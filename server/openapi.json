@@ -6939,7 +6939,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReportsBundleFilters"
+                "$ref": "#/components/schemas/GetReportsBundleApiRequest"
               }
             }
           }
@@ -6950,7 +6950,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportsBundleResponse"
+                  "$ref": "#/components/schemas/GetReportsBundleApiResponse"
                 }
               }
             }
@@ -7020,7 +7020,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReportsOverviewFilters"
+                "$ref": "#/components/schemas/GetReportsOverviewApiRequest"
               }
             }
           }
@@ -7031,7 +7031,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetDashboardBundleApiResponse"
+                  "$ref": "#/components/schemas/GetReportsOverviewApiResponse"
                 }
               }
             }
@@ -7101,7 +7101,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReportsHistoryFilters"
+                "$ref": "#/components/schemas/GetReportsHistoryApiRequest"
               }
             }
           }
@@ -7112,7 +7112,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetDashboardHistoryApiResponse"
+                  "$ref": "#/components/schemas/GetReportsHistoryApiResponse"
                 }
               }
             }
@@ -28521,10 +28521,54 @@
       },
       "ExportRequest": {
         "properties": {
-          "filters": {
-            "$ref": "#/components/schemas/ReportsExportFilters"
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
           },
-          "profileIds": {
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
             "anyOf": [
               {
                 "items": {
@@ -28536,13 +28580,14 @@
                 "type": "null"
               }
             ],
-            "title": "Profileids"
+            "title": "Simulation Filters"
           },
-          "simulationIds": {
+          "profile_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -28550,13 +28595,14 @@
                 "type": "null"
               }
             ],
-            "title": "Simulationids"
+            "title": "Profile Ids"
           },
-          "scenarioIds": {
+          "simulation_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -28564,7 +28610,79 @@
                 "type": "null"
               }
             ],
-            "title": "Scenarioids"
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 100
           },
           "metrics": {
             "anyOf": [
@@ -28580,18 +28698,19 @@
             ],
             "title": "Metrics"
           },
-          "brightspaceFormat": {
+          "brightspace_format": {
             "type": "boolean",
-            "title": "Brightspaceformat",
+            "title": "Brightspace Format",
             "default": false
           }
         },
         "type": "object",
         "required": [
-          "filters"
+          "start_date",
+          "end_date"
         ],
         "title": "ExportRequest",
-        "description": "Request to export reports data."
+        "description": "Export request - extends GetReportsBundleApiRequest with export-specific options."
       },
       "FeedbackItem": {
         "properties": {
@@ -28802,30 +28921,6 @@
         ],
         "title": "FeedbackToolPayload",
         "description": "Request to create feedback for a standard group."
-      },
-      "FilterOption": {
-        "properties": {
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "value",
-          "label",
-          "count"
-        ],
-        "title": "FilterOption",
-        "description": "Filter option with count."
       },
       "FinalizeUploadApiResponse": {
         "properties": {
@@ -40243,6 +40338,865 @@
         "type": "object",
         "title": "GetProvidersListApiResponse"
       },
+      "GetReportsBundleApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetReportsBundleApiRequest"
+      },
+      "GetReportsBundleApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsBundleV3Profile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pages"
+          },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsBundleV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsBundleV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsBundleV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          },
+          "scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsBundleV3Scenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios"
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsBundleV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          }
+        },
+        "type": "object",
+        "title": "GetReportsBundleApiResponse"
+      },
+      "GetReportsHistoryApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetReportsHistoryApiRequest"
+      },
+      "GetReportsHistoryApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsHistoryV3AttemptHistoryRow"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "archived_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived Count"
+          },
+          "unarchived_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unarchived Count"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pages"
+          },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsHistoryV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsHistoryV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsHistoryV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          }
+        },
+        "type": "object",
+        "title": "GetReportsHistoryApiResponse"
+      },
+      "GetReportsOverviewApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetReportsOverviewApiRequest"
+      },
+      "GetReportsOverviewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "header_metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3HeaderMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "primary_metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3PrimaryMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secondary_metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3SecondaryMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "footer_metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3FooterMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "history": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3AttemptHistoryRow"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History"
+          },
+          "insights": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3Insights"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "thresholds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3Thresholds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          },
+          "rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3Rubric"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubrics"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "title": "GetReportsOverviewApiResponse"
+      },
       "GetRubricDetailApiRequest": {
         "properties": {
           "rubric_id": {
@@ -47409,57 +48363,6 @@
         "title": "MessageStrengthToolPayload",
         "description": "Request to add strength feedback to a message."
       },
-      "MetricResponse": {
-        "properties": {
-          "hasData": {
-            "type": "boolean",
-            "title": "Hasdata"
-          },
-          "method": {
-            "type": "string",
-            "title": "Method"
-          },
-          "currentValue": {
-            "type": "integer",
-            "title": "Currentvalue"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "trendAnalysis": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trendanalysis"
-          },
-          "trendData": {
-            "items": {},
-            "type": "array",
-            "title": "Trenddata"
-          },
-          "dataPoints": {
-            "items": {},
-            "type": "array",
-            "title": "Datapoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hasData",
-          "method",
-          "currentValue",
-          "status",
-          "trendData",
-          "dataPoints"
-        ],
-        "title": "MetricResponse"
-      },
       "ObjectivesToolCompletePayload": {
         "properties": {
           "success": {
@@ -47912,124 +48815,6 @@
         },
         "type": "object",
         "title": "ProcessCsvApiResponse"
-      },
-      "ProfileDataEnhanced": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "firstName": {
-            "type": "string",
-            "title": "Firstname"
-          },
-          "lastName": {
-            "type": "string",
-            "title": "Lastname"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails",
-            "default": []
-          },
-          "primaryEmail": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primaryemail"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "simulationIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Simulationids",
-            "default": []
-          },
-          "scenarioIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenarioids",
-            "default": []
-          },
-          "metrics": {
-            "$ref": "#/components/schemas/ProfileMetrics"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId",
-          "firstName",
-          "lastName",
-          "primaryEmail",
-          "role",
-          "metrics"
-        ],
-        "title": "ProfileDataEnhanced",
-        "description": "Enhanced profile data row."
-      },
-      "ProfileMetrics": {
-        "properties": {
-          "averageScore": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "completionPercentage": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "firstAttemptPassRate": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "highestScore": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "messagesPerSession": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "personaResponseTimes": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "sessionEfficiency": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "stagnationRate": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "timeSpent": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "totalAttempts": {
-            "$ref": "#/components/schemas/MetricResponse"
-          }
-        },
-        "type": "object",
-        "required": [
-          "averageScore",
-          "completionPercentage",
-          "firstAttemptPassRate",
-          "highestScore",
-          "messagesPerSession",
-          "personaResponseTimes",
-          "sessionEfficiency",
-          "stagnationRate",
-          "timeSpent",
-          "totalAttempts"
-        ],
-        "title": "ProfileMetrics",
-        "description": "Profile metrics - each metric is a full MetricResponse object."
       },
       "QCreateScenarioV3Parameter": {
         "properties": {
@@ -76465,6 +77250,4991 @@
         ],
         "title": "QProcessCsvV3ProcessedRow"
       },
+      "QReportsBundleV3DataPoint": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "date",
+          "value",
+          "simulation_id",
+          "scenario_id",
+          "attempt_id"
+        ],
+        "title": "QReportsBundleV3DataPoint"
+      },
+      "QReportsBundleV3FilterOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "QReportsBundleV3FilterOption"
+      },
+      "QReportsBundleV3Hover": {
+        "properties": {
+          "mean": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "median": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent"
+          },
+          "top": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top"
+          },
+          "mean_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Seconds"
+          },
+          "median_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Seconds"
+          },
+          "samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Samples"
+          },
+          "avg_score_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score Percent"
+          },
+          "avg_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Minutes"
+          },
+          "efficiency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Efficiency"
+          },
+          "tracked": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tracked"
+          },
+          "stagnant": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stagnant"
+          },
+          "rate_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate Percent"
+          },
+          "total_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Minutes"
+          },
+          "total_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Hours"
+          },
+          "attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
+          },
+          "unique_simulations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unique Simulations"
+          },
+          "per_simulation_mean": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Simulation Mean"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mean",
+          "median",
+          "mode",
+          "count",
+          "completed",
+          "total",
+          "percent",
+          "top",
+          "mean_seconds",
+          "median_seconds",
+          "samples",
+          "avg_score_percent",
+          "avg_minutes",
+          "efficiency",
+          "tracked",
+          "stagnant",
+          "rate_percent",
+          "total_minutes",
+          "total_hours",
+          "attempts",
+          "unique_simulations",
+          "per_simulation_mean"
+        ],
+        "title": "QReportsBundleV3Hover"
+      },
+      "QReportsBundleV3Metric": {
+        "properties": {
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "data_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsBundleV3DataPoint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Points"
+          },
+          "hover": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Hover"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "has_data",
+          "method",
+          "current_value",
+          "data_points",
+          "hover",
+          "status"
+        ],
+        "title": "QReportsBundleV3Metric"
+      },
+      "QReportsBundleV3Profile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3ProfileMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email",
+          "role",
+          "simulation_ids",
+          "scenario_ids",
+          "metrics"
+        ],
+        "title": "QReportsBundleV3Profile"
+      },
+      "QReportsBundleV3ProfileMetrics": {
+        "properties": {
+          "average_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completion_percentage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "first_attempt_pass_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages_per_session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "persona_response_times": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_efficiency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stagnation_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "time_spent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_attempts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "average_score",
+          "completion_percentage",
+          "first_attempt_pass_rate",
+          "highest_score",
+          "messages_per_session",
+          "persona_response_times",
+          "session_efficiency",
+          "stagnation_rate",
+          "time_spent",
+          "total_attempts"
+        ],
+        "title": "QReportsBundleV3ProfileMetrics"
+      },
+      "QReportsBundleV3Scenario": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "name",
+          "description"
+        ],
+        "title": "QReportsBundleV3Scenario"
+      },
+      "QReportsBundleV3Simulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "rubric_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "rubric_id",
+          "rubric_points",
+          "rubric_pass_points"
+        ],
+        "title": "QReportsBundleV3Simulation"
+      },
+      "QReportsHistoryV3AttemptHistoryRow": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "num_scenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios"
+          },
+          "num_scenarios_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios Completed"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "persona_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Names"
+          },
+          "persona_colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Colors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "score_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Status"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Titles"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "show_view": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show View"
+          },
+          "show_continue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Continue"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names"
+          },
+          "practice_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "date",
+          "profile_id",
+          "profile_name",
+          "simulation_name",
+          "num_scenarios",
+          "num_scenarios_completed",
+          "infinite_mode",
+          "time_limit",
+          "persona_names",
+          "persona_colors",
+          "score",
+          "score_status",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "is_archived",
+          "show_view",
+          "show_continue",
+          "practice_simulation",
+          "pass_pct",
+          "department_ids",
+          "cohort_names",
+          "practice_scenario_id"
+        ],
+        "title": "QReportsHistoryV3AttemptHistoryRow"
+      },
+      "QReportsHistoryV3FilterOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "QReportsHistoryV3FilterOption"
+      },
+      "QReportsOverviewV3AttemptHistoryRow": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "num_scenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios"
+          },
+          "num_scenarios_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios Completed"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "persona_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Names"
+          },
+          "persona_colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Colors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "score_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Status"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Titles"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "show_view": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show View"
+          },
+          "show_continue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Continue"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names"
+          },
+          "practice_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "date",
+          "profile_id",
+          "profile_name",
+          "simulation_name",
+          "num_scenarios",
+          "num_scenarios_completed",
+          "infinite_mode",
+          "time_limit",
+          "persona_names",
+          "persona_colors",
+          "score",
+          "score_status",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "is_archived",
+          "show_view",
+          "show_continue",
+          "practice_simulation",
+          "pass_pct",
+          "department_ids",
+          "cohort_names",
+          "practice_scenario_id"
+        ],
+        "title": "QReportsOverviewV3AttemptHistoryRow"
+      },
+      "QReportsOverviewV3AttemptImprovementData": {
+        "properties": {
+          "attempt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt"
+          },
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "average_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Time"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt",
+          "average_score",
+          "average_time",
+          "pass_rate"
+        ],
+        "title": "QReportsOverviewV3AttemptImprovementData"
+      },
+      "QReportsOverviewV3AttemptImprovementFact": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "attempt_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt No"
+          },
+          "avg_grade": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Grade"
+          },
+          "avg_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Minutes"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "attempt_no",
+          "avg_grade",
+          "avg_minutes",
+          "pass_rate"
+        ],
+        "title": "QReportsOverviewV3AttemptImprovementFact"
+      },
+      "QReportsOverviewV3AttemptImprovementResponse": {
+        "properties": {
+          "chart_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3AttemptImprovementData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart Data"
+          },
+          "facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3AttemptImprovementFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facts"
+          },
+          "valid_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Simulation Ids"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chart_data",
+          "facts",
+          "valid_simulation_ids",
+          "status"
+        ],
+        "title": "QReportsOverviewV3AttemptImprovementResponse"
+      },
+      "QReportsOverviewV3CohortDailyFact": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "simulation_id",
+          "avg_score"
+        ],
+        "title": "QReportsOverviewV3CohortDailyFact"
+      },
+      "QReportsOverviewV3CohortData": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          },
+          "avg_percentage_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Percentage Score"
+          },
+          "total_students": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Students"
+          },
+          "passed_students": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Students"
+          },
+          "total_attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Attempts"
+          },
+          "passed_attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Attempts"
+          },
+          "simulation_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Count"
+          },
+          "required_simulations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Simulations"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "pass_rate",
+          "avg_percentage_score",
+          "total_students",
+          "passed_students",
+          "total_attempts",
+          "passed_attempts",
+          "simulation_count",
+          "required_simulations",
+          "status"
+        ],
+        "title": "QReportsOverviewV3CohortData"
+      },
+      "QReportsOverviewV3CohortFact": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "simulation_id",
+          "pass_rate",
+          "avg_score",
+          "attempts"
+        ],
+        "title": "QReportsOverviewV3CohortFact"
+      },
+      "QReportsOverviewV3CohortInsight": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "insight": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "insight"
+        ],
+        "title": "QReportsOverviewV3CohortInsight"
+      },
+      "QReportsOverviewV3CohortPerformanceResponse": {
+        "properties": {
+          "cohort_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3CohortData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Data"
+          },
+          "daily_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3DailyData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Data"
+          },
+          "cohort_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3CohortFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Facts"
+          },
+          "daily_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3CohortDailyFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Facts"
+          },
+          "valid_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Simulation Ids"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_data",
+          "daily_data",
+          "cohort_facts",
+          "daily_facts",
+          "valid_simulation_ids",
+          "status"
+        ],
+        "title": "QReportsOverviewV3CohortPerformanceResponse"
+      },
+      "QReportsOverviewV3DailyData": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "avg_score",
+          "cohort_id"
+        ],
+        "title": "QReportsOverviewV3DailyData"
+      },
+      "QReportsOverviewV3DataPoint": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "date",
+          "value",
+          "attempt_id",
+          "simulation_id",
+          "scenario_id",
+          "count"
+        ],
+        "title": "QReportsOverviewV3DataPoint"
+      },
+      "QReportsOverviewV3Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "QReportsOverviewV3Field"
+      },
+      "QReportsOverviewV3FooterMetrics": {
+        "properties": {
+          "scenario_performance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3ScenarioPerformanceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenario_stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3ScenarioStatsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation_performance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3SimulationPerformanceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation_composition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3SimulationCompositionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_performance",
+          "scenario_stats",
+          "simulation_performance",
+          "simulation_composition"
+        ],
+        "title": "QReportsOverviewV3FooterMetrics"
+      },
+      "QReportsOverviewV3GrowthDataPoint": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "completion_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Rate"
+          },
+          "first_attempt_pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Attempt Pass Rate"
+          },
+          "session_efficiency": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Efficiency"
+          },
+          "stagnation_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stagnation Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "average_score",
+          "completion_rate",
+          "first_attempt_pass_rate",
+          "session_efficiency",
+          "stagnation_rate"
+        ],
+        "title": "QReportsOverviewV3GrowthDataPoint"
+      },
+      "QReportsOverviewV3GrowthDataResponse": {
+        "properties": {
+          "chart_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3GrowthDataPoint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart Data"
+          },
+          "available_metrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3GrowthMetric"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Metrics"
+          },
+          "window_averages": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3GrowthWindowAverages"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chart_data",
+          "available_metrics",
+          "window_averages",
+          "status"
+        ],
+        "title": "QReportsOverviewV3GrowthDataResponse"
+      },
+      "QReportsOverviewV3GrowthMetric": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "formatter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatter Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color",
+          "unit",
+          "description",
+          "formatter_id"
+        ],
+        "title": "QReportsOverviewV3GrowthMetric"
+      },
+      "QReportsOverviewV3GrowthWindowAverage": {
+        "properties": {
+          "n": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N"
+          },
+          "last": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
+          },
+          "prev": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev"
+          }
+        },
+        "type": "object",
+        "required": [
+          "n",
+          "last",
+          "prev"
+        ],
+        "title": "QReportsOverviewV3GrowthWindowAverage"
+      },
+      "QReportsOverviewV3GrowthWindowAverages": {
+        "properties": {
+          "average_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3GrowthWindowAverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "average_score"
+        ],
+        "title": "QReportsOverviewV3GrowthWindowAverages"
+      },
+      "QReportsOverviewV3HeaderMetrics": {
+        "properties": {
+          "average_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completion_percentage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "first_attempt_pass_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages_per_session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "persona_response_times": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_efficiency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stagnation_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "time_spent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_attempts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3MetricResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "average_score",
+          "completion_percentage",
+          "first_attempt_pass_rate",
+          "highest_score",
+          "messages_per_session",
+          "persona_response_times",
+          "session_efficiency",
+          "stagnation_rate",
+          "time_spent",
+          "total_attempts"
+        ],
+        "title": "QReportsOverviewV3HeaderMetrics"
+      },
+      "QReportsOverviewV3Insights": {
+        "properties": {
+          "growth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Growth"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3PersonaInsight"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona"
+          },
+          "rubric_heatmap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Heatmap"
+          },
+          "attempt_improvement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Improvement"
+          },
+          "cohort": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3CohortInsight"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort"
+          },
+          "skill_performance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Performance"
+          },
+          "scenario_performance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Performance"
+          },
+          "scenario_stats": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Stats"
+          },
+          "simulation_performance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Performance"
+          },
+          "simulation_composition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Composition"
+          }
+        },
+        "type": "object",
+        "required": [
+          "growth",
+          "persona",
+          "rubric_heatmap",
+          "attempt_improvement",
+          "cohort",
+          "skill_performance",
+          "scenario_performance",
+          "scenario_stats",
+          "simulation_performance",
+          "simulation_composition"
+        ],
+        "title": "QReportsOverviewV3Insights"
+      },
+      "QReportsOverviewV3MetricResponse": {
+        "properties": {
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "trend_analysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Analysis"
+          },
+          "value_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Field"
+          },
+          "key_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Field"
+          },
+          "trend_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3TrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data"
+          },
+          "data_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3DataPoint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "has_data",
+          "method",
+          "current_value",
+          "status",
+          "trend_analysis",
+          "value_field",
+          "key_field",
+          "trend_data",
+          "data_points"
+        ],
+        "title": "QReportsOverviewV3MetricResponse"
+      },
+      "QReportsOverviewV3NumericAttemptFact": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "level_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Label"
+          },
+          "level_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Value"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "level_label",
+          "level_value",
+          "score",
+          "attempts"
+        ],
+        "title": "QReportsOverviewV3NumericAttemptFact"
+      },
+      "QReportsOverviewV3NumericScenarioFact": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "level_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Label"
+          },
+          "level_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "scenario_id",
+          "level_label",
+          "level_value"
+        ],
+        "title": "QReportsOverviewV3NumericScenarioFact"
+      },
+      "QReportsOverviewV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "numerical": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "QReportsOverviewV3Parameter"
+      },
+      "QReportsOverviewV3PersonaColor": {
+        "properties": {
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_name",
+          "color"
+        ],
+        "title": "QReportsOverviewV3PersonaColor"
+      },
+      "QReportsOverviewV3PersonaInsight": {
+        "properties": {
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "insight": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_name",
+          "insight"
+        ],
+        "title": "QReportsOverviewV3PersonaInsight"
+      },
+      "QReportsOverviewV3PersonaPerformanceData": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "sessions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessions"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "trend_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3PersonaTrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "score",
+          "sessions",
+          "color",
+          "simulation_ids",
+          "trend_data",
+          "status"
+        ],
+        "title": "QReportsOverviewV3PersonaPerformanceData"
+      },
+      "QReportsOverviewV3PersonaPerformanceResponse": {
+        "properties": {
+          "chart_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3PersonaPerformanceData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart Data"
+          },
+          "valid_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Simulation Ids"
+          },
+          "persona_colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3PersonaColor"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Colors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chart_data",
+          "valid_simulation_ids",
+          "persona_colors"
+        ],
+        "title": "QReportsOverviewV3PersonaPerformanceResponse"
+      },
+      "QReportsOverviewV3PersonaTrendData": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "score",
+          "timestamp",
+          "simulation_id"
+        ],
+        "title": "QReportsOverviewV3PersonaTrendData"
+      },
+      "QReportsOverviewV3PrimaryMetrics": {
+        "properties": {
+          "growth_data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3GrowthDataResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "persona_performance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3PersonaPerformanceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rubric_heatmap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3RubricHeatmapResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "growth_data",
+          "persona_performance",
+          "rubric_heatmap"
+        ],
+        "title": "QReportsOverviewV3PrimaryMetrics"
+      },
+      "QReportsOverviewV3Rubric": {
+        "properties": {
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "name",
+          "description"
+        ],
+        "title": "QReportsOverviewV3Rubric"
+      },
+      "QReportsOverviewV3RubricHeatmapCell": {
+        "properties": {
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "correlation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation"
+          },
+          "p_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P Value"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "strength": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strength"
+          },
+          "data_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "correlation",
+          "p_value",
+          "color",
+          "strength",
+          "data_points"
+        ],
+        "title": "QReportsOverviewV3RubricHeatmapCell"
+      },
+      "QReportsOverviewV3RubricHeatmapResponse": {
+        "properties": {
+          "matrices": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3RubricMatrixPackage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matrices"
+          },
+          "valid_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Rubric Ids"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "matrices",
+          "valid_rubric_ids",
+          "status"
+        ],
+        "title": "QReportsOverviewV3RubricHeatmapResponse"
+      },
+      "QReportsOverviewV3RubricMatrixPackage": {
+        "properties": {
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "matrix": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3RubricHeatmapCell"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matrix"
+          },
+          "insights": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insights"
+          },
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "standard_groups",
+          "matrix",
+          "insights",
+          "has_data"
+        ],
+        "title": "QReportsOverviewV3RubricMatrixPackage"
+      },
+      "QReportsOverviewV3ScenarioAttributeAttemptFact": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "parameter_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
+          },
+          "passed_attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "parameter_item_id",
+          "date",
+          "timestamp",
+          "avg_score",
+          "attempts",
+          "passed_attempts"
+        ],
+        "title": "QReportsOverviewV3ScenarioAttributeAttemptFact"
+      },
+      "QReportsOverviewV3ScenarioAttributeScenarioFact": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "parameter_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "parameter_item_id",
+          "scenario_id"
+        ],
+        "title": "QReportsOverviewV3ScenarioAttributeScenarioFact"
+      },
+      "QReportsOverviewV3ScenarioFact": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "scenario_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Name"
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "success_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Rate"
+          },
+          "total_attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Attempts"
+          },
+          "completed_attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "scenario_id",
+          "scenario_name",
+          "avg_score",
+          "success_rate",
+          "total_attempts",
+          "completed_attempts"
+        ],
+        "title": "QReportsOverviewV3ScenarioFact"
+      },
+      "QReportsOverviewV3ScenarioPerformanceResponse": {
+        "properties": {
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "attribute_attempt_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3ScenarioAttributeAttemptFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribute Attempt Facts"
+          },
+          "attribute_scenario_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3ScenarioAttributeScenarioFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribute Scenario Facts"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_parameter_ids",
+          "attribute_attempt_facts",
+          "attribute_scenario_facts",
+          "status"
+        ],
+        "title": "QReportsOverviewV3ScenarioPerformanceResponse"
+      },
+      "QReportsOverviewV3ScenarioStatsResponse": {
+        "properties": {
+          "valid_numeric_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Numeric Parameter Ids"
+          },
+          "numeric_attempt_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3NumericAttemptFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numeric Attempt Facts"
+          },
+          "numeric_scenario_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3NumericScenarioFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numeric Scenario Facts"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_numeric_parameter_ids",
+          "numeric_attempt_facts",
+          "numeric_scenario_facts",
+          "status"
+        ],
+        "title": "QReportsOverviewV3ScenarioStatsResponse"
+      },
+      "QReportsOverviewV3SecondaryMetrics": {
+        "properties": {
+          "attempt_improvement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3AttemptImprovementResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cohort_performance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3CohortPerformanceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "skill_performance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QReportsOverviewV3SkillPerformanceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_improvement",
+          "cohort_performance",
+          "skill_performance"
+        ],
+        "title": "QReportsOverviewV3SecondaryMetrics"
+      },
+      "QReportsOverviewV3Simulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "time_limit",
+          "department_ids"
+        ],
+        "title": "QReportsOverviewV3Simulation"
+      },
+      "QReportsOverviewV3SimulationCompositionResponse": {
+        "properties": {
+          "valid_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Simulation Ids"
+          },
+          "simulation_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3SimulationFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Facts"
+          },
+          "simulation_parameter_facts_categorical": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3SimulationParameterFactCategorical"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Parameter Facts Categorical"
+          },
+          "simulation_parameter_facts_numeric": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3SimulationParameterFactNumeric"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Parameter Facts Numeric"
+          },
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_simulation_ids",
+          "simulation_facts",
+          "simulation_parameter_facts_categorical",
+          "simulation_parameter_facts_numeric",
+          "has_data",
+          "status"
+        ],
+        "title": "QReportsOverviewV3SimulationCompositionResponse"
+      },
+      "QReportsOverviewV3SimulationFact": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "completion_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Rate"
+          },
+          "total_attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Attempts"
+          },
+          "scenario_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "title",
+          "avg_score",
+          "completion_rate",
+          "total_attempts",
+          "scenario_count"
+        ],
+        "title": "QReportsOverviewV3SimulationFact"
+      },
+      "QReportsOverviewV3SimulationParameterFactCategorical": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "parameter_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Id"
+          },
+          "scenario_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "parameter_id",
+          "parameter_item_id",
+          "scenario_count"
+        ],
+        "title": "QReportsOverviewV3SimulationParameterFactCategorical"
+      },
+      "QReportsOverviewV3SimulationParameterFactNumeric": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "avg_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Level"
+          },
+          "level_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Label"
+          },
+          "scenario_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "parameter_id",
+          "avg_level",
+          "level_label",
+          "scenario_count"
+        ],
+        "title": "QReportsOverviewV3SimulationParameterFactNumeric"
+      },
+      "QReportsOverviewV3SimulationPerformanceResponse": {
+        "properties": {
+          "valid_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Simulation Ids"
+          },
+          "scenario_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3ScenarioFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Facts"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_simulation_ids",
+          "scenario_facts",
+          "status"
+        ],
+        "title": "QReportsOverviewV3SimulationPerformanceResponse"
+      },
+      "QReportsOverviewV3SkillPackage": {
+        "properties": {
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "radar_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3SkillRadarData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radar Data"
+          },
+          "group_facts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3SkillStandardFact"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Facts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "radar_data",
+          "group_facts"
+        ],
+        "title": "QReportsOverviewV3SkillPackage"
+      },
+      "QReportsOverviewV3SkillPerformanceResponse": {
+        "properties": {
+          "packages": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV3SkillPackage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Packages"
+          },
+          "valid_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Rubric Ids"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "packages",
+          "valid_rubric_ids",
+          "status"
+        ],
+        "title": "QReportsOverviewV3SkillPerformanceResponse"
+      },
+      "QReportsOverviewV3SkillRadarData": {
+        "properties": {
+          "metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "full_mark": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Mark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric",
+          "description",
+          "value",
+          "full_mark"
+        ],
+        "title": "QReportsOverviewV3SkillRadarData"
+      },
+      "QReportsOverviewV3SkillStandardFact": {
+        "properties": {
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "group_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Name"
+          },
+          "group_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Description"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "avg_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "group_name",
+          "group_description",
+          "simulation_id",
+          "score",
+          "points",
+          "avg_pct"
+        ],
+        "title": "QReportsOverviewV3SkillStandardFact"
+      },
+      "QReportsOverviewV3StandardGroup": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Short Name"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "short_name",
+          "rubric_id"
+        ],
+        "title": "QReportsOverviewV3StandardGroup"
+      },
+      "QReportsOverviewV3Thresholds": {
+        "properties": {
+          "success": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          },
+          "danger": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Danger"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "warning",
+          "danger"
+        ],
+        "title": "QReportsOverviewV3Thresholds"
+      },
+      "QReportsOverviewV3TrendData": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "count"
+        ],
+        "title": "QReportsOverviewV3TrendData"
+      },
       "QSearchSimulatableProfilesV3Profile": {
         "properties": {
           "profile_id": {
@@ -77639,661 +83409,6 @@
         ],
         "title": "RenderTemplateApiRequest"
       },
-      "ReportsBundleFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulationFilters": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationfilters"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page"
-          },
-          "pageSize": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pagesize"
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "sortBy": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sortby"
-          },
-          "sortOrder": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sortorder"
-          },
-          "profileIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileids"
-          },
-          "simulationIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationids"
-          },
-          "scenarioIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarioids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "startDate",
-          "endDate"
-        ],
-        "title": "ReportsBundleFilters",
-        "description": "Reports bundle filter request schema."
-      },
-      "ReportsBundleResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/ProfileDataEnhanced"
-            },
-            "type": "array",
-            "title": "Data"
-          },
-          "totalCount": {
-            "type": "integer",
-            "title": "Totalcount"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
-          },
-          "totalPages": {
-            "type": "integer",
-            "title": "Totalpages"
-          },
-          "profileOptions": {
-            "items": {
-              "$ref": "#/components/schemas/FilterOption"
-            },
-            "type": "array",
-            "title": "Profileoptions",
-            "default": []
-          },
-          "simulationOptions": {
-            "items": {
-              "$ref": "#/components/schemas/FilterOption"
-            },
-            "type": "array",
-            "title": "Simulationoptions",
-            "default": []
-          },
-          "scenarioOptions": {
-            "items": {
-              "$ref": "#/components/schemas/FilterOption"
-            },
-            "type": "array",
-            "title": "Scenariooptions",
-            "default": []
-          },
-          "scenario_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
-            },
-            "type": "object",
-            "title": "Scenario Mapping"
-          },
-          "simulation_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
-            },
-            "type": "object",
-            "title": "Simulation Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data",
-          "totalCount",
-          "page",
-          "pageSize",
-          "totalPages",
-          "scenario_mapping",
-          "simulation_mapping"
-        ],
-        "title": "ReportsBundleResponse",
-        "description": "Reports bundle response with entity mappings."
-      },
-      "ReportsExportFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulationFilters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SimulationFilter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationfilters"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page"
-          },
-          "pageSize": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pagesize"
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "sortBy": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sortby"
-          },
-          "sortOrder": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sortorder"
-          },
-          "profileIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileids"
-          },
-          "simulationIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationids"
-          },
-          "scenarioIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarioids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "startDate",
-          "endDate"
-        ],
-        "title": "ReportsExportFilters",
-        "description": "Reports export filter request schema."
-      },
-      "ReportsHistoryFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulationFilters": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationfilters"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page",
-            "default": 0
-          },
-          "pageSize": {
-            "type": "integer",
-            "title": "Pagesize",
-            "default": 20
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "profileIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileids"
-          },
-          "simulationIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationids"
-          },
-          "scenarioIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarioids"
-          },
-          "infiniteMode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinitemode"
-          },
-          "sortBy": {
-            "type": "string",
-            "title": "Sortby",
-            "default": "date"
-          },
-          "sortOrder": {
-            "type": "string",
-            "title": "Sortorder",
-            "default": "desc"
-          }
-        },
-        "type": "object",
-        "required": [
-          "startDate",
-          "endDate"
-        ],
-        "title": "ReportsHistoryFilters",
-        "description": "Reports history filter request schema - requires profileId for individual reports."
-      },
-      "ReportsOverviewFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulationFilters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SimulationFilter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationfilters"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "startDate",
-          "endDate"
-        ],
-        "title": "ReportsOverviewFilters",
-        "description": "Reports overview filter request schema - requires profileId for individual reports."
-      },
       "ResolveFeedbackRequest": {
         "properties": {
           "feedback_id": {
@@ -78947,25 +84062,6 @@
         ],
         "title": "ScenarioItem"
       },
-      "ScenarioMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ScenarioMappingItem",
-        "description": "Scenario mapping item."
-      },
       "ScenarioQuestionsToolCompletePayload": {
         "properties": {
           "success": {
@@ -79476,16 +84572,6 @@
         "title": "SimulationEnterResponsePayload",
         "description": "Response indicating successfully updated chat created_at timestamp."
       },
-      "SimulationFilter": {
-        "type": "string",
-        "enum": [
-          "general",
-          "practice",
-          "archived"
-        ],
-        "title": "SimulationFilter",
-        "description": "Simulation filter types."
-      },
       "SimulationGradingProgressPayload": {
         "properties": {
           "type": {
@@ -79930,58 +85016,6 @@
         ],
         "title": "SimulationLeavePayload",
         "description": "Request to leave a simulation chat room."
-      },
-      "SimulationMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "rubric_points": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Points"
-          },
-          "rubric_pass_points": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Pass Points"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "SimulationMappingItem",
-        "description": "Simulation mapping item."
       },
       "SimulationMessageCancelledPayload": {
         "properties": {

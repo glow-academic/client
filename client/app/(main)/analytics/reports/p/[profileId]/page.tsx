@@ -105,12 +105,12 @@ async function getProfileReportsFilters(
   endDate.setHours(23, 59, 59, 999);
 
   const defaults = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: [] as string[],
+    start_date: startDate.toISOString(),
+    end_date: endDate.toISOString(),
+    cohort_ids: [] as string[],
     roles: [] as string[],
-    simulationFilters: ["general" as const],
-    departmentIds: [] as string[],
+    simulation_filters: ["general" as const],
+    department_ids: [] as string[],
   };
 
   // If search params are provided, merge them with defaults
@@ -118,24 +118,24 @@ async function getProfileReportsFilters(
   if (searchParams) {
     const parsedFilters = searchParamsToFilters(searchParams, defaults);
     filters = {
-      startDate: parsedFilters.startDate || defaults.startDate,
-      endDate: parsedFilters.endDate || defaults.endDate,
-      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
+      start_date: parsedFilters.start_date || defaults.start_date,
+      end_date: parsedFilters.end_date || defaults.end_date,
+      cohort_ids: parsedFilters.cohort_ids || defaults.cohort_ids,
       roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters ||
-        defaults.simulationFilters) as typeof defaults.simulationFilters,
-      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
+      simulation_filters: (parsedFilters.simulation_filters ||
+        defaults.simulation_filters) as typeof defaults.simulation_filters,
+      department_ids: parsedFilters.department_ids || defaults.department_ids,
     };
   }
 
   // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
   const cohortIds =
-    filters.cohortIds && filters.cohortIds.length > 0
-      ? filters.cohortIds
+    filters.cohort_ids && filters.cohort_ids.length > 0
+      ? filters.cohort_ids
       : profileContext.cohortIds || [];
   const departmentIds =
-    filters.departmentIds && filters.departmentIds.length > 0
-      ? filters.departmentIds
+    filters.department_ids && filters.department_ids.length > 0
+      ? filters.department_ids
       : profileContext.departmentIds || [];
   const roles =
     filters.roles && filters.roles.length > 0
@@ -144,8 +144,8 @@ async function getProfileReportsFilters(
 
   return {
     ...filters,
-    cohortIds,
-    departmentIds,
+    cohort_ids: cohortIds,
+    department_ids: departmentIds,
     roles,
   };
 }
@@ -210,7 +210,7 @@ export default async function ReportsPage({
   );    
   const reportsFilters = {
     ...defaultFilters,
-    profileId, // Required for reports overview
+    profile_id: profileId, // Required for reports overview (snake_case for API)
   };
 
   // Extract pagination and filter params from search params for history
@@ -255,14 +255,14 @@ export default async function ReportsPage({
         : "std",
     historySortBy,
     historySortOrder,
-    defaultFilters.startDate, // Include analytics filters to trigger re-fetch when filters change
-    defaultFilters.endDate,
-    defaultFilters.cohortIds.join(","),
-    defaultFilters.departmentIds.join(","),
+    defaultFilters.start_date, // Include analytics filters to trigger re-fetch when filters change
+    defaultFilters.end_date,
+    defaultFilters.cohort_ids.join(","),
+    defaultFilters.department_ids.join(","),
     defaultFilters.roles.join(","),
     (
-      defaultFilters as typeof defaultFilters & { simulationFilters?: string[] }
-    ).simulationFilters?.join(",") || "general",
+      defaultFilters as typeof defaultFilters & { simulation_filters?: string[] }
+    ).simulation_filters?.join(",") || "general",
   ].join("|");
 
   // Fetch profile detail and reports overview data server-side
@@ -359,39 +359,39 @@ async function ReportHistorySection({
   historySortOrder: string;
   profileId: string;
 }) {
-  // Build history filters - profileId is required for reports history
+  // Build history filters - profileId is required for reports history (snake_case for API)
   const historyFilters: ReportsHistoryIn = {
     body: {
-      profileIds: [profileId], // Required for reports history
-      startDate: defaultFilters.startDate,
-      endDate: defaultFilters.endDate,
-      cohortIds: defaultFilters.cohortIds,
-      departmentIds: defaultFilters.departmentIds,
+      profile_ids: [profileId], // Required for reports history
+      start_date: defaultFilters.start_date,
+      end_date: defaultFilters.end_date,
+      cohort_ids: defaultFilters.cohort_ids,
+      department_ids: defaultFilters.department_ids,
       roles: defaultFilters.roles,
-      simulationFilters: ["general", "practice", "archived"], // Show all types
+      simulation_filters: ["general", "practice", "archived"], // Show all types
       page: historyPage,
-      pageSize: historyPageSize,
+      page_size: historyPageSize,
       ...(historySearch && { search: historySearch }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
-          simulationIds: historySimulationIds,
+          simulation_ids: historySimulationIds,
         }),
       ...(historyScenarioIds &&
         historyScenarioIds.length > 0 && {
-          scenarioIds: historyScenarioIds,
+          scenario_ids: historyScenarioIds,
         }),
       ...(historyInfiniteMode !== undefined && {
-        infiniteMode: historyInfiniteMode,
+        infinite_mode: historyInfiniteMode,
       }),
-      sortBy: historySortBy,
-      sortOrder: historySortOrder,
+      sort_by: historySortBy,
+      sort_order: historySortOrder,
     },
   };
 
   const historyData = await getReportsHistory(historyFilters);
 
-  // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profileOptions || []).map((opt) => {
+  // Extract options from API response and cast to expected format (snake_case from server)
+  const profileOptions = (historyData.profile_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),
@@ -399,7 +399,7 @@ async function ReportHistorySection({
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
+  const simulationOptions = (historyData.simulation_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),
@@ -407,7 +407,7 @@ async function ReportHistorySection({
       ...(count !== undefined && { count }),
     };
   });
-  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
+  const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),

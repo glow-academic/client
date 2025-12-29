@@ -2,202 +2,101 @@
 
 import csv
 import io
-import json
 import zipfile
 from datetime import datetime
-from enum import Enum
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetReportsBundleApiRequest,
+    GetReportsBundleApiResponse,
+    GetReportsBundleSqlParams,
+    GetReportsBundleSqlRow,
+    GetPerSimulationMetricsSqlParams,
+    GetPerSimulationMetricsSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.logging.db_logger import get_logger
-
-
-# Inline mapping types (DHH style - no shared types)
-class SimulationFilter(str, Enum):
-    """Simulation filter types."""
-
-    GENERAL = "general"
-    PRACTICE = "practice"
-    ARCHIVED = "archived"
-
-
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 router = APIRouter(tags=["reports"])
 
-
-# Inline filter schemas
-class ReportsExportFilters(BaseModel):
-    """Reports export filter request schema."""
-
-    startDate: str
-    endDate: str
-    cohortIds: list[str] | None = None
-    roles: list[str] | None = None
-    simulationFilters: list[SimulationFilter] | None = None
-    # profileId removed - comes from X-Profile-Id header (for individual reports)
-    departmentIds: list[str] | None = None
-    # Pagination, search, sorting, and additional filters
-    page: int | None = None
-    pageSize: int | None = None
-    search: str | None = None  # Text search across profile names
-    sortBy: str | None = None  # Column to sort by (e.g., "averageScore", "profileName")
-    sortOrder: str | None = None  # "asc" or "desc"
-    profileIds: list[str] | None = None  # Filter by specific profiles
-    simulationIds: list[str] | None = None  # Filter by specific simulations
-    scenarioIds: list[str] | None = None  # Filter by specific scenarios
+BUNDLE_SQL_PATH = "app/sql/v3/reports/get_reports_bundle_complete.sql"
+PER_SIM_METRICS_SQL_PATH = "app/sql/v3/reports/get_per_simulation_metrics_complete.sql"
 
 
-# Inline request/response schemas
-class ExportRequest(BaseModel):
-    """Request to export reports data."""
+# Export request extends auto-generated bundle request with export-specific fields
+class ExportRequest(GetReportsBundleApiRequest):
+    """Export request - extends GetReportsBundleApiRequest with export-specific options."""
 
-    filters: ReportsExportFilters
-    profileIds: list[str] | None = None
-    simulationIds: list[str] | None = None
-    scenarioIds: list[str] | None = None
     metrics: list[str] | None = None
-    brightspaceFormat: bool = False
+    brightspace_format: bool = False
 
 
 async def _get_per_simulation_metrics(
     conn: asyncpg.Connection,
-    profile_where: str,
-    analytics_where: str,
-    base_params: list[Any],
-    profile_ids: list[str] | None,
-    simulation_ids: list[str] | None,
-    scenario_ids: list[str] | None,
+    bundle_request: GetReportsBundleApiRequest,
+    profile_id: UUID,
+    profile_ids: list[UUID] | None,
+    simulation_ids: list[UUID] | None,
+    scenario_ids: list[UUID] | None,
 ) -> dict[str, dict[str, dict[str, float]]]:
     """
     Get per-simulation metrics for each profile.
     Returns dict: {profile_id: {simulation_id: {metric_name: value}}}
     """
-    # Build additional filters
-    param_counter = len(base_params) + 1
-    additional_filters = []
-    params = list(base_params)
+    # Use auto-generated types directly - no manual conversion needed
+    params = GetPerSimulationMetricsSqlParams(
+        start_date=bundle_request.start_date,
+        end_date=bundle_request.end_date,
+        profile_id=profile_id,
+        cohort_ids=bundle_request.cohort_ids or [],
+        department_ids=bundle_request.department_ids or [],
+        roles=bundle_request.roles or [],
+        simulation_filters=bundle_request.simulation_filters or ["general"],
+        profile_ids=profile_ids or [],
+        simulation_ids=simulation_ids or [],
+        scenario_ids=scenario_ids or [],
+    )
+    # SQL handles date conversion from text to timestamptz - no manual parsing needed
 
-    if profile_ids and len(profile_ids) > 0:
-        additional_filters.append(f"a.profile_id = ANY(${param_counter}::uuid[])")
-        params.append(profile_ids)
-        param_counter += 1
-
-    if simulation_ids and len(simulation_ids) > 0:
-        additional_filters.append(f"a.simulation_id = ANY(${param_counter}::uuid[])")
-        params.append(simulation_ids)
-        param_counter += 1
-
-    if scenario_ids and len(scenario_ids) > 0:
-        additional_filters.append(f"a.scenario_id = ANY(${param_counter}::uuid[])")
-        params.append(scenario_ids)
-        param_counter += 1
-
-    additional_where = ""
-    if additional_filters:
-        additional_where = " AND " + " AND ".join(additional_filters)
-
-    # Query per-simulation metrics
-    sim_metrics_query = f"""
-        WITH filt AS (
-            SELECT a.* FROM analytics a
-            WHERE {analytics_where}
-              AND a.profile_id IN (
-                  SELECT p.id FROM profiles p WHERE {profile_where}
-              )
-              {additional_where}
-        ),
-        simulation_metrics_per_profile AS (
-            SELECT
-                f.profile_id,
-                f.simulation_id,
-                AVG(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS avg_score,
-                MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
-                (100.0 * AVG((f.completed)::int))::float AS completion_pct,
-                COUNT(f.attempt_id)::int AS total_attempts,
-                AVG(f.num_messages_total) AS avg_messages,
-                AVG(f.time_taken_seconds / 60.0) AS avg_time_minutes
-            FROM filt f
-            WHERE f.simulation_id IS NOT NULL
-            GROUP BY f.profile_id, f.simulation_id
-        ),
-        earliest_attempts_all_time AS (
-            SELECT DISTINCT ON (a.profile_id, a.simulation_id)
-                a.profile_id,
-                a.simulation_id,
-                a.attempt_created_at,
-                a.grade_percent,
-                a.rubric_pass_points,
-                a.rubric_points
-            FROM analytics a
-            WHERE a.profile_id IN (SELECT p.id FROM profiles p WHERE {profile_where})
-            ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
-        ),
-        filt_date_range AS (
-            SELECT 
-                MIN(attempt_created_at) AS min_date,
-                MAX(attempt_created_at) AS max_date
-            FROM filt
-            WHERE attempt_created_at IS NOT NULL
-        ),
-        first_attempts_per_sim AS (
-            SELECT
-                ea.profile_id,
-                ea.simulation_id,
-                ea.grade_percent >= (ea.rubric_pass_points * 100.0 / NULLIF(ea.rubric_points, 0)) AS passed
-            FROM earliest_attempts_all_time ea
-            CROSS JOIN filt_date_range fdr
-            WHERE EXISTS (SELECT 1 FROM filt f WHERE f.profile_id = ea.profile_id AND f.simulation_id = ea.simulation_id)
-              AND fdr.min_date IS NOT NULL
-              AND ea.attempt_created_at >= fdr.min_date
-              AND ea.attempt_created_at <= fdr.max_date
-        ),
-        first_attempt_per_sim_profile AS (
-            SELECT
-                profile_id,
-                simulation_id,
-                (100.0 * COUNT(*) FILTER (WHERE passed) / NULLIF(COUNT(*), 0))::float AS pass_rate
-            FROM first_attempts_per_sim
-            GROUP BY profile_id, simulation_id
+    async with conn.transaction():
+        await conn.execute("SET LOCAL jit = off;")
+        result = cast(
+            GetPerSimulationMetricsSqlRow,
+            await execute_sql_typed(
+                conn,
+                PER_SIM_METRICS_SQL_PATH,
+                params=params,
+            ),
         )
-        SELECT jsonb_object_agg(
-            sm.profile_id::text || '|' || sm.simulation_id::text,
-            jsonb_build_object(
-                'averageScore', COALESCE(sm.avg_score, 0),
-                'highestScore', COALESCE(sm.highest_score, 0),
-                'completionPercentage', COALESCE(sm.completion_pct, 0),
-                'firstAttemptPassRate', COALESCE(fasp.pass_rate, 0),
-                'totalAttempts', COALESCE(sm.total_attempts, 0),
-                'messagesPerSession', COALESCE(sm.avg_messages, 0),
-                'timeSpent', COALESCE(sm.avg_time_minutes, 0)
-            )
-        )
-        FROM simulation_metrics_per_profile sm
-        LEFT JOIN first_attempt_per_sim_profile fasp 
-            ON fasp.profile_id = sm.profile_id 
-            AND fasp.simulation_id = sm.simulation_id
-    """
 
-    result = await conn.fetchval(sim_metrics_query, *params)
-
-    # Parse and restructure result
+    # Convert array of composite types to nested dict structure
     per_sim_metrics: dict[str, dict[str, dict[str, float]]] = {}
-    if result:
-        if isinstance(result, str):
-            result = json.loads(result)
-        if isinstance(result, dict):
-            for key, value in result.items():
-                profile_id, simulation_id = key.split("|", 1)
-                if profile_id not in per_sim_metrics:
-                    per_sim_metrics[profile_id] = {}
-                per_sim_metrics[profile_id][simulation_id] = value
+    for metric in result.metrics:
+        profile_id_str = str(metric.profile_id)
+        simulation_id_str = str(metric.simulation_id)
+        
+        if profile_id_str not in per_sim_metrics:
+            per_sim_metrics[profile_id_str] = {}
+        
+        per_sim_metrics[profile_id_str][simulation_id_str] = {
+            "averageScore": metric.average_score,
+            "highestScore": metric.highest_score,
+            "completionPercentage": metric.completion_percentage,
+            "firstAttemptPassRate": metric.first_attempt_pass_rate,
+            "totalAttempts": float(metric.total_attempts),
+            "messagesPerSession": metric.messages_per_session,
+            "timeSpent": metric.time_spent,
+        }
 
     return per_sim_metrics
 
@@ -221,7 +120,6 @@ async def export_reports(
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        # For individual reports export, profileId comes from header
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -229,159 +127,68 @@ async def export_reports(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Use the same reports_bundle.sql query that the reports view uses
-        sql_template = load_sql("app/sql/v3/reports/reports_bundle.sql")
+        # Use bundle request (inherits from GetReportsBundleApiRequest)
+        bundle_request = GetReportsBundleApiRequest(**request.model_dump(exclude={"metrics", "brightspace_format"}))
 
-        # Build base filters inline (same as reports bundle)
-        profile_conditions = []
-        analytics_conditions = []
-        params: list[Any] = []
-        param_counter = 1
-
-        # Date filters - only for analytics
-        analytics_conditions.append(f"a.attempt_created_at >= ${param_counter}")
-        params.append(datetime.fromisoformat(request.filters.startDate.replace("Z", "+00:00")))
-        param_counter += 1
-
-        analytics_conditions.append(f"a.attempt_created_at < ${param_counter}")
-        params.append(datetime.fromisoformat(request.filters.endDate.replace("Z", "+00:00")))
-        param_counter += 1
-
-        # Simulation type filters - only for analytics
-        sim_filters = [f.value for f in request.filters.simulationFilters] if request.filters.simulationFilters else ["general"]
-        sim_conditions = []
-
-        if "general" in sim_filters:
-            sim_conditions.append("a.is_general = TRUE")
-        if "practice" in sim_filters:
-            sim_conditions.append("a.is_practice = TRUE")
-        if "archived" in sim_filters:
-            if "general" not in sim_filters and "practice" not in sim_filters:
-                sim_conditions.append("a.is_archived = TRUE")
-            else:
-                sim_conditions.append(
-                    "(a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE))"
-                )
-
-        if sim_conditions:
-            analytics_conditions.append(f"({' OR '.join(sim_conditions)})")
-
-        # Profile filter - applies to both
-        if profile_id:
-            profile_conditions.append(f"p.id = ${param_counter}")
-            analytics_conditions.append(f"a.profile_id = ${param_counter}")
-            params.append(profile_id)
-            param_counter += 1
-
-        # Role filter - only for profiles (only if no profile_id)
-        if not profile_id and request.filters.roles:
-            profile_conditions.append(f"p.role = ANY(${param_counter}::profile_role[])")
-            params.append(request.filters.roles)
-            param_counter += 1
-
-        # Cohort filter
-        if request.filters.cohortIds:
-            profile_conditions.append(
-                f"EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = ANY(${param_counter}::uuid[]) AND cp.active = true)"
-            )
-            analytics_conditions.append(
-                f"""a.simulation_id IN (
-                    SELECT DISTINCT s.id
-                    FROM simulations s
-                    WHERE s.active = TRUE
-                      AND (
-                          EXISTS (
-                              SELECT 1 
-                              FROM cohort_simulations cs 
-                              WHERE cs.simulation_id = s.id 
-                                AND cs.cohort_id = ANY(${param_counter}::uuid[])
-                                AND cs.active = TRUE
-                          )
-                          OR
-                          (s.practice_simulation = TRUE 
-                           AND NOT EXISTS (
-                               SELECT 1 
-                               FROM cohort_simulations cs2 
-                               WHERE cs2.simulation_id = s.id 
-                                 AND cs2.active = TRUE
-                           ))
-                      )
-                )"""
-            )
-            params.append(request.filters.cohortIds)
-            param_counter += 1
-
-        # Department filter
-        if request.filters.departmentIds:
-            profile_conditions.append(
-                f"EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.profile_id = p.id AND pd.department_id = ANY(${param_counter}::uuid[]) AND pd.active = true)"
-            )
-            params.append(request.filters.departmentIds)
-            param_counter += 1
-
-        profile_where = " AND ".join(profile_conditions) if profile_conditions else "TRUE"
-        analytics_where = (
-            " AND ".join(analytics_conditions) if analytics_conditions else "TRUE"
-        )
-
-        # Replace WHERE clause placeholders in SQL template
-        sql_query = sql_template.replace("{PROFILE_WHERE_CLAUSE}", profile_where)
-        sql_query = sql_query.replace("{ANALYTICS_WHERE_CLAUSE}", analytics_where)
-        sql_params = tuple(params)
+        sql_query = load_sql_query(BUNDLE_SQL_PATH)
+        params = GetReportsBundleSqlParams(**bundle_request.model_dump(), profile_id=profile_id)
+        # SQL handles date conversion from text to timestamptz - no manual parsing needed
+        sql_params = params.to_tuple()
 
         # Execute reports bundle query
-        result = await conn.fetchval(sql_query, *sql_params)
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            bundle_result = cast(
+                GetReportsBundleSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    BUNDLE_SQL_PATH,
+                    params=params,
+                ),
+            )
 
-        # Parse JSON result
-        parsed_result = result or {}
-        if isinstance(parsed_result, str):
-            parsed_result = json.loads(parsed_result)
-        if not isinstance(parsed_result, dict):
-            parsed_result = {}
+        # Set audit context
+        if bundle_result.actor_name:
+            audit_set(http_request, actor={"name": bundle_result.actor_name, "id": profile_id})
 
-        # Extract data and mappings from bundle result
-        bundle_data = parsed_result.get("data", []) or []
-        simulation_mapping_data = parsed_result.get("simulation_mapping", {}) or {}
+        # Convert bundle result to API response
+        bundle_response = GetReportsBundleApiResponse.model_validate(bundle_result.model_dump())
 
-        # Parse simulation mapping
+        # Extract data and simulations from bundle result (arrays, not dicts)
+        bundle_data = bundle_response.data or []
+        simulations_array = bundle_response.simulations or []
+
+        # Build simulation mapping from array (for CSV export)
+        # Filter by requested simulation_ids if provided
         simulation_mapping: dict[str, dict[str, str]] = {}
-        if isinstance(simulation_mapping_data, str):
-            simulation_mapping_data = json.loads(simulation_mapping_data)
-        if isinstance(simulation_mapping_data, dict):
-            for sim_id, sim_data in simulation_mapping_data.items():
-                if isinstance(sim_data, dict):
-                    simulation_mapping[sim_id] = {
-                        "name": sim_data.get("name", ""),
-                        "description": sim_data.get("description", ""),
-                    }
-
-        # Filter simulation mapping to only include selected simulations (if provided)
-        if request.simulationIds and len(request.simulationIds) > 0:
-            simulation_mapping = {
-                sim_id: sim_data
-                for sim_id, sim_data in simulation_mapping.items()
-                if sim_id in request.simulationIds
+        simulation_ids_filter = set(request.simulation_ids or [])
+        for sim in simulations_array:
+            sim_id_str = str(sim.simulation_id)
+            if simulation_ids_filter and sim_id_str not in simulation_ids_filter:
+                continue
+            simulation_mapping[sim_id_str] = {
+                "name": sim.name or "",
+                "description": sim.description or "",
             }
 
-        # Apply post-query filters (profileIds, simulationIds, scenarioIds)
+        # Apply post-query filters (profile_ids, simulation_ids, scenario_ids from request)
+        # Convert UUIDs for comparison
         filtered_data = bundle_data
-        if request.profileIds and len(request.profileIds) > 0:
+        if request.profile_ids and len(request.profile_ids) > 0:
             filtered_data = [
-                p for p in filtered_data if p.get("profileId") in request.profileIds
+                p for p in filtered_data if p.profile_id in request.profile_ids
             ]
-        if request.simulationIds and len(request.simulationIds) > 0:
+        if request.simulation_ids and len(request.simulation_ids) > 0:
             filtered_data = [
                 p
                 for p in filtered_data
-                if any(
-                    sid in request.simulationIds for sid in p.get("simulationIds", [])
-                )
+                if any(sid in request.simulation_ids for sid in (p.simulation_ids or []))
             ]
-        if request.scenarioIds and len(request.scenarioIds) > 0:
+        if request.scenario_ids and len(request.scenario_ids) > 0:
             filtered_data = [
                 p
                 for p in filtered_data
-                if any(sid in request.scenarioIds for sid in p.get("scenarioIds", []))
+                if any(sid in request.scenario_ids for sid in (p.scenario_ids or []))
             ]
 
         if len(filtered_data) == 0:
@@ -391,21 +198,21 @@ async def export_reports(
 
         # Get per-simulation metrics for Brightspace export
         per_simulation_metrics: dict[str, dict[str, dict[str, float]]] = {}
-        if request.brightspaceFormat:
+        if request.brightspace_format:
             logger.info(
                 f"Fetching per-simulation metrics for export: "
-                f"profileIds={len(request.profileIds) if request.profileIds else 0}, "
-                f"simulationIds={len(request.simulationIds) if request.simulationIds else 0}, "
-                f"scenarioIds={len(request.scenarioIds) if request.scenarioIds else 0}"
+                f"profile_ids={len(request.profile_ids) if request.profile_ids else 0}, "
+                f"simulation_ids={len(request.simulation_ids) if request.simulation_ids else 0}, "
+                f"scenario_ids={len(request.scenario_ids) if request.scenario_ids else 0}"
             )
+            
             per_simulation_metrics = await _get_per_simulation_metrics(
                 conn=conn,
-                profile_where=profile_where,
-                analytics_where=analytics_where,
-                base_params=list(params),
-                profile_ids=request.profileIds,
-                simulation_ids=request.simulationIds,
-                scenario_ids=request.scenarioIds,
+                bundle_request=bundle_request,
+                profile_id=profile_id,
+                profile_ids=request.profile_ids if request.profile_ids else None,
+                simulation_ids=request.simulation_ids if request.simulation_ids else None,
+                scenario_ids=request.scenario_ids if request.scenario_ids else None,
             )
             logger.info(
                 f"Retrieved per-simulation metrics for {len(per_simulation_metrics)} profiles"
@@ -414,43 +221,56 @@ async def export_reports(
         # Transform bundle data to export format
         export_data = []
         for profile in filtered_data:
-            # Extract metrics from MetricResponse objects
-            metrics = profile.get("metrics", {}) or {}
+            # Extract metrics from composite types
+            metrics_obj = profile.metrics
             export_metrics = {}
-            for metric_key, metric_response in metrics.items():
-                if isinstance(metric_response, dict):
-                    current_value = metric_response.get("currentValue", 0)
-                    # Format value based on metric type
-                    if metric_key in [
-                        "averageScore",
-                        "highestScore",
-                        "completionPercentage",
-                        "firstAttemptPassRate",
-                        "sessionEfficiency",
-                        "stagnationRate",
-                    ]:
-                        formatted_value = f"{int(round(current_value))}%"
-                    elif metric_key == "personaResponseTimes":
-                        formatted_value = f"{int(round(current_value))}s"
-                    elif metric_key == "timeSpent":
-                        formatted_value = f"{int(round(current_value))}m"
-                    else:
-                        formatted_value = str(int(round(current_value)))
+            
+            # Map metric keys to their values
+            metric_map = {
+                "averageScore": metrics_obj.average_score.current_value if metrics_obj.average_score else 0,
+                "highestScore": metrics_obj.highest_score.current_value if metrics_obj.highest_score else 0,
+                "completionPercentage": metrics_obj.completion_percentage.current_value if metrics_obj.completion_percentage else 0,
+                "firstAttemptPassRate": metrics_obj.first_attempt_pass_rate.current_value if metrics_obj.first_attempt_pass_rate else 0,
+                "messagesPerSession": metrics_obj.messages_per_session.current_value if metrics_obj.messages_per_session else 0,
+                "personaResponseTimes": metrics_obj.persona_response_times.current_value if metrics_obj.persona_response_times else 0,
+                "sessionEfficiency": metrics_obj.session_efficiency.current_value if metrics_obj.session_efficiency else 0,
+                "stagnationRate": metrics_obj.stagnation_rate.current_value if metrics_obj.stagnation_rate else 0,
+                "timeSpent": metrics_obj.time_spent.current_value if metrics_obj.time_spent else 0,
+                "totalAttempts": metrics_obj.total_attempts.current_value if metrics_obj.total_attempts else 0,
+            }
+            
+            for metric_key, current_value in metric_map.items():
+                # Format value based on metric type
+                if metric_key in [
+                    "averageScore",
+                    "highestScore",
+                    "completionPercentage",
+                    "firstAttemptPassRate",
+                    "sessionEfficiency",
+                    "stagnationRate",
+                ]:
+                    formatted_value = f"{int(round(current_value))}%"
+                elif metric_key == "personaResponseTimes":
+                    formatted_value = f"{int(round(current_value))}s"
+                elif metric_key == "timeSpent":
+                    formatted_value = f"{int(round(current_value))}m"
+                else:
+                    formatted_value = str(int(round(current_value)))
 
-                    export_metrics[metric_key] = {
-                        "value": current_value,
-                        "formattedValue": formatted_value,
-                    }
+                export_metrics[metric_key] = {
+                    "value": current_value,
+                    "formattedValue": formatted_value,
+                }
 
             export_profile = {
-                "profileId": profile.get("profileId", ""),
-                "firstName": profile.get("firstName", ""),
-                "lastName": profile.get("lastName", ""),
-                "email": profile.get("email") or "",
-                "role": profile.get("role", ""),
+                "profileId": str(profile.profile_id),
+                "firstName": profile.first_name or "",
+                "lastName": profile.last_name or "",
+                "email": profile.primary_email or "",
+                "role": profile.role or "",
                 "metrics": export_metrics,
                 "simulationMetrics": per_simulation_metrics.get(
-                    profile.get("profileId", ""), {}
+                    str(profile.profile_id), {}
                 ),
             }
             export_data.append(export_profile)
@@ -462,7 +282,7 @@ async def export_reports(
                 detail="At least one metric is required for export",
             )
 
-        if request.brightspaceFormat:
+        if request.brightspace_format:
             # Generate CSV(s) for Brightspace format
             # If only one metric, return single CSV; otherwise ZIP with multiple CSVs
             if len(request.metrics) == 1:
@@ -474,19 +294,6 @@ async def export_reports(
                 csv_filename = (
                     f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
                 )
-
-                # Fetch actor_name separately
-                actor_name_row = await conn.fetchrow(
-                    "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                    profile_id,
-                )
-                actor_name = actor_name_row["actor_name"] if actor_name_row else None
-
-                # Set audit context
-                if actor_name:
-                    audit_set(
-                        http_request, actor={"name": actor_name, "id": profile_id}
-                    )
 
                 return Response(
                     content=csv_data.encode("utf-8"),
@@ -516,19 +323,6 @@ async def export_reports(
                     f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.zip"
                 )
 
-                # Fetch actor_name separately
-                actor_name_row = await conn.fetchrow(
-                    "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                    profile_id,
-                )
-                actor_name = actor_name_row["actor_name"] if actor_name_row else None
-
-                # Set audit context
-                if actor_name:
-                    audit_set(
-                        http_request, actor={"name": actor_name, "id": profile_id}
-                    )
-
                 return Response(
                     content=zip_buffer.read(),
                     media_type="application/zip",
@@ -544,16 +338,7 @@ async def export_reports(
             csv_data = generate_regular_csv(export_data, request.metrics)
             csv_filename = f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
 
-            # Fetch actor_name separately
-            actor_name_row = await conn.fetchrow(
-                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                profile_id,
-            )
-            actor_name = actor_name_row["actor_name"] if actor_name_row else None
-
-            # Set audit context
-            if actor_name:
-                audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+            # Audit context already set above
 
             return Response(
                 content=csv_data.encode("utf-8"),

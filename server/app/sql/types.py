@@ -8496,6 +8496,969 @@ class UpdateProviderApiResponse(BaseModel):
 
 
 
+# Generated from: get_per_simulation_metrics
+
+class GetPerSimulationMetricsSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.roles,
+            self.simulation_filters,
+            self.profile_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+        )
+
+class QPerSimulationMetricsV3Metric(BaseModel):
+
+    profile_id: UUID | None
+    simulation_id: UUID | None
+    average_score: float | None
+    highest_score: float | None
+    completion_percentage: float | None
+    first_attempt_pass_rate: float | None
+    total_attempts: int | None
+    messages_per_session: float | None
+    time_spent: float | None
+
+class GetPerSimulationMetricsSqlRow(BaseModel):
+
+    metrics: list[QPerSimulationMetricsV3Metric] | None = None
+
+class GetPerSimulationMetricsApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetPerSimulationMetricsApiResponse(BaseModel):
+
+    metrics: list[QPerSimulationMetricsV3Metric] | None = None
+
+
+
+# Generated from: get_reports_bundle
+
+class GetReportsBundleSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 100
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.roles,
+            self.simulation_filters,
+            self.profile_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.search,
+            self.sort_by,
+            self.sort_order,
+            self.page,
+            self.page_size,
+        )
+
+class QReportsBundleV3FilterOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QReportsBundleV3DataPoint(BaseModel):
+
+    profile_id: str | None
+    date: str | None
+    value: float | None
+    simulation_id: str | None
+    scenario_id: str | None
+    attempt_id: str | None
+
+
+
+
+class QReportsBundleV3Hover(BaseModel):
+
+    mean: int | None
+    median: int | None
+    mode: int | None
+    count: int | None
+    completed: int | None
+    total: int | None
+    percent: int | None
+    top: list[int] | None
+    mean_seconds: int | None
+    median_seconds: int | None
+    samples: int | None
+    avg_score_percent: int | None
+    avg_minutes: int | None
+    efficiency: int | None
+    tracked: int | None
+    stagnant: int | None
+    rate_percent: int | None
+    total_minutes: int | None
+    total_hours: float | None
+    attempts: int | None
+    unique_simulations: int | None
+    per_simulation_mean: int | None
+
+class QReportsBundleV3Metric(BaseModel):
+
+    has_data: bool | None
+    method: str | None
+    current_value: int | None
+    data_points: list[QReportsBundleV3DataPoint] | None
+    hover: QReportsBundleV3Hover | None
+    status: str | None
+
+class QReportsBundleV3ProfileMetrics(BaseModel):
+
+    average_score: QReportsBundleV3Metric | None
+    completion_percentage: QReportsBundleV3Metric | None
+    first_attempt_pass_rate: QReportsBundleV3Metric | None
+    highest_score: QReportsBundleV3Metric | None
+    messages_per_session: QReportsBundleV3Metric | None
+    persona_response_times: QReportsBundleV3Metric | None
+    session_efficiency: QReportsBundleV3Metric | None
+    stagnation_rate: QReportsBundleV3Metric | None
+    time_spent: QReportsBundleV3Metric | None
+    total_attempts: QReportsBundleV3Metric | None
+
+class QReportsBundleV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email: str | None
+    role: str | None
+    simulation_ids: list[str] | None
+    scenario_ids: list[str] | None
+    metrics: QReportsBundleV3ProfileMetrics | None
+
+
+
+
+class QReportsBundleV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QReportsBundleV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    rubric_id: UUID | None
+    rubric_points: int | None
+    rubric_pass_points: int | None
+
+class GetReportsBundleSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QReportsBundleV3Profile] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QReportsBundleV3FilterOption] | None = None
+    simulation_options: list[QReportsBundleV3FilterOption] | None = None
+    scenario_options: list[QReportsBundleV3FilterOption] | None = None
+    scenarios: list[QReportsBundleV3Scenario] | None = None
+    simulations: list[QReportsBundleV3Simulation] | None = None
+
+class GetReportsBundleApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 100
+
+class GetReportsBundleApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QReportsBundleV3Profile] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QReportsBundleV3FilterOption] | None = None
+    simulation_options: list[QReportsBundleV3FilterOption] | None = None
+    scenario_options: list[QReportsBundleV3FilterOption] | None = None
+    scenarios: list[QReportsBundleV3Scenario] | None = None
+    simulations: list[QReportsBundleV3Simulation] | None = None
+
+
+
+# Generated from: get_reports_history
+
+class GetReportsHistorySqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.roles,
+            self.simulation_filters,
+            self.search,
+            self.profile_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.infinite_mode,
+            self.sort_by,
+            self.sort_order,
+            self.page,
+            self.page_size,
+        )
+
+class QReportsHistoryV3AttemptHistoryRow(BaseModel):
+
+    attempt_id: UUID | None
+    date: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    simulation_name: str | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    infinite_mode: bool | None
+    time_limit: int | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    score: int | None
+    score_status: str | None
+    simulation_id: UUID | None
+    scenario_ids: list[str] | None
+    scenario_titles: list[str] | None
+    is_archived: bool | None
+    show_view: bool | None
+    show_continue: bool | None
+    practice_simulation: bool | None
+    pass_pct: int | None
+    department_ids: list[str] | None
+    cohort_names: list[str] | None
+    practice_scenario_id: UUID | None
+
+
+
+
+class QReportsHistoryV3FilterOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+class GetReportsHistorySqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QReportsHistoryV3AttemptHistoryRow] | None = None
+    total_count: int | None = None
+    archived_count: int | None = None
+    unarchived_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QReportsHistoryV3FilterOption] | None = None
+    simulation_options: list[QReportsHistoryV3FilterOption] | None = None
+    scenario_options: list[QReportsHistoryV3FilterOption] | None = None
+
+class GetReportsHistoryApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+class GetReportsHistoryApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QReportsHistoryV3AttemptHistoryRow] | None = None
+    total_count: int | None = None
+    archived_count: int | None = None
+    unarchived_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QReportsHistoryV3FilterOption] | None = None
+    simulation_options: list[QReportsHistoryV3FilterOption] | None = None
+    scenario_options: list[QReportsHistoryV3FilterOption] | None = None
+
+
+
+# Generated from: get_reports_overview
+
+class GetReportsOverviewSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.roles,
+            self.simulation_filters,
+            self.department_ids,
+        )
+
+class QReportsOverviewV3AttemptHistoryRow(BaseModel):
+
+    attempt_id: UUID | None
+    date: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    simulation_name: str | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    infinite_mode: bool | None
+    time_limit: int | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    score: int | None
+    score_status: str | None
+    simulation_id: UUID | None
+    scenario_ids: list[str] | None
+    scenario_titles: list[str] | None
+    is_archived: bool | None
+    show_view: bool | None
+    show_continue: bool | None
+    practice_simulation: bool | None
+    pass_pct: int | None
+    department_ids: list[str] | None
+    cohort_names: list[str] | None
+    practice_scenario_id: UUID | None
+
+
+
+
+class QReportsOverviewV3Field(BaseModel):
+
+    field_id: str | None
+    name: str | None
+    description: str | None
+    parameter_id: str | None
+    parameter_name: str | None
+
+
+
+
+class QReportsOverviewV3ScenarioAttributeAttemptFact(BaseModel):
+
+    parameter_id: str | None
+    parameter_item_id: str | None
+    date: str | None
+    timestamp: int | None
+    avg_score: float | None
+    attempts: int | None
+    passed_attempts: int | None
+
+
+
+
+class QReportsOverviewV3ScenarioAttributeScenarioFact(BaseModel):
+
+    parameter_id: str | None
+    parameter_item_id: str | None
+    scenario_id: str | None
+
+class QReportsOverviewV3ScenarioPerformanceResponse(BaseModel):
+
+    valid_parameter_ids: list[str] | None
+    attribute_attempt_facts: list[QReportsOverviewV3ScenarioAttributeAttemptFact] | None
+    attribute_scenario_facts: list[QReportsOverviewV3ScenarioAttributeScenarioFact] | None
+    status: str | None
+
+
+
+
+class QReportsOverviewV3NumericAttemptFact(BaseModel):
+
+    parameter_id: str | None
+    level_label: str | None
+    level_value: float | None
+    score: float | None
+    attempts: int | None
+
+
+
+
+class QReportsOverviewV3NumericScenarioFact(BaseModel):
+
+    parameter_id: str | None
+    scenario_id: str | None
+    level_label: str | None
+    level_value: float | None
+
+class QReportsOverviewV3ScenarioStatsResponse(BaseModel):
+
+    valid_numeric_parameter_ids: list[str] | None
+    numeric_attempt_facts: list[QReportsOverviewV3NumericAttemptFact] | None
+    numeric_scenario_facts: list[QReportsOverviewV3NumericScenarioFact] | None
+    status: str | None
+
+
+
+
+class QReportsOverviewV3SimulationFact(BaseModel):
+
+    simulation_id: str | None
+    title: str | None
+    avg_score: float | None
+    completion_rate: float | None
+    total_attempts: int | None
+    scenario_count: int | None
+
+
+
+
+class QReportsOverviewV3SimulationParameterFactCategorical(BaseModel):
+
+    simulation_id: str | None
+    parameter_id: str | None
+    parameter_item_id: str | None
+    scenario_count: int | None
+
+
+
+
+class QReportsOverviewV3SimulationParameterFactNumeric(BaseModel):
+
+    simulation_id: str | None
+    parameter_id: str | None
+    avg_level: float | None
+    level_label: str | None
+    scenario_count: int | None
+
+class QReportsOverviewV3SimulationCompositionResponse(BaseModel):
+
+    valid_simulation_ids: list[str] | None
+    simulation_facts: list[QReportsOverviewV3SimulationFact] | None
+    simulation_parameter_facts_categorical: list[QReportsOverviewV3SimulationParameterFactCategorical] | None
+    simulation_parameter_facts_numeric: list[QReportsOverviewV3SimulationParameterFactNumeric] | None
+    has_data: bool | None
+    status: str | None
+
+
+
+
+class QReportsOverviewV3ScenarioFact(BaseModel):
+
+    simulation_id: str | None
+    scenario_id: str | None
+    scenario_name: str | None
+    avg_score: float | None
+    success_rate: float | None
+    total_attempts: int | None
+    completed_attempts: int | None
+
+class QReportsOverviewV3SimulationPerformanceResponse(BaseModel):
+
+    valid_simulation_ids: list[str] | None
+    scenario_facts: list[QReportsOverviewV3ScenarioFact] | None
+    status: str | None
+
+class QReportsOverviewV3FooterMetrics(BaseModel):
+
+    scenario_performance: QReportsOverviewV3ScenarioPerformanceResponse | None
+    scenario_stats: QReportsOverviewV3ScenarioStatsResponse | None
+    simulation_performance: QReportsOverviewV3SimulationPerformanceResponse | None
+    simulation_composition: QReportsOverviewV3SimulationCompositionResponse | None
+
+
+
+
+class QReportsOverviewV3DataPoint(BaseModel):
+
+    profile_id: str | None
+    date: str | None
+    value: float | None
+    attempt_id: str | None
+    simulation_id: str | None
+    scenario_id: str | None
+    count: int | None
+
+
+
+
+class QReportsOverviewV3TrendData(BaseModel):
+
+    date: str | None
+    value: float | None
+    count: int | None
+
+class QReportsOverviewV3MetricResponse(BaseModel):
+
+    has_data: bool | None
+    method: str | None
+    current_value: int | None
+    status: str | None
+    trend_analysis: str | None
+    value_field: str | None
+    key_field: str | None
+    trend_data: list[QReportsOverviewV3TrendData] | None
+    data_points: list[QReportsOverviewV3DataPoint] | None
+
+class QReportsOverviewV3HeaderMetrics(BaseModel):
+
+    average_score: QReportsOverviewV3MetricResponse | None
+    completion_percentage: QReportsOverviewV3MetricResponse | None
+    first_attempt_pass_rate: QReportsOverviewV3MetricResponse | None
+    highest_score: QReportsOverviewV3MetricResponse | None
+    messages_per_session: QReportsOverviewV3MetricResponse | None
+    persona_response_times: QReportsOverviewV3MetricResponse | None
+    session_efficiency: QReportsOverviewV3MetricResponse | None
+    stagnation_rate: QReportsOverviewV3MetricResponse | None
+    time_spent: QReportsOverviewV3MetricResponse | None
+    total_attempts: QReportsOverviewV3MetricResponse | None
+
+
+
+
+class QReportsOverviewV3CohortInsight(BaseModel):
+
+    cohort_id: str | None
+    insight: str | None
+
+
+
+
+class QReportsOverviewV3PersonaInsight(BaseModel):
+
+    persona_name: str | None
+    insight: str | None
+
+class QReportsOverviewV3Insights(BaseModel):
+
+    growth: str | None
+    persona: list[QReportsOverviewV3PersonaInsight] | None
+    rubric_heatmap: str | None
+    attempt_improvement: str | None
+    cohort: list[QReportsOverviewV3CohortInsight] | None
+    skill_performance: str | None
+    scenario_performance: str | None
+    scenario_stats: str | None
+    simulation_performance: str | None
+    simulation_composition: str | None
+
+
+
+
+class QReportsOverviewV3Parameter(BaseModel):
+
+    parameter_id: str | None
+    name: str | None
+    description: str | None
+    numerical: bool | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class QReportsOverviewV3GrowthDataPoint(BaseModel):
+
+    date: str | None
+    average_score: float | None
+    completion_rate: float | None
+    first_attempt_pass_rate: float | None
+    session_efficiency: float | None
+    stagnation_rate: float | None
+
+
+
+
+class QReportsOverviewV3GrowthMetric(BaseModel):
+
+    id: str | None
+    name: str | None
+    color: str | None
+    unit: str | None
+    description: str | None
+    formatter_id: str | None
+
+
+
+
+class QReportsOverviewV3GrowthWindowAverage(BaseModel):
+
+    n: int | None
+    last: float | None
+    prev: float | None
+
+class QReportsOverviewV3GrowthWindowAverages(BaseModel):
+
+    average_score: QReportsOverviewV3GrowthWindowAverage | None
+
+class QReportsOverviewV3GrowthDataResponse(BaseModel):
+
+    chart_data: list[QReportsOverviewV3GrowthDataPoint] | None
+    available_metrics: list[QReportsOverviewV3GrowthMetric] | None
+    window_averages: QReportsOverviewV3GrowthWindowAverages | None
+    status: str | None
+
+
+
+
+class QReportsOverviewV3PersonaColor(BaseModel):
+
+    persona_name: str | None
+    color: str | None
+
+
+
+
+class QReportsOverviewV3PersonaTrendData(BaseModel):
+
+    date: str | None
+    score: float | None
+    timestamp: int | None
+    simulation_id: str | None
+
+class QReportsOverviewV3PersonaPerformanceData(BaseModel):
+
+    name: str | None
+    score: float | None
+    sessions: int | None
+    color: str | None
+    simulation_ids: list[str] | None
+    trend_data: list[QReportsOverviewV3PersonaTrendData] | None
+    status: str | None
+
+class QReportsOverviewV3PersonaPerformanceResponse(BaseModel):
+
+    chart_data: list[QReportsOverviewV3PersonaPerformanceData] | None
+    valid_simulation_ids: list[str] | None
+    persona_colors: list[QReportsOverviewV3PersonaColor] | None
+
+
+
+
+class QReportsOverviewV3RubricHeatmapCell(BaseModel):
+
+    rubric_id: str | None
+    correlation: float | None
+    p_value: float | None
+    color: str | None
+    strength: str | None
+    data_points: int | None
+
+
+
+
+class QReportsOverviewV3StandardGroup(BaseModel):
+
+    id: str | None
+    name: str | None
+    short_name: str | None
+    rubric_id: str | None
+
+class QReportsOverviewV3RubricMatrixPackage(BaseModel):
+
+    rubric_id: str | None
+    standard_groups: list[QReportsOverviewV3StandardGroup] | None
+    matrix: list[QReportsOverviewV3RubricHeatmapCell] | None
+    insights: str | None
+    has_data: bool | None
+
+class QReportsOverviewV3RubricHeatmapResponse(BaseModel):
+
+    matrices: list[QReportsOverviewV3RubricMatrixPackage] | None
+    valid_rubric_ids: list[str] | None
+    status: str | None
+
+class QReportsOverviewV3PrimaryMetrics(BaseModel):
+
+    growth_data: QReportsOverviewV3GrowthDataResponse | None
+    persona_performance: QReportsOverviewV3PersonaPerformanceResponse | None
+    rubric_heatmap: QReportsOverviewV3RubricHeatmapResponse | None
+
+
+
+
+class QReportsOverviewV3Rubric(BaseModel):
+
+    rubric_id: str | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QReportsOverviewV3AttemptImprovementData(BaseModel):
+
+    attempt: str | None
+    average_score: float | None
+    average_time: float | None
+    pass_rate: float | None
+
+
+
+
+class QReportsOverviewV3AttemptImprovementFact(BaseModel):
+
+    simulation_id: str | None
+    attempt_no: int | None
+    avg_grade: float | None
+    avg_minutes: float | None
+    pass_rate: float | None
+
+class QReportsOverviewV3AttemptImprovementResponse(BaseModel):
+
+    chart_data: list[QReportsOverviewV3AttemptImprovementData] | None
+    facts: list[QReportsOverviewV3AttemptImprovementFact] | None
+    valid_simulation_ids: list[str] | None
+    status: str | None
+
+
+
+
+class QReportsOverviewV3CohortDailyFact(BaseModel):
+
+    date: str | None
+    simulation_id: str | None
+    avg_score: float | None
+
+
+
+
+class QReportsOverviewV3CohortData(BaseModel):
+
+    id: str | None
+    name: str | None
+    pass_rate: float | None
+    avg_percentage_score: float | None
+    total_students: int | None
+    passed_students: int | None
+    total_attempts: int | None
+    passed_attempts: int | None
+    simulation_count: int | None
+    required_simulations: int | None
+    status: str | None
+
+
+
+
+class QReportsOverviewV3CohortFact(BaseModel):
+
+    cohort_id: str | None
+    simulation_id: str | None
+    pass_rate: float | None
+    avg_score: float | None
+    attempts: int | None
+
+
+
+
+class QReportsOverviewV3DailyData(BaseModel):
+
+    date: str | None
+    avg_score: float | None
+    cohort_id: str | None
+
+class QReportsOverviewV3CohortPerformanceResponse(BaseModel):
+
+    cohort_data: list[QReportsOverviewV3CohortData] | None
+    daily_data: list[QReportsOverviewV3DailyData] | None
+    cohort_facts: list[QReportsOverviewV3CohortFact] | None
+    daily_facts: list[QReportsOverviewV3CohortDailyFact] | None
+    valid_simulation_ids: list[str] | None
+    status: str | None
+
+
+
+
+class QReportsOverviewV3SkillRadarData(BaseModel):
+
+    metric: str | None
+    description: str | None
+    value: float | None
+    full_mark: float | None
+
+
+
+
+class QReportsOverviewV3SkillStandardFact(BaseModel):
+
+    group_id: str | None
+    group_name: str | None
+    group_description: str | None
+    simulation_id: str | None
+    score: float | None
+    points: float | None
+    avg_pct: float | None
+
+class QReportsOverviewV3SkillPackage(BaseModel):
+
+    rubric_id: str | None
+    radar_data: list[QReportsOverviewV3SkillRadarData] | None
+    group_facts: list[QReportsOverviewV3SkillStandardFact] | None
+
+class QReportsOverviewV3SkillPerformanceResponse(BaseModel):
+
+    packages: list[QReportsOverviewV3SkillPackage] | None
+    valid_rubric_ids: list[str] | None
+    status: str | None
+
+class QReportsOverviewV3SecondaryMetrics(BaseModel):
+
+    attempt_improvement: QReportsOverviewV3AttemptImprovementResponse | None
+    cohort_performance: QReportsOverviewV3CohortPerformanceResponse | None
+    skill_performance: QReportsOverviewV3SkillPerformanceResponse | None
+
+
+
+
+class QReportsOverviewV3Simulation(BaseModel):
+
+    simulation_id: str | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QReportsOverviewV3Thresholds(BaseModel):
+
+    success: int | None
+    warning: int | None
+    danger: int | None
+
+class GetReportsOverviewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    header_metrics: QReportsOverviewV3HeaderMetrics | None = None
+    primary_metrics: QReportsOverviewV3PrimaryMetrics | None = None
+    secondary_metrics: QReportsOverviewV3SecondaryMetrics | None = None
+    footer_metrics: QReportsOverviewV3FooterMetrics | None = None
+    history: list[QReportsOverviewV3AttemptHistoryRow] | None = None
+    insights: QReportsOverviewV3Insights | None = None
+    thresholds: QReportsOverviewV3Thresholds | None = None
+    simulations: list[QReportsOverviewV3Simulation] | None = None
+    rubrics: list[QReportsOverviewV3Rubric] | None = None
+    parameters: list[QReportsOverviewV3Parameter] | None = None
+    fields: list[QReportsOverviewV3Field] | None = None
+
+class GetReportsOverviewApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetReportsOverviewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    header_metrics: QReportsOverviewV3HeaderMetrics | None = None
+    primary_metrics: QReportsOverviewV3PrimaryMetrics | None = None
+    secondary_metrics: QReportsOverviewV3SecondaryMetrics | None = None
+    footer_metrics: QReportsOverviewV3FooterMetrics | None = None
+    history: list[QReportsOverviewV3AttemptHistoryRow] | None = None
+    insights: QReportsOverviewV3Insights | None = None
+    thresholds: QReportsOverviewV3Thresholds | None = None
+    simulations: list[QReportsOverviewV3Simulation] | None = None
+    rubrics: list[QReportsOverviewV3Rubric] | None = None
+    parameters: list[QReportsOverviewV3Parameter] | None = None
+    fields: list[QReportsOverviewV3Field] | None = None
+
+
+
 # Generated from: create_rubric
 
 class ICreateRubricV3Standard(BaseModel):
@@ -13473,6 +14436,30 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateProviderApiRequest",
         "UpdateProviderApiResponse",
     ),
+    "app/sql/v3/reports/get_per_simulation_metrics_complete.sql": (
+        "GetPerSimulationMetricsSqlParams",
+        "GetPerSimulationMetricsSqlRow",
+        "GetPerSimulationMetricsApiRequest",
+        "GetPerSimulationMetricsApiResponse",
+    ),
+    "app/sql/v3/reports/get_reports_bundle_complete.sql": (
+        "GetReportsBundleSqlParams",
+        "GetReportsBundleSqlRow",
+        "GetReportsBundleApiRequest",
+        "GetReportsBundleApiResponse",
+    ),
+    "app/sql/v3/reports/get_reports_history_complete.sql": (
+        "GetReportsHistorySqlParams",
+        "GetReportsHistorySqlRow",
+        "GetReportsHistoryApiRequest",
+        "GetReportsHistoryApiResponse",
+    ),
+    "app/sql/v3/reports/get_reports_overview_complete.sql": (
+        "GetReportsOverviewSqlParams",
+        "GetReportsOverviewSqlRow",
+        "GetReportsOverviewApiRequest",
+        "GetReportsOverviewApiResponse",
+    ),
     "app/sql/v3/rubrics/create_rubric_complete.sql": (
         "CreateRubricSqlParams",
         "CreateRubricSqlRow",
@@ -14385,6 +15372,26 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/providers/update_provider_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/reports/get_per_simulation_metrics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/reports/get_reports_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/reports/get_reports_history_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/reports/get_reports_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload

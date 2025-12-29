@@ -89,7 +89,7 @@ export default function Reports({
       return reportsData.data.map((row: unknown) => {
         if (typeof row === "object" && row !== null) {
           const rowObj = row as Record<string, unknown>;
-          const primaryEmail = rowObj["primaryEmail"] as
+          const primaryEmail = rowObj["primary_email"] as
             | string
             | null
             | undefined;
@@ -106,34 +106,37 @@ export default function Reports({
     return [];
   }, [reportsData]);
 
-  const simulationMapping = useMemo(() => {
+  // Use simulations array directly (composite types pattern)
+  const simulations = useMemo(() => {
     if (
       reportsData &&
       typeof reportsData === "object" &&
-      "simulation_mapping" in reportsData
+      "simulations" in reportsData &&
+      Array.isArray(reportsData.simulations)
     ) {
-      return (
-        (reportsData as { simulation_mapping: Record<string, unknown> })
-          .simulation_mapping || {}
-      );
+      return reportsData.simulations as Array<{
+        simulation_id: string;
+        name: string | null;
+        description: string | null;
+      }>;
     }
-    return {};
+    return [];
   }, [reportsData]);
 
-  // Extract pagination metadata from server response
+  // Extract pagination metadata from server response (snake_case)
   const page =
     reportsData && typeof reportsData === "object" && "page" in reportsData
       ? (reportsData as { page: number }).page || 0
       : 0;
   const pageSize =
-    reportsData && typeof reportsData === "object" && "pageSize" in reportsData
-      ? (reportsData as { pageSize: number }).pageSize || 100
+    reportsData && typeof reportsData === "object" && "page_size" in reportsData
+      ? (reportsData as { page_size: number }).page_size || 100
       : 100;
   const totalPages =
     reportsData &&
     typeof reportsData === "object" &&
-    "totalPages" in reportsData
-      ? (reportsData as { totalPages: number }).totalPages || 0
+    "total_pages" in reportsData
+      ? (reportsData as { total_pages: number }).total_pages || 0
       : 0;
 
   // Export state
@@ -308,18 +311,14 @@ export default function Reports({
     [commitSearch]
   );
 
-  // Options are now provided as props from server
-
-  const simulations = useMemo(
+  // Convert simulations array to options format (for compatibility with existing code)
+  const simulationOptions = useMemo(
     () =>
-      Object.entries(simulationMapping).map(([id, simulation]) => ({
-        id,
-        title:
-          simulation && typeof simulation === "object" && "name" in simulation
-            ? (simulation as { name: string }).name
-            : "Unknown",
+      simulations.map((sim) => ({
+        id: sim.simulation_id,
+        title: sim.name || "Unknown",
       })),
-    [simulationMapping]
+    [simulations]
   );
 
   // Define ProfileRow type from reports data structure
@@ -329,7 +328,7 @@ export default function Reports({
     lastName: string;
     email: string;
     emails?: string[];
-    primaryEmail?: string | null;
+    primary_email?: string | null;
     role: string;
     scenarioIds?: string[];
     simulationIds?: string[];
@@ -564,7 +563,7 @@ export default function Reports({
               onClick={() =>
                 router.push(`/analytics/reports/p/${profile.profileId}`)
               }
-              title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primaryEmail ? ` (${profile.emails && profile.emails.length > 0 ? profile.emails.join(", ") : profile.primaryEmail || ""})` : ""} - Click to view detailed report`}
+              title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primary_email ? ` (${profile.emails && profile.emails.length > 0 ? profile.emails.join(", ") : profile.primary_email || ""})` : ""} - Click to view detailed report`}
               data-testid={`reports-profile-row-${profile.profileId}`}
             >
               <div className="flex flex-col items-start min-w-0 w-full">
@@ -575,18 +574,18 @@ export default function Reports({
                   {displayName}
                 </span>
                 {((profile.emails && profile.emails.length > 0) ||
-                  profile.primaryEmail) && (
+                  profile.primary_email) && (
                   <span
                     className="text-xs text-muted-foreground truncate w-full"
                     title={
                       profile.emails && profile.emails.length > 0
                         ? profile.emails.join(", ")
-                        : profile.primaryEmail || ""
+                        : profile.primary_email || ""
                     }
                   >
                     {profile.emails && profile.emails.length > 0
                       ? profile.emails.join(", ")
-                      : profile.primaryEmail || ""}
+                      : profile.primary_email || ""}
                   </span>
                 )}
               </div>
@@ -1285,18 +1284,28 @@ export default function Reports({
       const simulationIds = getSelectedSimulationIds();
       const scenarioIds = getSelectedScenarioIds();
 
+      // Convert filters to snake_case for API
+      const apiFilters = {
+        start_date: filters.startDate,
+        end_date: filters.endDate,
+        cohort_ids: filters.cohortIds || [],
+        department_ids: filters.departmentIds || [],
+        roles: filters.roles || [],
+        simulation_filters: filters.simulationFilters || ["general"],
+      };
+
       const response = await fetch("/api/documents/reports", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          filters,
-          profileIds,
-          simulationIds,
-          scenarioIds,
+          ...apiFilters,
+          profile_ids: profileIds,
+          simulation_ids: simulationIds,
+          scenario_ids: scenarioIds,
           metrics: metricsToExport,
-          brightspaceFormat,
+          brightspace_format: brightspaceFormat,
         }),
       });
 

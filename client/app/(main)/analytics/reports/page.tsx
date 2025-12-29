@@ -62,12 +62,12 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   endDate.setHours(23, 59, 59, 999);
 
   const defaults = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: [] as string[],
+    start_date: startDate.toISOString(),
+    end_date: endDate.toISOString(),
+    cohort_ids: [] as string[],
     roles: [] as string[],
-    simulationFilters: ["general" as const],
-    departmentIds: [] as string[],
+    simulation_filters: ["general" as const],
+    department_ids: [] as string[],
   };
 
   // If search params are provided, merge them with defaults
@@ -75,24 +75,24 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   if (searchParams) {
     const parsedFilters = searchParamsToFilters(searchParams, defaults);
     filters = {
-      startDate: parsedFilters.startDate || defaults.startDate,
-      endDate: parsedFilters.endDate || defaults.endDate,
-      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
+      start_date: parsedFilters.start_date || defaults.start_date,
+      end_date: parsedFilters.end_date || defaults.end_date,
+      cohort_ids: parsedFilters.cohort_ids || defaults.cohort_ids,
       roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters ||
-        defaults.simulationFilters) as typeof defaults.simulationFilters,
-      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
+      simulation_filters: (parsedFilters.simulation_filters ||
+        defaults.simulation_filters) as typeof defaults.simulation_filters,
+      department_ids: parsedFilters.department_ids || defaults.department_ids,
     };
   }
 
   // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
   const cohortIds =
-    filters.cohortIds && filters.cohortIds.length > 0
-      ? filters.cohortIds
+    filters.cohort_ids && filters.cohort_ids.length > 0
+      ? filters.cohort_ids
       : profileContext.cohortIds || [];
   const departmentIds =
-    filters.departmentIds && filters.departmentIds.length > 0
-      ? filters.departmentIds
+    filters.department_ids && filters.department_ids.length > 0
+      ? filters.department_ids
       : profileContext.departmentIds || [];
   const roles =
     filters.roles && filters.roles.length > 0
@@ -354,7 +354,7 @@ export default async function ReportsFullPage({
       warning: 80,
       success: 85,
     },
-    simulation_mapping: {},
+    simulations: [],
     rubric_mapping: {},
     parameter_mapping: {},
     field_mapping: {},
@@ -419,25 +419,25 @@ async function ReportsSection({
   reportsSortBy: string;
   reportsSortOrder: string;
 }) {
-  // Build reports filters with pagination/search/sorting/filtering params
+  // Build reports filters with pagination/search/sorting/filtering params (snake_case for API)
   const reportsFilters = {
     ...filters,
     page: reportsPage,
-    pageSize: reportsPageSize,
+    page_size: reportsPageSize,
     ...(reportsSearch && { search: reportsSearch }),
-    sortBy: reportsSortBy,
-    sortOrder: reportsSortOrder,
+    sort_by: reportsSortBy,
+    sort_order: reportsSortOrder,
     ...(reportsProfileIds &&
       reportsProfileIds.length > 0 && {
-        profileIds: reportsProfileIds,
+        profile_ids: reportsProfileIds,
       }),
     ...(reportsSimulationIds &&
       reportsSimulationIds.length > 0 && {
-        simulationIds: reportsSimulationIds,
+        simulation_ids: reportsSimulationIds,
       }),
     ...(reportsScenarioIds &&
       reportsScenarioIds.length > 0 && {
-        scenarioIds: reportsScenarioIds,
+        scenario_ids: reportsScenarioIds,
       }),
   };
 
@@ -446,10 +446,10 @@ async function ReportsSection({
     body: reportsFilters,
   });
 
-  // Extract filter options from API response
+  // Extract filter options from API response (snake_case from server)
   const profileOptions =
-    reportsData && "profileOptions" in reportsData
-      ? (reportsData.profileOptions || []).map(
+    reportsData && "profile_options" in reportsData
+      ? (reportsData.profile_options || []).map(
           (opt: Record<string, string | number>) => ({
             value: String(opt["value"] || ""),
             label: String(opt["label"] || ""),
@@ -458,8 +458,8 @@ async function ReportsSection({
         )
       : [];
   const simulationOptions =
-    reportsData && "simulationOptions" in reportsData
-      ? (reportsData.simulationOptions || []).map(
+    reportsData && "simulation_options" in reportsData
+      ? (reportsData.simulation_options || []).map(
           (opt: Record<string, string | number>) => ({
             value: String(opt["value"] || ""),
             label: String(opt["label"] || ""),
@@ -468,8 +468,8 @@ async function ReportsSection({
         )
       : [];
   const scenarioOptions =
-    reportsData && "scenarioOptions" in reportsData
-      ? (reportsData.scenarioOptions || []).map(
+    reportsData && "scenario_options" in reportsData
+      ? (reportsData.scenario_options || []).map(
           (opt: Record<string, string | number>) => ({
             value: String(opt["value"] || ""),
             label: String(opt["label"] || ""),

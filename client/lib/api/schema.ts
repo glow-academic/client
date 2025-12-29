@@ -8628,23 +8628,50 @@ export interface components {
         };
         /**
          * ExportRequest
-         * @description Request to export reports data.
+         * @description Export request - extends GetReportsBundleApiRequest with export-specific options.
          */
         ExportRequest: {
-            filters: components["schemas"]["ReportsExportFilters"];
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: unknown | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 100
+             */
+            page_size: number | null;
             /** Metrics */
             metrics?: string[] | null;
             /**
-             * Brightspaceformat
+             * Brightspace Format
              * @default false
              */
-            brightspaceFormat: boolean;
+            brightspace_format: boolean;
         };
         /**
          * FeedbackItem
@@ -8734,18 +8761,6 @@ export interface components {
             profile_id?: string | null;
             /** Sid */
             sid?: string | null;
-        };
-        /**
-         * FilterOption
-         * @description Filter option with count.
-         */
-        FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
-            /** Count */
-            count: number;
         };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
@@ -10973,6 +10988,168 @@ export interface components {
             /** Status Options */
             status_options?: components["schemas"]["QListProvidersV3StatusOption"][] | null;
         };
+        /** GetReportsBundleApiRequest */
+        GetReportsBundleApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: unknown | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 100
+             */
+            page_size: number | null;
+        };
+        /** GetReportsBundleApiResponse */
+        GetReportsBundleApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["QReportsBundleV3Profile"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["QReportsBundleV3FilterOption"][] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["QReportsBundleV3FilterOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["QReportsBundleV3FilterOption"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QReportsBundleV3Scenario"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QReportsBundleV3Simulation"][] | null;
+        };
+        /** GetReportsHistoryApiRequest */
+        GetReportsHistoryApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: unknown | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number | null;
+        };
+        /** GetReportsHistoryApiResponse */
+        GetReportsHistoryApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["QReportsHistoryV3AttemptHistoryRow"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Archived Count */
+            archived_count?: number | null;
+            /** Unarchived Count */
+            unarchived_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["QReportsHistoryV3FilterOption"][] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["QReportsHistoryV3FilterOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["QReportsHistoryV3FilterOption"][] | null;
+        };
+        /** GetReportsOverviewApiRequest */
+        GetReportsOverviewApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Roles */
+            roles?: unknown | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /** GetReportsOverviewApiResponse */
+        GetReportsOverviewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            header_metrics?: components["schemas"]["QReportsOverviewV3HeaderMetrics"] | null;
+            primary_metrics?: components["schemas"]["QReportsOverviewV3PrimaryMetrics"] | null;
+            secondary_metrics?: components["schemas"]["QReportsOverviewV3SecondaryMetrics"] | null;
+            footer_metrics?: components["schemas"]["QReportsOverviewV3FooterMetrics"] | null;
+            /** History */
+            history?: components["schemas"]["QReportsOverviewV3AttemptHistoryRow"][] | null;
+            insights?: components["schemas"]["QReportsOverviewV3Insights"] | null;
+            thresholds?: components["schemas"]["QReportsOverviewV3Thresholds"] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QReportsOverviewV3Simulation"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QReportsOverviewV3Rubric"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QReportsOverviewV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QReportsOverviewV3Field"][] | null;
+        };
         /** GetRubricDetailApiRequest */
         GetRubricDetailApiRequest: {
             /**
@@ -12432,23 +12609,6 @@ export interface components {
             /** Sid */
             sid?: string | null;
         };
-        /** MetricResponse */
-        MetricResponse: {
-            /** Hasdata */
-            hasData: boolean;
-            /** Method */
-            method: string;
-            /** Currentvalue */
-            currentValue: number;
-            /** Status */
-            status: string;
-            /** Trendanalysis */
-            trendAnalysis?: string | null;
-            /** Trenddata */
-            trendData: unknown[];
-            /** Datapoints */
-            dataPoints: unknown[];
-        };
         /**
          * ObjectivesToolCompletePayload
          * @description Response indicating objectives tool completed successfully.
@@ -12595,54 +12755,6 @@ export interface components {
             rows?: components["schemas"]["QProcessCsvV3ProcessedRow"][] | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /**
-         * ProfileDataEnhanced
-         * @description Enhanced profile data row.
-         */
-        ProfileDataEnhanced: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /**
-             * Emails
-             * @default []
-             */
-            emails: string[];
-            /** Primaryemail */
-            primaryEmail: string | null;
-            /** Role */
-            role: string;
-            /**
-             * Simulationids
-             * @default []
-             */
-            simulationIds: string[];
-            /**
-             * Scenarioids
-             * @default []
-             */
-            scenarioIds: string[];
-            metrics: components["schemas"]["ProfileMetrics"];
-        };
-        /**
-         * ProfileMetrics
-         * @description Profile metrics - each metric is a full MetricResponse object.
-         */
-        ProfileMetrics: {
-            averageScore: components["schemas"]["MetricResponse"];
-            completionPercentage: components["schemas"]["MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["MetricResponse"];
-            highestScore: components["schemas"]["MetricResponse"];
-            messagesPerSession: components["schemas"]["MetricResponse"];
-            personaResponseTimes: components["schemas"]["MetricResponse"];
-            sessionEfficiency: components["schemas"]["MetricResponse"];
-            stagnationRate: components["schemas"]["MetricResponse"];
-            timeSpent: components["schemas"]["MetricResponse"];
-            totalAttempts: components["schemas"]["MetricResponse"];
         };
         /** QCreateScenarioV3Parameter */
         QCreateScenarioV3Parameter: {
@@ -17802,6 +17914,883 @@ export interface components {
             /** Errors */
             errors: components["schemas"]["QProcessCsvV3CsvRowError"][] | null;
         };
+        /** QReportsBundleV3DataPoint */
+        QReportsBundleV3DataPoint: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Date */
+            date: string | null;
+            /** Value */
+            value: number | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Attempt Id */
+            attempt_id: string | null;
+        };
+        /** QReportsBundleV3FilterOption */
+        QReportsBundleV3FilterOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QReportsBundleV3Hover */
+        QReportsBundleV3Hover: {
+            /** Mean */
+            mean: number | null;
+            /** Median */
+            median: number | null;
+            /** Mode */
+            mode: number | null;
+            /** Count */
+            count: number | null;
+            /** Completed */
+            completed: number | null;
+            /** Total */
+            total: number | null;
+            /** Percent */
+            percent: number | null;
+            /** Top */
+            top: number[] | null;
+            /** Mean Seconds */
+            mean_seconds: number | null;
+            /** Median Seconds */
+            median_seconds: number | null;
+            /** Samples */
+            samples: number | null;
+            /** Avg Score Percent */
+            avg_score_percent: number | null;
+            /** Avg Minutes */
+            avg_minutes: number | null;
+            /** Efficiency */
+            efficiency: number | null;
+            /** Tracked */
+            tracked: number | null;
+            /** Stagnant */
+            stagnant: number | null;
+            /** Rate Percent */
+            rate_percent: number | null;
+            /** Total Minutes */
+            total_minutes: number | null;
+            /** Total Hours */
+            total_hours: number | null;
+            /** Attempts */
+            attempts: number | null;
+            /** Unique Simulations */
+            unique_simulations: number | null;
+            /** Per Simulation Mean */
+            per_simulation_mean: number | null;
+        };
+        /** QReportsBundleV3Metric */
+        QReportsBundleV3Metric: {
+            /** Has Data */
+            has_data: boolean | null;
+            /** Method */
+            method: string | null;
+            /** Current Value */
+            current_value: number | null;
+            /** Data Points */
+            data_points: components["schemas"]["QReportsBundleV3DataPoint"][] | null;
+            hover: components["schemas"]["QReportsBundleV3Hover"] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsBundleV3Profile */
+        QReportsBundleV3Profile: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
+            /** Role */
+            role: string | null;
+            /** Simulation Ids */
+            simulation_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            metrics: components["schemas"]["QReportsBundleV3ProfileMetrics"] | null;
+        };
+        /** QReportsBundleV3ProfileMetrics */
+        QReportsBundleV3ProfileMetrics: {
+            average_score: components["schemas"]["QReportsBundleV3Metric"] | null;
+            completion_percentage: components["schemas"]["QReportsBundleV3Metric"] | null;
+            first_attempt_pass_rate: components["schemas"]["QReportsBundleV3Metric"] | null;
+            highest_score: components["schemas"]["QReportsBundleV3Metric"] | null;
+            messages_per_session: components["schemas"]["QReportsBundleV3Metric"] | null;
+            persona_response_times: components["schemas"]["QReportsBundleV3Metric"] | null;
+            session_efficiency: components["schemas"]["QReportsBundleV3Metric"] | null;
+            stagnation_rate: components["schemas"]["QReportsBundleV3Metric"] | null;
+            time_spent: components["schemas"]["QReportsBundleV3Metric"] | null;
+            total_attempts: components["schemas"]["QReportsBundleV3Metric"] | null;
+        };
+        /** QReportsBundleV3Scenario */
+        QReportsBundleV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QReportsBundleV3Simulation */
+        QReportsBundleV3Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Rubric Points */
+            rubric_points: number | null;
+            /** Rubric Pass Points */
+            rubric_pass_points: number | null;
+        };
+        /** QReportsHistoryV3AttemptHistoryRow */
+        QReportsHistoryV3AttemptHistoryRow: {
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Date */
+            date: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Simulation Name */
+            simulation_name: string | null;
+            /** Num Scenarios */
+            num_scenarios: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed: number | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Persona Names */
+            persona_names: string[] | null;
+            /** Persona Colors */
+            persona_colors: string[] | null;
+            /** Score */
+            score: number | null;
+            /** Score Status */
+            score_status: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Scenario Titles */
+            scenario_titles: string[] | null;
+            /** Is Archived */
+            is_archived: boolean | null;
+            /** Show View */
+            show_view: boolean | null;
+            /** Show Continue */
+            show_continue: boolean | null;
+            /** Practice Simulation */
+            practice_simulation: boolean | null;
+            /** Pass Pct */
+            pass_pct: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Cohort Names */
+            cohort_names: string[] | null;
+            /** Practice Scenario Id */
+            practice_scenario_id: string | null;
+        };
+        /** QReportsHistoryV3FilterOption */
+        QReportsHistoryV3FilterOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QReportsOverviewV3AttemptHistoryRow */
+        QReportsOverviewV3AttemptHistoryRow: {
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Date */
+            date: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Simulation Name */
+            simulation_name: string | null;
+            /** Num Scenarios */
+            num_scenarios: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed: number | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Persona Names */
+            persona_names: string[] | null;
+            /** Persona Colors */
+            persona_colors: string[] | null;
+            /** Score */
+            score: number | null;
+            /** Score Status */
+            score_status: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Scenario Titles */
+            scenario_titles: string[] | null;
+            /** Is Archived */
+            is_archived: boolean | null;
+            /** Show View */
+            show_view: boolean | null;
+            /** Show Continue */
+            show_continue: boolean | null;
+            /** Practice Simulation */
+            practice_simulation: boolean | null;
+            /** Pass Pct */
+            pass_pct: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Cohort Names */
+            cohort_names: string[] | null;
+            /** Practice Scenario Id */
+            practice_scenario_id: string | null;
+        };
+        /** QReportsOverviewV3AttemptImprovementData */
+        QReportsOverviewV3AttemptImprovementData: {
+            /** Attempt */
+            attempt: string | null;
+            /** Average Score */
+            average_score: number | null;
+            /** Average Time */
+            average_time: number | null;
+            /** Pass Rate */
+            pass_rate: number | null;
+        };
+        /** QReportsOverviewV3AttemptImprovementFact */
+        QReportsOverviewV3AttemptImprovementFact: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Attempt No */
+            attempt_no: number | null;
+            /** Avg Grade */
+            avg_grade: number | null;
+            /** Avg Minutes */
+            avg_minutes: number | null;
+            /** Pass Rate */
+            pass_rate: number | null;
+        };
+        /** QReportsOverviewV3AttemptImprovementResponse */
+        QReportsOverviewV3AttemptImprovementResponse: {
+            /** Chart Data */
+            chart_data: components["schemas"]["QReportsOverviewV3AttemptImprovementData"][] | null;
+            /** Facts */
+            facts: components["schemas"]["QReportsOverviewV3AttemptImprovementFact"][] | null;
+            /** Valid Simulation Ids */
+            valid_simulation_ids: string[] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3CohortDailyFact */
+        QReportsOverviewV3CohortDailyFact: {
+            /** Date */
+            date: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Avg Score */
+            avg_score: number | null;
+        };
+        /** QReportsOverviewV3CohortData */
+        QReportsOverviewV3CohortData: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Pass Rate */
+            pass_rate: number | null;
+            /** Avg Percentage Score */
+            avg_percentage_score: number | null;
+            /** Total Students */
+            total_students: number | null;
+            /** Passed Students */
+            passed_students: number | null;
+            /** Total Attempts */
+            total_attempts: number | null;
+            /** Passed Attempts */
+            passed_attempts: number | null;
+            /** Simulation Count */
+            simulation_count: number | null;
+            /** Required Simulations */
+            required_simulations: number | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3CohortFact */
+        QReportsOverviewV3CohortFact: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Pass Rate */
+            pass_rate: number | null;
+            /** Avg Score */
+            avg_score: number | null;
+            /** Attempts */
+            attempts: number | null;
+        };
+        /** QReportsOverviewV3CohortInsight */
+        QReportsOverviewV3CohortInsight: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Insight */
+            insight: string | null;
+        };
+        /** QReportsOverviewV3CohortPerformanceResponse */
+        QReportsOverviewV3CohortPerformanceResponse: {
+            /** Cohort Data */
+            cohort_data: components["schemas"]["QReportsOverviewV3CohortData"][] | null;
+            /** Daily Data */
+            daily_data: components["schemas"]["QReportsOverviewV3DailyData"][] | null;
+            /** Cohort Facts */
+            cohort_facts: components["schemas"]["QReportsOverviewV3CohortFact"][] | null;
+            /** Daily Facts */
+            daily_facts: components["schemas"]["QReportsOverviewV3CohortDailyFact"][] | null;
+            /** Valid Simulation Ids */
+            valid_simulation_ids: string[] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3DailyData */
+        QReportsOverviewV3DailyData: {
+            /** Date */
+            date: string | null;
+            /** Avg Score */
+            avg_score: number | null;
+            /** Cohort Id */
+            cohort_id: string | null;
+        };
+        /** QReportsOverviewV3DataPoint */
+        QReportsOverviewV3DataPoint: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Date */
+            date: string | null;
+            /** Value */
+            value: number | null;
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QReportsOverviewV3Field */
+        QReportsOverviewV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+        };
+        /** QReportsOverviewV3FooterMetrics */
+        QReportsOverviewV3FooterMetrics: {
+            scenario_performance: components["schemas"]["QReportsOverviewV3ScenarioPerformanceResponse"] | null;
+            scenario_stats: components["schemas"]["QReportsOverviewV3ScenarioStatsResponse"] | null;
+            simulation_performance: components["schemas"]["QReportsOverviewV3SimulationPerformanceResponse"] | null;
+            simulation_composition: components["schemas"]["QReportsOverviewV3SimulationCompositionResponse"] | null;
+        };
+        /** QReportsOverviewV3GrowthDataPoint */
+        QReportsOverviewV3GrowthDataPoint: {
+            /** Date */
+            date: string | null;
+            /** Average Score */
+            average_score: number | null;
+            /** Completion Rate */
+            completion_rate: number | null;
+            /** First Attempt Pass Rate */
+            first_attempt_pass_rate: number | null;
+            /** Session Efficiency */
+            session_efficiency: number | null;
+            /** Stagnation Rate */
+            stagnation_rate: number | null;
+        };
+        /** QReportsOverviewV3GrowthDataResponse */
+        QReportsOverviewV3GrowthDataResponse: {
+            /** Chart Data */
+            chart_data: components["schemas"]["QReportsOverviewV3GrowthDataPoint"][] | null;
+            /** Available Metrics */
+            available_metrics: components["schemas"]["QReportsOverviewV3GrowthMetric"][] | null;
+            window_averages: components["schemas"]["QReportsOverviewV3GrowthWindowAverages"] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3GrowthMetric */
+        QReportsOverviewV3GrowthMetric: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Color */
+            color: string | null;
+            /** Unit */
+            unit: string | null;
+            /** Description */
+            description: string | null;
+            /** Formatter Id */
+            formatter_id: string | null;
+        };
+        /** QReportsOverviewV3GrowthWindowAverage */
+        QReportsOverviewV3GrowthWindowAverage: {
+            /** N */
+            n: number | null;
+            /** Last */
+            last: number | null;
+            /** Prev */
+            prev: number | null;
+        };
+        /** QReportsOverviewV3GrowthWindowAverages */
+        QReportsOverviewV3GrowthWindowAverages: {
+            average_score: components["schemas"]["QReportsOverviewV3GrowthWindowAverage"] | null;
+        };
+        /** QReportsOverviewV3HeaderMetrics */
+        QReportsOverviewV3HeaderMetrics: {
+            average_score: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            completion_percentage: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            first_attempt_pass_rate: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            highest_score: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            messages_per_session: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            persona_response_times: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            session_efficiency: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            stagnation_rate: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            time_spent: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+            total_attempts: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+        };
+        /** QReportsOverviewV3Insights */
+        QReportsOverviewV3Insights: {
+            /** Growth */
+            growth: string | null;
+            /** Persona */
+            persona: components["schemas"]["QReportsOverviewV3PersonaInsight"][] | null;
+            /** Rubric Heatmap */
+            rubric_heatmap: string | null;
+            /** Attempt Improvement */
+            attempt_improvement: string | null;
+            /** Cohort */
+            cohort: components["schemas"]["QReportsOverviewV3CohortInsight"][] | null;
+            /** Skill Performance */
+            skill_performance: string | null;
+            /** Scenario Performance */
+            scenario_performance: string | null;
+            /** Scenario Stats */
+            scenario_stats: string | null;
+            /** Simulation Performance */
+            simulation_performance: string | null;
+            /** Simulation Composition */
+            simulation_composition: string | null;
+        };
+        /** QReportsOverviewV3MetricResponse */
+        QReportsOverviewV3MetricResponse: {
+            /** Has Data */
+            has_data: boolean | null;
+            /** Method */
+            method: string | null;
+            /** Current Value */
+            current_value: number | null;
+            /** Status */
+            status: string | null;
+            /** Trend Analysis */
+            trend_analysis: string | null;
+            /** Value Field */
+            value_field: string | null;
+            /** Key Field */
+            key_field: string | null;
+            /** Trend Data */
+            trend_data: components["schemas"]["QReportsOverviewV3TrendData"][] | null;
+            /** Data Points */
+            data_points: components["schemas"]["QReportsOverviewV3DataPoint"][] | null;
+        };
+        /** QReportsOverviewV3NumericAttemptFact */
+        QReportsOverviewV3NumericAttemptFact: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Level Label */
+            level_label: string | null;
+            /** Level Value */
+            level_value: number | null;
+            /** Score */
+            score: number | null;
+            /** Attempts */
+            attempts: number | null;
+        };
+        /** QReportsOverviewV3NumericScenarioFact */
+        QReportsOverviewV3NumericScenarioFact: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Level Label */
+            level_label: string | null;
+            /** Level Value */
+            level_value: number | null;
+        };
+        /** QReportsOverviewV3Parameter */
+        QReportsOverviewV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Numerical */
+            numerical: boolean | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+        };
+        /** QReportsOverviewV3PersonaColor */
+        QReportsOverviewV3PersonaColor: {
+            /** Persona Name */
+            persona_name: string | null;
+            /** Color */
+            color: string | null;
+        };
+        /** QReportsOverviewV3PersonaInsight */
+        QReportsOverviewV3PersonaInsight: {
+            /** Persona Name */
+            persona_name: string | null;
+            /** Insight */
+            insight: string | null;
+        };
+        /** QReportsOverviewV3PersonaPerformanceData */
+        QReportsOverviewV3PersonaPerformanceData: {
+            /** Name */
+            name: string | null;
+            /** Score */
+            score: number | null;
+            /** Sessions */
+            sessions: number | null;
+            /** Color */
+            color: string | null;
+            /** Simulation Ids */
+            simulation_ids: string[] | null;
+            /** Trend Data */
+            trend_data: components["schemas"]["QReportsOverviewV3PersonaTrendData"][] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3PersonaPerformanceResponse */
+        QReportsOverviewV3PersonaPerformanceResponse: {
+            /** Chart Data */
+            chart_data: components["schemas"]["QReportsOverviewV3PersonaPerformanceData"][] | null;
+            /** Valid Simulation Ids */
+            valid_simulation_ids: string[] | null;
+            /** Persona Colors */
+            persona_colors: components["schemas"]["QReportsOverviewV3PersonaColor"][] | null;
+        };
+        /** QReportsOverviewV3PersonaTrendData */
+        QReportsOverviewV3PersonaTrendData: {
+            /** Date */
+            date: string | null;
+            /** Score */
+            score: number | null;
+            /** Timestamp */
+            timestamp: number | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+        };
+        /** QReportsOverviewV3PrimaryMetrics */
+        QReportsOverviewV3PrimaryMetrics: {
+            growth_data: components["schemas"]["QReportsOverviewV3GrowthDataResponse"] | null;
+            persona_performance: components["schemas"]["QReportsOverviewV3PersonaPerformanceResponse"] | null;
+            rubric_heatmap: components["schemas"]["QReportsOverviewV3RubricHeatmapResponse"] | null;
+        };
+        /** QReportsOverviewV3Rubric */
+        QReportsOverviewV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QReportsOverviewV3RubricHeatmapCell */
+        QReportsOverviewV3RubricHeatmapCell: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Correlation */
+            correlation: number | null;
+            /** P Value */
+            p_value: number | null;
+            /** Color */
+            color: string | null;
+            /** Strength */
+            strength: string | null;
+            /** Data Points */
+            data_points: number | null;
+        };
+        /** QReportsOverviewV3RubricHeatmapResponse */
+        QReportsOverviewV3RubricHeatmapResponse: {
+            /** Matrices */
+            matrices: components["schemas"]["QReportsOverviewV3RubricMatrixPackage"][] | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids: string[] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3RubricMatrixPackage */
+        QReportsOverviewV3RubricMatrixPackage: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Standard Groups */
+            standard_groups: components["schemas"]["QReportsOverviewV3StandardGroup"][] | null;
+            /** Matrix */
+            matrix: components["schemas"]["QReportsOverviewV3RubricHeatmapCell"][] | null;
+            /** Insights */
+            insights: string | null;
+            /** Has Data */
+            has_data: boolean | null;
+        };
+        /** QReportsOverviewV3ScenarioAttributeAttemptFact */
+        QReportsOverviewV3ScenarioAttributeAttemptFact: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Item Id */
+            parameter_item_id: string | null;
+            /** Date */
+            date: string | null;
+            /** Timestamp */
+            timestamp: number | null;
+            /** Avg Score */
+            avg_score: number | null;
+            /** Attempts */
+            attempts: number | null;
+            /** Passed Attempts */
+            passed_attempts: number | null;
+        };
+        /** QReportsOverviewV3ScenarioAttributeScenarioFact */
+        QReportsOverviewV3ScenarioAttributeScenarioFact: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Item Id */
+            parameter_item_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+        };
+        /** QReportsOverviewV3ScenarioFact */
+        QReportsOverviewV3ScenarioFact: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Scenario Name */
+            scenario_name: string | null;
+            /** Avg Score */
+            avg_score: number | null;
+            /** Success Rate */
+            success_rate: number | null;
+            /** Total Attempts */
+            total_attempts: number | null;
+            /** Completed Attempts */
+            completed_attempts: number | null;
+        };
+        /** QReportsOverviewV3ScenarioPerformanceResponse */
+        QReportsOverviewV3ScenarioPerformanceResponse: {
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[] | null;
+            /** Attribute Attempt Facts */
+            attribute_attempt_facts: components["schemas"]["QReportsOverviewV3ScenarioAttributeAttemptFact"][] | null;
+            /** Attribute Scenario Facts */
+            attribute_scenario_facts: components["schemas"]["QReportsOverviewV3ScenarioAttributeScenarioFact"][] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3ScenarioStatsResponse */
+        QReportsOverviewV3ScenarioStatsResponse: {
+            /** Valid Numeric Parameter Ids */
+            valid_numeric_parameter_ids: string[] | null;
+            /** Numeric Attempt Facts */
+            numeric_attempt_facts: components["schemas"]["QReportsOverviewV3NumericAttemptFact"][] | null;
+            /** Numeric Scenario Facts */
+            numeric_scenario_facts: components["schemas"]["QReportsOverviewV3NumericScenarioFact"][] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3SecondaryMetrics */
+        QReportsOverviewV3SecondaryMetrics: {
+            attempt_improvement: components["schemas"]["QReportsOverviewV3AttemptImprovementResponse"] | null;
+            cohort_performance: components["schemas"]["QReportsOverviewV3CohortPerformanceResponse"] | null;
+            skill_performance: components["schemas"]["QReportsOverviewV3SkillPerformanceResponse"] | null;
+        };
+        /** QReportsOverviewV3Simulation */
+        QReportsOverviewV3Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QReportsOverviewV3SimulationCompositionResponse */
+        QReportsOverviewV3SimulationCompositionResponse: {
+            /** Valid Simulation Ids */
+            valid_simulation_ids: string[] | null;
+            /** Simulation Facts */
+            simulation_facts: components["schemas"]["QReportsOverviewV3SimulationFact"][] | null;
+            /** Simulation Parameter Facts Categorical */
+            simulation_parameter_facts_categorical: components["schemas"]["QReportsOverviewV3SimulationParameterFactCategorical"][] | null;
+            /** Simulation Parameter Facts Numeric */
+            simulation_parameter_facts_numeric: components["schemas"]["QReportsOverviewV3SimulationParameterFactNumeric"][] | null;
+            /** Has Data */
+            has_data: boolean | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3SimulationFact */
+        QReportsOverviewV3SimulationFact: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Title */
+            title: string | null;
+            /** Avg Score */
+            avg_score: number | null;
+            /** Completion Rate */
+            completion_rate: number | null;
+            /** Total Attempts */
+            total_attempts: number | null;
+            /** Scenario Count */
+            scenario_count: number | null;
+        };
+        /** QReportsOverviewV3SimulationParameterFactCategorical */
+        QReportsOverviewV3SimulationParameterFactCategorical: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Item Id */
+            parameter_item_id: string | null;
+            /** Scenario Count */
+            scenario_count: number | null;
+        };
+        /** QReportsOverviewV3SimulationParameterFactNumeric */
+        QReportsOverviewV3SimulationParameterFactNumeric: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Avg Level */
+            avg_level: number | null;
+            /** Level Label */
+            level_label: string | null;
+            /** Scenario Count */
+            scenario_count: number | null;
+        };
+        /** QReportsOverviewV3SimulationPerformanceResponse */
+        QReportsOverviewV3SimulationPerformanceResponse: {
+            /** Valid Simulation Ids */
+            valid_simulation_ids: string[] | null;
+            /** Scenario Facts */
+            scenario_facts: components["schemas"]["QReportsOverviewV3ScenarioFact"][] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3SkillPackage */
+        QReportsOverviewV3SkillPackage: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Radar Data */
+            radar_data: components["schemas"]["QReportsOverviewV3SkillRadarData"][] | null;
+            /** Group Facts */
+            group_facts: components["schemas"]["QReportsOverviewV3SkillStandardFact"][] | null;
+        };
+        /** QReportsOverviewV3SkillPerformanceResponse */
+        QReportsOverviewV3SkillPerformanceResponse: {
+            /** Packages */
+            packages: components["schemas"]["QReportsOverviewV3SkillPackage"][] | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids: string[] | null;
+            /** Status */
+            status: string | null;
+        };
+        /** QReportsOverviewV3SkillRadarData */
+        QReportsOverviewV3SkillRadarData: {
+            /** Metric */
+            metric: string | null;
+            /** Description */
+            description: string | null;
+            /** Value */
+            value: number | null;
+            /** Full Mark */
+            full_mark: number | null;
+        };
+        /** QReportsOverviewV3SkillStandardFact */
+        QReportsOverviewV3SkillStandardFact: {
+            /** Group Id */
+            group_id: string | null;
+            /** Group Name */
+            group_name: string | null;
+            /** Group Description */
+            group_description: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Score */
+            score: number | null;
+            /** Points */
+            points: number | null;
+            /** Avg Pct */
+            avg_pct: number | null;
+        };
+        /** QReportsOverviewV3StandardGroup */
+        QReportsOverviewV3StandardGroup: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Short Name */
+            short_name: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+        };
+        /** QReportsOverviewV3Thresholds */
+        QReportsOverviewV3Thresholds: {
+            /** Success */
+            success: number | null;
+            /** Warning */
+            warning: number | null;
+            /** Danger */
+            danger: number | null;
+        };
+        /** QReportsOverviewV3TrendData */
+        QReportsOverviewV3TrendData: {
+            /** Date */
+            date: string | null;
+            /** Value */
+            value: number | null;
+            /** Count */
+            count: number | null;
+        };
         /** QSearchSimulatableProfilesV3Profile */
         QSearchSimulatableProfilesV3Profile: {
             /** Profile Id */
@@ -18084,179 +19073,6 @@ export interface components {
             document_id: string;
         };
         /**
-         * ReportsBundleFilters
-         * @description Reports bundle filter request schema.
-         */
-        ReportsBundleFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: string[] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
-            /** Search */
-            search?: string | null;
-            /** Sortby */
-            sortBy?: string | null;
-            /** Sortorder */
-            sortOrder?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-        };
-        /**
-         * ReportsBundleResponse
-         * @description Reports bundle response with entity mappings.
-         */
-        ReportsBundleResponse: {
-            /** Data */
-            data: components["schemas"]["ProfileDataEnhanced"][];
-            /** Totalcount */
-            totalCount: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-            /** Totalpages */
-            totalPages: number;
-            /**
-             * Profileoptions
-             * @default []
-             */
-            profileOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Simulationoptions
-             * @default []
-             */
-            simulationOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Scenariooptions
-             * @default []
-             */
-            scenarioOptions: components["schemas"]["FilterOption"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-        };
-        /**
-         * ReportsExportFilters
-         * @description Reports export filter request schema.
-         */
-        ReportsExportFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
-            /** Search */
-            search?: string | null;
-            /** Sortby */
-            sortBy?: string | null;
-            /** Sortorder */
-            sortOrder?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-        };
-        /**
-         * ReportsHistoryFilters
-         * @description Reports history filter request schema - requires profileId for individual reports.
-         */
-        ReportsHistoryFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: string[] | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Pagesize
-             * @default 20
-             */
-            pageSize: number;
-            /** Search */
-            search?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-            /** Infinitemode */
-            infiniteMode?: boolean | null;
-            /**
-             * Sortby
-             * @default date
-             */
-            sortBy: string;
-            /**
-             * Sortorder
-             * @default desc
-             */
-            sortOrder: string;
-        };
-        /**
-         * ReportsOverviewFilters
-         * @description Reports overview filter request schema - requires profileId for individual reports.
-         */
-        ReportsOverviewFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-        };
-        /**
          * ResolveFeedbackRequest
          * @description Request to resolve/unresolve feedback.
          */
@@ -18481,16 +19297,6 @@ export interface components {
             objectives?: string[] | null;
         };
         /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item.
-         */
-        ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * ScenarioQuestionsToolCompletePayload
          * @description Response indicating questions tool completed successfully.
          */
@@ -18680,12 +19486,6 @@ export interface components {
             chat_id: string;
         };
         /**
-         * SimulationFilter
-         * @description Simulation filter types.
-         * @enum {string}
-         */
-        SimulationFilter: "general" | "practice" | "archived";
-        /**
          * SimulationGradingProgressPayload
          * @description Response indicating progress in simulation grading.
          */
@@ -18833,22 +19633,6 @@ export interface components {
              * @default assistant
              */
             chat_type: string;
-        };
-        /**
-         * SimulationMappingItem
-         * @description Simulation mapping item.
-         */
-        SimulationMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Rubric Points */
-            rubric_points?: number | null;
-            /** Rubric Pass Points */
-            rubric_pass_points?: number | null;
         };
         /**
          * SimulationMessageCancelledPayload
@@ -23345,7 +24129,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReportsBundleFilters"];
+                "application/json": components["schemas"]["GetReportsBundleApiRequest"];
             };
         };
         responses: {
@@ -23355,7 +24139,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReportsBundleResponse"];
+                    "application/json": components["schemas"]["GetReportsBundleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23381,7 +24165,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReportsOverviewFilters"];
+                "application/json": components["schemas"]["GetReportsOverviewApiRequest"];
             };
         };
         responses: {
@@ -23391,7 +24175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDashboardBundleApiResponse"];
+                    "application/json": components["schemas"]["GetReportsOverviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23417,7 +24201,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReportsHistoryFilters"];
+                "application/json": components["schemas"]["GetReportsHistoryApiRequest"];
             };
         };
         responses: {
@@ -23427,7 +24211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDashboardHistoryApiResponse"];
+                    "application/json": components["schemas"]["GetReportsHistoryApiResponse"];
                 };
             };
             /** @description Validation Error */
