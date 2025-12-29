@@ -39,14 +39,41 @@ export default function Home({ homeData }: HomeProps) {
   const homeOverview = homeData;
 
   // Extract rubric mappings from home overview data
-  const standardGroupsMapping = useMemo(
-    () => homeOverview?.standard_groups_mapping || {},
-    [homeOverview],
-  );
-  const standardsMapping = useMemo(
-    () => homeOverview?.standards_mapping || {},
-    [homeOverview],
-  );
+  // Convert arrays to dicts for backward compatibility with existing components
+  const standardGroupsMapping = useMemo(() => {
+    const groups = homeOverview?.standard_groups || [];
+    const mapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+      }
+    > = {};
+    for (const group of groups) {
+      mapping[group.standard_group_id] = {
+        name: group.name,
+        description: group.description,
+        points: group.points,
+        passPoints: group.pass_points,
+      };
+    }
+    return mapping;
+  }, [homeOverview?.standard_groups]);
+
+  const standardsMapping = useMemo(() => {
+    const standards = homeOverview?.standards || [];
+    const mapping: Record<string, { name: string; description: string; points: number }> = {};
+    for (const standard of standards) {
+      mapping[standard.standard_id] = {
+        name: standard.name,
+        description: standard.description,
+        points: standard.points,
+      };
+    }
+    return mapping;
+  }, [homeOverview?.standards]);
 
   const [carouselIndex, setCarouselIndex] = useState(0);
   // Use WebSocket's specific simulation ID for precise loading state

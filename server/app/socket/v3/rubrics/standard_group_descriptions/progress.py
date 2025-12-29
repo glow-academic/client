@@ -18,7 +18,7 @@ from utils.sql_helper import execute_sql_typed
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/rubrics/standard_group_descriptions/standard_group_descriptions_progress_complete.sql"
+SQL_PATH = "app/sql/v3/rubrics/standard_group_descriptions_progress_complete.sql"
 
 
 async def _standard_group_descriptions_progress_impl(

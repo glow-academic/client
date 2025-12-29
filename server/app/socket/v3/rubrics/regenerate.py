@@ -18,8 +18,8 @@ from app.sql.types import (
     GetRubricRegenerationRunContextAndCreateRunApiRequest,
     GetRubricRegenerationRunContextAndCreateRunSqlParams,
     GetRubricRegenerationRunContextAndCreateRunSqlRow,
-    IGetRubricRegenerationRunContextAndCreateRunV3Standard,
-    IGetRubricRegenerationRunContextAndCreateRunV3StandardGroup,
+    IRubricRegenRunContextCreateRunV3Msg, IRubricRegenRunContextCreateRunV3Sg,
+    IRubricRegenRunContextCreateRunV3Std,
     IUpdateStandardDescriptionsV3Description,
     RubricGenerationCompleteApiRequest, RubricGenerationErrorApiRequest,
     RubricGenerationErrorSqlRow, RubricGenerationProgressApiRequest,
@@ -115,46 +115,37 @@ async def _rubric_regenerate_impl(
                 return
 
             # result.group_id and result.trace_id come from groups table
-            trace_id = result.trace_id  # From groups.trace_id
+            trace_id = result.trace_id or ""  # From groups.trace_id (never NULL due to DEFAULT)
+            if not result.group_id:
+                await emit_to_internal(
+                    "rubric_error",
+                    RubricGenerationErrorApiRequest(
+                        rubric_id=rubric_id if rubric_id else None,
+                        error_message="Failed to retrieve group information",
+                    ),
+                    sid=sid,
+                )
+                return
             group_id = result.group_id  # Uses existing group
 
             # Extract run_id from result (created in same transaction)
             model_run_id = uuid.UUID(result.run_id)
 
-            # Get rubric structure from result (no need to pass it)
-            standard_groups_data = result.standard_groups or []
-            standards_data = result.standards or []
+            # Get rubric structure from result (already properly typed as composite types)
+            standard_groups_objects = result.standard_groups or []
+            standards_objects = result.standards or []
 
-            # Convert to objects for use in agent context
-            standard_groups_objects = [
-                IGetRubricRegenerationRunContextAndCreateRunV3StandardGroup(
-                    id=g["id"],
-                    name=g["name"],
-                    description=g["description"],
-                    points=g["points"],
-                    pass_points=g.get("pass_points", 0)
-                )
-                for g in standard_groups_data
-            ]
-
-            standards_objects = [
-                IGetRubricRegenerationRunContextAndCreateRunV3Standard(
-                    id=s["id"],
-                    name=s["name"],
-                    points=s["points"],
-                    standard_group_id=s["standard_group_id"]
-                )
-                for s in standards_data
-            ]
-
-            # Get previous messages from result (all messages from all previous runs)
+            # Get previous messages from result (already properly typed as composite types)
             previous_messages: list[TResponseInputItem] = []
             if result.previous_messages:
                 previous_messages = [
-                    {
-                        "role": msg["role"],
-                        "content": msg["content"]
-                    }
+                    cast(
+                        TResponseInputItem,
+                        {
+                            "role": msg.role or "",
+                            "content": msg.content or "",
+                        },
+                    )
                     for msg in result.previous_messages
                 ]
 

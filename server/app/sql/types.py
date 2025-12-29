@@ -4244,6 +4244,231 @@ class GetHealthBundleApiResponse(BaseModel):
 
 
 
+# Generated from: get_home_history
+
+class GetHomeHistorySqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    offset_count: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.roles,
+            self.simulation_filters,
+            self.search,
+            self.profile_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.infinite_mode,
+            self.sort_by,
+            self.sort_order,
+            self.page_size,
+            self.offset_count,
+        )
+
+class QGetHomeHistoryV3AttemptHistoryRow(BaseModel):
+
+    attempt_id: UUID | None
+    date: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    simulation_name: str | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    infinite_mode: bool | None
+    time_limit: int | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    score: int | None
+    score_status: str | None
+    simulation_id: UUID | None
+    scenario_ids: list[UUID] | None
+    scenario_titles: list[str] | None
+    is_archived: bool | None
+    show_view: bool | None
+    show_continue: bool | None
+    practice_simulation: bool | None
+    pass_pct: int | None
+    department_ids: list[str] | None
+    cohort_names: list[str] | None
+    practice_scenario_id: UUID | None
+
+
+
+
+class QGetHomeHistoryV3Option(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+class GetHomeHistorySqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetHomeHistoryV3AttemptHistoryRow] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QGetHomeHistoryV3Option] | None = None
+    simulation_options: list[QGetHomeHistoryV3Option] | None = None
+    scenario_options: list[QGetHomeHistoryV3Option] | None = None
+
+class GetHomeHistoryApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    offset_count: int | None = 0
+
+class GetHomeHistoryApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetHomeHistoryV3AttemptHistoryRow] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QGetHomeHistoryV3Option] | None = None
+    simulation_options: list[QGetHomeHistoryV3Option] | None = None
+    scenario_options: list[QGetHomeHistoryV3Option] | None = None
+
+
+
+# Generated from: get_home_overview
+
+class GetHomeOverviewSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+        )
+
+class QGetHomeOverviewV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetHomeOverviewV3SimulationItem(BaseModel):
+
+    view_mode: str | None
+    simulation_id: UUID | None
+    simulation_title: str | None
+    simulation_description: str | None
+    simulation_name: str | None
+    time_limit: int | None
+    num_sessions: int | None
+    highest_score: int | None
+    standard_groups: list[str] | None
+    color: str | None
+    icon: str | None
+    has_passed: bool | None
+    pass_rate: int | None
+    status: str | None
+    completion_pct: int | None
+    passed_count: int | None
+    in_progress_count: int | None
+    not_started_count: int | None
+    pass_pct: int | None
+    cohort_name: str | None
+    cohort_names: str | None
+
+
+
+
+class QGetHomeOverviewV3Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetHomeOverviewV3StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetHomeOverviewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    has_data: bool | None = None
+    items: list[QGetHomeOverviewV3SimulationItem] | None = None
+    standard_groups: list[QGetHomeOverviewV3StandardGroup] | None = None
+    standards: list[QGetHomeOverviewV3Standard] | None = None
+    simulations: list[QGetHomeOverviewV3Simulation] | None = None
+
+class GetHomeOverviewApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetHomeOverviewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    has_data: bool | None = None
+    items: list[QGetHomeOverviewV3SimulationItem] | None = None
+    standard_groups: list[QGetHomeOverviewV3StandardGroup] | None = None
+    standards: list[QGetHomeOverviewV3Standard] | None = None
+    simulations: list[QGetHomeOverviewV3Simulation] | None = None
+
+
+
 # Generated from: create_key
 
 class CreateKeySqlParams(BaseModel):
@@ -7776,6 +8001,32 @@ class GetRubricRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
+class IRubricRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+
+
+
+class IRubricRegenRunContextCreateRunV3Sg(BaseModel):
+
+    id: str | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+
+
+
+class IRubricRegenRunContextCreateRunV3Std(BaseModel):
+
+    id: str | None
+    name: str | None
+    points: int | None
+    standard_group_id: str | None
+
 class GetRubricRegenerationRunContextAndCreateRunSqlRow(BaseModel):
 
     agent_id: str | None = None
@@ -7795,9 +8046,9 @@ class GetRubricRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    standard_groups: dict[str, Any] | None = None
-    standards: dict[str, Any] | None = None
-    previous_messages: dict[str, Any] | None = None
+    standard_groups: list[IRubricRegenRunContextCreateRunV3Sg] | None = None
+    standards: list[IRubricRegenRunContextCreateRunV3Std] | None = None
+    previous_messages: list[IRubricRegenRunContextCreateRunV3Msg] | None = None
 
 class GetRubricRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -7826,9 +8077,9 @@ class GetRubricRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    standard_groups: dict[str, Any] | None = None
-    standards: dict[str, Any] | None = None
-    previous_messages: dict[str, Any] | None = None
+    standard_groups: list[IRubricRegenRunContextCreateRunV3Sg] | None = None
+    standards: list[IRubricRegenRunContextCreateRunV3Std] | None = None
+    previous_messages: list[IRubricRegenRunContextCreateRunV3Msg] | None = None
 
 
 
@@ -8150,6 +8401,148 @@ class RubricGenerationProgressApiResponse(BaseModel):
 
 
 
+# Generated from: standard_group_descriptions_complete
+
+class QStandardGroupDescriptionsCompleteV3Description(BaseModel):
+
+    standard_group_id: UUID | None
+    standard_id: UUID | None
+    description: str | None
+
+class StandardGroupDescriptionsCompleteSqlParams(BaseModel):
+
+    success: bool
+    rubric_id: UUID
+    updated_count: int
+    message: str
+    descriptions: list[QStandardGroupDescriptionsCompleteV3Description]
+    profile_id: UUID
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert descriptions composite array to tuples for asyncpg
+        descriptions_tuples = [
+            (conn.standard_group_id, conn.standard_id, conn.description)
+            for conn in self.descriptions
+        ]
+        return (
+            self.success,
+            self.rubric_id,
+            self.updated_count,
+            self.message,
+            descriptions_tuples,
+            self.profile_id,
+            self.group_id,
+        )
+
+class StandardGroupDescriptionsCompleteSqlRow(BaseModel):
+
+    success: bool | None = None
+    rubric_id: UUID | None = None
+    updated_count: int | None = None
+    trace_id: str | None = None
+    message: str | None = None
+    descriptions: list[QStandardGroupDescriptionsCompleteV3Description] | None = None
+
+class StandardGroupDescriptionsCompleteApiRequest(BaseModel):
+
+    success: bool
+    rubric_id: UUID
+    updated_count: int
+    message: str
+    descriptions: list[QStandardGroupDescriptionsCompleteV3Description]
+    group_id: UUID | None = None
+
+class StandardGroupDescriptionsCompleteApiResponse(BaseModel):
+
+    success: bool | None = None
+    rubric_id: UUID | None = None
+    updated_count: int | None = None
+    trace_id: str | None = None
+    message: str | None = None
+    descriptions: list[QStandardGroupDescriptionsCompleteV3Description] | None = None
+
+
+
+# Generated from: standard_group_descriptions_error
+
+class StandardGroupDescriptionsErrorSqlParams(BaseModel):
+
+    success: bool
+    message: str
+    profile_id: UUID
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.success,
+            self.message,
+            self.profile_id,
+            self.group_id,
+        )
+
+class StandardGroupDescriptionsErrorSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+class StandardGroupDescriptionsErrorApiRequest(BaseModel):
+
+    success: bool
+    message: str
+    group_id: UUID | None = None
+
+class StandardGroupDescriptionsErrorApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+
+
+# Generated from: standard_group_descriptions_progress
+
+class StandardGroupDescriptionsProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    type: str
+    group_id: UUID | None = None
+    message: str | None = None
+    tool_name: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.type,
+            self.group_id,
+            self.message,
+            self.tool_name,
+        )
+
+class StandardGroupDescriptionsProgressSqlRow(BaseModel):
+
+    type: str | None = None
+    message: str | None = None
+    tool_name: str | None = None
+    trace_id: str | None = None
+
+class StandardGroupDescriptionsProgressApiRequest(BaseModel):
+
+    type: str
+    group_id: UUID | None = None
+    message: str | None = None
+    tool_name: str | None = None
+
+class StandardGroupDescriptionsProgressApiResponse(BaseModel):
+
+    type: str | None = None
+    message: str | None = None
+    tool_name: str | None = None
+    trace_id: str | None = None
+
+
+
 # Generated from: update_rubric
 
 class IUpdateRubricV3Standard(BaseModel):
@@ -8255,11 +8648,18 @@ class UpdateStandardDescriptionsSqlParams(BaseModel):
             self.group_id,
         )
 
+class QUpdateStandardDescriptionsV3Description(BaseModel):
+
+    standard_group_id: UUID | None
+    standard_id: UUID | None
+    description: str | None
+
 class UpdateStandardDescriptionsSqlRow(BaseModel):
 
     updated_count: int | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
+    descriptions: list[QUpdateStandardDescriptionsV3Description] | None = None
 
 class UpdateStandardDescriptionsApiRequest(BaseModel):
 
@@ -8272,6 +8672,7 @@ class UpdateStandardDescriptionsApiResponse(BaseModel):
     updated_count: int | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
+    descriptions: list[QUpdateStandardDescriptionsV3Description] | None = None
 
 
 
@@ -11876,6 +12277,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetHealthBundleApiRequest",
         "GetHealthBundleApiResponse",
     ),
+    "app/sql/v3/home/get_home_history_complete.sql": (
+        "GetHomeHistorySqlParams",
+        "GetHomeHistorySqlRow",
+        "GetHomeHistoryApiRequest",
+        "GetHomeHistoryApiResponse",
+    ),
+    "app/sql/v3/home/get_home_overview_complete.sql": (
+        "GetHomeOverviewSqlParams",
+        "GetHomeOverviewSqlRow",
+        "GetHomeOverviewApiRequest",
+        "GetHomeOverviewApiResponse",
+    ),
     "app/sql/v3/keys/create_key_complete.sql": (
         "CreateKeySqlParams",
         "CreateKeySqlRow",
@@ -12223,6 +12636,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RubricGenerationProgressSqlRow",
         "RubricGenerationProgressApiRequest",
         "RubricGenerationProgressApiResponse",
+    ),
+    "app/sql/v3/rubrics/standard_group_descriptions_complete_complete.sql": (
+        "StandardGroupDescriptionsCompleteSqlParams",
+        "StandardGroupDescriptionsCompleteSqlRow",
+        "StandardGroupDescriptionsCompleteApiRequest",
+        "StandardGroupDescriptionsCompleteApiResponse",
+    ),
+    "app/sql/v3/rubrics/standard_group_descriptions_error_complete.sql": (
+        "StandardGroupDescriptionsErrorSqlParams",
+        "StandardGroupDescriptionsErrorSqlRow",
+        "StandardGroupDescriptionsErrorApiRequest",
+        "StandardGroupDescriptionsErrorApiResponse",
+    ),
+    "app/sql/v3/rubrics/standard_group_descriptions_progress_complete.sql": (
+        "StandardGroupDescriptionsProgressSqlParams",
+        "StandardGroupDescriptionsProgressSqlRow",
+        "StandardGroupDescriptionsProgressApiRequest",
+        "StandardGroupDescriptionsProgressApiResponse",
     ),
     "app/sql/v3/rubrics/update_rubric_complete.sql": (
         "UpdateRubricSqlParams",
@@ -12771,6 +13202,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/home/get_home_history_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/home/get_home_overview_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/keys/create_key_complete.sql"]
     ) -> SqlString: ...
 
@@ -13057,6 +13498,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/rubrics/rubric_generation_progress_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/standard_group_descriptions_complete_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/standard_group_descriptions_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/standard_group_descriptions_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload

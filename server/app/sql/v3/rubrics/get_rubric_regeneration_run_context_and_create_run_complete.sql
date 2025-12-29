@@ -31,14 +31,35 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'i_get_rubric_regeneration_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'i_rubric_regen_run_context_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
     END LOOP;
 END $$;
 
--- 3) Recreate function
+-- 3) Recreate composite types
+CREATE TYPE types.i_rubric_regen_run_context_create_run_v3_sg AS (
+    id text,
+    name text,
+    description text,
+    points integer,
+    pass_points integer
+);
+
+CREATE TYPE types.i_rubric_regen_run_context_create_run_v3_std AS (
+    id text,
+    name text,
+    points integer,
+    standard_group_id text
+);
+
+CREATE TYPE types.i_rubric_regen_run_context_create_run_v3_msg AS (
+    role text,
+    content text
+);
+
+-- 4) Recreate function
 -- group_id is REQUIRED (not NULL) for regeneration - uses existing group
 -- rubric_id is REQUIRED to get standard_groups and standards
 -- Gets all messages from all previous runs in the group
@@ -69,9 +90,9 @@ RETURNS TABLE (
     run_id text,
     group_id uuid,
     trace_id text,
-    standard_groups jsonb,  -- Array of standard groups from rubric
-    standards jsonb,  -- Array of standards from rubric
-    previous_messages jsonb  -- All messages from all previous runs in group
+    standard_groups types.i_rubric_regen_run_context_create_run_v3_sg[],  -- Array of standard groups from rubric
+    standards types.i_rubric_regen_run_context_create_run_v3_std[],  -- Array of standards from rubric
+    previous_messages types.i_rubric_regen_run_context_create_run_v3_msg[]  -- All messages from all previous runs in group
 )
 LANGUAGE sql
 VOLATILE
@@ -98,27 +119,18 @@ rubric_structure AS (
     -- Get standard_groups and standards from rubric_id via junction table
     SELECT 
         COALESCE(
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', sg.id::text,
-                    'name', sg.name,
-                    'description', sg.description,
-                    'points', sg.points,
-                    'pass_points', sg.pass_points
-                ) ORDER BY rsg.position, sg.created_at
+            ARRAY_AGG(
+                (sg.id::text, sg.name, sg.description, sg.points, sg.pass_points)::types.i_rubric_regen_run_context_create_run_v3_sg
+                ORDER BY rsg.position, sg.created_at
             ),
-            '[]'::jsonb
+            '{}'::types.i_rubric_regen_run_context_create_run_v3_sg[]
         ) as standard_groups,
         COALESCE(
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', s.id::text,
-                    'name', s.name,
-                    'points', s.points,
-                    'standard_group_id', s.standard_group_id::text
-                ) ORDER BY rsg.position, s.created_at
+            ARRAY_AGG(
+                (s.id::text, s.name, s.points, s.standard_group_id::text)::types.i_rubric_regen_run_context_create_run_v3_std
+                ORDER BY rsg.position, s.created_at
             ),
-            '[]'::jsonb
+            '{}'::types.i_rubric_regen_run_context_create_run_v3_std[]
         ) as standards
     FROM params p
     LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = p.rubric_id AND rsg.active = true
@@ -149,16 +161,14 @@ previous_messages_all_runs AS (
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
     ORDER BY gr.idx ASC, m.created_at ASC  -- Order by run idx first, then message created_at
 ),
-previous_messages_json AS (
-    -- Aggregate all previous messages into JSONB array
+previous_messages_array AS (
+    -- Aggregate all previous messages into composite type array
     SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'role', role,
-                'content', content
-            ) ORDER BY run_idx, created_at
+        ARRAY_AGG(
+            (role, content)::types.i_rubric_regen_run_context_create_run_v3_msg
+            ORDER BY run_idx, created_at
         ),
-        '[]'::jsonb
+        '{}'::types.i_rubric_regen_run_context_create_run_v3_msg[]
     ) as previous_messages
     FROM previous_messages_all_runs
 ),
@@ -386,12 +396,12 @@ SELECT
     rs.standard_groups,
     rs.standards,
     -- Previous messages (from all previous runs in group)
-    pmj.previous_messages
+    pma.previous_messages
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN group_data gd
 CROSS JOIN rubric_structure rs
-CROSS JOIN previous_messages_json pmj
+CROSS JOIN previous_messages_array pma
 $$;
 
 COMMIT;

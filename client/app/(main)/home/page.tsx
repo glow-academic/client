@@ -168,12 +168,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // Extract subset for Home: startDate, endDate
   // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
   // profileId removed - comes from X-Profile-Id header automatically
+  // Convert camelCase to snake_case for API
   const homeFilters: HomeIn = {
     body: {
-      startDate: defaultFilters.startDate,
-      endDate: defaultFilters.endDate,
-      cohortIds: defaultFilters.cohortIds, // Always non-empty
-      departmentIds: defaultFilters.departmentIds, // Always non-empty
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
+      cohort_ids: defaultFilters.cohortIds, // Always non-empty
+      department_ids: defaultFilters.departmentIds, // Always non-empty
     },
   };
 
@@ -315,33 +316,34 @@ async function HomeHistorySection({
 }) {
   // Build history filters matching logic from page.tsx
   // profileId removed - comes from X-Profile-Id header automatically
+  // Convert camelCase to snake_case for API
   const historyFilters: HomeHistoryIn = {
     body: {
-      startDate: defaultFilters.startDate,
-      endDate: defaultFilters.endDate,
-      cohortIds: defaultFilters.cohortIds,
-      departmentIds: defaultFilters.departmentIds,
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
+      cohort_ids: defaultFilters.cohortIds,
+      department_ids: defaultFilters.departmentIds,
       roles: defaultFilters.roles,
       page: historyPage,
-      pageSize: historyPageSize,
+      page_size: historyPageSize,
       ...(historySearch && { search: historySearch }),
       ...(historyProfileIds &&
         historyProfileIds.length > 0 && {
-          profileIds: historyProfileIds,
+          profile_ids: historyProfileIds,
         }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
-          simulationIds: historySimulationIds,
+          simulation_ids: historySimulationIds,
         }),
       ...(historyScenarioIds &&
         historyScenarioIds.length > 0 && {
-          scenarioIds: historyScenarioIds,
+          scenario_ids: historyScenarioIds,
         }),
       ...(historyInfiniteMode !== undefined && {
-        infiniteMode: historyInfiniteMode,
+        infinite_mode: historyInfiniteMode,
       }),
-      sortBy: historySortBy,
-      sortOrder: historySortOrder,
+      sort_by: historySortBy,
+      sort_order: historySortOrder,
     },
   };
 
