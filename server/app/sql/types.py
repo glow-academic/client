@@ -7755,6 +7755,64 @@ class GetRubricNewApiResponse(BaseModel):
 
 
 
+# Generated from: get_rubric_run_context_and_create_run
+
+class GetRubricRunContextAndCreateRunSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+    rubric_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+            self.rubric_agent_id,
+        )
+
+class GetRubricRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+
+class GetRubricRunContextAndCreateRunApiRequest(BaseModel):
+
+    department_id: UUID
+    rubric_agent_id: UUID
+
+class GetRubricRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+
+
+
 # Generated from: get_rubrics_list
 
 class GetRubricsListSqlParams(BaseModel):
@@ -7926,6 +7984,47 @@ class UpdateRubricApiResponse(BaseModel):
     rubric_id: UUID | None = None
     rubric_name: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: update_standard_descriptions
+
+class IUpdateStandardDescriptionsV3Description(BaseModel):
+
+    standard_group_id: UUID | None
+    standard_id: UUID | None
+    description: str | None
+
+class UpdateStandardDescriptionsSqlParams(BaseModel):
+
+    rubric_id: UUID
+    descriptions: list[IUpdateStandardDescriptionsV3Description]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert descriptions composite array to tuples for asyncpg
+        descriptions_tuples = [
+            (conn.standard_group_id, conn.standard_id, conn.description)
+            for conn in self.descriptions
+        ]
+        return (
+            self.rubric_id,
+            descriptions_tuples,
+            self.profile_id,
+        )
+
+class UpdateStandardDescriptionsSqlRow(BaseModel):
+
+    updated_count: int | None = None
+
+class UpdateStandardDescriptionsApiRequest(BaseModel):
+
+    rubric_id: UUID
+    descriptions: list[IUpdateStandardDescriptionsV3Description]
+
+class UpdateStandardDescriptionsApiResponse(BaseModel):
+
+    updated_count: int | None = None
 
 
 
@@ -11770,6 +11869,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricNewApiRequest",
         "GetRubricNewApiResponse",
     ),
+    "app/sql/v3/rubrics/get_rubric_run_context_and_create_run_complete.sql": (
+        "GetRubricRunContextAndCreateRunSqlParams",
+        "GetRubricRunContextAndCreateRunSqlRow",
+        "GetRubricRunContextAndCreateRunApiRequest",
+        "GetRubricRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/rubrics/get_rubrics_list_complete.sql": (
         "GetRubricsListSqlParams",
         "GetRubricsListSqlRow",
@@ -11781,6 +11886,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateRubricSqlRow",
         "UpdateRubricApiRequest",
         "UpdateRubricApiResponse",
+    ),
+    "app/sql/v3/rubrics/update_standard_descriptions_complete.sql": (
+        "UpdateStandardDescriptionsSqlParams",
+        "UpdateStandardDescriptionsSqlRow",
+        "UpdateStandardDescriptionsApiRequest",
+        "UpdateStandardDescriptionsApiResponse",
     ),
     "app/sql/v3/scenarios/create_scenario_complete.sql": (
         "CreateScenarioSqlParams",
@@ -12571,12 +12682,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/get_rubric_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/rubrics/get_rubrics_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/rubrics/update_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/update_standard_descriptions_complete.sql"]
     ) -> SqlString: ...
 
     @overload

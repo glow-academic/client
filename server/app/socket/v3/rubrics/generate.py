@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from agents import Runner, function_tool, gen_trace_id, trace
 from agents.items import TResponseInputItem
@@ -10,16 +10,24 @@ from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
 from app.main import get_internal_sio, get_pool, sio
+from app.sql.types import (GetRubricRunContextAndCreateRunApiRequest,
+                           GetRubricRunContextAndCreateRunSqlParams,
+                           GetRubricRunContextAndCreateRunSqlRow,
+                           IUpdateStandardDescriptionsV3Description,
+                           UpdateStandardDescriptionsApiRequest)
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/rubrics/get_rubric_run_context_and_create_run_complete.sql"
 
 
 # Pydantic models for server-to-client events
@@ -126,15 +134,27 @@ async def _rubric_generate_impl(sid: str, data: GenerateRubricPayload) -> None:
 
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            sql_query = load_sql(
-                "app/sql/v3/agents/get_rubric_run_context_and_create_run.sql"
-            )
+            if not profile_id:
+                await rubric_generation_error(
+                    RubricGenerationErrorPayload(
+                        success=False,
+                        message="Profile ID is required",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
+
             try:
-                context_row = await conn.fetchrow(
-                    sql_query,
-                    str(department_id),
-                    str(profile_id) if profile_id else None,
-                    str(rubric_agent_id),
+                # Use execute_sql_typed() - auto-detects function
+                params = GetRubricRunContextAndCreateRunSqlParams(
+                    department_id=department_id,
+                    profile_id=profile_id,
+                    rubric_agent_id=rubric_agent_id,
+                )
+                result = cast(
+                    GetRubricRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
@@ -175,7 +195,7 @@ async def _rubric_generate_impl(sid: str, data: GenerateRubricPayload) -> None:
                 )
                 return
 
-            if not context_row:
+            if not result or not result.run_id:
                 await rubric_generation_error(
                     RubricGenerationErrorPayload(
                         success=False,
@@ -186,25 +206,23 @@ async def _rubric_generate_impl(sid: str, data: GenerateRubricPayload) -> None:
                 )
                 return
 
-            # Build context dict
+            # Build context dict from strongly typed result
             context = {
-                "agent_id": context_row["agent_id"],
-                "agent_name": context_row["agent_name"],
-                "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"])
-                if context_row["temperature"] is not None
-                else 0.0,
-                "reasoning": context_row["reasoning"],
-                "model_id": context_row["model_id"],
-                "model_name": context_row["model_name"],
-                "provider": context_row["provider"],
-                "base_url": context_row["base_url"],
-                "api_key": context_row["api_key"],
-                "profile_id": context_row["profile_id"],
+                "agent_id": result.agent_id,
+                "agent_name": result.agent_name,
+                "system_prompt": result.system_prompt or "",
+                "temperature": float(result.temperature) if result.temperature is not None else 0.0,
+                "reasoning": result.reasoning,
+                "model_id": result.model_id,
+                "model_name": result.model_name,
+                "provider": result.provider or "",
+                "base_url": result.base_url or "",
+                "api_key": result.api_key,
+                "profile_id": result.profile_id,
             }
 
             # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(context_row["run_id"])
+            model_run_id = uuid.UUID(result.run_id)
 
             # Build rubric structure context for the agent
             rubric_context = {
@@ -234,15 +252,38 @@ async def _rubric_generate_impl(sid: str, data: GenerateRubricPayload) -> None:
                     Confirmation message
                 """
                 # Emit to internal bus for description updates
-                await internal_sio.emit(
-                    "rubric_tool_standard_group_descriptions",
-                    {
-                        "sid": sid,
-                        "trace_id": trace_id,
-                        "rubric_id": str(rubric_id) if rubric_id else None,
-                        "descriptions": descriptions,
-                    },
-                )
+                # ✅ Use target event's ApiRequest type for type-safe event chaining
+                # Convert descriptions to composite type objects
+                descriptions_list = [
+                    IUpdateStandardDescriptionsV3Description(
+                        standard_group_id=uuid.UUID(desc["standard_group_id"]) if isinstance(desc["standard_group_id"], str) else desc["standard_group_id"],
+                        standard_id=uuid.UUID(desc["standard_id"]) if isinstance(desc["standard_id"], str) else desc["standard_id"],
+                        description=desc["description"]
+                    )
+                    for desc in descriptions
+                ]
+                
+                # Only emit if rubric_id is provided (required for UpdateStandardDescriptionsApiRequest)
+                if rubric_id:
+                    payload = UpdateStandardDescriptionsApiRequest(
+                        rubric_id=rubric_id,
+                        descriptions=descriptions_list,
+                    )
+                    
+                    # Emit with strongly typed payload (serialize for socket.io)
+                    await internal_sio.emit(
+                        "rubric_tool_standard_group_descriptions",
+                        {
+                            "sid": sid,
+                            "profile_id": str(profile_id),
+                            "trace_id": trace_id,
+                            **payload.model_dump(mode='json'),  # UUIDs → strings for socket.io
+                        },
+                    )
+                else:
+                    logger.warning(
+                        f"[generate_rubric] Skipping standard group descriptions update - no rubric_id provided (trace_id={trace_id})"
+                    )
 
                 logger.info(
                     f"[generate_rubric] Emitted standard group descriptions to internal bus: "
@@ -297,7 +338,7 @@ Generate descriptions for ALL combinations of standard groups and standards."""
             ]
 
             # Rate limit validation and run creation are now handled in SQL
-            # (get_rubric_run_context_and_create_run.sql) - both happen atomically
+            # (get_rubric_run_context_and_create_run_complete.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
             # Run rubric generation with tracing

@@ -16242,7 +16242,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StandardGroupDescriptionsToolPayload"
+                "$ref": "#/components/schemas/UpdateStandardDescriptionsApiRequest"
               }
             }
           },
@@ -45332,6 +45332,52 @@
           "key_id"
         ],
         "title": "IUpdateSettingsV3ProviderKey"
+      },
+      "IUpdateStandardDescriptionsV3Description": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "standard_id",
+          "description"
+        ],
+        "title": "IUpdateStandardDescriptionsV3Description"
       },
       "IUpsertStaffV3Profile": {
         "properties": {
@@ -77154,34 +77200,6 @@
         "title": "StandardGroupDescriptionsToolErrorPayload",
         "description": "Response indicating an error occurred in standard group descriptions tool."
       },
-      "StandardGroupDescriptionsToolPayload": {
-        "properties": {
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "descriptions": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Descriptions"
-          }
-        },
-        "type": "object",
-        "required": [
-          "trace_id",
-          "rubric_id",
-          "descriptions"
-        ],
-        "title": "StandardGroupDescriptionsToolPayload",
-        "description": "Request to update standard group descriptions from rubric generation tool."
-      },
       "StandardMappingItem": {
         "properties": {
           "name": {
@@ -80100,6 +80118,28 @@
         },
         "type": "object",
         "title": "UpdateSimulationApiResponse"
+      },
+      "UpdateStandardDescriptionsApiRequest": {
+        "properties": {
+          "rubric_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rubric Id"
+          },
+          "descriptions": {
+            "items": {
+              "$ref": "#/components/schemas/IUpdateStandardDescriptionsV3Description"
+            },
+            "type": "array",
+            "title": "Descriptions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "descriptions"
+        ],
+        "title": "UpdateStandardDescriptionsApiRequest"
       },
       "UpsertStaffApiRequest": {
         "properties": {

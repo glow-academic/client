@@ -12025,6 +12025,15 @@ export interface components {
             /** Key Id */
             key_id: string | null;
         };
+        /** IUpdateStandardDescriptionsV3Description */
+        IUpdateStandardDescriptionsV3Description: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Standard Id */
+            standard_id: string | null;
+            /** Description */
+            description: string | null;
+        };
         /** IUpsertStaffV3Profile */
         IUpsertStaffV3Profile: {
             /** First Name */
@@ -18872,20 +18881,6 @@ export interface components {
             trace_id: string;
         };
         /**
-         * StandardGroupDescriptionsToolPayload
-         * @description Request to update standard group descriptions from rubric generation tool.
-         */
-        StandardGroupDescriptionsToolPayload: {
-            /** Trace Id */
-            trace_id: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Descriptions */
-            descriptions: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
          * StandardMappingItem
          * @description Standard mapping item with points.
          */
@@ -19771,6 +19766,16 @@ export interface components {
         UpdateSimulationApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** UpdateStandardDescriptionsApiRequest */
+        UpdateStandardDescriptionsApiRequest: {
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /** Descriptions */
+            descriptions: components["schemas"]["IUpdateStandardDescriptionsV3Description"][];
         };
         /** UpsertStaffApiRequest */
         UpsertStaffApiRequest: {
@@ -28425,7 +28430,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StandardGroupDescriptionsToolPayload"];
+                "application/json": components["schemas"]["UpdateStandardDescriptionsApiRequest"];
             };
         };
         responses: {

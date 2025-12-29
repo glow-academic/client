@@ -1,15 +1,18 @@
 """Handler for rubric_tool_standard_group_descriptions WebSocket event."""
 
 import uuid
-from typing import Any
-
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from typing import Any, cast
 
 from app.main import get_internal_sio, get_pool, sio
+from app.sql.types import (IUpdateStandardDescriptionsV3Description,
+                           UpdateStandardDescriptionsApiRequest,
+                           UpdateStandardDescriptionsSqlParams,
+                           UpdateStandardDescriptionsSqlRow)
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -17,15 +20,8 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-
-class StandardGroupDescriptionsToolPayload(BaseModel):
-    """Request to update standard group descriptions from rubric generation tool."""
-
-    trace_id: str
-    rubric_id: str
-    descriptions: list[
-        dict[str, Any]
-    ]  # Array of {standard_group_id, standard_id, description}
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/rubrics/update_standard_descriptions_complete.sql"
 
 
 class StandardGroupDescriptionsToolCompletePayload(BaseModel):
@@ -78,15 +74,114 @@ async def standard_group_descriptions_tool_error(
 
 
 async def _rubric_tool_standard_group_descriptions_impl(
-    sid: str, data: dict[str, Any]
+    sid: str, data: UpdateStandardDescriptionsApiRequest, profile_id: uuid.UUID, trace_id: str | None = None
 ) -> None:
     """Internal implementation for standard group descriptions update."""
     logger.info(
         f"[rubric_tool_standard_group_descriptions] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
+        f"rubric_id={data.rubric_id}, trace_id={trace_id or 'unknown'}"
     )
+
+    pool = get_pool()
+
+    if not pool:
+        await standard_group_descriptions_tool_error(
+            StandardGroupDescriptionsToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id or "unknown",
+            ),
+            room=sid,
+        )
+        return
+
     try:
-        validated = StandardGroupDescriptionsToolPayload(**data)
+        async with pool.acquire() as conn:
+            # Use execute_sql_typed() - auto-detects function
+            # data.descriptions is already a list[IUpdateStandardDescriptionsV3Description] after validation
+            params = UpdateStandardDescriptionsSqlParams(
+                rubric_id=data.rubric_id,
+                descriptions=data.descriptions,
+                profile_id=profile_id
+            )
+            result = cast(
+                UpdateStandardDescriptionsSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or result.updated_count is None:
+                await standard_group_descriptions_tool_error(
+                    StandardGroupDescriptionsToolErrorPayload(
+                        success=False,
+                        message="Failed to update standard descriptions",
+                        trace_id=trace_id or "unknown",
+                    ),
+                    room=sid,
+                )
+                return
+
+            updated_count = result.updated_count
+
+            logger.info(
+                f"✓ Updated {updated_count} standard descriptions "
+                f"(rubric_id={data.rubric_id}, trace_id={trace_id})"
+            )
+
+            # Invalidate rubrics cache
+            await invalidate_tags(["rubrics", f"rubric:{str(data.rubric_id)}"])
+
+            await standard_group_descriptions_tool_complete(
+                StandardGroupDescriptionsToolCompletePayload(
+                    success=True,
+                    rubric_id=str(data.rubric_id),
+                    updated_count=updated_count,
+                    trace_id=trace_id or "unknown",
+                    message=f"Updated {updated_count} standard descriptions successfully",
+                    descriptions=[desc.model_dump() for desc in data.descriptions],
+                ),
+                room=sid,
+            )
+
+    except Exception as e:
+        logger.error(
+            f"Error in rubric_tool_standard_group_descriptions for {sid}: {str(e)}",
+            exc_info=True,
+        )
+        await standard_group_descriptions_tool_error(
+            StandardGroupDescriptionsToolErrorPayload(
+                success=False, message=str(e), trace_id=trace_id or "unknown"
+            ),
+            room=sid,
+        )
+
+
+@sio.event  # type: ignore
+async def rubric_tool_standard_group_descriptions(
+    sid: str, data: dict[str, Any]
+) -> None:
+    """Handle standard group descriptions update event from rubric generation tool (client-to-server)."""
+    try:
+        # Extract profile_id and trace_id before validation (not in ApiRequest)
+        profile_id_str = data.get("profile_id")
+        trace_id = data.get("trace_id")
+        if not profile_id_str:
+            logger.error(
+                f"Missing profile_id in rubric_tool_standard_group_descriptions for {sid}"
+            )
+            await standard_group_descriptions_tool_error(
+                StandardGroupDescriptionsToolErrorPayload(
+                    success=False,
+                    message="Missing profile_id in payload",
+                    trace_id=trace_id or "unknown",
+                ),
+                room=sid,
+            )
+            return
+        
+        profile_id = uuid.UUID(profile_id_str)
+        payload_dict = {k: v for k, v in data.items() if k not in ("profile_id", "trace_id")}
+        validated = UpdateStandardDescriptionsApiRequest(**payload_dict)
+        await _rubric_tool_standard_group_descriptions_impl(sid, validated, profile_id, trace_id)
     except ValidationError as e:
         logger.error(
             f"Validation error in rubric_tool_standard_group_descriptions for {sid}: {e}"
@@ -99,86 +194,6 @@ async def _rubric_tool_standard_group_descriptions_impl(
             ),
             room=sid,
         )
-        return
-
-    trace_id = validated.trace_id
-    rubric_id_uuid = uuid.UUID(validated.rubric_id)
-    pool = get_pool()
-
-    if not pool:
-        await standard_group_descriptions_tool_error(
-            StandardGroupDescriptionsToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
-
-    try:
-        async with pool.acquire() as conn:
-            # Convert descriptions list to JSONB array
-            import json
-
-            descriptions_json = json.dumps(validated.descriptions)
-
-            # Update standard descriptions using SQL file
-            sql = load_sql("app/sql/v3/rubrics/update_standard_descriptions.sql")
-            result = await conn.fetchrow(sql, str(rubric_id_uuid), descriptions_json)
-
-            if not result:
-                await standard_group_descriptions_tool_error(
-                    StandardGroupDescriptionsToolErrorPayload(
-                        success=False,
-                        message="Failed to update standard descriptions",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
-                )
-                return
-
-            updated_count = result["updated_count"]
-
-            logger.info(
-                f"✓ Updated {updated_count} standard descriptions "
-                f"(rubric_id={rubric_id_uuid}, trace_id={trace_id})"
-            )
-
-            # Invalidate rubrics cache
-            await invalidate_tags(["rubrics", f"rubric:{validated.rubric_id}"])
-
-            await standard_group_descriptions_tool_complete(
-                StandardGroupDescriptionsToolCompletePayload(
-                    success=True,
-                    rubric_id=validated.rubric_id,
-                    updated_count=updated_count,
-                    trace_id=trace_id,
-                    message=f"Updated {updated_count} standard descriptions successfully",
-                    descriptions=validated.descriptions,
-                ),
-                room=sid,
-            )
-
-    except Exception as e:
-        logger.error(
-            f"Error in rubric_tool_standard_group_descriptions for {sid}: {str(e)}",
-            exc_info=True,
-        )
-        await standard_group_descriptions_tool_error(
-            StandardGroupDescriptionsToolErrorPayload(
-                success=False, message=str(e), trace_id=trace_id
-            ),
-            room=sid,
-        )
-
-
-@sio.event  # type: ignore
-async def rubric_tool_standard_group_descriptions(
-    sid: str, data: dict[str, Any]
-) -> None:
-    """Handle standard group descriptions update event from rubric generation tool (client-to-server)."""
-    await _rubric_tool_standard_group_descriptions_impl(sid, data)
 
 
 @internal_sio.on("rubric_tool_standard_group_descriptions")
@@ -192,15 +207,49 @@ async def rubric_tool_standard_group_descriptions_internal(
             "[rubric_tool_standard_group_descriptions_internal] Missing 'sid' in payload"
         )
         return
-    # Remove sid from data before passing to implementation
-    payload = {k: v for k, v in data.items() if k != "sid"}
-    await _rubric_tool_standard_group_descriptions_impl(sid, payload)
+    
+    # Extract sid, profile_id, and trace_id before validation (not in ApiRequest)
+    profile_id_str = data.get("profile_id")
+    trace_id = data.get("trace_id")
+    if not profile_id_str:
+        logger.error(
+            "[rubric_tool_standard_group_descriptions_internal] Missing 'profile_id' in payload"
+        )
+        await standard_group_descriptions_tool_error(
+            StandardGroupDescriptionsToolErrorPayload(
+                success=False,
+                message="Missing profile_id in payload",
+                trace_id=trace_id or "unknown",
+            ),
+            room=sid,
+        )
+        return
+    
+    profile_id = uuid.UUID(profile_id_str)
+    payload_dict = {k: v for k, v in data.items() if k not in ("sid", "profile_id", "trace_id")}
+    
+    try:
+        # Validate with same ApiRequest type used by emitter
+        validated = UpdateStandardDescriptionsApiRequest(**payload_dict)
+        await _rubric_tool_standard_group_descriptions_impl(sid, validated, profile_id, trace_id)
+    except ValidationError as e:
+        logger.error(
+            f"Validation error in rubric_tool_standard_group_descriptions_internal: {e}"
+        )
+        await standard_group_descriptions_tool_error(
+            StandardGroupDescriptionsToolErrorPayload(
+                success=False,
+                message=f"Invalid payload: {str(e)}",
+                trace_id=trace_id or "unknown",
+            ),
+            room=sid,
+        )
 
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/standard_group_descriptions", response_model=dict[str, bool])
 async def rubric_tool_standard_group_descriptions_api(
-    request: StandardGroupDescriptionsToolPayload,
+    request: UpdateStandardDescriptionsApiRequest,
 ) -> dict[str, bool]:
     """Client-to-server event: Update standard group descriptions from rubric generation tool."""
     return {"success": True}
