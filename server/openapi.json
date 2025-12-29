@@ -7182,7 +7182,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LeaderboardBundleFilters"
+                "$ref": "#/components/schemas/GetLeaderboardBundleApiRequest"
               }
             }
           }
@@ -7193,7 +7193,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LeaderboardBundleResponse"
+                  "$ref": "#/components/schemas/GetLeaderboardBundleApiResponse"
                 }
               }
             }
@@ -12244,7 +12244,7 @@
           "practice"
         ],
         "summary": "Get Practice Overview",
-        "description": "Get practice overview data with history and all entity mappings.\n\nPractice uses simplified filters: only profileId and departmentIds.\nNo cohort/role/date filtering for personal practice.",
+        "description": "Get practice overview data with items and all entity mappings.\n\nPractice uses simplified filters: only profileId and departmentIds.\nNo cohort/role/date filtering for personal practice.\nNote: History is not included in overview - use /practice/history endpoint separately.",
         "operationId": "get_practice_overview_api_v3_practice_overview_post",
         "parameters": [
           {
@@ -12285,7 +12285,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PracticeFilters"
+                "$ref": "#/components/schemas/GetPracticeOverviewApiRequest"
               }
             }
           }
@@ -12296,7 +12296,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PracticeOverviewResponse"
+                  "$ref": "#/components/schemas/GetPracticeOverviewApiResponse"
                 }
               }
             }
@@ -12366,7 +12366,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PracticeHistoryFilters"
+                "$ref": "#/components/schemas/GetPracticeHistoryApiRequest"
               }
             }
           }
@@ -12377,7 +12377,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PracticeHistoryResponse"
+                  "$ref": "#/components/schemas/GetPracticeHistoryApiResponse"
                 }
               }
             }
@@ -26815,25 +26815,6 @@
         "type": "object",
         "title": "DeleteSimulationApiResponse"
       },
-      "DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
       "DocumentTemplateGenerationCompletePayload": {
         "properties": {
           "success": {
@@ -29072,35 +29053,6 @@
         ],
         "title": "FeedbackToolPayload",
         "description": "Request to create feedback for a standard group."
-      },
-      "FieldMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "type": "string",
-            "title": "Parameter Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name"
-        ],
-        "title": "FieldMappingItem",
-        "description": "Field mapping item with parameter context."
       },
       "FilterOption": {
         "properties": {
@@ -35334,6 +35286,163 @@
         "type": "object",
         "title": "GetKeysListApiResponse"
       },
+      "GetLeaderboardBundleApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetLeaderboardBundleApiRequest"
+      },
+      "GetLeaderboardBundleApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetLeaderboardBundleV3Row"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetLeaderboardBundleV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          },
+          "scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetLeaderboardBundleV3Scenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios"
+          },
+          "primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Color"
+          },
+          "accent_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accent Color"
+          }
+        },
+        "type": "object",
+        "title": "GetLeaderboardBundleApiResponse"
+      },
       "GetLoginDataApiRequest": {
         "properties": {
           "department_id": {
@@ -37336,6 +37445,446 @@
         },
         "type": "object",
         "title": "GetPersonasListApiResponse"
+      },
+      "GetPracticeHistoryApiRequest": {
+        "properties": {
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 20
+          },
+          "page_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetPracticeHistoryApiRequest"
+      },
+      "GetPracticeHistoryApiResponse": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeHistoryV3Attempt"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pages"
+          },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeHistoryV3ProfileOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeHistoryV3SimulationOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeHistoryV3ScenarioOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          }
+        },
+        "type": "object",
+        "title": "GetPracticeHistoryApiResponse"
+      },
+      "GetPracticeOverviewApiRequest": {
+        "properties": {
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetPracticeOverviewApiRequest"
+      },
+      "GetPracticeOverviewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3PracticeSimulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3Scenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeOverviewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetPracticeOverviewApiResponse"
       },
       "GetProfileByEmailApiRequest": {
         "properties": {
@@ -45729,272 +46278,6 @@
         "title": "InputTokenDetails",
         "description": "Input token details from Realtime API usage."
       },
-      "LeaderboardBundleFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulationFilters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SimulationFilter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationfilters"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "startDate",
-          "endDate"
-        ],
-        "title": "LeaderboardBundleFilters",
-        "description": "Leaderboard bundle filter request schema - for general leaderboard (multi-cohort or all cohorts)."
-      },
-      "LeaderboardBundleResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/LeaderboardRow"
-            },
-            "type": "array",
-            "title": "Data"
-          },
-          "simulation_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__leaderboard__bundle__SimulationMappingItem"
-            },
-            "type": "object",
-            "title": "Simulation Mapping",
-            "default": {}
-          },
-          "scenario_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__leaderboard__bundle__ScenarioMappingItem"
-            },
-            "type": "object",
-            "title": "Scenario Mapping",
-            "default": {}
-          },
-          "primary_color": {
-            "type": "string",
-            "title": "Primary Color",
-            "default": "#171717"
-          },
-          "accent_color": {
-            "type": "string",
-            "title": "Accent Color",
-            "default": "#f5f5f5"
-          },
-          "gradient_start_color": {
-            "type": "string",
-            "title": "Gradient Start Color",
-            "default": "rgba(59, 130, 246, 0.8)"
-          },
-          "gradient_end_color": {
-            "type": "string",
-            "title": "Gradient End Color",
-            "default": "rgba(59, 130, 246, 0.8)"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "LeaderboardBundleResponse",
-        "description": "Leaderboard bundle response."
-      },
-      "LeaderboardMetric": {
-        "properties": {
-          "hasData": {
-            "type": "boolean",
-            "title": "Hasdata"
-          },
-          "method": {
-            "type": "string",
-            "title": "Method"
-          },
-          "currentValue": {
-            "type": "integer",
-            "title": "Currentvalue"
-          },
-          "keyField": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Keyfield"
-          },
-          "trendData": {
-            "items": {},
-            "type": "array",
-            "title": "Trenddata"
-          },
-          "dataPoints": {
-            "items": {},
-            "type": "array",
-            "title": "Datapoints"
-          },
-          "hover": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Hover"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hasData",
-          "method",
-          "currentValue",
-          "trendData",
-          "dataPoints",
-          "hover"
-        ],
-        "title": "LeaderboardMetric",
-        "description": "Leaderboard metric."
-      },
-      "LeaderboardMetrics": {
-        "properties": {
-          "totalAttempts": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          },
-          "highestScoreAvg": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          },
-          "messagesPerSession": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          },
-          "personaResponseSeconds": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          },
-          "timeSpentMinutes": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          },
-          "improvementRatePerDay": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          },
-          "perfectScoreCount": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          },
-          "quickestPassMinutes": {
-            "$ref": "#/components/schemas/LeaderboardMetric"
-          }
-        },
-        "type": "object",
-        "required": [
-          "totalAttempts",
-          "highestScoreAvg",
-          "messagesPerSession",
-          "personaResponseSeconds",
-          "timeSpentMinutes",
-          "improvementRatePerDay",
-          "perfectScoreCount",
-          "quickestPassMinutes"
-        ],
-        "title": "LeaderboardMetrics",
-        "description": "Leaderboard metrics."
-      },
-      "LeaderboardRow": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "firstName": {
-            "type": "string",
-            "title": "Firstname"
-          },
-          "lastName": {
-            "type": "string",
-            "title": "Lastname"
-          },
-          "simulationIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Simulationids",
-            "default": []
-          },
-          "scenarioIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenarioids",
-            "default": []
-          },
-          "metrics": {
-            "$ref": "#/components/schemas/LeaderboardMetrics"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId",
-          "firstName",
-          "lastName",
-          "metrics"
-        ],
-        "title": "LeaderboardRow",
-        "description": "Leaderboard row."
-      },
       "LeaveCohortApiRequest": {
         "properties": {
           "cohort_id": {
@@ -46878,40 +47161,6 @@
         "title": "OutputTokenDetails",
         "description": "Output token details from Realtime API usage."
       },
-      "ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "numerical",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "ParameterMappingItem",
-        "description": "Parameter mapping item."
-      },
       "PersonaItem": {
         "properties": {
           "id": {
@@ -46951,46 +47200,6 @@
           "name"
         ],
         "title": "PersonaItem"
-      },
-      "PersonaMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "image_model": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Model"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "color",
-          "icon"
-        ],
-        "title": "PersonaMappingItem",
-        "description": "Persona mapping item with custom color and icon fields."
       },
       "PersonaTool": {
         "properties": {
@@ -47041,569 +47250,6 @@
         ],
         "title": "PersonaToolContext",
         "description": "Context for a persona tool call."
-      },
-      "PracticeFilters": {
-        "properties": {
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          }
-        },
-        "type": "object",
-        "title": "PracticeFilters",
-        "description": "Practice filter request schema - simplified to profile-only.\n\ndepartmentIds filters which practice simulations are shown:\n- If empty \u2192 show all simulations\n- If provided \u2192 show simulations matching those departments OR simulations with no department associations"
-      },
-      "PracticeHistoryFilters": {
-        "properties": {
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page",
-            "default": 0
-          },
-          "pageSize": {
-            "type": "integer",
-            "title": "Pagesize",
-            "default": 20
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "profileIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileids"
-          },
-          "simulationIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationids"
-          },
-          "scenarioIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarioids"
-          },
-          "infiniteMode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinitemode"
-          },
-          "sortBy": {
-            "type": "string",
-            "title": "Sortby",
-            "default": "date"
-          },
-          "sortOrder": {
-            "type": "string",
-            "title": "Sortorder",
-            "default": "desc"
-          }
-        },
-        "type": "object",
-        "title": "PracticeHistoryFilters",
-        "description": "Practice history filter request schema."
-      },
-      "PracticeHistoryResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__practice__history__AttemptHistoryRow"
-            },
-            "type": "array",
-            "title": "Data"
-          },
-          "totalCount": {
-            "type": "integer",
-            "title": "Totalcount"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
-          },
-          "totalPages": {
-            "type": "integer",
-            "title": "Totalpages"
-          },
-          "profileOptions": {
-            "items": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "integer"
-                  }
-                ]
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Profileoptions"
-          },
-          "simulationOptions": {
-            "items": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "integer"
-                  }
-                ]
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Simulationoptions"
-          },
-          "scenarioOptions": {
-            "items": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "integer"
-                  }
-                ]
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Scenariooptions"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data",
-          "totalCount",
-          "page",
-          "pageSize",
-          "totalPages",
-          "profileOptions",
-          "simulationOptions",
-          "scenarioOptions"
-        ],
-        "title": "PracticeHistoryResponse",
-        "description": "Practice history paginated response."
-      },
-      "PracticeOverviewResponse": {
-        "properties": {
-          "mode": {
-            "type": "string",
-            "const": "practice",
-            "title": "Mode"
-          },
-          "hasData": {
-            "type": "boolean",
-            "title": "Hasdata"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/PracticeSimulationItem"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "history": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__practice__overview__AttemptHistoryRow"
-            },
-            "type": "array",
-            "title": "History"
-          },
-          "standard_groups_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__practice__overview__StandardGroupMappingItem"
-            },
-            "type": "object",
-            "title": "Standard Groups Mapping"
-          },
-          "standards_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/StandardMappingItem"
-            },
-            "type": "object",
-            "title": "Standards Mapping"
-          },
-          "simulation_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__practice__overview__SimulationMappingItem"
-            },
-            "type": "object",
-            "title": "Simulation Mapping"
-          },
-          "scenario_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__practice__overview__ScenarioMappingItem"
-            },
-            "type": "object",
-            "title": "Scenario Mapping"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "field_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
-            },
-            "type": "object",
-            "title": "Field Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "mode",
-          "hasData",
-          "items",
-          "history",
-          "standard_groups_mapping",
-          "standards_mapping",
-          "simulation_mapping",
-          "scenario_mapping",
-          "persona_mapping",
-          "parameter_mapping",
-          "field_mapping",
-          "department_mapping",
-          "valid_department_ids"
-        ],
-        "title": "PracticeOverviewResponse",
-        "description": "Practice overview response with mappings and history."
-      },
-      "PracticeSimulationItem": {
-        "properties": {
-          "viewMode": {
-            "type": "string",
-            "const": "practice",
-            "title": "Viewmode"
-          },
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "simulationTitle": {
-            "type": "string",
-            "title": "Simulationtitle"
-          },
-          "simulationDescription": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationdescription"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "numSessions": {
-            "type": "integer",
-            "title": "Numsessions"
-          },
-          "highestScore": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Highestscore"
-          },
-          "standard_groups": {
-            "additionalProperties": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "type": "object",
-            "title": "Standard Groups"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "hasPassed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Haspassed"
-          },
-          "passRate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passrate"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "not-started",
-                  "in-progress",
-                  "passed"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
-          },
-          "completionPct": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completionpct"
-          },
-          "passedCount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passedcount"
-          },
-          "inProgressCount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Inprogresscount"
-          },
-          "notStartedCount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notstartedcount"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "cohortName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortname"
-          },
-          "updatedAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updatedat"
-          },
-          "lastActivityTs": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastactivityts"
-          },
-          "hasActivity": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hasactivity"
-          }
-        },
-        "type": "object",
-        "required": [
-          "viewMode",
-          "id",
-          "simulationTitle",
-          "simulationName",
-          "numSessions",
-          "standard_groups"
-        ],
-        "title": "PracticeSimulationItem",
-        "description": "Practice simulation item."
       },
       "PreviousChat": {
         "properties": {
@@ -58819,6 +58465,405 @@
         ],
         "title": "QGetKeysListV3ModelOption"
       },
+      "QGetLeaderboardBundleV3Metric": {
+        "properties": {
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "key_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Field"
+          },
+          "trend_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data"
+          },
+          "data_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Points"
+          },
+          "hover": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hover"
+          }
+        },
+        "type": "object",
+        "required": [
+          "has_data",
+          "method",
+          "current_value",
+          "key_field",
+          "trend_data",
+          "data_points",
+          "hover"
+        ],
+        "title": "QGetLeaderboardBundleV3Metric"
+      },
+      "QGetLeaderboardBundleV3Metrics": {
+        "properties": {
+          "total_attempts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "highest_score_avg": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages_per_session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "persona_response_seconds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "time_spent_minutes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "improvement_rate_per_day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "perfect_score_count": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quickest_pass_minutes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_attempts",
+          "highest_score_avg",
+          "messages_per_session",
+          "persona_response_seconds",
+          "time_spent_minutes",
+          "improvement_rate_per_day",
+          "perfect_score_count",
+          "quickest_pass_minutes"
+        ],
+        "title": "QGetLeaderboardBundleV3Metrics"
+      },
+      "QGetLeaderboardBundleV3Row": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLeaderboardBundleV3Metrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "first_name",
+          "last_name",
+          "simulation_ids",
+          "scenario_ids",
+          "metrics"
+        ],
+        "title": "QGetLeaderboardBundleV3Row"
+      },
+      "QGetLeaderboardBundleV3Scenario": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetLeaderboardBundleV3Scenario"
+      },
+      "QGetLeaderboardBundleV3Simulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "time_limit",
+          "department_ids"
+        ],
+        "title": "QGetLeaderboardBundleV3Simulation"
+      },
       "QGetLoginDataV3Department": {
         "properties": {
           "id": {
@@ -60879,6 +60924,1267 @@
           "video_parameter"
         ],
         "title": "QGetPersonaNewV3Parameter"
+      },
+      "QGetPracticeHistoryV3Attempt": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "num_scenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios"
+          },
+          "num_scenarios_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios Completed"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "persona_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Names"
+          },
+          "persona_colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Colors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "score_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Status"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Titles"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "show_view": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show View"
+          },
+          "show_continue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Continue"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names"
+          },
+          "practice_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "date",
+          "profile_id",
+          "profile_name",
+          "simulation_name",
+          "num_scenarios",
+          "num_scenarios_completed",
+          "infinite_mode",
+          "time_limit",
+          "persona_names",
+          "persona_colors",
+          "score",
+          "score_status",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "is_archived",
+          "show_view",
+          "show_continue",
+          "practice_simulation",
+          "pass_pct",
+          "department_ids",
+          "cohort_names",
+          "practice_scenario_id"
+        ],
+        "title": "QGetPracticeHistoryV3Attempt"
+      },
+      "QGetPracticeHistoryV3ProfileOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "QGetPracticeHistoryV3ProfileOption"
+      },
+      "QGetPracticeHistoryV3ScenarioOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "QGetPracticeHistoryV3ScenarioOption"
+      },
+      "QGetPracticeHistoryV3SimulationOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "QGetPracticeHistoryV3SimulationOption"
+      },
+      "QGetPracticeOverviewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetPracticeOverviewV3Department"
+      },
+      "QGetPracticeOverviewV3Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "QGetPracticeOverviewV3Field"
+      },
+      "QGetPracticeOverviewV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "document_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "QGetPracticeOverviewV3Parameter"
+      },
+      "QGetPracticeOverviewV3Persona": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "QGetPracticeOverviewV3Persona"
+      },
+      "QGetPracticeOverviewV3PracticeSimulation": {
+        "properties": {
+          "view_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Mode"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "simulation_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Title"
+          },
+          "simulation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Description"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "num_sessions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Sessions"
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "has_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Passed"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "completion_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Pct"
+          },
+          "passed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Count"
+          },
+          "in_progress_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Progress Count"
+          },
+          "not_started_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Started Count"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "cohort_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Name"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "last_activity_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity Ts"
+          },
+          "has_activity": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Activity"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "view_mode",
+          "simulation_id",
+          "simulation_title",
+          "simulation_description",
+          "simulation_name",
+          "time_limit",
+          "num_sessions",
+          "highest_score",
+          "rubric_id",
+          "color",
+          "icon",
+          "has_passed",
+          "pass_rate",
+          "status",
+          "completion_pct",
+          "passed_count",
+          "in_progress_count",
+          "not_started_count",
+          "pass_pct",
+          "cohort_name",
+          "updated_at",
+          "last_activity_ts",
+          "has_activity",
+          "standard_groups"
+        ],
+        "title": "QGetPracticeOverviewV3PracticeSimulation"
+      },
+      "QGetPracticeOverviewV3Scenario": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "name",
+          "description",
+          "persona_ids"
+        ],
+        "title": "QGetPracticeOverviewV3Scenario"
+      },
+      "QGetPracticeOverviewV3Simulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "time_limit",
+          "department_ids"
+        ],
+        "title": "QGetPracticeOverviewV3Simulation"
+      },
+      "QGetPracticeOverviewV3Standard": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetPracticeOverviewV3Standard"
+      },
+      "QGetPracticeOverviewV3StandardGroup": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "pass_points"
+        ],
+        "title": "QGetPracticeOverviewV3StandardGroup"
       },
       "QGetProfileContextV3Auth": {
         "properties": {
@@ -75210,14 +76516,14 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__reports__bundle__ScenarioMappingItem"
+              "$ref": "#/components/schemas/ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__reports__bundle__SimulationMappingItem"
+              "$ref": "#/components/schemas/SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -75734,7 +77040,7 @@
           },
           "standardGroupsMapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__attempts__simulation__StandardGroupMappingItem"
+              "$ref": "#/components/schemas/StandardGroupMappingItem"
             },
             "type": "object",
             "title": "Standardgroupsmapping"
@@ -76501,6 +77807,25 @@
           "copyPasteAllowed"
         ],
         "title": "ScenarioItem"
+      },
+      "ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
       },
       "ScenarioQuestionsToolCompletePayload": {
         "properties": {
@@ -77467,6 +78792,58 @@
         "title": "SimulationLeavePayload",
         "description": "Request to leave a simulation chat room."
       },
+      "SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "rubric_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
+      },
       "SimulationMessageCancelledPayload": {
         "properties": {
           "message_id": {
@@ -77901,7 +79278,7 @@
         "title": "SimulationToolCallTokenPayload",
         "description": "Internal event for tool call arguments update."
       },
-      "StandardMappingItem": {
+      "StandardGroupMappingItem": {
         "properties": {
           "name": {
             "type": "string",
@@ -77912,18 +79289,22 @@
             "title": "Description"
           },
           "points": {
-            "type": "integer",
+            "type": "number",
             "title": "Points"
+          },
+          "passPoints": {
+            "type": "number",
+            "title": "Passpoints"
           }
         },
         "type": "object",
         "required": [
           "name",
           "description",
-          "points"
+          "points",
+          "passPoints"
         ],
-        "title": "StandardMappingItem",
-        "description": "Standard mapping item with points."
+        "title": "StandardGroupMappingItem"
       },
       "StartSimulationErrorPayload": {
         "properties": {
@@ -81837,644 +83218,6 @@
         ],
         "title": "MessageItem"
       },
-      "app__api__v3__attempts__simulation__StandardGroupMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "points": {
-            "type": "number",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "number",
-            "title": "Passpoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "points",
-          "passPoints"
-        ],
-        "title": "StandardGroupMappingItem"
-      },
-      "app__api__v3__leaderboard__bundle__ScenarioMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids",
-            "default": []
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping",
-            "default": {}
-          },
-          "document_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Document Mapping",
-            "default": {}
-          },
-          "parameter_item_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Parameter Item Mapping",
-            "default": {}
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids",
-            "default": []
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ScenarioMappingItem",
-        "description": "Scenario mapping item with extended fields for nested data."
-      },
-      "app__api__v3__leaderboard__bundle__SimulationMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "SimulationMappingItem",
-        "description": "Simulation mapping item."
-      },
-      "app__api__v3__practice__history__AttemptHistoryRow": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "numScenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Numscenarios"
-          },
-          "numScenariosCompleted": {
-            "type": "integer",
-            "title": "Numscenarioscompleted"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "personaNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personanames"
-          },
-          "personaColors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personacolors"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "scoreStatus": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scorestatus"
-          },
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Titles"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "title": "Isarchived"
-          },
-          "showView": {
-            "type": "boolean",
-            "title": "Showview"
-          },
-          "showContinue": {
-            "type": "boolean",
-            "title": "Showcontinue"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohortNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortnames"
-          },
-          "practiceScenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practicescenarioid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "date",
-          "profileId",
-          "profileName",
-          "simulationName",
-          "numScenariosCompleted",
-          "infiniteMode",
-          "personaNames",
-          "personaColors",
-          "simulation_id",
-          "scenario_ids",
-          "scenario_titles",
-          "isArchived",
-          "showView",
-          "showContinue",
-          "practiceSimulation",
-          "cohortNames"
-        ],
-        "title": "AttemptHistoryRow",
-        "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
-      },
-      "app__api__v3__practice__overview__AttemptHistoryRow": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "numScenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Numscenarios"
-          },
-          "numScenariosCompleted": {
-            "type": "integer",
-            "title": "Numscenarioscompleted"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "personaNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personanames"
-          },
-          "personaColors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personacolors"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Titles"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "title": "Isarchived"
-          },
-          "showView": {
-            "type": "boolean",
-            "title": "Showview"
-          },
-          "showContinue": {
-            "type": "boolean",
-            "title": "Showcontinue"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohortNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortnames"
-          },
-          "practiceScenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practicescenarioid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "date",
-          "profileId",
-          "profileName",
-          "simulationName",
-          "numScenariosCompleted",
-          "infiniteMode",
-          "personaNames",
-          "personaColors",
-          "simulation_id",
-          "scenario_ids",
-          "scenario_titles",
-          "isArchived",
-          "showView",
-          "showContinue",
-          "practiceSimulation",
-          "cohortNames"
-        ],
-        "title": "AttemptHistoryRow",
-        "description": "Attempt history row."
-      },
-      "app__api__v3__practice__overview__ScenarioMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids",
-            "default": []
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping",
-            "default": {}
-          },
-          "document_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Document Mapping",
-            "default": {}
-          },
-          "parameter_item_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Parameter Item Mapping",
-            "default": {}
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids",
-            "default": []
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ScenarioMappingItem",
-        "description": "Scenario mapping item with extended fields for nested data."
-      },
-      "app__api__v3__practice__overview__SimulationMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "SimulationMappingItem",
-        "description": "Simulation mapping item."
-      },
-      "app__api__v3__practice__overview__StandardGroupMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "points",
-          "passPoints"
-        ],
-        "title": "StandardGroupMappingItem",
-        "description": "Standard group mapping item with rubric context."
-      },
       "app__api__v3__pricing__detail__MessageItem": {
         "properties": {
           "id": {
@@ -82589,77 +83332,6 @@
           "dataPoints"
         ],
         "title": "MetricResponse"
-      },
-      "app__api__v3__reports__bundle__ScenarioMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ScenarioMappingItem",
-        "description": "Scenario mapping item."
-      },
-      "app__api__v3__reports__bundle__SimulationMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "rubric_points": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Points"
-          },
-          "rubric_pass_points": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Pass Points"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "SimulationMappingItem",
-        "description": "Simulation mapping item."
       }
     }
   }

@@ -118,11 +118,11 @@ export default async function PracticePage({
     throw error;
   }
 
-  // Build practice filters (only departmentIds)
-  // profileId removed - comes from X-Profile-Id header automatically
-  // Always pass departmentIds (never empty array) - use all IDs from profile context
+  // Build practice filters (only department_ids) - convert to snake_case
+  // profile_id removed - comes from X-Profile-Id header automatically
+  // Always pass department_ids (never empty array) - use all IDs from profile context
   const practiceFiltersBody: PracticeIn["body"] = {
-    departmentIds: profileContext.departmentIds || [], // Always pass (non-empty from profile context)
+    department_ids: profileContext.departmentIds || [], // Always pass (non-empty from profile context)
   };
 
   const practiceFilters: PracticeIn = {
@@ -158,10 +158,9 @@ export default async function PracticePage({
   // Fetch practice data server-side (without history - history will be fetched separately)
   const practiceData = await getPractice(practiceFilters);
 
-  // Remove history from response for server-driven pagination
+  // Remove history from response for server-driven pagination (history is now separate endpoint)
   const practiceDataWithoutHistory = {
     ...practiceData,
-    history: [],
   };
 
   // Get effectiveProfileId from profile context
@@ -275,31 +274,32 @@ async function PracticeHistorySection({
   effectiveProfileId: string;
   departmentIds: string[];
 }) {
-  // Build history filters for practice (simplified: departmentIds only)
-  // profileId removed - comes from X-Profile-Id header automatically
+  // Build history filters for practice (simplified: department_ids only)
+  // profile_id removed - comes from X-Profile-Id header automatically
+  // Convert camelCase to snake_case for API
   const historyFilters: PracticeHistoryIn = {
     body: {
-      departmentIds: departmentIds,
+      department_ids: departmentIds,
       page: historyPage,
-      pageSize: historyPageSize,
+      page_size: historyPageSize,
       ...(historySearch && { search: historySearch }),
       ...(historyProfileIds &&
         historyProfileIds.length > 0 && {
-          profileIds: historyProfileIds,
+          profile_ids: historyProfileIds,
         }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
-          simulationIds: historySimulationIds,
+          simulation_ids: historySimulationIds,
         }),
       ...(historyScenarioIds &&
         historyScenarioIds.length > 0 && {
-          scenarioIds: historyScenarioIds,
+          scenario_ids: historyScenarioIds,
         }),
       ...(historyInfiniteMode !== undefined && {
-        infiniteMode: historyInfiniteMode,
+        infinite_mode: historyInfiniteMode,
       }),
-      sortBy: historySortBy,
-      sortOrder: historySortOrder,
+      sort_by: historySortBy,
+      sort_order: historySortOrder,
     },
   };
 

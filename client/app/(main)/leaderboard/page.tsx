@@ -27,7 +27,17 @@ const getLeaderboard = async (
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/leaderboard/bundle", input, {
+  // Convert camelCase to snake_case for API
+  const apiInput = {
+    start_date: input.startDate,
+    end_date: input.endDate,
+    cohort_ids: input.cohortIds || [],
+    department_ids: input.departmentIds || [],
+    simulation_filters: input.simulationFilters || ["general"],
+    roles: input.roles || [],
+  };
+
+  return api.post("/leaderboard/bundle", apiInput, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

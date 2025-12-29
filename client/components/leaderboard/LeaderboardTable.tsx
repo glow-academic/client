@@ -58,8 +58,8 @@ export interface LeaderboardData {
 export interface LeaderboardTableProps {
   data: LeaderboardData[];
   currentUserId: string;
-  simulationMapping?: Record<string, { name: string; description?: string }>;
-  scenarioMapping?: Record<string, { name: string; description?: string }>;
+  simulations?: Array<{ simulation_id: string; name: string; description?: string }>;
+  scenarios?: Array<{ scenario_id: string; name: string; description?: string }>;
   onViewReport?: (profileId: string) => void;
 }
 
@@ -73,8 +73,8 @@ const getInitials = (name: string) =>
 export default function LeaderboardTable({
   data,
   currentUserId,
-  simulationMapping = {},
-  scenarioMapping = {},
+  simulations = [],
+  scenarios = [],
   onViewReport,
 }: LeaderboardTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -364,18 +364,18 @@ export default function LeaderboardTable({
   }, [data]);
 
   const simulationOptions = useMemo(() => {
-    return Object.entries(simulationMapping).map(([id, sim]) => ({
-      value: id,
+    return simulations.map((sim) => ({
+      value: sim.simulation_id,
       label: sim.name,
     }));
-  }, [simulationMapping]);
+  }, [simulations]);
 
   const scenarioOptions = useMemo(() => {
-    return Object.entries(scenarioMapping).map(([id, scenario]) => ({
-      value: id,
+    return scenarios.map((scenario) => ({
+      value: scenario.scenario_id,
       label: scenario.name,
     }));
-  }, [scenarioMapping]);
+  }, [scenarios]);
 
   if (data.length === 0) {
     return (

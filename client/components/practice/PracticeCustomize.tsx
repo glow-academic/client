@@ -48,41 +48,118 @@ export default function PracticeCustomize({
   );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Extract entity mappings from practiceData
+  // Extract entity arrays from practiceData (API now returns arrays, not mappings)
   const bundle = practiceData;
-  const personaMapping = useMemo(
-    () => bundle?.persona_mapping || {},
-    [bundle?.persona_mapping],
-  );
-  const scenarioMapping = useMemo(
-    () => bundle?.scenario_mapping || {},
-    [bundle?.scenario_mapping],
-  );
-  const parameterMapping = useMemo(
-    () => bundle?.parameter_mapping || {},
-    [bundle?.parameter_mapping],
-  );
-  const parameterItemMapping = useMemo(
-    () => bundle?.field_mapping || {},
-    [bundle?.field_mapping],
-  );
-  const simulationMapping = useMemo(
-    () => bundle?.simulation_mapping || {},
-    [bundle?.simulation_mapping],
-  );
-  const departmentMapping = useMemo(
-    () => bundle?.department_mapping || {},
-    [bundle?.department_mapping],
-  );
+  
+  // Build mappings from arrays for backward compatibility with components
+  const personaMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string; color: string; icon: string }> = {};
+    if (bundle?.personas) {
+      for (const persona of bundle.personas) {
+        if (persona.persona_id) {
+          mapping[String(persona.persona_id)] = {
+            name: persona.name || "",
+            description: persona.description || "",
+            color: persona.color || "",
+            icon: persona.icon || "",
+          };
+        }
+      }
+    }
+    return mapping;
+  }, [bundle?.personas]);
+
+  const scenarioMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string; persona_ids: string[] }> = {};
+    if (bundle?.scenarios) {
+      for (const scenario of bundle.scenarios) {
+        if (scenario.scenario_id) {
+          mapping[String(scenario.scenario_id)] = {
+            name: scenario.name || "",
+            description: scenario.description || "",
+            persona_ids: scenario.persona_ids || [],
+          };
+        }
+      }
+    }
+    return mapping;
+  }, [bundle?.scenarios]);
+
+  const parameterMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string; document_parameter: boolean; persona_parameter: boolean }> = {};
+    if (bundle?.parameters) {
+      for (const parameter of bundle.parameters) {
+        if (parameter.parameter_id) {
+          mapping[String(parameter.parameter_id)] = {
+            name: parameter.name || "",
+            description: parameter.description || "",
+            document_parameter: parameter.document_parameter || false,
+            persona_parameter: parameter.persona_parameter || false,
+          };
+        }
+      }
+    }
+    return mapping;
+  }, [bundle?.parameters]);
+
+  const parameterItemMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string; parameter_id: string; parameter_name: string }> = {};
+    if (bundle?.fields) {
+      for (const field of bundle.fields) {
+        if (field.field_id) {
+          mapping[String(field.field_id)] = {
+            name: field.name || "",
+            description: field.description || "",
+            parameter_id: String(field.parameter_id || ""),
+            parameter_name: field.parameter_name || "",
+          };
+        }
+      }
+    }
+    return mapping;
+  }, [bundle?.fields]);
+
+  const simulationMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string; time_limit: number; department_ids: string[] }> = {};
+    if (bundle?.simulations) {
+      for (const simulation of bundle.simulations) {
+        if (simulation.simulation_id) {
+          mapping[String(simulation.simulation_id)] = {
+            name: simulation.name || "",
+            description: simulation.description || "",
+            time_limit: simulation.time_limit || 0,
+            department_ids: simulation.department_ids || [],
+          };
+        }
+      }
+    }
+    return mapping;
+  }, [bundle?.simulations]);
+
+  const departmentMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    if (bundle?.departments) {
+      for (const department of bundle.departments) {
+        if (department.department_id) {
+          mapping[String(department.department_id)] = {
+            name: department.name || "",
+            description: department.description || "",
+          };
+        }
+      }
+    }
+    return mapping;
+  }, [bundle?.departments]);
+
   const validDepartmentIds = useMemo(
     () => bundle?.valid_department_ids || [],
     [bundle?.valid_department_ids],
   );
 
-  // Build valid IDs from mappings (server already filtered to relevant items)
+  // Build valid IDs from arrays (server already filtered to relevant items)
   const validSimulationIds = useMemo(
-    () => Object.keys(simulationMapping),
-    [simulationMapping],
+    () => bundle?.simulations?.map(s => String(s.simulation_id)).filter(Boolean) || [],
+    [bundle?.simulations],
   );
 
   // Filter personas and parameter items based on selected departments

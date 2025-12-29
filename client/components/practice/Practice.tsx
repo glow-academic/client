@@ -48,26 +48,56 @@ export default function Practice({
   const bundle = practiceData;
   const practiceOverview = bundle;
 
-  // Normalize simulation items to ensure required fields are present
-  const simulationItems = useMemo(() => {
-    if (!practiceOverview?.items) return [];
+  // Build standard_groups mapping from standards array (for SimulationCard compatibility)
+  // API returns arrays, but SimulationCard expects a dict mapping standard_group_id -> array of standard_ids
+  const standardGroupsToStandards = useMemo(() => {
+    const mapping: Record<string, string[]> = {};
+    if (practiceOverview?.standards) {
+      for (const standard of practiceOverview.standards) {
+        if (standard.standard_group_id && standard.standard_id) {
+          const sgId = String(standard.standard_group_id);
+          if (!mapping[sgId]) {
+            mapping[sgId] = [];
+          }
+          mapping[sgId].push(String(standard.standard_id));
+        }
+      }
+    }
+    return mapping;
+  }, [practiceOverview?.standards]);
 
-    return practiceOverview.items.map((item) => ({
-      ...item,
-      // Ensure simulationDescription is always present (string | null, not undefined)
-      simulationDescription: item.simulationDescription ?? null,
-    }));
-  }, [practiceOverview?.items]);
+  // Convert arrays to dicts for backward compatibility with SimulationCard
+  // API now returns arrays (standard_groups, standards) instead of mappings
+  const standardGroupsMapping = useMemo(() => {
+    if (!practiceOverview?.standard_groups) return {};
+    const mapping: Record<string, { name: string; description: string; points: number; passPoints: number }> = {};
+    for (const sg of practiceOverview.standard_groups) {
+      if (sg.standard_group_id) {
+        mapping[String(sg.standard_group_id)] = {
+          name: sg.name || "",
+          description: sg.description || "",
+          points: sg.points || 0,
+          passPoints: sg.pass_points || 0,
+        };
+      }
+    }
+    return mapping;
+  }, [practiceOverview?.standard_groups]);
 
-  // Extract rubric mappings from practice overview data
-  const standardGroupsMapping = useMemo(
-    () => practiceOverview?.standard_groups_mapping || {},
-    [practiceOverview],
-  );
-  const standardsMapping = useMemo(
-    () => practiceOverview?.standards_mapping || {},
-    [practiceOverview],
-  );
+  const standardsMapping = useMemo(() => {
+    if (!practiceOverview?.standards) return {};
+    const mapping: Record<string, { name: string; description: string; points: number }> = {};
+    for (const st of practiceOverview.standards) {
+      if (st.standard_id) {
+        mapping[String(st.standard_id)] = {
+          name: st.name || "",
+          description: st.description || "",
+          points: st.points || 0,
+        };
+      }
+    }
+    return mapping;
+  }, [practiceOverview?.standards]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -228,7 +258,8 @@ export default function Practice({
     <TooltipProvider>
       <div className="space-y-12">
         <PracticeZone
-          simulations={simulationItems}
+          simulations={practiceOverview?.items || []}
+          standardGroupsToStandards={standardGroupsToStandards}
           standardGroupsMapping={
             standardGroupsMapping as Record<
               string,

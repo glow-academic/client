@@ -1,0 +1,401 @@
+-- Get leaderboard bundle with all metrics and profile data
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_leaderboard_bundle_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_leaderboard_bundle_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- Drop in reverse dependency order: metrics (depends on metric) first, then metric, then others
+DO $$
+DECLARE
+    r RECORD;
+    type_names text[] := ARRAY[
+        'q_get_leaderboard_bundle_v3_row',  -- Depends on metrics
+        'q_get_leaderboard_bundle_v3_metrics',  -- Depends on metric
+        'q_get_leaderboard_bundle_v3_metric',
+        'q_get_leaderboard_bundle_v3_simulation',
+        'q_get_leaderboard_bundle_v3_scenario'
+    ];
+    type_name text;
+BEGIN
+    FOREACH type_name IN ARRAY type_names
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', type_name);
+    END LOOP;
+    -- Also drop any other types matching the pattern (for future additions)
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_leaderboard_bundle_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+          AND typname != ALL(type_names)
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_leaderboard_bundle_v3_metric AS (
+    has_data boolean,
+    method text,
+    current_value int,
+    key_field text,
+    trend_data text[],
+    data_points text[],
+    hover text
+);
+
+CREATE TYPE types.q_get_leaderboard_bundle_v3_metrics AS (
+    total_attempts types.q_get_leaderboard_bundle_v3_metric,
+    highest_score_avg types.q_get_leaderboard_bundle_v3_metric,
+    messages_per_session types.q_get_leaderboard_bundle_v3_metric,
+    persona_response_seconds types.q_get_leaderboard_bundle_v3_metric,
+    time_spent_minutes types.q_get_leaderboard_bundle_v3_metric,
+    improvement_rate_per_day types.q_get_leaderboard_bundle_v3_metric,
+    perfect_score_count types.q_get_leaderboard_bundle_v3_metric,
+    quickest_pass_minutes types.q_get_leaderboard_bundle_v3_metric
+);
+
+CREATE TYPE types.q_get_leaderboard_bundle_v3_row AS (
+    profile_id uuid,
+    first_name text,
+    last_name text,
+    simulation_ids uuid[],
+    scenario_ids uuid[],
+    metrics types.q_get_leaderboard_bundle_v3_metrics
+);
+
+CREATE TYPE types.q_get_leaderboard_bundle_v3_simulation AS (
+    simulation_id uuid,
+    name text,
+    description text,
+    time_limit int,
+    department_ids text[]
+);
+
+CREATE TYPE types.q_get_leaderboard_bundle_v3_scenario AS (
+    scenario_id uuid,
+    name text,
+    description text
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_leaderboard_bundle_v3(
+    start_date timestamptz,
+    end_date timestamptz,
+    profile_id uuid,
+    roles text[] DEFAULT ARRAY[]::text[],
+    cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    simulation_filters text[] DEFAULT ARRAY['general']::text[],
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[]
+)
+RETURNS TABLE (
+    actor_name text,
+    data types.q_get_leaderboard_bundle_v3_row[],
+    simulations types.q_get_leaderboard_bundle_v3_simulation[],
+    scenarios types.q_get_leaderboard_bundle_v3_scenario[],
+    primary_color text,
+    accent_color text
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT 
+        start_date AS start_date,
+        end_date AS end_date,
+        profile_id AS profile_id,
+        COALESCE(NULLIF(roles, ARRAY[]::text[]), ARRAY[]::text[]) AS roles,
+        COALESCE(NULLIF(cohort_ids, ARRAY[]::uuid[]), ARRAY[]::uuid[]) AS cohort_ids,
+        COALESCE(NULLIF(simulation_filters, ARRAY[]::text[]), ARRAY['general']::text[]) AS simulation_filters,
+        COALESCE(NULLIF(department_ids, ARRAY[]::uuid[]), ARRAY[]::uuid[]) AS department_ids
+),
+-- Get colors from active settings (defaults if no settings found)
+settings_colors AS (
+    SELECT 
+        COALESCE(primary_color, '#171717') AS primary_color,
+        COALESCE(accent, '#f5f5f5') AS accent
+    FROM settings
+    WHERE active = true
+    LIMIT 1
+),
+-- Get actor name from profile
+user_profile AS (
+    SELECT 
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles ON profiles.id = x.profile_id
+),
+filt AS (
+    SELECT * FROM analytics a 
+    WHERE a.attempt_created_at >= (SELECT start_date FROM params)
+      AND a.attempt_created_at < (SELECT end_date FROM params)
+      AND (
+          -- Default to general if no filters specified
+          cardinality((SELECT simulation_filters FROM params)::text[]) = 0
+          OR (
+              -- General filter
+              ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general = TRUE) OR
+              -- Practice filter
+              ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_practice = TRUE) OR
+              -- Archived filter: if general/practice also selected, include archived OR non-general/non-practice
+              -- Otherwise, just archived
+              ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND (
+                  (('general' = ANY((SELECT simulation_filters FROM params)::text[]) OR 'practice' = ANY((SELECT simulation_filters FROM params)::text[])) 
+                   AND (a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE)))
+                  OR
+                  (NOT ('general' = ANY((SELECT simulation_filters FROM params)::text[]) OR 'practice' = ANY((SELECT simulation_filters FROM params)::text[]))
+                   AND a.is_archived = TRUE)
+              ))
+          )
+      )
+      AND (cardinality((SELECT roles FROM params)::text[]) = 0 OR a.profile_role::text = ANY((SELECT roles FROM params)::text[]))
+      AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (
+          SELECT DISTINCT s.id
+          FROM simulations s
+          WHERE s.active = TRUE
+            AND (
+                EXISTS (
+                    SELECT 1 
+                    FROM cohort_simulations cs 
+                    WHERE cs.simulation_id = s.id 
+                      AND cs.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
+                      AND cs.active = TRUE
+                )
+                OR
+                (s.practice_simulation = TRUE 
+                 AND NOT EXISTS (
+                     SELECT 1 
+                     FROM cohort_simulations cs2 
+                     WHERE cs2.simulation_id = s.id 
+                       AND cs2.active = TRUE
+                 ))
+            )
+      ))
+      AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
+),
+profile_stats AS (
+    SELECT
+        f.profile_id,
+        p.first_name,
+        p.last_name,
+        COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
+        MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
+        AVG(f.num_messages_total) FILTER (WHERE f.num_messages_total IS NOT NULL) AS avg_messages,
+        COALESCE(SUM(LEAST(f.time_taken_seconds / 60.0, 30.0)) FILTER (WHERE f.time_taken_seconds IS NOT NULL), 0.0)::float AS total_time,
+        ARRAY_AGG(DISTINCT f.simulation_id) FILTER (WHERE f.simulation_id IS NOT NULL) AS simulation_ids,
+        ARRAY_AGG(DISTINCT f.scenario_id) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
+    FROM filt f
+    JOIN profiles p ON f.profile_id = p.id
+    GROUP BY f.profile_id, p.first_name, p.last_name
+),
+-- Persona response times per profile
+persona_times AS (
+    SELECT
+        f.profile_id,
+        UNNEST(f.message_time_taken_seconds) AS delta_sec
+    FROM filt f
+    WHERE cardinality(f.message_time_taken_seconds) > 0
+),
+persona_per_profile AS (
+    SELECT
+        profile_id,
+        ROUND(AVG(delta_sec))::int AS avg_response_time
+    FROM persona_times
+    GROUP BY profile_id
+),
+-- Improvement rate per day per profile
+attempt_grades AS (
+    SELECT
+        simulation_id,
+        attempt_id,
+        profile_id,
+        MIN(chat_created_at) as first_time,
+        MAX(grade_percent) as best_grade
+    FROM filt
+    WHERE grade_percent IS NOT NULL AND attempt_id IS NOT NULL
+    GROUP BY simulation_id, attempt_id, profile_id
+),
+sim_improvement_rates AS (
+    SELECT
+        profile_id,
+        simulation_id,
+        CASE
+            WHEN COUNT(*) >= 2 THEN
+                ROUND(
+                    (MAX(best_grade) - MIN(best_grade)) /
+                    GREATEST(1.0,
+                        EXTRACT(EPOCH FROM (MAX(first_time) - MIN(first_time))) / 86400.0
+                    )
+                )::int
+            ELSE 0
+        END AS improvement_rate
+    FROM attempt_grades
+    GROUP BY profile_id, simulation_id
+),
+improvement_per_profile AS (
+    SELECT
+        profile_id,
+        MAX(improvement_rate) AS max_improvement_rate
+    FROM sim_improvement_rates
+    GROUP BY profile_id
+),
+-- Perfect score count per profile
+perfect_per_profile AS (
+    SELECT
+        profile_id,
+        COUNT(*) AS perfect_count
+    FROM filt
+    WHERE grade_percent >= 100.0
+    GROUP BY profile_id
+),
+-- Quickest pass per profile
+quickest_per_profile AS (
+    SELECT
+        profile_id,
+        MIN(time_taken_seconds / 60.0) AS quickest_minutes
+    FROM filt
+    WHERE passed = TRUE AND time_taken_seconds IS NOT NULL
+    GROUP BY profile_id
+),
+-- Join all metrics together
+all_stats AS (
+    SELECT
+        ps.*,
+        COALESCE(pp.avg_response_time, 0) AS persona_response_time,
+        COALESCE(ip.max_improvement_rate, 0) AS improvement_rate,
+        COALESCE(pf.perfect_count, 0) AS perfect_count,
+        COALESCE(qp.quickest_minutes, 0) AS quickest_pass
+    FROM profile_stats ps
+    LEFT JOIN persona_per_profile pp ON ps.profile_id = pp.profile_id
+    LEFT JOIN improvement_per_profile ip ON ps.profile_id = ip.profile_id
+    LEFT JOIN perfect_per_profile pf ON ps.profile_id = pf.profile_id
+    LEFT JOIN quickest_per_profile qp ON ps.profile_id = qp.profile_id
+),
+-- Get all unique simulation IDs for mapping
+all_simulation_ids AS (
+    SELECT DISTINCT unnest(simulation_ids) AS simulation_id
+    FROM profile_stats
+    WHERE simulation_ids IS NOT NULL
+),
+simulation_data AS (
+    SELECT 
+        s.id as simulation_id,
+        s.title as name,
+        COALESCE(s.description, '') as description,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        )::int as time_limit,
+        COALESCE(
+            (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
+             FROM simulation_departments sd
+             WHERE sd.simulation_id = s.id AND sd.active = true),
+            ARRAY[]::text[]
+        ) as department_ids
+    FROM all_simulation_ids asi
+    LEFT JOIN simulations s ON s.id = asi.simulation_id
+    WHERE s.active = true
+),
+-- Get all unique scenario IDs for mapping
+all_scenario_ids AS (
+    SELECT DISTINCT unnest(scenario_ids) AS scenario_id
+    FROM profile_stats
+    WHERE scenario_ids IS NOT NULL
+),
+scenario_data AS (
+    SELECT 
+        sc.id as scenario_id,
+        sc.name as name,
+        COALESCE(
+            (SELECT ps.problem_statement 
+             FROM scenario_problem_statements sps 
+             JOIN problem_statements ps ON ps.id = sps.problem_statement_id 
+             WHERE sps.scenario_id = sc.id AND sps.active = true 
+             ORDER BY sps.created_at DESC, sps.updated_at DESC 
+             LIMIT 1),
+            ''
+        ) as description
+    FROM all_scenario_ids asci
+    LEFT JOIN scenarios sc ON sc.id = asci.scenario_id
+    WHERE sc.active = true
+),
+-- Get top 25% of profiles by highest score
+ranked_stats AS (
+    SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY highest_score DESC) as rank,
+        COUNT(*) OVER () as total_count
+    FROM all_stats
+),
+top_25_percent AS (
+    SELECT *
+    FROM ranked_stats
+    WHERE rank <= GREATEST(1, CEIL(total_count * 0.25)::int)
+)
+SELECT 
+    up.actor_name::text as actor_name,
+    COALESCE(
+        ARRAY_AGG(
+            (t25p.profile_id,
+             t25p.first_name,
+             t25p.last_name,
+             COALESCE(t25p.simulation_ids, ARRAY[]::uuid[]),
+             COALESCE(t25p.scenario_ids, ARRAY[]::uuid[]),
+             ((true, 'countDistinct', t25p.total_attempts, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric,
+              (t25p.highest_score IS NOT NULL, 'max', ROUND(COALESCE(t25p.highest_score, 0))::int, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric,
+              (t25p.avg_messages IS NOT NULL, 'avg', ROUND(COALESCE(t25p.avg_messages, 0))::int, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric,
+              (t25p.persona_response_time > 0, 'avg', t25p.persona_response_time, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric,
+              (t25p.total_time IS NOT NULL AND t25p.total_time > 0, 'sum', ROUND(COALESCE(t25p.total_time, 0))::int, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric,
+              (t25p.improvement_rate > 0, 'slope', t25p.improvement_rate, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric,
+              (t25p.perfect_count > 0, 'sum', t25p.perfect_count, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric,
+              (t25p.quickest_pass > 0, 'min', ROUND(t25p.quickest_pass)::int, NULL::text, ARRAY[]::text[], ARRAY[]::text[], ''::text)::types.q_get_leaderboard_bundle_v3_metric)::types.q_get_leaderboard_bundle_v3_metrics
+            )::types.q_get_leaderboard_bundle_v3_row
+            ORDER BY t25p.highest_score DESC
+        ),
+        '{}'::types.q_get_leaderboard_bundle_v3_row[]
+    ) as data,
+    (SELECT COALESCE(
+        ARRAY_AGG(
+            (sd.simulation_id, sd.name, sd.description, sd.time_limit, sd.department_ids)::types.q_get_leaderboard_bundle_v3_simulation
+            ORDER BY sd.name
+        ),
+        '{}'::types.q_get_leaderboard_bundle_v3_simulation[]
+    ) FROM simulation_data sd) as simulations,
+    (SELECT COALESCE(
+        ARRAY_AGG(
+            (scd.scenario_id, scd.name, scd.description)::types.q_get_leaderboard_bundle_v3_scenario
+            ORDER BY scd.name
+        ),
+        '{}'::types.q_get_leaderboard_bundle_v3_scenario[]
+    ) FROM scenario_data scd) as scenarios,
+    (SELECT primary_color FROM settings_colors LIMIT 1)::text as primary_color,
+    (SELECT accent FROM settings_colors LIMIT 1)::text as accent_color
+FROM top_25_percent t25p
+CROSS JOIN user_profile up
+CROSS JOIN settings_colors sc
+GROUP BY up.actor_name, sc.primary_color, sc.accent
+$$;
+
+COMMIT;
+

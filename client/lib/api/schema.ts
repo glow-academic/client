@@ -3042,10 +3042,11 @@ export interface paths {
         put?: never;
         /**
          * Get Practice Overview
-         * @description Get practice overview data with history and all entity mappings.
+         * @description Get practice overview data with items and all entity mappings.
          *
          *     Practice uses simplified filters: only profileId and departmentIds.
          *     No cohort/role/date filtering for personal practice.
+         *     Note: History is not included in overview - use /practice/history endpoint separately.
          */
         post: operations["get_practice_overview_api_v3_practice_overview_post"];
         delete?: never;
@@ -7977,16 +7978,6 @@ export interface components {
             actor_name?: string | null;
         };
         /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * DocumentTemplateGenerationCompletePayload
          * @description Response indicating document template generation completed successfully.
          */
@@ -8861,20 +8852,6 @@ export interface components {
             profile_id?: string | null;
             /** Sid */
             sid?: string | null;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
         };
         /**
          * FilterOption
@@ -10131,6 +10108,36 @@ export interface components {
             /** Model Options */
             model_options?: components["schemas"]["QGetKeysListV3ModelOption"][] | null;
         };
+        /** GetLeaderboardBundleApiRequest */
+        GetLeaderboardBundleApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Roles */
+            roles?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /** GetLeaderboardBundleApiResponse */
+        GetLeaderboardBundleApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["QGetLeaderboardBundleV3Row"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetLeaderboardBundleV3Simulation"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QGetLeaderboardBundleV3Scenario"][] | null;
+            /** Primary Color */
+            primary_color?: string | null;
+            /** Accent Color */
+            accent_color?: string | null;
+        };
         /** GetLoginDataApiRequest */
         GetLoginDataApiRequest: {
             /** Department Id */
@@ -10485,6 +10492,88 @@ export interface components {
             agents?: components["schemas"]["QListPersonasV3Agent"][] | null;
             /** Departments */
             departments?: components["schemas"]["QListPersonasV3Department"][] | null;
+        };
+        /** GetPracticeHistoryApiRequest */
+        GetPracticeHistoryApiRequest: {
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
+        /** GetPracticeHistoryApiResponse */
+        GetPracticeHistoryApiResponse: {
+            /** Data */
+            data?: components["schemas"]["QGetPracticeHistoryV3Attempt"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["QGetPracticeHistoryV3ProfileOption"][] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["QGetPracticeHistoryV3SimulationOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["QGetPracticeHistoryV3ScenarioOption"][] | null;
+        };
+        /** GetPracticeOverviewApiRequest */
+        GetPracticeOverviewApiRequest: {
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /** GetPracticeOverviewApiResponse */
+        GetPracticeOverviewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Mode */
+            mode?: string | null;
+            /** Has Data */
+            has_data?: boolean | null;
+            /** Items */
+            items?: components["schemas"]["QGetPracticeOverviewV3PracticeSimulation"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetPracticeOverviewV3StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetPracticeOverviewV3Standard"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetPracticeOverviewV3Simulation"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetPracticeOverviewV3Persona"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QGetPracticeOverviewV3Scenario"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetPracticeOverviewV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetPracticeOverviewV3Field"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetPracticeOverviewV3Department"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
         };
         /** GetProfileByEmailApiRequest */
         GetProfileByEmailApiRequest: {
@@ -12076,125 +12165,6 @@ export interface components {
             cached_tokens?: number | null;
             cached_tokens_details?: components["schemas"]["CachedTokenDetails"] | null;
         };
-        /**
-         * LeaderboardBundleFilters
-         * @description Leaderboard bundle filter request schema - for general leaderboard (multi-cohort or all cohorts).
-         */
-        LeaderboardBundleFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-        };
-        /**
-         * LeaderboardBundleResponse
-         * @description Leaderboard bundle response.
-         */
-        LeaderboardBundleResponse: {
-            /** Data */
-            data: components["schemas"]["LeaderboardRow"][];
-            /**
-             * Simulation Mapping
-             * @default {}
-             */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__leaderboard__bundle__SimulationMappingItem"];
-            };
-            /**
-             * Scenario Mapping
-             * @default {}
-             */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__leaderboard__bundle__ScenarioMappingItem"];
-            };
-            /**
-             * Primary Color
-             * @default #171717
-             */
-            primary_color: string;
-            /**
-             * Accent Color
-             * @default #f5f5f5
-             */
-            accent_color: string;
-            /**
-             * Gradient Start Color
-             * @default rgba(59, 130, 246, 0.8)
-             */
-            gradient_start_color: string;
-            /**
-             * Gradient End Color
-             * @default rgba(59, 130, 246, 0.8)
-             */
-            gradient_end_color: string;
-        };
-        /**
-         * LeaderboardMetric
-         * @description Leaderboard metric.
-         */
-        LeaderboardMetric: {
-            /** Hasdata */
-            hasData: boolean;
-            /** Method */
-            method: string;
-            /** Currentvalue */
-            currentValue: number;
-            /** Keyfield */
-            keyField?: string | null;
-            /** Trenddata */
-            trendData: unknown[];
-            /** Datapoints */
-            dataPoints: unknown[];
-            /** Hover */
-            hover: {
-                [key: string]: unknown;
-            };
-        };
-        /**
-         * LeaderboardMetrics
-         * @description Leaderboard metrics.
-         */
-        LeaderboardMetrics: {
-            totalAttempts: components["schemas"]["LeaderboardMetric"];
-            highestScoreAvg: components["schemas"]["LeaderboardMetric"];
-            messagesPerSession: components["schemas"]["LeaderboardMetric"];
-            personaResponseSeconds: components["schemas"]["LeaderboardMetric"];
-            timeSpentMinutes: components["schemas"]["LeaderboardMetric"];
-            improvementRatePerDay: components["schemas"]["LeaderboardMetric"];
-            perfectScoreCount: components["schemas"]["LeaderboardMetric"];
-            quickestPassMinutes: components["schemas"]["LeaderboardMetric"];
-        };
-        /**
-         * LeaderboardRow
-         * @description Leaderboard row.
-         */
-        LeaderboardRow: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /**
-             * Simulationids
-             * @default []
-             */
-            simulationIds: string[];
-            /**
-             * Scenarioids
-             * @default []
-             */
-            scenarioIds: string[];
-            metrics: components["schemas"]["LeaderboardMetrics"];
-        };
         /** LeaveCohortApiRequest */
         LeaveCohortApiRequest: {
             /**
@@ -12502,22 +12472,6 @@ export interface components {
             /** Text Tokens */
             text_tokens?: number | null;
         };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item.
-         */
-        ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-        };
         /** PersonaItem */
         PersonaItem: {
             /** Id */
@@ -12528,22 +12482,6 @@ export interface components {
             icon?: string | null;
             /** Color */
             color?: string | null;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
         };
         /**
          * PersonaTool
@@ -12566,192 +12504,6 @@ export interface components {
             persona_id: string;
             /** Profile Id */
             profile_id: string | null;
-        };
-        /**
-         * PracticeFilters
-         * @description Practice filter request schema - simplified to profile-only.
-         *
-         *     departmentIds filters which practice simulations are shown:
-         *     - If empty → show all simulations
-         *     - If provided → show simulations matching those departments OR simulations with no department associations
-         */
-        PracticeFilters: {
-            /** Departmentids */
-            departmentIds?: string[] | null;
-        };
-        /**
-         * PracticeHistoryFilters
-         * @description Practice history filter request schema.
-         */
-        PracticeHistoryFilters: {
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Pagesize
-             * @default 20
-             */
-            pageSize: number;
-            /** Search */
-            search?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-            /** Infinitemode */
-            infiniteMode?: boolean | null;
-            /**
-             * Sortby
-             * @default date
-             */
-            sortBy: string;
-            /**
-             * Sortorder
-             * @default desc
-             */
-            sortOrder: string;
-        };
-        /**
-         * PracticeHistoryResponse
-         * @description Practice history paginated response.
-         */
-        PracticeHistoryResponse: {
-            /** Data */
-            data: components["schemas"]["app__api__v3__practice__history__AttemptHistoryRow"][];
-            /** Totalcount */
-            totalCount: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-            /** Totalpages */
-            totalPages: number;
-            /** Profileoptions */
-            profileOptions: {
-                [key: string]: string | number;
-            }[];
-            /** Simulationoptions */
-            simulationOptions: {
-                [key: string]: string | number;
-            }[];
-            /** Scenariooptions */
-            scenarioOptions: {
-                [key: string]: string | number;
-            }[];
-        };
-        /**
-         * PracticeOverviewResponse
-         * @description Practice overview response with mappings and history.
-         */
-        PracticeOverviewResponse: {
-            /**
-             * Mode
-             * @constant
-             */
-            mode: "practice";
-            /** Hasdata */
-            hasData: boolean;
-            /** Items */
-            items: components["schemas"]["PracticeSimulationItem"][];
-            /** History */
-            history: components["schemas"]["app__api__v3__practice__overview__AttemptHistoryRow"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__practice__overview__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__practice__overview__SimulationMappingItem"];
-            };
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__practice__overview__ScenarioMappingItem"];
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-        };
-        /**
-         * PracticeSimulationItem
-         * @description Practice simulation item.
-         */
-        PracticeSimulationItem: {
-            /**
-             * Viewmode
-             * @constant
-             */
-            viewMode: "practice";
-            /** Id */
-            id: string;
-            /** Simulationtitle */
-            simulationTitle: string;
-            /** Simulationdescription */
-            simulationDescription?: string | null;
-            /** Simulationname */
-            simulationName: string;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Numsessions */
-            numSessions: number;
-            /** Highestscore */
-            highestScore?: number | null;
-            /** Standard Groups */
-            standard_groups: {
-                [key: string]: string[];
-            };
-            /** Color */
-            color?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Haspassed */
-            hasPassed?: boolean | null;
-            /** Passrate */
-            passRate?: number | null;
-            /** Status */
-            status?: ("not-started" | "in-progress" | "passed") | null;
-            /** Completionpct */
-            completionPct?: number | null;
-            /** Passedcount */
-            passedCount?: number | null;
-            /** Inprogresscount */
-            inProgressCount?: number | null;
-            /** Notstartedcount */
-            notStartedCount?: number | null;
-            /** Passpct */
-            passPct?: number | null;
-            /** Cohortname */
-            cohortName?: string | null;
-            /** Updatedat */
-            updatedAt?: string | null;
-            /** Lastactivityts */
-            lastActivityTs?: string | null;
-            /** Hasactivity */
-            hasActivity?: boolean | null;
         };
         /** PreviousChat */
         PreviousChat: {
@@ -14932,6 +14684,70 @@ export interface components {
             /** Label */
             label: string | null;
         };
+        /** QGetLeaderboardBundleV3Metric */
+        QGetLeaderboardBundleV3Metric: {
+            /** Has Data */
+            has_data: boolean | null;
+            /** Method */
+            method: string | null;
+            /** Current Value */
+            current_value: number | null;
+            /** Key Field */
+            key_field: string | null;
+            /** Trend Data */
+            trend_data: string[] | null;
+            /** Data Points */
+            data_points: string[] | null;
+            /** Hover */
+            hover: string | null;
+        };
+        /** QGetLeaderboardBundleV3Metrics */
+        QGetLeaderboardBundleV3Metrics: {
+            total_attempts: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+            highest_score_avg: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+            messages_per_session: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+            persona_response_seconds: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+            time_spent_minutes: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+            improvement_rate_per_day: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+            perfect_score_count: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+            quickest_pass_minutes: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+        };
+        /** QGetLeaderboardBundleV3Row */
+        QGetLeaderboardBundleV3Row: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Simulation Ids */
+            simulation_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            metrics: components["schemas"]["QGetLeaderboardBundleV3Metrics"] | null;
+        };
+        /** QGetLeaderboardBundleV3Scenario */
+        QGetLeaderboardBundleV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetLeaderboardBundleV3Simulation */
+        QGetLeaderboardBundleV3Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /** QGetLoginDataV3Department */
         QGetLoginDataV3Department: {
             /** Id */
@@ -15323,6 +15139,231 @@ export interface components {
             scenario_parameter: boolean | null;
             /** Video Parameter */
             video_parameter: boolean | null;
+        };
+        /** QGetPracticeHistoryV3Attempt */
+        QGetPracticeHistoryV3Attempt: {
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Date */
+            date: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Simulation Name */
+            simulation_name: string | null;
+            /** Num Scenarios */
+            num_scenarios: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed: number | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Persona Names */
+            persona_names: string[] | null;
+            /** Persona Colors */
+            persona_colors: string[] | null;
+            /** Score */
+            score: number | null;
+            /** Score Status */
+            score_status: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Scenario Titles */
+            scenario_titles: string[] | null;
+            /** Is Archived */
+            is_archived: boolean | null;
+            /** Show View */
+            show_view: boolean | null;
+            /** Show Continue */
+            show_continue: boolean | null;
+            /** Practice Simulation */
+            practice_simulation: boolean | null;
+            /** Pass Pct */
+            pass_pct: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Cohort Names */
+            cohort_names: string[] | null;
+            /** Practice Scenario Id */
+            practice_scenario_id: string | null;
+        };
+        /** QGetPracticeHistoryV3ProfileOption */
+        QGetPracticeHistoryV3ProfileOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QGetPracticeHistoryV3ScenarioOption */
+        QGetPracticeHistoryV3ScenarioOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QGetPracticeHistoryV3SimulationOption */
+        QGetPracticeHistoryV3SimulationOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QGetPracticeOverviewV3Department */
+        QGetPracticeOverviewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetPracticeOverviewV3Field */
+        QGetPracticeOverviewV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+        };
+        /** QGetPracticeOverviewV3Parameter */
+        QGetPracticeOverviewV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+        };
+        /** QGetPracticeOverviewV3Persona */
+        QGetPracticeOverviewV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+        };
+        /** QGetPracticeOverviewV3PracticeSimulation */
+        QGetPracticeOverviewV3PracticeSimulation: {
+            /** View Mode */
+            view_mode: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Simulation Title */
+            simulation_title: string | null;
+            /** Simulation Description */
+            simulation_description: string | null;
+            /** Simulation Name */
+            simulation_name: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Num Sessions */
+            num_sessions: number | null;
+            /** Highest Score */
+            highest_score: number | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Has Passed */
+            has_passed: boolean | null;
+            /** Pass Rate */
+            pass_rate: number | null;
+            /** Status */
+            status: string | null;
+            /** Completion Pct */
+            completion_pct: number | null;
+            /** Passed Count */
+            passed_count: number | null;
+            /** In Progress Count */
+            in_progress_count: number | null;
+            /** Not Started Count */
+            not_started_count: number | null;
+            /** Pass Pct */
+            pass_pct: number | null;
+            /** Cohort Name */
+            cohort_name: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Last Activity Ts */
+            last_activity_ts: string | null;
+            /** Has Activity */
+            has_activity: boolean | null;
+            /** Standard Groups */
+            standard_groups: string[] | null;
+        };
+        /** QGetPracticeOverviewV3Scenario */
+        QGetPracticeOverviewV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+        };
+        /** QGetPracticeOverviewV3Simulation */
+        QGetPracticeOverviewV3Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetPracticeOverviewV3Standard */
+        QGetPracticeOverviewV3Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetPracticeOverviewV3StandardGroup */
+        QGetPracticeOverviewV3StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
         };
         /** QGetProfileContextV3Auth */
         QGetProfileContextV3Auth: {
@@ -17996,11 +18037,11 @@ export interface components {
             scenarioOptions: components["schemas"]["FilterOption"][];
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__reports__bundle__ScenarioMappingItem"];
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__reports__bundle__SimulationMappingItem"];
+                [key: string]: components["schemas"]["SimulationMappingItem"];
             };
         };
         /**
@@ -18147,7 +18188,7 @@ export interface components {
             };
             /** Standardgroupsmapping */
             standardGroupsMapping: {
-                [key: string]: components["schemas"]["app__api__v3__attempts__simulation__StandardGroupMappingItem"];
+                [key: string]: components["schemas"]["StandardGroupMappingItem"];
             };
             /** Standardsmapping */
             standardsMapping: {
@@ -18389,6 +18430,16 @@ export interface components {
             backgroundImage?: string | null;
             /** Objectives */
             objectives?: string[] | null;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * ScenarioQuestionsToolCompletePayload
@@ -18735,6 +18786,22 @@ export interface components {
             chat_type: string;
         };
         /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Rubric Points */
+            rubric_points?: number | null;
+            /** Rubric Pass Points */
+            rubric_pass_points?: number | null;
+        };
+        /**
          * SimulationMessageCancelledPayload
          * @description Response indicating a simulation message was cancelled.
          */
@@ -18916,17 +18983,16 @@ export interface components {
             /** Sid */
             sid?: string | null;
         };
-        /**
-         * StandardMappingItem
-         * @description Standard mapping item with points.
-         */
-        StandardMappingItem: {
+        /** StandardGroupMappingItem */
+        StandardGroupMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Points */
             points: number;
+            /** Passpoints */
+            passPoints: number;
         };
         /**
          * StartSimulationErrorPayload
@@ -20194,257 +20260,6 @@ export interface components {
             /** Feedbacks */
             feedbacks?: components["schemas"]["MessageFeedbackItem"][] | null;
         };
-        /** StandardGroupMappingItem */
-        app__api__v3__attempts__simulation__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__leaderboard__bundle__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Persona Ids
-             * @default []
-             */
-            persona_ids: string[];
-            /**
-             * Persona Mapping
-             * @default {}
-             */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /**
-             * Document Mapping
-             * @default {}
-             */
-            document_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Mapping
-             * @default {}
-             */
-            parameter_item_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids: string[];
-            /**
-             * Document Ids
-             * @default []
-             */
-            document_ids: string[];
-        };
-        /**
-         * SimulationMappingItem
-         * @description Simulation mapping item.
-         */
-        app__api__v3__leaderboard__bundle__SimulationMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * AttemptHistoryRow
-         * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
-         */
-        app__api__v3__practice__history__AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Scorestatus */
-            scoreStatus?: string | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
-            /** Practicescenarioid */
-            practiceScenarioId?: string | null;
-        };
-        /**
-         * AttemptHistoryRow
-         * @description Attempt history row.
-         */
-        app__api__v3__practice__overview__AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
-            /** Practicescenarioid */
-            practiceScenarioId?: string | null;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__practice__overview__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Persona Ids
-             * @default []
-             */
-            persona_ids: string[];
-            /**
-             * Persona Mapping
-             * @default {}
-             */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /**
-             * Document Mapping
-             * @default {}
-             */
-            document_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Mapping
-             * @default {}
-             */
-            parameter_item_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids: string[];
-            /**
-             * Document Ids
-             * @default []
-             */
-            document_ids: string[];
-        };
-        /**
-         * SimulationMappingItem
-         * @description Simulation mapping item.
-         */
-        app__api__v3__practice__overview__SimulationMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * StandardGroupMappingItem
-         * @description Standard group mapping item with rubric context.
-         */
-        app__api__v3__practice__overview__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
         /**
          * MessageItem
          * @description Message item schema.
@@ -20483,32 +20298,6 @@ export interface components {
             trendData: unknown[];
             /** Datapoints */
             dataPoints: unknown[];
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item.
-         */
-        app__api__v3__reports__bundle__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * SimulationMappingItem
-         * @description Simulation mapping item.
-         */
-        app__api__v3__reports__bundle__SimulationMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Rubric Points */
-            rubric_points?: number | null;
-            /** Rubric Pass Points */
-            rubric_pass_points?: number | null;
         };
     };
     responses: never;
@@ -23701,7 +23490,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LeaderboardBundleFilters"];
+                "application/json": components["schemas"]["GetLeaderboardBundleApiRequest"];
             };
         };
         responses: {
@@ -23711,7 +23500,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LeaderboardBundleResponse"];
+                    "application/json": components["schemas"]["GetLeaderboardBundleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25969,7 +25758,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PracticeFilters"];
+                "application/json": components["schemas"]["GetPracticeOverviewApiRequest"];
             };
         };
         responses: {
@@ -25979,7 +25768,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PracticeOverviewResponse"];
+                    "application/json": components["schemas"]["GetPracticeOverviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26005,7 +25794,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PracticeHistoryFilters"];
+                "application/json": components["schemas"]["GetPracticeHistoryApiRequest"];
             };
         };
         responses: {
@@ -26015,7 +25804,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PracticeHistoryResponse"];
+                    "application/json": components["schemas"]["GetPracticeHistoryApiResponse"];
                 };
             };
             /** @description Validation Error */

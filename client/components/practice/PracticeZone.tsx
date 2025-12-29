@@ -12,11 +12,24 @@ import type { OutputOf } from "@/lib/api/types";
 // Extract types from API response (single source of truth)
 type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
 type PracticeSimulationItem = PracticeOverviewOut["items"][number];
-type StandardGroupsMapping = PracticeOverviewOut["standard_groups_mapping"];
-type StandardsMapping = PracticeOverviewOut["standards_mapping"];
+// API now returns arrays, but components expect dicts - define mapping types locally
+type StandardGroupsMapping = Record<
+  string,
+  {
+    name: string;
+    description: string;
+    points: number;
+    passPoints: number;
+  }
+>;
+type StandardsMapping = Record<
+  string,
+  { name: string; description: string; points: number }
+>;
 
 interface PracticeZoneProps {
   simulations: PracticeSimulationItem[];
+  standardGroupsToStandards: Record<string, string[]>; // Mapping of standard_group_id -> array of standard_ids
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
   profile: ProfileItem | null;
@@ -27,6 +40,7 @@ interface PracticeZoneProps {
 
 export default function PracticeZone({
   simulations,
+  standardGroupsToStandards,
   standardGroupsMapping,
   standardsMapping,
   profile,
@@ -102,27 +116,40 @@ export default function PracticeZone({
         data-testid="practice-simulation-grid"
       >
         {visibleSimulations.map(
-          (simulation) =>
-            profile && (
+          (simulation) => {
+            if (!profile) return null;
+            
+            // Convert snake_case to camelCase for SimulationCard (shared component)
+            const simulationId = simulation.simulation_id ? String(simulation.simulation_id) : "";
+            
+            // Build standard_groups dict from standard_groups array (IDs) and standardGroupsToStandards mapping
+            const standardGroupsDict: Record<string, string[]> = {};
+            if (simulation.standard_groups) {
+              for (const sgId of simulation.standard_groups) {
+                standardGroupsDict[sgId] = standardGroupsToStandards[sgId] || [];
+              }
+            }
+            
+            return (
               <SimulationCard
-                key={simulation.id}
-                id={simulation.id}
-                {...(typeof simulation.timeLimit === "number" && {
-                  timeLimit: simulation.timeLimit,
+                key={simulationId}
+                id={simulationId}
+                {...(typeof simulation.time_limit === "number" && {
+                  timeLimit: simulation.time_limit,
                 })}
-                numSessions={simulation.numSessions}
-                {...(typeof simulation.highestScore === "number" && {
-                  highestScore: simulation.highestScore,
+                numSessions={simulation.num_sessions || 0}
+                {...(typeof simulation.highest_score === "number" && {
+                  highestScore: simulation.highest_score,
                 })}
-                simulationTitle={simulation.simulationTitle}
-                simulationDescription={simulation.simulationDescription || ""}
-                standard_groups={simulation.standard_groups}
+                simulationTitle={simulation.simulation_title || ""}
+                simulationDescription={simulation.simulation_description || ""}
+                standard_groups={standardGroupsDict}
                 standardGroupsMapping={standardGroupsMapping}
                 standardsMapping={standardsMapping}
                 {...(simulation.color && { color: simulation.color })}
                 {...(simulation.icon && { icon: simulation.icon })}
-                {...(typeof simulation.hasPassed === "boolean" && {
-                  hasPassed: simulation.hasPassed,
+                {...(typeof simulation.has_passed === "boolean" && {
+                  hasPassed: simulation.has_passed,
                 })}
                 // Removed passRate for practice cards to prevent fallback to rubric threshold
                 type="default"
@@ -131,7 +158,8 @@ export default function PracticeZone({
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
               />
-            ),
+            );
+          },
         )}
       </div>
 

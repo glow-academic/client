@@ -4853,6 +4853,108 @@ class UpdateKeyApiResponse(BaseModel):
 
 
 
+# Generated from: get_leaderboard_bundle
+
+class GetLeaderboardBundleSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    roles: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_filters: list[str] | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.roles,
+            self.cohort_ids,
+            self.simulation_filters,
+            self.department_ids,
+        )
+
+class QGetLeaderboardBundleV3Metric(BaseModel):
+
+    has_data: bool | None
+    method: str | None
+    current_value: int | None
+    key_field: str | None
+    trend_data: list[str] | None
+    data_points: list[str] | None
+    hover: str | None
+
+class QGetLeaderboardBundleV3Metrics(BaseModel):
+
+    total_attempts: QGetLeaderboardBundleV3Metric | None
+    highest_score_avg: QGetLeaderboardBundleV3Metric | None
+    messages_per_session: QGetLeaderboardBundleV3Metric | None
+    persona_response_seconds: QGetLeaderboardBundleV3Metric | None
+    time_spent_minutes: QGetLeaderboardBundleV3Metric | None
+    improvement_rate_per_day: QGetLeaderboardBundleV3Metric | None
+    perfect_score_count: QGetLeaderboardBundleV3Metric | None
+    quickest_pass_minutes: QGetLeaderboardBundleV3Metric | None
+
+class QGetLeaderboardBundleV3Row(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    simulation_ids: list[UUID] | None
+    scenario_ids: list[UUID] | None
+    metrics: QGetLeaderboardBundleV3Metrics | None
+
+
+
+
+class QGetLeaderboardBundleV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetLeaderboardBundleV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+
+class GetLeaderboardBundleSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetLeaderboardBundleV3Row] | None = None
+    simulations: list[QGetLeaderboardBundleV3Simulation] | None = None
+    scenarios: list[QGetLeaderboardBundleV3Scenario] | None = None
+    primary_color: str | None = None
+    accent_color: str | None = None
+
+class GetLeaderboardBundleApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    roles: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_filters: list[str] | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetLeaderboardBundleApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetLeaderboardBundleV3Row] | None = None
+    simulations: list[QGetLeaderboardBundleV3Simulation] | None = None
+    scenarios: list[QGetLeaderboardBundleV3Scenario] | None = None
+    primary_color: str | None = None
+    accent_color: str | None = None
+
+
+
 # Generated from: get_logs_bundle
 
 class GetLogsBundleSqlParams(BaseModel):
@@ -6510,6 +6612,290 @@ class UpdatePersonaApiResponse(BaseModel):
 
     persona_id: UUID | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: get_practice_history
+
+class GetPracticeHistorySqlParams(BaseModel):
+
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_ids,
+            self.search,
+            self.profile_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.infinite_mode,
+            self.sort_by,
+            self.sort_order,
+            self.page_size,
+            self.page_offset,
+        )
+
+class QGetPracticeHistoryV3Attempt(BaseModel):
+
+    attempt_id: UUID | None
+    date: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    simulation_name: str | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    infinite_mode: bool | None
+    time_limit: int | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    score: int | None
+    score_status: str | None
+    simulation_id: UUID | None
+    scenario_ids: list[str] | None
+    scenario_titles: list[str] | None
+    is_archived: bool | None
+    show_view: bool | None
+    show_continue: bool | None
+    practice_simulation: bool | None
+    pass_pct: int | None
+    department_ids: list[str] | None
+    cohort_names: list[str] | None
+    practice_scenario_id: str | None
+
+
+
+
+class QGetPracticeHistoryV3ProfileOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QGetPracticeHistoryV3ScenarioOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QGetPracticeHistoryV3SimulationOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+class GetPracticeHistorySqlRow(BaseModel):
+
+    data: list[QGetPracticeHistoryV3Attempt] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QGetPracticeHistoryV3ProfileOption] | None = None
+    simulation_options: list[QGetPracticeHistoryV3SimulationOption] | None = None
+    scenario_options: list[QGetPracticeHistoryV3ScenarioOption] | None = None
+
+class GetPracticeHistoryApiRequest(BaseModel):
+
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    page_offset: int | None = 0
+
+class GetPracticeHistoryApiResponse(BaseModel):
+
+    data: list[QGetPracticeHistoryV3Attempt] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    profile_options: list[QGetPracticeHistoryV3ProfileOption] | None = None
+    simulation_options: list[QGetPracticeHistoryV3SimulationOption] | None = None
+    scenario_options: list[QGetPracticeHistoryV3ScenarioOption] | None = None
+
+
+
+# Generated from: get_practice_overview
+
+class GetPracticeOverviewSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_ids,
+        )
+
+class QGetPracticeOverviewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetPracticeOverviewV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QGetPracticeOverviewV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class QGetPracticeOverviewV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+
+
+
+
+class QGetPracticeOverviewV3PracticeSimulation(BaseModel):
+
+    view_mode: str | None
+    simulation_id: UUID | None
+    simulation_title: str | None
+    simulation_description: str | None
+    simulation_name: str | None
+    time_limit: int | None
+    num_sessions: int | None
+    highest_score: int | None
+    rubric_id: UUID | None
+    color: str | None
+    icon: str | None
+    has_passed: bool | None
+    pass_rate: int | None
+    status: str | None
+    completion_pct: int | None
+    passed_count: int | None
+    in_progress_count: int | None
+    not_started_count: int | None
+    pass_pct: int | None
+    cohort_name: str | None
+    updated_at: str | None
+    last_activity_ts: str | None
+    has_activity: bool | None
+    standard_groups: list[str] | None
+
+
+
+
+class QGetPracticeOverviewV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    persona_ids: list[str] | None
+
+
+
+
+class QGetPracticeOverviewV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetPracticeOverviewV3Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetPracticeOverviewV3StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetPracticeOverviewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    has_data: bool | None = None
+    items: list[QGetPracticeOverviewV3PracticeSimulation] | None = None
+    standard_groups: list[QGetPracticeOverviewV3StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewV3Standard] | None = None
+    simulations: list[QGetPracticeOverviewV3Simulation] | None = None
+    personas: list[QGetPracticeOverviewV3Persona] | None = None
+    scenarios: list[QGetPracticeOverviewV3Scenario] | None = None
+    parameters: list[QGetPracticeOverviewV3Parameter] | None = None
+    fields: list[QGetPracticeOverviewV3Field] | None = None
+    departments: list[QGetPracticeOverviewV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+
+class GetPracticeOverviewApiRequest(BaseModel):
+
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetPracticeOverviewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    has_data: bool | None = None
+    items: list[QGetPracticeOverviewV3PracticeSimulation] | None = None
+    standard_groups: list[QGetPracticeOverviewV3StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewV3Standard] | None = None
+    simulations: list[QGetPracticeOverviewV3Simulation] | None = None
+    personas: list[QGetPracticeOverviewV3Persona] | None = None
+    scenarios: list[QGetPracticeOverviewV3Scenario] | None = None
+    parameters: list[QGetPracticeOverviewV3Parameter] | None = None
+    fields: list[QGetPracticeOverviewV3Field] | None = None
+    departments: list[QGetPracticeOverviewV3Department] | None = None
+    valid_department_ids: list[str] | None = None
 
 
 
@@ -12332,6 +12718,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateKeyApiRequest",
         "UpdateKeyApiResponse",
     ),
+    "app/sql/v3/leaderboard/get_leaderboard_bundle_complete.sql": (
+        "GetLeaderboardBundleSqlParams",
+        "GetLeaderboardBundleSqlRow",
+        "GetLeaderboardBundleApiRequest",
+        "GetLeaderboardBundleApiResponse",
+    ),
     "app/sql/v3/logs/get_logs_bundle_complete.sql": (
         "GetLogsBundleSqlParams",
         "GetLogsBundleSqlRow",
@@ -12463,6 +12855,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdatePersonaSqlRow",
         "UpdatePersonaApiRequest",
         "UpdatePersonaApiResponse",
+    ),
+    "app/sql/v3/practice/get_practice_history_complete.sql": (
+        "GetPracticeHistorySqlParams",
+        "GetPracticeHistorySqlRow",
+        "GetPracticeHistoryApiRequest",
+        "GetPracticeHistoryApiResponse",
+    ),
+    "app/sql/v3/practice/get_practice_overview_complete.sql": (
+        "GetPracticeOverviewSqlParams",
+        "GetPracticeOverviewSqlRow",
+        "GetPracticeOverviewApiRequest",
+        "GetPracticeOverviewApiResponse",
     ),
     "app/sql/v3/profile/authorize_emulation_complete.sql": (
         "AuthorizeEmulationSqlParams",
@@ -13248,6 +13652,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/leaderboard/get_leaderboard_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/logs/get_logs_bundle_complete.sql"]
     ) -> SqlString: ...
 
@@ -13354,6 +13763,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/personas/update_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/practice/get_practice_history_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/practice/get_practice_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
