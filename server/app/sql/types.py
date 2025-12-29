@@ -638,6 +638,668 @@ class RefreshAnalyticsApiResponse(BaseModel):
 
 
 
+# Generated from: bulk_archive_attempts
+
+class BulkArchiveAttemptsSqlParams(BaseModel):
+
+    archived: bool
+    profile_id: UUID
+    attempt_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids_filter: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.archived,
+            self.profile_id,
+            self.attempt_ids,
+            self.start_date,
+            self.end_date,
+            self.cohort_ids,
+            self.department_ids,
+            self.roles,
+            self.simulation_filters,
+            self.search,
+            self.profile_ids_filter,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.infinite_mode,
+        )
+
+class BulkArchiveAttemptsSqlRow(BaseModel):
+
+    updated_count: int | None = None
+    actor_name: str | None = None
+    profile_ids_to_invalidate: list[str] | None = None
+
+class BulkArchiveAttemptsApiRequest(BaseModel):
+
+    archived: bool
+    attempt_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids_filter: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+
+class BulkArchiveAttemptsApiResponse(BaseModel):
+
+    updated_count: int | None = None
+    actor_name: str | None = None
+    profile_ids_to_invalidate: list[str] | None = None
+
+
+
+# Generated from: get_eval_attempt
+
+class GetEvalAttemptSqlParams(BaseModel):
+
+    attempt_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.profile_id,
+        )
+
+class QGetEvalAttemptV3Attempt(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    eval_id: UUID | None
+    archived: bool | None
+    conversation_mode: bool | None
+    conversation_agent_id: UUID | None
+    conversation_max_turns: int | None
+
+
+
+
+class QGetEvalAttemptV3Eval(BaseModel):
+
+    eval_id: UUID | None
+    name: str | None
+    description: str | None
+    rubric_id: UUID | None
+    agent_id: UUID | None
+    eval_agent_id: UUID | None
+    dynamic: bool | None
+    rubric_name: str | None
+    rubric_description: str | None
+    system_prompt: str | None
+    conversation_agent_name: str | None
+
+
+
+
+class QGetEvalAttemptV3Run(BaseModel):
+
+    run_id: UUID | None
+    status: str | None
+    test_id: UUID | None
+    eval_run_completed: bool | None
+    eval_run_assigned_at: str | None
+    eval_run_updated_at: str | None
+    run_created_at: str | None
+    model_id: UUID | None
+    model_name: str | None
+    agent_id: UUID | None
+    agent_name: str | None
+    persona_id: UUID | None
+    persona_name: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    grade_score: int | None
+    grade_passed: bool | None
+    grade_created_at: str | None
+
+
+
+
+class QGetEvalAttemptV3StatusSummary(BaseModel):
+
+    not_started: int | None
+    in_progress: int | None
+    completed: int | None
+    total: int | None
+
+class GetEvalAttemptSqlRow(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    attempt: QGetEvalAttemptV3Attempt | None = None
+    eval: QGetEvalAttemptV3Eval | None = None
+    runs: list[QGetEvalAttemptV3Run] | None = None
+    status_summary: QGetEvalAttemptV3StatusSummary | None = None
+
+class GetEvalAttemptApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetEvalAttemptApiResponse(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    attempt: QGetEvalAttemptV3Attempt | None = None
+    eval: QGetEvalAttemptV3Eval | None = None
+    runs: list[QGetEvalAttemptV3Run] | None = None
+    status_summary: QGetEvalAttemptV3StatusSummary | None = None
+
+
+
+# Generated from: get_simulation_attempt
+
+class GetSimulationAttemptSqlParams(BaseModel):
+
+    attempt_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.profile_id,
+        )
+
+class QGetSimulationAttemptV3AggregatedResults(BaseModel):
+
+    total_score: float | None
+    total_possible_points: float | None
+    percentage: float | None
+    passed: bool | None
+    chats_completed: int | None
+    total_chats: int | None
+
+
+
+
+class QGetSimulationAttemptV3PreviousChat(BaseModel):
+
+    chat_id: UUID | None
+    attempt_id: UUID | None
+    score: float | None
+    passed: bool | None
+    created_at: str | None
+    title: str | None
+    time_taken: float | None
+    total_possible_points: float | None
+    percentage: float | None
+
+class QGetSimulationAttemptV3AllSimulationScenario(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    department_id: UUID | None
+    active: bool | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_icon: str | None
+    persona_color: str | None
+    created_at: str | None
+    updated_at: str | None
+    generated: bool | None
+    default_scenario: bool | None
+    copy_paste_allowed: bool | None
+    text_enabled: bool | None
+    audio_enabled: bool | None
+    show_problem_statement: bool | None
+    show_objectives: bool | None
+    show_images: bool | None
+    background_image: UUID | None
+    objectives: list[str] | None
+    previous_chats: list[QGetSimulationAttemptV3PreviousChat] | None
+
+
+
+
+class QGetSimulationAttemptV3Attempt(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    simulation_id: UUID | None
+    infinite_mode: bool | None
+    archived: bool | None
+    profile_id: UUID | None
+
+
+
+
+class QGetSimulationAttemptV3AttemptProfile(BaseModel):
+
+    profile_id: UUID | None
+    attempt_id: UUID | None
+    active: bool | None
+
+
+
+
+class QGetSimulationAttemptV3ContinuationOption(BaseModel):
+
+    scenario_id: UUID | None
+    position: int | None
+    scenario_name: str | None
+    previous_chat_id: UUID | None
+    title: str | None
+    score: float | None
+    percentage: float | None
+    time_taken: float | None
+
+class QGetSimulationAttemptV3AvailableContinuationOptions(BaseModel):
+
+    next_sequential_options: list[QGetSimulationAttemptV3ContinuationOption] | None
+    has_options: bool | None
+
+
+
+
+class QGetSimulationAttemptV3Chat(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+    title: str | None
+    scenario_id: UUID | None
+    parent_scenario_id: UUID | None
+    attempt_id: UUID | None
+    completed: bool | None
+    completed_at: str | None
+    trace_id: UUID | None
+    document_ids: list[str] | None
+
+
+
+
+class QGetSimulationAttemptV3SkillFeedback(BaseModel):
+
+    skill_name: str | None
+    feedback: str | None
+
+
+
+
+class QGetSimulationAttemptV3SkillScore(BaseModel):
+
+    skill_name: str | None
+    score: float | None
+
+class QGetSimulationAttemptV3DynamicRubric(BaseModel):
+
+    chat_id: UUID | None
+    score: float | None
+    passed: bool | None
+    time_taken: float | None
+    skill_scores: list[QGetSimulationAttemptV3SkillScore] | None
+    skill_feedbacks: list[QGetSimulationAttemptV3SkillFeedback] | None
+    total_possible_points: float | None
+
+
+
+
+class QGetSimulationAttemptV3Grade(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    simulation_chat_id: UUID | None
+    rubric_id: UUID | None
+    description: str | None
+    passed: bool | None
+    score: int | None
+    time_taken: int | None
+
+
+
+
+class QGetSimulationAttemptV3StandardAchievement(BaseModel):
+
+    standard_id: UUID | None
+    achieved: bool | None
+
+
+
+
+class QGetSimulationAttemptV3StandardFeedback(BaseModel):
+
+    standard_id: UUID | None
+    feedback: str | None
+
+
+
+
+class QGetSimulationAttemptV3StandardPass(BaseModel):
+
+    standard_id: UUID | None
+    passed: bool | None
+
+class QGetSimulationAttemptV3GradingState(BaseModel):
+
+    achieved_standards: list[QGetSimulationAttemptV3StandardAchievement] | None
+    passed_standards: list[QGetSimulationAttemptV3StandardPass] | None
+    grade_description: str | None
+    feedback_by_standard_id: list[QGetSimulationAttemptV3StandardFeedback] | None
+
+
+
+
+class QGetSimulationAttemptV3Hint(BaseModel):
+
+    simulation_message_id: UUID | None
+    hint: str | None
+    idx: int | None
+    created_at: str | None
+
+class QGetSimulationAttemptV3HintsByMessage(BaseModel):
+
+    message_id: UUID | None
+    hints: list[QGetSimulationAttemptV3Hint] | None
+
+
+
+
+class QGetSimulationAttemptV3MessageFeedbackHighlight(BaseModel):
+
+    section: str | None
+
+
+
+
+class QGetSimulationAttemptV3MessageFeedbackReplace(BaseModel):
+
+    section: str | None
+    replace: str | None
+
+class QGetSimulationAttemptV3MessageFeedback(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    type: str | None
+    replaces: list[QGetSimulationAttemptV3MessageFeedbackReplace] | None
+    highlights: list[QGetSimulationAttemptV3MessageFeedbackHighlight] | None
+
+class QGetSimulationAttemptV3Message(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+    chat_id: UUID | None
+    content: str | None
+    type: str | None
+    completed: bool | None
+    persona_id: UUID | None
+    feedbacks: list[QGetSimulationAttemptV3MessageFeedback] | None
+
+
+
+
+class QGetSimulationAttemptV3Persona(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    icon: str | None
+    color: str | None
+
+
+
+
+class QGetSimulationAttemptV3QuizResponse(BaseModel):
+
+    question_id: UUID | None
+    option_id: UUID | None
+    completed: bool | None
+    created_at: str | None
+
+class QGetSimulationAttemptV3Quiz(BaseModel):
+
+    id: UUID | None
+    completed: bool | None
+    responses: list[QGetSimulationAttemptV3QuizResponse] | None
+
+
+
+
+class QGetSimulationAttemptV3Scenario(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    department_id: UUID | None
+    active: bool | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_icon: str | None
+    persona_color: str | None
+    created_at: str | None
+    updated_at: str | None
+    generated: bool | None
+    default_scenario: bool | None
+    copy_paste_allowed: bool | None
+    text_enabled: bool | None
+    audio_enabled: bool | None
+    show_problem_statement: bool | None
+    show_objectives: bool | None
+    show_images: bool | None
+    background_image: UUID | None
+    objectives: list[str] | None
+
+
+
+
+class QGetSimulationAttemptV3Option(BaseModel):
+
+    id: UUID | None
+    option_text: str | None
+    type: str | None
+    is_correct: bool | None
+
+class QGetSimulationAttemptV3Question(BaseModel):
+
+    id: UUID | None
+    question_text: str | None
+    type: str | None
+    allow_multiple: bool | None
+    times: list[int] | None
+    options: list[QGetSimulationAttemptV3Option] | None
+
+
+
+
+class QGetSimulationAttemptV3VideoDocument(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    extension: str | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+
+class QGetSimulationAttemptV3Video(BaseModel):
+
+    id: UUID | None
+    title: str | None
+    length_seconds: int | None
+    upload_id: UUID | None
+    video_documents: list[QGetSimulationAttemptV3VideoDocument] | None
+    questions: list[QGetSimulationAttemptV3Question] | None
+    show_image: bool | None
+
+class QGetSimulationAttemptV3ChatData(BaseModel):
+
+    chat: QGetSimulationAttemptV3Chat | None
+    scenario: QGetSimulationAttemptV3Scenario | None
+    messages: list[QGetSimulationAttemptV3Message] | None
+    hints: list[QGetSimulationAttemptV3HintsByMessage] | None
+    grade: QGetSimulationAttemptV3Grade | None
+    grading_state: QGetSimulationAttemptV3GradingState | None
+    dynamic_rubric: QGetSimulationAttemptV3DynamicRubric | None
+    previous_chats: list[QGetSimulationAttemptV3PreviousChat] | None
+    personas: list[QGetSimulationAttemptV3Persona] | None
+    content_type: str | None
+    video: QGetSimulationAttemptV3Video | None
+    quiz: QGetSimulationAttemptV3Quiz | None
+
+
+
+
+class QGetSimulationAttemptV3StandardGroupMapping(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+    pass_points: float | None
+
+
+
+
+class QGetSimulationAttemptV3StandardGroupStandards(BaseModel):
+
+    standard_group_id: UUID | None
+    standard_ids: list[str] | None
+
+
+
+
+class QGetSimulationAttemptV3StandardMapping(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+
+class QGetSimulationAttemptV3RubricStructure(BaseModel):
+
+    standard_groups: list[QGetSimulationAttemptV3StandardGroupStandards] | None
+    standard_groups_mapping: list[QGetSimulationAttemptV3StandardGroupMapping] | None
+    standards_mapping: list[QGetSimulationAttemptV3StandardMapping] | None
+
+
+
+
+class QGetSimulationAttemptV3ScenarioDocument(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    type: str | None
+    updated_at: str | None
+    extension: str | None
+    scenario_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    active: bool | None
+    department_ids: list[str] | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    field_ids: list[str] | None
+
+
+
+
+class QGetSimulationAttemptV3Simulation(BaseModel):
+
+    id: UUID | None
+    title: str | None
+    description: str | None
+    department_id: UUID | None
+    active: bool | None
+    default_simulation: bool | None
+    practice_simulation: bool | None
+    hints_enabled: bool | None
+    objectives_enabled: bool | None
+    input_guardrail_active: bool | None
+    output_guardrail_active: bool | None
+    image_input_active: bool | None
+    copy_paste_allowed: bool | None
+    time_limit: int | None
+    rubric_id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+
+
+
+
+class QGetSimulationAttemptV3Timer(BaseModel):
+
+    elapsed: int | None
+    limit: int | None
+    exceeded: bool | None
+    formatted: str | None
+
+class GetSimulationAttemptSqlRow(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    access_denied: bool | None = None
+    attempt: QGetSimulationAttemptV3Attempt | None = None
+    simulation: QGetSimulationAttemptV3Simulation | None = None
+    attempt_profiles: list[QGetSimulationAttemptV3AttemptProfile] | None = None
+    chats: list[QGetSimulationAttemptV3ChatData] | None = None
+    scenario_documents: list[QGetSimulationAttemptV3ScenarioDocument] | None = None
+    aggregated_results: QGetSimulationAttemptV3AggregatedResults | None = None
+    timer: QGetSimulationAttemptV3Timer | None = None
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_single_chat_attempt: bool | None = None
+    is_last_attempt: bool | None = None
+    show_results: bool | None = None
+    should_show_controls: bool | None = None
+    remaining_scenarios_count: int | None = None
+    is_last_remaining_scenario: bool | None = None
+    can_pick_multiple_alternatives: bool | None = None
+    is_active: bool | None = None
+    rubric_structure: QGetSimulationAttemptV3RubricStructure | None = None
+    all_simulation_scenarios: list[QGetSimulationAttemptV3AllSimulationScenario] | None = None
+    available_continuation_options: QGetSimulationAttemptV3AvailableContinuationOptions | None = None
+
+class GetSimulationAttemptApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetSimulationAttemptApiResponse(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    access_denied: bool | None = None
+    attempt: QGetSimulationAttemptV3Attempt | None = None
+    simulation: QGetSimulationAttemptV3Simulation | None = None
+    attempt_profiles: list[QGetSimulationAttemptV3AttemptProfile] | None = None
+    chats: list[QGetSimulationAttemptV3ChatData] | None = None
+    scenario_documents: list[QGetSimulationAttemptV3ScenarioDocument] | None = None
+    aggregated_results: QGetSimulationAttemptV3AggregatedResults | None = None
+    timer: QGetSimulationAttemptV3Timer | None = None
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_single_chat_attempt: bool | None = None
+    is_last_attempt: bool | None = None
+    show_results: bool | None = None
+    should_show_controls: bool | None = None
+    remaining_scenarios_count: int | None = None
+    is_last_remaining_scenario: bool | None = None
+    can_pick_multiple_alternatives: bool | None = None
+    is_active: bool | None = None
+    rubric_structure: QGetSimulationAttemptV3RubricStructure | None = None
+    all_simulation_scenarios: list[QGetSimulationAttemptV3AllSimulationScenario] | None = None
+    available_continuation_options: QGetSimulationAttemptV3AvailableContinuationOptions | None = None
+
+
+
 # Generated from: create_auth
 
 class ICreateAuthV3AuthItem(BaseModel):
@@ -13818,6 +14480,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshAnalyticsApiRequest",
         "RefreshAnalyticsApiResponse",
     ),
+    "app/sql/v3/attempts/bulk_archive_attempts_complete.sql": (
+        "BulkArchiveAttemptsSqlParams",
+        "BulkArchiveAttemptsSqlRow",
+        "BulkArchiveAttemptsApiRequest",
+        "BulkArchiveAttemptsApiResponse",
+    ),
+    "app/sql/v3/attempts/get_eval_attempt_complete.sql": (
+        "GetEvalAttemptSqlParams",
+        "GetEvalAttemptSqlRow",
+        "GetEvalAttemptApiRequest",
+        "GetEvalAttemptApiResponse",
+    ),
+    "app/sql/v3/attempts/get_simulation_attempt_complete.sql": (
+        "GetSimulationAttemptSqlParams",
+        "GetSimulationAttemptSqlRow",
+        "GetSimulationAttemptApiRequest",
+        "GetSimulationAttemptApiResponse",
+    ),
     "app/sql/v3/auth/create_auth_complete.sql": (
         "CreateAuthSqlParams",
         "CreateAuthSqlRow",
@@ -14857,6 +15537,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/analytics/refresh_analytics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/attempts/bulk_archive_attempts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/attempts/get_eval_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/attempts/get_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -317,7 +317,7 @@ export async function getLayoutContextData(session?: Session | null) {
   if (attemptId && effectiveProfileId) {
     try {
       attemptData = await getAttemptFull(attemptId, {
-        body: { attemptId },
+        body: { attempt_id: attemptId },
       });
     } catch {
       // If attempt fetch fails, just continue without attempt data

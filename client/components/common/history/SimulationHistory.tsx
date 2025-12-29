@@ -1304,21 +1304,19 @@ export default function SimulationHistory({
 
         result = await bulkArchiveAttemptsAction({
           body: {
-            archiveAll: true,
             archived: archiveAction,
-            filters: {
-              startDate: _initialFilters.startDate,
-              endDate: _initialFilters.endDate,
-              cohortIds: _initialFilters.cohortIds,
-              departmentIds: _initialFilters.departmentIds,
-              roles: _initialFilters.roles,
-              simulationFilters,
-              search: historySearch || null,
-              profileIds: historyProfileIds || null,
-              simulationIds: historySimulationIds || null,
-              scenarioIds: historyScenarioIds || null,
-              infiniteMode: historyInfiniteMode ?? null,
-            },
+            attempt_ids: [], // Empty array means filter mode
+            start_date: _initialFilters.startDate,
+            end_date: _initialFilters.endDate,
+            cohort_ids: _initialFilters.cohortIds || [],
+            department_ids: _initialFilters.departmentIds || [],
+            roles: _initialFilters.roles || [],
+            simulation_filters: simulationFilters,
+            search: historySearch || null,
+            profile_ids_filter: historyProfileIds || [],
+            simulation_ids: historySimulationIds || [],
+            scenario_ids: historyScenarioIds || [],
+            infinite_mode: historyInfiniteMode ?? null,
           },
         });
 
@@ -1342,9 +1340,19 @@ export default function SimulationHistory({
 
         result = await bulkArchiveAttemptsAction({
           body: {
-            archiveAll: false,
-            attemptIds: attemptsToUpdate,
             archived: archiveAction,
+            attempt_ids: attemptsToUpdate,
+            start_date: null,
+            end_date: null,
+            cohort_ids: [],
+            department_ids: [],
+            roles: [],
+            simulation_filters: [],
+            search: null,
+            profile_ids_filter: [],
+            simulation_ids: [],
+            scenario_ids: [],
+            infinite_mode: null,
           },
         });
 

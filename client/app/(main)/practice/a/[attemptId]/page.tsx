@@ -38,7 +38,7 @@ export async function generateMetadata(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId },
+      body: { attempt_id: attemptId },
     });
       const simulationTitle = attemptData?.simulation?.["title"];
       return {
@@ -69,7 +69,7 @@ export default async function PracticeAttemptPage({
   // Fetch attempt data server-side
   try {
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId },
+      body: { attempt_id: attemptId },
     });
 
     return (

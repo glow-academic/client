@@ -1,393 +1,25 @@
 """Attempt full endpoint - returns complete attempt data with all related entities."""
 
-import json
-import re
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetSimulationAttemptApiRequest,
+    GetSimulationAttemptApiResponse,
+    GetSimulationAttemptSqlParams,
+    GetSimulationAttemptSqlRow,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class AttemptFullRequest(BaseModel):
-    attemptId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-# Strongly typed nested models
-class AttemptItem(BaseModel):
-    id: str
-    createdAt: str
-    simulationId: str
-    infiniteMode: bool
-    archived: bool
-    profileId: str | None = None
-
-
-class SimulationItem(BaseModel):
-    id: str
-    title: str
-    description: str
-    departmentId: str | None
-    active: bool
-    defaultSimulation: bool
-    practiceSimulation: bool
-    hintsEnabled: bool
-    objectivesEnabled: bool
-    inputGuardrailActive: bool
-    outputGuardrailActive: bool
-    imageInputActive: bool
-    copyPasteAllowed: bool
-    timeLimit: int | None
-    rubricId: str | None
-    createdAt: str
-    updatedAt: str
-
-
-class AttemptProfileItem(BaseModel):
-    profileId: str
-    attemptId: str
-    active: bool
-
-
-class ChatItem(BaseModel):
-    id: str | None = None
-    createdAt: str
-    updatedAt: str
-    title: str
-    scenarioId: str | None = None
-    parentScenarioId: str | None = None
-    attemptId: str
-    completed: bool
-    completedAt: str | None
-    traceId: str | None
-    documentIds: list[str]
-
-
-class ScenarioItem(BaseModel):
-    id: str
-    name: str
-    problemStatement: str
-    departmentId: str | None
-    active: bool
-    personaId: str | None
-    personaName: str | None = None
-    personaIcon: str | None = None
-    personaColor: str | None = None
-    createdAt: str
-    updatedAt: str
-    generated: bool
-    defaultScenario: bool
-    copyPasteAllowed: bool
-    textEnabled: bool = True
-    audioEnabled: bool = False
-    showProblemStatement: bool = True
-    showObjectives: bool = True
-    showImages: bool = True
-    backgroundImage: str | None = None
-    objectives: list[str] | None = None
-
-
-class MessageFeedbackReplaceItem(BaseModel):
-    section: str
-    replace: str
-
-
-class MessageFeedbackHighlightItem(BaseModel):
-    section: str
-
-
-class MessageFeedbackItem(BaseModel):
-    id: str
-    name: str
-    description: str
-    type: Literal["strength", "improvement"]
-    replaces: list[MessageFeedbackReplaceItem] = []
-    highlights: list[MessageFeedbackHighlightItem] = []
-
-
-class MessageItem(BaseModel):
-    id: str
-    createdAt: str
-    updatedAt: str
-    chatId: str
-    content: str
-    type: str  # "query" | "response"
-    completed: bool
-    personaId: str | None = None
-    feedbacks: list[MessageFeedbackItem] | None = None
-
-
-class PersonaItem(BaseModel):
-    id: str
-    name: str
-    icon: str | None = None
-    color: str | None = None
-
-
-class HintItem(BaseModel):
-    simulationMessageId: str
-    hint: str
-    idx: int
-    createdAt: str
-
-
-class HintsByMessage(BaseModel):
-    messageId: str
-    hints: list[HintItem]
-
-
-class GradingState(BaseModel):
-    achievedStandards: dict[str, bool]
-    passedStandards: dict[str, bool]
-    gradeDescription: str | None = None
-    feedbackByStandardId: dict[str, str] | None = None
-
-
-class DynamicRubric(BaseModel):
-    chatId: str
-    score: float
-    passed: bool
-    timeTaken: float
-    skillScores: dict[str, float]
-    skillFeedbacks: dict[str, str]
-    totalPossiblePoints: float
-
-
-class PreviousChat(BaseModel):
-    chatId: str
-    attemptId: str
-    score: float | None
-    passed: bool | None
-    createdAt: str
-    title: str
-    timeTaken: float | None
-    totalPossiblePoints: float | None
-    percentage: float | None
-
-
-class GradeItem(BaseModel):
-    id: str
-    createdAt: str
-    simulationChatId: str
-    rubricId: str
-    description: str | None
-    passed: bool
-    score: int
-    timeTaken: int | None
-
-
-class OptionItem(BaseModel):
-    id: str
-    optionText: str
-    type: str
-    isCorrect: bool
-
-
-class QuestionItem(BaseModel):
-    id: str
-    questionText: str
-    type: str  # "choice" | "frq"
-    allowMultiple: bool
-    times: list[int]  # Timestamps when question appears
-    options: list[OptionItem]
-
-
-class VideoDocumentItem(BaseModel):
-    id: str
-    name: str
-    description: str
-    extension: str | None
-    filePath: str | None
-    mimeType: str | None
-    uploadId: str | None
-
-
-class VideoItem(BaseModel):
-    id: str
-    title: str
-    lengthSeconds: int
-    uploadId: str | None
-    videoDocuments: list[VideoDocumentItem]
-    questions: list[QuestionItem]
-    showImage: bool
-
-
-class QuizResponseItem(BaseModel):
-    questionId: str
-    optionId: str
-    completed: bool
-    createdAt: str
-
-
-class QuizItem(BaseModel):
-    id: str
-    completed: bool
-    responses: list[QuizResponseItem]
-
-
-class ChatData(BaseModel):
-    chat: ChatItem
-    scenario: ScenarioItem | None
-    messages: list[MessageItem]
-    hints: list[HintsByMessage]
-    grade: GradeItem | None = None
-    gradingState: GradingState | None = None
-    dynamicRubric: DynamicRubric | None = None
-    previousChats: list[PreviousChat]
-    personas: list[PersonaItem] = []
-    contentType: str | None = None  # "scenario" | "video"
-    video: VideoItem | None = None
-    quiz: QuizItem | None = None
-
-
-class ScenarioDocumentItem(BaseModel):
-    document_id: str
-    name: str
-    type: str
-    updatedAt: str
-    extension: str
-    scenario_ids: list[str]
-    can_edit: bool
-    can_delete: bool
-    active: bool
-    department_ids: list[str] | None
-    file_path: str
-    mime_type: str
-    upload_id: str | None
-    field_ids: list[str]
-
-
-class StandardGroupMappingItem(BaseModel):
-    name: str
-    description: str
-    points: float
-    passPoints: float
-
-
-class RubricStructure(BaseModel):
-    standardGroups: dict[str, list[str]]
-    standardGroupsMapping: dict[str, StandardGroupMappingItem]
-    standardsMapping: dict[str, dict[str, Any]]  # Can be complex nested structure
-
-
-class AllSimulationScenarioItem(BaseModel):
-    id: str
-    name: str
-    problemStatement: str
-    departmentId: str | None
-    active: bool
-    personaId: str | None
-    createdAt: str
-    updatedAt: str
-    generated: bool
-    defaultScenario: bool
-    copyPasteAllowed: bool
-    textEnabled: bool = True
-    audioEnabled: bool = False
-    showProblemStatement: bool = True
-    showObjectives: bool = True
-    showImages: bool = True
-    backgroundImage: str | None = None
-    objectives: list[str] | None = None
-    previousChats: list[PreviousChat] = []
-
-
-class ContinuationOption(BaseModel):
-    """A single continuation option for a scenario."""
-
-    scenarioId: str
-    position: int
-    scenarioName: str
-    previousChatId: (
-        str | None
-    )  # null means "continue normally" (but we won't include these)
-    title: str
-    score: float | None
-    percentage: float | None
-    timeTaken: float | None
-
-
-class PermutationOption(BaseModel):
-    """A single option within a permutation."""
-
-    scenarioId: str
-    scenarioName: str
-    previousChatId: str | None
-    title: str
-    score: float | None
-    percentage: float | None
-    timeTaken: float | None
-
-
-class Permutation(BaseModel):
-    """A permutation of continuation options for sequential scenarios."""
-
-    id: str
-    options: list[PermutationOption]
-    totalScore: float
-    totalPercentage: float | None
-    totalTimeTaken: float
-
-
-class AvailableContinuationOptions(BaseModel):
-    """Available continuation options with order constraint enforcement."""
-
-    # Options for continuing to next sequential scenario(s)
-    # Only includes scenarios that can be advanced to in order (no gaps)
-    # Frontend will generate permutations from these
-    nextSequentialOptions: list[ContinuationOption] = []
-    # Whether there are any options available at all
-    hasOptions: bool = False
-
-
-class TimerItem(BaseModel):
-    elapsed: int
-    limit: int | None
-    exceeded: bool
-    formatted: str
-
-
-class AggregatedResults(BaseModel):
-    totalScore: float
-    totalPossiblePoints: float
-    percentage: float
-    passed: bool
-    chatsCompleted: int
-    totalChats: int
-
-
-class AttemptFullResponse(BaseModel):
-    """Response containing complete attempt data with all nested structures."""
-
-    attempt: AttemptItem
-    simulation: SimulationItem
-    attemptProfiles: list[AttemptProfileItem]
-    chats: list[ChatData]
-    scenarioDocuments: list[ScenarioDocumentItem]
-    aggregatedResults: AggregatedResults | None = None
-    timer: TimerItem
-    currentChatIndex: int
-    expectedChatCount: int
-    isSingleChatAttempt: bool
-    isLastAttempt: bool
-    showResults: bool
-    shouldShowControls: bool
-    remainingScenariosCount: int
-    isLastRemainingScenario: bool
-    canPickMultipleAlternatives: bool
-    isActive: bool
-    rubricStructure: RubricStructure | None = None
-    allSimulationScenarios: list[AllSimulationScenarioItem]
-    availableContinuationOptions: AvailableContinuationOptions | None = None
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/attempts/get_simulation_attempt_complete.sql"
 
 
 router = APIRouter()
@@ -395,7 +27,7 @@ router = APIRouter()
 
 @router.post(
     "/simulation",
-    response_model=AttemptFullResponse,
+    response_model=GetSimulationAttemptApiResponse,
     dependencies=[
         audit_activity(
             "attempt.viewed", "{{ actor.name }} viewed attempt '{{ attempt.id }}'"
@@ -403,11 +35,11 @@ router = APIRouter()
     ],
 )
 async def get_attempt_full(
-    request: AttemptFullRequest,
+    request: GetSimulationAttemptApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> AttemptFullResponse:
+) -> GetSimulationAttemptApiResponse:
     """Get complete attempt data with all related entities and computed values."""
     tags = ["attempts"]  # From router tags
 
@@ -415,7 +47,7 @@ async def get_attempt_full(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    body_dict = request.model_dump(mode='json')
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache (unless bypassed)
@@ -424,309 +56,69 @@ async def get_attempt_full(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return AttemptFullResponse.model_validate(cached["data"])
+            return GetSimulationAttemptApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get current user's profileId from header (set by router-level dependency)
-        # Used for role-based access control
-        current_profile_id = http_request.state.profile_id
-        # Note: profileId is optional - if not provided, skip role check for backward compatibility
-
-        sql_query = load_sql("app/sql/v3/attempts/get_simulation_attempt_complete.sql")
-        sql_params = (request.attemptId,)
-        result = await conn.fetchrow(sql_query, *sql_params)
-
-        if not result:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
             raise HTTPException(
-                status_code=404, detail=f"Attempt not found: {request.attemptId}"
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch actor_name separately
-        actor_name_row = None
-        if current_profile_id:
-            actor_name_row = await conn.fetchrow(
-                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                current_profile_id,
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetSimulationAttemptSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper (single row result)
+        result = cast(
+            GetSimulationAttemptSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        # Check if attempt exists using SQL result
+        if not result.attempt_exists:
+            raise HTTPException(
+                status_code=404, detail=f"Attempt not found: {request.attempt_id}"
             )
-        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Check role-based access control (handled in SQL)
+        if result.access_denied:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to view this attempt. Your role is lower than the attempt owner's role.",
+            )
 
         # Set audit context
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": current_profile_id},
-                attempt={"id": request.attemptId},
+                actor={"name": result.actor_name, "id": profile_id},
+                attempt={"id": str(request.attempt_id)},
             )
 
-        # Parse JSONB fields from strings to Python objects
-        # asyncpg returns JSONB as dict/list, but handle string case for safety
-        def parse_jsonb(data: Any) -> Any:  # noqa: ANN401
-            if isinstance(data, str):
-                return json.loads(data)
-            return data
+        # Convert SQL result to API response
+        api_response = GetSimulationAttemptApiResponse.model_validate(result.model_dump())
 
-        # Role-based restriction: check if viewing profile's role is "higher" than current user's role
-        if current_profile_id:
-            resolved_current_profile_id = current_profile_id
-
-            # Get attempt's profile role from attempt_profiles
-            attempt_profiles_data = parse_jsonb(result.get("attemptProfiles", []))
-            attempt_profile_id = None
-            if attempt_profiles_data and isinstance(attempt_profiles_data, list):
-                for ap in attempt_profiles_data:
-                    if isinstance(ap, dict) and ap.get("active"):
-                        attempt_profile_id = ap.get("profileId")
-                        break
-
-            if attempt_profile_id and resolved_current_profile_id:
-                # Get roles for comparison
-                attempt_profile_role_row = await conn.fetchrow(
-                    "SELECT role FROM profiles WHERE id = $1",
-                    attempt_profile_id,
-                )
-                current_user_role_row = await conn.fetchrow(
-                    "SELECT role FROM profiles WHERE id = $1",
-                    resolved_current_profile_id,
-                )
-
-                if attempt_profile_role_row and current_user_role_row:
-                    attempt_role = attempt_profile_role_row["role"]
-                    current_role = current_user_role_row["role"]
-
-                    # Role hierarchy: superadmin > admin > instructional > member > guest
-                    role_hierarchy = {
-                        "superadmin": 5,
-                        "admin": 4,
-                        "instructional": 3,
-                        "member": 2,
-                        "guest": 1,
-                    }
-
-                    attempt_role_level = role_hierarchy.get(attempt_role.lower(), 1)
-                    current_role_level = role_hierarchy.get(current_role.lower(), 1)
-
-                    # Return 403 if viewing profile's role is higher than current user's role
-                    if attempt_role_level > current_role_level:
-                        raise HTTPException(
-                            status_code=403,
-                            detail=f"You don't have permission to view attempts from {attempt_role} users. Your role ({current_role}) is lower than the attempt owner's role.",
-                        )
-
-        # Parse JSONB fields and construct strongly typed models
-        attempt_data = parse_jsonb(result["attempt"])
-        simulation_data = parse_jsonb(result["simulation"])
-        attempt_profiles_data = parse_jsonb(result["attemptProfiles"])
-        chats_data = parse_jsonb(result["chats"])
-        scenario_documents_data = parse_jsonb(result["scenarioDocuments"])
-        aggregated_results_data = (
-            parse_jsonb(result["aggregatedResults"])
-            if result.get("aggregatedResults")
-            else None
-        )
-        timer_data = parse_jsonb(result["timer"])
-        rubric_structure_data = (
-            parse_jsonb(result["rubricStructure"])
-            if result.get("rubricStructure")
-            else None
-        )
-        all_simulation_scenarios_data = parse_jsonb(result["allSimulationScenarios"])
-        available_continuation_options_data = parse_jsonb(
-            result.get("availableContinuationOptions", {})
-        )
-
-        # Construct strongly typed models
-        attempt = AttemptItem(**attempt_data)
-        simulation = SimulationItem(**simulation_data)
-        attempt_profiles = [AttemptProfileItem(**ap) for ap in attempt_profiles_data]
-
-        # Construct chats with nested structures
-        chats = []
-        for chat_data in chats_data:
-            chat_item = ChatItem(**chat_data["chat"])
-            scenario = (
-                ScenarioItem(**chat_data["scenario"])
-                if chat_data.get("scenario")
-                else None
-            )
-            messages = [MessageItem(**m) for m in chat_data.get("messages", [])]
-            hints = [HintsByMessage(**h) for h in chat_data.get("hints", [])]
-            grade = GradeItem(**chat_data["grade"]) if chat_data.get("grade") else None
-            grading_state = (
-                GradingState(**chat_data["gradingState"])
-                if chat_data.get("gradingState")
-                else None
-            )
-            dynamic_rubric = (
-                DynamicRubric(**chat_data["dynamicRubric"])
-                if chat_data.get("dynamicRubric")
-                else None
-            )
-            previous_chats = [
-                PreviousChat(**pc) for pc in chat_data.get("previousChats", [])
-            ]
-            personas = [PersonaItem(**p) for p in chat_data.get("personas", [])]
-
-            # Handle contentType, video, and quiz fields
-            content_type = chat_data.get("contentType")
-            video = None
-            quiz = None
-
-            if content_type == "video" and chat_data.get("video"):
-                video_data = chat_data["video"]
-                # Parse video documents
-                video_documents = [
-                    VideoDocumentItem(**p) for p in video_data.get("videoDocuments", [])
-                ]
-                # Parse questions with options
-                questions = []
-                for q_data in video_data.get("questions", []):
-                    options = [OptionItem(**opt) for opt in q_data.get("options", [])]
-                    questions.append(
-                        QuestionItem(
-                            id=q_data["id"],
-                            questionText=q_data["questionText"],
-                            type=q_data["type"],
-                            allowMultiple=q_data.get("allowMultiple", False),
-                            times=q_data.get("times", []),
-                            options=options,
-                        )
-                    )
-                video = VideoItem(
-                    id=video_data["id"],
-                    title=video_data["title"],
-                    lengthSeconds=video_data["lengthSeconds"],
-                    uploadId=video_data.get("uploadId"),
-                    videoDocuments=video_documents,
-                    questions=questions,
-                    showImage=video_data.get("showImage", True),
-                )
-
-            if chat_data.get("quiz"):
-                quiz_data = chat_data["quiz"]
-                responses = [
-                    QuizResponseItem(**r) for r in quiz_data.get("responses", [])
-                ]
-                quiz = QuizItem(
-                    id=quiz_data["id"],
-                    completed=quiz_data.get("completed", False),
-                    responses=responses,
-                )
-
-            chats.append(
-                ChatData(
-                    chat=chat_item,
-                    scenario=scenario,
-                    messages=messages,
-                    hints=hints,
-                    grade=grade,
-                    gradingState=grading_state,
-                    dynamicRubric=dynamic_rubric,
-                    previousChats=previous_chats,
-                    personas=personas,
-                    contentType=content_type,
-                    video=video,
-                    quiz=quiz,
-                )
-            )
-
-        scenario_documents = [
-            ScenarioDocumentItem(**sd) for sd in scenario_documents_data
-        ]
-        aggregated_results = (
-            AggregatedResults(**aggregated_results_data)
-            if aggregated_results_data
-            else None
-        )
-        timer = TimerItem(**timer_data)
-
-        rubric_structure = None
-        if rubric_structure_data:
-            # Handle nested mappings for rubric structure
-            standard_groups_mapping = {
-                k: StandardGroupMappingItem(**v)
-                for k, v in rubric_structure_data.get(
-                    "standardGroupsMapping", {}
-                ).items()
-            }
-            rubric_structure = RubricStructure(
-                standardGroups=rubric_structure_data.get("standardGroups", {}),
-                standardGroupsMapping=standard_groups_mapping,
-                standardsMapping=rubric_structure_data.get("standardsMapping", {}),
-            )
-
-        all_simulation_scenarios = [
-            AllSimulationScenarioItem(**s) for s in all_simulation_scenarios_data
-        ]
-
-        # Construct available continuation options
-        available_continuation_options = None
-        if available_continuation_options_data:
-            next_sequential_options = [
-                ContinuationOption(**opt)
-                for opt in available_continuation_options_data.get(
-                    "nextSequentialOptions", []
-                )
-            ]
-            available_continuation_options = AvailableContinuationOptions(
-                nextSequentialOptions=next_sequential_options,
-                hasOptions=available_continuation_options_data.get("hasOptions", False),
-            )
-
-        # Access result fields defensively (asyncpg may lowercase column names)
-        # Try both camelCase and snake_case versions
-        def get_result_field(key: str, default: Any = None) -> Any:  # noqa: ANN401
-            """Get field from result, trying both camelCase and snake_case."""
-            if key in result:
-                return result[key]
-            # Try lowercase version (asyncpg might lowercase)
-            key_lower = key.lower()
-            if key_lower in result:
-                return result[key_lower]
-            # Try snake_case version
-            key_snake = re.sub(r"([A-Z])", r"_\1", key).lower()
-            if key_snake in result:
-                return result[key_snake]
-            return default
-
-        response_data = AttemptFullResponse(
-            attempt=attempt,
-            simulation=simulation,
-            attemptProfiles=attempt_profiles,
-            chats=chats,
-            scenarioDocuments=scenario_documents,
-            aggregatedResults=aggregated_results,
-            timer=timer,
-            currentChatIndex=get_result_field("currentChatIndex", 0),
-            expectedChatCount=get_result_field("expectedChatCount", 1),
-            isSingleChatAttempt=get_result_field("isSingleChatAttempt", True),
-            isLastAttempt=get_result_field("isLastAttempt", True),
-            showResults=get_result_field("showResults", False),
-            shouldShowControls=get_result_field("shouldShowControls", True),
-            remainingScenariosCount=get_result_field("remainingScenariosCount", 0),
-            isLastRemainingScenario=get_result_field("isLastRemainingScenario", False),
-            canPickMultipleAlternatives=get_result_field(
-                "canPickMultipleAlternatives", True
-            ),
-            isActive=get_result_field("isActive", True),
-            rubricStructure=rubric_structure,
-            allSimulationScenarios=all_simulation_scenarios,
-            availableContinuationOptions=available_continuation_options,
-        )
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

@@ -40,7 +40,7 @@ export async function generateMetadata(
   try {
     // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId },
+      body: { attempt_id: attemptId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
@@ -68,12 +68,12 @@ export default async function AttemptPage({
   const { attemptId } = await params;
 
   // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch attempt data server-side
-  try {
-    const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId },
-    });
+    // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+    // Fetch attempt data server-side
+    try {
+      const attemptData = await getAttemptFull(attemptId, {
+        body: { attempt_id: attemptId },
+      });
 
     return (
       <div className="space-y-6">

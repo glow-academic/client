@@ -45,7 +45,7 @@ export async function generateMetadata(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const attemptData = await getEvalAttemptFull(attemptId, {
-      body: { attemptId },
+      body: { attempt_id: attemptId },
     });
     const evalName = attemptData?.eval?.["name"];
     return {
@@ -76,7 +76,7 @@ export default async function BenchmarkAttemptPage({
   // Fetch attempt data server-side
   try {
     const attemptData = await getEvalAttemptFull(attemptId, {
-      body: { attemptId },
+      body: { attempt_id: attemptId },
     });
     const agentsList = await getAgentsList();
 

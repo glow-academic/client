@@ -6437,134 +6437,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AggregatedResults */
-        AggregatedResults: {
-            /** Totalscore */
-            totalScore: number;
-            /** Totalpossiblepoints */
-            totalPossiblePoints: number;
-            /** Percentage */
-            percentage: number;
-            /** Passed */
-            passed: boolean;
-            /** Chatscompleted */
-            chatsCompleted: number;
-            /** Totalchats */
-            totalChats: number;
-        };
-        /** AllSimulationScenarioItem */
-        AllSimulationScenarioItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Problemstatement */
-            problemStatement: string;
-            /** Departmentid */
-            departmentId: string | null;
-            /** Active */
-            active: boolean;
-            /** Personaid */
-            personaId: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Generated */
-            generated: boolean;
-            /** Defaultscenario */
-            defaultScenario: boolean;
-            /** Copypasteallowed */
-            copyPasteAllowed: boolean;
-            /**
-             * Textenabled
-             * @default true
-             */
-            textEnabled: boolean;
-            /**
-             * Audioenabled
-             * @default false
-             */
-            audioEnabled: boolean;
-            /**
-             * Showproblemstatement
-             * @default true
-             */
-            showProblemStatement: boolean;
-            /**
-             * Showobjectives
-             * @default true
-             */
-            showObjectives: boolean;
-            /**
-             * Showimages
-             * @default true
-             */
-            showImages: boolean;
-            /** Backgroundimage */
-            backgroundImage?: string | null;
-            /** Objectives */
-            objectives?: string[] | null;
-            /**
-             * Previouschats
-             * @default []
-             */
-            previousChats: components["schemas"]["PreviousChat"][];
-        };
-        /** AttemptFullRequest */
-        AttemptFullRequest: {
-            /** Attemptid */
-            attemptId: string;
-        };
-        /**
-         * AttemptFullResponse
-         * @description Response containing complete attempt data with all nested structures.
-         */
-        AttemptFullResponse: {
-            attempt: components["schemas"]["app__api__v3__attempts__simulation__AttemptItem"];
-            simulation: components["schemas"]["SimulationItem"];
-            /** Attemptprofiles */
-            attemptProfiles: components["schemas"]["AttemptProfileItem"][];
-            /** Chats */
-            chats: components["schemas"]["ChatData"][];
-            /** Scenariodocuments */
-            scenarioDocuments: components["schemas"]["ScenarioDocumentItem"][];
-            aggregatedResults?: components["schemas"]["AggregatedResults"] | null;
-            timer: components["schemas"]["TimerItem"];
-            /** Currentchatindex */
-            currentChatIndex: number;
-            /** Expectedchatcount */
-            expectedChatCount: number;
-            /** Issinglechatattempt */
-            isSingleChatAttempt: boolean;
-            /** Islastattempt */
-            isLastAttempt: boolean;
-            /** Showresults */
-            showResults: boolean;
-            /** Shouldshowcontrols */
-            shouldShowControls: boolean;
-            /** Remainingscenarioscount */
-            remainingScenariosCount: number;
-            /** Islastremainingscenario */
-            isLastRemainingScenario: boolean;
-            /** Canpickmultiplealternatives */
-            canPickMultipleAlternatives: boolean;
-            /** Isactive */
-            isActive: boolean;
-            rubricStructure?: components["schemas"]["RubricStructure"] | null;
-            /** Allsimulationscenarios */
-            allSimulationScenarios: components["schemas"]["AllSimulationScenarioItem"][];
-            availableContinuationOptions?: components["schemas"]["AvailableContinuationOptions"] | null;
-        };
-        /** AttemptProfileItem */
-        AttemptProfileItem: {
-            /** Profileid */
-            profileId: string;
-            /** Attemptid */
-            attemptId: string;
-            /** Active */
-            active: boolean;
-        };
         /**
          * AudioToolCompletePayload
          * @description Response indicating audio tool completed successfully.
@@ -6643,73 +6515,45 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * AvailableContinuationOptions
-         * @description Available continuation options with order constraint enforcement.
-         */
-        AvailableContinuationOptions: {
-            /**
-             * Nextsequentialoptions
-             * @default []
-             */
-            nextSequentialOptions: components["schemas"]["ContinuationOption"][];
-            /**
-             * Hasoptions
-             * @default false
-             */
-            hasOptions: boolean;
-        };
         /** BaseModel */
         BaseModel: Record<string, never>;
-        /** BulkArchiveAttemptsRequest */
-        BulkArchiveAttemptsRequest: {
+        /** BulkArchiveAttemptsApiRequest */
+        BulkArchiveAttemptsApiRequest: {
             /** Archived */
             archived: boolean;
-            /** Attemptids */
-            attemptIds?: string[] | null;
-            /**
-             * Archiveall
-             * @default false
-             */
-            archiveAll: boolean;
-            filters?: components["schemas"]["BulkArchiveFilters"] | null;
-        };
-        /** BulkArchiveAttemptsResponse */
-        BulkArchiveAttemptsResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Count */
-            count: number;
-        };
-        /**
-         * BulkArchiveFilters
-         * @description Filter schema for bulk archive operations.
-         */
-        BulkArchiveFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
+            /** Attempt Ids */
+            attempt_ids?: string[] | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: string[] | null;
+            roles?: unknown | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
             /** Search */
             search?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-            /** Infinitemode */
-            infiniteMode?: boolean | null;
+            /** Profile Ids Filter */
+            profile_ids_filter?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+        };
+        /** BulkArchiveAttemptsApiResponse */
+        BulkArchiveAttemptsApiResponse: {
+            /** Updated Count */
+            updated_count?: number | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Profile Ids To Invalidate */
+            profile_ids_to_invalidate?: string[] | null;
         };
         /** BulkCreateStaffApiRequest */
         BulkCreateStaffApiRequest: {
@@ -6768,54 +6612,6 @@ export interface components {
             text_tokens?: number | null;
             /** Image Tokens */
             image_tokens?: number | null;
-        };
-        /** ChatData */
-        ChatData: {
-            chat: components["schemas"]["ChatItem"];
-            scenario: components["schemas"]["ScenarioItem"] | null;
-            /** Messages */
-            messages: components["schemas"]["MessageItem"][];
-            /** Hints */
-            hints: components["schemas"]["HintsByMessage"][];
-            grade?: components["schemas"]["GradeItem"] | null;
-            gradingState?: components["schemas"]["GradingState"] | null;
-            dynamicRubric?: components["schemas"]["DynamicRubric"] | null;
-            /** Previouschats */
-            previousChats: components["schemas"]["PreviousChat"][];
-            /**
-             * Personas
-             * @default []
-             */
-            personas: components["schemas"]["PersonaItem"][];
-            /** Contenttype */
-            contentType?: string | null;
-            video?: components["schemas"]["VideoItem"] | null;
-            quiz?: components["schemas"]["QuizItem"] | null;
-        };
-        /** ChatItem */
-        ChatItem: {
-            /** Id */
-            id?: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Title */
-            title: string;
-            /** Scenarioid */
-            scenarioId?: string | null;
-            /** Parentscenarioid */
-            parentScenarioId?: string | null;
-            /** Attemptid */
-            attemptId: string;
-            /** Completed */
-            completed: boolean;
-            /** Completedat */
-            completedAt: string | null;
-            /** Traceid */
-            traceId: string | null;
-            /** Documentids */
-            documentIds: string[];
         };
         /**
          * ClassifyUploadCompletePayload
@@ -6876,28 +6672,6 @@ export interface components {
             guest_id: string | null;
             /** Server Time */
             server_time: number;
-        };
-        /**
-         * ContinuationOption
-         * @description A single continuation option for a scenario.
-         */
-        ContinuationOption: {
-            /** Scenarioid */
-            scenarioId: string;
-            /** Position */
-            position: number;
-            /** Scenarioname */
-            scenarioName: string;
-            /** Previouschatid */
-            previousChatId: string | null;
-            /** Title */
-            title: string;
-            /** Score */
-            score: number | null;
-            /** Percentage */
-            percentage: number | null;
-            /** Timetaken */
-            timeTaken: number | null;
         };
         /** CreateAgentApiRequest */
         CreateAgentApiRequest: {
@@ -8160,27 +7934,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DynamicRubric */
-        DynamicRubric: {
-            /** Chatid */
-            chatId: string;
-            /** Score */
-            score: number;
-            /** Passed */
-            passed: boolean;
-            /** Timetaken */
-            timeTaken: number;
-            /** Skillscores */
-            skillScores: {
-                [key: string]: number;
-            };
-            /** Skillfeedbacks */
-            skillFeedbacks: {
-                [key: string]: string;
-            };
-            /** Totalpossiblepoints */
-            totalPossiblePoints: number;
-        };
         /**
          * EndAllCompletedPayload
          * @description Response indicating end all operation completed.
@@ -8253,25 +8006,6 @@ export interface components {
             } | null;
         };
         /**
-         * EvalAttemptFullRequest
-         * @description Request to get eval attempt full details.
-         */
-        EvalAttemptFullRequest: {
-            /** Attemptid */
-            attemptId: string;
-        };
-        /**
-         * EvalAttemptFullResponse
-         * @description Response for eval attempt full endpoint.
-         */
-        EvalAttemptFullResponse: {
-            attempt: components["schemas"]["app__api__v3__attempts__eval__AttemptItem"];
-            eval: components["schemas"]["EvalItem"];
-            /** Runs */
-            runs: components["schemas"]["RunItem"][];
-            status_summary: components["schemas"]["StatusSummary"];
-        };
-        /**
          * EvalCompletedPayload
          * @description Response indicating all runs in eval are completed.
          */
@@ -8314,40 +8048,6 @@ export interface components {
             message: string;
             /** Test Id */
             test_id: string;
-        };
-        /**
-         * EvalItem
-         * @description Eval item in attempt response.
-         */
-        EvalItem: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string;
-            /** Eval Agent Id */
-            eval_agent_id: string;
-            /**
-             * Dynamic
-             * @default false
-             */
-            dynamic: boolean;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /**
-             * System Prompt
-             * @default
-             */
-            system_prompt: string;
-            /** Conversation Agent Name */
-            conversation_agent_name?: string | null;
         };
         /**
          * EvalJoinErrorPayload
@@ -9568,6 +9268,26 @@ export interface components {
             valid_department_ids?: string[] | null;
             /** Document Type Options */
             document_type_options?: string[] | null;
+        };
+        /** GetEvalAttemptApiRequest */
+        GetEvalAttemptApiRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /** GetEvalAttemptApiResponse */
+        GetEvalAttemptApiResponse: {
+            /** Attempt Exists */
+            attempt_exists?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            attempt?: components["schemas"]["QGetEvalAttemptV3Attempt"] | null;
+            eval?: components["schemas"]["QGetEvalAttemptV3Eval"] | null;
+            /** Runs */
+            runs?: components["schemas"]["QGetEvalAttemptV3Run"][] | null;
+            status_summary?: components["schemas"]["QGetEvalAttemptV3StatusSummary"] | null;
         };
         /** GetEvalDetailApiRequest */
         GetEvalDetailApiRequest: {
@@ -11665,6 +11385,57 @@ export interface components {
             /** Settings */
             settings?: components["schemas"]["QGetSettingsListV3Setting"][] | null;
         };
+        /** GetSimulationAttemptApiRequest */
+        GetSimulationAttemptApiRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /** GetSimulationAttemptApiResponse */
+        GetSimulationAttemptApiResponse: {
+            /** Attempt Exists */
+            attempt_exists?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Access Denied */
+            access_denied?: boolean | null;
+            attempt?: components["schemas"]["QGetSimulationAttemptV3Attempt"] | null;
+            simulation?: components["schemas"]["QGetSimulationAttemptV3Simulation"] | null;
+            /** Attempt Profiles */
+            attempt_profiles?: components["schemas"]["QGetSimulationAttemptV3AttemptProfile"][] | null;
+            /** Chats */
+            chats?: components["schemas"]["QGetSimulationAttemptV3ChatData"][] | null;
+            /** Scenario Documents */
+            scenario_documents?: components["schemas"]["QGetSimulationAttemptV3ScenarioDocument"][] | null;
+            aggregated_results?: components["schemas"]["QGetSimulationAttemptV3AggregatedResults"] | null;
+            timer?: components["schemas"]["QGetSimulationAttemptV3Timer"] | null;
+            /** Current Chat Index */
+            current_chat_index?: number | null;
+            /** Expected Chat Count */
+            expected_chat_count?: number | null;
+            /** Is Single Chat Attempt */
+            is_single_chat_attempt?: boolean | null;
+            /** Is Last Attempt */
+            is_last_attempt?: boolean | null;
+            /** Show Results */
+            show_results?: boolean | null;
+            /** Should Show Controls */
+            should_show_controls?: boolean | null;
+            /** Remaining Scenarios Count */
+            remaining_scenarios_count?: number | null;
+            /** Is Last Remaining Scenario */
+            is_last_remaining_scenario?: boolean | null;
+            /** Can Pick Multiple Alternatives */
+            can_pick_multiple_alternatives?: boolean | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            rubric_structure?: components["schemas"]["QGetSimulationAttemptV3RubricStructure"] | null;
+            /** All Simulation Scenarios */
+            all_simulation_scenarios?: components["schemas"]["QGetSimulationAttemptV3AllSimulationScenario"][] | null;
+            available_continuation_options?: components["schemas"]["QGetSimulationAttemptV3AvailableContinuationOptions"] | null;
+        };
         /** GetSimulationDetailApiRequest */
         GetSimulationDetailApiRequest: {
             /**
@@ -11972,42 +11743,6 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["QSearchStaffV3Department"][] | null;
         };
-        /** GradeItem */
-        GradeItem: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Simulationchatid */
-            simulationChatId: string;
-            /** Rubricid */
-            rubricId: string;
-            /** Description */
-            description: string | null;
-            /** Passed */
-            passed: boolean;
-            /** Score */
-            score: number;
-            /** Timetaken */
-            timeTaken: number | null;
-        };
-        /** GradingState */
-        GradingState: {
-            /** Achievedstandards */
-            achievedStandards: {
-                [key: string]: boolean;
-            };
-            /** Passedstandards */
-            passedStandards: {
-                [key: string]: boolean;
-            };
-            /** Gradedescription */
-            gradeDescription?: string | null;
-            /** Feedbackbystandardid */
-            feedbackByStandardId?: {
-                [key: string]: string;
-            } | null;
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -12033,35 +11768,17 @@ export interface components {
             /** Hints Count */
             hints_count?: number | null;
             /** Hints */
-            hints?: components["schemas"]["HintItem-Input"][] | null;
+            hints?: components["schemas"]["HintItem"][] | null;
         };
         /**
          * HintItem
          * @description Individual hint item with index and text.
          */
-        "HintItem-Input": {
+        HintItem: {
             /** Idx */
             idx: number;
             /** Hint */
             hint: string;
-        };
-        /** HintItem */
-        "HintItem-Output": {
-            /** Simulationmessageid */
-            simulationMessageId: string;
-            /** Hint */
-            hint: string;
-            /** Idx */
-            idx: number;
-            /** Createdat */
-            createdAt: string;
-        };
-        /** HintsByMessage */
-        HintsByMessage: {
-            /** Messageid */
-            messageId: string;
-            /** Hints */
-            hints: components["schemas"]["HintItem-Output"][];
         };
         /** IBulkCreateStaffV3Profile */
         IBulkCreateStaffV3Profile: {
@@ -12426,42 +12143,6 @@ export interface components {
             /** Departmentid */
             departmentId?: string | null;
         };
-        /** MessageFeedbackHighlightItem */
-        MessageFeedbackHighlightItem: {
-            /** Section */
-            section: string;
-        };
-        /** MessageFeedbackItem */
-        MessageFeedbackItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type: "strength" | "improvement";
-            /**
-             * Replaces
-             * @default []
-             */
-            replaces: components["schemas"]["MessageFeedbackReplaceItem"][];
-            /**
-             * Highlights
-             * @default []
-             */
-            highlights: components["schemas"]["MessageFeedbackHighlightItem"][];
-        };
-        /** MessageFeedbackReplaceItem */
-        MessageFeedbackReplaceItem: {
-            /** Section */
-            section: string;
-            /** Replace */
-            replace: string;
-        };
         /**
          * MessageImprovementToolCompletePayload
          * @description Response indicating message improvement tool completed successfully.
@@ -12517,27 +12198,6 @@ export interface components {
             profile_id?: string | null;
             /** Sid */
             sid?: string | null;
-        };
-        /** MessageItem */
-        MessageItem: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Chatid */
-            chatId: string;
-            /** Content */
-            content: string;
-            /** Type */
-            type: string;
-            /** Completed */
-            completed: boolean;
-            /** Personaid */
-            personaId?: string | null;
-            /** Feedbacks */
-            feedbacks?: components["schemas"]["MessageFeedbackItem"][] | null;
         };
         /**
          * MessageSentPayload
@@ -12635,17 +12295,6 @@ export interface components {
             /** Scenario Id */
             scenario_id?: string | null;
         };
-        /** OptionItem */
-        OptionItem: {
-            /** Id */
-            id: string;
-            /** Optiontext */
-            optionText: string;
-            /** Type */
-            type: string;
-            /** Iscorrect */
-            isCorrect: boolean;
-        };
         /**
          * OutputTokenDetails
          * @description Output token details from Realtime API usage.
@@ -12655,17 +12304,6 @@ export interface components {
             audio_tokens?: number | null;
             /** Text Tokens */
             text_tokens?: number | null;
-        };
-        /** PersonaItem */
-        PersonaItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Icon */
-            icon?: string | null;
-            /** Color */
-            color?: string | null;
         };
         /**
          * PersonaTool
@@ -12688,27 +12326,6 @@ export interface components {
             persona_id: string;
             /** Profile Id */
             profile_id: string | null;
-        };
-        /** PreviousChat */
-        PreviousChat: {
-            /** Chatid */
-            chatId: string;
-            /** Attemptid */
-            attemptId: string;
-            /** Score */
-            score: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Createdat */
-            createdAt: string;
-            /** Title */
-            title: string;
-            /** Timetaken */
-            timeTaken: number | null;
-            /** Totalpossiblepoints */
-            totalPossiblePoints: number | null;
-            /** Percentage */
-            percentage: number | null;
         };
         /**
          * ProblemStatementToolCompletePayload
@@ -14240,6 +13857,98 @@ export interface components {
             created_at: string | null;
             /** Updated At */
             updated_at: string | null;
+        };
+        /** QGetEvalAttemptV3Attempt */
+        QGetEvalAttemptV3Attempt: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Archived */
+            archived: boolean | null;
+            /** Conversation Mode */
+            conversation_mode: boolean | null;
+            /** Conversation Agent Id */
+            conversation_agent_id: string | null;
+            /** Conversation Max Turns */
+            conversation_max_turns: number | null;
+        };
+        /** QGetEvalAttemptV3Eval */
+        QGetEvalAttemptV3Eval: {
+            /** Eval Id */
+            eval_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Eval Agent Id */
+            eval_agent_id: string | null;
+            /** Dynamic */
+            dynamic: boolean | null;
+            /** Rubric Name */
+            rubric_name: string | null;
+            /** Rubric Description */
+            rubric_description: string | null;
+            /** System Prompt */
+            system_prompt: string | null;
+            /** Conversation Agent Name */
+            conversation_agent_name: string | null;
+        };
+        /** QGetEvalAttemptV3Run */
+        QGetEvalAttemptV3Run: {
+            /** Run Id */
+            run_id: string | null;
+            /** Status */
+            status: string | null;
+            /** Test Id */
+            test_id: string | null;
+            /** Eval Run Completed */
+            eval_run_completed: boolean | null;
+            /** Eval Run Assigned At */
+            eval_run_assigned_at: string | null;
+            /** Eval Run Updated At */
+            eval_run_updated_at: string | null;
+            /** Run Created At */
+            run_created_at: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Grade Score */
+            grade_score: number | null;
+            /** Grade Passed */
+            grade_passed: boolean | null;
+            /** Grade Created At */
+            grade_created_at: string | null;
+        };
+        /** QGetEvalAttemptV3StatusSummary */
+        QGetEvalAttemptV3StatusSummary: {
+            /** Not Started */
+            not_started: number | null;
+            /** In Progress */
+            in_progress: number | null;
+            /** Completed */
+            completed: number | null;
+            /** Total */
+            total: number | null;
         };
         /** QGetEvalDetailV3Agent */
         QGetEvalDetailV3Agent: {
@@ -16544,6 +16253,587 @@ export interface components {
             description: string | null;
             /** Department Ids */
             department_ids: string[] | null;
+        };
+        /** QGetSimulationAttemptV3AggregatedResults */
+        QGetSimulationAttemptV3AggregatedResults: {
+            /** Total Score */
+            total_score: number | null;
+            /** Total Possible Points */
+            total_possible_points: number | null;
+            /** Percentage */
+            percentage: number | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Chats Completed */
+            chats_completed: number | null;
+            /** Total Chats */
+            total_chats: number | null;
+        };
+        /** QGetSimulationAttemptV3AllSimulationScenario */
+        QGetSimulationAttemptV3AllSimulationScenario: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Problem Statement */
+            problem_statement: string | null;
+            /** Department Id */
+            department_id: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Persona Icon */
+            persona_icon: string | null;
+            /** Persona Color */
+            persona_color: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Default Scenario */
+            default_scenario: boolean | null;
+            /** Copy Paste Allowed */
+            copy_paste_allowed: boolean | null;
+            /** Text Enabled */
+            text_enabled: boolean | null;
+            /** Audio Enabled */
+            audio_enabled: boolean | null;
+            /** Show Problem Statement */
+            show_problem_statement: boolean | null;
+            /** Show Objectives */
+            show_objectives: boolean | null;
+            /** Show Images */
+            show_images: boolean | null;
+            /** Background Image */
+            background_image: string | null;
+            /** Objectives */
+            objectives: string[] | null;
+            /** Previous Chats */
+            previous_chats: components["schemas"]["QGetSimulationAttemptV3PreviousChat"][] | null;
+        };
+        /** QGetSimulationAttemptV3Attempt */
+        QGetSimulationAttemptV3Attempt: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Archived */
+            archived: boolean | null;
+            /** Profile Id */
+            profile_id: string | null;
+        };
+        /** QGetSimulationAttemptV3AttemptProfile */
+        QGetSimulationAttemptV3AttemptProfile: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QGetSimulationAttemptV3AvailableContinuationOptions */
+        QGetSimulationAttemptV3AvailableContinuationOptions: {
+            /** Next Sequential Options */
+            next_sequential_options: components["schemas"]["QGetSimulationAttemptV3ContinuationOption"][] | null;
+            /** Has Options */
+            has_options: boolean | null;
+        };
+        /** QGetSimulationAttemptV3Chat */
+        QGetSimulationAttemptV3Chat: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Title */
+            title: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Parent Scenario Id */
+            parent_scenario_id: string | null;
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Completed */
+            completed: boolean | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Trace Id */
+            trace_id: string | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+        };
+        /** QGetSimulationAttemptV3ChatData */
+        QGetSimulationAttemptV3ChatData: {
+            chat: components["schemas"]["QGetSimulationAttemptV3Chat"] | null;
+            scenario: components["schemas"]["QGetSimulationAttemptV3Scenario"] | null;
+            /** Messages */
+            messages: components["schemas"]["QGetSimulationAttemptV3Message"][] | null;
+            /** Hints */
+            hints: components["schemas"]["QGetSimulationAttemptV3HintsByMessage"][] | null;
+            grade: components["schemas"]["QGetSimulationAttemptV3Grade"] | null;
+            grading_state: components["schemas"]["QGetSimulationAttemptV3GradingState"] | null;
+            dynamic_rubric: components["schemas"]["QGetSimulationAttemptV3DynamicRubric"] | null;
+            /** Previous Chats */
+            previous_chats: components["schemas"]["QGetSimulationAttemptV3PreviousChat"][] | null;
+            /** Personas */
+            personas: components["schemas"]["QGetSimulationAttemptV3Persona"][] | null;
+            /** Content Type */
+            content_type: string | null;
+            video: components["schemas"]["QGetSimulationAttemptV3Video"] | null;
+            quiz: components["schemas"]["QGetSimulationAttemptV3Quiz"] | null;
+        };
+        /** QGetSimulationAttemptV3ContinuationOption */
+        QGetSimulationAttemptV3ContinuationOption: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Position */
+            position: number | null;
+            /** Scenario Name */
+            scenario_name: string | null;
+            /** Previous Chat Id */
+            previous_chat_id: string | null;
+            /** Title */
+            title: string | null;
+            /** Score */
+            score: number | null;
+            /** Percentage */
+            percentage: number | null;
+            /** Time Taken */
+            time_taken: number | null;
+        };
+        /** QGetSimulationAttemptV3DynamicRubric */
+        QGetSimulationAttemptV3DynamicRubric: {
+            /** Chat Id */
+            chat_id: string | null;
+            /** Score */
+            score: number | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Time Taken */
+            time_taken: number | null;
+            /** Skill Scores */
+            skill_scores: components["schemas"]["QGetSimulationAttemptV3SkillScore"][] | null;
+            /** Skill Feedbacks */
+            skill_feedbacks: components["schemas"]["QGetSimulationAttemptV3SkillFeedback"][] | null;
+            /** Total Possible Points */
+            total_possible_points: number | null;
+        };
+        /** QGetSimulationAttemptV3Grade */
+        QGetSimulationAttemptV3Grade: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Simulation Chat Id */
+            simulation_chat_id: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Description */
+            description: string | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Score */
+            score: number | null;
+            /** Time Taken */
+            time_taken: number | null;
+        };
+        /** QGetSimulationAttemptV3GradingState */
+        QGetSimulationAttemptV3GradingState: {
+            /** Achieved Standards */
+            achieved_standards: components["schemas"]["QGetSimulationAttemptV3StandardAchievement"][] | null;
+            /** Passed Standards */
+            passed_standards: components["schemas"]["QGetSimulationAttemptV3StandardPass"][] | null;
+            /** Grade Description */
+            grade_description: string | null;
+            /** Feedback By Standard Id */
+            feedback_by_standard_id: components["schemas"]["QGetSimulationAttemptV3StandardFeedback"][] | null;
+        };
+        /** QGetSimulationAttemptV3Hint */
+        QGetSimulationAttemptV3Hint: {
+            /** Simulation Message Id */
+            simulation_message_id: string | null;
+            /** Hint */
+            hint: string | null;
+            /** Idx */
+            idx: number | null;
+            /** Created At */
+            created_at: string | null;
+        };
+        /** QGetSimulationAttemptV3HintsByMessage */
+        QGetSimulationAttemptV3HintsByMessage: {
+            /** Message Id */
+            message_id: string | null;
+            /** Hints */
+            hints: components["schemas"]["QGetSimulationAttemptV3Hint"][] | null;
+        };
+        /** QGetSimulationAttemptV3Message */
+        QGetSimulationAttemptV3Message: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Chat Id */
+            chat_id: string | null;
+            /** Content */
+            content: string | null;
+            /** Type */
+            type: string | null;
+            /** Completed */
+            completed: boolean | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Feedbacks */
+            feedbacks: components["schemas"]["QGetSimulationAttemptV3MessageFeedback"][] | null;
+        };
+        /** QGetSimulationAttemptV3MessageFeedback */
+        QGetSimulationAttemptV3MessageFeedback: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Type */
+            type: string | null;
+            /** Replaces */
+            replaces: components["schemas"]["QGetSimulationAttemptV3MessageFeedbackReplace"][] | null;
+            /** Highlights */
+            highlights: components["schemas"]["QGetSimulationAttemptV3MessageFeedbackHighlight"][] | null;
+        };
+        /** QGetSimulationAttemptV3MessageFeedbackHighlight */
+        QGetSimulationAttemptV3MessageFeedbackHighlight: {
+            /** Section */
+            section: string | null;
+        };
+        /** QGetSimulationAttemptV3MessageFeedbackReplace */
+        QGetSimulationAttemptV3MessageFeedbackReplace: {
+            /** Section */
+            section: string | null;
+            /** Replace */
+            replace: string | null;
+        };
+        /** QGetSimulationAttemptV3Option */
+        QGetSimulationAttemptV3Option: {
+            /** Id */
+            id: string | null;
+            /** Option Text */
+            option_text: string | null;
+            /** Type */
+            type: string | null;
+            /** Is Correct */
+            is_correct: boolean | null;
+        };
+        /** QGetSimulationAttemptV3Persona */
+        QGetSimulationAttemptV3Persona: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Color */
+            color: string | null;
+        };
+        /** QGetSimulationAttemptV3PreviousChat */
+        QGetSimulationAttemptV3PreviousChat: {
+            /** Chat Id */
+            chat_id: string | null;
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Score */
+            score: number | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Title */
+            title: string | null;
+            /** Time Taken */
+            time_taken: number | null;
+            /** Total Possible Points */
+            total_possible_points: number | null;
+            /** Percentage */
+            percentage: number | null;
+        };
+        /** QGetSimulationAttemptV3Question */
+        QGetSimulationAttemptV3Question: {
+            /** Id */
+            id: string | null;
+            /** Question Text */
+            question_text: string | null;
+            /** Type */
+            type: string | null;
+            /** Allow Multiple */
+            allow_multiple: boolean | null;
+            /** Times */
+            times: number[] | null;
+            /** Options */
+            options: components["schemas"]["QGetSimulationAttemptV3Option"][] | null;
+        };
+        /** QGetSimulationAttemptV3Quiz */
+        QGetSimulationAttemptV3Quiz: {
+            /** Id */
+            id: string | null;
+            /** Completed */
+            completed: boolean | null;
+            /** Responses */
+            responses: components["schemas"]["QGetSimulationAttemptV3QuizResponse"][] | null;
+        };
+        /** QGetSimulationAttemptV3QuizResponse */
+        QGetSimulationAttemptV3QuizResponse: {
+            /** Question Id */
+            question_id: string | null;
+            /** Option Id */
+            option_id: string | null;
+            /** Completed */
+            completed: boolean | null;
+            /** Created At */
+            created_at: string | null;
+        };
+        /** QGetSimulationAttemptV3RubricStructure */
+        QGetSimulationAttemptV3RubricStructure: {
+            /** Standard Groups */
+            standard_groups: components["schemas"]["QGetSimulationAttemptV3StandardGroupStandards"][] | null;
+            /** Standard Groups Mapping */
+            standard_groups_mapping: components["schemas"]["QGetSimulationAttemptV3StandardGroupMapping"][] | null;
+            /** Standards Mapping */
+            standards_mapping: components["schemas"]["QGetSimulationAttemptV3StandardMapping"][] | null;
+        };
+        /** QGetSimulationAttemptV3Scenario */
+        QGetSimulationAttemptV3Scenario: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Problem Statement */
+            problem_statement: string | null;
+            /** Department Id */
+            department_id: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Persona Icon */
+            persona_icon: string | null;
+            /** Persona Color */
+            persona_color: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Default Scenario */
+            default_scenario: boolean | null;
+            /** Copy Paste Allowed */
+            copy_paste_allowed: boolean | null;
+            /** Text Enabled */
+            text_enabled: boolean | null;
+            /** Audio Enabled */
+            audio_enabled: boolean | null;
+            /** Show Problem Statement */
+            show_problem_statement: boolean | null;
+            /** Show Objectives */
+            show_objectives: boolean | null;
+            /** Show Images */
+            show_images: boolean | null;
+            /** Background Image */
+            background_image: string | null;
+            /** Objectives */
+            objectives: string[] | null;
+        };
+        /** QGetSimulationAttemptV3ScenarioDocument */
+        QGetSimulationAttemptV3ScenarioDocument: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Type */
+            type: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Extension */
+            extension: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+        };
+        /** QGetSimulationAttemptV3Simulation */
+        QGetSimulationAttemptV3Simulation: {
+            /** Id */
+            id: string | null;
+            /** Title */
+            title: string | null;
+            /** Description */
+            description: string | null;
+            /** Department Id */
+            department_id: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Default Simulation */
+            default_simulation: boolean | null;
+            /** Practice Simulation */
+            practice_simulation: boolean | null;
+            /** Hints Enabled */
+            hints_enabled: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled: boolean | null;
+            /** Input Guardrail Active */
+            input_guardrail_active: boolean | null;
+            /** Output Guardrail Active */
+            output_guardrail_active: boolean | null;
+            /** Image Input Active */
+            image_input_active: boolean | null;
+            /** Copy Paste Allowed */
+            copy_paste_allowed: boolean | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /** QGetSimulationAttemptV3SkillFeedback */
+        QGetSimulationAttemptV3SkillFeedback: {
+            /** Skill Name */
+            skill_name: string | null;
+            /** Feedback */
+            feedback: string | null;
+        };
+        /** QGetSimulationAttemptV3SkillScore */
+        QGetSimulationAttemptV3SkillScore: {
+            /** Skill Name */
+            skill_name: string | null;
+            /** Score */
+            score: number | null;
+        };
+        /** QGetSimulationAttemptV3StandardAchievement */
+        QGetSimulationAttemptV3StandardAchievement: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Achieved */
+            achieved: boolean | null;
+        };
+        /** QGetSimulationAttemptV3StandardFeedback */
+        QGetSimulationAttemptV3StandardFeedback: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Feedback */
+            feedback: string | null;
+        };
+        /** QGetSimulationAttemptV3StandardGroupMapping */
+        QGetSimulationAttemptV3StandardGroupMapping: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+        };
+        /** QGetSimulationAttemptV3StandardGroupStandards */
+        QGetSimulationAttemptV3StandardGroupStandards: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+        };
+        /** QGetSimulationAttemptV3StandardMapping */
+        QGetSimulationAttemptV3StandardMapping: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetSimulationAttemptV3StandardPass */
+        QGetSimulationAttemptV3StandardPass: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Passed */
+            passed: boolean | null;
+        };
+        /** QGetSimulationAttemptV3Timer */
+        QGetSimulationAttemptV3Timer: {
+            /** Elapsed */
+            elapsed: number | null;
+            /** Limit */
+            limit: number | null;
+            /** Exceeded */
+            exceeded: boolean | null;
+            /** Formatted */
+            formatted: string | null;
+        };
+        /** QGetSimulationAttemptV3Video */
+        QGetSimulationAttemptV3Video: {
+            /** Id */
+            id: string | null;
+            /** Title */
+            title: string | null;
+            /** Length Seconds */
+            length_seconds: number | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Video Documents */
+            video_documents: components["schemas"]["QGetSimulationAttemptV3VideoDocument"][] | null;
+            /** Questions */
+            questions: components["schemas"]["QGetSimulationAttemptV3Question"][] | null;
+            /** Show Image */
+            show_image: boolean | null;
+        };
+        /** QGetSimulationAttemptV3VideoDocument */
+        QGetSimulationAttemptV3VideoDocument: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Extension */
+            extension: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
         };
         /** QGetSimulationDetailV3Agent */
         QGetSimulationDetailV3Agent: {
@@ -18897,28 +19187,13 @@ export interface components {
          * QuestionItem
          * @description Question item for scenario questions tool.
          */
-        "QuestionItem-Input": {
+        QuestionItem: {
             /** Question Text */
             question_text: string;
             /** Allow Multiple */
             allow_multiple: boolean;
             /** Options */
             options: components["schemas"]["QuestionOption"][];
-        };
-        /** QuestionItem */
-        "QuestionItem-Output": {
-            /** Id */
-            id: string;
-            /** Questiontext */
-            questionText: string;
-            /** Type */
-            type: string;
-            /** Allowmultiple */
-            allowMultiple: boolean;
-            /** Times */
-            times: number[];
-            /** Options */
-            options: components["schemas"]["OptionItem"][];
         };
         /**
          * QuestionOption
@@ -18929,26 +19204,6 @@ export interface components {
             option_text: string;
             /** Is Correct */
             is_correct: boolean;
-        };
-        /** QuizItem */
-        QuizItem: {
-            /** Id */
-            id: string;
-            /** Completed */
-            completed: boolean;
-            /** Responses */
-            responses: components["schemas"]["QuizResponseItem"][];
-        };
-        /** QuizResponseItem */
-        QuizResponseItem: {
-            /** Questionid */
-            questionId: string;
-            /** Optionid */
-            optionId: string;
-            /** Completed */
-            completed: boolean;
-            /** Createdat */
-            createdAt: string;
         };
         /**
          * RandomizeScenarioPayload
@@ -19108,96 +19363,6 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
-        /** RubricStructure */
-        RubricStructure: {
-            /** Standardgroups */
-            standardGroups: {
-                [key: string]: string[];
-            };
-            /** Standardgroupsmapping */
-            standardGroupsMapping: {
-                [key: string]: components["schemas"]["StandardGroupMappingItem"];
-            };
-            /** Standardsmapping */
-            standardsMapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        /**
-         * RunItem
-         * @description Run item in eval attempt.
-         */
-        RunItem: {
-            /** Run Id */
-            run_id: string;
-            /** Status */
-            status: string;
-            /** Test Id */
-            test_id?: string | null;
-            /** Eval Run Completed */
-            eval_run_completed: boolean;
-            /** Eval Run Assigned At */
-            eval_run_assigned_at: string;
-            /** Eval Run Updated At */
-            eval_run_updated_at: string;
-            /** Run Created At */
-            run_created_at: string;
-            /** Model Id */
-            model_id?: string | null;
-            /** Model Name */
-            model_name?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Agent Name */
-            agent_name?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Grade Score */
-            grade_score?: number | null;
-            /** Grade Passed */
-            grade_passed?: boolean | null;
-            /** Grade Created At */
-            grade_created_at?: string | null;
-        };
-        /** ScenarioDocumentItem */
-        ScenarioDocumentItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Field Ids */
-            field_ids: string[];
-        };
         /**
          * ScenarioGenerationCompletePayload
          * @description Response indicating scenario generation completed successfully.
@@ -19236,66 +19401,6 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** ScenarioItem */
-        ScenarioItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Problemstatement */
-            problemStatement: string;
-            /** Departmentid */
-            departmentId: string | null;
-            /** Active */
-            active: boolean;
-            /** Personaid */
-            personaId: string | null;
-            /** Personaname */
-            personaName?: string | null;
-            /** Personaicon */
-            personaIcon?: string | null;
-            /** Personacolor */
-            personaColor?: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Generated */
-            generated: boolean;
-            /** Defaultscenario */
-            defaultScenario: boolean;
-            /** Copypasteallowed */
-            copyPasteAllowed: boolean;
-            /**
-             * Textenabled
-             * @default true
-             */
-            textEnabled: boolean;
-            /**
-             * Audioenabled
-             * @default false
-             */
-            audioEnabled: boolean;
-            /**
-             * Showproblemstatement
-             * @default true
-             */
-            showProblemStatement: boolean;
-            /**
-             * Showobjectives
-             * @default true
-             */
-            showObjectives: boolean;
-            /**
-             * Showimages
-             * @default true
-             */
-            showImages: boolean;
-            /** Backgroundimage */
-            backgroundImage?: string | null;
-            /** Objectives */
-            objectives?: string[] | null;
-        };
         /**
          * ScenarioQuestionsToolCompletePayload
          * @description Response indicating questions tool completed successfully.
@@ -19330,7 +19435,7 @@ export interface components {
             /** Trace Id */
             trace_id: string;
             /** Questions */
-            questions: components["schemas"]["QuestionItem-Input"][];
+            questions: components["schemas"]["QuestionItem"][];
             /** Scenario Id */
             scenario_id: string;
             /** Video Id */
@@ -19540,43 +19645,6 @@ export interface components {
             department_id: string;
             /** Sid */
             sid?: string | null;
-        };
-        /** SimulationItem */
-        SimulationItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Departmentid */
-            departmentId: string | null;
-            /** Active */
-            active: boolean;
-            /** Defaultsimulation */
-            defaultSimulation: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Hintsenabled */
-            hintsEnabled: boolean;
-            /** Objectivesenabled */
-            objectivesEnabled: boolean;
-            /** Inputguardrailactive */
-            inputGuardrailActive: boolean;
-            /** Outputguardrailactive */
-            outputGuardrailActive: boolean;
-            /** Imageinputactive */
-            imageInputActive: boolean;
-            /** Copypasteallowed */
-            copyPasteAllowed: boolean;
-            /** Timelimit */
-            timeLimit: number | null;
-            /** Rubricid */
-            rubricId: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
         };
         /**
          * SimulationJoinErrorPayload
@@ -19816,17 +19884,6 @@ export interface components {
             /** Sid */
             sid?: string | null;
         };
-        /** StandardGroupMappingItem */
-        StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
         /**
          * StartSimulationErrorPayload
          * @description Response indicating an error occurred while starting simulation.
@@ -19905,20 +19962,6 @@ export interface components {
             history?: components["schemas"]["RealtimeItem"][];
         };
         /**
-         * StatusSummary
-         * @description Status summary for eval attempt.
-         */
-        StatusSummary: {
-            /** Not Started */
-            not_started: number;
-            /** In Progress */
-            in_progress: number;
-            /** Completed */
-            completed: number;
-            /** Total */
-            total: number;
-        };
-        /**
          * StopSimulationErrorPayload
          * @description Response indicating an error occurred while stopping simulation.
          */
@@ -19973,17 +20016,6 @@ export interface components {
             find: string;
             /** Replace */
             replace: string;
-        };
-        /** TimerItem */
-        TimerItem: {
-            /** Elapsed */
-            elapsed: number;
-            /** Limit */
-            limit: number | null;
-            /** Exceeded */
-            exceeded: boolean;
-            /** Formatted */
-            formatted: string;
         };
         /** UpdateAgentApiRequest */
         UpdateAgentApiRequest: {
@@ -20723,23 +20755,6 @@ export interface components {
             /** Error Type */
             type: string;
         };
-        /** VideoDocumentItem */
-        VideoDocumentItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Extension */
-            extension: string | null;
-            /** Filepath */
-            filePath: string | null;
-            /** Mimetype */
-            mimeType: string | null;
-            /** Uploadid */
-            uploadId: string | null;
-        };
         /**
          * VideoGenerationCompletePayload
          * @description Response indicating video generation completed successfully.
@@ -20781,23 +20796,6 @@ export interface components {
             progress?: number | null;
             /** Video Id */
             video_id?: string | null;
-        };
-        /** VideoItem */
-        VideoItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Lengthseconds */
-            lengthSeconds: number;
-            /** Uploadid */
-            uploadId: string | null;
-            /** Videodocuments */
-            videoDocuments: components["schemas"]["VideoDocumentItem"][];
-            /** Questions */
-            questions: components["schemas"]["QuestionItem-Output"][];
-            /** Showimage */
-            showImage: boolean;
         };
         /**
          * VoiceAssistantAudioLinkPayload
@@ -21007,44 +21005,6 @@ export interface components {
             transcript: string;
             /** Upload Id */
             upload_id?: string | null;
-        };
-        /**
-         * AttemptItem
-         * @description Eval attempt item.
-         */
-        app__api__v3__attempts__eval__AttemptItem: {
-            /** Id */
-            id: string;
-            /** Created At */
-            created_at: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Archived */
-            archived: boolean;
-            /**
-             * Conversation Mode
-             * @default false
-             */
-            conversation_mode: boolean;
-            /** Conversation Agent Id */
-            conversation_agent_id?: string | null;
-            /** Conversation Max Turns */
-            conversation_max_turns?: number | null;
-        };
-        /** AttemptItem */
-        app__api__v3__attempts__simulation__AttemptItem: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Simulationid */
-            simulationId: string;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Archived */
-            archived: boolean;
-            /** Profileid */
-            profileId?: string | null;
         };
     };
     responses: never;
@@ -25893,7 +25853,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkArchiveAttemptsRequest"];
+                "application/json": components["schemas"]["BulkArchiveAttemptsApiRequest"];
             };
         };
         responses: {
@@ -25903,7 +25863,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkArchiveAttemptsResponse"];
+                    "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25929,7 +25889,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AttemptFullRequest"];
+                "application/json": components["schemas"]["GetSimulationAttemptApiRequest"];
             };
         };
         responses: {
@@ -25939,7 +25899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttemptFullResponse"];
+                    "application/json": components["schemas"]["GetSimulationAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25965,7 +25925,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EvalAttemptFullRequest"];
+                "application/json": components["schemas"]["GetEvalAttemptApiRequest"];
             };
         };
         responses: {
@@ -25975,7 +25935,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EvalAttemptFullResponse"];
+                    "application/json": components["schemas"]["GetEvalAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -10908,7 +10908,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BulkArchiveAttemptsRequest"
+                "$ref": "#/components/schemas/BulkArchiveAttemptsApiRequest"
               }
             }
           }
@@ -10919,7 +10919,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BulkArchiveAttemptsResponse"
+                  "$ref": "#/components/schemas/BulkArchiveAttemptsApiResponse"
                 }
               }
             }
@@ -10989,7 +10989,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AttemptFullRequest"
+                "$ref": "#/components/schemas/GetSimulationAttemptApiRequest"
               }
             }
           }
@@ -11000,7 +11000,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AttemptFullResponse"
+                  "$ref": "#/components/schemas/GetSimulationAttemptApiResponse"
                 }
               }
             }
@@ -11070,7 +11070,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EvalAttemptFullRequest"
+                "$ref": "#/components/schemas/GetEvalAttemptApiRequest"
               }
             }
           }
@@ -11081,7 +11081,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EvalAttemptFullResponse"
+                  "$ref": "#/components/schemas/GetEvalAttemptApiResponse"
                 }
               }
             }
@@ -21693,348 +21693,6 @@
   },
   "components": {
     "schemas": {
-      "AggregatedResults": {
-        "properties": {
-          "totalScore": {
-            "type": "number",
-            "title": "Totalscore"
-          },
-          "totalPossiblePoints": {
-            "type": "number",
-            "title": "Totalpossiblepoints"
-          },
-          "percentage": {
-            "type": "number",
-            "title": "Percentage"
-          },
-          "passed": {
-            "type": "boolean",
-            "title": "Passed"
-          },
-          "chatsCompleted": {
-            "type": "integer",
-            "title": "Chatscompleted"
-          },
-          "totalChats": {
-            "type": "integer",
-            "title": "Totalchats"
-          }
-        },
-        "type": "object",
-        "required": [
-          "totalScore",
-          "totalPossiblePoints",
-          "percentage",
-          "passed",
-          "chatsCompleted",
-          "totalChats"
-        ],
-        "title": "AggregatedResults"
-      },
-      "AllSimulationScenarioItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "problemStatement": {
-            "type": "string",
-            "title": "Problemstatement"
-          },
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "personaId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaid"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "generated": {
-            "type": "boolean",
-            "title": "Generated"
-          },
-          "defaultScenario": {
-            "type": "boolean",
-            "title": "Defaultscenario"
-          },
-          "copyPasteAllowed": {
-            "type": "boolean",
-            "title": "Copypasteallowed"
-          },
-          "textEnabled": {
-            "type": "boolean",
-            "title": "Textenabled",
-            "default": true
-          },
-          "audioEnabled": {
-            "type": "boolean",
-            "title": "Audioenabled",
-            "default": false
-          },
-          "showProblemStatement": {
-            "type": "boolean",
-            "title": "Showproblemstatement",
-            "default": true
-          },
-          "showObjectives": {
-            "type": "boolean",
-            "title": "Showobjectives",
-            "default": true
-          },
-          "showImages": {
-            "type": "boolean",
-            "title": "Showimages",
-            "default": true
-          },
-          "backgroundImage": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Backgroundimage"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          },
-          "previousChats": {
-            "items": {
-              "$ref": "#/components/schemas/PreviousChat"
-            },
-            "type": "array",
-            "title": "Previouschats",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "problemStatement",
-          "departmentId",
-          "active",
-          "personaId",
-          "createdAt",
-          "updatedAt",
-          "generated",
-          "defaultScenario",
-          "copyPasteAllowed"
-        ],
-        "title": "AllSimulationScenarioItem"
-      },
-      "AttemptFullRequest": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId"
-        ],
-        "title": "AttemptFullRequest"
-      },
-      "AttemptFullResponse": {
-        "properties": {
-          "attempt": {
-            "$ref": "#/components/schemas/app__api__v3__attempts__simulation__AttemptItem"
-          },
-          "simulation": {
-            "$ref": "#/components/schemas/SimulationItem"
-          },
-          "attemptProfiles": {
-            "items": {
-              "$ref": "#/components/schemas/AttemptProfileItem"
-            },
-            "type": "array",
-            "title": "Attemptprofiles"
-          },
-          "chats": {
-            "items": {
-              "$ref": "#/components/schemas/ChatData"
-            },
-            "type": "array",
-            "title": "Chats"
-          },
-          "scenarioDocuments": {
-            "items": {
-              "$ref": "#/components/schemas/ScenarioDocumentItem"
-            },
-            "type": "array",
-            "title": "Scenariodocuments"
-          },
-          "aggregatedResults": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AggregatedResults"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "timer": {
-            "$ref": "#/components/schemas/TimerItem"
-          },
-          "currentChatIndex": {
-            "type": "integer",
-            "title": "Currentchatindex"
-          },
-          "expectedChatCount": {
-            "type": "integer",
-            "title": "Expectedchatcount"
-          },
-          "isSingleChatAttempt": {
-            "type": "boolean",
-            "title": "Issinglechatattempt"
-          },
-          "isLastAttempt": {
-            "type": "boolean",
-            "title": "Islastattempt"
-          },
-          "showResults": {
-            "type": "boolean",
-            "title": "Showresults"
-          },
-          "shouldShowControls": {
-            "type": "boolean",
-            "title": "Shouldshowcontrols"
-          },
-          "remainingScenariosCount": {
-            "type": "integer",
-            "title": "Remainingscenarioscount"
-          },
-          "isLastRemainingScenario": {
-            "type": "boolean",
-            "title": "Islastremainingscenario"
-          },
-          "canPickMultipleAlternatives": {
-            "type": "boolean",
-            "title": "Canpickmultiplealternatives"
-          },
-          "isActive": {
-            "type": "boolean",
-            "title": "Isactive"
-          },
-          "rubricStructure": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RubricStructure"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "allSimulationScenarios": {
-            "items": {
-              "$ref": "#/components/schemas/AllSimulationScenarioItem"
-            },
-            "type": "array",
-            "title": "Allsimulationscenarios"
-          },
-          "availableContinuationOptions": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AvailableContinuationOptions"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt",
-          "simulation",
-          "attemptProfiles",
-          "chats",
-          "scenarioDocuments",
-          "timer",
-          "currentChatIndex",
-          "expectedChatCount",
-          "isSingleChatAttempt",
-          "isLastAttempt",
-          "showResults",
-          "shouldShowControls",
-          "remainingScenariosCount",
-          "isLastRemainingScenario",
-          "canPickMultipleAlternatives",
-          "isActive",
-          "allSimulationScenarios"
-        ],
-        "title": "AttemptFullResponse",
-        "description": "Response containing complete attempt data with all nested structures."
-      },
-      "AttemptProfileItem": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId",
-          "attemptId",
-          "active"
-        ],
-        "title": "AttemptProfileItem"
-      },
       "AudioToolCompletePayload": {
         "properties": {
           "success": {
@@ -22235,42 +21893,23 @@
         "type": "object",
         "title": "AuthorizeEmulationApiResponse"
       },
-      "AvailableContinuationOptions": {
-        "properties": {
-          "nextSequentialOptions": {
-            "items": {
-              "$ref": "#/components/schemas/ContinuationOption"
-            },
-            "type": "array",
-            "title": "Nextsequentialoptions",
-            "default": []
-          },
-          "hasOptions": {
-            "type": "boolean",
-            "title": "Hasoptions",
-            "default": false
-          }
-        },
-        "type": "object",
-        "title": "AvailableContinuationOptions",
-        "description": "Available continuation options with order constraint enforcement."
-      },
       "BaseModel": {
         "properties": {},
         "type": "object",
         "title": "BaseModel"
       },
-      "BulkArchiveAttemptsRequest": {
+      "BulkArchiveAttemptsApiRequest": {
         "properties": {
           "archived": {
             "type": "boolean",
             "title": "Archived"
           },
-          "attemptIds": {
+          "attempt_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -22278,68 +21917,36 @@
                 "type": "null"
               }
             ],
-            "title": "Attemptids"
+            "title": "Attempt Ids"
           },
-          "archiveAll": {
-            "type": "boolean",
-            "title": "Archiveall",
-            "default": false
-          },
-          "filters": {
+          "start_date": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/BulkArchiveFilters"
+                "type": "string"
               },
               {
                 "type": "null"
               }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "archived"
-        ],
-        "title": "BulkArchiveAttemptsRequest"
-      },
-      "BulkArchiveAttemptsResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+            ],
+            "title": "Start Date"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
           },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "count"
-        ],
-        "title": "BulkArchiveAttemptsResponse"
-      },
-      "BulkArchiveFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
+          "cohort_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -22347,13 +21954,14 @@
                 "type": "null"
               }
             ],
-            "title": "Cohortids"
+            "title": "Cohort Ids"
           },
-          "departmentIds": {
+          "department_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -22361,23 +21969,18 @@
                 "type": "null"
               }
             ],
-            "title": "Departmentids"
+            "title": "Department Ids"
           },
           "roles": {
             "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
+              {},
               {
                 "type": "null"
               }
             ],
             "title": "Roles"
           },
-          "simulationFilters": {
+          "simulation_filters": {
             "anyOf": [
               {
                 "items": {
@@ -22389,7 +21992,7 @@
                 "type": "null"
               }
             ],
-            "title": "Simulationfilters"
+            "title": "Simulation Filters"
           },
           "search": {
             "anyOf": [
@@ -22402,11 +22005,12 @@
             ],
             "title": "Search"
           },
-          "profileIds": {
+          "profile_ids_filter": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -22414,13 +22018,14 @@
                 "type": "null"
               }
             ],
-            "title": "Profileids"
+            "title": "Profile Ids Filter"
           },
-          "simulationIds": {
+          "simulation_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -22428,13 +22033,14 @@
                 "type": "null"
               }
             ],
-            "title": "Simulationids"
+            "title": "Simulation Ids"
           },
-          "scenarioIds": {
+          "scenario_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -22442,9 +22048,9 @@
                 "type": "null"
               }
             ],
-            "title": "Scenarioids"
+            "title": "Scenario Ids"
           },
-          "infiniteMode": {
+          "infinite_mode": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -22453,16 +22059,56 @@
                 "type": "null"
               }
             ],
-            "title": "Infinitemode"
+            "title": "Infinite Mode"
           }
         },
         "type": "object",
         "required": [
-          "startDate",
-          "endDate"
+          "archived"
         ],
-        "title": "BulkArchiveFilters",
-        "description": "Filter schema for bulk archive operations."
+        "title": "BulkArchiveAttemptsApiRequest"
+      },
+      "BulkArchiveAttemptsApiResponse": {
+        "properties": {
+          "updated_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated Count"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "profile_ids_to_invalidate": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids To Invalidate"
+          }
+        },
+        "type": "object",
+        "title": "BulkArchiveAttemptsApiResponse"
       },
       "BulkCreateStaffApiRequest": {
         "properties": {
@@ -22701,220 +22347,6 @@
         "title": "CachedTokenDetails",
         "description": "Cached token details within input token details."
       },
-      "ChatData": {
-        "properties": {
-          "chat": {
-            "$ref": "#/components/schemas/ChatItem"
-          },
-          "scenario": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioItem"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "messages": {
-            "items": {
-              "$ref": "#/components/schemas/MessageItem"
-            },
-            "type": "array",
-            "title": "Messages"
-          },
-          "hints": {
-            "items": {
-              "$ref": "#/components/schemas/HintsByMessage"
-            },
-            "type": "array",
-            "title": "Hints"
-          },
-          "grade": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/GradeItem"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "gradingState": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/GradingState"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "dynamicRubric": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DynamicRubric"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "previousChats": {
-            "items": {
-              "$ref": "#/components/schemas/PreviousChat"
-            },
-            "type": "array",
-            "title": "Previouschats"
-          },
-          "personas": {
-            "items": {
-              "$ref": "#/components/schemas/PersonaItem"
-            },
-            "type": "array",
-            "title": "Personas",
-            "default": []
-          },
-          "contentType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Contenttype"
-          },
-          "video": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/VideoItem"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "quiz": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QuizItem"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat",
-          "scenario",
-          "messages",
-          "hints",
-          "previousChats"
-        ],
-        "title": "ChatData"
-      },
-      "ChatItem": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "scenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarioid"
-          },
-          "parentScenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parentscenarioid"
-          },
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed"
-          },
-          "completedAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completedat"
-          },
-          "traceId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Traceid"
-          },
-          "documentIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Documentids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "title",
-          "attemptId",
-          "completed",
-          "completedAt",
-          "traceId",
-          "documentIds"
-        ],
-        "title": "ChatItem"
-      },
       "ClassifyUploadCompletePayload": {
         "properties": {
           "success": {
@@ -23064,83 +22496,6 @@
         ],
         "title": "ConnectionConfirmedPayload",
         "description": "Response indicating WebSocket connection was confirmed."
-      },
-      "ContinuationOption": {
-        "properties": {
-          "scenarioId": {
-            "type": "string",
-            "title": "Scenarioid"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          },
-          "scenarioName": {
-            "type": "string",
-            "title": "Scenarioname"
-          },
-          "previousChatId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previouschatid"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "percentage": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Percentage"
-          },
-          "timeTaken": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timetaken"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenarioId",
-          "position",
-          "scenarioName",
-          "previousChatId",
-          "title",
-          "score",
-          "percentage",
-          "timeTaken"
-        ],
-        "title": "ContinuationOption",
-        "description": "A single continuation option for a scenario."
       },
       "CreateAgentApiRequest": {
         "properties": {
@@ -27476,55 +26831,6 @@
         "type": "object",
         "title": "DuplicateSimulationApiResponse"
       },
-      "DynamicRubric": {
-        "properties": {
-          "chatId": {
-            "type": "string",
-            "title": "Chatid"
-          },
-          "score": {
-            "type": "number",
-            "title": "Score"
-          },
-          "passed": {
-            "type": "boolean",
-            "title": "Passed"
-          },
-          "timeTaken": {
-            "type": "number",
-            "title": "Timetaken"
-          },
-          "skillScores": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "type": "object",
-            "title": "Skillscores"
-          },
-          "skillFeedbacks": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Skillfeedbacks"
-          },
-          "totalPossiblePoints": {
-            "type": "number",
-            "title": "Totalpossiblepoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chatId",
-          "score",
-          "passed",
-          "timeTaken",
-          "skillScores",
-          "skillFeedbacks",
-          "totalPossiblePoints"
-        ],
-        "title": "DynamicRubric"
-      },
       "EndAllCompletedPayload": {
         "properties": {
           "success": {
@@ -27719,49 +27025,6 @@
         "title": "EndSimulationPayload",
         "description": "Request to end simulation chat."
       },
-      "EvalAttemptFullRequest": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId"
-        ],
-        "title": "EvalAttemptFullRequest",
-        "description": "Request to get eval attempt full details."
-      },
-      "EvalAttemptFullResponse": {
-        "properties": {
-          "attempt": {
-            "$ref": "#/components/schemas/app__api__v3__attempts__eval__AttemptItem"
-          },
-          "eval": {
-            "$ref": "#/components/schemas/EvalItem"
-          },
-          "runs": {
-            "items": {
-              "$ref": "#/components/schemas/RunItem"
-            },
-            "type": "array",
-            "title": "Runs"
-          },
-          "status_summary": {
-            "$ref": "#/components/schemas/StatusSummary"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt",
-          "eval",
-          "runs",
-          "status_summary"
-        ],
-        "title": "EvalAttemptFullResponse",
-        "description": "Response for eval attempt full endpoint."
-      },
       "EvalCompletedPayload": {
         "properties": {
           "eval_id": {
@@ -27847,76 +27110,6 @@
         ],
         "title": "EvalEnterResponsePayload",
         "description": "Response indicating successfully updated test created_at timestamp."
-      },
-      "EvalItem": {
-        "properties": {
-          "eval_id": {
-            "type": "string",
-            "title": "Eval Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "agent_id": {
-            "type": "string",
-            "title": "Agent Id"
-          },
-          "eval_agent_id": {
-            "type": "string",
-            "title": "Eval Agent Id"
-          },
-          "dynamic": {
-            "type": "boolean",
-            "title": "Dynamic",
-            "default": false
-          },
-          "rubric_name": {
-            "type": "string",
-            "title": "Rubric Name"
-          },
-          "rubric_description": {
-            "type": "string",
-            "title": "Rubric Description"
-          },
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt",
-            "default": ""
-          },
-          "conversation_agent_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Agent Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "eval_id",
-          "name",
-          "description",
-          "rubric_id",
-          "agent_id",
-          "eval_agent_id",
-          "rubric_name",
-          "rubric_description"
-        ],
-        "title": "EvalItem",
-        "description": "Eval item in attempt response."
       },
       "EvalJoinErrorPayload": {
         "properties": {
@@ -32834,6 +32027,92 @@
         },
         "type": "object",
         "title": "GetDocumentsListApiResponse"
+      },
+      "GetEvalAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "GetEvalAttemptApiRequest"
+      },
+      "GetEvalAttemptApiResponse": {
+        "properties": {
+          "attempt_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Exists"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetEvalAttemptV3Attempt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetEvalAttemptV3Eval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "runs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetEvalAttemptV3Run"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs"
+          },
+          "status_summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetEvalAttemptV3StatusSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "GetEvalAttemptApiResponse"
       },
       "GetEvalDetailApiRequest": {
         "properties": {
@@ -44193,6 +43472,285 @@
         "type": "object",
         "title": "GetSettingsListApiResponse"
       },
+      "GetSimulationAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "GetSimulationAttemptApiRequest"
+      },
+      "GetSimulationAttemptApiResponse": {
+        "properties": {
+          "attempt_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Exists"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "access_denied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Denied"
+          },
+          "attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Attempt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Simulation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempt_profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3AttemptProfile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Profiles"
+          },
+          "chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3ChatData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats"
+          },
+          "scenario_documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3ScenarioDocument"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Documents"
+          },
+          "aggregated_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3AggregatedResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Timer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_chat_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Chat Index"
+          },
+          "expected_chat_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Chat Count"
+          },
+          "is_single_chat_attempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Single Chat Attempt"
+          },
+          "is_last_attempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Last Attempt"
+          },
+          "show_results": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Results"
+          },
+          "should_show_controls": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Should Show Controls"
+          },
+          "remaining_scenarios_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Scenarios Count"
+          },
+          "is_last_remaining_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Last Remaining Scenario"
+          },
+          "can_pick_multiple_alternatives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Pick Multiple Alternatives"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "rubric_structure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3RubricStructure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "all_simulation_scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3AllSimulationScenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Simulation Scenarios"
+          },
+          "available_continuation_options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3AvailableContinuationOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "GetSimulationAttemptApiResponse"
+      },
       "GetSimulationDetailApiRequest": {
         "properties": {
           "simulation_id": {
@@ -45923,117 +45481,6 @@
         "type": "object",
         "title": "GetStaffSearchApiResponse"
       },
-      "GradeItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "simulationChatId": {
-            "type": "string",
-            "title": "Simulationchatid"
-          },
-          "rubricId": {
-            "type": "string",
-            "title": "Rubricid"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "passed": {
-            "type": "boolean",
-            "title": "Passed"
-          },
-          "score": {
-            "type": "integer",
-            "title": "Score"
-          },
-          "timeTaken": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timetaken"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "simulationChatId",
-          "rubricId",
-          "description",
-          "passed",
-          "score",
-          "timeTaken"
-        ],
-        "title": "GradeItem"
-      },
-      "GradingState": {
-        "properties": {
-          "achievedStandards": {
-            "additionalProperties": {
-              "type": "boolean"
-            },
-            "type": "object",
-            "title": "Achievedstandards"
-          },
-          "passedStandards": {
-            "additionalProperties": {
-              "type": "boolean"
-            },
-            "type": "object",
-            "title": "Passedstandards"
-          },
-          "gradeDescription": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Gradedescription"
-          },
-          "feedbackByStandardId": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feedbackbystandardid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "achievedStandards",
-          "passedStandards"
-        ],
-        "title": "GradingState"
-      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -46112,7 +45559,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/HintItem-Input"
+                  "$ref": "#/components/schemas/HintItem"
                 },
                 "type": "array"
               },
@@ -46132,7 +45579,7 @@
         "title": "HintGenerationProgressPayload",
         "description": "Response indicating progress in hint generation."
       },
-      "HintItem-Input": {
+      "HintItem": {
         "properties": {
           "idx": {
             "type": "integer",
@@ -46150,55 +45597,6 @@
         ],
         "title": "HintItem",
         "description": "Individual hint item with index and text."
-      },
-      "HintItem-Output": {
-        "properties": {
-          "simulationMessageId": {
-            "type": "string",
-            "title": "Simulationmessageid"
-          },
-          "hint": {
-            "type": "string",
-            "title": "Hint"
-          },
-          "idx": {
-            "type": "integer",
-            "title": "Idx"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulationMessageId",
-          "hint",
-          "idx",
-          "createdAt"
-        ],
-        "title": "HintItem"
-      },
-      "HintsByMessage": {
-        "properties": {
-          "messageId": {
-            "type": "string",
-            "title": "Messageid"
-          },
-          "hints": {
-            "items": {
-              "$ref": "#/components/schemas/HintItem-Output"
-            },
-            "type": "array",
-            "title": "Hints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "messageId",
-          "hints"
-        ],
-        "title": "HintsByMessage"
       },
       "IBulkCreateStaffV3Profile": {
         "properties": {
@@ -47893,85 +47291,6 @@
         "title": "LogRunPayload",
         "description": "Request to log run pricing and metrics."
       },
-      "MessageFeedbackHighlightItem": {
-        "properties": {
-          "section": {
-            "type": "string",
-            "title": "Section"
-          }
-        },
-        "type": "object",
-        "required": [
-          "section"
-        ],
-        "title": "MessageFeedbackHighlightItem"
-      },
-      "MessageFeedbackItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "strength",
-              "improvement"
-            ],
-            "title": "Type"
-          },
-          "replaces": {
-            "items": {
-              "$ref": "#/components/schemas/MessageFeedbackReplaceItem"
-            },
-            "type": "array",
-            "title": "Replaces",
-            "default": []
-          },
-          "highlights": {
-            "items": {
-              "$ref": "#/components/schemas/MessageFeedbackHighlightItem"
-            },
-            "type": "array",
-            "title": "Highlights",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "type"
-        ],
-        "title": "MessageFeedbackItem"
-      },
-      "MessageFeedbackReplaceItem": {
-        "properties": {
-          "section": {
-            "type": "string",
-            "title": "Section"
-          },
-          "replace": {
-            "type": "string",
-            "title": "Replace"
-          }
-        },
-        "type": "object",
-        "required": [
-          "section",
-          "replace"
-        ],
-        "title": "MessageFeedbackReplaceItem"
-      },
       "MessageImprovementToolCompletePayload": {
         "properties": {
           "success": {
@@ -48118,74 +47437,6 @@
         ],
         "title": "MessageImprovementToolPayload",
         "description": "Request to add improvement feedback to a message."
-      },
-      "MessageItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "chatId": {
-            "type": "string",
-            "title": "Chatid"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed"
-          },
-          "personaId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaid"
-          },
-          "feedbacks": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/MessageFeedbackItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feedbacks"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "chatId",
-          "content",
-          "type",
-          "completed"
-        ],
-        "title": "MessageItem"
       },
       "MessageSentPayload": {
         "properties": {
@@ -48434,34 +47685,6 @@
         "title": "ObjectivesToolPayload",
         "description": "Request to create objectives from scenario generation tool."
       },
-      "OptionItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "optionText": {
-            "type": "string",
-            "title": "Optiontext"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "isCorrect": {
-            "type": "boolean",
-            "title": "Iscorrect"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "optionText",
-          "type",
-          "isCorrect"
-        ],
-        "title": "OptionItem"
-      },
       "OutputTokenDetails": {
         "properties": {
           "audio_tokens": {
@@ -48490,46 +47713,6 @@
         "type": "object",
         "title": "OutputTokenDetails",
         "description": "Output token details from Realtime API usage."
-      },
-      "PersonaItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "PersonaItem"
       },
       "PersonaTool": {
         "properties": {
@@ -48580,94 +47763,6 @@
         ],
         "title": "PersonaToolContext",
         "description": "Context for a persona tool call."
-      },
-      "PreviousChat": {
-        "properties": {
-          "chatId": {
-            "type": "string",
-            "title": "Chatid"
-          },
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passed"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "timeTaken": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timetaken"
-          },
-          "totalPossiblePoints": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Totalpossiblepoints"
-          },
-          "percentage": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Percentage"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chatId",
-          "attemptId",
-          "score",
-          "passed",
-          "createdAt",
-          "title",
-          "timeTaken",
-          "totalPossiblePoints",
-          "percentage"
-        ],
-        "title": "PreviousChat"
       },
       "ProblemStatementToolCompletePayload": {
         "properties": {
@@ -56938,6 +56033,531 @@
           "updated_at"
         ],
         "title": "QGetDocumentDetailV3Template"
+      },
+      "QGetEvalAttemptV3Attempt": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "conversation_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Mode"
+          },
+          "conversation_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Agent Id"
+          },
+          "conversation_max_turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Max Turns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "eval_id",
+          "archived",
+          "conversation_mode",
+          "conversation_agent_id",
+          "conversation_max_turns"
+        ],
+        "title": "QGetEvalAttemptV3Attempt"
+      },
+      "QGetEvalAttemptV3Eval": {
+        "properties": {
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "eval_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Agent Id"
+          },
+          "dynamic": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dynamic"
+          },
+          "rubric_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Name"
+          },
+          "rubric_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Description"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "conversation_agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Agent Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "name",
+          "description",
+          "rubric_id",
+          "agent_id",
+          "eval_agent_id",
+          "dynamic",
+          "rubric_name",
+          "rubric_description",
+          "system_prompt",
+          "conversation_agent_name"
+        ],
+        "title": "QGetEvalAttemptV3Eval"
+      },
+      "QGetEvalAttemptV3Run": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
+          },
+          "eval_run_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Run Completed"
+          },
+          "eval_run_assigned_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Run Assigned At"
+          },
+          "eval_run_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Run Updated At"
+          },
+          "run_created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Created At"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "grade_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Score"
+          },
+          "grade_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Passed"
+          },
+          "grade_created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "status",
+          "test_id",
+          "eval_run_completed",
+          "eval_run_assigned_at",
+          "eval_run_updated_at",
+          "run_created_at",
+          "model_id",
+          "model_name",
+          "agent_id",
+          "agent_name",
+          "persona_id",
+          "persona_name",
+          "profile_id",
+          "profile_name",
+          "grade_score",
+          "grade_passed",
+          "grade_created_at"
+        ],
+        "title": "QGetEvalAttemptV3Run"
+      },
+      "QGetEvalAttemptV3StatusSummary": {
+        "properties": {
+          "not_started": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Started"
+          },
+          "in_progress": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Progress"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "not_started",
+          "in_progress",
+          "completed",
+          "total"
+        ],
+        "title": "QGetEvalAttemptV3StatusSummary"
       },
       "QGetEvalDetailV3Agent": {
         "properties": {
@@ -69653,6 +69273,3290 @@
           "department_ids"
         ],
         "title": "QGetSettingsListV3Setting"
+      },
+      "QGetSimulationAttemptV3AggregatedResults": {
+        "properties": {
+          "total_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Score"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "chats_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats Completed"
+          },
+          "total_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Chats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_score",
+          "total_possible_points",
+          "percentage",
+          "passed",
+          "chats_completed",
+          "total_chats"
+        ],
+        "title": "QGetSimulationAttemptV3AggregatedResults"
+      },
+      "QGetSimulationAttemptV3AllSimulationScenario": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "default_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Scenario"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_images": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Images"
+          },
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "previous_chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3PreviousChat"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problem_statement",
+          "department_id",
+          "active",
+          "persona_id",
+          "persona_name",
+          "persona_icon",
+          "persona_color",
+          "created_at",
+          "updated_at",
+          "generated",
+          "default_scenario",
+          "copy_paste_allowed",
+          "text_enabled",
+          "audio_enabled",
+          "show_problem_statement",
+          "show_objectives",
+          "show_images",
+          "background_image",
+          "objectives",
+          "previous_chats"
+        ],
+        "title": "QGetSimulationAttemptV3AllSimulationScenario"
+      },
+      "QGetSimulationAttemptV3Attempt": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "simulation_id",
+          "infinite_mode",
+          "archived",
+          "profile_id"
+        ],
+        "title": "QGetSimulationAttemptV3Attempt"
+      },
+      "QGetSimulationAttemptV3AttemptProfile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "attempt_id",
+          "active"
+        ],
+        "title": "QGetSimulationAttemptV3AttemptProfile"
+      },
+      "QGetSimulationAttemptV3AvailableContinuationOptions": {
+        "properties": {
+          "next_sequential_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3ContinuationOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Sequential Options"
+          },
+          "has_options": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "next_sequential_options",
+          "has_options"
+        ],
+        "title": "QGetSimulationAttemptV3AvailableContinuationOptions"
+      },
+      "QGetSimulationAttemptV3Chat": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "parent_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Scenario Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "updated_at",
+          "title",
+          "scenario_id",
+          "parent_scenario_id",
+          "attempt_id",
+          "completed",
+          "completed_at",
+          "trace_id",
+          "document_ids"
+        ],
+        "title": "QGetSimulationAttemptV3Chat"
+      },
+      "QGetSimulationAttemptV3ChatData": {
+        "properties": {
+          "chat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Chat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Scenario"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3Message"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3HintsByMessage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Grade"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "grading_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3GradingState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dynamic_rubric": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3DynamicRubric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previous_chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3PreviousChat"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chats"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Video"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quiz": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetSimulationAttemptV3Quiz"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat",
+          "scenario",
+          "messages",
+          "hints",
+          "grade",
+          "grading_state",
+          "dynamic_rubric",
+          "previous_chats",
+          "personas",
+          "content_type",
+          "video",
+          "quiz"
+        ],
+        "title": "QGetSimulationAttemptV3ChatData"
+      },
+      "QGetSimulationAttemptV3ContinuationOption": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "scenario_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Name"
+          },
+          "previous_chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "position",
+          "scenario_name",
+          "previous_chat_id",
+          "title",
+          "score",
+          "percentage",
+          "time_taken"
+        ],
+        "title": "QGetSimulationAttemptV3ContinuationOption"
+      },
+      "QGetSimulationAttemptV3DynamicRubric": {
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "skill_scores": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3SkillScore"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Scores"
+          },
+          "skill_feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3SkillFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Feedbacks"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "score",
+          "passed",
+          "time_taken",
+          "skill_scores",
+          "skill_feedbacks",
+          "total_possible_points"
+        ],
+        "title": "QGetSimulationAttemptV3DynamicRubric"
+      },
+      "QGetSimulationAttemptV3Grade": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "simulation_chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Chat Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "simulation_chat_id",
+          "rubric_id",
+          "description",
+          "passed",
+          "score",
+          "time_taken"
+        ],
+        "title": "QGetSimulationAttemptV3Grade"
+      },
+      "QGetSimulationAttemptV3GradingState": {
+        "properties": {
+          "achieved_standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3StandardAchievement"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achieved Standards"
+          },
+          "passed_standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3StandardPass"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Standards"
+          },
+          "grade_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Description"
+          },
+          "feedback_by_standard_id": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3StandardFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback By Standard Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "achieved_standards",
+          "passed_standards",
+          "grade_description",
+          "feedback_by_standard_id"
+        ],
+        "title": "QGetSimulationAttemptV3GradingState"
+      },
+      "QGetSimulationAttemptV3Hint": {
+        "properties": {
+          "simulation_message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Message Id"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_message_id",
+          "hint",
+          "idx",
+          "created_at"
+        ],
+        "title": "QGetSimulationAttemptV3Hint"
+      },
+      "QGetSimulationAttemptV3HintsByMessage": {
+        "properties": {
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3Hint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "hints"
+        ],
+        "title": "QGetSimulationAttemptV3HintsByMessage"
+      },
+      "QGetSimulationAttemptV3Message": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3MessageFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "updated_at",
+          "chat_id",
+          "content",
+          "type",
+          "completed",
+          "persona_id",
+          "feedbacks"
+        ],
+        "title": "QGetSimulationAttemptV3Message"
+      },
+      "QGetSimulationAttemptV3MessageFeedback": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "replaces": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3MessageFeedbackReplace"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaces"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3MessageFeedbackHighlight"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "type",
+          "replaces",
+          "highlights"
+        ],
+        "title": "QGetSimulationAttemptV3MessageFeedback"
+      },
+      "QGetSimulationAttemptV3MessageFeedbackHighlight": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "title": "QGetSimulationAttemptV3MessageFeedbackHighlight"
+      },
+      "QGetSimulationAttemptV3MessageFeedbackReplace": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "replace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section",
+          "replace"
+        ],
+        "title": "QGetSimulationAttemptV3MessageFeedbackReplace"
+      },
+      "QGetSimulationAttemptV3Option": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "option_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Text"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "option_text",
+          "type",
+          "is_correct"
+        ],
+        "title": "QGetSimulationAttemptV3Option"
+      },
+      "QGetSimulationAttemptV3Persona": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "color"
+        ],
+        "title": "QGetSimulationAttemptV3Persona"
+      },
+      "QGetSimulationAttemptV3PreviousChat": {
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id",
+          "score",
+          "passed",
+          "created_at",
+          "title",
+          "time_taken",
+          "total_possible_points",
+          "percentage"
+        ],
+        "title": "QGetSimulationAttemptV3PreviousChat"
+      },
+      "QGetSimulationAttemptV3Question": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "question_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Text"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "allow_multiple": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allow Multiple"
+          },
+          "times": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Times"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3Option"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question_text",
+          "type",
+          "allow_multiple",
+          "times",
+          "options"
+        ],
+        "title": "QGetSimulationAttemptV3Question"
+      },
+      "QGetSimulationAttemptV3Quiz": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "responses": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3QuizResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "completed",
+          "responses"
+        ],
+        "title": "QGetSimulationAttemptV3Quiz"
+      },
+      "QGetSimulationAttemptV3QuizResponse": {
+        "properties": {
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          },
+          "option_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Id"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "option_id",
+          "completed",
+          "created_at"
+        ],
+        "title": "QGetSimulationAttemptV3QuizResponse"
+      },
+      "QGetSimulationAttemptV3RubricStructure": {
+        "properties": {
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3StandardGroupStandards"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standard_groups_mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3StandardGroupMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups Mapping"
+          },
+          "standards_mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3StandardMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_groups",
+          "standard_groups_mapping",
+          "standards_mapping"
+        ],
+        "title": "QGetSimulationAttemptV3RubricStructure"
+      },
+      "QGetSimulationAttemptV3Scenario": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "default_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Scenario"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_images": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Images"
+          },
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problem_statement",
+          "department_id",
+          "active",
+          "persona_id",
+          "persona_name",
+          "persona_icon",
+          "persona_color",
+          "created_at",
+          "updated_at",
+          "generated",
+          "default_scenario",
+          "copy_paste_allowed",
+          "text_enabled",
+          "audio_enabled",
+          "show_problem_statement",
+          "show_objectives",
+          "show_images",
+          "background_image",
+          "objectives"
+        ],
+        "title": "QGetSimulationAttemptV3Scenario"
+      },
+      "QGetSimulationAttemptV3ScenarioDocument": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "type",
+          "updated_at",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "upload_id",
+          "field_ids"
+        ],
+        "title": "QGetSimulationAttemptV3ScenarioDocument"
+      },
+      "QGetSimulationAttemptV3Simulation": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "default_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Simulation"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "input_guardrail_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Guardrail Active"
+          },
+          "output_guardrail_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Guardrail Active"
+          },
+          "image_input_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Input Active"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "department_id",
+          "active",
+          "default_simulation",
+          "practice_simulation",
+          "hints_enabled",
+          "objectives_enabled",
+          "input_guardrail_active",
+          "output_guardrail_active",
+          "image_input_active",
+          "copy_paste_allowed",
+          "time_limit",
+          "rubric_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "QGetSimulationAttemptV3Simulation"
+      },
+      "QGetSimulationAttemptV3SkillFeedback": {
+        "properties": {
+          "skill_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Name"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill_name",
+          "feedback"
+        ],
+        "title": "QGetSimulationAttemptV3SkillFeedback"
+      },
+      "QGetSimulationAttemptV3SkillScore": {
+        "properties": {
+          "skill_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Name"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill_name",
+          "score"
+        ],
+        "title": "QGetSimulationAttemptV3SkillScore"
+      },
+      "QGetSimulationAttemptV3StandardAchievement": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "achieved": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achieved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "achieved"
+        ],
+        "title": "QGetSimulationAttemptV3StandardAchievement"
+      },
+      "QGetSimulationAttemptV3StandardFeedback": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "feedback"
+        ],
+        "title": "QGetSimulationAttemptV3StandardFeedback"
+      },
+      "QGetSimulationAttemptV3StandardGroupMapping": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "pass_points"
+        ],
+        "title": "QGetSimulationAttemptV3StandardGroupMapping"
+      },
+      "QGetSimulationAttemptV3StandardGroupStandards": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "standard_ids"
+        ],
+        "title": "QGetSimulationAttemptV3StandardGroupStandards"
+      },
+      "QGetSimulationAttemptV3StandardMapping": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetSimulationAttemptV3StandardMapping"
+      },
+      "QGetSimulationAttemptV3StandardPass": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "passed"
+        ],
+        "title": "QGetSimulationAttemptV3StandardPass"
+      },
+      "QGetSimulationAttemptV3Timer": {
+        "properties": {
+          "elapsed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "exceeded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exceeded"
+          },
+          "formatted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "elapsed",
+          "limit",
+          "exceeded",
+          "formatted"
+        ],
+        "title": "QGetSimulationAttemptV3Timer"
+      },
+      "QGetSimulationAttemptV3Video": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "length_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Seconds"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "video_documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3VideoDocument"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Documents"
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationAttemptV3Question"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions"
+          },
+          "show_image": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Image"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "length_seconds",
+          "upload_id",
+          "video_documents",
+          "questions",
+          "show_image"
+        ],
+        "title": "QGetSimulationAttemptV3Video"
+      },
+      "QGetSimulationAttemptV3VideoDocument": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "extension",
+          "file_path",
+          "mime_type",
+          "upload_id"
+        ],
+        "title": "QGetSimulationAttemptV3VideoDocument"
       },
       "QGetSimulationDetailV3Agent": {
         "properties": {
@@ -82814,7 +85718,7 @@
         ],
         "title": "QUpdateScenarioV3QuestionTimestamp"
       },
-      "QuestionItem-Input": {
+      "QuestionItem": {
         "properties": {
           "question_text": {
             "type": "string",
@@ -82841,50 +85745,6 @@
         "title": "QuestionItem",
         "description": "Question item for scenario questions tool."
       },
-      "QuestionItem-Output": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "questionText": {
-            "type": "string",
-            "title": "Questiontext"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "allowMultiple": {
-            "type": "boolean",
-            "title": "Allowmultiple"
-          },
-          "times": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Times"
-          },
-          "options": {
-            "items": {
-              "$ref": "#/components/schemas/OptionItem"
-            },
-            "type": "array",
-            "title": "Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "questionText",
-          "type",
-          "allowMultiple",
-          "times",
-          "options"
-        ],
-        "title": "QuestionItem"
-      },
       "QuestionOption": {
         "properties": {
           "option_text": {
@@ -82903,60 +85763,6 @@
         ],
         "title": "QuestionOption",
         "description": "Option for a question."
-      },
-      "QuizItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed"
-          },
-          "responses": {
-            "items": {
-              "$ref": "#/components/schemas/QuizResponseItem"
-            },
-            "type": "array",
-            "title": "Responses"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "completed",
-          "responses"
-        ],
-        "title": "QuizItem"
-      },
-      "QuizResponseItem": {
-        "properties": {
-          "questionId": {
-            "type": "string",
-            "title": "Questionid"
-          },
-          "optionId": {
-            "type": "string",
-            "title": "Optionid"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "questionId",
-          "optionId",
-          "completed",
-          "createdAt"
-        ],
-        "title": "QuizResponseItem"
       },
       "RandomizeScenarioPayload": {
         "properties": {
@@ -83487,314 +86293,6 @@
         "title": "ResponseInputItem",
         "description": "Input item for agent conversation (TResponseInputItem format)."
       },
-      "RubricStructure": {
-        "properties": {
-          "standardGroups": {
-            "additionalProperties": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "type": "object",
-            "title": "Standardgroups"
-          },
-          "standardGroupsMapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/StandardGroupMappingItem"
-            },
-            "type": "object",
-            "title": "Standardgroupsmapping"
-          },
-          "standardsMapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Standardsmapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "standardGroups",
-          "standardGroupsMapping",
-          "standardsMapping"
-        ],
-        "title": "RubricStructure"
-      },
-      "RunItem": {
-        "properties": {
-          "run_id": {
-            "type": "string",
-            "title": "Run Id"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
-          },
-          "eval_run_completed": {
-            "type": "boolean",
-            "title": "Eval Run Completed"
-          },
-          "eval_run_assigned_at": {
-            "type": "string",
-            "title": "Eval Run Assigned At"
-          },
-          "eval_run_updated_at": {
-            "type": "string",
-            "title": "Eval Run Updated At"
-          },
-          "run_created_at": {
-            "type": "string",
-            "title": "Run Created At"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "model_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Name"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "agent_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Name"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "persona_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Name"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "profile_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Name"
-          },
-          "grade_score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Score"
-          },
-          "grade_passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Passed"
-          },
-          "grade_created_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "run_id",
-          "status",
-          "eval_run_completed",
-          "eval_run_assigned_at",
-          "eval_run_updated_at",
-          "run_created_at"
-        ],
-        "title": "RunItem",
-        "description": "Run item in eval attempt."
-      },
-      "ScenarioDocumentItem": {
-        "properties": {
-          "document_id": {
-            "type": "string",
-            "title": "Document Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "extension": {
-            "type": "string",
-            "title": "Extension"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "file_path": {
-            "type": "string",
-            "title": "File Path"
-          },
-          "mime_type": {
-            "type": "string",
-            "title": "Mime Type"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Field Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "document_id",
-          "name",
-          "type",
-          "updatedAt",
-          "extension",
-          "scenario_ids",
-          "can_edit",
-          "can_delete",
-          "active",
-          "department_ids",
-          "file_path",
-          "mime_type",
-          "upload_id",
-          "field_ids"
-        ],
-        "title": "ScenarioDocumentItem"
-      },
       "ScenarioGenerationCompletePayload": {
         "properties": {
           "success": {
@@ -83902,166 +86400,6 @@
         "title": "ScenarioGenerationProgressPayload",
         "description": "Response indicating progress in scenario generation."
       },
-      "ScenarioItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "problemStatement": {
-            "type": "string",
-            "title": "Problemstatement"
-          },
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "personaId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaid"
-          },
-          "personaName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaname"
-          },
-          "personaIcon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaicon"
-          },
-          "personaColor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personacolor"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "generated": {
-            "type": "boolean",
-            "title": "Generated"
-          },
-          "defaultScenario": {
-            "type": "boolean",
-            "title": "Defaultscenario"
-          },
-          "copyPasteAllowed": {
-            "type": "boolean",
-            "title": "Copypasteallowed"
-          },
-          "textEnabled": {
-            "type": "boolean",
-            "title": "Textenabled",
-            "default": true
-          },
-          "audioEnabled": {
-            "type": "boolean",
-            "title": "Audioenabled",
-            "default": false
-          },
-          "showProblemStatement": {
-            "type": "boolean",
-            "title": "Showproblemstatement",
-            "default": true
-          },
-          "showObjectives": {
-            "type": "boolean",
-            "title": "Showobjectives",
-            "default": true
-          },
-          "showImages": {
-            "type": "boolean",
-            "title": "Showimages",
-            "default": true
-          },
-          "backgroundImage": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Backgroundimage"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "problemStatement",
-          "departmentId",
-          "active",
-          "personaId",
-          "createdAt",
-          "updatedAt",
-          "generated",
-          "defaultScenario",
-          "copyPasteAllowed"
-        ],
-        "title": "ScenarioItem"
-      },
       "ScenarioQuestionsToolCompletePayload": {
         "properties": {
           "success": {
@@ -84132,7 +86470,7 @@
           },
           "questions": {
             "items": {
-              "$ref": "#/components/schemas/QuestionItem-Input"
+              "$ref": "#/components/schemas/QuestionItem"
             },
             "type": "array",
             "title": "Questions"
@@ -84808,120 +87146,6 @@
         "title": "SimulationGradingStartPayload",
         "description": "Request to start grading for a simulation chat."
       },
-      "SimulationItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "defaultSimulation": {
-            "type": "boolean",
-            "title": "Defaultsimulation"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "hintsEnabled": {
-            "type": "boolean",
-            "title": "Hintsenabled"
-          },
-          "objectivesEnabled": {
-            "type": "boolean",
-            "title": "Objectivesenabled"
-          },
-          "inputGuardrailActive": {
-            "type": "boolean",
-            "title": "Inputguardrailactive"
-          },
-          "outputGuardrailActive": {
-            "type": "boolean",
-            "title": "Outputguardrailactive"
-          },
-          "imageInputActive": {
-            "type": "boolean",
-            "title": "Imageinputactive"
-          },
-          "copyPasteAllowed": {
-            "type": "boolean",
-            "title": "Copypasteallowed"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "rubricId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubricid"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "description",
-          "departmentId",
-          "active",
-          "defaultSimulation",
-          "practiceSimulation",
-          "hintsEnabled",
-          "objectivesEnabled",
-          "inputGuardrailActive",
-          "outputGuardrailActive",
-          "imageInputActive",
-          "copyPasteAllowed",
-          "timeLimit",
-          "rubricId",
-          "createdAt",
-          "updatedAt"
-        ],
-        "title": "SimulationItem"
-      },
       "SimulationJoinErrorPayload": {
         "properties": {
           "success": {
@@ -85451,34 +87675,6 @@
         "title": "SimulationToolCallTokenPayload",
         "description": "Internal event for tool call arguments update."
       },
-      "StandardGroupMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "points": {
-            "type": "number",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "number",
-            "title": "Passpoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "points",
-          "passPoints"
-        ],
-        "title": "StandardGroupMappingItem"
-      },
       "StartSimulationErrorPayload": {
         "properties": {
           "success": {
@@ -85673,35 +87869,6 @@
         "title": "StartVoiceResponsePayload",
         "description": "Response from starting a voice simulation session."
       },
-      "StatusSummary": {
-        "properties": {
-          "not_started": {
-            "type": "integer",
-            "title": "Not Started"
-          },
-          "in_progress": {
-            "type": "integer",
-            "title": "In Progress"
-          },
-          "completed": {
-            "type": "integer",
-            "title": "Completed"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          }
-        },
-        "type": "object",
-        "required": [
-          "not_started",
-          "in_progress",
-          "completed",
-          "total"
-        ],
-        "title": "StatusSummary",
-        "description": "Status summary for eval attempt."
-      },
       "StopSimulationErrorPayload": {
         "properties": {
           "success": {
@@ -85805,41 +87972,6 @@
         ],
         "title": "StrikeItem",
         "description": "Strike/replace item for message improvement."
-      },
-      "TimerItem": {
-        "properties": {
-          "elapsed": {
-            "type": "integer",
-            "title": "Elapsed"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limit"
-          },
-          "exceeded": {
-            "type": "boolean",
-            "title": "Exceeded"
-          },
-          "formatted": {
-            "type": "string",
-            "title": "Formatted"
-          }
-        },
-        "type": "object",
-        "required": [
-          "elapsed",
-          "limit",
-          "exceeded",
-          "formatted"
-        ],
-        "title": "TimerItem"
       },
       "UpdateAgentApiRequest": {
         "properties": {
@@ -88460,77 +90592,6 @@
         ],
         "title": "ValidationError"
       },
-      "VideoDocumentItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "extension": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Extension"
-          },
-          "filePath": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Filepath"
-          },
-          "mimeType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mimetype"
-          },
-          "uploadId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uploadid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "extension",
-          "filePath",
-          "mimeType",
-          "uploadId"
-        ],
-        "title": "VideoDocumentItem"
-      },
       "VideoGenerationCompletePayload": {
         "properties": {
           "success": {
@@ -88659,62 +90720,6 @@
         ],
         "title": "VideoGenerationProgressPayload",
         "description": "Response indicating progress in video generation."
-      },
-      "VideoItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "lengthSeconds": {
-            "type": "integer",
-            "title": "Lengthseconds"
-          },
-          "uploadId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uploadid"
-          },
-          "videoDocuments": {
-            "items": {
-              "$ref": "#/components/schemas/VideoDocumentItem"
-            },
-            "type": "array",
-            "title": "Videodocuments"
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/QuestionItem-Output"
-            },
-            "type": "array",
-            "title": "Questions"
-          },
-          "showImage": {
-            "type": "boolean",
-            "title": "Showimage"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "lengthSeconds",
-          "uploadId",
-          "videoDocuments",
-          "questions",
-          "showImage"
-        ],
-        "title": "VideoItem"
       },
       "VoiceAssistantAudioLinkPayload": {
         "properties": {
@@ -89146,106 +91151,6 @@
         ],
         "title": "VoiceUserTranscriptPayload",
         "description": "Request to send user transcript from voice simulation."
-      },
-      "app__api__v3__attempts__eval__AttemptItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "eval_id": {
-            "type": "string",
-            "title": "Eval Id"
-          },
-          "archived": {
-            "type": "boolean",
-            "title": "Archived"
-          },
-          "conversation_mode": {
-            "type": "boolean",
-            "title": "Conversation Mode",
-            "default": false
-          },
-          "conversation_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Agent Id"
-          },
-          "conversation_max_turns": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Max Turns"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "created_at",
-          "eval_id",
-          "archived"
-        ],
-        "title": "AttemptItem",
-        "description": "Eval attempt item."
-      },
-      "app__api__v3__attempts__simulation__AttemptItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "simulationId": {
-            "type": "string",
-            "title": "Simulationid"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "archived": {
-            "type": "boolean",
-            "title": "Archived"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "simulationId",
-          "infiniteMode",
-          "archived"
-        ],
-        "title": "AttemptItem"
       }
     }
   }

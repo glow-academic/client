@@ -1,30 +1,144 @@
 -- Get eval attempt full details with runs and status
--- Parameters: $1 = attempt_id (uuid), $2 = profile_id (uuid)
--- Returns: attempt details, eval info, runs list with status (not_started, in_progress, completed), actor_name
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
-WITH actor_profile AS (
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_eval_attempt_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_eval_attempt_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_eval_attempt_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_eval_attempt_v3_run AS (
+    run_id uuid,
+    status text,
+    test_id uuid,
+    eval_run_completed boolean,
+    eval_run_assigned_at timestamptz,
+    eval_run_updated_at timestamptz,
+    run_created_at timestamptz,
+    model_id uuid,
+    model_name text,
+    agent_id uuid,
+    agent_name text,
+    persona_id uuid,
+    persona_name text,
+    profile_id uuid,
+    profile_name text,
+    grade_score int,
+    grade_passed boolean,
+    grade_created_at timestamptz
+);
+
+CREATE TYPE types.q_get_eval_attempt_v3_attempt AS (
+    id uuid,
+    created_at timestamptz,
+    eval_id uuid,
+    archived boolean,
+    conversation_mode boolean,
+    conversation_agent_id uuid,
+    conversation_max_turns int
+);
+
+CREATE TYPE types.q_get_eval_attempt_v3_eval AS (
+    eval_id uuid,
+    name text,
+    description text,
+    rubric_id uuid,
+    agent_id uuid,
+    eval_agent_id uuid,
+    dynamic boolean,
+    rubric_name text,
+    rubric_description text,
+    system_prompt text,
+    conversation_agent_name text
+);
+
+CREATE TYPE types.q_get_eval_attempt_v3_status_summary AS (
+    not_started int,
+    in_progress int,
+    completed int,
+    total int
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_eval_attempt_v3(
+    attempt_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    attempt_exists boolean,
+    actor_name text,
+    attempt types.q_get_eval_attempt_v3_attempt,
+    eval types.q_get_eval_attempt_v3_eval,
+    runs types.q_get_eval_attempt_v3_run[],
+    status_summary types.q_get_eval_attempt_v3_status_summary
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT 
+        attempt_id AS attempt_id,
+        profile_id AS profile_id
+),
+actor_profile AS (
     SELECT
-        $2::uuid as profile_id,
+        p.id as profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
+),
+attempt_exists_check AS (
+    SELECT EXISTS(
+        SELECT 1 FROM eval_attempts WHERE id = (SELECT attempt_id FROM params)
+    )::boolean as attempt_exists
 ),
 attempt_data AS (
     SELECT 
-        ea.id as attempt_id,
-        ea.created_at as attempt_created_at,
+        ea.id,
+        ea.created_at,
         ea.eval_id,
         ea.archived,
         ea.conversation_mode,
         ea.conversation_agent_id,
         ea.conversation_max_turns
-    FROM eval_attempts ea
-    WHERE ea.id = $1::uuid
+    FROM params x
+    JOIN eval_attempts ea ON ea.id = x.attempt_id
 ),
 -- Get conversation agent name
 conversation_agent_info AS (
     SELECT 
-        a.id::text as agent_id,
+        a.id as agent_id,
         a.name as agent_name
     FROM attempt_data ad
     LEFT JOIN agents a ON a.id = ad.conversation_agent_id
@@ -44,9 +158,9 @@ eval_info AS (
         e.id as eval_id,
         e.name as eval_name,
         e.description as eval_description,
-        e.rubric_id::text,
-        e.agent_id::text,
-        e.eval_agent_id::text,
+        e.rubric_id,
+        e.agent_id,
+        e.eval_agent_id,
         e.dynamic,
         r.name as rubric_name,
         r.description as rubric_description
@@ -57,7 +171,7 @@ eval_info AS (
 -- Get all runs for this eval (from eval_runs)
 eval_runs_data AS (
     SELECT 
-        er.run_id::text,
+        er.run_id,
         er.completed as eval_run_completed,
         er.created_at as eval_run_assigned_at,
         er.updated_at as eval_run_updated_at
@@ -67,21 +181,19 @@ eval_runs_data AS (
 -- Get tests linked to this attempt via attempt_tests
 attempt_tests_data AS (
     SELECT 
-        at.test_id::text,
-        at.attempt_id::text,
-        t.run_id::text as test_run_id,
+        at.test_id,
+        at.attempt_id,
+        t.run_id as test_run_id,
         t.completed as test_completed,
         t.title as test_title,
         t.created_at as test_created_at,
         t.updated_at as test_updated_at
     FROM attempt_data ad
-    JOIN attempt_tests at ON at.attempt_id = ad.attempt_id
+    JOIN attempt_tests at ON at.attempt_id = ad.id
     JOIN tests t ON t.id = at.test_id
 ),
 -- Map tests to original runs using trace_id
 -- trace_id format: "eval_{attempt_id}_{original_run_id}"
--- So we can extract original_run_id from trace_id: SPLIT_PART(trace_id, '_', 3)
--- Also verify attempt_id matches (SPLIT_PART(trace_id, '_', 2))
 tests_to_runs AS (
     SELECT 
         atd.test_id,
@@ -90,12 +202,17 @@ tests_to_runs AS (
         atd.test_created_at,
         atd.test_updated_at,
         -- Extract original run_id from trace_id (format: eval_{attempt_id}_{run_id})
-        SPLIT_PART(t.trace_id, '_', 3) as original_run_id
+        -- Keep as text for comparison, cast to uuid only when valid
+        CASE 
+            WHEN t.trace_id LIKE 'eval_%_%' AND SPLIT_PART(t.trace_id, '_', 3) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
+                SPLIT_PART(t.trace_id, '_', 3)::uuid
+            ELSE NULL::uuid
+        END as original_run_id
     FROM attempt_tests_data atd
-    JOIN tests t ON t.id::text = atd.test_id
+    JOIN tests t ON t.id = atd.test_id
     CROSS JOIN attempt_data ad
     WHERE t.trace_id LIKE 'eval_%_%'
-      AND SPLIT_PART(t.trace_id, '_', 2) = ad.attempt_id::text
+      AND SPLIT_PART(t.trace_id, '_', 2) = ad.id::text
 ),
 runs_with_status AS (
     SELECT 
@@ -143,15 +260,15 @@ runs_with_details AS (
         -- Run details
         r.created_at as run_created_at,
         -- Model info
-        rm.model_id::text as model_id,
+        rm.model_id,
         m.name as model_name,
         -- Agent/persona info
-        r.agent_id::text as agent_id,
+        r.agent_id,
         a.name as agent_name,
-        rper.persona_id::text as persona_id,
+        rper.persona_id,
         per.name as persona_name,
         -- Profile info
-        rp.profile_id::text as profile_id,
+        rp.profile_id,
         p.first_name || ' ' || p.last_name as profile_name,
         -- Grade info (from eval_agent's run, not original run)
         -- Grade is on the eval_agent run (test.run_id), not original run
@@ -160,7 +277,7 @@ runs_with_details AS (
             FROM grades g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
-            WHERE t.id::text = rws.test_id
+            WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_score,
         (
@@ -168,7 +285,7 @@ runs_with_details AS (
             FROM grades g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
-            WHERE t.id::text = rws.test_id
+            WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_passed,
         (
@@ -176,11 +293,11 @@ runs_with_details AS (
             FROM grades g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
-            WHERE t.id::text = rws.test_id
+            WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_created_at
     FROM runs_with_status rws
-    JOIN runs r ON r.id::text = rws.run_id
+    JOIN runs r ON r.id = rws.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN models m ON m.id = rm.model_id
     LEFT JOIN agents a ON a.id = r.agent_id
@@ -190,79 +307,41 @@ runs_with_details AS (
     LEFT JOIN profiles p ON p.id = rp.profile_id
     ORDER BY rws.eval_run_assigned_at DESC
 ),
-runs_json AS (
-    SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'run_id', run_id,
-                'status', status,
-                'test_id', test_id,
-                'eval_run_completed', eval_run_completed,
-                'eval_run_assigned_at', eval_run_assigned_at,
-                'eval_run_updated_at', eval_run_updated_at,
-                'run_created_at', run_created_at,
-                'model_id', model_id,
-                'model_name', model_name,
-                'agent_id', agent_id,
-                'agent_name', agent_name,
-                'persona_id', persona_id,
-                'persona_name', persona_name,
-                'profile_id', profile_id,
-                'profile_name', profile_name,
-                'grade_score', grade_score,
-                'grade_passed', grade_passed,
-                'grade_created_at', grade_created_at
-            ) ORDER BY eval_run_assigned_at DESC
-        ),
-        '[]'::jsonb
-    ) as runs
-    FROM runs_with_details
-),
 -- Calculate status summary
 status_summary AS (
     SELECT 
-        COUNT(*) FILTER (WHERE status = 'not_started') as not_started_count,
-        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress_count,
-        COUNT(*) FILTER (WHERE status = 'completed') as completed_count,
-        COUNT(*) as total_runs
+        COUNT(*) FILTER (WHERE status = 'not_started')::int as not_started,
+        COUNT(*) FILTER (WHERE status = 'in_progress')::int as in_progress,
+        COUNT(*) FILTER (WHERE status = 'completed')::int as completed,
+        COUNT(*)::int as total
     FROM runs_with_status
+),
+runs_aggregated AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (rwd.run_id, rwd.status, rwd.test_id, rwd.eval_run_completed, rwd.eval_run_assigned_at, rwd.eval_run_updated_at, rwd.run_created_at, rwd.model_id, rwd.model_name, rwd.agent_id, rwd.agent_name, rwd.persona_id, rwd.persona_name, rwd.profile_id, rwd.profile_name, rwd.grade_score, rwd.grade_passed, rwd.grade_created_at)::types.q_get_eval_attempt_v3_run
+                ORDER BY rwd.eval_run_assigned_at DESC
+            ),
+            '{}'::types.q_get_eval_attempt_v3_run[]
+        ) as runs
+    FROM runs_with_details rwd
 )
 SELECT 
-    jsonb_build_object(
-        'id', ad.attempt_id::text,
-        'created_at', ad.attempt_created_at,
-        'eval_id', ad.eval_id::text,
-        'archived', ad.archived,
-        'conversation_mode', ad.conversation_mode,
-        'conversation_agent_id', ad.conversation_agent_id::text,
-        'conversation_max_turns', ad.conversation_max_turns
-    ) as attempt,
-    jsonb_build_object(
-        'eval_id', ei.eval_id::text,
-        'name', ei.eval_name,
-        'description', ei.eval_description,
-        'rubric_id', ei.rubric_id,
-        'agent_id', ei.agent_id,
-        'eval_agent_id', ei.eval_agent_id,
-        'dynamic', ei.dynamic,
-        'rubric_name', ei.rubric_name,
-        'rubric_description', ei.rubric_description,
-        'system_prompt', COALESCE(asp.system_prompt, ''),
-        'conversation_agent_name', cai.agent_name
-    ) as eval,
-    rj.runs,
-    jsonb_build_object(
-        'not_started', COALESCE(ss.not_started_count, 0),
-        'in_progress', COALESCE(ss.in_progress_count, 0),
-        'completed', COALESCE(ss.completed_count, 0),
-        'total', COALESCE(ss.total_runs, 0)
-    ) as status_summary,
-    ap.actor_name
-FROM attempt_data ad
+    aec.attempt_exists,
+    ap.actor_name,
+    (ad.id, ad.created_at, ad.eval_id, ad.archived, ad.conversation_mode, ad.conversation_agent_id, ad.conversation_max_turns)::types.q_get_eval_attempt_v3_attempt as attempt,
+    (ei.eval_id, ei.eval_name, ei.eval_description, ei.rubric_id, ei.agent_id, ei.eval_agent_id, ei.dynamic, ei.rubric_name, ei.rubric_description, COALESCE(asp.system_prompt, ''), cai.agent_name)::types.q_get_eval_attempt_v3_eval as eval,
+    COALESCE(ra.runs, '{}'::types.q_get_eval_attempt_v3_run[]) as runs,
+    (ss.not_started, ss.in_progress, ss.completed, ss.total)::types.q_get_eval_attempt_v3_status_summary as status_summary
+FROM attempt_exists_check aec
+CROSS JOIN attempt_data ad
 CROSS JOIN eval_info ei
-CROSS JOIN runs_json rj
 CROSS JOIN status_summary ss
 CROSS JOIN actor_profile ap
 CROSS JOIN agent_system_prompt asp
-LEFT JOIN conversation_agent_info cai ON cai.agent_id = ad.conversation_agent_id::text
+CROSS JOIN runs_aggregated ra
+LEFT JOIN conversation_agent_info cai ON cai.agent_id = ad.conversation_agent_id
+$$;
 
+COMMIT;
