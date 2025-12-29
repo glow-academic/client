@@ -38,42 +38,60 @@ export default function Home({ homeData }: HomeProps) {
   // Use data directly from props (fetched server-side)
   const homeOverview = homeData;
 
-  // Extract rubric mappings from home overview data
-  // Convert arrays to dicts for backward compatibility with existing components
+  // Extract rubric mappings from home overview data (arrays from composite types)
+  // TableRubric component expects dicts, so we build them from arrays using efficient lookups
   const standardGroupsMapping = useMemo(() => {
     const groups = homeOverview?.standard_groups || [];
-    const mapping: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        points: number;
-        passPoints: number;
-      }
-    > = {};
-    for (const group of groups) {
-      mapping[group.standard_group_id] = {
-        name: group.name,
-        description: group.description,
-        points: group.points,
-        passPoints: group.pass_points,
-      };
-    }
-    return mapping;
+    // Build dict using array methods for efficient lookup
+    return Object.fromEntries(
+      groups
+        .filter((group) => group.standard_group_id)
+        .map((group) => [
+          String(group.standard_group_id),
+          {
+            name: group.name,
+            description: group.description,
+            points: group.points,
+            passPoints: group.pass_points,
+          },
+        ])
+    );
   }, [homeOverview?.standard_groups]);
 
   const standardsMapping = useMemo(() => {
     const standards = homeOverview?.standards || [];
-    const mapping: Record<string, { name: string; description: string; points: number }> = {};
-    for (const standard of standards) {
-      mapping[standard.standard_id] = {
-        name: standard.name,
-        description: standard.description,
-        points: standard.points,
-      };
-    }
-    return mapping;
+    // Build dict using array methods for efficient lookup
+    return Object.fromEntries(
+      standards
+        .filter((standard) => standard.standard_id)
+        .map((standard) => [
+          String(standard.standard_id),
+          {
+            name: standard.name,
+            description: standard.description,
+            points: standard.points,
+          },
+        ])
+    );
   }, [homeOverview?.standards]);
+
+  // Helper to build standardGroups dict for a simulation item (group_id -> [standard_ids])
+  const buildStandardGroupsDict = useCallback(
+    (itemStandardGroups: string[]) => {
+      const standards = homeOverview?.standards || [];
+      const dict: Record<string, string[]> = {};
+      for (const groupId of itemStandardGroups) {
+        const standardIds = standards
+          .filter((s) => s.standard_group_id === groupId)
+          .map((s) => String(s.standard_id));
+        if (standardIds.length > 0) {
+          dict[groupId] = standardIds;
+        }
+      }
+      return dict;
+    },
+    [homeOverview?.standards]
+  );
 
   const [carouselIndex, setCarouselIndex] = useState(0);
   // Use WebSocket's specific simulation ID for precise loading state
@@ -406,7 +424,7 @@ export default function Home({ homeData }: HomeProps) {
                       })}
                       simulationTitle={item.simulationTitle}
                       simulationDescription={item.simulationDescription || ""}
-                      standard_groups={item.standard_groups}
+                      standard_groups={buildStandardGroupsDict(item.standard_groups || [])}
                       standardGroupsMapping={
                         standardGroupsMapping as Record<
                           string,

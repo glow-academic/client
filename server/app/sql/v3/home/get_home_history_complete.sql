@@ -87,8 +87,8 @@ CREATE OR REPLACE FUNCTION api_get_home_history_v3(
     infinite_mode boolean DEFAULT NULL,
     sort_by text DEFAULT 'date',
     sort_order text DEFAULT 'desc',
-    page_size int DEFAULT 20,
-    offset_count int DEFAULT 0
+    page int DEFAULT 0,
+    page_size int DEFAULT 20
 )
 RETURNS TABLE (
     actor_name text,
@@ -120,8 +120,9 @@ WITH params AS (
         infinite_mode AS infinite_mode,
         COALESCE(sort_by, 'date') AS sort_by,
         COALESCE(sort_order, 'desc') AS sort_order,
+        COALESCE(page, 0) AS page,
         COALESCE(page_size, 20) AS page_size,
-        COALESCE(offset_count, 0) AS offset_count
+        (COALESCE(page, 0) * COALESCE(page_size, 20)) AS offset_count
 ),
 resolve_profile_id AS (
     SELECT 
@@ -769,7 +770,7 @@ user_profile AS (
 page_info AS (
     SELECT 
         (SELECT total_count FROM total_count_cte)::int AS total_count,
-        (SELECT offset_count FROM params)::int / (SELECT page_size FROM params)::int AS page,
+        (SELECT page FROM params)::int AS page,
         (SELECT page_size FROM params)::int AS page_size,
         CASE 
             WHEN (SELECT total_count FROM total_count_cte) > 0 

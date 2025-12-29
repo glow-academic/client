@@ -1,18 +1,14 @@
 """Home overview endpoint - POST /home/overview"""
 
-from datetime import datetime
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, Dict, cast
 
 import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetHomeOverviewApiRequest,
-    GetHomeOverviewApiResponse,
-    GetHomeOverviewSqlParams,
-    GetHomeOverviewSqlRow,
-)
+from app.sql.types import (GetHomeOverviewApiRequest,
+                           GetHomeOverviewApiResponse,
+                           GetHomeOverviewSqlParams, GetHomeOverviewSqlRow)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -70,15 +66,11 @@ async def get_home_overview(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        # Convert start_date and end_date strings to datetime objects
-        request_dict = request.model_dump()
-        params = GetHomeOverviewSqlParams(
-            start_date=datetime.fromisoformat(request_dict["start_date"].replace("Z", "+00:00")),
-            end_date=datetime.fromisoformat(request_dict["end_date"].replace("Z", "+00:00")),
-            profile_id=profile_id,
-            cohort_ids=request_dict.get("cohort_ids") or [],
-            department_ids=request_dict.get("department_ids") or [],
-        )
+        # Use mode='json' to keep dates as ISO strings (SQL params model expects strings, not datetime objects)
+        # Use double-star pattern - SQL handles defaults via COALESCE in params CTE
+        # Note: model_dump(mode='json') returns strings for dates at runtime, but type checker infers datetime
+        request_dict = request.model_dump(mode="json")
+        params = GetHomeOverviewSqlParams(**request_dict, profile_id=profile_id)  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present

@@ -1,7 +1,6 @@
 """Home history endpoint - POST /home/history"""
 
-from datetime import datetime
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, cast, Dict
 
 import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
@@ -70,26 +69,10 @@ async def get_home_history(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        # Convert start_date and end_date strings to datetime objects
-        request_dict = request.model_dump()
-        params = GetHomeHistorySqlParams(
-            start_date=datetime.fromisoformat(request_dict["start_date"].replace("Z", "+00:00")),
-            end_date=datetime.fromisoformat(request_dict["end_date"].replace("Z", "+00:00")),
-            profile_id=profile_id,
-            cohort_ids=request_dict.get("cohort_ids") or [],
-            department_ids=request_dict.get("department_ids") or [],
-            roles=request_dict.get("roles") or [],
-            simulation_filters=request_dict.get("simulation_filters") or ["general"],
-            search=request_dict.get("search"),
-            profile_ids=request_dict.get("profile_ids") or [],
-            simulation_ids=request_dict.get("simulation_ids") or [],
-            scenario_ids=request_dict.get("scenario_ids") or [],
-            infinite_mode=request_dict.get("infinite_mode"),
-            sort_by=request_dict.get("sort_by", "date"),
-            sort_order=request_dict.get("sort_order", "desc"),
-            page_size=request_dict.get("page_size", 20),
-            offset_count=(request_dict.get("page", 0) * request_dict.get("page_size", 20)),
-        )
+        # Use mode='json' to keep dates as ISO strings (SQL params model expects strings, not datetime objects)
+        # Use double-star pattern - SQL handles page/offset_count calculation via COALESCE in params CTE
+        # Note: model_dump(mode='json') returns strings for dates at runtime, but type checker infers datetime
+        params = GetHomeHistorySqlParams(**request.model_dump(mode="json"), profile_id=profile_id)  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present

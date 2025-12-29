@@ -4262,8 +4262,8 @@ class GetHomeHistorySqlParams(BaseModel):
     infinite_mode: bool | None = None
     sort_by: str | None = None
     sort_order: str | None = None
+    page: int | None = 0
     page_size: int | None = 20
-    offset_count: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -4281,8 +4281,8 @@ class GetHomeHistorySqlParams(BaseModel):
             self.infinite_mode,
             self.sort_by,
             self.sort_order,
+            self.page,
             self.page_size,
-            self.offset_count,
         )
 
 class QGetHomeHistoryV3AttemptHistoryRow(BaseModel):
@@ -4348,8 +4348,8 @@ class GetHomeHistoryApiRequest(BaseModel):
     infinite_mode: bool | None = None
     sort_by: str | None = None
     sort_order: str | None = None
+    page: int | None = 0
     page_size: int | None = 20
-    offset_count: int | None = 0
 
 class GetHomeHistoryApiResponse(BaseModel):
 
@@ -4425,6 +4425,7 @@ class QGetHomeOverviewV3SimulationItem(BaseModel):
 class QGetHomeOverviewV3Standard(BaseModel):
 
     standard_id: UUID | None
+    standard_group_id: UUID | None
     name: str | None
     description: str | None
     points: int | None

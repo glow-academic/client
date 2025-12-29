@@ -9962,15 +9962,15 @@ export interface components {
             /** Sort Order */
             sort_order?: string | null;
             /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
              * Page Size
              * @default 20
              */
             page_size: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
         };
         /** GetHomeHistoryApiResponse */
         GetHomeHistoryApiResponse: {
@@ -14803,6 +14803,8 @@ export interface components {
         QGetHomeOverviewV3Standard: {
             /** Standard Id */
             standard_id: string | null;
+            /** Standard Group Id */
+            standard_group_id: string | null;
             /** Name */
             name: string | null;
             /** Description */

@@ -72,6 +72,7 @@ CREATE TYPE types.q_get_home_overview_v3_standard_group AS (
 
 CREATE TYPE types.q_get_home_overview_v3_standard AS (
     standard_id uuid,
+    standard_group_id uuid,
     name text,
     description text,
     points int
@@ -527,7 +528,7 @@ standard_groups_array AS (
 -- Standards mapping (as array)
 standards_array AS (
     SELECT 
-        (st.id, st.name, st.description, st.points)::types.q_get_home_overview_v3_standard AS standard
+        (st.id, st.standard_group_id, st.name, st.description, st.points)::types.q_get_home_overview_v3_standard AS standard
     FROM standards st
     WHERE st.standard_group_id IN (
         SELECT rsg.standard_group_id FROM rubric_standard_groups rsg
