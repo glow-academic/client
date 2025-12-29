@@ -1,116 +1,49 @@
 """Activity bundle endpoint for header metrics."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity
+from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetActivityBundleApiRequest, GetActivityBundleApiResponse,
+                           GetActivityBundleSqlParams, GetActivityBundleSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Type definitions (previously imported from dashboard.bundle, now defined locally)
-class Method:
-    COUNT_DISTINCT = "countDistinct"
-    AVG = "avg"
-    MAX = "max"
-    MIN = "min"
-    SUM = "sum"
-
-
-class TrendData(BaseModel):
-    date: str
-    value: float
-    count: int
-
-
-class MetricResponse(BaseModel):
-    hasData: bool
-    method: str
-    currentValue: int
-    status: str
-    trendAnalysis: str | None = None
-    trendData: list[TrendData]
-    dataPoints: list[Any]
-
-
-# Inline request/response schemas
-class ActivityBundleFilters(BaseModel):
-    """Filters for activity bundle request."""
-
-    pass
-    # No filters needed for header metrics
-
-
-class ActivityChartDataPoint(BaseModel):
-    """Activity chart data point."""
-
-    date: str
-    activeProfiles: int
-    feedbackEntries: int
-    activityEntries: int
-    errors: int
-
-
-class ActivityBundleMetrics(BaseModel):
-    """Header metrics for activity page."""
-
-    active_profiles_count: MetricResponse
-    total_feedback_count: MetricResponse
-    total_activity_entries: MetricResponse
-    total_errors_count: MetricResponse
-
-
-class ActivityBundleResponse(BaseModel):
-    """Response for activity bundle endpoint."""
-
-    metrics: ActivityBundleMetrics
-    chartData: list[ActivityChartDataPoint]
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/activity/get_activity_bundle_complete.sql"
 
 
 router = APIRouter()
 
 
-def compute_status(
-    value: int, threshold_warning: int = 0, threshold_danger: int = 0
-) -> str:
-    """Compute status based on value and thresholds."""
-    if value >= threshold_warning:
-        return "success"
-    elif value >= threshold_danger:
-        return "warning"
-    else:
-        return "neutral"
-
-
 @router.post(
     "/bundle",
-    response_model=ActivityBundleResponse,
+    response_model=GetActivityBundleApiResponse,
     dependencies=[
         audit_activity("activity.bundle", "{{ actor.name }} viewed activity metrics")
     ],
 )
 async def get_activity_bundle(
-    filters: ActivityBundleFilters,
-    request: Request,
+    request: GetActivityBundleApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ActivityBundleResponse:
+) -> GetActivityBundleApiResponse:
     """Get activity bundle with header metrics."""
     tags = ["activity"]  # From router tags
 
     # Check for cache bypass header (for hard refresh)
-    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
-    body_dict = filters.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    body_dict = request.model_dump(mode='json')
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache (unless bypassed)
     if not bypass_cache:
@@ -118,127 +51,60 @@ async def get_activity_bundle(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return ActivityBundleResponse.model_validate(cached["data"])
+            return GetActivityBundleApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Load SQL query
-        sql_query = load_sql("app/sql/v3/activity/bundle.sql")
-        sql_params = ()
-
-        # Execute query
-        result = await conn.fetchrow(sql_query, *sql_params)
-
-        if not result:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
             raise HTTPException(
-                status_code=500, detail="Failed to fetch activity metrics"
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
             )
 
-        # Extract header metrics
-        active_profiles = result["active_profiles_count"] or 0
-        total_feedback = result["total_feedback_count"] or 0
-        total_activity = result["total_activity_entries"] or 0
-        total_errors = result["total_errors_count"] or 0
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetActivityBundleSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Parse chart data
-        chart_data_raw = result.get("chart_data")
-        chart_data: list[ActivityChartDataPoint] = []
-        if chart_data_raw:
-            if isinstance(chart_data_raw, str):
-                chart_data_json = json.loads(chart_data_raw)
-            else:
-                chart_data_json = chart_data_raw
-
-            if isinstance(chart_data_json, list):
-                chart_data = [
-                    ActivityChartDataPoint(**item) for item in chart_data_json
-                ]
-
-        # Calculate trend data for each metric (last 30 days for modal charts)
-        def calculate_trend_data(metric_key: str) -> list[TrendData]:
-            """Calculate trend data for a metric from chart data."""
-            if not chart_data:
-                return []
-
-            # Get last 30 days of data
-            recent_data = chart_data[-30:] if len(chart_data) > 30 else chart_data
-
-            trend_data = []
-            for point in recent_data:
-                value = getattr(point, metric_key, 0)
-                trend_data.append(
-                    TrendData(
-                        date=point.date,
-                        value=float(value),
-                        count=1,
-                    )
-                )
-            return trend_data
-
-        # Build metrics with trend data
-        metrics = ActivityBundleMetrics(
-            active_profiles_count=MetricResponse(
-                hasData=active_profiles > 0,
-                method=Method.COUNT_DISTINCT,
-                currentValue=active_profiles,
-                status=compute_status(active_profiles),
-                trendAnalysis=None,
-                trendData=calculate_trend_data("activeProfiles"),
-                dataPoints=[],
-            ),
-            total_feedback_count=MetricResponse(
-                hasData=total_feedback > 0,
-                method=Method.COUNT_DISTINCT,
-                currentValue=total_feedback,
-                status=compute_status(total_feedback),
-                trendAnalysis=None,
-                trendData=calculate_trend_data("feedbackEntries"),
-                dataPoints=[],
-            ),
-            total_activity_entries=MetricResponse(
-                hasData=total_activity > 0,
-                method=Method.COUNT_DISTINCT,
-                currentValue=total_activity,
-                status=compute_status(total_activity),
-                trendAnalysis=None,
-                trendData=calculate_trend_data("activityEntries"),
-                dataPoints=[],
-            ),
-            total_errors_count=MetricResponse(
-                hasData=total_errors > 0,
-                method=Method.COUNT_DISTINCT,
-                currentValue=total_errors,
-                status=compute_status(
-                    total_errors, threshold_warning=10, threshold_danger=50
-                ),
-                trendAnalysis=None,
-                trendData=calculate_trend_data("errors"),
-                dataPoints=[],
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetActivityBundleSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
             ),
         )
 
-        result_data = ActivityBundleResponse(metrics=metrics, chartData=chart_data)
+        # Set audit context
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Cache response
+        # Convert SQL result to API response (no manual transformation needed - SQL returns arrays)
+        api_response = GetActivityBundleApiResponse.model_validate(result.model_dump())
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": result_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=300,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_activity_bundle",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

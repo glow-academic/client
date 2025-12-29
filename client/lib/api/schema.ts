@@ -6437,98 +6437,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * ActivityBundleFilters
-         * @description Filters for activity bundle request.
-         */
-        ActivityBundleFilters: Record<string, never>;
-        /**
-         * ActivityBundleMetrics
-         * @description Header metrics for activity page.
-         */
-        ActivityBundleMetrics: {
-            active_profiles_count: components["schemas"]["app__api__v3__activity__bundle__MetricResponse"];
-            total_feedback_count: components["schemas"]["app__api__v3__activity__bundle__MetricResponse"];
-            total_activity_entries: components["schemas"]["app__api__v3__activity__bundle__MetricResponse"];
-            total_errors_count: components["schemas"]["app__api__v3__activity__bundle__MetricResponse"];
-        };
-        /**
-         * ActivityBundleResponse
-         * @description Response for activity bundle endpoint.
-         */
-        ActivityBundleResponse: {
-            metrics: components["schemas"]["ActivityBundleMetrics"];
-            /** Chartdata */
-            chartData: components["schemas"]["ActivityChartDataPoint"][];
-        };
-        /**
-         * ActivityChartDataPoint
-         * @description Activity chart data point.
-         */
-        ActivityChartDataPoint: {
-            /** Date */
-            date: string;
-            /** Activeprofiles */
-            activeProfiles: number;
-            /** Feedbackentries */
-            feedbackEntries: number;
-            /** Activityentries */
-            activityEntries: number;
-            /** Errors */
-            errors: number;
-        };
-        /**
-         * ActivityItem
-         * @description Individual activity item in the response.
-         */
-        ActivityItem: {
-            /** Activity Id */
-            activity_id: string;
-            /** Created At */
-            created_at: string;
-            /** Message */
-            message: string;
-            /** Error */
-            error: boolean;
-            /** Profile Name */
-            profile_name: string;
-            /** Profile Id */
-            profile_id: string;
-        };
-        /**
-         * ActivityListFilters
-         * @description Filters for activity list request.
-         */
-        ActivityListFilters: {
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Pagesize
-             * @default 50
-             */
-            pageSize: number;
-            /** Search */
-            search?: string | null;
-        };
-        /**
-         * ActivityListResponse
-         * @description Response for activity list endpoint.
-         */
-        ActivityListResponse: {
-            /** Data */
-            data: components["schemas"]["ActivityItem"][];
-            /** Totalcount */
-            totalCount: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-            /** Totalpages */
-            totalPages: number;
-        };
         /** AggregatedResults */
         AggregatedResults: {
             /** Totalscore */
@@ -8965,6 +8873,53 @@ export interface components {
             prompt: string;
             /** Imagereferenceid */
             imageReferenceId?: string | null;
+        };
+        /** GetActivityBundleApiRequest */
+        GetActivityBundleApiRequest: Record<string, never>;
+        /** GetActivityBundleApiResponse */
+        GetActivityBundleApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Active Profiles Count */
+            active_profiles_count?: number | null;
+            /** Total Feedback Count */
+            total_feedback_count?: number | null;
+            /** Total Activity Entries */
+            total_activity_entries?: number | null;
+            /** Total Errors Count */
+            total_errors_count?: number | null;
+            /** Chart Data */
+            chart_data?: components["schemas"]["QGetActivityBundleV3ChartDataPoint"][] | null;
+        };
+        /** GetActivityListApiRequest */
+        GetActivityListApiRequest: {
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 50
+             */
+            page_size: number | null;
+            /** Search */
+            search?: string | null;
+        };
+        /** GetActivityListApiResponse */
+        GetActivityListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Activities */
+            activities?: components["schemas"]["QGetActivityListV3Activity"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
         };
         /** GetAgentDetailApiRequest */
         GetAgentDetailApiRequest: {
@@ -12477,6 +12432,23 @@ export interface components {
             /** Sid */
             sid?: string | null;
         };
+        /** MetricResponse */
+        MetricResponse: {
+            /** Hasdata */
+            hasData: boolean;
+            /** Method */
+            method: string;
+            /** Currentvalue */
+            currentValue: number;
+            /** Status */
+            status: string;
+            /** Trendanalysis */
+            trendAnalysis?: string | null;
+            /** Trenddata */
+            trendData: unknown[];
+            /** Datapoints */
+            dataPoints: unknown[];
+        };
         /**
          * ObjectivesToolCompletePayload
          * @description Response indicating objectives tool completed successfully.
@@ -12661,16 +12633,16 @@ export interface components {
          * @description Profile metrics - each metric is a full MetricResponse object.
          */
         ProfileMetrics: {
-            averageScore: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            completionPercentage: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            highestScore: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            messagesPerSession: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            personaResponseTimes: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            sessionEfficiency: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            stagnationRate: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            timeSpent: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            totalAttempts: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            averageScore: components["schemas"]["MetricResponse"];
+            completionPercentage: components["schemas"]["MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["MetricResponse"];
+            highestScore: components["schemas"]["MetricResponse"];
+            messagesPerSession: components["schemas"]["MetricResponse"];
+            personaResponseTimes: components["schemas"]["MetricResponse"];
+            sessionEfficiency: components["schemas"]["MetricResponse"];
+            stagnationRate: components["schemas"]["MetricResponse"];
+            timeSpent: components["schemas"]["MetricResponse"];
+            totalAttempts: components["schemas"]["MetricResponse"];
         };
         /** QCreateScenarioV3Parameter */
         QCreateScenarioV3Parameter: {
@@ -12687,6 +12659,34 @@ export interface components {
             video_id: string | null;
             /** Timestamps */
             timestamps: number[] | null;
+        };
+        /** QGetActivityBundleV3ChartDataPoint */
+        QGetActivityBundleV3ChartDataPoint: {
+            /** Date */
+            date: string | null;
+            /** Active Profiles */
+            active_profiles: number | null;
+            /** Feedback Entries */
+            feedback_entries: number | null;
+            /** Activity Entries */
+            activity_entries: number | null;
+            /** Errors */
+            errors: number | null;
+        };
+        /** QGetActivityListV3Activity */
+        QGetActivityListV3Activity: {
+            /** Activity Id */
+            activity_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Message */
+            message: string | null;
+            /** Error */
+            error: boolean | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Profile Id */
+            profile_id: string | null;
         };
         /** QGetAgentDetailV3AvailableVoice */
         QGetAgentDetailV3AvailableVoice: {
@@ -19201,15 +19201,6 @@ export interface components {
             /** Formatted */
             formatted: string;
         };
-        /** TrendData */
-        TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Count */
-            count: number;
-        };
         /** UpdateAgentApiRequest */
         UpdateAgentApiRequest: {
             /**
@@ -20233,23 +20224,6 @@ export interface components {
             /** Upload Id */
             upload_id?: string | null;
         };
-        /** MetricResponse */
-        app__api__v3__activity__bundle__MetricResponse: {
-            /** Hasdata */
-            hasData: boolean;
-            /** Method */
-            method: string;
-            /** Currentvalue */
-            currentValue: number;
-            /** Status */
-            status: string;
-            /** Trendanalysis */
-            trendAnalysis?: string | null;
-            /** Trenddata */
-            trendData: components["schemas"]["TrendData"][];
-            /** Datapoints */
-            dataPoints: unknown[];
-        };
         /**
          * AttemptItem
          * @description Eval attempt item.
@@ -20287,23 +20261,6 @@ export interface components {
             archived: boolean;
             /** Profileid */
             profileId?: string | null;
-        };
-        /** MetricResponse */
-        app__api__v3__reports__bundle__MetricResponse: {
-            /** Hasdata */
-            hasData: boolean;
-            /** Method */
-            method: string;
-            /** Currentvalue */
-            currentValue: number;
-            /** Status */
-            status: string;
-            /** Trendanalysis */
-            trendAnalysis?: string | null;
-            /** Trenddata */
-            trendData: unknown[];
-            /** Datapoints */
-            dataPoints: unknown[];
         };
     };
     responses: never;
@@ -23208,7 +23165,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ActivityBundleFilters"];
+                "application/json": components["schemas"]["GetActivityBundleApiRequest"];
             };
         };
         responses: {
@@ -23218,7 +23175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ActivityBundleResponse"];
+                    "application/json": components["schemas"]["GetActivityBundleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23244,7 +23201,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ActivityListFilters"];
+                "application/json": components["schemas"]["GetActivityListApiRequest"];
             };
         };
         responses: {
@@ -23254,7 +23211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ActivityListResponse"];
+                    "application/json": components["schemas"]["GetActivityListApiResponse"];
                 };
             };
             /** @description Validation Error */

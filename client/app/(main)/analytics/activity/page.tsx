@@ -126,10 +126,10 @@ export default async function ActivityPage({
   // Create empty activity data for loading state
   const emptyActivityData: ActivityListOut = {
     data: [],
-    totalCount: 0,
+    total_count: 0,
     page: activityPage,
-    pageSize: activityPageSize,
-    totalPages: 0,
+    page_size: activityPageSize,
+    total_pages: 0,
   };
 
   return (
@@ -177,7 +177,7 @@ async function ActivityListSection({
   const activityListData = await getActivityList({
     body: {
       page: activityPage,
-      pageSize: activityPageSize,
+      page_size: activityPageSize,
       ...(activitySearch && { search: activitySearch }),
     },
   });

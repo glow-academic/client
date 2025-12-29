@@ -1,47 +1,22 @@
 """Activity list endpoint."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity
+from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetActivityListApiRequest, GetActivityListApiResponse,
+                           GetActivityListSqlParams, GetActivityListSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class ActivityListFilters(BaseModel):
-    """Filters for activity list request."""
-
-    page: int = 0
-    pageSize: int = 50
-    search: str | None = None
-
-
-class ActivityItem(BaseModel):
-    """Individual activity item in the response."""
-
-    activity_id: str
-    created_at: str
-    message: str
-    error: bool
-    profile_name: str
-    profile_id: str
-
-
-class ActivityListResponse(BaseModel):
-    """Response for activity list endpoint."""
-
-    data: list[ActivityItem]
-    totalCount: int
-    page: int
-    pageSize: int
-    totalPages: int
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/activity/get_activity_list_complete.sql"
 
 
 router = APIRouter()
@@ -49,26 +24,26 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=ActivityListResponse,
+    response_model=GetActivityListApiResponse,
     dependencies=[
         audit_activity("activity.list", "{{ actor.name }} viewed activity list")
     ],
 )
 async def get_activity_list(
-    filters: ActivityListFilters,
-    request: Request,
+    request: GetActivityListApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ActivityListResponse:
+) -> GetActivityListApiResponse:
     """Get paginated list of activity entries."""
     tags = ["activity"]  # From router tags
 
     # Check for cache bypass header (for hard refresh)
-    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
-    body_dict = filters.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    body_dict = request.model_dump(mode='json')
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache (unless bypassed)
     if not bypass_cache:
@@ -76,72 +51,60 @@ async def get_activity_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return ActivityListResponse.model_validate(cached["data"])
+            return GetActivityListApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Load SQL queries
-        list_query = load_sql("app/sql/v3/activity/get_activity_list.sql")
-        count_query = load_sql("app/sql/v3/activity/get_activity_count.sql")
-
-        # Prepare parameters
-        page = filters.page or 0
-        page_size = filters.pageSize or 50
-        search = filters.search or None
-
-        sql_params = (page, page_size, search)
-
-        # Execute queries
-        rows = await conn.fetch(list_query, *sql_params)
-        count_result = await conn.fetchrow(count_query, search)
-
-        total_count = count_result["total_count"] if count_result else 0
-        total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
-
-        # Transform results
-        activity_items = []
-        for row in rows:
-            activity_items.append(
-                ActivityItem(
-                    activity_id=str(row["activity_id"]),
-                    created_at=row["created_at"].isoformat()
-                    if row["created_at"]
-                    else "",
-                    message=row["message"],
-                    error=row["error"],
-                    profile_name=row["profile_name"],
-                    profile_id=row["profile_id"],
-                )
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
             )
 
-        result_data = ActivityListResponse(
-            data=activity_items,
-            totalCount=total_count,
-            page=page,
-            pageSize=page_size,
-            totalPages=total_pages,
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetActivityListSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetActivityListSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Cache response
+        # Set audit context
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+
+        # Convert SQL result to API response (no manual transformation needed - SQL handles it)
+        api_response = GetActivityListApiResponse.model_validate(result.model_dump())
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": result_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=300,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_activity_list",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

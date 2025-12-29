@@ -77,13 +77,13 @@ export default function Activity({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Extract data
-  const metrics = activityData.bundleData?.metrics;
+  // Extract data from flat fields (server returns flat structure, not nested metrics)
+  const bundleData = activityData.bundleData;
   const feedback = activityData.feedbackData?.feedback || [];
-  const activityList = useMemo(() => activityData.activityData?.data || [], [activityData.activityData?.data]);
+  const activityList = useMemo(() => activityData.activityData?.activities || [], [activityData.activityData?.activities]);
   const activityPage = activityData.activityData?.page || 0;
-  const activityPageSize = activityData.activityData?.pageSize || 50;
-  const activityTotalPages = activityData.activityData?.totalPages || 0;
+  const activityPageSize = activityData.activityData?.page_size || 50;
+  const activityTotalPages = activityData.activityData?.total_pages || 0;
 
   // Search state
   const [searchTerm, setSearchTerm] = useState(
@@ -177,6 +177,82 @@ export default function Activity({
     [router]
   );
 
+  // Helper function to compute status based on value and thresholds
+  const computeStatus = (
+    value: number,
+    thresholdWarning: number = 0,
+    thresholdDanger: number = 0
+  ): "success" | "warning" | "danger" | "neutral" => {
+    if (value >= thresholdWarning) {
+      return "success";
+    } else if (value >= thresholdDanger) {
+      return "warning";
+    } else {
+      return "neutral";
+    }
+  };
+
+  // Helper function to calculate trend data from chart_data for a specific metric
+  const calculateTrendData = (
+    chartData: Array<{
+      date: string | null;
+      active_profiles: number | null;
+      feedback_entries: number | null;
+      activity_entries: number | null;
+      errors: number | null;
+    }>,
+    metricKey: "active_profiles" | "feedback_entries" | "activity_entries" | "errors"
+  ): Array<{ date: string; value: number; count: number }> => {
+    if (!chartData || chartData.length === 0) return [];
+
+    // Get last 30 days of data
+    const recentData = chartData.slice(-30);
+
+    return recentData.map((point) => ({
+      date: point.date || "",
+      value: point[metricKey] || 0,
+      count: 1,
+    }));
+  };
+
+  // Build metrics structure from flat fields (client-side transformation)
+  const metrics = useMemo(() => {
+    if (!bundleData) return null;
+
+    const activeProfiles = bundleData.active_profiles_count || 0;
+    const totalFeedback = bundleData.total_feedback_count || 0;
+    const totalActivity = bundleData.total_activity_entries || 0;
+    const totalErrors = bundleData.total_errors_count || 0;
+    const chartData = bundleData.chart_data || [];
+
+    return {
+      active_profiles_count: {
+        currentValue: activeProfiles,
+        trendData: calculateTrendData(chartData, "active_profiles"),
+        hasData: activeProfiles > 0,
+        status: computeStatus(activeProfiles),
+      },
+      total_feedback_count: {
+        currentValue: totalFeedback,
+        trendData: calculateTrendData(chartData, "feedback_entries"),
+        hasData: totalFeedback > 0,
+        status: computeStatus(totalFeedback),
+      },
+      total_activity_entries: {
+        currentValue: totalActivity,
+        trendData: calculateTrendData(chartData, "activity_entries"),
+        hasData: totalActivity > 0,
+        status: computeStatus(totalActivity),
+      },
+      total_errors_count: {
+        currentValue: totalErrors,
+        trendData: calculateTrendData(chartData, "errors"),
+        hasData: totalErrors > 0,
+        status: computeStatus(totalErrors, 10, 50), // threshold_warning=10, threshold_danger=50
+      },
+    };
+  }, [bundleData]);
+
   // Header metrics components
   const headerComponents = useMemo(() => {
     if (!metrics) return [];
@@ -213,8 +289,17 @@ export default function Activity({
     ];
   }, [metrics]);
 
-  // Extract chart data from bundle
-  const chartData = activityData.bundleData?.chartData || [];
+  // Extract chart data from bundle and transform to camelCase for ActivityMetricsGraph
+  const chartData = useMemo(() => {
+    const rawChartData = activityData.bundleData?.chart_data || [];
+    return rawChartData.map((point) => ({
+      date: point.date,
+      activeProfiles: point.active_profiles,
+      feedbackEntries: point.feedback_entries,
+      activityEntries: point.activity_entries,
+      errors: point.errors,
+    }));
+  }, [activityData.bundleData?.chart_data]);
 
   // Extract unique profiles for faceted filter
   const profileOptions = useMemo(() => {

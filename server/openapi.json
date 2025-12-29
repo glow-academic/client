@@ -6534,7 +6534,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ActivityBundleFilters"
+                "$ref": "#/components/schemas/GetActivityBundleApiRequest"
               }
             }
           }
@@ -6545,7 +6545,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActivityBundleResponse"
+                  "$ref": "#/components/schemas/GetActivityBundleApiResponse"
                 }
               }
             }
@@ -6615,7 +6615,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ActivityListFilters"
+                "$ref": "#/components/schemas/GetActivityListApiRequest"
               }
             }
           }
@@ -6626,7 +6626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActivityListResponse"
+                  "$ref": "#/components/schemas/GetActivityListApiResponse"
                 }
               }
             }
@@ -21693,196 +21693,6 @@
   },
   "components": {
     "schemas": {
-      "ActivityBundleFilters": {
-        "properties": {},
-        "type": "object",
-        "title": "ActivityBundleFilters",
-        "description": "Filters for activity bundle request."
-      },
-      "ActivityBundleMetrics": {
-        "properties": {
-          "active_profiles_count": {
-            "$ref": "#/components/schemas/app__api__v3__activity__bundle__MetricResponse"
-          },
-          "total_feedback_count": {
-            "$ref": "#/components/schemas/app__api__v3__activity__bundle__MetricResponse"
-          },
-          "total_activity_entries": {
-            "$ref": "#/components/schemas/app__api__v3__activity__bundle__MetricResponse"
-          },
-          "total_errors_count": {
-            "$ref": "#/components/schemas/app__api__v3__activity__bundle__MetricResponse"
-          }
-        },
-        "type": "object",
-        "required": [
-          "active_profiles_count",
-          "total_feedback_count",
-          "total_activity_entries",
-          "total_errors_count"
-        ],
-        "title": "ActivityBundleMetrics",
-        "description": "Header metrics for activity page."
-      },
-      "ActivityBundleResponse": {
-        "properties": {
-          "metrics": {
-            "$ref": "#/components/schemas/ActivityBundleMetrics"
-          },
-          "chartData": {
-            "items": {
-              "$ref": "#/components/schemas/ActivityChartDataPoint"
-            },
-            "type": "array",
-            "title": "Chartdata"
-          }
-        },
-        "type": "object",
-        "required": [
-          "metrics",
-          "chartData"
-        ],
-        "title": "ActivityBundleResponse",
-        "description": "Response for activity bundle endpoint."
-      },
-      "ActivityChartDataPoint": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "activeProfiles": {
-            "type": "integer",
-            "title": "Activeprofiles"
-          },
-          "feedbackEntries": {
-            "type": "integer",
-            "title": "Feedbackentries"
-          },
-          "activityEntries": {
-            "type": "integer",
-            "title": "Activityentries"
-          },
-          "errors": {
-            "type": "integer",
-            "title": "Errors"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "activeProfiles",
-          "feedbackEntries",
-          "activityEntries",
-          "errors"
-        ],
-        "title": "ActivityChartDataPoint",
-        "description": "Activity chart data point."
-      },
-      "ActivityItem": {
-        "properties": {
-          "activity_id": {
-            "type": "string",
-            "title": "Activity Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "error": {
-            "type": "boolean",
-            "title": "Error"
-          },
-          "profile_name": {
-            "type": "string",
-            "title": "Profile Name"
-          },
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "activity_id",
-          "created_at",
-          "message",
-          "error",
-          "profile_name",
-          "profile_id"
-        ],
-        "title": "ActivityItem",
-        "description": "Individual activity item in the response."
-      },
-      "ActivityListFilters": {
-        "properties": {
-          "page": {
-            "type": "integer",
-            "title": "Page",
-            "default": 0
-          },
-          "pageSize": {
-            "type": "integer",
-            "title": "Pagesize",
-            "default": 50
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          }
-        },
-        "type": "object",
-        "title": "ActivityListFilters",
-        "description": "Filters for activity list request."
-      },
-      "ActivityListResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/ActivityItem"
-            },
-            "type": "array",
-            "title": "Data"
-          },
-          "totalCount": {
-            "type": "integer",
-            "title": "Totalcount"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
-          },
-          "totalPages": {
-            "type": "integer",
-            "title": "Totalpages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data",
-          "totalCount",
-          "page",
-          "pageSize",
-          "totalPages"
-        ],
-        "title": "ActivityListResponse",
-        "description": "Response for activity list endpoint."
-      },
       "AggregatedResults": {
         "properties": {
           "totalScore": {
@@ -29435,6 +29245,202 @@
         ],
         "title": "GenerateVideoPayload",
         "description": "Request to generate a video."
+      },
+      "GetActivityBundleApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetActivityBundleApiRequest"
+      },
+      "GetActivityBundleApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "active_profiles_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Profiles Count"
+          },
+          "total_feedback_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Feedback Count"
+          },
+          "total_activity_entries": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Activity Entries"
+          },
+          "total_errors_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Errors Count"
+          },
+          "chart_data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetActivityBundleV3ChartDataPoint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart Data"
+          }
+        },
+        "type": "object",
+        "title": "GetActivityBundleApiResponse"
+      },
+      "GetActivityListApiRequest": {
+        "properties": {
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 50
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          }
+        },
+        "type": "object",
+        "title": "GetActivityListApiRequest"
+      },
+      "GetActivityListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "activities": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetActivityListV3Activity"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activities"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "title": "GetActivityListApiResponse"
       },
       "GetAgentDetailApiRequest": {
         "properties": {
@@ -47403,6 +47409,57 @@
         "title": "MessageStrengthToolPayload",
         "description": "Request to add strength feedback to a message."
       },
+      "MetricResponse": {
+        "properties": {
+          "hasData": {
+            "type": "boolean",
+            "title": "Hasdata"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "currentValue": {
+            "type": "integer",
+            "title": "Currentvalue"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "trendAnalysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trendanalysis"
+          },
+          "trendData": {
+            "items": {},
+            "type": "array",
+            "title": "Trenddata"
+          },
+          "dataPoints": {
+            "items": {},
+            "type": "array",
+            "title": "Datapoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hasData",
+          "method",
+          "currentValue",
+          "status",
+          "trendData",
+          "dataPoints"
+        ],
+        "title": "MetricResponse"
+      },
       "ObjectivesToolCompletePayload": {
         "properties": {
           "success": {
@@ -47928,34 +47985,34 @@
       "ProfileMetrics": {
         "properties": {
           "averageScore": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "completionPercentage": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "firstAttemptPassRate": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "highestScore": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "messagesPerSession": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "personaResponseTimes": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "sessionEfficiency": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "stagnationRate": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "timeSpent": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           },
           "totalAttempts": {
-            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
+            "$ref": "#/components/schemas/MetricResponse"
           }
         },
         "type": "object",
@@ -48059,6 +48116,156 @@
           "timestamps"
         ],
         "title": "QCreateScenarioV3QuestionTimestamp"
+      },
+      "QGetActivityBundleV3ChartDataPoint": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "active_profiles": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Profiles"
+          },
+          "feedback_entries": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Entries"
+          },
+          "activity_entries": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Entries"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "active_profiles",
+          "feedback_entries",
+          "activity_entries",
+          "errors"
+        ],
+        "title": "QGetActivityBundleV3ChartDataPoint"
+      },
+      "QGetActivityListV3Activity": {
+        "properties": {
+          "activity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity_id",
+          "created_at",
+          "message",
+          "error",
+          "profile_name",
+          "profile_id"
+        ],
+        "title": "QGetActivityListV3Activity"
       },
       "QGetAgentDetailV3AvailableVoice": {
         "properties": {
@@ -80600,29 +80807,6 @@
         ],
         "title": "TimerItem"
       },
-      "TrendData": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "value",
-          "count"
-        ],
-        "title": "TrendData"
-      },
       "UpdateAgentApiRequest": {
         "properties": {
           "agent_id": {
@@ -83929,59 +84113,6 @@
         "title": "VoiceUserTranscriptPayload",
         "description": "Request to send user transcript from voice simulation."
       },
-      "app__api__v3__activity__bundle__MetricResponse": {
-        "properties": {
-          "hasData": {
-            "type": "boolean",
-            "title": "Hasdata"
-          },
-          "method": {
-            "type": "string",
-            "title": "Method"
-          },
-          "currentValue": {
-            "type": "integer",
-            "title": "Currentvalue"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "trendAnalysis": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trendanalysis"
-          },
-          "trendData": {
-            "items": {
-              "$ref": "#/components/schemas/TrendData"
-            },
-            "type": "array",
-            "title": "Trenddata"
-          },
-          "dataPoints": {
-            "items": {},
-            "type": "array",
-            "title": "Datapoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hasData",
-          "method",
-          "currentValue",
-          "status",
-          "trendData",
-          "dataPoints"
-        ],
-        "title": "MetricResponse"
-      },
       "app__api__v3__attempts__eval__AttemptItem": {
         "properties": {
           "id": {
@@ -84081,57 +84212,6 @@
           "archived"
         ],
         "title": "AttemptItem"
-      },
-      "app__api__v3__reports__bundle__MetricResponse": {
-        "properties": {
-          "hasData": {
-            "type": "boolean",
-            "title": "Hasdata"
-          },
-          "method": {
-            "type": "string",
-            "title": "Method"
-          },
-          "currentValue": {
-            "type": "integer",
-            "title": "Currentvalue"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "trendAnalysis": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trendanalysis"
-          },
-          "trendData": {
-            "items": {},
-            "type": "array",
-            "title": "Trenddata"
-          },
-          "dataPoints": {
-            "items": {},
-            "type": "array",
-            "title": "Datapoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hasData",
-          "method",
-          "currentValue",
-          "status",
-          "trendData",
-          "dataPoints"
-        ],
-        "title": "MetricResponse"
       }
     }
   }
