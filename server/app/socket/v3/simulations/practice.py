@@ -326,3 +326,4 @@ async def simulation_text_practice_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while creating practice scenario."""
     return {"success": True}
+

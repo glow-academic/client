@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.documents.template.create import (
+from app.socket.v3.simulations.document_template_create import (
     _document_template_create_impl,
     document_template_create_internal,
 )

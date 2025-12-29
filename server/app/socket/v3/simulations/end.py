@@ -983,3 +983,4 @@ async def end_chat_started_api(request: EndChatStartedPayload) -> dict[str, bool
 async def end_all_completed_api(request: EndAllCompletedPayload) -> dict[str, bool]:
     """Server-to-client event: Ending all chats completed."""
     return {"success": True}
+

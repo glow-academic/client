@@ -88,3 +88,4 @@ async def eval_leave_api(request: EvalLeavePayload) -> dict[str, bool]:
 async def eval_leave_error_api(request: EvalLeaveErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while leaving eval room."""
     return {"success": True}
+

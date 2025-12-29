@@ -107,3 +107,4 @@ async def eval_joined_api(request: EvalJoinedPayload) -> dict[str, bool]:
 async def eval_join_error_api(request: EvalJoinErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while joining eval room."""
     return {"success": True}
+

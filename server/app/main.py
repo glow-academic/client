@@ -434,7 +434,7 @@ async def transaction(
         raise
 
 
-from app.socket.v3.agents.document.template.create import \
+from app.socket.v3.simulations.document_template_create import \
     document_template_create_internal  # noqa: F401
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
@@ -462,7 +462,7 @@ from app.socket.v3.tools.video.call import \
     scenario_tool_video  # noqa: F401
 from app.socket.v3.simulations.group.link import \
     simulation_group_link_internal  # noqa: F401
-from app.socket.v3.agents.hint.create import \
+from app.socket.v3.simulations.hint_create import \
     simulation_hints_create_internal  # noqa: F401
 # Import simulation hints to register internal_sio handler
 from app.socket.v3.agents.hint.generate import \

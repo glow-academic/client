@@ -26,6 +26,21 @@ from .streaming import (
 from .streaming import (
     server_router as streaming_server_router,
 )
+from .end import (
+    client_router as end_client_router,
+    server_router as end_server_router,
+)
+from .practice import (
+    client_router as practice_client_router,
+    server_router as practice_server_router,
+)
+from .stop import (
+    client_router as stop_client_router,
+    server_router as stop_server_router,
+)
+from .randomize import (
+    client_router as randomize_client_router,
+)
 
 client_router = APIRouter(prefix="/simulations", tags=["socket-client"])
 server_router = APIRouter(prefix="/simulations", tags=["socket-server"])
@@ -34,8 +49,15 @@ client_router.include_router(enter_client_router)
 client_router.include_router(join_client_router)
 client_router.include_router(leave_client_router)
 client_router.include_router(streaming_client_router)
+client_router.include_router(end_client_router)
+client_router.include_router(practice_client_router)
+client_router.include_router(stop_client_router)
+client_router.include_router(randomize_client_router)
 
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
 server_router.include_router(leave_server_router)
 server_router.include_router(streaming_server_router)
+server_router.include_router(end_server_router)
+server_router.include_router(practice_server_router)
+server_router.include_router(stop_server_router)

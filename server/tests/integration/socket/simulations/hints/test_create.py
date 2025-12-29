@@ -7,7 +7,7 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.simulations.hints.create import (
+from app.socket.v3.simulations.hint_create import (
     _simulation_hints_create_impl,
     simulation_hints_create_internal,
 )

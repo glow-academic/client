@@ -8,9 +8,6 @@ from .generate import (
 from .generate import (
     server_router as generate_server_router,
 )
-from .randomize import (
-    client_router as randomize_client_router,
-)
 from .regenerate import (
     client_router as regenerate_client_router,
 )
@@ -26,7 +23,6 @@ server_router = APIRouter(prefix="/scenarios", tags=["socket-server"])
 
 client_router.include_router(generate_client_router)
 client_router.include_router(regenerate_client_router)
-client_router.include_router(randomize_client_router)
 
 server_router.include_router(generate_server_router)
 server_router.include_router(regenerate_server_router)

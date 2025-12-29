@@ -2,15 +2,8 @@
 
 from fastapi import APIRouter
 
-from . import (
-    actions,
-    agents,
-    connect,
-    disconnect,
-    log,
-    simulations,
-    tools,
-)
+from . import (actions, agents, connect, disconnect, evals, log, simulations,
+               tools)
 
 # Create main router
 router = APIRouter(prefix="/socket/v3", tags=["socket"])
@@ -37,6 +30,10 @@ server_router.include_router(tools.server_router)
 # Include simulation operation routers
 client_router.include_router(simulations.client_router)
 server_router.include_router(simulations.server_router)
+
+# Include eval operation routers
+client_router.include_router(evals.client_router)
+server_router.include_router(evals.server_router)
 
 # Include both routers in main router
 router.include_router(client_router)

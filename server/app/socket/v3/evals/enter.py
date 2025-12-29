@@ -173,3 +173,4 @@ async def eval_enter_response_api(
 async def eval_enter_error_api(request: EvalEnterErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while updating test created_at timestamp."""
     return {"success": True}
+

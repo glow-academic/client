@@ -203,3 +203,4 @@ async def document_template_create_api(
 ) -> dict[str, bool]:
     """Internal event: Create a document template."""
     return {"success": True}
+
