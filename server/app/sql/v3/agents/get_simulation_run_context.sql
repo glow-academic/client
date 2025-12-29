@@ -150,7 +150,7 @@ SELECT
     -- Chat data
     sc.id::text as chat_id,
     sc.title as chat_title,
-    sc.trace_id,
+    g.trace_id,
     
     -- Attempt data
     sa.id::text as attempt_id,
@@ -297,7 +297,7 @@ CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept
 WHERE sc.id = $1::uuid
-GROUP BY sc.id, sc.title, sc.trace_id,
+GROUP BY sc.id, sc.title, g.trace_id,
          sa.id, sa.simulation_id,
          s.id, ps.problem_statement,
          first_persona.persona_id, first_persona.persona_name,

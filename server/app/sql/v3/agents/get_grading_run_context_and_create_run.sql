@@ -9,11 +9,13 @@ WITH chat_info AS (
         sc.scenario_id,
         ac.attempt_id,
         sc.title,
-        sc.trace_id,
+        g.trace_id,
         sc.created_at,
         sc.completed
     FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
+    LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
+    LEFT JOIN groups g ON g.id = cg.group_id
     WHERE sc.id = $1::uuid
 ),
 attempt_info AS (

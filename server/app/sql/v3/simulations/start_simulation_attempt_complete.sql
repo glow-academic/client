@@ -247,20 +247,34 @@ scenario_full_data AS (
 -- Create simulation chat (only for scenarios, not videos)
 new_chat AS (
     INSERT INTO chats (
-        created_at, title, scenario_id, completed, trace_id, updated_at
+        created_at, title, scenario_id, completed, updated_at
     )
     SELECT 
         now(),
         COALESCE(sfd.scenario_name, 'New Simulation'),
         sfd.scenario_id,
         false,
-        $5::text,
         now()
     FROM new_attempt na
     CROSS JOIN scenario_full_data sfd
     CROSS JOIN content_type_check ctc
     WHERE ctc.content_type = 'scenario'
     RETURNING id as chat_id, title as chat_title, created_at, updated_at
+),
+-- Create group with trace_id for the chat
+new_group AS (
+    INSERT INTO groups (created_at, updated_at, trace_id)
+    SELECT nc.created_at, nc.updated_at, $5::text
+    FROM new_chat nc
+    RETURNING id as group_id, trace_id
+),
+-- Link chat to group
+chat_group_link AS (
+    INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
+    SELECT nc.chat_id, ng.group_id, nc.created_at, nc.updated_at
+    FROM new_chat nc
+    CROSS JOIN new_group ng
+    RETURNING chat_id, group_id
 ),
 -- Create attempt_chats junction table entry (only if chat was created)
 attempt_chat_link AS (

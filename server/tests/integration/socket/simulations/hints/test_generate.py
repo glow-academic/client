@@ -23,9 +23,28 @@ async def test_simulation_hints_generate_success(
         "INSERT INTO scenarios(name, active) VALUES ('Test Scenario', true) RETURNING id"
     )
 
-    # Create chat
+    # Create chat and group
     chat_id = await db.fetchval(
-        "INSERT INTO chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
+        """
+        WITH inserted_chat AS (
+            INSERT INTO chats(title, scenario_id, completed) 
+            VALUES ('Test Chat', $1, false) 
+            RETURNING id
+        ),
+        create_group AS (
+            INSERT INTO groups (created_at, updated_at, trace_id)
+            VALUES (NOW(), NOW(), 'test-trace-id')
+            RETURNING id as group_id
+        ),
+        link_chat_group AS (
+            INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
+            SELECT ic.id, cg.group_id, NOW(), NOW()
+            FROM inserted_chat ic
+            CROSS JOIN create_group cg
+            RETURNING chat_id
+        )
+        SELECT id FROM inserted_chat
+        """,
         scenario_id,
     )
 

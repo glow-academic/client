@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict VqJDJASHFOavPple4A7fWnzTfSnw5Wky0zC80NKGKiVB8P4aAxhMgoiBA78NQdS
+\restrict avyC1vI8H692Fqduy4hhWYbbAdXgyxOOgSqabbLJseWrdXYQjxKoJkfRhrqlzM2
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -363,6 +363,19 @@ BEGIN
     )::text
   );
   RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: gen_trace_id(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.gen_trace_id() RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN 'trace_' || REPLACE(gen_random_uuid()::text, '-', '');
 END;
 $$;
 
@@ -772,7 +785,6 @@ CREATE TABLE public.chats (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     title text NOT NULL,
     completed boolean DEFAULT false NOT NULL,
-    trace_id text NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT chats_id_v7_not_null NOT NULL,
     scenario_id uuid
 );
@@ -1161,7 +1173,8 @@ CREATE TABLE public.group_runs (
 CREATE TABLE public.groups (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT groups_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT groups_id_v7_not_null NOT NULL,
+    trace_id text DEFAULT public.gen_trace_id() NOT NULL
 );
 
 
@@ -4563,6 +4576,13 @@ CREATE INDEX group_runs_run_id_v7_idx ON public.group_runs USING btree (run_id);
 --
 
 CREATE INDEX groups_created_at_idx ON public.groups USING btree (created_at);
+
+
+--
+-- Name: groups_trace_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX groups_trace_id_idx ON public.groups USING btree (trace_id);
 
 
 --
@@ -8364,5 +8384,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict VqJDJASHFOavPple4A7fWnzTfSnw5Wky0zC80NKGKiVB8P4aAxhMgoiBA78NQdS
+\unrestrict avyC1vI8H692Fqduy4hhWYbbAdXgyxOOgSqabbLJseWrdXYQjxKoJkfRhrqlzM2
 

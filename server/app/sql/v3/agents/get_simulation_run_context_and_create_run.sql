@@ -151,7 +151,7 @@ context_data AS (
         -- Chat data
         sc.id::text as chat_id,
         sc.title as chat_title,
-        sc.trace_id,
+        g.trace_id,
         
         -- Attempt data
         sa.id::text as attempt_id,
@@ -300,7 +300,7 @@ context_data AS (
     WHERE sc.id = $1::uuid
         -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
         AND validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
-    GROUP BY sc.id, sc.title, sc.trace_id,
+    GROUP BY sc.id, sc.title, g.trace_id,
              sa.id, sa.simulation_id,
              s.id, ps.problem_statement,
              first_persona.persona_id, first_persona.persona_name,

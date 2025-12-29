@@ -17,9 +17,11 @@ WITH target_message AS (
     WHERE m.id = $1::uuid AND c.id = $2::uuid
 ),
 chat_info AS (
-    SELECT sc.id, ac.attempt_id, sc.scenario_id, sc.trace_id, sc.title
+    SELECT sc.id, ac.attempt_id, sc.scenario_id, g.trace_id, sc.title
     FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
+    LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
+    LEFT JOIN groups g ON g.id = cg.group_id
     JOIN target_message tm ON tm.chat_id = sc.id
 ),
 attempt_info AS (

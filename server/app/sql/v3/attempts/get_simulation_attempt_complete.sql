@@ -49,7 +49,7 @@
             sc.scenario_id,
             ac.attempt_id,
             sc.completed,
-            sc.trace_id,
+            g.trace_id,
             -- Add document IDs for this chat's scenario
             COALESCE(
                 (SELECT array_agg(DISTINCT sd.document_id::text)
@@ -59,6 +59,8 @@
             ) as document_ids
         FROM attempt_chats ac
         JOIN chats sc ON sc.id = ac.chat_id
+        LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
+        LEFT JOIN groups g ON g.id = cg.group_id
         WHERE ac.attempt_id = $1
         ORDER BY sc.created_at
         ),

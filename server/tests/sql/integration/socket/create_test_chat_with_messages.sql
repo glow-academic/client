@@ -2,9 +2,21 @@
 -- Parameters: $1 = scenario_id (UUID), $2 = run_id (UUID), $3 = attempt_id (UUID, optional)
 -- Returns: chat_id (UUID), system_message_id (UUID), user_message_id (UUID), assistant_message_id (UUID)
 WITH new_chat AS (
-    INSERT INTO chats(title, scenario_id, completed, trace_id)
-    VALUES ('Test Chat', $1::uuid, false, 'test-trace-id')
+    INSERT INTO chats(title, scenario_id, completed)
+    VALUES ('Test Chat', $1::uuid, false)
     RETURNING id as chat_id
+),
+create_group AS (
+    INSERT INTO groups (created_at, updated_at, trace_id)
+    VALUES (NOW(), NOW(), 'test-trace-id')
+    RETURNING id as group_id
+),
+link_chat_group AS (
+    INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
+    SELECT nc.chat_id, cg.group_id, NOW(), NOW()
+    FROM new_chat nc
+    CROSS JOIN create_group cg
+    RETURNING chat_id
 ),
 system_msg AS (
     INSERT INTO messages(role, content, created_at)

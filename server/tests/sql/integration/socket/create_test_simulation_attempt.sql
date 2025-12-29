@@ -68,10 +68,22 @@ attempt_profile AS (
     FROM attempt a
 ),
 chat AS (
-    INSERT INTO chats(title, scenario_id, completed, trace_id)
-    SELECT 'Test Chat', s.id, false, 'test-trace-id'
+    INSERT INTO chats(title, scenario_id, completed)
+    SELECT 'Test Chat', s.id, false
     FROM scenario s
     RETURNING id
+),
+create_group AS (
+    INSERT INTO groups (created_at, updated_at, trace_id)
+    VALUES (NOW(), NOW(), 'test-trace-id')
+    RETURNING id as group_id
+),
+link_chat_group AS (
+    INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
+    SELECT c.id, cg.group_id, NOW(), NOW()
+    FROM chat c
+    CROSS JOIN create_group cg
+    RETURNING chat_id
 ),
 link_chat AS (
     INSERT INTO attempt_chats(attempt_id, chat_id)
