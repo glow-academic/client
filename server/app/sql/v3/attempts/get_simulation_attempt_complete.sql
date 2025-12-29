@@ -873,11 +873,11 @@
                 sg.points,
                 sg.pass_points,
                 sg.description,
-                sg.rubric_id
-            FROM standard_groups sg
-            CROSS JOIN attempt_base ab
+                rsg.rubric_id
+            FROM attempt_base ab
+            JOIN rubric_standard_groups rsg ON rsg.rubric_id = ab.sim_rubric_id AND rsg.active = true
+            JOIN standard_groups sg ON sg.id = rsg.standard_group_id
             WHERE ab.sim_rubric_id IS NOT NULL
-              AND sg.rubric_id = ab.sim_rubric_id
         ),
         rubric_standards_grouped AS (
                 SELECT 

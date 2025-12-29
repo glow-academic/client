@@ -231,10 +231,10 @@ all_agent_ids AS (
     WHERE agent_id IS NOT NULL
 ),
 all_standard_group_ids AS (
-    SELECT DISTINCT sg.id as standard_group_id
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-      AND sg.active = true
+    SELECT DISTINCT rsg.standard_group_id
+    FROM rubric_standard_groups rsg
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+      AND rsg.active = true
 ),
 all_standard_ids AS (
     SELECT DISTINCT st.id as standard_id
@@ -287,17 +287,17 @@ SELECT
     -- Rubric standard groups array (mapping structure)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sg.rubric_id, sg.id,
+            (rsg.rubric_id, rsg.standard_group_id,
              COALESCE(
                  (SELECT ARRAY_AGG(st.id)
                   FROM standards st
-                  WHERE st.standard_group_id = sg.id),
+                  WHERE st.standard_group_id = rsg.standard_group_id),
                  ARRAY[]::uuid[]
              )
             )::types.q_list_evals_v3_rubric_standard_group
          )
          FROM all_standard_group_ids asgi
-         JOIN standard_groups sg ON sg.id = asgi.standard_group_id),
+         JOIN rubric_standard_groups rsg ON rsg.standard_group_id = asgi.standard_group_id AND rsg.active = true),
         '{}'::types.q_list_evals_v3_rubric_standard_group[]
     ) as rubric_standard_groups,
     -- Rubric options array

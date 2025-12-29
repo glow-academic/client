@@ -327,8 +327,12 @@ ta_rows AS (
                         WHERE st.standard_group_id = sg.id
                     )
                 )
-                FROM standard_groups sg
-                WHERE sg.rubric_id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.simulation_id AND ss.active = true ORDER BY ss.position LIMIT 1)
+                FROM simulation_scenarios ss
+                JOIN rubric_standard_groups rsg ON rsg.rubric_id = ss.rubric_id AND rsg.active = true
+                JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+                WHERE ss.simulation_id = s.simulation_id AND ss.active = true
+                ORDER BY ss.position
+                LIMIT 1
             ), '{}'::jsonb)
         ) AS item
     FROM sim_meta s
@@ -409,8 +413,12 @@ inst_rows AS (
                         WHERE st.standard_group_id = sg.id
                     )
                 )
-                FROM standard_groups sg
-                WHERE sg.rubric_id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.simulation_id AND ss.active = true ORDER BY ss.position LIMIT 1)
+                FROM simulation_scenarios ss
+                JOIN rubric_standard_groups rsg ON rsg.rubric_id = ss.rubric_id AND rsg.active = true
+                JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+                WHERE ss.simulation_id = s.simulation_id AND ss.active = true
+                ORDER BY ss.position
+                LIMIT 1
             ), '{}'::jsonb)
         ) AS item,
         CASE
@@ -442,8 +450,9 @@ standard_groups_mapping AS (
         ),
         '{}'::jsonb
     ) AS mapping
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
 ),
 standards_mapping AS (
     SELECT COALESCE(
@@ -459,8 +468,8 @@ standards_mapping AS (
     ) AS mapping
     FROM standards st
     WHERE st.standard_group_id IN (
-        SELECT sg.id FROM standard_groups sg
-        WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+        SELECT rsg.standard_group_id FROM rubric_standard_groups rsg
+        WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
     )
 ),
 simulation_mapping_data AS (

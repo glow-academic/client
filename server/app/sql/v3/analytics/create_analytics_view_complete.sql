@@ -373,9 +373,11 @@ CREATE INDEX IF NOT EXISTS feedbacks_grade_idx
 CREATE INDEX IF NOT EXISTS standards_group_idx
   ON standards (standard_group_id);
 
--- Group ↔ rubric
-CREATE INDEX IF NOT EXISTS standard_groups_rubric_idx
-  ON standard_groups (rubric_id);
+-- Group ↔ rubric (via junction table)
+CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_idx
+  ON rubric_standard_groups (rubric_id);
+CREATE INDEX IF NOT EXISTS rubric_standard_groups_standard_group_idx
+  ON rubric_standard_groups (standard_group_id);
 
 -- Analytics 'where' clause helpers
 CREATE INDEX analytics_chat_created_idx
@@ -393,9 +395,9 @@ CREATE INDEX analytics_simulation_idx
 CREATE INDEX IF NOT EXISTS grades_run_rubric_created_idx
   ON grades (run_id, rubric_id, created_at DESC);
 
--- Group id + rubric (we filter sg.rubric_id = lg.rubric_id)
-CREATE INDEX IF NOT EXISTS standard_groups_id_rubric_idx
-  ON standard_groups (id, rubric_id);
+-- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
+CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
+  ON rubric_standard_groups (rubric_id, standard_group_id);
 
 -- Performance optimization indexes for analytics functions
 -- High-impact indexes on analytics matview for fast queries

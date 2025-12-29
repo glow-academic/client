@@ -202,7 +202,7 @@ context_data AS (
                     'description', sg.description,
                     'points', sg.points,
                     'pass_points', sg.pass_points,
-                    'rubric_id', sg.rubric_id::text
+                    'rubric_id', rsg.rubric_id::text
                 )
                 ORDER BY jsonb_build_object(
                     'id', sg.id::text,
@@ -211,7 +211,7 @@ context_data AS (
                     'description', sg.description,
                     'points', sg.points,
                     'pass_points', sg.pass_points,
-                    'rubric_id', sg.rubric_id::text
+                    'rubric_id', rsg.rubric_id::text
                 )
             ) FILTER (WHERE sg.id IS NOT NULL),
             '[]'::json
@@ -268,7 +268,8 @@ context_data AS (
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sc.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     INNER JOIN rubrics r ON r.id = si.rubric_id
-    LEFT JOIN standard_groups sg ON sg.rubric_id = r.id
+    LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = r.id AND rsg.active = true
+    LEFT JOIN standard_groups sg ON sg.id = rsg.standard_group_id
     LEFT JOIN standards std ON std.standard_group_id = sg.id
     INNER JOIN agents a ON a.id = ba.agent_id
     -- Try department-specific prompt first, fall back to default prompt

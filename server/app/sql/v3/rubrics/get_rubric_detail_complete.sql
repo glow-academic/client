@@ -172,13 +172,14 @@ standard_groups_data AS (
         sg.description,
         sg.points,
         sg.pass_points,
-        sg.position,
-        sg.active,
+        rsg.position,
+        rsg.active,
         ARRAY_AGG(s.id ORDER BY s.name) as standard_ids
-    FROM standard_groups sg
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
     LEFT JOIN standards s ON s.standard_group_id = sg.id
-    WHERE sg.rubric_id = (SELECT rubric_id FROM params)
-    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sg.position, sg.active
+    WHERE rsg.rubric_id = (SELECT rubric_id FROM params) AND rsg.active = true
+    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, rsg.position, rsg.active
 ),
 standard_groups_aggregated AS (
     SELECT 

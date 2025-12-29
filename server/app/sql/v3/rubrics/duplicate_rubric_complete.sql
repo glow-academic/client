@@ -59,15 +59,17 @@ original_departments AS (
 ),
 original_groups AS (
     SELECT 
-        id,
-        name,
-        short_name,
-        description,
-        points,
-        pass_points,
-        ROW_NUMBER() OVER (ORDER BY position, name) as group_order
-    FROM standard_groups
-    WHERE rubric_id = (SELECT original_rubric_id FROM params)
+        sg.id,
+        sg.name,
+        sg.short_name,
+        sg.description,
+        sg.points,
+        sg.pass_points,
+        ROW_NUMBER() OVER (ORDER BY rsg.position, sg.name) as group_order
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE rsg.rubric_id = (SELECT original_rubric_id FROM params)
+      AND rsg.active = true
 ),
 original_standards AS (
     SELECT 
@@ -115,7 +117,6 @@ link_departments AS (
 ),
 new_standard_groups AS (
     INSERT INTO standard_groups (
-        rubric_id,
         name,
         short_name,
         description,
@@ -123,15 +124,31 @@ new_standard_groups AS (
         pass_points
     )
     SELECT 
-        nr.rubric_id,
         og.name,
         og.short_name,
         og.description,
         og.points,
         og.pass_points
+    FROM original_groups og
+    RETURNING id, name, short_name, description, points, pass_points
+),
+link_standard_groups AS (
+    INSERT INTO rubric_standard_groups (rubric_id, standard_group_id, position, active, created_at, updated_at)
+    SELECT 
+        nr.rubric_id,
+        nsg.id,
+        og.group_order,
+        true,
+        NOW(),
+        NOW()
     FROM new_rubric nr
-    CROSS JOIN original_groups og
-    RETURNING id, rubric_id, name, short_name, description, points, pass_points
+    CROSS JOIN new_standard_groups nsg
+    JOIN original_groups og ON 
+        og.name = nsg.name
+        AND COALESCE(og.short_name, '') = COALESCE(nsg.short_name, '')
+        AND COALESCE(og.description, '') = COALESCE(nsg.description, '')
+        AND og.points = nsg.points
+        AND og.pass_points = nsg.pass_points
 ),
 new_groups_with_order AS (
     SELECT 
@@ -152,7 +169,6 @@ groups_mapping AS (
     FROM original_groups og
     JOIN new_groups_with_order ngwo ON 
         ngwo.name = og.name
-        AND ngwo.rubric_id = (SELECT rubric_id FROM new_rubric)
         AND COALESCE(ngwo.short_name, '') = COALESCE(og.short_name, '')
         AND COALESCE(ngwo.description, '') = COALESCE(og.description, '')
         AND ngwo.points = og.points

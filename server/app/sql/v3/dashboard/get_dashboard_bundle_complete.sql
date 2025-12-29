@@ -1317,15 +1317,16 @@ filt AS (
             per_grade_group AS (
                 SELECT
                     lg.chat_id,
-                    sg.rubric_id,
+                    rsg.rubric_id,
                     sg.id AS group_id,
                     sg.name AS group_name,
                     (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
                 FROM latest_grade_per_chat lg
                 JOIN feedbacks scf ON scf.grade_id = lg.id
                 JOIN standards s ON s.id = scf.standard_id
-                JOIN standard_groups sg ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
-                GROUP BY lg.chat_id, sg.rubric_id, sg.id, sg.name, sg.points
+                JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
+                JOIN standard_groups sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
+                GROUP BY lg.chat_id, rsg.rubric_id, sg.id, sg.name, sg.points
             ),
             corrs_upper AS (
                 SELECT
@@ -1351,7 +1352,8 @@ filt AS (
             rubric_groups AS (
                 SELECT DISTINCT pgg.rubric_id, sg.id, sg.name, sg.short_name
                 FROM per_grade_group pgg
-                JOIN standard_groups sg ON sg.id = pgg.group_id
+                JOIN rubric_standard_groups rsg ON rsg.rubric_id = pgg.rubric_id AND rsg.standard_group_id = pgg.group_id AND rsg.active = true
+                JOIN standard_groups sg ON sg.id = rsg.standard_group_id
             ),
             valid_rubric_ids_list AS (
                 SELECT DISTINCT rubric_id FROM rubric_groups

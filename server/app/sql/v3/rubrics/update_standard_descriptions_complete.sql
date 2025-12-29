@@ -97,9 +97,10 @@ updated_standards AS (
     WHERE s.id = dd.standard_id
       AND s.standard_group_id = dd.standard_group_id
       AND EXISTS (
-          SELECT 1 FROM standard_groups sg
-          WHERE sg.id = s.standard_group_id
-          AND sg.rubric_id = (SELECT rubric_id FROM params)
+          SELECT 1 FROM rubric_standard_groups rsg
+          WHERE rsg.standard_group_id = s.standard_group_id
+          AND rsg.rubric_id = (SELECT rubric_id FROM params)
+          AND rsg.active = true
       )
     RETURNING s.id
 )

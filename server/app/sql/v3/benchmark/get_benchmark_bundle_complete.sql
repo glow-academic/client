@@ -505,9 +505,10 @@ standard_groups_array AS (
         ),
         '{}'::types.q_get_benchmark_bundle_v3_standard_group[]
     ) as standard_groups
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-      AND sg.active = true
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+      AND rsg.active = true
 ),
 -- Build composite type arrays for standards
 standards_array AS (
@@ -521,25 +522,26 @@ standards_array AS (
     ) as standards
     FROM standards st
     WHERE st.standard_group_id IN (
-        SELECT sg.id FROM standard_groups sg
-        WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-          AND sg.active = true
+        SELECT rsg.standard_group_id FROM rubric_standard_groups rsg
+        WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+          AND rsg.active = true
     )
 ),
 -- Build standard_ids per standard_group first
 standard_group_standards AS (
     SELECT 
-        sg.id as standard_group_id,
-        sg.rubric_id,
+        rsg.standard_group_id,
+        rsg.rubric_id,
         COALESCE(
             ARRAY_AGG(st.id ORDER BY st.id) FILTER (WHERE st.id IS NOT NULL),
             ARRAY[]::uuid[]
         ) as standard_ids
-    FROM standard_groups sg
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
     LEFT JOIN standards st ON st.standard_group_id = sg.id
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-      AND sg.active = true
-    GROUP BY sg.id, sg.rubric_id
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+      AND rsg.active = true
+    GROUP BY rsg.standard_group_id, rsg.rubric_id
 ),
 -- Build composite type arrays for rubric-standard group relationships
 rubric_standard_groups_array AS (

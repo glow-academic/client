@@ -136,8 +136,9 @@ standard_groups_mapping AS (
             'passPoints', sg.pass_points
         )
     ) AS mapping
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
 ),
 standards_mapping AS (
     SELECT jsonb_object_agg(
@@ -150,8 +151,8 @@ standards_mapping AS (
     ) AS mapping
     FROM standards st
     WHERE st.standard_group_id IN (
-        SELECT sg.id FROM standard_groups sg
-        WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+        SELECT rsg.standard_group_id FROM rubric_standard_groups rsg
+        WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
     )
 ),
 -- 9) Final items
@@ -228,8 +229,9 @@ rows AS (
                         WHERE st.standard_group_id = sg.id
                     )
                 )
-                FROM standard_groups sg
-                WHERE sg.rubric_id = sm.rubric_id
+                FROM rubric_standard_groups rsg
+                JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+                WHERE rsg.rubric_id = sm.rubric_id AND rsg.active = true
             ), '{}'::jsonb)
         ) AS item,
         sm.simulation_title AS sort_title,

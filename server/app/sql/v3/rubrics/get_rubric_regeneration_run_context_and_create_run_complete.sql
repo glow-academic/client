@@ -95,7 +95,7 @@ group_data AS (
     WHERE g.id = p.group_id
 ),
 rubric_structure AS (
-    -- Get standard_groups and standards from rubric_id
+    -- Get standard_groups and standards from rubric_id via junction table
     SELECT 
         COALESCE(
             jsonb_agg(
@@ -105,7 +105,7 @@ rubric_structure AS (
                     'description', sg.description,
                     'points', sg.points,
                     'pass_points', sg.pass_points
-                ) ORDER BY sg.created_at
+                ) ORDER BY rsg.position, sg.created_at
             ),
             '[]'::jsonb
         ) as standard_groups,
@@ -116,12 +116,13 @@ rubric_structure AS (
                     'name', s.name,
                     'points', s.points,
                     'standard_group_id', s.standard_group_id::text
-                ) ORDER BY s.created_at
+                ) ORDER BY rsg.position, s.created_at
             ),
             '[]'::jsonb
         ) as standards
     FROM params p
-    LEFT JOIN standard_groups sg ON sg.rubric_id = p.rubric_id AND sg.active = true
+    LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = p.rubric_id AND rsg.active = true
+    LEFT JOIN standard_groups sg ON sg.id = rsg.standard_group_id
     LEFT JOIN standards s ON s.standard_group_id = sg.id
     GROUP BY p.rubric_id
 ),

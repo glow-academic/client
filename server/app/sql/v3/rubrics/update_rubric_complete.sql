@@ -165,8 +165,11 @@ link_departments AS (
         active = true,
         updated_at = NOW()
 ),
-delete_standard_groups AS (
-    DELETE FROM standard_groups WHERE rubric_id = (SELECT rubric_id FROM params)
+-- Deactivate existing standard_group links instead of deleting standard_groups
+deactivate_rubric_standard_groups AS (
+    UPDATE rubric_standard_groups 
+    SET active = false, updated_at = NOW()
+    WHERE rubric_id = (SELECT rubric_id FROM params) AND active = true
 ),
 standard_groups_unnested AS (
     SELECT 
@@ -184,28 +187,67 @@ standard_groups_unnested AS (
     CROSS JOIN UNNEST(x.standard_groups) WITH ORDINALITY as sg
     WHERE array_length(x.standard_groups, 1) > 0
 ),
+-- Create placeholder tool_calls for API-updated standard_groups (not created via tool)
+placeholder_tool_calls AS (
+    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    SELECT 
+        'api_update_rubric_' || sgu.rubric_id::text || '_sg_' || sgu.group_order::text,
+        NULL,
+        TRUE,
+        NOW(),
+        NOW()
+    FROM standard_groups_unnested sgu
+    RETURNING id, call_id
+),
+tool_calls_with_order AS (
+    SELECT 
+        ptc.id as tool_call_id,
+        (ROW_NUMBER() OVER (ORDER BY ptc.id))::int as rn
+    FROM placeholder_tool_calls ptc
+),
 new_standard_groups AS (
     INSERT INTO standard_groups (
-        rubric_id,
         name,
         short_name,
         description,
         points,
         pass_points,
-        position,
-        active
+        active,
+        tool_call_id
     )
     SELECT 
-        rubric_id,
-        name,
-        short_name,
-        description,
-        points,
-        pass_points,
-        position,
-        active
-    FROM standard_groups_unnested
-    RETURNING id, rubric_id, name, short_name, description, points, pass_points, position, active
+        sgu.name,
+        sgu.short_name,
+        sgu.description,
+        sgu.points,
+        sgu.pass_points,
+        sgu.active,
+        tcwo.tool_call_id
+    FROM standard_groups_unnested sgu
+    JOIN tool_calls_with_order tcwo ON tcwo.rn = sgu.group_order
+    RETURNING id, name, short_name, description, points, pass_points, active
+),
+link_rubric_standard_groups AS (
+    INSERT INTO rubric_standard_groups (rubric_id, standard_group_id, position, active, created_at, updated_at)
+    SELECT 
+        sgu.rubric_id,
+        nsg.id as standard_group_id,
+        sgu.position,
+        sgu.active,
+        NOW(),
+        NOW()
+    FROM new_standard_groups nsg
+    JOIN standard_groups_unnested sgu ON 
+        sgu.name = nsg.name 
+        AND COALESCE(sgu.short_name, '') = COALESCE(nsg.short_name, '')
+        AND COALESCE(sgu.description, '') = COALESCE(nsg.description, '')
+        AND sgu.points = nsg.points
+        AND sgu.pass_points = nsg.pass_points
+    ORDER BY sgu.group_order
+    ON CONFLICT (rubric_id, standard_group_id) DO UPDATE SET
+        position = EXCLUDED.position,
+        active = EXCLUDED.active,
+        updated_at = NOW()
 ),
 standard_groups_with_order AS (
     SELECT DISTINCT ON (nsg.id)
@@ -214,7 +256,6 @@ standard_groups_with_order AS (
     FROM new_standard_groups nsg
     JOIN standard_groups_unnested sgu ON 
         sgu.name = nsg.name 
-        AND sgu.rubric_id = nsg.rubric_id
         AND COALESCE(sgu.short_name, '') = COALESCE(nsg.short_name, '')
         AND COALESCE(sgu.description, '') = COALESCE(nsg.description, '')
         AND sgu.points = nsg.points

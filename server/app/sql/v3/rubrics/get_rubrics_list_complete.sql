@@ -216,16 +216,17 @@ all_rubric_ids AS (
 ),
 rubric_standard_group_ids AS (
     SELECT 
-        sg.rubric_id,
-        ARRAY_AGG(sg.id ORDER BY sg.position, sg.name) as standard_group_ids
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-    GROUP BY sg.rubric_id
+        rsg.rubric_id,
+        ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.position, sg.name) as standard_group_ids
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
+    GROUP BY rsg.rubric_id
 ),
 all_standard_group_ids AS (
-    SELECT DISTINCT id as standard_group_id
-    FROM standard_groups
-    WHERE rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+    SELECT DISTINCT rsg.standard_group_id
+    FROM rubric_standard_groups rsg
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
 ),
 all_standard_ids AS (
     SELECT DISTINCT s.id as standard_id
@@ -255,10 +256,11 @@ assigned_department_ids AS (
 ),
 standard_groups_distinct AS (
     SELECT DISTINCT ON (sg.id)
-        sg.id, sg.rubric_id, sg.name, COALESCE(sg.description, '') as description, sg.points, sg.pass_points, sg.position
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-    ORDER BY sg.id, sg.rubric_id, sg.position, sg.name
+        sg.id, rsg.rubric_id, sg.name, COALESCE(sg.description, '') as description, sg.points, sg.pass_points, rsg.position
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
+    ORDER BY sg.id, rsg.rubric_id, rsg.position, sg.name
 ),
 standard_groups_aggregated AS (
     SELECT 

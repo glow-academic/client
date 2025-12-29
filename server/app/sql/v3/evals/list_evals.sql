@@ -147,9 +147,10 @@ standard_groups_mapping_data AS (
         ) FILTER (WHERE sg.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-      AND sg.active = true
+    FROM rubric_standard_groups rsg
+    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+      AND rsg.active = true
 ),
 standards_mapping_data AS (
     SELECT COALESCE(
@@ -165,28 +166,28 @@ standards_mapping_data AS (
     ) as mapping
     FROM standards st
     WHERE st.standard_group_id IN (
-        SELECT sg.id FROM standard_groups sg
-        WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-          AND sg.active = true
+        SELECT rsg.standard_group_id FROM rubric_standard_groups rsg
+        WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+          AND rsg.active = true
     )
 ),
 -- Map rubric_id to standard_group_ids with standard_ids per group
 rubric_standard_groups_data AS (
     SELECT 
-        sg.rubric_id::text,
+        rsg.rubric_id::text,
         jsonb_object_agg(
-            sg.id::text,
+            rsg.standard_group_id::text,
             COALESCE(
                 (SELECT jsonb_agg(st.id::text ORDER BY st.id)
                  FROM standards st
-                 WHERE st.standard_group_id = sg.id),
+                 WHERE st.standard_group_id = rsg.standard_group_id),
                 '[]'::jsonb
             )
-        ) FILTER (WHERE sg.id IS NOT NULL) as standard_group_ids_map
-    FROM standard_groups sg
-    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
-      AND sg.active = true
-    GROUP BY sg.rubric_id
+        ) FILTER (WHERE rsg.standard_group_id IS NOT NULL) as standard_group_ids_map
+    FROM rubric_standard_groups rsg
+    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+      AND rsg.active = true
+    GROUP BY rsg.rubric_id
 ),
 rubric_standard_groups_mapping AS (
     SELECT COALESCE(
