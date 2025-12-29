@@ -155,11 +155,8 @@ export default function Pricing({
   // Table uses paginated/filtered data from runs endpoint
   // Extract data from V3 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
-  const modelMapping = useMemo(
-    () => pricingData?.model_mapping || {},
-    [pricingData],
-  );
-  // Note: profileMapping, agentMapping, personaMapping removed as unused in this component
+  // Use models array directly (no mapping construction)
+  const models = useMemo(() => pricingData?.models || [], [pricingData]);
 
   // Get chart colors from CSS variables
   const chartColors = useChartColors();
@@ -169,7 +166,7 @@ export default function Pricing({
 
   // Compute spend per run and aggregate by day (chart shows all data, no filtering)
   const { chartData, totals, chartConfig } = useMemo(() => {
-    if (!modelRuns?.length || Object.keys(modelMapping).length === 0) {
+    if (!modelRuns?.length || models.length === 0) {
       return {
         chartData: [] as Array<Record<string, number | string>>,
         totals: { totalSpend: 0, runCount: 0, avgCost: 0 },
@@ -178,7 +175,7 @@ export default function Pricing({
     }
 
     // Include all models (chart shows all data)
-    const includeModels = new Set(Object.keys(modelMapping));
+    const includeModels = new Set(models.map(m => m.model_id).filter(Boolean));
 
     const byDay = new Map<
       string,
@@ -193,13 +190,13 @@ export default function Pricing({
       const modelId = run.model_id;
       if (!modelId || !includeModels.has(modelId)) continue;
 
-      // Pricing comes from model mapping
-      const modelInfo = modelMapping[modelId];
+      // Find model from array
+      const modelInfo = models.find(m => m.model_id === modelId);
       if (!modelInfo) continue;
 
       const spend =
-        (run.input_tokens / 1_000_000) * (modelInfo.input_ppm || 0) +
-        (run.output_tokens / 1_000_000) * (modelInfo.output_ppm || 0);
+        (run.input_tokens / 1_000_000) * (Number(modelInfo.input_ppm) || 0) +
+        (run.output_tokens / 1_000_000) * (Number(modelInfo.output_ppm) || 0);
 
       const dateKey = format(new Date(run.created_at), "yyyy-MM-dd");
       const dateLabel = format(new Date(run.created_at), "MMM dd");
@@ -245,7 +242,8 @@ export default function Pricing({
 
     const config: Record<string, { label: string; color: string }> = {};
     for (const id of includeModels) {
-      const label = modelMapping[id]?.name;
+      const model = models.find(m => m.model_id === id);
+      const label = model?.name;
       config[id] = {
         label: label ?? id,
         color: modelIdToColor[id] ?? "#999999",
@@ -262,12 +260,12 @@ export default function Pricing({
       },
       chartConfig: config,
     };
-  }, [modelRuns, modelMapping, chartColors, mutedColor]);
+  }, [modelRuns, models, chartColors, mutedColor]);
 
   // Build rows for runs table from runsData (server-driven, paginated)
   // Convert GroupRunItem[] to GroupRunRow[] format for RunsDataTable
   const runRows = useMemo(() => {
-    return (runsData?.data || []).map((group) => ({
+    return (runsData?.group_runs || []).map((group) => ({
       groupId: group.group_id,
       createdAt: group.created_at,
       runCount: group.run_count,
@@ -367,33 +365,37 @@ export default function Pricing({
                 <ChartLegend content={<ChartLegendContent />} />
 
                 {/* Stacked areas per selected models */}
-                {Object.keys(modelMapping).map((id) => (
-                  <Area
-                    key={id}
-                    type="monotone"
-                    dataKey={id}
-                    stackId="1"
-                    stroke={
-                      (
-                        chartConfig as Record<
-                          string,
-                          { label: string; color: string }
-                        >
-                      )[id]?.color
-                    }
-                    fill={
-                      (
-                        chartConfig as Record<
-                          string,
-                          { label: string; color: string }
-                        >
-                      )[id]?.color
-                    }
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                ))}
+                {models.map((model) => {
+                  const id = model.model_id;
+                  if (!id) return null;
+                  return (
+                    <Area
+                      key={id}
+                      type="monotone"
+                      dataKey={id}
+                      stackId="1"
+                      stroke={
+                        (
+                          chartConfig as Record<
+                            string,
+                            { label: string; color: string }
+                          >
+                        )[id]?.color
+                      }
+                      fill={
+                        (
+                          chartConfig as Record<
+                            string,
+                            { label: string; color: string }
+                          >
+                        )[id]?.color
+                      }
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  );
+                })}
 
                 {/* Total spend line */}
                 <Line
@@ -421,16 +423,16 @@ export default function Pricing({
       <div className="mt-6" data-testid="pricing-runs-table">
         <RunsDataTable
           rows={runRows}
-          modelMapping={runsData?.model_mapping || {}}
-          profileMapping={runsData?.profile_mapping || {}}
-          agentMapping={runsData?.agent_mapping || {}}
-          personaMapping={runsData?.persona_mapping || {}}
+          models={runsData?.models || []}
+          profiles={runsData?.profiles || []}
+          agents={runsData?.agents || []}
+          personas={runsData?.personas || []}
           isLoading={isLoading}
           modelOptions={modelOptions}
           profileOptions={profileOptions}
           actorOptions={actorOptions}
-          totalCount={runsData?.totalCount || 0}
-          totalPages={runsData?.totalPages || 0}
+          totalCount={runsData?.total_count || 0}
+          totalPages={runsData?.total_pages || 0}
         />
       </div>
     </div>

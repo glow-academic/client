@@ -6866,7 +6866,7 @@ export interface components {
             chat: components["schemas"]["ChatItem"];
             scenario: components["schemas"]["ScenarioItem"] | null;
             /** Messages */
-            messages: components["schemas"]["app__api__v3__attempts__simulation__MessageItem"][];
+            messages: components["schemas"]["MessageItem"][];
             /** Hints */
             hints: components["schemas"]["HintsByMessage"][];
             grade?: components["schemas"]["GradeItem"] | null;
@@ -6968,20 +6968,6 @@ export interface components {
             guest_id: string | null;
             /** Server Time */
             server_time: number;
-        };
-        /**
-         * ContentItem
-         * @description Content entry schema.
-         */
-        ContentItem: {
-            /** Idx */
-            idx: number;
-            /** Content */
-            content: string;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
         };
         /**
          * ContinuationOption
@@ -7613,18 +7599,6 @@ export interface components {
             simulation_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug information item.
-         */
-        DebugInfoItem: {
-            /** Id */
-            id: string;
-            /** Created At */
-            created_at: string;
-            /** Content */
-            content: string;
         };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
@@ -10575,6 +10549,121 @@ export interface components {
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
         };
+        /** GetPricingAnalyticsApiRequest */
+        GetPricingAnalyticsApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Roles */
+            roles: string[];
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Simulation Filters */
+            simulation_filters: string[];
+        };
+        /** GetPricingAnalyticsApiResponse */
+        GetPricingAnalyticsApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Model Runs */
+            model_runs?: components["schemas"]["QGetPricingAnalyticsV3ModelRun"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetPricingAnalyticsV3Model"][] | null;
+            /** Profiles */
+            profiles?: components["schemas"]["QGetPricingAnalyticsV3Profile"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetPricingAnalyticsV3Agent"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetPricingAnalyticsV3Persona"][] | null;
+        };
+        /** GetPricingGroupDetailApiRequest */
+        GetPricingGroupDetailApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+        };
+        /** GetPricingGroupDetailApiResponse */
+        GetPricingGroupDetailApiResponse: {
+            /** Group Exists */
+            group_exists?: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Runs */
+            runs?: components["schemas"]["QGetPricingGroupDetailV3RunWithMessages"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetPricingGroupDetailV3Model"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetPricingGroupDetailV3Agent"][] | null;
+            /** Profiles */
+            profiles?: components["schemas"]["QGetPricingGroupDetailV3Profile"][] | null;
+        };
+        /** GetPricingRunsApiRequest */
+        GetPricingRunsApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Roles */
+            roles: string[];
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Simulation Filters */
+            simulation_filters: string[];
+            /** Search */
+            search: string;
+            /** Model Ids */
+            model_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Actor Ids */
+            actor_ids: string[];
+            /** Sort By */
+            sort_by: string;
+            /** Sort Order */
+            sort_order: string;
+            /** Limit Count */
+            limit_count: number;
+            /** Offset Count */
+            offset_count: number;
+        };
+        /** GetPricingRunsApiResponse */
+        GetPricingRunsApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Group Runs */
+            group_runs?: components["schemas"]["QGetPricingRunsV3GroupRun"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Model Options */
+            model_options?: components["schemas"]["QGetPricingRunsV3FilterOption"][] | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["QGetPricingRunsV3FilterOption"][] | null;
+            /** Actor Options */
+            actor_options?: components["schemas"]["QGetPricingRunsV3FilterOption"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetPricingRunsV3Model"][] | null;
+            /** Profiles */
+            profiles?: components["schemas"]["QGetPricingRunsV3Profile"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetPricingRunsV3Agent"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetPricingRunsV3Persona"][] | null;
+        };
         /** GetProfileByEmailApiRequest */
         GetProfileByEmailApiRequest: {
             /** Email */
@@ -11787,26 +11876,6 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
-        /**
-         * GroupRunItem
-         * @description Group run item with aggregated metrics across multiple runs.
-         */
-        GroupRunItem: {
-            /** Group Id */
-            group_id: string;
-            /** Created At */
-            created_at: string;
-            /** Run Count */
-            run_count: number;
-            /** Total Input Tokens */
-            total_input_tokens: number;
-            /** Total Output Tokens */
-            total_output_tokens: number;
-            /** Total Cost */
-            total_cost: number;
-            /** Runs */
-            runs: components["schemas"]["RunSummaryItem"][];
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -12317,6 +12386,27 @@ export interface components {
             /** Sid */
             sid?: string | null;
         };
+        /** MessageItem */
+        MessageItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Chatid */
+            chatId: string;
+            /** Content */
+            content: string;
+            /** Type */
+            type: string;
+            /** Completed */
+            completed: boolean;
+            /** Personaid */
+            personaId?: string | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["MessageFeedbackItem"][] | null;
+        };
         /**
          * MessageSentPayload
          * @description Response indicating a message was sent.
@@ -12386,44 +12476,6 @@ export interface components {
             profile_id?: string | null;
             /** Sid */
             sid?: string | null;
-        };
-        /**
-         * ModelMappingWithPricing
-         * @description Model mapping with pricing information.
-         */
-        ModelMappingWithPricing: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Input Ppm */
-            input_ppm: number;
-            /** Output Ppm */
-            output_ppm: number;
-        };
-        /**
-         * ModelRunItem
-         * @description Model run item with aggregated metrics.
-         */
-        ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Input Tokens */
-            input_tokens: number;
-            /** Output Tokens */
-            output_tokens: number;
-            /** Model Id */
-            model_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["DebugInfoItem"][] | null;
         };
         /**
          * ObjectivesToolCompletePayload
@@ -12525,186 +12577,6 @@ export interface components {
             totalPossiblePoints: number | null;
             /** Percentage */
             percentage: number | null;
-        };
-        /**
-         * PricingAnalyticsFilters
-         * @description Pricing analytics filter request schema.
-         */
-        PricingAnalyticsFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-        };
-        /**
-         * PricingAnalyticsResponse
-         * @description Response for pricing analytics.
-         */
-        PricingAnalyticsResponse: {
-            /** Model Runs */
-            model_runs: components["schemas"]["ModelRunItem"][];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingWithPricing"];
-            };
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: string;
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: string;
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: string;
-            };
-        };
-        /**
-         * PricingGroupDetailResponse
-         * @description Response schema for pricing group detail (multiple runs).
-         */
-        PricingGroupDetailResponse: {
-            /** Groupid */
-            groupId: string;
-            /** Runs */
-            runs: components["schemas"]["RunWithMessages"][];
-            /** Modelmapping */
-            modelMapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Agentmapping */
-            agentMapping: {
-                [key: string]: string;
-            };
-            /** Profilemapping */
-            profileMapping: {
-                [key: string]: string;
-            };
-        };
-        /**
-         * PricingRunDetailRequest
-         * @description Request schema for pricing run detail.
-         */
-        PricingRunDetailRequest: {
-            /** Groupid */
-            groupId: string;
-        };
-        /**
-         * PricingRunDetailResponse
-         * @description Response schema for pricing run detail (single run - backward compatible).
-         */
-        PricingRunDetailResponse: {
-            run: components["schemas"]["RunMetadata"];
-            /** Messages */
-            messages: components["schemas"]["app__api__v3__pricing__detail__MessageItem"][];
-            /** Modelmapping */
-            modelMapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Agentmapping */
-            agentMapping: {
-                [key: string]: string;
-            };
-            /** Profilemapping */
-            profileMapping: {
-                [key: string]: string;
-            };
-            /** Previouscontextstartindex */
-            previousContextStartIndex?: number | null;
-        };
-        /**
-         * PricingRunsFilters
-         * @description Pricing runs filter request schema.
-         */
-        PricingRunsFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
-            /** Search */
-            search?: string | null;
-            /** Sortby */
-            sortBy?: string | null;
-            /** Sortorder */
-            sortOrder?: string | null;
-            /** Modelids */
-            modelIds?: string[] | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Actorids */
-            actorIds?: string[] | null;
-        };
-        /**
-         * PricingRunsResponse
-         * @description Response for pricing groups table.
-         */
-        PricingRunsResponse: {
-            /** Data */
-            data: components["schemas"]["GroupRunItem"][];
-            /** Totalcount */
-            totalCount: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-            /** Totalpages */
-            totalPages: number;
-            /**
-             * Modeloptions
-             * @default []
-             */
-            modelOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Profileoptions
-             * @default []
-             */
-            profileOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Actoroptions
-             * @default []
-             */
-            actorOptions: components["schemas"]["FilterOption"][];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingWithPricing"];
-            };
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: string;
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: string;
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: string;
-            };
         };
         /**
          * ProblemStatementToolCompletePayload
@@ -15364,6 +15236,246 @@ export interface components {
             points: number | null;
             /** Pass Points */
             pass_points: number | null;
+        };
+        /** QGetPricingAnalyticsV3Agent */
+        QGetPricingAnalyticsV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingAnalyticsV3DebugInfo */
+        QGetPricingAnalyticsV3DebugInfo: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Content */
+            content: string | null;
+        };
+        /** QGetPricingAnalyticsV3Model */
+        QGetPricingAnalyticsV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Input Ppm */
+            input_ppm: number | null;
+            /** Output Ppm */
+            output_ppm: number | null;
+        };
+        /** QGetPricingAnalyticsV3ModelRun */
+        QGetPricingAnalyticsV3ModelRun: {
+            /** Run Id */
+            run_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Debug Info */
+            debug_info: components["schemas"]["QGetPricingAnalyticsV3DebugInfo"][] | null;
+        };
+        /** QGetPricingAnalyticsV3Persona */
+        QGetPricingAnalyticsV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingAnalyticsV3Profile */
+        QGetPricingAnalyticsV3Profile: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingGroupDetailV3Agent */
+        QGetPricingGroupDetailV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingGroupDetailV3Content */
+        QGetPricingGroupDetailV3Content: {
+            /** Idx */
+            idx: number | null;
+            /** Content */
+            content: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /** QGetPricingGroupDetailV3Message */
+        QGetPricingGroupDetailV3Message: {
+            /** Id */
+            id: string | null;
+            /** Role */
+            role: string | null;
+            /** Contents */
+            contents: components["schemas"]["QGetPricingGroupDetailV3Content"][] | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Completed */
+            completed: boolean | null;
+            /** Run Idx */
+            run_idx: number | null;
+            /** Depth */
+            depth: number | null;
+        };
+        /** QGetPricingGroupDetailV3Model */
+        QGetPricingGroupDetailV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetPricingGroupDetailV3Profile */
+        QGetPricingGroupDetailV3Profile: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingGroupDetailV3RunMetadata */
+        QGetPricingGroupDetailV3RunMetadata: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Cached Input Tokens */
+            cached_input_tokens: number | null;
+            /** Cost */
+            cost: number | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+        };
+        /** QGetPricingGroupDetailV3RunWithMessages */
+        QGetPricingGroupDetailV3RunWithMessages: {
+            run: components["schemas"]["QGetPricingGroupDetailV3RunMetadata"] | null;
+            /** Messages */
+            messages: components["schemas"]["QGetPricingGroupDetailV3Message"][] | null;
+            /** Previous Context Start Index */
+            previous_context_start_index: number | null;
+        };
+        /** QGetPricingRunsV3Agent */
+        QGetPricingRunsV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingRunsV3DebugInfo */
+        QGetPricingRunsV3DebugInfo: {
+            /** Id */
+            id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Content */
+            content: string | null;
+        };
+        /** QGetPricingRunsV3FilterOption */
+        QGetPricingRunsV3FilterOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QGetPricingRunsV3GroupRun */
+        QGetPricingRunsV3GroupRun: {
+            /** Group Id */
+            group_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Run Count */
+            run_count: number | null;
+            /** Total Input Tokens */
+            total_input_tokens: number | null;
+            /** Total Output Tokens */
+            total_output_tokens: number | null;
+            /** Total Cost */
+            total_cost: number | null;
+            /** Runs */
+            runs: components["schemas"]["QGetPricingRunsV3RunSummary"][] | null;
+        };
+        /** QGetPricingRunsV3Model */
+        QGetPricingRunsV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Input Ppm */
+            input_ppm: number | null;
+            /** Output Ppm */
+            output_ppm: number | null;
+        };
+        /** QGetPricingRunsV3Persona */
+        QGetPricingRunsV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingRunsV3Profile */
+        QGetPricingRunsV3Profile: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Name */
+            name: string | null;
+        };
+        /** QGetPricingRunsV3RunSummary */
+        QGetPricingRunsV3RunSummary: {
+            /** Run Id */
+            run_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Cost */
+            cost: number | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Debug Info */
+            debug_info: components["schemas"]["QGetPricingRunsV3DebugInfo"][] | null;
         };
         /** QGetProfileContextV3Auth */
         QGetProfileContextV3Auth: {
@@ -18239,69 +18351,6 @@ export interface components {
             /** Grade Created At */
             grade_created_at?: string | null;
         };
-        /**
-         * RunMetadata
-         * @description Run metadata schema.
-         */
-        RunMetadata: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Inputtokens */
-            inputTokens: number;
-            /** Outputtokens */
-            outputTokens: number;
-            /** Cachedinputtokens */
-            cachedInputTokens: number;
-            /** Cost */
-            cost: number;
-            /** Modelid */
-            modelId?: string | null;
-            /** Agentid */
-            agentId?: string | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Personaid */
-            personaId?: string | null;
-        };
-        /**
-         * RunSummaryItem
-         * @description Run summary item within a group.
-         */
-        RunSummaryItem: {
-            /** Run Id */
-            run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Input Tokens */
-            input_tokens: number;
-            /** Output Tokens */
-            output_tokens: number;
-            /** Cost */
-            cost: number;
-            /** Model Id */
-            model_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["DebugInfoItem"][] | null;
-        };
-        /**
-         * RunWithMessages
-         * @description Run with messages schema.
-         */
-        RunWithMessages: {
-            run: components["schemas"]["RunMetadata"];
-            /** Messages */
-            messages: components["schemas"]["app__api__v3__pricing__detail__MessageItem"][];
-            /** Previouscontextstartindex */
-            previousContextStartIndex?: number | null;
-        };
         /** ScenarioDocumentItem */
         ScenarioDocumentItem: {
             /** Document Id */
@@ -20238,49 +20287,6 @@ export interface components {
             archived: boolean;
             /** Profileid */
             profileId?: string | null;
-        };
-        /** MessageItem */
-        app__api__v3__attempts__simulation__MessageItem: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Chatid */
-            chatId: string;
-            /** Content */
-            content: string;
-            /** Type */
-            type: string;
-            /** Completed */
-            completed: boolean;
-            /** Personaid */
-            personaId?: string | null;
-            /** Feedbacks */
-            feedbacks?: components["schemas"]["MessageFeedbackItem"][] | null;
-        };
-        /**
-         * MessageItem
-         * @description Message item schema.
-         */
-        app__api__v3__pricing__detail__MessageItem: {
-            /** Id */
-            id: string;
-            /** Role */
-            role: string;
-            /** Contents */
-            contents: components["schemas"]["ContentItem"][];
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Completed */
-            completed: boolean;
-            /** Runidx */
-            runIdx?: number | null;
-            /** Depth */
-            depth?: number | null;
         };
         /** MetricResponse */
         app__api__v3__reports__bundle__MetricResponse: {
@@ -25830,7 +25836,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PricingAnalyticsFilters"];
+                "application/json": components["schemas"]["GetPricingAnalyticsApiRequest"];
             };
         };
         responses: {
@@ -25840,7 +25846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PricingAnalyticsResponse"];
+                    "application/json": components["schemas"]["GetPricingAnalyticsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25866,7 +25872,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PricingRunsFilters"];
+                "application/json": components["schemas"]["GetPricingRunsApiRequest"];
             };
         };
         responses: {
@@ -25876,7 +25882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PricingRunsResponse"];
+                    "application/json": components["schemas"]["GetPricingRunsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25902,7 +25908,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PricingRunDetailRequest"];
+                "application/json": components["schemas"]["GetPricingGroupDetailApiRequest"];
             };
         };
         responses: {
@@ -25912,7 +25918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PricingRunDetailResponse"] | components["schemas"]["PricingGroupDetailResponse"];
+                    "application/json": components["schemas"]["GetPricingGroupDetailApiResponse"];
                 };
             };
             /** @description Validation Error */

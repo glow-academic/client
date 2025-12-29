@@ -66,9 +66,10 @@ export default async function PricingGroupPage({
   }
 
   // Fetch group detail data
+  // Convert camelCase to snake_case for API
   const groupDetail = await getPricingGroupDetail({
     body: {
-      groupId,
+      group_id: groupId,
     },
   });
 

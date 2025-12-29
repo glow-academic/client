@@ -20,8 +20,10 @@ export function PricingRunsClient({
   runsData,
   isLoading,
 }: PricingRunsClientProps) {
+  // Use arrays directly (no mapping construction)
+
   const rows = useMemo<GroupRunRow[]>(() => {
-    return (runsData?.data || []).map((group) => {
+    return (runsData?.group_runs || []).map((group) => {
       const row: GroupRunRow = {
         groupId: group.group_id,
         createdAt: group.created_at,
@@ -45,22 +47,22 @@ export function PricingRunsClient({
 
       return row;
     });
-  }, [runsData]);
+  }, [runsData?.group_runs]);
 
   return (
     <div className="mt-6" data-testid="pricing-runs-table">
       <RunsDataTable
         rows={rows}
-        modelMapping={runsData.model_mapping || {}}
-        profileMapping={runsData.profile_mapping || {}}
-        agentMapping={runsData.agent_mapping || {}}
-        personaMapping={runsData.persona_mapping || {}}
+        models={runsData?.models || []}
+        profiles={runsData?.profiles || []}
+        agents={runsData?.agents || []}
+        personas={runsData?.personas || []}
         isLoading={isLoading}
-        modelOptions={runsData.modelOptions || []}
-        profileOptions={runsData.profileOptions || []}
-        actorOptions={runsData.actorOptions || []}
-        totalCount={runsData.totalCount || 0}
-        totalPages={runsData.totalPages || 0}
+        modelOptions={runsData?.model_options || []}
+        profileOptions={runsData?.profile_options || []}
+        actorOptions={runsData?.actor_options || []}
+        totalCount={runsData?.total_count || 0}
+        totalPages={runsData?.total_pages || 0}
       />
     </div>
   );

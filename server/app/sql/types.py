@@ -6899,6 +6899,378 @@ class GetPracticeOverviewApiResponse(BaseModel):
 
 
 
+# Generated from: get_pricing_analytics
+
+class GetPricingAnalyticsSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    department_ids: list[UUID]
+    profile_id: UUID
+    roles: list[str]
+    cohort_ids: list[UUID]
+    simulation_filters: list[str]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.department_ids,
+            self.profile_id,
+            self.roles,
+            self.cohort_ids,
+            self.simulation_filters,
+        )
+
+class QGetPricingAnalyticsV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetPricingAnalyticsV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    input_ppm: float | None
+    output_ppm: float | None
+
+
+
+
+class QGetPricingAnalyticsV3DebugInfo(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    content: str | None
+
+class QGetPricingAnalyticsV3ModelRun(BaseModel):
+
+    run_id: UUID | None
+    created_at: str | None
+    input_tokens: int | None
+    output_tokens: int | None
+    model_id: UUID | None
+    profile_id: UUID | None
+    agent_id: UUID | None
+    persona_id: UUID | None
+    debug_info: list[QGetPricingAnalyticsV3DebugInfo] | None
+
+
+
+
+class QGetPricingAnalyticsV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetPricingAnalyticsV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+
+class GetPricingAnalyticsSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    model_runs: list[QGetPricingAnalyticsV3ModelRun] | None = None
+    models: list[QGetPricingAnalyticsV3Model] | None = None
+    profiles: list[QGetPricingAnalyticsV3Profile] | None = None
+    agents: list[QGetPricingAnalyticsV3Agent] | None = None
+    personas: list[QGetPricingAnalyticsV3Persona] | None = None
+
+class GetPricingAnalyticsApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    department_ids: list[UUID]
+    roles: list[str]
+    cohort_ids: list[UUID]
+    simulation_filters: list[str]
+
+class GetPricingAnalyticsApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    model_runs: list[QGetPricingAnalyticsV3ModelRun] | None = None
+    models: list[QGetPricingAnalyticsV3Model] | None = None
+    profiles: list[QGetPricingAnalyticsV3Profile] | None = None
+    agents: list[QGetPricingAnalyticsV3Agent] | None = None
+    personas: list[QGetPricingAnalyticsV3Persona] | None = None
+
+
+
+# Generated from: get_pricing_group_detail
+
+class GetPricingGroupDetailSqlParams(BaseModel):
+
+    group_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.group_id,
+            self.profile_id,
+        )
+
+class QGetPricingGroupDetailV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetPricingGroupDetailV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetPricingGroupDetailV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetPricingGroupDetailV3Content(BaseModel):
+
+    idx: int | None
+    content: str | None
+    created_at: str | None
+    updated_at: str | None
+
+class QGetPricingGroupDetailV3Message(BaseModel):
+
+    id: UUID | None
+    role: str | None
+    contents: list[QGetPricingGroupDetailV3Content] | None
+    created_at: str | None
+    updated_at: str | None
+    completed: bool | None
+    run_idx: int | None
+    depth: int | None
+
+
+
+
+class QGetPricingGroupDetailV3RunMetadata(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    input_tokens: int | None
+    output_tokens: int | None
+    cached_input_tokens: int | None
+    cost: float | None
+    model_id: UUID | None
+    agent_id: UUID | None
+    profile_id: UUID | None
+    persona_id: UUID | None
+
+class QGetPricingGroupDetailV3RunWithMessages(BaseModel):
+
+    run: QGetPricingGroupDetailV3RunMetadata | None
+    messages: list[QGetPricingGroupDetailV3Message] | None
+    previous_context_start_index: int | None
+
+class GetPricingGroupDetailSqlRow(BaseModel):
+
+    group_exists: bool | None = None
+    group_id: UUID | None = None
+    actor_name: str | None = None
+    runs: list[QGetPricingGroupDetailV3RunWithMessages] | None = None
+    models: list[QGetPricingGroupDetailV3Model] | None = None
+    agents: list[QGetPricingGroupDetailV3Agent] | None = None
+    profiles: list[QGetPricingGroupDetailV3Profile] | None = None
+
+class GetPricingGroupDetailApiRequest(BaseModel):
+
+    group_id: UUID
+
+class GetPricingGroupDetailApiResponse(BaseModel):
+
+    group_exists: bool | None = None
+    group_id: UUID | None = None
+    actor_name: str | None = None
+    runs: list[QGetPricingGroupDetailV3RunWithMessages] | None = None
+    models: list[QGetPricingGroupDetailV3Model] | None = None
+    agents: list[QGetPricingGroupDetailV3Agent] | None = None
+    profiles: list[QGetPricingGroupDetailV3Profile] | None = None
+
+
+
+# Generated from: get_pricing_runs
+
+class GetPricingRunsSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    department_ids: list[UUID]
+    profile_id: UUID
+    roles: list[str]
+    cohort_ids: list[UUID]
+    simulation_filters: list[str]
+    search: str
+    model_ids: list[UUID]
+    profile_ids: list[UUID]
+    actor_ids: list[UUID]
+    sort_by: str
+    sort_order: str
+    limit_count: int
+    offset_count: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.department_ids,
+            self.profile_id,
+            self.roles,
+            self.cohort_ids,
+            self.simulation_filters,
+            self.search,
+            self.model_ids,
+            self.profile_ids,
+            self.actor_ids,
+            self.sort_by,
+            self.sort_order,
+            self.limit_count,
+            self.offset_count,
+        )
+
+class QGetPricingRunsV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetPricingRunsV3FilterOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QGetPricingRunsV3DebugInfo(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    content: str | None
+
+class QGetPricingRunsV3RunSummary(BaseModel):
+
+    run_id: UUID | None
+    created_at: str | None
+    input_tokens: int | None
+    output_tokens: int | None
+    cost: float | None
+    model_id: UUID | None
+    profile_id: UUID | None
+    agent_id: UUID | None
+    persona_id: UUID | None
+    debug_info: list[QGetPricingRunsV3DebugInfo] | None
+
+class QGetPricingRunsV3GroupRun(BaseModel):
+
+    group_id: UUID | None
+    created_at: str | None
+    run_count: int | None
+    total_input_tokens: int | None
+    total_output_tokens: int | None
+    total_cost: float | None
+    runs: list[QGetPricingRunsV3RunSummary] | None
+
+
+
+
+class QGetPricingRunsV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    input_ppm: float | None
+    output_ppm: float | None
+
+
+
+
+class QGetPricingRunsV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetPricingRunsV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+
+class GetPricingRunsSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    group_runs: list[QGetPricingRunsV3GroupRun] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    model_options: list[QGetPricingRunsV3FilterOption] | None = None
+    profile_options: list[QGetPricingRunsV3FilterOption] | None = None
+    actor_options: list[QGetPricingRunsV3FilterOption] | None = None
+    models: list[QGetPricingRunsV3Model] | None = None
+    profiles: list[QGetPricingRunsV3Profile] | None = None
+    agents: list[QGetPricingRunsV3Agent] | None = None
+    personas: list[QGetPricingRunsV3Persona] | None = None
+
+class GetPricingRunsApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    department_ids: list[UUID]
+    roles: list[str]
+    cohort_ids: list[UUID]
+    simulation_filters: list[str]
+    search: str
+    model_ids: list[UUID]
+    profile_ids: list[UUID]
+    actor_ids: list[UUID]
+    sort_by: str
+    sort_order: str
+    limit_count: int
+    offset_count: int
+
+class GetPricingRunsApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    group_runs: list[QGetPricingRunsV3GroupRun] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    model_options: list[QGetPricingRunsV3FilterOption] | None = None
+    profile_options: list[QGetPricingRunsV3FilterOption] | None = None
+    actor_options: list[QGetPricingRunsV3FilterOption] | None = None
+    models: list[QGetPricingRunsV3Model] | None = None
+    profiles: list[QGetPricingRunsV3Profile] | None = None
+    agents: list[QGetPricingRunsV3Agent] | None = None
+    personas: list[QGetPricingRunsV3Persona] | None = None
+
+
+
 # Generated from: authorize_emulation
 
 class AuthorizeEmulationSqlParams(BaseModel):
@@ -12868,6 +13240,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPracticeOverviewApiRequest",
         "GetPracticeOverviewApiResponse",
     ),
+    "app/sql/v3/pricing/get_pricing_analytics_complete.sql": (
+        "GetPricingAnalyticsSqlParams",
+        "GetPricingAnalyticsSqlRow",
+        "GetPricingAnalyticsApiRequest",
+        "GetPricingAnalyticsApiResponse",
+    ),
+    "app/sql/v3/pricing/get_pricing_group_detail_complete.sql": (
+        "GetPricingGroupDetailSqlParams",
+        "GetPricingGroupDetailSqlRow",
+        "GetPricingGroupDetailApiRequest",
+        "GetPricingGroupDetailApiResponse",
+    ),
+    "app/sql/v3/pricing/get_pricing_runs_complete.sql": (
+        "GetPricingRunsSqlParams",
+        "GetPricingRunsSqlRow",
+        "GetPricingRunsApiRequest",
+        "GetPricingRunsApiResponse",
+    ),
     "app/sql/v3/profile/authorize_emulation_complete.sql": (
         "AuthorizeEmulationSqlParams",
         "AuthorizeEmulationSqlRow",
@@ -13773,6 +14163,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/practice/get_practice_overview_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/pricing/get_pricing_analytics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/pricing/get_pricing_group_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/pricing/get_pricing_runs_complete.sql"]
     ) -> SqlString: ...
 
     @overload

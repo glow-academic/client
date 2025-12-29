@@ -1,26 +1,160 @@
--- Get group detail with all runs, messages, and pricing information
--- Parameters: $1=group_id (uuid), $2=profile_id (uuid)
--- Returns: group metadata, array of runs with messages, pricing info, and mappings
+-- Get pricing group detail with all runs, messages, and pricing information
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
-WITH resolve_profile_id AS (
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_pricing_group_detail_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_pricing_group_detail_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop types in dependency order: drop dependent types first (run_with_messages -> message -> content)
+-- Use prefix pattern to find all types, but drop in correct order
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Drop run_with_messages first (depends on message and run_metadata)
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_pricing_group_detail_v3_run_with_messages'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+    -- Drop message next (depends on content)
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_pricing_group_detail_v3_message'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+    -- Drop remaining types
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_pricing_group_detail_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_pricing_group_detail_v3_content AS (
+    idx int,
+    content text,
+    created_at timestamptz,
+    updated_at timestamptz
+);
+
+CREATE TYPE types.q_get_pricing_group_detail_v3_message AS (
+    id uuid,
+    role text,
+    contents types.q_get_pricing_group_detail_v3_content[],
+    created_at timestamptz,
+    updated_at timestamptz,
+    completed boolean,
+    run_idx int,
+    depth int
+);
+
+CREATE TYPE types.q_get_pricing_group_detail_v3_run_metadata AS (
+    id uuid,
+    created_at timestamptz,
+    input_tokens int,
+    output_tokens int,
+    cached_input_tokens int,
+    cost numeric,
+    model_id uuid,
+    agent_id uuid,
+    profile_id uuid,
+    persona_id uuid
+);
+
+CREATE TYPE types.q_get_pricing_group_detail_v3_run_with_messages AS (
+    run types.q_get_pricing_group_detail_v3_run_metadata,
+    messages types.q_get_pricing_group_detail_v3_message[],
+    previous_context_start_index int
+);
+
+CREATE TYPE types.q_get_pricing_group_detail_v3_model AS (
+    model_id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_pricing_group_detail_v3_agent AS (
+    agent_id uuid,
+    name text
+);
+
+CREATE TYPE types.q_get_pricing_group_detail_v3_profile AS (
+    profile_id uuid,
+    name text
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_pricing_group_detail_v3(
+    group_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    group_exists boolean,
+    group_id uuid,
+    actor_name text,
+    runs types.q_get_pricing_group_detail_v3_run_with_messages[],
+    models types.q_get_pricing_group_detail_v3_model[],
+    agents types.q_get_pricing_group_detail_v3_agent[],
+    profiles types.q_get_pricing_group_detail_v3_profile[]
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT 
+        group_id AS group_id,
+        profile_id AS profile_id
+),
+group_exists_check AS (
+    SELECT EXISTS(SELECT 1 FROM groups WHERE id = (SELECT group_id FROM params)) as group_exists
+),
+resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
-            ELSE $2::uuid
+            WHEN (SELECT profile_id FROM params) IS NULL THEN NULL::uuid
+            ELSE (SELECT profile_id FROM params)
         END as resolved_profile_id
 ),
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = (SELECT resolved_profile_id FROM resolve_profile_id)
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM params x
+    LEFT JOIN profiles p ON p.id = x.profile_id
+    WHERE x.profile_id IS NOT NULL
 ),
 group_runs_list AS (
     SELECT 
         gr.run_id
     FROM group_runs gr
-    WHERE gr.group_id = $1::uuid
+    WHERE gr.group_id = (SELECT group_id FROM params)
 ),
 runs_metadata AS (
     SELECT 
@@ -108,7 +242,7 @@ first_runs_map AS (
         gr.group_id,
         gr.run_id as first_run_id
     FROM group_runs gr
-    WHERE gr.idx = 0
+    WHERE gr.idx = 0 AND gr.group_id = (SELECT group_id FROM params)
 ),
 -- Map each run to its previous run (idx - 1) in the same group
 previous_runs_map AS (
@@ -119,14 +253,12 @@ previous_runs_map AS (
     FROM group_runs gr_current
     JOIN group_runs gr_previous ON gr_previous.group_id = gr_current.group_id
         AND gr_previous.idx = gr_current.idx - 1
-    WHERE gr_current.idx > 0  -- Only non-first runs have a previous run
+    WHERE gr_current.idx > 0 AND gr_current.group_id = (SELECT group_id FROM params)
 ),
 -- Tree traversal for messages: get all messages following conversation flow per run
 messages_with_tree AS (
     WITH RECURSIVE message_path AS (
         -- Base case: Include ALL messages from current run
-        -- We include all messages from the current run, regardless of whether they have children
-        -- The recursive traversal will handle following parent links
         SELECT 
             m.id, 
             rcm.run_id,
@@ -137,7 +269,7 @@ messages_with_tree AS (
             m.updated_at,
             0 as depth,
             m.id as path_root_id,
-            gr.idx as run_idx  -- Track run idx for ordering
+            gr.idx as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
@@ -151,11 +283,9 @@ messages_with_tree AS (
         UNION ALL
         
         -- Recursive case: Traverse up the tree following parent links
-        -- Only traverse to parents that are ancestors of messages in the current group
-        -- This prevents including system/developer messages from other groups
         SELECT 
             m.id, 
-            mp.run_id,  -- Keep the child's run_id (the run we're querying for)
+            mp.run_id,
             mp.chat_id,
             m.role, 
             m.created_at, 
@@ -163,17 +293,12 @@ messages_with_tree AS (
             m.updated_at,
             mp.depth + 1 as depth,
             mp.path_root_id,
-            mp.run_idx  -- Keep the run_idx from child (will be adjusted later if needed)
+            mp.run_idx
         FROM messages m
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
-        -- Only include parents that are linked to the same group as the child's run
-        -- AND where the parent-child relationship exists within that same group context
-        -- This ensures we don't traverse to system/developer messages from other groups
-        WHERE mp.depth < 50  -- Safety limit to prevent excessive recursion
+        WHERE mp.depth < 50
         AND EXISTS (
-            -- Verify parent is linked to the same group as the child's run
-            -- AND that the child (which we're traversing from) is also in that same group
             SELECT 1 
             FROM message_runs mr_parent
             JOIN group_runs gr_parent ON gr_parent.run_id = mr_parent.run_id
@@ -181,17 +306,11 @@ messages_with_tree AS (
             JOIN group_runs gr_child ON gr_child.run_id = mr_child.run_id
             WHERE mr_parent.message_id = m.id
             AND gr_parent.group_id = gr_child.group_id
-            AND gr_child.run_id = mp.run_id  -- Ensure child is from the run we're querying
-            -- For system/developer messages, they must be in first run (idx=0)
+            AND gr_child.run_id = mp.run_id
             AND (m.role IN ('user', 'assistant') OR gr_parent.idx = 0)
         )
     ),
-    -- Include messages without parents (backward compatibility for existing messages)
-    -- Use depth=0 for root messages (they will be ordered by created_at within message_tree structure)
-    -- For non-first runs: also include all messages from previous run in same group
     messages_without_parents AS (
-        -- Messages linked to current run that don't have parents and weren't captured in message_path
-        -- These are root messages in the tree, so depth=0
         SELECT 
             m.id, 
             rcm.run_id,
@@ -200,9 +319,9 @@ messages_with_tree AS (
             m.created_at, 
             m.completed, 
             m.updated_at,
-            0 as depth,  -- Root messages have depth 0 (will be ordered by created_at)
+            0 as depth,
             m.id as path_root_id,
-            gr.idx as run_idx  -- Track run idx for ordering
+            gr.idx as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
@@ -223,10 +342,6 @@ messages_with_tree AS (
         
         UNION
         
-        -- System/developer messages from first run (for non-first runs)
-        -- These are only linked to first run but should appear in all runs
-        -- Include them regardless of whether they have children (they link to user messages)
-        -- Use depth=0 as they are root messages in their run context
         SELECT 
             m.id, 
             rcm.run_id,
@@ -235,9 +350,9 @@ messages_with_tree AS (
             m.created_at, 
             m.completed, 
             m.updated_at,
-            0 as depth,  -- Root messages have depth 0 (will be ordered by created_at)
+            0 as depth,
             m.id as path_root_id,
-            0 as run_idx  -- System/dev messages are from first run (idx=0)
+            0 as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
@@ -252,20 +367,15 @@ messages_with_tree AS (
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
         )
         AND NOT EXISTS (
-            -- Don't include if already linked to current run
             SELECT 1 FROM message_runs mr2
             WHERE mr2.message_id = m.id AND mr2.run_id = rcm.run_id
         )
     ),
-    -- Combine tree-traversed messages and messages without parents
     all_messages AS (
         SELECT * FROM message_path
         UNION ALL
         SELECT * FROM messages_without_parents
     ),
-    -- Select distinct messages ordered by conversation flow
-    -- Adjust run_idx to reflect actual run the message belongs to
-    -- Deduplicate: if same message appears multiple times, keep only the one with minimum depth
     message_run_idx AS (
         SELECT DISTINCT ON (am.id, am.run_id)
             am.id,
@@ -276,7 +386,6 @@ messages_with_tree AS (
             am.completed,
             am.updated_at,
             am.depth,
-            -- Get actual run idx: prefer message's own run, fallback to child's run_idx
             COALESCE(
                 (SELECT gr.idx FROM message_runs mr2 
                  JOIN group_runs gr ON gr.run_id = mr2.run_id 
@@ -311,22 +420,11 @@ messages_with_content AS (
         mwt.run_idx,
         mwt.depth,
         COALESCE(
-            jsonb_agg(
-                jsonb_build_object(
-                    'idx', mc.idx,
-                    'content', mc.content,
-                    'createdAt', mc.created_at,
-                    'updatedAt', mc.updated_at
-                ) ORDER BY mc.idx
+            ARRAY_AGG(
+                (mc.idx, mc.content, mc.created_at, mc.updated_at)::types.q_get_pricing_group_detail_v3_content
+                ORDER BY mc.idx
             ) FILTER (WHERE mc.idx IS NOT NULL),
-            jsonb_build_array(
-                jsonb_build_object(
-                    'idx', 0,
-                    'content', '',
-                    'createdAt', mwt.created_at,
-                    'updatedAt', mwt.updated_at
-                )
-            )
+            ARRAY[(0, '', mwt.created_at, mwt.updated_at)::types.q_get_pricing_group_detail_v3_content]
         ) as contents
     FROM messages_with_tree mwt
     LEFT JOIN message_content mc ON mc.message_id = mwt.id
@@ -342,29 +440,18 @@ runs_with_idx AS (
     JOIN group_runs gr ON gr.run_id = rm.run_id
 ),
 -- For each run, find the latest message and traverse up message_tree to get all ancestors
--- This preserves message_tree ordering (source of truth) and includes all previous context
 runs_with_messages AS (
     SELECT 
         current_run.run_id,
         current_run.run_idx as current_run_idx,
         COALESCE(
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', ancestor_msg.id::text,
-                    'role', ancestor_msg.role,
-                    'contents', ancestor_msg.contents,
-                    'createdAt', ancestor_msg.created_at,
-                    'updatedAt', ancestor_msg.updated_at,
-                    'completed', ancestor_msg.completed,
-                    'runIdx', ancestor_msg.run_idx,
-                    'depth', COALESCE(ancestor_msg.depth, 0)  -- Depth from root (0 = root, increases toward latest message)
-                ) ORDER BY 
-                    ancestor_msg.depth ASC  -- Order by depth: root messages (depth 0) first, latest message (highest depth) last
+            ARRAY_AGG(
+                (ancestor_msg.id, ancestor_msg.role, ancestor_msg.contents, ancestor_msg.created_at, ancestor_msg.updated_at, ancestor_msg.completed, ancestor_msg.run_idx, COALESCE(ancestor_msg.depth, 0))::types.q_get_pricing_group_detail_v3_message
+                ORDER BY ancestor_msg.depth ASC
             ) FILTER (WHERE ancestor_msg.id IS NOT NULL),
-            '[]'::jsonb
+            '{}'::types.q_get_pricing_group_detail_v3_message[]
         ) as messages
     FROM runs_with_idx current_run
-    -- Find the latest message in the current run (most recent assistant message, or user if no assistant)
     LEFT JOIN LATERAL (
         SELECT m.id, m.created_at
         FROM message_runs mr
@@ -372,76 +459,48 @@ runs_with_messages AS (
         WHERE mr.run_id = current_run.run_id
         AND m.role IN ('user', 'assistant')
         ORDER BY 
-            CASE WHEN m.role = 'assistant' THEN 0 ELSE 1 END,  -- Prefer assistant over user
+            CASE WHEN m.role = 'assistant' THEN 0 ELSE 1 END,
             m.created_at DESC
         LIMIT 1
     ) latest_msg ON true
-    -- Traverse up message_tree from latest message to get all ancestors
-    -- Only traverse within the current group's context
     LEFT JOIN LATERAL (
         WITH RECURSIVE ancestor_path AS (
-            -- Start from the latest message
             SELECT 
                 m.id,
                 m.role,
-                mc.contents,
+                mwc.contents,
                 m.created_at,
                 m.updated_at,
                 m.completed,
                 current_run.run_idx as run_idx,
-                0 as depth_from_latest  -- Track depth from latest message (for ordering)
+                0 as depth_from_latest
             FROM messages m
-            LEFT JOIN LATERAL (
-                SELECT jsonb_agg(
-                    jsonb_build_object(
-                        'idx', mc2.idx,
-                        'content', mc2.content,
-                        'createdAt', mc2.created_at,
-                        'updatedAt', mc2.updated_at
-                    ) ORDER BY mc2.idx
-                ) FILTER (WHERE mc2.idx IS NOT NULL) as contents
-                FROM message_content mc2
-                WHERE mc2.message_id = m.id
-            ) mc ON true
+            LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
             WHERE m.id = latest_msg.id
             
             UNION ALL
             
-            -- Traverse up to parent, but only if parent is in the same group
             SELECT 
                 m.id,
                 m.role,
-                mc.contents,
+                mwc.contents,
                 m.created_at,
                 m.updated_at,
                 m.completed,
-                -- Get run_idx: prefer message's own run (from message_runs), fallback to child's run_idx
                 COALESCE(
                     (SELECT gr.idx FROM message_runs mr2 
                      JOIN group_runs gr ON gr.run_id = mr2.run_id 
                      WHERE mr2.message_id = m.id 
-                     AND gr.group_id = current_run.group_id  -- Ensure same group
+                     AND gr.group_id = current_run.group_id
                      ORDER BY gr.idx LIMIT 1),
                     ap.run_idx
                 ) as run_idx,
-                ap.depth_from_latest + 1 as depth_from_latest  -- Increase depth as we go up
+                ap.depth_from_latest + 1 as depth_from_latest
             FROM messages m
             JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
             JOIN ancestor_path ap ON ap.id = mt.child_id
-            LEFT JOIN LATERAL (
-                SELECT jsonb_agg(
-                    jsonb_build_object(
-                        'idx', mc2.idx,
-                        'content', mc2.content,
-                        'createdAt', mc2.created_at,
-                        'updatedAt', mc2.updated_at
-                    ) ORDER BY mc2.idx
-                ) FILTER (WHERE mc2.idx IS NOT NULL) as contents
-                FROM message_content mc2
-                WHERE mc2.message_id = m.id
-            ) mc ON true
-            -- Ensure parent is in the same group (via message_runs -> group_runs)
-            WHERE ap.depth_from_latest < 50  -- Safety limit
+            LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
+            WHERE ap.depth_from_latest < 50
             AND EXISTS (
                 SELECT 1 
                 FROM message_runs mr_parent
@@ -450,9 +509,6 @@ runs_with_messages AS (
                 AND gr_parent.group_id = current_run.group_id
             )
         )
-        -- Calculate actual depth from root (reverse depth_from_latest)
-        -- Root messages have depth 0, latest message has highest depth
-        -- Window function should work here - calculate max depth and subtract
         SELECT 
             ap.id,
             ap.role,
@@ -461,61 +517,40 @@ runs_with_messages AS (
             ap.updated_at,
             ap.completed,
             ap.run_idx,
-            -- Calculate depth: max_depth - depth_from_latest
-            -- Root messages (highest depth_from_latest) have depth 0
-            -- Latest message (depth_from_latest = 0) has highest depth
-            -- Window function calculates max across all rows in ancestor_path
             (MAX(ap.depth_from_latest) OVER () - ap.depth_from_latest)::integer as depth
         FROM ancestor_path ap
     ) ancestor_msg ON true
     GROUP BY current_run.run_id, current_run.run_idx
 ),
 -- Calculate previousContextStartIndex for each run
--- Need to preserve the exact ordering from message_tree (depth-based) which is the source of truth
+-- Need to find first message index where run_idx equals current run idx
 runs_with_context_index AS (
     SELECT 
         rwm.run_id,
         rwm.current_run_idx,
         rwm.messages,
-        -- Calculate previousContextStartIndex: find first message index where runIdx equals current run idx
-        -- This indicates where the current run's messages start (after previous context)
-        -- For first run (idx=0), this will be NULL (no previous context)
-        -- Ordering must EXACTLY match the ordering used in runs_with_messages aggregation
-        -- which uses depth from message_tree as the source of truth
         CASE 
             WHEN rwm.current_run_idx = 0 THEN NULL::integer
             ELSE (
-                -- Re-query messages_with_content to get depth information for proper ordering
-                -- This ensures we match the exact ordering from message_tree
-                SELECT msg_idx
+                SELECT MIN(msg_idx) - 1
                 FROM (
                     SELECT 
                         row_number() OVER (ORDER BY 
-                            -- EXACT match to runs_with_messages ordering (preserves message_tree order):
-                            -- 1. Depth from message_tree (source of truth) - now available in JSON
-                            CASE WHEN (msg->>'depth') IS NULL THEN 999999 ELSE (msg->>'depth')::integer END ASC,
-                            -- 2. Role-based ordering (tiebreaker)
+                            m.depth ASC,
                             CASE 
-                                WHEN (msg->>'role') = 'system' THEN 1
-                                WHEN (msg->>'role') = 'developer' THEN 2
-                                WHEN (msg->>'role') = 'user' THEN 3
-                                WHEN (msg->>'role') = 'assistant' THEN 4
+                                WHEN m.role = 'system' THEN 1
+                                WHEN m.role = 'developer' THEN 2
+                                WHEN m.role = 'user' THEN 3
+                                WHEN m.role = 'assistant' THEN 4
                                 ELSE 5
                             END,
-                            -- 3. Then by runIdx (messages from earlier runs come first)
-                            CASE WHEN (msg->>'runIdx') IS NULL THEN 999999 ELSE (msg->>'runIdx')::integer END,
-                            -- 4. Then by createdAt for consistent ordering
-                            (msg->>'createdAt')
-                        ) - 1 as msg_idx,
-                        CASE 
-                            WHEN (msg->>'runIdx') IS NULL THEN 999999
-                            ELSE (msg->>'runIdx')::integer
-                        END as msg_run_idx
-                    FROM jsonb_array_elements(rwm.messages) as msg
+                            m.run_idx,
+                            m.created_at
+                        ) as msg_idx,
+                        m.run_idx
+                    FROM unnest(rwm.messages) m
                 ) indexed_msgs
-                WHERE indexed_msgs.msg_run_idx = rwm.current_run_idx
-                ORDER BY indexed_msgs.msg_idx
-                LIMIT 1
+                WHERE indexed_msgs.run_idx = rwm.current_run_idx
             )
         END as previous_context_start_index
     FROM runs_with_messages rwm
@@ -533,80 +568,58 @@ runs_detail AS (
         rm.profile_id,
         rm.persona_id,
         COALESCE(rc.run_cost, 0) as cost,
-        COALESCE(rwci.messages, '[]'::jsonb) as messages,
+        COALESCE(rwci.messages, '{}'::types.q_get_pricing_group_detail_v3_message[]) as messages,
         rwci.previous_context_start_index
     FROM runs_metadata rm
     LEFT JOIN run_costs rc ON rc.run_id = rm.run_id
     LEFT JOIN runs_with_context_index rwci ON rwci.run_id = rm.run_id
-),
--- Build model mapping
-model_mapping_data AS (
-    SELECT 
-        jsonb_object_agg(
-            m.id::text,
-            jsonb_build_object(
-                'name', m.name,
-                'description', COALESCE(m.description, '')
-            )
-        ) as model_mapping
-    FROM runs_metadata rm
-    LEFT JOIN models m ON m.id = rm.model_id
-    WHERE m.id IS NOT NULL
-),
--- Build agent mapping
-agent_mapping_data AS (
-    SELECT 
-        jsonb_object_agg(
-            a.id::text,
-            a.name
-        ) as agent_mapping
-    FROM runs_metadata rm
-    LEFT JOIN agents a ON a.id = rm.agent_id
-    WHERE a.id IS NOT NULL
-),
--- Build profile mapping
-profile_mapping_data AS (
-    SELECT 
-        jsonb_object_agg(
-            p.id::text,
-            p.first_name || ' ' || p.last_name
-        ) as profile_mapping
-    FROM runs_metadata rm
-    LEFT JOIN profiles p ON p.id = rm.profile_id
-    WHERE p.id IS NOT NULL
 )
 SELECT 
+    (SELECT group_exists FROM group_exists_check)::boolean as group_exists,
+    (SELECT group_id FROM params)::uuid as group_id,
+    COALESCE((SELECT actor_name FROM user_profile LIMIT 1), 'System')::text as actor_name,
     CASE 
         WHEN (SELECT has_access FROM group_access_check) = false THEN
-            NULL::jsonb
+            '{}'::types.q_get_pricing_group_detail_v3_run_with_messages[]
         ELSE
-            jsonb_build_object(
-                'group_id', $1::text,
-                'runs', COALESCE(
-                    (SELECT jsonb_agg(
-                        jsonb_build_object(
-                            'id', rd.run_id::text,
-                            'createdAt', rd.created_at,
-                            'inputTokens', rd.input_tokens,
-                            'outputTokens', rd.output_tokens,
-                            'cachedInputTokens', rd.cached_input_tokens,
-                            'cost', rd.cost,
-                            'modelId', CASE WHEN rd.model_id IS NOT NULL THEN rd.model_id::text ELSE NULL END,
-                            'agentId', CASE WHEN rd.agent_id IS NOT NULL THEN rd.agent_id::text ELSE NULL END,
-                            'profileId', CASE WHEN rd.profile_id IS NOT NULL THEN rd.profile_id::text ELSE NULL END,
-                            'personaId', CASE WHEN rd.persona_id IS NOT NULL THEN rd.persona_id::text ELSE NULL END,
-                            'messages', rd.messages,
-                            'previousContextStartIndex', rd.previous_context_start_index
-                        ) ORDER BY rd.created_at
-                    )
-                    FROM runs_detail rd),
-                    '[]'::jsonb
+            COALESCE(
+                ARRAY_AGG(
+                    (
+                        (rd.run_id, rd.created_at, rd.input_tokens, rd.output_tokens, rd.cached_input_tokens, rd.cost, rd.model_id, rd.agent_id, rd.profile_id, rd.persona_id)::types.q_get_pricing_group_detail_v3_run_metadata,
+                        rd.messages,
+                        rd.previous_context_start_index
+                    )::types.q_get_pricing_group_detail_v3_run_with_messages
+                    ORDER BY rd.created_at
                 ),
-                'modelMapping', COALESCE((SELECT model_mapping FROM model_mapping_data LIMIT 1), '{}'::jsonb),
-                'agentMapping', COALESCE((SELECT agent_mapping FROM agent_mapping_data LIMIT 1), '{}'::jsonb),
-                'profileMapping', COALESCE((SELECT profile_mapping FROM profile_mapping_data LIMIT 1), '{}'::jsonb)
+                '{}'::types.q_get_pricing_group_detail_v3_run_with_messages[]
             )
-    END as result
-FROM (SELECT $1::uuid as group_id) g
-WHERE EXISTS (SELECT 1 FROM groups WHERE id = g.group_id);
+    END as runs,
+    COALESCE(
+        ARRAY_AGG(
+            DISTINCT (m.id, m.name, COALESCE(m.description, ''))::types.q_get_pricing_group_detail_v3_model
+        ) FILTER (WHERE m.id IS NOT NULL),
+        '{}'::types.q_get_pricing_group_detail_v3_model[]
+    ) as models,
+    COALESCE(
+        ARRAY_AGG(
+            DISTINCT (a.id, a.name)::types.q_get_pricing_group_detail_v3_agent
+        ) FILTER (WHERE a.id IS NOT NULL),
+        '{}'::types.q_get_pricing_group_detail_v3_agent[]
+    ) as agents,
+    COALESCE(
+        ARRAY_AGG(
+            DISTINCT (p.id, p.first_name || ' ' || p.last_name)::types.q_get_pricing_group_detail_v3_profile
+        ) FILTER (WHERE p.id IS NOT NULL),
+        '{}'::types.q_get_pricing_group_detail_v3_profile[]
+    ) as profiles
+FROM runs_detail rd
+LEFT JOIN models m ON m.id = rd.model_id
+LEFT JOIN agents a ON a.id = rd.agent_id
+LEFT JOIN profiles p ON p.id = rd.profile_id
+CROSS JOIN group_exists_check gec
+CROSS JOIN group_access_check gac
+WHERE (SELECT group_exists FROM group_exists_check) = true
+GROUP BY (SELECT group_exists FROM group_exists_check), (SELECT group_id FROM params), (SELECT actor_name FROM user_profile LIMIT 1), (SELECT has_access FROM group_access_check)
+$$;
 
+COMMIT;

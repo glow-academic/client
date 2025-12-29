@@ -166,8 +166,16 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   );
 
   // Fetch summary data server-side (for chart - all runs, no pagination)
+  // Convert camelCase to snake_case for API
   const pricingData = await getPricingAnalytics({
-    body: filters,
+    body: {
+      start_date: filters.startDate,
+      end_date: filters.endDate,
+      cohort_ids: filters.cohortIds,
+      department_ids: filters.departmentIds,
+      roles: filters.roles,
+      simulation_filters: filters.simulationFilters,
+    },
   });
 
   // Extract pagination and filter params from search params for runs table
@@ -213,18 +221,18 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
   // Create empty runs data for loading state
   const emptyRunsData: PricingRunsOut = {
-    data: [],
-    totalCount: 0,
+    group_runs: [],
+    total_count: 0,
     page: pricingPage,
-    pageSize: pricingPageSize,
-    totalPages: 0,
-    modelOptions: [],
-    profileOptions: [],
-    actorOptions: [],
-    model_mapping: {},
-    profile_mapping: {},
-    agent_mapping: {},
-    persona_mapping: {},
+    page_size: pricingPageSize,
+    total_pages: 0,
+    model_options: [],
+    profile_options: [],
+    actor_options: [],
+    models: [],
+    profiles: [],
+    agents: [],
+    personas: [],
   };
 
   return (
@@ -284,25 +292,22 @@ async function PricingRunsSection({
   pricingSortOrder: string;
 }) {
   // Build runs filters with pagination/search/sorting/filtering params
+  // Convert camelCase to snake_case for API
   const runsFilters = {
-    ...filters,
-    page: pricingPage,
-    pageSize: pricingPageSize,
-    ...(pricingSearch && { search: pricingSearch }),
-    sortBy: pricingSortBy,
-    sortOrder: pricingSortOrder,
-    ...(pricingModelIds &&
-      pricingModelIds.length > 0 && {
-        modelIds: pricingModelIds,
-      }),
-    ...(pricingProfileIds &&
-      pricingProfileIds.length > 0 && {
-        profileIds: pricingProfileIds,
-      }),
-    ...(pricingActorIds &&
-      pricingActorIds.length > 0 && {
-        actorIds: pricingActorIds,
-      }),
+    start_date: filters.startDate,
+    end_date: filters.endDate,
+    cohort_ids: filters.cohortIds,
+    department_ids: filters.departmentIds,
+    roles: filters.roles,
+    simulation_filters: filters.simulationFilters,
+    search: pricingSearch || "",
+    model_ids: pricingModelIds || [],
+    profile_ids: pricingProfileIds || [],
+    actor_ids: pricingActorIds || [],
+    sort_by: pricingSortBy,
+    sort_order: pricingSortOrder,
+    limit_count: pricingPageSize,
+    offset_count: pricingPage * pricingPageSize,
   };
 
   // Fetch runs data server-side

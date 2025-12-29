@@ -31,11 +31,27 @@ type DebugInfoItem = {
   content: string;
 };
 
-type ModelMappingWithPricing = {
+type ModelWithPricing = {
+  model_id: string;
   name: string;
   description: string;
   input_ppm: number;
   output_ppm: number;
+};
+
+type ProfileItem = {
+  profile_id: string;
+  name: string;
+};
+
+type AgentItem = {
+  agent_id: string;
+  name: string;
+};
+
+type PersonaItem = {
+  persona_id: string;
+  name: string;
 };
 
 const currency = (value: number) =>
@@ -85,10 +101,10 @@ export interface GroupRunRow {
 
 export interface RunsDataTableProps {
   rows: GroupRunRow[];
-  modelMapping: Record<string, ModelMappingWithPricing>;
-  profileMapping: Record<string, string>;
-  agentMapping: Record<string, string>;
-  personaMapping: Record<string, string>;
+  models: ModelWithPricing[];
+  profiles: ProfileItem[];
+  agents: AgentItem[];
+  personas: PersonaItem[];
   isLoading?: boolean;
   modelOptions: Array<{ value: string; label: string; count?: number }>;
   profileOptions: Array<{ value: string; label: string; count?: number }>;
@@ -99,10 +115,10 @@ export interface RunsDataTableProps {
 
 export function RunsDataTable({
   rows,
-  modelMapping: _modelMapping,
-  profileMapping: _profileMapping,
-  agentMapping: _agentMapping,
-  personaMapping: _personaMapping,
+  models: _models,
+  profiles: _profiles,
+  agents: _agents,
+  personas: _personas,
   isLoading = false,
   modelOptions,
   profileOptions,

@@ -103,9 +103,11 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   }, [groupDetail, isGroupResponse]);
 
   const runs = useMemo(() => groupDetailTyped?.runs ?? [], [groupDetailTyped]);
-  const modelMapping = groupDetailTyped?.modelMapping ?? {};
-  const agentMapping = groupDetailTyped?.agentMapping ?? {};
-  const profileMapping = groupDetailTyped?.profileMapping ?? {};
+  
+  // Use arrays directly (no mapping construction)
+  const models = useMemo(() => groupDetailTyped?.models || [], [groupDetailTyped?.models]);
+  const agents = useMemo(() => groupDetailTyped?.agents || [], [groupDetailTyped?.agents]);
+  const profiles = useMemo(() => groupDetailTyped?.profiles || [], [groupDetailTyped?.profiles]);
 
   // Sort runs chronologically
   const sortedRuns = useMemo(() => {
@@ -114,8 +116,8 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
     }
     return [...runs].sort(
       (a, b) =>
-        new Date(a.run.createdAt).getTime() -
-        new Date(b.run.createdAt).getTime()
+        new Date(a.run.created_at).getTime() -
+        new Date(b.run.created_at).getTime()
     );
   }, [runs, isGroupResponse]);
 
@@ -134,12 +136,12 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
     let messagesToFilter = currentRun.messages;
     if (
       !showPreviousContext &&
-      currentRun.previousContextStartIndex !== null &&
-      currentRun.previousContextStartIndex !== undefined
+      currentRun.previous_context_start_index !== null &&
+      currentRun.previous_context_start_index !== undefined
     ) {
-      // Hide messages before the previousContextStartIndex (these are from previous runs)
+      // Hide messages before the previous_context_start_index (these are from previous runs)
       messagesToFilter = currentRun.messages.slice(
-        currentRun.previousContextStartIndex
+        currentRun.previous_context_start_index
       );
     }
 
@@ -171,17 +173,17 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   // Messages are already ordered by message_tree from server, no need to sort
 
   const modelName =
-    run.modelId && modelMapping[run.modelId]
-      ? (modelMapping[run.modelId]?.["name"] ?? run.modelId)
-      : run.modelId || "Unknown";
+    run.model_id
+      ? (models.find(m => m.model_id === run.model_id)?.name ?? run.model_id)
+      : "Unknown";
   const agentName =
-    run.agentId && agentMapping[run.agentId]
-      ? agentMapping[run.agentId]
-      : run.agentId || "Unknown";
+    run.agent_id
+      ? (agents.find(a => a.agent_id === run.agent_id)?.name ?? run.agent_id)
+      : "Unknown";
   const profileName =
-    run.profileId && profileMapping[run.profileId]
-      ? profileMapping[run.profileId]
-      : run.profileId || "Unknown";
+    run.profile_id
+      ? (profiles.find(p => p.profile_id === run.profile_id)?.name ?? run.profile_id)
+      : "Unknown";
 
   return (
     <div className="flex flex-col">
@@ -247,19 +249,19 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
             <div>
               <div className="text-sm text-muted-foreground">Input Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber(run.inputTokens)}
+                {formatNumber(run.input_tokens)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Output Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber(run.outputTokens)}
+                {formatNumber(run.output_tokens)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Cached Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber(run.cachedInputTokens)}
+                {formatNumber(run.cached_input_tokens)}
               </div>
             </div>
           </div>
@@ -279,7 +281,7 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
             </div>
             <div>
               <span className="text-muted-foreground">Created: </span>
-              <span className="font-medium">{formatDate(run.createdAt)}</span>
+              <span className="font-medium">{formatDate(run.created_at)}</span>
             </div>
           </div>
         </div>
@@ -305,9 +307,9 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                     (m) => m.id === message.id
                   );
                   const isPreviousContextBoundary =
-                    currentRun.previousContextStartIndex !== null &&
-                    currentRun.previousContextStartIndex !== undefined &&
-                    originalIndex === currentRun.previousContextStartIndex &&
+                    currentRun.previous_context_start_index !== null &&
+                    currentRun.previous_context_start_index !== undefined &&
+                    originalIndex === currentRun.previous_context_start_index &&
                     showPreviousContext; // Only show boundary when previous context is visible
 
                   return (

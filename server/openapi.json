@@ -12447,7 +12447,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PricingAnalyticsFilters"
+                "$ref": "#/components/schemas/GetPricingAnalyticsApiRequest"
               }
             }
           }
@@ -12458,7 +12458,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PricingAnalyticsResponse"
+                  "$ref": "#/components/schemas/GetPricingAnalyticsApiResponse"
                 }
               }
             }
@@ -12528,7 +12528,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PricingRunsFilters"
+                "$ref": "#/components/schemas/GetPricingRunsApiRequest"
               }
             }
           }
@@ -12539,7 +12539,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PricingRunsResponse"
+                  "$ref": "#/components/schemas/GetPricingRunsApiResponse"
                 }
               }
             }
@@ -12609,7 +12609,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PricingRunDetailRequest"
+                "$ref": "#/components/schemas/GetPricingGroupDetailApiRequest"
               }
             }
           }
@@ -12620,15 +12620,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/PricingRunDetailResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PricingGroupDetailResponse"
-                    }
-                  ],
-                  "title": "Response Get Pricing Run Detail Api V3 Pricing Detail Post"
+                  "$ref": "#/components/schemas/GetPricingGroupDetailApiResponse"
                 }
               }
             }
@@ -22916,7 +22908,7 @@
           },
           "messages": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__attempts__simulation__MessageItem"
+              "$ref": "#/components/schemas/MessageItem"
             },
             "type": "array",
             "title": "Messages"
@@ -23262,35 +23254,6 @@
         ],
         "title": "ConnectionConfirmedPayload",
         "description": "Response indicating WebSocket connection was confirmed."
-      },
-      "ContentItem": {
-        "properties": {
-          "idx": {
-            "type": "integer",
-            "title": "Idx"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "idx",
-          "content",
-          "createdAt",
-          "updatedAt"
-        ],
-        "title": "ContentItem",
-        "description": "Content entry schema."
       },
       "ContinuationOption": {
         "properties": {
@@ -25583,30 +25546,6 @@
         },
         "type": "object",
         "title": "CreateSimulationApiResponse"
-      },
-      "DebugInfoItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "created_at",
-          "content"
-        ],
-        "title": "DebugInfoItem",
-        "description": "Debug information item."
       },
       "DeleteAgentApiRequest": {
         "properties": {
@@ -37886,6 +37825,532 @@
         "type": "object",
         "title": "GetPracticeOverviewApiResponse"
       },
+      "GetPricingAnalyticsApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "simulation_filters": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Filters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "department_ids",
+          "roles",
+          "cohort_ids",
+          "simulation_filters"
+        ],
+        "title": "GetPricingAnalyticsApiRequest"
+      },
+      "GetPricingAnalyticsApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "model_runs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingAnalyticsV3ModelRun"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Runs"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingAnalyticsV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingAnalyticsV3Profile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profiles"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingAnalyticsV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingAnalyticsV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingAnalyticsApiResponse"
+      },
+      "GetPricingGroupDetailApiRequest": {
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id"
+        ],
+        "title": "GetPricingGroupDetailApiRequest"
+      },
+      "GetPricingGroupDetailApiResponse": {
+        "properties": {
+          "group_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Exists"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "runs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingGroupDetailV3RunWithMessages"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingGroupDetailV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingGroupDetailV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingGroupDetailV3Profile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profiles"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingGroupDetailApiResponse"
+      },
+      "GetPricingRunsApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "simulation_filters": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Filters"
+          },
+          "search": {
+            "type": "string",
+            "title": "Search"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "actor_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Actor Ids"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order"
+          },
+          "limit_count": {
+            "type": "integer",
+            "title": "Limit Count"
+          },
+          "offset_count": {
+            "type": "integer",
+            "title": "Offset Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "department_ids",
+          "roles",
+          "cohort_ids",
+          "simulation_filters",
+          "search",
+          "model_ids",
+          "profile_ids",
+          "actor_ids",
+          "sort_by",
+          "sort_order",
+          "limit_count",
+          "offset_count"
+        ],
+        "title": "GetPricingRunsApiRequest"
+      },
+      "GetPricingRunsApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "group_runs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3GroupRun"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Runs"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pages"
+          },
+          "model_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Options"
+          },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options"
+          },
+          "actor_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Options"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3Profile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profiles"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingRunsApiResponse"
+      },
       "GetProfileByEmailApiRequest": {
         "properties": {
           "email": {
@@ -44609,53 +45074,6 @@
         ],
         "title": "GradingState"
       },
-      "GroupRunItem": {
-        "properties": {
-          "group_id": {
-            "type": "string",
-            "title": "Group Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "run_count": {
-            "type": "integer",
-            "title": "Run Count"
-          },
-          "total_input_tokens": {
-            "type": "integer",
-            "title": "Total Input Tokens"
-          },
-          "total_output_tokens": {
-            "type": "integer",
-            "title": "Total Output Tokens"
-          },
-          "total_cost": {
-            "type": "number",
-            "title": "Total Cost"
-          },
-          "runs": {
-            "items": {
-              "$ref": "#/components/schemas/RunSummaryItem"
-            },
-            "type": "array",
-            "title": "Runs"
-          }
-        },
-        "type": "object",
-        "required": [
-          "group_id",
-          "created_at",
-          "run_count",
-          "total_input_tokens",
-          "total_output_tokens",
-          "total_cost",
-          "runs"
-        ],
-        "title": "GroupRunItem",
-        "description": "Group run item with aggregated metrics across multiple runs."
-      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -46741,6 +47159,74 @@
         "title": "MessageImprovementToolPayload",
         "description": "Request to add improvement feedback to a message."
       },
+      "MessageItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "chatId": {
+            "type": "string",
+            "title": "Chatid"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MessageFeedbackItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "chatId",
+          "content",
+          "type",
+          "completed"
+        ],
+        "title": "MessageItem"
+      },
       "MessageSentPayload": {
         "properties": {
           "message_id": {
@@ -46916,122 +47402,6 @@
         ],
         "title": "MessageStrengthToolPayload",
         "description": "Request to add strength feedback to a message."
-      },
-      "ModelMappingWithPricing": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "input_ppm": {
-            "type": "number",
-            "title": "Input Ppm"
-          },
-          "output_ppm": {
-            "type": "number",
-            "title": "Output Ppm"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "input_ppm",
-          "output_ppm"
-        ],
-        "title": "ModelMappingWithPricing",
-        "description": "Model mapping with pricing information."
-      },
-      "ModelRunItem": {
-        "properties": {
-          "model_run_id": {
-            "type": "string",
-            "title": "Model Run Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "input_tokens": {
-            "type": "integer",
-            "title": "Input Tokens"
-          },
-          "output_tokens": {
-            "type": "integer",
-            "title": "Output Tokens"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "debug_info": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DebugInfoItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Debug Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "model_run_id",
-          "created_at",
-          "input_tokens",
-          "output_tokens"
-        ],
-        "title": "ModelRunItem",
-        "description": "Model run item with aggregated metrics."
       },
       "ObjectivesToolCompletePayload": {
         "properties": {
@@ -47338,517 +47708,6 @@
           "percentage"
         ],
         "title": "PreviousChat"
-      },
-      "PricingAnalyticsFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulationFilters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SimulationFilter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationfilters"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "startDate",
-          "endDate"
-        ],
-        "title": "PricingAnalyticsFilters",
-        "description": "Pricing analytics filter request schema."
-      },
-      "PricingAnalyticsResponse": {
-        "properties": {
-          "model_runs": {
-            "items": {
-              "$ref": "#/components/schemas/ModelRunItem"
-            },
-            "type": "array",
-            "title": "Model Runs"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingWithPricing"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          },
-          "profile_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Profile Mapping"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "model_runs",
-          "model_mapping",
-          "profile_mapping",
-          "agent_mapping",
-          "persona_mapping"
-        ],
-        "title": "PricingAnalyticsResponse",
-        "description": "Response for pricing analytics."
-      },
-      "PricingGroupDetailResponse": {
-        "properties": {
-          "groupId": {
-            "type": "string",
-            "title": "Groupid"
-          },
-          "runs": {
-            "items": {
-              "$ref": "#/components/schemas/RunWithMessages"
-            },
-            "type": "array",
-            "title": "Runs"
-          },
-          "modelMapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Modelmapping"
-          },
-          "agentMapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Agentmapping"
-          },
-          "profileMapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Profilemapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "groupId",
-          "runs",
-          "modelMapping",
-          "agentMapping",
-          "profileMapping"
-        ],
-        "title": "PricingGroupDetailResponse",
-        "description": "Response schema for pricing group detail (multiple runs)."
-      },
-      "PricingRunDetailRequest": {
-        "properties": {
-          "groupId": {
-            "type": "string",
-            "title": "Groupid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "groupId"
-        ],
-        "title": "PricingRunDetailRequest",
-        "description": "Request schema for pricing run detail."
-      },
-      "PricingRunDetailResponse": {
-        "properties": {
-          "run": {
-            "$ref": "#/components/schemas/RunMetadata"
-          },
-          "messages": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__pricing__detail__MessageItem"
-            },
-            "type": "array",
-            "title": "Messages"
-          },
-          "modelMapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Modelmapping"
-          },
-          "agentMapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Agentmapping"
-          },
-          "profileMapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Profilemapping"
-          },
-          "previousContextStartIndex": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previouscontextstartindex"
-          }
-        },
-        "type": "object",
-        "required": [
-          "run",
-          "messages",
-          "modelMapping",
-          "agentMapping",
-          "profileMapping"
-        ],
-        "title": "PricingRunDetailResponse",
-        "description": "Response schema for pricing run detail (single run - backward compatible)."
-      },
-      "PricingRunsFilters": {
-        "properties": {
-          "startDate": {
-            "type": "string",
-            "title": "Startdate"
-          },
-          "endDate": {
-            "type": "string",
-            "title": "Enddate"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulationFilters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SimulationFilter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulationfilters"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page"
-          },
-          "pageSize": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pagesize"
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "sortBy": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sortby"
-          },
-          "sortOrder": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sortorder"
-          },
-          "modelIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modelids"
-          },
-          "profileIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileids"
-          },
-          "actorIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actorids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "startDate",
-          "endDate"
-        ],
-        "title": "PricingRunsFilters",
-        "description": "Pricing runs filter request schema."
-      },
-      "PricingRunsResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/GroupRunItem"
-            },
-            "type": "array",
-            "title": "Data"
-          },
-          "totalCount": {
-            "type": "integer",
-            "title": "Totalcount"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
-          },
-          "totalPages": {
-            "type": "integer",
-            "title": "Totalpages"
-          },
-          "modelOptions": {
-            "items": {
-              "$ref": "#/components/schemas/FilterOption"
-            },
-            "type": "array",
-            "title": "Modeloptions",
-            "default": []
-          },
-          "profileOptions": {
-            "items": {
-              "$ref": "#/components/schemas/FilterOption"
-            },
-            "type": "array",
-            "title": "Profileoptions",
-            "default": []
-          },
-          "actorOptions": {
-            "items": {
-              "$ref": "#/components/schemas/FilterOption"
-            },
-            "type": "array",
-            "title": "Actoroptions",
-            "default": []
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingWithPricing"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          },
-          "profile_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Profile Mapping"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data",
-          "totalCount",
-          "page",
-          "pageSize",
-          "totalPages",
-          "model_mapping",
-          "profile_mapping",
-          "agent_mapping",
-          "persona_mapping"
-        ],
-        "title": "PricingRunsResponse",
-        "description": "Response for pricing groups table."
       },
       "ProblemStatementToolCompletePayload": {
         "properties": {
@@ -62185,6 +62044,1286 @@
           "pass_points"
         ],
         "title": "QGetPracticeOverviewV3StandardGroup"
+      },
+      "QGetPricingAnalyticsV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name"
+        ],
+        "title": "QGetPricingAnalyticsV3Agent"
+      },
+      "QGetPricingAnalyticsV3DebugInfo": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "content"
+        ],
+        "title": "QGetPricingAnalyticsV3DebugInfo"
+      },
+      "QGetPricingAnalyticsV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "input_ppm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Ppm"
+          },
+          "output_ppm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Ppm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description",
+          "input_ppm",
+          "output_ppm"
+        ],
+        "title": "QGetPricingAnalyticsV3Model"
+      },
+      "QGetPricingAnalyticsV3ModelRun": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "debug_info": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingAnalyticsV3DebugInfo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debug Info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "created_at",
+          "input_tokens",
+          "output_tokens",
+          "model_id",
+          "profile_id",
+          "agent_id",
+          "persona_id",
+          "debug_info"
+        ],
+        "title": "QGetPricingAnalyticsV3ModelRun"
+      },
+      "QGetPricingAnalyticsV3Persona": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name"
+        ],
+        "title": "QGetPricingAnalyticsV3Persona"
+      },
+      "QGetPricingAnalyticsV3Profile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "name"
+        ],
+        "title": "QGetPricingAnalyticsV3Profile"
+      },
+      "QGetPricingGroupDetailV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name"
+        ],
+        "title": "QGetPricingGroupDetailV3Agent"
+      },
+      "QGetPricingGroupDetailV3Content": {
+        "properties": {
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "idx",
+          "content",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "QGetPricingGroupDetailV3Content"
+      },
+      "QGetPricingGroupDetailV3Message": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "contents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingGroupDetailV3Content"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contents"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "run_idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Idx"
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depth"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "contents",
+          "created_at",
+          "updated_at",
+          "completed",
+          "run_idx",
+          "depth"
+        ],
+        "title": "QGetPricingGroupDetailV3Message"
+      },
+      "QGetPricingGroupDetailV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetPricingGroupDetailV3Model"
+      },
+      "QGetPricingGroupDetailV3Profile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "name"
+        ],
+        "title": "QGetPricingGroupDetailV3Profile"
+      },
+      "QGetPricingGroupDetailV3RunMetadata": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "cached_input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cached Input Tokens"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "input_tokens",
+          "output_tokens",
+          "cached_input_tokens",
+          "cost",
+          "model_id",
+          "agent_id",
+          "profile_id",
+          "persona_id"
+        ],
+        "title": "QGetPricingGroupDetailV3RunMetadata"
+      },
+      "QGetPricingGroupDetailV3RunWithMessages": {
+        "properties": {
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPricingGroupDetailV3RunMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingGroupDetailV3Message"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages"
+          },
+          "previous_context_start_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Context Start Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run",
+          "messages",
+          "previous_context_start_index"
+        ],
+        "title": "QGetPricingGroupDetailV3RunWithMessages"
+      },
+      "QGetPricingRunsV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name"
+        ],
+        "title": "QGetPricingRunsV3Agent"
+      },
+      "QGetPricingRunsV3DebugInfo": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "content"
+        ],
+        "title": "QGetPricingRunsV3DebugInfo"
+      },
+      "QGetPricingRunsV3FilterOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "QGetPricingRunsV3FilterOption"
+      },
+      "QGetPricingRunsV3GroupRun": {
+        "properties": {
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "run_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Count"
+          },
+          "total_input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Input Tokens"
+          },
+          "total_output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Output Tokens"
+          },
+          "total_cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cost"
+          },
+          "runs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3RunSummary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "created_at",
+          "run_count",
+          "total_input_tokens",
+          "total_output_tokens",
+          "total_cost",
+          "runs"
+        ],
+        "title": "QGetPricingRunsV3GroupRun"
+      },
+      "QGetPricingRunsV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "input_ppm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Ppm"
+          },
+          "output_ppm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Ppm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description",
+          "input_ppm",
+          "output_ppm"
+        ],
+        "title": "QGetPricingRunsV3Model"
+      },
+      "QGetPricingRunsV3Persona": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name"
+        ],
+        "title": "QGetPricingRunsV3Persona"
+      },
+      "QGetPricingRunsV3Profile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "name"
+        ],
+        "title": "QGetPricingRunsV3Profile"
+      },
+      "QGetPricingRunsV3RunSummary": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "debug_info": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingRunsV3DebugInfo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debug Info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "created_at",
+          "input_tokens",
+          "output_tokens",
+          "cost",
+          "model_id",
+          "profile_id",
+          "agent_id",
+          "persona_id",
+          "debug_info"
+        ],
+        "title": "QGetPricingRunsV3RunSummary"
       },
       "QGetProfileContextV3Auth": {
         "properties": {
@@ -77233,213 +78372,6 @@
         "title": "RunItem",
         "description": "Run item in eval attempt."
       },
-      "RunMetadata": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "inputTokens": {
-            "type": "integer",
-            "title": "Inputtokens"
-          },
-          "outputTokens": {
-            "type": "integer",
-            "title": "Outputtokens"
-          },
-          "cachedInputTokens": {
-            "type": "integer",
-            "title": "Cachedinputtokens"
-          },
-          "cost": {
-            "type": "number",
-            "title": "Cost"
-          },
-          "modelId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modelid"
-          },
-          "agentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agentid"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
-          "personaId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "inputTokens",
-          "outputTokens",
-          "cachedInputTokens",
-          "cost"
-        ],
-        "title": "RunMetadata",
-        "description": "Run metadata schema."
-      },
-      "RunSummaryItem": {
-        "properties": {
-          "run_id": {
-            "type": "string",
-            "title": "Run Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "input_tokens": {
-            "type": "integer",
-            "title": "Input Tokens"
-          },
-          "output_tokens": {
-            "type": "integer",
-            "title": "Output Tokens"
-          },
-          "cost": {
-            "type": "number",
-            "title": "Cost"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "debug_info": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DebugInfoItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Debug Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "run_id",
-          "created_at",
-          "input_tokens",
-          "output_tokens",
-          "cost"
-        ],
-        "title": "RunSummaryItem",
-        "description": "Run summary item within a group."
-      },
-      "RunWithMessages": {
-        "properties": {
-          "run": {
-            "$ref": "#/components/schemas/RunMetadata"
-          },
-          "messages": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__pricing__detail__MessageItem"
-            },
-            "type": "array",
-            "title": "Messages"
-          },
-          "previousContextStartIndex": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previouscontextstartindex"
-          }
-        },
-        "type": "object",
-        "required": [
-          "run",
-          "messages"
-        ],
-        "title": "RunWithMessages",
-        "description": "Run with messages schema."
-      },
       "ScenarioDocumentItem": {
         "properties": {
           "document_id": {
@@ -83149,138 +84081,6 @@
           "archived"
         ],
         "title": "AttemptItem"
-      },
-      "app__api__v3__attempts__simulation__MessageItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "chatId": {
-            "type": "string",
-            "title": "Chatid"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed"
-          },
-          "personaId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaid"
-          },
-          "feedbacks": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/MessageFeedbackItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feedbacks"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "chatId",
-          "content",
-          "type",
-          "completed"
-        ],
-        "title": "MessageItem"
-      },
-      "app__api__v3__pricing__detail__MessageItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "contents": {
-            "items": {
-              "$ref": "#/components/schemas/ContentItem"
-            },
-            "type": "array",
-            "title": "Contents"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed"
-          },
-          "runIdx": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Runidx"
-          },
-          "depth": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Depth"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "role",
-          "contents",
-          "createdAt",
-          "updatedAt",
-          "completed"
-        ],
-        "title": "MessageItem",
-        "description": "Message item schema."
       },
       "app__api__v3__reports__bundle__MetricResponse": {
         "properties": {

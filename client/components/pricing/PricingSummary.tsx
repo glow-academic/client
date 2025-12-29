@@ -126,10 +126,8 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
   // Chart uses all data from summary endpoint (no filtering)
   // Extract data from V3 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
-  const modelMapping = useMemo(
-    () => pricingData?.model_mapping || {},
-    [pricingData],
-  );
+  // Use models array directly (no mapping construction)
+  const models = useMemo(() => pricingData?.models || [], [pricingData]);
 
   // Get chart colors from CSS variables
   const chartColors = useChartColors();
@@ -139,7 +137,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
 
   // Compute spend per run and aggregate by day (chart shows all data, no filtering)
   const { chartData, totals, chartConfig } = useMemo(() => {
-    if (!modelRuns?.length || Object.keys(modelMapping).length === 0) {
+    if (!modelRuns?.length || models.length === 0) {
       return {
         chartData: [] as Array<Record<string, number | string>>,
         totals: { totalSpend: 0, runCount: 0, avgCost: 0 },
@@ -148,7 +146,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     }
 
     // Include all models (chart shows all data)
-    const includeModels = new Set(Object.keys(modelMapping));
+    const includeModels = new Set(models.map(m => m.model_id).filter(Boolean));
 
     const byDay = new Map<
       string,
@@ -163,13 +161,13 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       const modelId = run.model_id;
       if (!modelId || !includeModels.has(modelId)) continue;
 
-      // Pricing comes from model mapping
-      const modelInfo = modelMapping[modelId];
+      // Find model from array
+      const modelInfo = models.find(m => m.model_id === modelId);
       if (!modelInfo) continue;
 
       const spend =
-        (run.input_tokens / 1_000_000) * (modelInfo.input_ppm || 0) +
-        (run.output_tokens / 1_000_000) * (modelInfo.output_ppm || 0);
+        (run.input_tokens / 1_000_000) * (Number(modelInfo.input_ppm) || 0) +
+        (run.output_tokens / 1_000_000) * (Number(modelInfo.output_ppm) || 0);
 
       const dateKey = format(new Date(run.created_at), "yyyy-MM-dd");
       const dateLabel = format(new Date(run.created_at), "MMM dd");
@@ -215,7 +213,8 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
 
     const config: Record<string, { label: string; color: string }> = {};
     for (const id of includeModels) {
-      const label = modelMapping[id]?.name;
+      const model = models.find(m => m.model_id === id);
+      const label = model?.name;
       config[id] = {
         label: label ?? id,
         color: modelIdToColor[id] ?? "#999999",
@@ -232,7 +231,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       },
       chartConfig: config,
     };
-  }, [modelRuns, modelMapping, chartColors, mutedColor]);
+  }, [modelRuns, models, chartColors, mutedColor]);
 
   return (
     <div className="flex flex-col gap-4" data-testid="pricing-summary">
@@ -312,33 +311,37 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
                 <ChartLegend content={<ChartLegendContent />} />
 
                 {/* Stacked areas per selected models */}
-                {Object.keys(modelMapping).map((id) => (
-                  <Area
-                    key={id}
-                    type="monotone"
-                    dataKey={id}
-                    stackId="1"
-                    stroke={
-                      (
-                        chartConfig as Record<
-                          string,
-                          { label: string; color: string }
-                        >
-                      )[id]?.color
-                    }
-                    fill={
-                      (
-                        chartConfig as Record<
-                          string,
-                          { label: string; color: string }
-                        >
-                      )[id]?.color
-                    }
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                ))}
+                {models.map((model) => {
+                  const id = model.model_id;
+                  if (!id) return null;
+                  return (
+                    <Area
+                      key={id}
+                      type="monotone"
+                      dataKey={id}
+                      stackId="1"
+                      stroke={
+                        (
+                          chartConfig as Record<
+                            string,
+                            { label: string; color: string }
+                          >
+                        )[id]?.color
+                      }
+                      fill={
+                        (
+                          chartConfig as Record<
+                            string,
+                            { label: string; color: string }
+                          >
+                        )[id]?.color
+                      }
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  );
+                })}
 
                 {/* Total spend line */}
                 <Line

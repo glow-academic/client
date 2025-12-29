@@ -1,23 +1,141 @@
--- Pricing analytics query - complete model run pricing with all mappings embedded
--- Parameters: 
---   $1 = start_date (timestamp)
---   $2 = end_date (timestamp)
---   $3 = department_ids (uuid[] | NULL)
---   $4 = profile_id (uuid | NULL) - raw profile ID (role check happens in SQL)
---   $5 = roles (text[] | NULL) - only used if profile_id is NULL or role is admin/superadmin/instructional
---   $6 = cohort_ids (uuid[] | NULL)
---   $7 = simulation_filters (text[] | NULL) - ["general", "practice", "archived"]
--- Returns: JSONB object with runs, model_mapping, profile_mapping, agent_mapping, persona_mapping
+-- Get pricing analytics - complete model run pricing with all mappings
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
-WITH profile_role_check AS (
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_pricing_analytics_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_pricing_analytics_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop types in dependency order: drop dependent types first (model_run depends on debug_info)
+-- Use prefix pattern to find all types, but drop in correct order
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Drop model_run first (depends on debug_info)
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_pricing_analytics_v3_model_run'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+    -- Drop remaining types
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_pricing_analytics_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_pricing_analytics_v3_debug_info AS (
+    id uuid,
+    created_at timestamptz,
+    content text
+);
+
+CREATE TYPE types.q_get_pricing_analytics_v3_model_run AS (
+    run_id uuid,
+    created_at timestamptz,
+    input_tokens int,
+    output_tokens int,
+    model_id uuid,
+    profile_id uuid,
+    agent_id uuid,
+    persona_id uuid,
+    debug_info types.q_get_pricing_analytics_v3_debug_info[]
+);
+
+CREATE TYPE types.q_get_pricing_analytics_v3_model AS (
+    model_id uuid,
+    name text,
+    description text,
+    input_ppm numeric,
+    output_ppm numeric
+);
+
+CREATE TYPE types.q_get_pricing_analytics_v3_profile AS (
+    profile_id uuid,
+    name text
+);
+
+CREATE TYPE types.q_get_pricing_analytics_v3_agent AS (
+    agent_id uuid,
+    name text
+);
+
+CREATE TYPE types.q_get_pricing_analytics_v3_persona AS (
+    persona_id uuid,
+    name text
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_pricing_analytics_v3(
+    start_date text,
+    end_date text,
+    department_ids uuid[],
+    profile_id uuid,
+    roles text[],
+    cohort_ids uuid[],
+    simulation_filters text[]
+)
+RETURNS TABLE (
+    actor_name text,
+    model_runs types.q_get_pricing_analytics_v3_model_run[],
+    models types.q_get_pricing_analytics_v3_model[],
+    profiles types.q_get_pricing_analytics_v3_profile[],
+    agents types.q_get_pricing_analytics_v3_agent[],
+    personas types.q_get_pricing_analytics_v3_persona[]
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT 
+        COALESCE(NULLIF(start_date, ''), NULL)::timestamptz AS start_date,
+        COALESCE(NULLIF(end_date, ''), NULL)::timestamptz AS end_date,
+        department_ids AS department_ids,
+        profile_id AS profile_id,
+        roles AS roles,
+        cohort_ids AS cohort_ids,
+        simulation_filters AS simulation_filters
+),
+profile_role_check AS (
     -- Resolve profile_id and check role to determine effective filtering
     SELECT 
-        $4::uuid as raw_profile_id,
+        (SELECT profile_id FROM params) as raw_profile_id,
         CASE 
-            WHEN $4::uuid IS NULL THEN NULL::uuid
-            WHEN (SELECT role FROM profiles WHERE id = $4::uuid) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
-            ELSE $4::uuid
+            WHEN (SELECT profile_id FROM params) IS NULL THEN NULL::uuid
+            WHEN (SELECT role FROM profiles WHERE id = (SELECT profile_id FROM params)) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            ELSE (SELECT profile_id FROM params)
         END as effective_profile_id
+),
+user_profile AS (
+    SELECT 
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles ON profiles.id = x.profile_id
+    WHERE x.profile_id IS NOT NULL
 ),
 runs_base AS (
     SELECT
@@ -50,20 +168,21 @@ runs_base AS (
     LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
     LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     LEFT JOIN simulations sim ON sim.id = sa.simulation_id
+    CROSS JOIN params p
     WHERE 
         -- Date filters (always required)
-        mr.created_at >= $1
-        AND mr.created_at <= $2
+        mr.created_at >= p.start_date
+        AND mr.created_at <= p.end_date
         -- Department filter (via profile_departments join)
         AND (
-            $3::uuid[] IS NULL 
-            OR COALESCE(array_length($3::uuid[], 1), 0) = 0
+            p.department_ids IS NULL
+            OR COALESCE(array_length(p.department_ids, 1), 0) = 0
             OR EXISTS (
                 SELECT 1 FROM run_profiles mrp2
                 JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
                 WHERE mrp2.run_id = mr.id
                   AND mrp2.active = true
-                  AND pd.department_id = ANY($3::uuid[])
+                  AND pd.department_id = ANY(p.department_ids)
             )
         )
         -- Profile filter (specific user) - only if role is not admin/superadmin/instructional
@@ -74,38 +193,39 @@ runs_base AS (
         -- Role filter (only if no effective profile_id)
         AND (
             (SELECT effective_profile_id FROM profile_role_check) IS NOT NULL
-            OR $5::text[] IS NULL
+            OR p.roles IS NULL
+            OR COALESCE(array_length(p.roles, 1), 0) = 0
             OR mrp.profile_id IN (
-                SELECT id FROM profiles WHERE role::text = ANY($5::text[])
+                SELECT id FROM profiles WHERE role::text = ANY(p.roles)
             )
         )
         -- Cohort filter (via cohort_profiles)
         AND (
-            $6::uuid[] IS NULL
-            OR COALESCE(array_length($6::uuid[], 1), 0) = 0
+            p.cohort_ids IS NULL
+            OR COALESCE(array_length(p.cohort_ids, 1), 0) = 0
             OR mrp.profile_id IN (
                 SELECT profile_id FROM cohort_profiles
-                WHERE cohort_id = ANY($6::uuid[]) AND active = true
+                WHERE cohort_id = ANY(p.cohort_ids) AND active = true
             )
         )
         -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
         -- If no filters provided (NULL or empty), include all runs (runs not linked to simulations are included)
         -- If filters provided, only include runs that match the filter OR runs not linked to simulations (treat as "general")
         AND (
-            $7::text[] IS NULL 
-            OR COALESCE(array_length($7::text[], 1), 0) = 0
+            p.simulation_filters IS NULL
+            OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
             OR sim.id IS NULL  -- Runs not linked to simulations are always included
             OR (
-                ('general' = ANY($7::text[]) AND sim.practice_simulation = FALSE AND COALESCE(sa.archived, FALSE) = FALSE) OR
-                ('practice' = ANY($7::text[]) AND sim.practice_simulation = TRUE AND COALESCE(sa.archived, FALSE) = FALSE) OR
-                ('archived' = ANY($7::text[]) AND COALESCE(sa.archived, FALSE) = TRUE)
+                ('general' = ANY(p.simulation_filters) AND sim.practice_simulation = FALSE AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('practice' = ANY(p.simulation_filters) AND sim.practice_simulation = TRUE AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('archived' = ANY(p.simulation_filters) AND COALESCE(sa.archived, FALSE) = TRUE)
             )
         )
         -- Exclude archived attempts unless 'archived' is explicitly in the filter list
         AND (
-            $7::text[] IS NULL 
-            OR COALESCE(array_length($7::text[], 1), 0) = 0 
-            OR 'archived' = ANY($7::text[]) 
+            p.simulation_filters IS NULL
+            OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
+            OR 'archived' = ANY(p.simulation_filters)
             OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
@@ -113,18 +233,15 @@ runs_with_debug AS (
     SELECT
         mrb.*,
         COALESCE(
-            (SELECT jsonb_agg(
-                jsonb_build_object(
-                    'id', di.id::text,
-                    'created_at', di.created_at,
-                    'content', di.content
-                ) ORDER BY di.created_at
-            )
-            FROM debug_info di
-            WHERE di.run_id = mrb.run_id),
-            '[]'::jsonb
+            ARRAY_AGG(
+                (di.id, di.created_at, di.content)::types.q_get_pricing_analytics_v3_debug_info
+                ORDER BY di.created_at
+            ) FILTER (WHERE di.id IS NOT NULL),
+            '{}'::types.q_get_pricing_analytics_v3_debug_info[]
         ) as debug_info
     FROM runs_base mrb
+    LEFT JOIN debug_info di ON di.run_id = mrb.run_id
+    GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.practice_simulation, mrb.archived
 ),
 model_pricing_aggregated AS (
     -- Aggregate pricing per model: sum all input/output prices normalized to per-million tokens
@@ -136,76 +253,47 @@ model_pricing_aggregated AS (
     LEFT JOIN model_pricing mp ON mp.model_id = mrb.model_id AND mp.active = true AND mp.pricing_type IN ('input', 'output')
     LEFT JOIN units u ON u.id = mp.unit_id
     GROUP BY mrb.model_id
-),
-model_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            m.id::text,
-            jsonb_build_object(
-                'name', m.name,
-                'description', m.description,
-                'input_ppm', COALESCE(mpa.input_ppm, 0.0),
-                'output_ppm', COALESCE(mpa.output_ppm, 0.0)
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping
-    FROM (SELECT DISTINCT model_id FROM runs_base WHERE model_id IS NOT NULL) mrb
-    JOIN models m ON m.id = mrb.model_id
-    LEFT JOIN model_pricing_aggregated mpa ON mpa.model_id = m.id
-),
-profile_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            p.id::text,
-            p.first_name || ' ' || p.last_name
-        ),
-        '{}'::jsonb
-    ) as mapping
-    FROM (SELECT DISTINCT profile_id FROM runs_base WHERE profile_id IS NOT NULL) mrb
-    JOIN profiles p ON p.id = mrb.profile_id
-),
-agent_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            a.id::text,
-            a.name
-        ),
-        '{}'::jsonb
-    ) as mapping
-    FROM (SELECT DISTINCT agent_id FROM runs_base WHERE agent_id IS NOT NULL) mrb
-    JOIN agents a ON a.id = mrb.agent_id
-),
-persona_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            per.id::text,
-            per.name
-        ),
-        '{}'::jsonb
-    ) as mapping
-    FROM (SELECT DISTINCT persona_id FROM runs_base WHERE persona_id IS NOT NULL) mrb
-    JOIN personas per ON per.id = mrb.persona_id
 )
-SELECT jsonb_build_object(
-    'runs', COALESCE(
-        (SELECT jsonb_agg(
-            jsonb_build_object(
-                'run_id', run_id::text,
-                'created_at', created_at,
-                'input_tokens', input_tokens,
-                'output_tokens', output_tokens,
-                'model_id', CASE WHEN model_id IS NOT NULL THEN model_id::text ELSE NULL END,
-                'profile_id', CASE WHEN profile_id IS NOT NULL THEN profile_id::text ELSE NULL END,
-                'agent_id', CASE WHEN agent_id IS NOT NULL THEN agent_id::text ELSE NULL END,
-                'persona_id', CASE WHEN persona_id IS NOT NULL THEN persona_id::text ELSE NULL END,
-                'debug_info', debug_info
-            ) ORDER BY created_at DESC
-        ) FROM runs_with_debug),
-        '[]'::jsonb
-    ),
-    'model_mapping', COALESCE((SELECT mapping FROM model_mapping LIMIT 1), '{}'::jsonb),
-    'profile_mapping', COALESCE((SELECT mapping FROM profile_mapping LIMIT 1), '{}'::jsonb),
-    'agent_mapping', COALESCE((SELECT mapping FROM agent_mapping LIMIT 1), '{}'::jsonb),
-    'persona_mapping', COALESCE((SELECT mapping FROM persona_mapping LIMIT 1), '{}'::jsonb)
-) as result
+SELECT 
+    COALESCE((SELECT actor_name FROM user_profile LIMIT 1), 'System')::text as actor_name,
+    COALESCE(
+        ARRAY_AGG(
+            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.debug_info)::types.q_get_pricing_analytics_v3_model_run
+            ORDER BY mrb.created_at DESC
+        ),
+        '{}'::types.q_get_pricing_analytics_v3_model_run[]
+    ) as model_runs,
+    COALESCE(
+        ARRAY_AGG(
+            DISTINCT (m.id, m.name, COALESCE(m.description, ''), COALESCE(mpa.input_ppm, 0.0), COALESCE(mpa.output_ppm, 0.0))::types.q_get_pricing_analytics_v3_model
+        ) FILTER (WHERE m.id IS NOT NULL),
+        '{}'::types.q_get_pricing_analytics_v3_model[]
+    ) as models,
+    COALESCE(
+        ARRAY_AGG(
+            DISTINCT (p.id, p.first_name || ' ' || p.last_name)::types.q_get_pricing_analytics_v3_profile
+        ) FILTER (WHERE p.id IS NOT NULL),
+        '{}'::types.q_get_pricing_analytics_v3_profile[]
+    ) as profiles,
+    COALESCE(
+        ARRAY_AGG(
+            DISTINCT (a.id, a.name)::types.q_get_pricing_analytics_v3_agent
+        ) FILTER (WHERE a.id IS NOT NULL),
+        '{}'::types.q_get_pricing_analytics_v3_agent[]
+    ) as agents,
+    COALESCE(
+        ARRAY_AGG(
+            DISTINCT (per.id, per.name)::types.q_get_pricing_analytics_v3_persona
+        ) FILTER (WHERE per.id IS NOT NULL),
+        '{}'::types.q_get_pricing_analytics_v3_persona[]
+    ) as personas
+FROM runs_with_debug mrb
+LEFT JOIN models m ON m.id = mrb.model_id
+LEFT JOIN model_pricing_aggregated mpa ON mpa.model_id = m.id
+LEFT JOIN profiles p ON p.id = mrb.profile_id
+LEFT JOIN agents a ON a.id = mrb.agent_id
+LEFT JOIN personas per ON per.id = mrb.persona_id
+GROUP BY (SELECT actor_name FROM user_profile LIMIT 1)
+$$;
+
+COMMIT;
