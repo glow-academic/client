@@ -829,22 +829,22 @@ export default function Rubric({
           );
 
           socket.emit("rubric_generate", {
-            departmentId,
-            profileId: effectiveProfile?.id,
-            rubricId: isEditMode && rubricId ? rubricId : undefined,
-            rubricAgentId: formData.rubricAgentId!,
-            standardGroups: standardGroups.map((g) => ({
+            department_id: departmentId,
+            // profileId removed - comes from sid
+            rubric_id: isEditMode && rubricId ? rubricId : undefined,
+            rubric_agent_id: formData.rubricAgentId!,
+            standard_groups: standardGroups.map((g) => ({
               id: g.id,
               name: g.name,
               description: g.description,
               points: g.points,
-              passPoints: g.passPoints,
+              pass_points: g.passPoints,
             })),
             standards: standards.map((s) => ({
               id: s.id,
               name: s.name,
               points: s.points,
-              standardGroupId: s.standardGroupId,
+              standard_group_id: s.standardGroupId,
             })),
           });
         },

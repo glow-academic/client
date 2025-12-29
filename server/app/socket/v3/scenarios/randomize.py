@@ -9,6 +9,7 @@ from app.main import get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -220,23 +221,23 @@ async def _randomize_scenario_impl(sid: str, data: RandomizeScenarioPayload) -> 
             # Convert UUID arrays to string arrays
             randomized_selections = {
                 "personaIds": (
-                    [str(pid) for pid in result["persona_ids"]]
-                    if result["persona_ids"]
+                    [str(pid) for pid in result["randomized_persona_ids"]]
+                    if result["randomized_persona_ids"]
                     else None
                 ),
                 "documentIds": (
-                    [str(did) for did in result["document_ids"]]
-                    if result["document_ids"]
+                    [str(did) for did in result["randomized_document_ids"]]
+                    if result["randomized_document_ids"]
                     else None
                 ),
                 "parameterIds": (
-                    [str(pid) for pid in result["parameter_ids"]]
-                    if result["parameter_ids"]
+                    [str(pid) for pid in result["randomized_parameter_ids"]]
+                    if result["randomized_parameter_ids"]
                     else None
                 ),
                 "fieldIds": (
-                    [str(fid) for fid in result["field_ids"]]
-                    if result["field_ids"]
+                    [str(fid) for fid in result["randomized_field_ids"]]
+                    if result["randomized_field_ids"]
                     else None
                 ),
             }

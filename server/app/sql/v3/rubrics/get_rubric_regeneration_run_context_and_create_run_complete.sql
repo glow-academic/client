@@ -1,4 +1,5 @@
--- Get all data needed to run rubric agent AND create run in single atomic transaction
+-- Get all data needed to run rubric regeneration agent AND create run in single atomic transaction
+-- Uses existing group_id to get previous context from previous run
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
@@ -13,10 +14,10 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'socket_get_rubric_run_context_and_create_run_v3'
+        WHERE proname = 'socket_get_rubric_regeneration_run_context_and_create_run_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_rubric_run_context_and_create_run_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_rubric_regeneration_run_context_and_create_run_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -30,40 +31,25 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'i_get_rubric_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'i_get_rubric_regeneration_run_context_and_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
     END LOOP;
 END $$;
 
--- 3) Recreate types for pass-through parameters (not used in SQL, but needed in ApiRequest)
-CREATE TYPE types.i_get_rubric_run_context_and_create_run_v3_standard_group AS (
-    id text,
-    name text,
-    description text,
-    points integer,
-    pass_points integer
-);
-
-CREATE TYPE types.i_get_rubric_run_context_and_create_run_v3_standard AS (
-    id text,
-    name text,
-    points integer,
-    standard_group_id text
-);
-
--- 4) Recreate function
--- Note: standard_groups and standards are pass-through parameters (not used in SQL)
--- They are included so they appear in the auto-generated ApiRequest type
-CREATE OR REPLACE FUNCTION socket_get_rubric_run_context_and_create_run_v3(
+-- 3) Recreate function
+-- group_id is REQUIRED (not NULL) for regeneration - uses existing group
+-- rubric_id is REQUIRED to get standard_groups and standards
+-- Gets all messages from all previous runs in the group
+-- Links existing system/developer messages to the new run
+CREATE OR REPLACE FUNCTION socket_get_rubric_regeneration_run_context_and_create_run_v3(
     department_id uuid,
     profile_id uuid,
     rubric_agent_id uuid,
-    group_id uuid DEFAULT NULL,
-    rubric_id uuid DEFAULT NULL,
-    standard_groups types.i_get_rubric_run_context_and_create_run_v3_standard_group[] DEFAULT NULL,
-    standards types.i_get_rubric_run_context_and_create_run_v3_standard[] DEFAULT NULL
+    group_id uuid,  -- REQUIRED for regeneration (not NULL)
+    rubric_id uuid,  -- REQUIRED to get rubric structure
+    user_instructions text DEFAULT NULL
 )
 RETURNS TABLE (
     agent_id text,
@@ -82,7 +68,10 @@ RETURNS TABLE (
     earliest_run_created_at timestamptz,
     run_id text,
     group_id uuid,
-    trace_id text
+    trace_id text,
+    standard_groups jsonb,  -- Array of standard groups from rubric
+    standards jsonb,  -- Array of standards from rubric
+    previous_messages jsonb  -- All messages from all previous runs in group
 )
 LANGUAGE sql
 VOLATILE
@@ -94,28 +83,83 @@ WITH params AS (
         rubric_agent_id AS rubric_agent_id, 
         group_id AS group_id,
         rubric_id AS rubric_id,
-        standard_groups AS standard_groups,
-        standards AS standards
-),
-create_group_if_needed AS (
-    -- Create new group if group_id is NULL
-    INSERT INTO groups (created_at, updated_at)
-    SELECT NOW(), NOW()
-    FROM params p
-    WHERE p.group_id IS NULL
-    RETURNING id as group_id, trace_id
+        user_instructions AS user_instructions
 ),
 group_data AS (
-    -- Use existing group if provided, otherwise use newly created group
+    -- Use existing group (required for regeneration)
+    SELECT 
+        g.id as group_id,
+        g.trace_id
+    FROM groups g
+    CROSS JOIN params p
+    WHERE g.id = p.group_id
+),
+rubric_structure AS (
+    -- Get standard_groups and standards from rubric_id
     SELECT 
         COALESCE(
-            (SELECT g.id FROM groups g CROSS JOIN params p WHERE g.id = p.group_id),
-            (SELECT cg.group_id FROM create_group_if_needed cg)
-        ) as group_id,
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', sg.id::text,
+                    'name', sg.name,
+                    'description', sg.description,
+                    'points', sg.points,
+                    'pass_points', sg.pass_points
+                ) ORDER BY sg.created_at
+            ),
+            '[]'::jsonb
+        ) as standard_groups,
         COALESCE(
-            (SELECT g.trace_id FROM groups g CROSS JOIN params p WHERE g.id = p.group_id),
-            (SELECT cg.trace_id FROM create_group_if_needed cg)
-        ) as trace_id
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', s.id::text,
+                    'name', s.name,
+                    'points', s.points,
+                    'standard_group_id', s.standard_group_id::text
+                ) ORDER BY s.created_at
+            ),
+            '[]'::jsonb
+        ) as standards
+    FROM params p
+    LEFT JOIN standard_groups sg ON sg.rubric_id = p.rubric_id AND sg.active = true
+    LEFT JOIN standards s ON s.standard_group_id = sg.id
+    GROUP BY p.rubric_id
+),
+previous_runs_in_group AS (
+    -- Get all previous runs in the group (all runs except the one we're about to create)
+    SELECT gr.run_id
+    FROM group_runs gr
+    CROSS JOIN params p
+    WHERE gr.group_id = p.group_id
+    ORDER BY gr.idx ASC  -- Order by idx to maintain chronological order
+),
+previous_messages_all_runs AS (
+    -- Get all messages from all previous runs in the group
+    -- Ordered chronologically across all runs
+    SELECT 
+        m.role,
+        mc.content,
+        m.created_at,
+        gr.idx as run_idx
+    FROM previous_runs_in_group prig
+    JOIN group_runs gr ON gr.run_id = prig.run_id
+    JOIN message_runs mr ON mr.run_id = prig.run_id
+    JOIN messages m ON m.id = mr.message_id
+    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    ORDER BY gr.idx ASC, m.created_at ASC  -- Order by run idx first, then message created_at
+),
+previous_messages_json AS (
+    -- Aggregate all previous messages into JSONB array
+    SELECT COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'role', role,
+                'content', content
+            ) ORDER BY run_idx, created_at
+        ),
+        '[]'::jsonb
+    ) as previous_messages
+    FROM previous_messages_all_runs
 ),
 best_agent AS (
     -- Use the provided rubric_agent_id directly (UI handles filtering and selection)
@@ -294,15 +338,27 @@ link_profile AS (
     RETURNING run_id
 ),
 link_group AS (
-    -- Link run to group via group_runs junction table
+    -- Link run to existing group via group_runs junction table
     INSERT INTO group_runs (group_id, run_id, idx)
     SELECT 
         gd.group_id,
         cr.id as run_id,
-        0 as idx
+        (SELECT COALESCE(MAX(idx), -1) + 1 FROM group_runs WHERE group_id = gd.group_id) as idx
     FROM group_data gd
     CROSS JOIN create_run cr
     RETURNING group_id, run_id
+),
+link_existing_messages AS (
+    -- Link existing system/developer messages from previous runs to new run
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT DISTINCT mr.message_id, cr.id, NOW(), NOW()
+    FROM previous_runs_in_group prig
+    CROSS JOIN create_run cr
+    JOIN message_runs mr ON mr.run_id = prig.run_id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE m.role IN ('system', 'developer')
+    ON CONFLICT (message_id, run_id)
+    DO UPDATE SET updated_at = NOW()
 )
 SELECT 
     -- Context data
@@ -322,12 +378,19 @@ SELECT
     cd.earliest_run_created_at,
     -- Run ID (created in same transaction)
     cr.id::text as run_id,
-    -- Group ID and trace_id (from groups table)
+    -- Group ID and trace_id (from existing group)
     gd.group_id,
-    gd.trace_id
+    gd.trace_id,
+    -- Rubric structure (from rubric_id)
+    rs.standard_groups,
+    rs.standards,
+    -- Previous messages (from all previous runs in group)
+    pmj.previous_messages
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN group_data gd
+CROSS JOIN rubric_structure rs
+CROSS JOIN previous_messages_json pmj
 $$;
 
 COMMIT;

@@ -1,4 +1,4 @@
-"""Handler for rubric_generate WebSocket event."""
+"""Handler for rubric_regenerate WebSocket event."""
 
 import json
 import uuid
@@ -14,17 +14,16 @@ from app.infra.v3.websocket.handler_wrapper import handle_client_event
 from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.sql.types import (GetRubricRunContextAndCreateRunApiRequest,
-                           GetRubricRunContextAndCreateRunSqlParams,
-                           GetRubricRunContextAndCreateRunSqlRow,
-                           IGetRubricRunContextAndCreateRunV3Standard,
-                           IGetRubricRunContextAndCreateRunV3StandardGroup,
-                           IUpdateStandardDescriptionsV3Description,
-                           RubricGenerationCompleteApiRequest,
-                           RubricGenerationErrorApiRequest,
-                           RubricGenerationErrorSqlRow,
-                           RubricGenerationProgressApiRequest,
-                           UpdateStandardDescriptionsApiRequest)
+from app.sql.types import (
+    GetRubricRegenerationRunContextAndCreateRunApiRequest,
+    GetRubricRegenerationRunContextAndCreateRunSqlParams,
+    GetRubricRegenerationRunContextAndCreateRunSqlRow,
+    IGetRubricRegenerationRunContextAndCreateRunV3Standard,
+    IGetRubricRegenerationRunContextAndCreateRunV3StandardGroup,
+    IUpdateStandardDescriptionsV3Description,
+    RubricGenerationCompleteApiRequest, RubricGenerationErrorApiRequest,
+    RubricGenerationErrorSqlRow, RubricGenerationProgressApiRequest,
+    UpdateStandardDescriptionsApiRequest)
 from fastapi import APIRouter
 from pydantic import Field
 from utils.sql_helper import execute_sql_typed
@@ -32,45 +31,42 @@ from utils.sql_helper import execute_sql_typed
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/rubrics/get_rubric_run_context_and_create_run_complete.sql"
+SQL_PATH = "app/sql/v3/rubrics/get_rubric_regeneration_run_context_and_create_run_complete.sql"
 
 internal_sio = get_internal_sio()
 
 
-async def _rubric_generate_impl(
-    sid: str, data: GetRubricRunContextAndCreateRunApiRequest, profile_id: uuid.UUID
+async def _rubric_regenerate_impl(
+    sid: str, data: GetRubricRegenerationRunContextAndCreateRunApiRequest, profile_id: uuid.UUID
 ) -> None:
-    """Handle rubric generation requests via WebSocket."""
+    """Handle rubric regeneration requests via WebSocket."""
     trace_id: str | None = None
 
     try:
-        # data fields are already validated as UUIDs by GetRubricRunContextAndCreateRunApiRequest
+        # data fields are already validated as UUIDs by GetRubricRegenerationRunContextAndCreateRunApiRequest
         # (Pydantic auto-converts strings to UUIDs)
         department_id = data.department_id
         rubric_agent_id = data.rubric_agent_id
         rubric_id = data.rubric_id
-
-        # data.standard_groups and data.standards are already validated as composite type objects
-        # by GetRubricRunContextAndCreateRunApiRequest (Pydantic auto-converts dicts to models)
-        standard_groups_objects = data.standard_groups or []
-        standards_objects = data.standards or []
+        group_id = data.group_id  # REQUIRED for regeneration
+        user_instructions = data.user_instructions
 
         async with get_db_connection() as conn:
             # Get all context data AND create run in single atomic transaction
-            # This validates rate limits and creates run atomically
+            # This validates rate limits, creates run, gets rubric structure, gets all previous messages,
+            # and links existing system/developer messages atomically
             try:
                 # Use execute_sql_typed() - auto-detects function
-                params = GetRubricRunContextAndCreateRunSqlParams(
+                params = GetRubricRegenerationRunContextAndCreateRunSqlParams(
                     department_id=department_id,
                     profile_id=profile_id,  # From sid lookup
                     rubric_agent_id=rubric_agent_id,
-                    group_id=None,  # NULL for new group
-                    rubric_id=rubric_id,
-                    standard_groups=standard_groups_objects if standard_groups_objects else None,
-                    standards=standards_objects if standards_objects else None,
+                    group_id=group_id,  # REQUIRED for regeneration (uses existing group)
+                    rubric_id=rubric_id,  # REQUIRED to get rubric structure
+                    user_instructions=user_instructions,
                 )
                 result = cast(
-                    GetRubricRunContextAndCreateRunSqlRow,
+                    GetRubricRegenerationRunContextAndCreateRunSqlRow,
                     await execute_sql_typed(conn, SQL_PATH, params=params),
                 )
             except Exception as e:
@@ -101,7 +97,7 @@ async def _rubric_generate_impl(
                     "rubric_error",
                     RubricGenerationErrorApiRequest(
                         rubric_id=rubric_id if rubric_id else None,
-                        error_message=f"Failed to initialize rubric generation: {str(e)}",
+                        error_message=f"Failed to initialize rubric regeneration: {str(e)}",
                     ),
                     sid=sid,
                 )
@@ -120,7 +116,47 @@ async def _rubric_generate_impl(
 
             # result.group_id and result.trace_id come from groups table
             trace_id = result.trace_id  # From groups.trace_id
-            group_id = result.group_id  # Created by SQL
+            group_id = result.group_id  # Uses existing group
+
+            # Extract run_id from result (created in same transaction)
+            model_run_id = uuid.UUID(result.run_id)
+
+            # Get rubric structure from result (no need to pass it)
+            standard_groups_data = result.standard_groups or []
+            standards_data = result.standards or []
+
+            # Convert to objects for use in agent context
+            standard_groups_objects = [
+                IGetRubricRegenerationRunContextAndCreateRunV3StandardGroup(
+                    id=g["id"],
+                    name=g["name"],
+                    description=g["description"],
+                    points=g["points"],
+                    pass_points=g.get("pass_points", 0)
+                )
+                for g in standard_groups_data
+            ]
+
+            standards_objects = [
+                IGetRubricRegenerationRunContextAndCreateRunV3Standard(
+                    id=s["id"],
+                    name=s["name"],
+                    points=s["points"],
+                    standard_group_id=s["standard_group_id"]
+                )
+                for s in standards_data
+            ]
+
+            # Get previous messages from result (all messages from all previous runs)
+            previous_messages: list[TResponseInputItem] = []
+            if result.previous_messages:
+                previous_messages = [
+                    {
+                        "role": msg["role"],
+                        "content": msg["content"]
+                    }
+                    for msg in result.previous_messages
+                ]
 
             # Emit start event via internal bus
             # trace_id comes from groups table via SQL, not passed in payload
@@ -129,7 +165,7 @@ async def _rubric_generate_impl(
                 RubricGenerationProgressApiRequest(
                     rubric_id=rubric_id if rubric_id else None,
                     progress_type="start",
-                    message="Starting rubric generation",
+                    message="Starting rubric regeneration",
                 ),
                 sid=sid,
                 group_id=str(group_id),
@@ -150,32 +186,6 @@ async def _rubric_generate_impl(
                 "base_url": result.base_url,
                 "api_key": result.api_key,
                 "profile_id": result.profile_id,
-            }
-
-            # Extract run_id from result (created in same transaction)
-            model_run_id = uuid.UUID(result.run_id)
-
-            # Build rubric structure context for the agent (convert back to dicts for JSON serialization)
-            # Use snake_case to match server convention (server is source of truth)
-            rubric_context = {
-                "standard_groups": [
-                    {
-                        "id": g.id,
-                        "name": g.name,
-                        "description": g.description,
-                        "points": g.points,
-                    }
-                    for g in standard_groups_objects
-                ],
-                "standards": [
-                    {
-                        "id": s.id,
-                        "name": s.name,
-                        "points": s.points,
-                        "standard_group_id": s.standard_group_id,
-                    }
-                    for s in standards_objects
-                ],
             }
 
             # Create rubric generation tool
@@ -244,8 +254,14 @@ async def _rubric_generate_impl(
                 parallel_tool_calls=False,
             )
 
+            # Build input items: previous messages + user instructions on top
+            input_items: list[TResponseInputItem] = []
+
+            # Add previous messages first (conversation history from all runs)
+            input_items.extend(previous_messages)
+
             # Format rubric context for agent input
-            rubric_context_text = f"""You are generating descriptions for a rubric grid. The rubric has the following structure:
+            rubric_context_text = f"""You are regenerating descriptions for a rubric grid. The rubric has the following structure:
 
 Standard Groups:
 {json.dumps([{"id": g.id, "name": g.name, "description": g.description, "points": g.points} for g in standard_groups_objects], indent=2)}
@@ -266,19 +282,24 @@ You must call the generate_standard_group_descriptions tool with an array of des
 
 Generate descriptions for ALL combinations of standard groups and standards."""
 
-            # Construct input items for the agent
-            input_items: list[TResponseInputItem] = [
-                {
+            # Append user instructions on top (most recent instruction goes last)
+            if user_instructions and user_instructions.strip():
+                input_items.append({
                     "role": "user",
-                    "content": rubric_context_text,
-                }
-            ]
+                    "content": f"{rubric_context_text}\n\nUser Instructions: {user_instructions}"
+                })
+            else:
+                # If no instructions, just add the rubric context
+                input_items.append({
+                    "role": "user",
+                    "content": rubric_context_text
+                })
 
             # Rate limit validation and run creation are now handled in SQL
-            # (get_rubric_run_context_and_create_run.sql) - both happen atomically
+            # (get_rubric_regeneration_run_context_and_create_run.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
-            # Run rubric generation with tracing
+            # Run rubric regeneration with tracing
             # ⚠️ NOTE: trace() function's group_id parameter is the resource ID (rubric_id),
             # not the database group_id. This is for OpenAI implementation compatibility.
             with trace(
@@ -317,7 +338,7 @@ Generate descriptions for ALL combinations of standard groups and standards."""
                 "rubric_complete",
                 RubricGenerationCompleteApiRequest(
                     rubric_id=rubric_id if rubric_id else None,
-                    message="Rubric generation completed successfully",
+                    message="Rubric regeneration completed successfully",
                 ),
                 sid=sid,
                 group_id=str(group_id),
@@ -327,13 +348,13 @@ Generate descriptions for ALL combinations of standard groups and standards."""
             try:
                 await log_websocket_activity(
                     sid=sid,
-                    event_key="rubrics.generated",
-                    template="{{ actor.name }} generated rubric descriptions",
+                    event_key="rubrics.regenerated",
+                    template="{{ actor.name }} regenerated rubric descriptions",
                     context={
                         "department_id": str(department_id),
                         "rubric_id": str(rubric_id) if rubric_id else None,
                     },
-                    endpoint="/socket/v3/rubrics/generate",
+                    endpoint="/socket/v3/rubrics/regenerate",
                     error=False,
                 )
             except Exception:
@@ -366,10 +387,10 @@ Generate descriptions for ALL combinations of standard groups and standards."""
         try:
             await log_websocket_activity(
                 sid=sid,
-                event_key="rubrics.generated",
-                template="{{ actor.name }} failed to generate rubric descriptions",
+                event_key="rubrics.regenerated",
+                template="{{ actor.name }} failed to regenerate rubric descriptions",
                 context={"error": str(e)},
-                endpoint="/socket/v3/rubrics/generate",
+                endpoint="/socket/v3/rubrics/regenerate",
                 error=True,
             )
         except Exception:
@@ -377,13 +398,13 @@ Generate descriptions for ALL combinations of standard groups and standards."""
 
 
 @sio.event  # type: ignore
-async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
+async def rubric_regenerate(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
     await handle_client_event(
         sid=sid,
         data=data,
-        request_type=GetRubricRunContextAndCreateRunApiRequest,
-        handler=_rubric_generate_impl,  # type: ignore[arg-type]
+        request_type=GetRubricRegenerationRunContextAndCreateRunApiRequest,
+        handler=_rubric_regenerate_impl,  # type: ignore[arg-type]
         error_event_name="rubrics_generation_error",
         error_response_type=RubricGenerationErrorSqlRow,
     )
@@ -391,7 +412,8 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
 
 register_client_endpoint(
     client_router,
-    "/generate",
-    GetRubricRunContextAndCreateRunApiRequest,
-    "Generate rubric descriptions using AI",
+    "/regenerate",
+    GetRubricRegenerationRunContextAndCreateRunApiRequest,
+    "Regenerate rubric descriptions using AI",
 )
+

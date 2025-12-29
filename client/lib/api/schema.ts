@@ -4355,10 +4355,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rubric Generate Api
-         * @description Client-to-server event: Generate rubric descriptions using AI.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["rubric_generate_api_socket_v3_client_rubrics_generate_post"];
+        post: operations["endpoint_handler_socket_v3_client_rubrics_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4375,10 +4375,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rubric Tool Standard Group Descriptions Api
-         * @description Client-to-server event: Update standard group descriptions from rubric generation tool.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["rubric_tool_standard_group_descriptions_api_socket_v3_client_rubrics_tools_standard_group_descriptions_post"];
+        post: operations["endpoint_handler_socket_v3_client_rubrics_tools_standard_group_descriptions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6165,66 +6165,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/rubrics/generation_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Rubric Generation Progress Api
-         * @description Server-to-client event: Progress update for rubric generation.
-         */
-        post: operations["rubric_generation_progress_api_socket_v3_server_rubrics_generation_progress_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v3/server/rubrics/generation_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Rubric Generation Complete Api
-         * @description Server-to-client event: Rubric generation completed successfully.
-         */
-        post: operations["rubric_generation_complete_api_socket_v3_server_rubrics_generation_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v3/server/rubrics/generation_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Rubric Generation Error Api
-         * @description Server-to-client event: Error occurred during rubric generation.
-         */
-        post: operations["rubric_generation_error_api_socket_v3_server_rubrics_generation_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v3/server/rubrics/tools/standard_group_descriptions_complete": {
         parameters: {
             query?: never;
@@ -6235,10 +6175,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Standard Group Descriptions Tool Complete Api
-         * @description Server-to-client event: Standard group descriptions tool completed successfully.
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
          */
-        post: operations["standard_group_descriptions_tool_complete_api_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post"];
+        post: operations["endpoint_handler_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6255,10 +6195,70 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Standard Group Descriptions Tool Error Api
-         * @description Server-to-client event: Error occurred in standard group descriptions tool.
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
          */
-        post: operations["standard_group_descriptions_tool_error_api_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post"];
+        post: operations["endpoint_handler_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["endpoint_handler_socket_v3_server_rubrics_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["endpoint_handler_socket_v3_server_rubrics_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["endpoint_handler_socket_v3_server_rubrics_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6709,6 +6709,8 @@ export interface components {
              */
             hasOptions: boolean;
         };
+        /** BaseModel */
+        BaseModel: Record<string, never>;
         /** BulkArchiveAttemptsRequest */
         BulkArchiveAttemptsRequest: {
             /** Archived */
@@ -8909,28 +8911,6 @@ export interface components {
             room?: string | null;
             /** Trace Id */
             trace_id?: string | null;
-        };
-        /**
-         * GenerateRubricPayload
-         * @description Request to generate rubric descriptions using AI.
-         */
-        GenerateRubricPayload: {
-            /** Departmentid */
-            departmentId: string;
-            /** Rubricagentid */
-            rubricAgentId: string;
-            /** Profileid */
-            profileId?: string | null;
-            /** Rubricid */
-            rubricId?: string | null;
-            /** Standardgroups */
-            standardGroups: {
-                [key: string]: unknown;
-            }[];
-            /** Standards */
-            standards: {
-                [key: string]: unknown;
-            }[];
         };
         /**
          * GenerateScenarioAIPayload
@@ -12052,15 +12032,6 @@ export interface components {
             provider_id: string | null;
             /** Key Id */
             key_id: string | null;
-        };
-        /** IUpdateStandardDescriptionsV3Description */
-        IUpdateStandardDescriptionsV3Description: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Standard Id */
-            standard_id: string | null;
-            /** Description */
-            description: string | null;
         };
         /** IUpsertStaffV3Profile */
         IUpsertStaffV3Profile: {
@@ -18067,44 +18038,6 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
-        /**
-         * RubricGenerationCompletePayload
-         * @description Response indicating rubric generation completed successfully.
-         */
-        RubricGenerationCompletePayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Trace Id */
-            trace_id?: string | null;
-        };
-        /**
-         * RubricGenerationErrorPayload
-         * @description Response indicating an error occurred in rubric generation.
-         */
-        RubricGenerationErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Trace Id */
-            trace_id?: string | null;
-        };
-        /**
-         * RubricGenerationProgressPayload
-         * @description Response indicating progress in rubric generation.
-         */
-        RubricGenerationProgressPayload: {
-            /** Type */
-            type: string;
-            /** Message */
-            message?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Trace Id */
-            trace_id?: string | null;
-        };
         /** RubricStructure */
         RubricStructure: {
             /** Standardgroups */
@@ -18881,38 +18814,6 @@ export interface components {
             arguments_raw: string;
             /** Sid */
             sid?: string | null;
-        };
-        /**
-         * StandardGroupDescriptionsToolCompletePayload
-         * @description Response indicating standard group descriptions tool completed successfully.
-         */
-        StandardGroupDescriptionsToolCompletePayload: {
-            /** Success */
-            success: boolean;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Updated Count */
-            updated_count: number;
-            /** Trace Id */
-            trace_id: string;
-            /** Message */
-            message?: string | null;
-            /** Descriptions */
-            descriptions?: {
-                [key: string]: unknown;
-            }[] | null;
-        };
-        /**
-         * StandardGroupDescriptionsToolErrorPayload
-         * @description Response indicating an error occurred in standard group descriptions tool.
-         */
-        StandardGroupDescriptionsToolErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Trace Id */
-            trace_id: string;
         };
         /**
          * StandardMappingItem
@@ -19800,16 +19701,6 @@ export interface components {
         UpdateSimulationApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /** UpdateStandardDescriptionsApiRequest */
-        UpdateStandardDescriptionsApiRequest: {
-            /**
-             * Rubric Id
-             * Format: uuid
-             */
-            rubric_id: string;
-            /** Descriptions */
-            descriptions: components["schemas"]["IUpdateStandardDescriptionsV3Description"][];
         };
         /** UpsertStaffApiRequest */
         UpsertStaffApiRequest: {
@@ -28450,7 +28341,7 @@ export interface operations {
             };
         };
     };
-    rubric_generate_api_socket_v3_client_rubrics_generate_post: {
+    endpoint_handler_socket_v3_client_rubrics_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28459,7 +28350,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GenerateRubricPayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -28485,7 +28376,7 @@ export interface operations {
             };
         };
     };
-    rubric_tool_standard_group_descriptions_api_socket_v3_client_rubrics_tools_standard_group_descriptions_post: {
+    endpoint_handler_socket_v3_client_rubrics_tools_standard_group_descriptions_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28494,7 +28385,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateStandardDescriptionsApiRequest"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -31635,7 +31526,7 @@ export interface operations {
             };
         };
     };
-    rubric_generation_progress_api_socket_v3_server_rubrics_generation_progress_post: {
+    endpoint_handler_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31644,7 +31535,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RubricGenerationProgressPayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -31670,7 +31561,7 @@ export interface operations {
             };
         };
     };
-    rubric_generation_complete_api_socket_v3_server_rubrics_generation_complete_post: {
+    endpoint_handler_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31679,7 +31570,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RubricGenerationCompletePayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -31705,7 +31596,7 @@ export interface operations {
             };
         };
     };
-    rubric_generation_error_api_socket_v3_server_rubrics_generation_error_post: {
+    endpoint_handler_socket_v3_server_rubrics_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31714,7 +31605,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RubricGenerationErrorPayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -31740,7 +31631,7 @@ export interface operations {
             };
         };
     };
-    standard_group_descriptions_tool_complete_api_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post: {
+    endpoint_handler_socket_v3_server_rubrics_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31749,7 +31640,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StandardGroupDescriptionsToolCompletePayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -31775,7 +31666,7 @@ export interface operations {
             };
         };
     };
-    standard_group_descriptions_tool_error_api_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post: {
+    endpoint_handler_socket_v3_server_rubrics_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31784,7 +31675,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StandardGroupDescriptionsToolErrorPayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {

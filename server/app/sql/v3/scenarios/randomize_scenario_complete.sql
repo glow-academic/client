@@ -42,10 +42,10 @@ CREATE OR REPLACE FUNCTION api_randomize_scenario_v3(
     field_ranges_json jsonb
 )
 RETURNS TABLE (
-    persona_ids uuid[],
-    document_ids uuid[],
-    parameter_ids uuid[],
-    field_ids uuid[]
+    randomized_persona_ids uuid[],
+    randomized_document_ids uuid[],
+    randomized_parameter_ids uuid[],
+    randomized_field_ids uuid[]
 )
 LANGUAGE plpgsql
 VOLATILE

@@ -16181,14 +16181,14 @@
           "socket-client",
           "socket-client"
         ],
-        "summary": "Rubric Generate Api",
-        "description": "Client-to-server event: Generate rubric descriptions using AI.",
-        "operationId": "rubric_generate_api_socket_v3_client_rubrics_generate_post",
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "endpoint_handler_socket_v3_client_rubrics_generate_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GenerateRubricPayload"
+                "$ref": "#/components/schemas/BaseModel"
               }
             }
           },
@@ -16204,7 +16204,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Rubric Generate Api Socket V3 Client Rubrics Generate Post"
+                  "title": "Response Endpoint Handler Socket V3 Client Rubrics Generate Post"
                 }
               }
             }
@@ -16235,14 +16235,14 @@
           "socket-client",
           "socket-client"
         ],
-        "summary": "Rubric Tool Standard Group Descriptions Api",
-        "description": "Client-to-server event: Update standard group descriptions from rubric generation tool.",
-        "operationId": "rubric_tool_standard_group_descriptions_api_socket_v3_client_rubrics_tools_standard_group_descriptions_post",
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "endpoint_handler_socket_v3_client_rubrics_tools_standard_group_descriptions_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateStandardDescriptionsApiRequest"
+                "$ref": "#/components/schemas/BaseModel"
               }
             }
           },
@@ -16258,7 +16258,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Rubric Tool Standard Group Descriptions Api Socket V3 Client Rubrics Tools Standard Group Descriptions Post"
+                  "title": "Response Endpoint Handler Socket V3 Client Rubrics Tools Standard Group Descriptions Post"
                 }
               }
             }
@@ -21111,165 +21111,6 @@
         ]
       }
     },
-    "/socket/v3/server/rubrics/generation_progress": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Rubric Generation Progress Api",
-        "description": "Server-to-client event: Progress update for rubric generation.",
-        "operationId": "rubric_generation_progress_api_socket_v3_server_rubrics_generation_progress_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RubricGenerationProgressPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Rubric Generation Progress Api Socket V3 Server Rubrics Generation Progress Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v3/server/rubrics/generation_complete": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Rubric Generation Complete Api",
-        "description": "Server-to-client event: Rubric generation completed successfully.",
-        "operationId": "rubric_generation_complete_api_socket_v3_server_rubrics_generation_complete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RubricGenerationCompletePayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Rubric Generation Complete Api Socket V3 Server Rubrics Generation Complete Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v3/server/rubrics/generation_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Rubric Generation Error Api",
-        "description": "Server-to-client event: Error occurred during rubric generation.",
-        "operationId": "rubric_generation_error_api_socket_v3_server_rubrics_generation_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RubricGenerationErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Rubric Generation Error Api Socket V3 Server Rubrics Generation Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
     "/socket/v3/server/rubrics/tools/standard_group_descriptions_complete": {
       "post": {
         "tags": [
@@ -21278,14 +21119,14 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Standard Group Descriptions Tool Complete Api",
-        "description": "Server-to-client event: Standard group descriptions tool completed successfully.",
-        "operationId": "standard_group_descriptions_tool_complete_api_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post",
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StandardGroupDescriptionsToolCompletePayload"
+                "$ref": "#/components/schemas/BaseModel"
               }
             }
           },
@@ -21301,7 +21142,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Standard Group Descriptions Tool Complete Api Socket V3 Server Rubrics Tools Standard Group Descriptions Complete Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Rubrics Tools Standard Group Descriptions Complete Post"
                 }
               }
             }
@@ -21333,14 +21174,14 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Standard Group Descriptions Tool Error Api",
-        "description": "Server-to-client event: Error occurred in standard group descriptions tool.",
-        "operationId": "standard_group_descriptions_tool_error_api_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post",
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StandardGroupDescriptionsToolErrorPayload"
+                "$ref": "#/components/schemas/BaseModel"
               }
             }
           },
@@ -21356,7 +21197,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Standard Group Descriptions Tool Error Api Socket V3 Server Rubrics Tools Standard Group Descriptions Error Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Rubrics Tools Standard Group Descriptions Error Post"
                 }
               }
             }
@@ -21375,6 +21216,165 @@
         "x-cache-tags": [
           "socket",
           "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/rubrics/generation_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_rubrics_generation_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Rubrics Generation Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/rubrics/generation_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_rubrics_generation_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Rubrics Generation Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/rubrics/generation_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_rubrics_generation_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Rubrics Generation Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
           "socket-server",
           "socket-server"
         ]
@@ -22344,6 +22344,11 @@
         "type": "object",
         "title": "AvailableContinuationOptions",
         "description": "Available continuation options with order constraint enforcement."
+      },
+      "BaseModel": {
+        "properties": {},
+        "type": "object",
+        "title": "BaseModel"
       },
       "BulkArchiveAttemptsRequest": {
         "properties": {
@@ -29243,65 +29248,6 @@
         ],
         "title": "GenerateImagePayload",
         "description": "Request to generate an image."
-      },
-      "GenerateRubricPayload": {
-        "properties": {
-          "departmentId": {
-            "type": "string",
-            "title": "Departmentid"
-          },
-          "rubricAgentId": {
-            "type": "string",
-            "title": "Rubricagentid"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
-          "rubricId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubricid"
-          },
-          "standardGroups": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Standardgroups"
-          },
-          "standards": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Standards"
-          }
-        },
-        "type": "object",
-        "required": [
-          "departmentId",
-          "rubricAgentId",
-          "standardGroups",
-          "standards"
-        ],
-        "title": "GenerateRubricPayload",
-        "description": "Request to generate rubric descriptions using AI."
       },
       "GenerateScenarioAIPayload": {
         "properties": {
@@ -45486,52 +45432,6 @@
           "key_id"
         ],
         "title": "IUpdateSettingsV3ProviderKey"
-      },
-      "IUpdateStandardDescriptionsV3Description": {
-        "properties": {
-          "standard_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Group Id"
-          },
-          "standard_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Id"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "standard_group_id",
-          "standard_id",
-          "description"
-        ],
-        "title": "IUpdateStandardDescriptionsV3Description"
       },
       "IUpsertStaffV3Profile": {
         "properties": {
@@ -75010,113 +74910,6 @@
         "title": "ResponseInputItem",
         "description": "Input item for agent conversation (TResponseInputItem format)."
       },
-      "RubricGenerationCompletePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "RubricGenerationCompletePayload",
-        "description": "Response indicating rubric generation completed successfully."
-      },
-      "RubricGenerationErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "RubricGenerationErrorPayload",
-        "description": "Response indicating an error occurred in rubric generation."
-      },
-      "RubricGenerationProgressPayload": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "tool_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tool Name"
-          },
-          "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type"
-        ],
-        "title": "RubricGenerationProgressPayload",
-        "description": "Response indicating progress in rubric generation."
-      },
       "RubricStructure": {
         "properties": {
           "standardGroups": {
@@ -77297,85 +77090,6 @@
         ],
         "title": "SimulationToolCallTokenPayload",
         "description": "Internal event for tool call arguments update."
-      },
-      "StandardGroupDescriptionsToolCompletePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "updated_count": {
-            "type": "integer",
-            "title": "Updated Count"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "descriptions": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "rubric_id",
-          "updated_count",
-          "trace_id"
-        ],
-        "title": "StandardGroupDescriptionsToolCompletePayload",
-        "description": "Response indicating standard group descriptions tool completed successfully."
-      },
-      "StandardGroupDescriptionsToolErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "trace_id"
-        ],
-        "title": "StandardGroupDescriptionsToolErrorPayload",
-        "description": "Response indicating an error occurred in standard group descriptions tool."
       },
       "StandardMappingItem": {
         "properties": {
@@ -80295,28 +80009,6 @@
         },
         "type": "object",
         "title": "UpdateSimulationApiResponse"
-      },
-      "UpdateStandardDescriptionsApiRequest": {
-        "properties": {
-          "rubric_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Rubric Id"
-          },
-          "descriptions": {
-            "items": {
-              "$ref": "#/components/schemas/IUpdateStandardDescriptionsV3Description"
-            },
-            "type": "array",
-            "title": "Descriptions"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rubric_id",
-          "descriptions"
-        ],
-        "title": "UpdateStandardDescriptionsApiRequest"
       },
       "UpsertStaffApiRequest": {
         "properties": {

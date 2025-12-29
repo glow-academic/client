@@ -1,6 +1,7 @@
 -- Update standard descriptions for rubric grid cells
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Returns descriptions as array of composite types (not JSONB)
 
 BEGIN;
 
@@ -31,6 +32,7 @@ BEGIN
         SELECT typname 
         FROM pg_type 
         WHERE typname LIKE 'i_update_standard_descriptions_v3_%'
+           OR typname LIKE 'q_update_standard_descriptions_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -39,6 +41,13 @@ END $$;
 
 -- 3) Recreate types
 CREATE TYPE types.i_update_standard_descriptions_v3_description AS (
+    standard_group_id uuid,
+    standard_id uuid,
+    description text
+);
+
+-- Return type for descriptions array
+CREATE TYPE types.q_update_standard_descriptions_v3_description AS (
     standard_group_id uuid,
     standard_id uuid,
     description text
@@ -54,7 +63,8 @@ CREATE OR REPLACE FUNCTION socket_update_standard_descriptions_v3(
 RETURNS TABLE (
     updated_count int,
     group_id uuid,
-    trace_id text
+    trace_id text,
+    descriptions types.q_update_standard_descriptions_v3_description[]
 )
 LANGUAGE sql
 VOLATILE
@@ -101,13 +111,21 @@ updated_standards AS (
           WHERE sg.id = s.standard_group_id
           AND sg.rubric_id = (SELECT rubric_id FROM params)
       )
-    RETURNING s.id
+    RETURNING s.standard_group_id, s.id as standard_id, s.description
 )
 SELECT 
     COUNT(*)::int as updated_count,
     (SELECT group_id FROM group_data LIMIT 1) as group_id,
-    (SELECT trace_id FROM group_data LIMIT 1) as trace_id
-FROM updated_standards
+    (SELECT trace_id FROM group_data LIMIT 1) as trace_id,
+    -- Return descriptions as array of composite types (not JSONB)
+    COALESCE(
+        ARRAY_AGG(
+            (us.standard_group_id, us.standard_id, us.description)::types.q_update_standard_descriptions_v3_description
+            ORDER BY us.standard_group_id, us.standard_id
+        ),
+        ARRAY[]::types.q_update_standard_descriptions_v3_description[]
+    ) as descriptions
+FROM updated_standards us
 $$;
 
 COMMIT;

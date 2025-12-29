@@ -7755,19 +7755,132 @@ class GetRubricNewApiResponse(BaseModel):
 
 
 
-# Generated from: get_rubric_run_context_and_create_run
+# Generated from: get_rubric_regeneration_run_context_and_create_run
 
-class GetRubricRunContextAndCreateRunSqlParams(BaseModel):
+class GetRubricRegenerationRunContextAndCreateRunSqlParams(BaseModel):
 
     department_id: UUID
     profile_id: UUID
     rubric_agent_id: UUID
+    group_id: UUID
+    rubric_id: UUID
+    user_instructions: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.department_id,
             self.profile_id,
             self.rubric_agent_id,
+            self.group_id,
+            self.rubric_id,
+            self.user_instructions,
+        )
+
+class GetRubricRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    standard_groups: dict[str, Any] | None = None
+    standards: dict[str, Any] | None = None
+    previous_messages: dict[str, Any] | None = None
+
+class GetRubricRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    department_id: UUID
+    rubric_agent_id: UUID
+    group_id: UUID
+    rubric_id: UUID
+    user_instructions: str | None = None
+
+class GetRubricRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    standard_groups: dict[str, Any] | None = None
+    standards: dict[str, Any] | None = None
+    previous_messages: dict[str, Any] | None = None
+
+
+
+# Generated from: get_rubric_run_context_and_create_run
+
+class IGetRubricRunContextAndCreateRunV3Standard(BaseModel):
+
+    id: str | None
+    name: str | None
+    points: int | None
+    standard_group_id: str | None
+
+
+
+
+class IGetRubricRunContextAndCreateRunV3StandardGroup(BaseModel):
+
+    id: str | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetRubricRunContextAndCreateRunSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+    rubric_agent_id: UUID
+    group_id: UUID | None = None
+    rubric_id: UUID | None = None
+    standard_groups: list[IGetRubricRunContextAndCreateRunV3StandardGroup] | None = None
+    standards: list[IGetRubricRunContextAndCreateRunV3Standard] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert standard_groups composite array to tuples for asyncpg
+        standard_groups_tuples = [
+            (conn.id, conn.name, conn.description, conn.points, conn.pass_points)
+            for conn in self.standard_groups
+        ]
+        # Convert standards composite array to tuples for asyncpg
+        standards_tuples = [
+            (conn.id, conn.name, conn.points, conn.standard_group_id)
+            for conn in self.standards
+        ]
+        return (
+            self.department_id,
+            self.profile_id,
+            self.rubric_agent_id,
+            self.group_id,
+            self.rubric_id,
+            standard_groups_tuples,
+            standards_tuples,
         )
 
 class GetRubricRunContextAndCreateRunSqlRow(BaseModel):
@@ -7787,11 +7900,17 @@ class GetRubricRunContextAndCreateRunSqlRow(BaseModel):
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
     run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
 
 class GetRubricRunContextAndCreateRunApiRequest(BaseModel):
 
     department_id: UUID
     rubric_agent_id: UUID
+    group_id: UUID | None = None
+    rubric_id: UUID | None = None
+    standard_groups: list[IGetRubricRunContextAndCreateRunV3StandardGroup] | None = None
+    standards: list[IGetRubricRunContextAndCreateRunV3Standard] | None = None
 
 class GetRubricRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -7810,6 +7929,8 @@ class GetRubricRunContextAndCreateRunApiResponse(BaseModel):
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
     run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
 
 
 
@@ -7910,6 +8031,125 @@ class GetRubricsListApiResponse(BaseModel):
 
 
 
+# Generated from: rubric_generation_complete
+
+class RubricGenerationCompleteSqlParams(BaseModel):
+
+    profile_id: UUID
+    rubric_id: UUID | None = None
+    group_id: UUID | None = None
+    message: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.rubric_id,
+            self.group_id,
+            self.message,
+        )
+
+class RubricGenerationCompleteSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+class RubricGenerationCompleteApiRequest(BaseModel):
+
+    rubric_id: UUID | None = None
+    group_id: UUID | None = None
+    message: str | None = None
+
+class RubricGenerationCompleteApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+
+
+# Generated from: rubric_generation_error
+
+class RubricGenerationErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    error_message: str
+    rubric_id: UUID | None = None
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.error_message,
+            self.rubric_id,
+            self.group_id,
+        )
+
+class RubricGenerationErrorSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+class RubricGenerationErrorApiRequest(BaseModel):
+
+    error_message: str
+    rubric_id: UUID | None = None
+    group_id: UUID | None = None
+
+class RubricGenerationErrorApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+
+
+# Generated from: rubric_generation_progress
+
+class RubricGenerationProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    progress_type: str
+    rubric_id: UUID | None = None
+    group_id: UUID | None = None
+    message: str | None = None
+    tool_name: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.progress_type,
+            self.rubric_id,
+            self.group_id,
+            self.message,
+            self.tool_name,
+        )
+
+class RubricGenerationProgressSqlRow(BaseModel):
+
+    type: str | None = None
+    message: str | None = None
+    tool_name: str | None = None
+    trace_id: str | None = None
+
+class RubricGenerationProgressApiRequest(BaseModel):
+
+    progress_type: str
+    rubric_id: UUID | None = None
+    group_id: UUID | None = None
+    message: str | None = None
+    tool_name: str | None = None
+
+class RubricGenerationProgressApiResponse(BaseModel):
+
+    type: str | None = None
+    message: str | None = None
+    tool_name: str | None = None
+    trace_id: str | None = None
+
+
+
 # Generated from: update_rubric
 
 class IUpdateRubricV3Standard(BaseModel):
@@ -8000,6 +8240,7 @@ class UpdateStandardDescriptionsSqlParams(BaseModel):
     rubric_id: UUID
     descriptions: list[IUpdateStandardDescriptionsV3Description]
     profile_id: UUID
+    group_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert descriptions composite array to tuples for asyncpg
@@ -8011,20 +8252,26 @@ class UpdateStandardDescriptionsSqlParams(BaseModel):
             self.rubric_id,
             descriptions_tuples,
             self.profile_id,
+            self.group_id,
         )
 
 class UpdateStandardDescriptionsSqlRow(BaseModel):
 
     updated_count: int | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
 
 class UpdateStandardDescriptionsApiRequest(BaseModel):
 
     rubric_id: UUID
     descriptions: list[IUpdateStandardDescriptionsV3Description]
+    group_id: UUID | None = None
 
 class UpdateStandardDescriptionsApiResponse(BaseModel):
 
     updated_count: int | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
 
 
 
@@ -9102,6 +9349,78 @@ class GetScenariosListApiResponse(BaseModel):
     persona_options: list[QListScenariosV3Option] | None = None
     simulation_options: list[QListScenariosV3Option] | None = None
     department_options: list[QListScenariosV3Option] | None = None
+
+
+
+# Generated from: randomize_scenario
+
+class RandomizeScenarioSqlParams(BaseModel):
+
+    scenario_id: UUID
+    profile_id: UUID
+    randomize_type: str
+    department_ids: list[UUID]
+    persona_ids: list[UUID]
+    document_ids: list[UUID]
+    parameter_ids: list[UUID]
+    field_ids: list[UUID]
+    persona_min: int
+    persona_max: int
+    document_min: int
+    document_max: int
+    parameter_selection_min: int
+    parameter_selection_max: int
+    field_ranges_json: dict[str, Any]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+            self.profile_id,
+            self.randomize_type,
+            self.department_ids,
+            self.persona_ids,
+            self.document_ids,
+            self.parameter_ids,
+            self.field_ids,
+            self.persona_min,
+            self.persona_max,
+            self.document_min,
+            self.document_max,
+            self.parameter_selection_min,
+            self.parameter_selection_max,
+            self.field_ranges_json,
+        )
+
+class RandomizeScenarioSqlRow(BaseModel):
+
+    randomized_persona_ids: list[UUID] | None = None
+    randomized_document_ids: list[UUID] | None = None
+    randomized_parameter_ids: list[UUID] | None = None
+    randomized_field_ids: list[UUID] | None = None
+
+class RandomizeScenarioApiRequest(BaseModel):
+
+    scenario_id: UUID
+    randomize_type: str
+    department_ids: list[UUID]
+    persona_ids: list[UUID]
+    document_ids: list[UUID]
+    parameter_ids: list[UUID]
+    field_ids: list[UUID]
+    persona_min: int
+    persona_max: int
+    document_min: int
+    document_max: int
+    parameter_selection_min: int
+    parameter_selection_max: int
+    field_ranges_json: dict[str, Any]
+
+class RandomizeScenarioApiResponse(BaseModel):
+
+    randomized_persona_ids: list[UUID] | None = None
+    randomized_document_ids: list[UUID] | None = None
+    randomized_parameter_ids: list[UUID] | None = None
+    randomized_field_ids: list[UUID] | None = None
 
 
 
@@ -11869,6 +12188,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricNewApiRequest",
         "GetRubricNewApiResponse",
     ),
+    "app/sql/v3/rubrics/get_rubric_regeneration_run_context_and_create_run_complete.sql": (
+        "GetRubricRegenerationRunContextAndCreateRunSqlParams",
+        "GetRubricRegenerationRunContextAndCreateRunSqlRow",
+        "GetRubricRegenerationRunContextAndCreateRunApiRequest",
+        "GetRubricRegenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/rubrics/get_rubric_run_context_and_create_run_complete.sql": (
         "GetRubricRunContextAndCreateRunSqlParams",
         "GetRubricRunContextAndCreateRunSqlRow",
@@ -11880,6 +12205,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricsListSqlRow",
         "GetRubricsListApiRequest",
         "GetRubricsListApiResponse",
+    ),
+    "app/sql/v3/rubrics/rubric_generation_complete_complete.sql": (
+        "RubricGenerationCompleteSqlParams",
+        "RubricGenerationCompleteSqlRow",
+        "RubricGenerationCompleteApiRequest",
+        "RubricGenerationCompleteApiResponse",
+    ),
+    "app/sql/v3/rubrics/rubric_generation_error_complete.sql": (
+        "RubricGenerationErrorSqlParams",
+        "RubricGenerationErrorSqlRow",
+        "RubricGenerationErrorApiRequest",
+        "RubricGenerationErrorApiResponse",
+    ),
+    "app/sql/v3/rubrics/rubric_generation_progress_complete.sql": (
+        "RubricGenerationProgressSqlParams",
+        "RubricGenerationProgressSqlRow",
+        "RubricGenerationProgressApiRequest",
+        "RubricGenerationProgressApiResponse",
     ),
     "app/sql/v3/rubrics/update_rubric_complete.sql": (
         "UpdateRubricSqlParams",
@@ -11928,6 +12271,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenariosListSqlRow",
         "GetScenariosListApiRequest",
         "GetScenariosListApiResponse",
+    ),
+    "app/sql/v3/scenarios/randomize_scenario_complete.sql": (
+        "RandomizeScenarioSqlParams",
+        "RandomizeScenarioSqlRow",
+        "RandomizeScenarioApiRequest",
+        "RandomizeScenarioApiResponse",
     ),
     "app/sql/v3/scenarios/update_scenario_complete.sql": (
         "UpdateScenarioSqlParams",
@@ -12682,12 +13031,32 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/get_rubric_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/rubrics/get_rubric_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/rubrics/get_rubrics_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/rubric_generation_complete_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/rubric_generation_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/rubric_generation_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -12728,6 +13097,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/scenarios/get_scenarios_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenarios/randomize_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
