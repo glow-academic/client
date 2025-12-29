@@ -43,4 +43,3 @@ async def test_simulation_grading_start_success(
 
     # Assert - verify handler completed
     # Grading start initiates grading process for completed chat
-

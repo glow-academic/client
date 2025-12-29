@@ -23,7 +23,9 @@ async def test_eval_start_success(
     department_id = await get_or_create_test_department(db)
 
     # Create eval with runs
-    sql_create_eval = load_sql("tests/sql/integration/socket/create_test_eval_with_runs.sql")
+    sql_create_eval = load_sql(
+        "tests/sql/integration/socket/create_test_eval_with_runs.sql"
+    )
     eval_row = await db.fetchrow(sql_create_eval, None, None, None)
     assert eval_row is not None
     eval_id = eval_row["eval_id"]
@@ -76,7 +78,10 @@ async def test_eval_start_missing_eval_id(
     error_events = mock_sio.get_events("evals_start_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "eval_id" in error_events[0]["message"].lower() or "missing" in error_events[0]["message"].lower()
+    assert (
+        "eval_id" in error_events[0]["message"].lower()
+        or "missing" in error_events[0]["message"].lower()
+    )
 
 
 async def test_eval_start_no_pending_runs(
@@ -105,7 +110,10 @@ async def test_eval_start_no_pending_runs(
     error_events = mock_sio.get_events("evals_start_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "pending" in error_events[0]["message"].lower() or "no" in error_events[0]["message"].lower()
+    assert (
+        "pending" in error_events[0]["message"].lower()
+        or "no" in error_events[0]["message"].lower()
+    )
 
 
 async def test_eval_start_with_conversation_mode(
@@ -122,7 +130,9 @@ async def test_eval_start_with_conversation_mode(
     )
 
     # Create eval with runs
-    sql_create_eval = load_sql("tests/sql/integration/socket/create_test_eval_with_runs.sql")
+    sql_create_eval = load_sql(
+        "tests/sql/integration/socket/create_test_eval_with_runs.sql"
+    )
     eval_row = await db.fetchrow(sql_create_eval, agent_id, None, None)
     assert eval_row is not None
     eval_id = eval_row["eval_id"]
@@ -153,4 +163,3 @@ async def test_eval_start_with_conversation_mode(
     events = mock_sio.get_events("evals_started")
     assert len(events) == 1
     assert events[0]["success"] is True
-

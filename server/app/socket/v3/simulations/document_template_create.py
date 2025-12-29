@@ -5,15 +5,17 @@ import os
 import uuid
 from typing import Any
 
-from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
-from app.socket.v3.agents.document.generate import (
-    DocumentTemplateGenerationCompletePayload,
-    document_template_generation_complete)
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool
+from app.socket.v3.agents.document.generate import (
+    DocumentTemplateGenerationCompletePayload,
+    document_template_generation_complete,
+)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -109,9 +111,7 @@ async def _document_template_create_impl(
                     sql_templates = load_sql(
                         "app/sql/v3/documents/get_document_templates.sql"
                     )
-                    template_rows = await conn.fetch(
-                        sql_templates, str(document_id)
-                    )
+                    template_rows = await conn.fetch(sql_templates, str(document_id))
 
                     # Build mapping from array (replacing JSONB pattern)
                     template_mapping = {}
@@ -163,9 +163,7 @@ async def _document_template_create_impl(
             }
 
         except Exception as e:
-            logger.error(
-                f"Error creating document template: {e}", exc_info=True
-            )
+            logger.error(f"Error creating document template: {e}", exc_info=True)
             return None
 
 
@@ -175,9 +173,7 @@ async def document_template_create_internal(data: dict[str, Any]) -> None:
     try:
         validated = CreateDocumentTemplatePayload(**data)
         document_id = (
-            uuid.UUID(validated.document_id)
-            if validated.document_id
-            else None
+            uuid.UUID(validated.document_id) if validated.document_id else None
         )
         await _document_template_create_impl(
             document_id,
@@ -191,9 +187,7 @@ async def document_template_create_internal(data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in document_template_create: {e}")
     except Exception as e:
-        logger.error(
-            f"Error in document_template_create_internal: {e}", exc_info=True
-        )
+        logger.error(f"Error in document_template_create_internal: {e}", exc_info=True)
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -203,4 +197,3 @@ async def document_template_create_api(
 ) -> dict[str, bool]:
     """Internal event: Create a document template."""
     return {"success": True}
-

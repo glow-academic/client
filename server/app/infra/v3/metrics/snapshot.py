@@ -36,4 +36,3 @@ async def log_metrics_snapshot(
         cpu_percent,
         memory_bytes,
     )
-

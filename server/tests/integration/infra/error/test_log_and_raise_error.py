@@ -2,8 +2,9 @@
 
 import pytest
 from fastapi import HTTPException
-from app.infra.v3.error.log_and_raise_error import log_and_raise_error
 from utils.sql_helper import load_sql
+
+from app.infra.v3.error.log_and_raise_error import log_and_raise_error
 
 
 class TestLogAndRaiseError:
@@ -23,7 +24,7 @@ class TestLogAndRaiseError:
                 route_path=route_path,
                 operation=operation,
             )
-        
+
         assert exc_info.value.status_code == 500
 
     def test_log_and_raise_error_with_sql_query(self) -> None:
@@ -44,7 +45,7 @@ class TestLogAndRaiseError:
                 sql_query=sql_query,
                 sql_params=sql_params,
             )
-        
+
         assert exc_info.value.status_code == 500
 
     def test_log_and_raise_error_with_request(self) -> None:
@@ -53,9 +54,10 @@ class TestLogAndRaiseError:
         error = ValueError("Test error")
         route_path = "/api/v3/test"
         operation = "test_operation"
-        
+
         # Create a proper Request object with required scope fields
         from starlette.requests import Request as StarletteRequest
+
         scope = {
             "type": "http",
             "method": "GET",
@@ -74,6 +76,5 @@ class TestLogAndRaiseError:
                 operation=operation,
                 request=request,
             )
-        
-        assert exc_info.value.status_code == 500
 
+        assert exc_info.value.status_code == 500

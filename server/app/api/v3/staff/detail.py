@@ -4,17 +4,22 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetStaffDetailApiRequest, GetStaffDetailApiResponse,
-                           GetStaffDetailSqlParams, GetStaffDetailSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    GetStaffDetailApiRequest,
+    GetStaffDetailApiResponse,
+    GetStaffDetailSqlParams,
+    GetStaffDetailSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/staff/get_staff_detail_complete.sql"
@@ -67,7 +72,9 @@ async def get_staff_detail(
 
         # Convert API request to SQL params (add profile_id from header)
         # SQL function expects: target_profile_id (from request), profile_id (from header)
-        params = GetStaffDetailSqlParams(**request.model_dump(), profile_id=uuid.UUID(profile_id))
+        params = GetStaffDetailSqlParams(
+            **request.model_dump(), profile_id=uuid.UUID(profile_id)
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper (single row result)
@@ -100,7 +107,10 @@ async def get_staff_detail(
             audit_set(
                 http_request,
                 actor={"name": result.actor_name, "id": profile_id},
-                staff={"name": result.name or "", "id": str(result.profile_id) if result.profile_id else ""},
+                staff={
+                    "name": result.name or "",
+                    "id": str(result.profile_id) if result.profile_id else "",
+                },
             )
 
         # Convert SQL result to API response
@@ -109,7 +119,7 @@ async def get_staff_detail(
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": api_response.model_dump(mode='json')},
+            {"data": api_response.model_dump(mode="json")},
             ttl=60,
             tags=tags,
         )

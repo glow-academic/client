@@ -3,6 +3,12 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -13,11 +19,6 @@ from app.sql.types import (
     GetHealthBundleSqlRow,
     load_sql_query,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.cache_key import cache_key
-from utils.cache.get_cached import get_cached
-from utils.cache.set_cached import set_cached
-from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/health/get_health_bundle_complete.sql"
@@ -64,8 +65,11 @@ async def get_health_bundle(
         # Convert API request to SQL params (add profile_id from header)
         # Use double star pattern for parameter construction
         import uuid
+
         profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
-        params = GetHealthBundleSqlParams(**request.model_dump(), profile_id=profile_id_uuid)
+        params = GetHealthBundleSqlParams(
+            **request.model_dump(), profile_id=profile_id_uuid
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
@@ -107,4 +111,3 @@ async def get_health_bundle(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -3,17 +3,22 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetPersonaDetailApiRequest, GetPersonaDetailApiResponse,
-                           GetPersonaDetailSqlParams, GetPersonaDetailSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    GetPersonaDetailApiRequest,
+    GetPersonaDetailApiResponse,
+    GetPersonaDetailSqlParams,
+    GetPersonaDetailSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/personas/get_persona_detail_complete.sql"
@@ -64,7 +69,9 @@ async def get_persona_detail(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetPersonaDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetPersonaDetailSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper (single row result)
@@ -82,7 +89,7 @@ async def get_persona_detail(
             raise HTTPException(
                 status_code=404, detail=f"Persona {request.persona_id} not found"
             )
-        
+
         if not result.name:
             # Persona exists but user doesn't have access
             raise HTTPException(
@@ -167,18 +174,20 @@ async def get_persona_detail(
         # Convert SQL result to API response
         # Note: preset_colors, suggested_icons, valid_icons are hardcoded in Python
         # All other fields come from SQL result
-        response_data = GetPersonaDetailApiResponse.model_validate({
-            **result.model_dump(),
-            "preset_colors": preset_colors,
-            "suggested_icons": suggested_icons,
-            "valid_icons": valid_icons,
-            "debug_info": [],  # Empty for now
-        })
+        response_data = GetPersonaDetailApiResponse.model_validate(
+            {
+                **result.model_dump(),
+                "preset_colors": preset_colors,
+                "suggested_icons": suggested_icons,
+                "valid_icons": valid_icons,
+                "debug_info": [],  # Empty for now
+            }
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump(mode='json')},
+            {"data": response_data.model_dump(mode="json")},
             ttl=60,
             tags=tags,
         )

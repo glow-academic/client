@@ -4,12 +4,13 @@ import json
 import uuid
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -186,9 +187,7 @@ async def _randomize_scenario_impl(sid: str, data: RandomizeScenarioPayload) -> 
                     field_ranges_jsonb = None
 
             # Call PostgreSQL function
-            sql_randomize = load_sql(
-                "app/sql/v3/scenario/randomize_scenario.sql"
-            )
+            sql_randomize = load_sql("app/sql/v3/scenario/randomize_scenario.sql")
             result = await conn.fetchrow(
                 sql_randomize,
                 scenario_id_uuid,
@@ -268,9 +267,7 @@ async def _randomize_scenario_impl(sid: str, data: RandomizeScenarioPayload) -> 
                 )
 
     except Exception as e:
-        logger.error(
-            f"Error in scenario_randomize for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in scenario_randomize for {sid}: {str(e)}", exc_info=True)
         await scenario_randomize_error(
             ScenarioRandomizeErrorPayload(success=False, message=str(e)),
             room=sid,
@@ -328,4 +325,3 @@ async def scenario_randomize_api(
 ) -> dict[str, bool]:
     """Client-to-server event: Randomize scenario selections."""
     return {"success": True}
-

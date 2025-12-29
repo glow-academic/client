@@ -6,6 +6,10 @@ from typing import Any, cast
 
 from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import Field
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
@@ -14,20 +18,17 @@ from app.infra.v3.websocket.handler_wrapper import handle_client_event
 from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.sql.types import (GetRubricRunContextAndCreateRunApiRequest,
-                           GetRubricRunContextAndCreateRunSqlParams,
-                           GetRubricRunContextAndCreateRunSqlRow,
-                           IGetRubricRunContextAndCreateRunV3Standard,
-                           IGetRubricRunContextAndCreateRunV3StandardGroup,
-                           IUpdateStandardDescriptionsV3Description,
-                           RubricGenerationCompleteApiRequest,
-                           RubricGenerationErrorApiRequest,
-                           RubricGenerationErrorSqlRow,
-                           RubricGenerationProgressApiRequest,
-                           UpdateStandardDescriptionsApiRequest)
-from fastapi import APIRouter
-from pydantic import Field
-from utils.sql_helper import execute_sql_typed
+from app.sql.types import (
+    GetRubricRunContextAndCreateRunApiRequest,
+    GetRubricRunContextAndCreateRunSqlParams,
+    GetRubricRunContextAndCreateRunSqlRow,
+    IUpdateStandardDescriptionsV3Description,
+    RubricGenerationCompleteApiRequest,
+    RubricGenerationErrorApiRequest,
+    RubricGenerationErrorSqlRow,
+    RubricGenerationProgressApiRequest,
+    UpdateStandardDescriptionsApiRequest,
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -66,7 +67,9 @@ async def _rubric_generate_impl(
                     rubric_agent_id=rubric_agent_id,
                     group_id=None,  # NULL for new group
                     rubric_id=rubric_id,
-                    standard_groups=standard_groups_objects if standard_groups_objects else None,
+                    standard_groups=standard_groups_objects
+                    if standard_groups_objects
+                    else None,
                     standards=standards_objects if standards_objects else None,
                 )
                 result = cast(
@@ -212,7 +215,9 @@ async def _rubric_generate_impl(
                 # Emit to internal bus with type-safe payload
                 # rubric_id is required for UpdateStandardDescriptionsApiRequest
                 if not rubric_id:
-                    raise ValueError("rubric_id is required for updating standard descriptions")
+                    raise ValueError(
+                        "rubric_id is required for updating standard descriptions"
+                    )
                 # Type narrowing: rubric_id is guaranteed to be UUID here
                 rubric_id_uuid: uuid.UUID = rubric_id
                 payload = UpdateStandardDescriptionsApiRequest(
@@ -284,7 +289,9 @@ Generate descriptions for ALL combinations of standard groups and standards."""
             with trace(
                 "Rubric Agent",
                 trace_id=trace_id,  # From groups table
-                group_id=str(rubric_id) if rubric_id else None,  # Resource ID, not database group_id
+                group_id=str(rubric_id)
+                if rubric_id
+                else None,  # Resource ID, not database group_id
             ):
                 run_result = await Runner.run(
                     rubric_agent.agent(),

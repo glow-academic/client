@@ -3,16 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (CreateAnalyticsViewFunctionApiRequest,
-                           CreateAnalyticsViewFunctionApiResponse,
-                           CreateAnalyticsViewFunctionSqlParams,
-                           CreateAnalyticsViewFunctionSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed, load_sql
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CreateAnalyticsViewFunctionApiRequest,
+    CreateAnalyticsViewFunctionApiResponse,
+    CreateAnalyticsViewFunctionSqlParams,
+    CreateAnalyticsViewFunctionSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/analytics/create_analytics_view_function_complete.sql"
@@ -24,7 +28,9 @@ router = APIRouter()
     "/view",
     response_model=CreateAnalyticsViewFunctionApiResponse,
     dependencies=[
-        audit_activity("analytics.view.created", "{{ actor.name }} created analytics view")
+        audit_activity(
+            "analytics.view.created", "{{ actor.name }} created analytics view"
+        )
     ],
 )
 async def create_analytics_view(
@@ -50,13 +56,18 @@ async def create_analytics_view(
 
         # Execute the view creation SQL (DDL operations) first
         # Note: DDL operations cannot be in functions, so this is handled separately
-        view_creation_sql = load_sql("app/sql/v3/analytics/create_analytics_view_complete.sql")
+        view_creation_sql = load_sql(
+            "app/sql/v3/analytics/create_analytics_view_complete.sql"
+        )
         await conn.execute(view_creation_sql)
 
         # Now call the function to get actor_name and response
         # Use double star pattern for parameter construction
         import uuid
-        params = CreateAnalyticsViewFunctionSqlParams(**request.model_dump(), profile_id=uuid.UUID(profile_id))
+
+        params = CreateAnalyticsViewFunctionSqlParams(
+            **request.model_dump(), profile_id=uuid.UUID(profile_id)
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
@@ -74,7 +85,9 @@ async def create_analytics_view(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Build response - SQL function returns structured data
-        api_response = CreateAnalyticsViewFunctionApiResponse.model_validate(result.model_dump())
+        api_response = CreateAnalyticsViewFunctionApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -92,4 +105,3 @@ async def create_analytics_view(
             sql_params=sql_params,
             request=http_request,
         )
-

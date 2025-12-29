@@ -21,4 +21,3 @@ async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
     except (asyncpg.DataError, ValueError):
         # Invalid UUID format - profile cannot exist
         return False
-

@@ -3,15 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (DeleteRubricApiRequest, DeleteRubricApiResponse,
-                           DeleteRubricSqlParams, DeleteRubricSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    DeleteRubricApiRequest,
+    DeleteRubricApiResponse,
+    DeleteRubricSqlParams,
+    DeleteRubricSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/rubrics/delete_rubric_complete.sql"
@@ -87,10 +92,12 @@ async def delete_rubric(
             )
 
         # Convert SQL result to API response
-        api_response = DeleteRubricApiResponse.model_validate({
-            "success": True,
-            "message": "Rubric deleted successfully",
-        })
+        api_response = DeleteRubricApiResponse.model_validate(
+            {
+                "success": True,
+                "message": "Rubric deleted successfully",
+            }
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

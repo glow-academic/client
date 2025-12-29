@@ -2,13 +2,14 @@
 
 from typing import Any
 
-from app.infra.v3.websocket.cancel_active_run import cancel_active_run
-from app.main import get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.websocket.cancel_active_run import cancel_active_run
+from app.main import get_pool, sio
 
 logger = get_logger(__name__)
 
@@ -134,7 +135,9 @@ async def _eval_run_stop_impl(sid: str, data: EvalRunStopPayload) -> None:
                 await conn.execute(sql_complete_test, test_id)
 
                 # Mark eval_runs as completed (stopped)
-                sql_complete_eval_run = load_sql("app/sql/v3/evals/complete_eval_run.sql")
+                sql_complete_eval_run = load_sql(
+                    "app/sql/v3/evals/complete_eval_run.sql"
+                )
                 await conn.execute(sql_complete_eval_run, attempt_id, run_id)
 
                 # Invalidate cache after stopping run

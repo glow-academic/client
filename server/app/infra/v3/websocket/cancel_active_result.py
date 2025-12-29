@@ -2,8 +2,9 @@
 
 import asyncio
 
-from app.main import get_active_results_dict
 from utils.logging.db_logger import get_logger
+
+from app.main import get_active_results_dict
 
 logger = get_logger(__name__)
 

@@ -5,7 +5,6 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
 from app.socket.v3.scenarios.tools.objectives import (
-    _scenario_tool_objectives_impl,
     scenario_tool_objectives,
     scenario_tool_objectives_internal,
 )
@@ -109,4 +108,3 @@ async def test_scenario_tool_objectives_limits_to_3(
         scenario_id,
     )
     assert len(objectives) == 3
-

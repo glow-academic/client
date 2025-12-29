@@ -4,7 +4,9 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.simulations.voice.assistant.audio import simulation_voice_assistant_audio_link
+from app.socket.v3.simulations.voice.assistant.audio import (
+    simulation_voice_assistant_audio_link,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -15,10 +17,9 @@ async def test_simulation_voice_assistant_audio_link_success(
     """Test successful simulation_voice_assistant_audio_link event."""
     # Arrange
     from tests.integration.socket.helpers import get_or_create_test_profile
-    from utils.sql_helper import load_sql
-    
+
     profile_id = await get_or_create_test_profile(db)
-    
+
     # Create test scenario and chat
     scenario_id = await db.fetchval(
         "INSERT INTO scenarios(name, active) VALUES ('Test Scenario', true) RETURNING id"
@@ -27,24 +28,24 @@ async def test_simulation_voice_assistant_audio_link_success(
         "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $1, true)",
         scenario_id,
     )
-    
+
     chat_id = await db.fetchval(
         "INSERT INTO chats(title, scenario_id, completed, trace_id) "
         "VALUES ('Test Chat', $1, false, 'test-trace') RETURNING id",
         scenario_id,
     )
-    
+
     # Create message
     message_id = await db.fetchval(
         "INSERT INTO messages(role, completed) VALUES ('assistant', true) RETURNING id"
     )
-    
+
     # Create upload
     upload_id = await db.fetchval(
         "INSERT INTO uploads(filename, mime_type, size) "
         "VALUES ('test.mp3', 'audio/mpeg', 1024) RETURNING id"
     )
-    
+
     sid = "test_sid_123"
     data = {
         "chat_id": str(chat_id),
@@ -79,5 +80,7 @@ async def test_simulation_voice_assistant_audio_link_missing_chat_id(
     error_events = mock_sio.get_events("simulations_voice_assistant_audio_link_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "chat_id" in error_events[0]["message"].lower() or "missing" in error_events[0]["message"].lower()
-
+    assert (
+        "chat_id" in error_events[0]["message"].lower()
+        or "missing" in error_events[0]["message"].lower()
+    )

@@ -3,6 +3,10 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
@@ -13,9 +17,6 @@ from app.sql.types import (
     UpdateDepartmentSqlRow,
     load_sql_query,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/departments/update_department_complete.sql"
@@ -56,7 +57,9 @@ async def update_department(
 
         async with transaction(conn):
             # Convert API request to SQL params (add profile_id from header)
-            params = UpdateDepartmentSqlParams(**request.model_dump(), profile_id=profile_id)
+            params = UpdateDepartmentSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper
@@ -79,10 +82,15 @@ async def update_department(
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    department={"title": department_title, "id": str(request.department_id)},
+                    department={
+                        "title": department_title,
+                        "id": str(request.department_id),
+                    },
                 )
 
-        result_response = UpdateDepartmentApiResponse.model_validate(result.model_dump())
+        result_response = UpdateDepartmentApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

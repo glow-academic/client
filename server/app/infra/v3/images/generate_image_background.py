@@ -2,14 +2,12 @@
 
 import os
 import uuid
-from typing import Any
 
-import asyncpg  # type: ignore
-
-from app.main import UPLOAD_FOLDER, get_pool
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import UPLOAD_FOLDER, get_pool
 
 logger = get_logger(__name__)
 
@@ -21,8 +19,6 @@ try:
 except ImportError:
     LITELLM_AVAILABLE = False
     logger.warning("litellm not available - image generation will not work")
-
-
 
 
 async def generate_image_background(
@@ -66,7 +62,7 @@ async def generate_image_background(
                     image_id, storage_key, "profile_id is required for image generation"
                 )
                 return
-            
+
             sql_query = load_sql("app/sql/v3/agents/get_agent_model_info.sql")
             row = await conn.fetchrow(sql_query, agent_id, profile_id)
             if not row:
@@ -334,7 +330,9 @@ async def _emit_image_error(
     if pool:
         try:
             async with pool.acquire() as conn:
-                sql_update_image = load_sql("app/sql/v3/images/update_image_completed.sql")
+                sql_update_image = load_sql(
+                    "app/sql/v3/images/update_image_completed.sql"
+                )
                 await conn.execute(sql_update_image, image_id, True)
         except Exception as e:
             logger.error(f"Failed to update image record on error: {e}")

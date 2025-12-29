@@ -117,4 +117,3 @@ async def test_grading_tool_message_improvement_missing_required_fields(
     error_events = mock_sio.get_events("grading_tools_message_improvement_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

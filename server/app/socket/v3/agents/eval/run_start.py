@@ -2,12 +2,13 @@
 
 from typing import Any
 
-from app.infra.v3.evals.run_eval_single_run import run_eval_single_run
-from app.main import get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.logging.db_logger import get_logger
+
+from app.infra.v3.evals.run_eval_single_run import run_eval_single_run
+from app.main import get_pool, sio
 
 logger = get_logger(__name__)
 

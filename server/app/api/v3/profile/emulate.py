@@ -3,16 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (AuthorizeEmulationApiRequest,
-                           AuthorizeEmulationApiResponse,
-                           AuthorizeEmulationSqlParams,
-                           AuthorizeEmulationSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    AuthorizeEmulationApiRequest,
+    AuthorizeEmulationApiResponse,
+    AuthorizeEmulationSqlParams,
+    AuthorizeEmulationSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/profile/authorize_emulation_complete.sql"
@@ -56,7 +60,10 @@ async def authorize_emulation(
         # Set audit context using actor_name from SQL result
         if result.actor_name:
             # Use requester_profile_id for actor (the one requesting emulation)
-            audit_set(http_request, actor={"name": result.actor_name, "id": request.requester_profile_id})
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": request.requester_profile_id},
+            )
 
         # Convert SQL result to API response
         api_response = AuthorizeEmulationApiResponse.model_validate(result.model_dump())

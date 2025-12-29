@@ -5,32 +5,33 @@ import json
 import uuid
 from typing import Any
 
-from agents import Runner, Tool, function_tool, trace
+from agents import Runner, function_tool, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.agents.utils.build_hint_agent import build_hint_agent
-from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
-from app.infra.v3.debug.debug_info import DebugContext
-from app.infra.v3.documents.format_document_info import format_document_info
-from app.infra.v3.tools.build_pydantic_fields import \
-    build_function_signature_string
-from app.main import (get_internal_sio, get_pool,
-                      get_simulation_tool_calls_dict, sio)
-from app.socket.v3.simulations.group.link import _simulation_group_link_impl
-from app.socket.v3.simulations.message.create import \
-    _simulation_message_create_impl
-from app.socket.v3.simulations.streaming.message import (
-    _simulation_message_complete_impl, _simulation_message_link_persona_impl,
-    _simulation_message_start_impl, _simulation_message_token_impl)
-from app.socket.v3.simulations.streaming.tool_call import (
-    _simulation_tool_call_complete_impl, _simulation_tool_call_start_impl,
-    _simulation_tool_call_token_impl)
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.documents.format_document_info import format_document_info
+from app.main import get_internal_sio, get_pool, get_simulation_tool_calls_dict, sio
+from app.socket.v3.simulations.group.link import _simulation_group_link_impl
+from app.socket.v3.simulations.message.create import _simulation_message_create_impl
+from app.socket.v3.simulations.streaming.message import (
+    _simulation_message_complete_impl,
+    _simulation_message_link_persona_impl,
+    _simulation_message_start_impl,
+    _simulation_message_token_impl,
+)
+from app.socket.v3.simulations.streaming.tool_call import (
+    _simulation_tool_call_complete_impl,
+    _simulation_tool_call_start_impl,
+    _simulation_tool_call_token_impl,
+)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -348,8 +349,7 @@ async def _simulation_text_send_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.infra.v3.websocket.store_active_run import \
-                        store_active_run
+                    from app.infra.v3.websocket.store_active_run import store_active_run
 
                     # Get context AND create run in single atomic transaction
                     # This validates rate limits and creates run atomically
@@ -359,7 +359,9 @@ async def _simulation_text_send_impl(
                         "app/sql/v3/simulations/get_simulation_run_context_and_create_run.sql"
                     )
                     try:
-                        context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
+                        context_row = await conn.fetchrow(
+                            sql_context, str(chat_id_uuid)
+                        )
                     except Exception as e:
                         import asyncpg  # type: ignore
 
@@ -528,8 +530,9 @@ async def _simulation_text_send_impl(
                     await _simulation_group_link_impl(chat_id_uuid, model_run_id, sid)
 
                     # Link system/developer messages to run via internal event (separate event for database operations)
-                    from app.socket.v3.simulations.messages.link import \
-                        _simulation_messages_link_impl
+                    from app.socket.v3.simulations.messages.link import (
+                        _simulation_messages_link_impl,
+                    )
 
                     await _simulation_messages_link_impl(
                         model_run_id,
@@ -699,56 +702,89 @@ async def _simulation_text_send_impl(
                     if personas:
                         # Load agent tools from database
                         simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
-                        sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
-                        rows = await conn.fetch(sql_get_agent_tools, str(simulation_agent_id_uuid))
+                        sql_get_agent_tools = load_sql(
+                            "app/sql/v3/agents/get_agent_tools.sql"
+                        )
+                        rows = await conn.fetch(
+                            sql_get_agent_tools, str(simulation_agent_id_uuid)
+                        )
                         agent_tools_config = [dict(row) for row in rows]
                         tool_config_map_persona: dict[str, dict[str, Any]] = {
-                            tool_config["name"]: tool_config for tool_config in agent_tools_config
+                            tool_config["name"]: tool_config
+                            for tool_config in agent_tools_config
                         }
-                        
+
                         # Build speak tool inline
                         speak_config = tool_config_map_persona.get("speak")
                         if speak_config:
-                            persona_desc = speak_config.get("argument_descriptions", {}).get("persona", "The name of the persona that should speak")
-                            message_desc = speak_config.get("argument_descriptions", {}).get("message", "The message content that the persona should say")
+                            persona_desc = speak_config.get(
+                                "argument_descriptions", {}
+                            ).get(
+                                "persona", "The name of the persona that should speak"
+                            )
+                            message_desc = speak_config.get(
+                                "argument_descriptions", {}
+                            ).get(
+                                "message",
+                                "The message content that the persona should say",
+                            )
                         else:
                             # Build list of available persona names for tool description
                             persona_names = []
                             for persona in personas:
-                                persona_name = persona.get("persona_name") or persona.get("name", "")
+                                persona_name = persona.get(
+                                    "persona_name"
+                                ) or persona.get("name", "")
                                 if persona_name:
                                     persona_names.append(persona_name)
-                            
+
                             if persona_names:
-                                persona_names_str = ", ".join(f'"{name}"' for name in persona_names)
+                                persona_names_str = ", ".join(
+                                    f'"{name}"' for name in persona_names
+                                )
                                 persona_desc = f"The name of the persona that should speak. Must be one of: {persona_names_str}."
                             else:
-                                persona_desc = "The name of the persona that should speak"
-                            message_desc = "The message content that the persona should say"
-                        
+                                persona_desc = (
+                                    "The name of the persona that should speak"
+                                )
+                            message_desc = (
+                                "The message content that the persona should say"
+                            )
+
                         async def speak(
                             persona: str = Field(description=persona_desc),
                             message: str = Field(description=message_desc),
                         ) -> str:
                             """Make a persona speak by calling this tool with the persona name and message."""
-                            logger.info(f"Speak tool called: persona={persona}, message_length={len(message)}")
-                            
+                            logger.info(
+                                f"Speak tool called: persona={persona}, message_length={len(message)}"
+                            )
+
                             # Find persona by name
-                            persona_match = find_persona_by_name_inline(persona.strip() if persona else "", personas)
+                            persona_match = find_persona_by_name_inline(
+                                persona.strip() if persona else "", personas
+                            )
                             if not persona_match:
-                                available_list = "\n".join(f"  - {p.get('persona_name') or p.get('name', '')}" for p in personas)
+                                available_list = "\n".join(
+                                    f"  - {p.get('persona_name') or p.get('name', '')}"
+                                    for p in personas
+                                )
                                 error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"
                                 logger.error(error_msg)
                                 return f"Error: {error_msg}"
-                            
+
                             persona_id, persona_display_name = persona_match
-                            logger.info(f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})")
-                            
+                            logger.info(
+                                f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})"
+                            )
+
                             # Tool call validation only - actual DB operations happen in streaming handler
                             return f"Tool call confirmed for {persona_display_name}"
-                        
+
                         persona_tools.append(function_tool(speak))
-                        logger.info(f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}")
+                        logger.info(
+                            f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}"
+                        )
 
                         # Get persona instructions for developer message
                         sql_get_persona_instructions = load_sql(
@@ -1200,9 +1236,13 @@ Tool Usage Instructions:
                                             # Resolve persona_id if we have persona_so_far
                                             persona_id_str = None
                                             if tool_call_state["persona_so_far"]:
-                                                persona_match = find_persona_by_name_inline(
-                                                    tool_call_state["persona_so_far"],
-                                                    personas,
+                                                persona_match = (
+                                                    find_persona_by_name_inline(
+                                                        tool_call_state[
+                                                            "persona_so_far"
+                                                        ],
+                                                        personas,
+                                                    )
                                                 )
                                                 if persona_match:
                                                     persona_id_str = str(
@@ -1861,11 +1901,9 @@ Tool Usage Instructions:
 
                                                         # Link to persona if we have it and haven't already
                                                         if final_persona:
-                                                            persona_match = (
-                                                                find_persona_by_name_inline(
-                                                                    final_persona,
-                                                                    personas,
-                                                                )
+                                                            persona_match = find_persona_by_name_inline(
+                                                                final_persona,
+                                                                personas,
                                                             )
                                                             if persona_match:
                                                                 persona_id, _ = (
@@ -1900,11 +1938,9 @@ Tool Usage Instructions:
                                                         # Emit final message update
                                                         persona_id_str = None
                                                         if final_persona:
-                                                            persona_match = (
-                                                                find_persona_by_name_inline(
-                                                                    final_persona,
-                                                                    personas,
-                                                                )
+                                                            persona_match = find_persona_by_name_inline(
+                                                                final_persona,
+                                                                personas,
                                                             )
                                                             if persona_match:
                                                                 persona_id_str = str(
@@ -2098,8 +2134,9 @@ Tool Usage Instructions:
                             del tool_calls_dict[chat_id_str]
 
                         # Clean up active run
-                        from app.infra.v3.websocket.remove_active_run import \
-                            remove_active_run
+                        from app.infra.v3.websocket.remove_active_run import (
+                            remove_active_run,
+                        )
 
                         await remove_active_run(chat_id_str)
 
@@ -2189,7 +2226,9 @@ Tool Usage Instructions:
                             f"Triggering hint generation for practice message {last_tool_message['id']}"
                         )
                         # Extract department_id from run context for hint generation
-                        sql = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
+                        sql = load_sql(
+                            "app/sql/v3/simulations/get_simulation_run_context.sql"
+                        )
                         run_context_for_hints = await conn.fetchrow(
                             sql, str(chat_id_uuid)
                         )

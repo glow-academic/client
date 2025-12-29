@@ -17,10 +17,10 @@ class TestParseOklch:
         """Test parsing basic oklch color."""
         # Arrange
         oklch_str = "oklch(0.5 0.1 120)"
-        
+
         # Act
         result = parse_oklch(oklch_str)
-        
+
         # Assert
         assert result == (0.5, 0.1, 120.0, None)
 
@@ -28,10 +28,10 @@ class TestParseOklch:
         """Test parsing oklch color with alpha."""
         # Arrange
         oklch_str = "oklch(0.5 0.1 120 / 0.8)"
-        
+
         # Act
         result = parse_oklch(oklch_str)
-        
+
         # Assert
         assert result == (0.5, 0.1, 120.0, 0.8)
 
@@ -39,10 +39,10 @@ class TestParseOklch:
         """Test parsing oklch color with alpha as percent."""
         # Arrange
         oklch_str = "oklch(0.5 0.1 120 / 80%)"
-        
+
         # Act
         result = parse_oklch(oklch_str)
-        
+
         # Assert
         assert result == (0.5, 0.1, 120.0, 0.8)
 
@@ -50,7 +50,7 @@ class TestParseOklch:
         """Test parsing invalid oklch format raises error."""
         # Arrange
         oklch_str = "invalid"
-        
+
         # Act & Assert
         with pytest.raises(ValueError, match="Invalid oklch format"):
             parse_oklch(oklch_str)
@@ -63,10 +63,10 @@ class TestFormatOklch:
         """Test formatting basic oklch color."""
         # Arrange
         lightness, chroma, hue = 0.5, 0.1, 120.0
-        
+
         # Act
         result = format_oklch(lightness, chroma, hue)
-        
+
         # Assert
         assert result == "oklch(0.5 0.1 120.0)"
 
@@ -74,10 +74,10 @@ class TestFormatOklch:
         """Test formatting oklch color with alpha."""
         # Arrange
         lightness, chroma, hue, alpha = 0.5, 0.1, 120.0, 0.8
-        
+
         # Act
         result = format_oklch(lightness, chroma, hue, alpha)
-        
+
         # Assert
         assert result == "oklch(0.5 0.1 120.0 / 0.8)"
 
@@ -89,10 +89,10 @@ class TestTint:
         """Test tint with amount 0.0 returns original color."""
         # Arrange
         color = "oklch(0.5 0.1 120)"
-        
+
         # Act
         result = tint(color, 0.0)
-        
+
         # Assert
         l, c, h, alpha = parse_oklch(result)
         assert abs(l - 0.5) < 0.01
@@ -103,10 +103,10 @@ class TestTint:
         """Test tint increases lightness."""
         # Arrange
         color = "oklch(0.5 0.1 120)"
-        
+
         # Act
         result = tint(color, 0.5)
-        
+
         # Assert
         l, _, _, _ = parse_oklch(result)
         assert l > 0.5
@@ -115,10 +115,10 @@ class TestTint:
         """Test tint reduces chroma."""
         # Arrange
         color = "oklch(0.5 0.1 120)"
-        
+
         # Act
         result = tint(color, 0.5)
-        
+
         # Assert
         _, c, _, _ = parse_oklch(result)
         assert c < 0.1
@@ -131,10 +131,10 @@ class TestShade:
         """Test shade with amount 0.0 returns original color."""
         # Arrange
         color = "oklch(0.5 0.1 120)"
-        
+
         # Act
         result = shade(color, 0.0)
-        
+
         # Assert
         l, c, h, alpha = parse_oklch(result)
         assert abs(l - 0.5) < 0.01
@@ -145,10 +145,10 @@ class TestShade:
         """Test shade decreases lightness."""
         # Arrange
         color = "oklch(0.5 0.1 120)"
-        
+
         # Act
         result = shade(color, 0.5)
-        
+
         # Assert
         l, _, _, _ = parse_oklch(result)
         assert l < 0.5
@@ -162,10 +162,10 @@ class TestEnsureContrast:
         # Arrange
         background = "oklch(0.8 0.1 120)"  # Light background
         candidate = "oklch(0.5 0.1 120)"  # Medium text
-        
+
         # Act
         result = ensure_contrast(background, candidate)
-        
+
         # Assert
         l, c, h, _ = parse_oklch(result)
         assert l < 0.3  # Should be dark
@@ -177,10 +177,10 @@ class TestEnsureContrast:
         # Arrange
         background = "oklch(0.3 0.1 120)"  # Dark background
         candidate = "oklch(0.5 0.1 120)"  # Medium text
-        
+
         # Act
         result = ensure_contrast(background, candidate)
-        
+
         # Assert
         l, c, h, _ = parse_oklch(result)
         assert l > 0.7  # Should be light
@@ -192,11 +192,10 @@ class TestEnsureContrast:
         # Arrange
         background = "oklch(0.8 0.1 120)"  # Light background
         candidate = "oklch(0.2 0.1 120)"  # Already dark text
-        
+
         # Act
         result = ensure_contrast(background, candidate)
-        
+
         # Assert
         l, c, h, _ = parse_oklch(result)
         assert l < 0.3  # Should remain dark
-

@@ -3,17 +3,22 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetPersonaNewApiRequest, GetPersonaNewApiResponse,
-                           GetPersonaNewSqlParams, GetPersonaNewSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    GetPersonaNewApiRequest,
+    GetPersonaNewApiResponse,
+    GetPersonaNewSqlParams,
+    GetPersonaNewSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/personas/get_persona_new_complete.sql"
@@ -157,32 +162,34 @@ async def get_persona_new(
             )
 
         # Convert SQL result to API response with defaults
-        response_data = GetPersonaNewApiResponse.model_validate({
-            **result.model_dump(),
-            "name": "",
-            "description": "",
-            "department_ids": default_department_ids,
-            "active": True,
-            "color": preset_colors[0] if preset_colors else "#3B82F6",
-            "icon": suggested_icons[0] if suggested_icons else "Sparkles",
-            "instructions": "",
-            "text_agent_id": default_text_agent_id,
-            "voice_agent_id": None,
-            "in_use": False,
-            "scenario_count": 0,
-            "can_edit": can_edit_default,
-            "can_duplicate": False,
-            "can_delete": False,
-            "preset_colors": preset_colors,
-            "suggested_icons": suggested_icons,
-            "valid_icons": valid_icons,
-            "debug_info": [],
-        })
+        response_data = GetPersonaNewApiResponse.model_validate(
+            {
+                **result.model_dump(),
+                "name": "",
+                "description": "",
+                "department_ids": default_department_ids,
+                "active": True,
+                "color": preset_colors[0] if preset_colors else "#3B82F6",
+                "icon": suggested_icons[0] if suggested_icons else "Sparkles",
+                "instructions": "",
+                "text_agent_id": default_text_agent_id,
+                "voice_agent_id": None,
+                "in_use": False,
+                "scenario_count": 0,
+                "can_edit": can_edit_default,
+                "can_duplicate": False,
+                "can_delete": False,
+                "preset_colors": preset_colors,
+                "suggested_icons": suggested_icons,
+                "valid_icons": valid_icons,
+                "debug_info": [],
+            }
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump(mode='json')},
+            {"data": response_data.model_dump(mode="json")},
             ttl=60,
             tags=tags,
         )

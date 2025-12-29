@@ -42,4 +42,3 @@ async def test_simulation_voice_assistant_interrupted_missing_chat_id(
     await simulation_voice_assistant_interrupted(sid, data)
 
     # Assert - handler may complete without error
-

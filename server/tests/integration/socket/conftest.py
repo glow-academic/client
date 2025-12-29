@@ -212,7 +212,9 @@ def patch_sio_instance(
             if hasattr(module, "internal_sio"):
                 monkeypatch.setattr(module, "internal_sio", mock_internal_sio)
             if hasattr(module, "get_internal_sio"):
-                monkeypatch.setattr(module, "get_internal_sio", lambda: mock_internal_sio)
+                monkeypatch.setattr(
+                    module, "get_internal_sio", lambda: mock_internal_sio
+                )
         except ImportError:
             pass  # Module might not exist
 

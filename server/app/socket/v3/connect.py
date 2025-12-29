@@ -4,6 +4,11 @@ import time
 import uuid
 from urllib.parse import parse_qs
 
+from fastapi import APIRouter
+from pydantic import BaseModel
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
+
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.add_guest_socket import add_guest_socket
 from app.infra.v3.websocket.get_socket_owner import get_socket_owner
@@ -11,10 +16,6 @@ from app.infra.v3.websocket.increment_guest_count import increment_guest_count
 from app.infra.v3.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.v3.websocket.set_socket_owner import set_socket_owner
 from app.main import get_pool, sio
-from fastapi import APIRouter
-from pydantic import BaseModel
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -82,7 +83,9 @@ async def connect(
                 f"Closing old connection and accepting new one {sid}."
             )
             # Clean up the entire old session for this profile
-            logger.info(f"Cleaning up profile {profile_id} connections - new socket takeover")
+            logger.info(
+                f"Cleaning up profile {profile_id} connections - new socket takeover"
+            )
             # Remove from socket ownership using Redis
             await remove_socket_owner(profile_id)
             # Update database to mark profile as inactive

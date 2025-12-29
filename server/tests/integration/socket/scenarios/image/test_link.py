@@ -31,7 +31,9 @@ async def test_scenario_image_link_success(
     )
 
     # Act - call internal implementation directly
-    result = await _scenario_image_link_impl(scenario_id, image_id, True, "test_sid_123")
+    result = await _scenario_image_link_impl(
+        scenario_id, image_id, True, "test_sid_123"
+    )
 
     # Assert - verify link was created
     assert result is True
@@ -98,7 +100,9 @@ async def test_scenario_image_link_inactive(
     )
 
     # Act
-    result = await _scenario_image_link_impl(scenario_id, image_id, False, "test_sid_123")
+    result = await _scenario_image_link_impl(
+        scenario_id, image_id, False, "test_sid_123"
+    )
 
     # Assert - verify link was created with active=False
     assert result is True
@@ -109,4 +113,3 @@ async def test_scenario_image_link_inactive(
     )
     assert link_row is not None
     assert link_row["active"] is False
-

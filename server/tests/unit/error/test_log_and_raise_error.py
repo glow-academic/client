@@ -6,8 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import asyncpg  # type: ignore
 import pytest
-from app.infra.v3.error.log_and_raise_error import log_and_raise_error
 from fastapi import HTTPException, Request
+
+from app.infra.v3.error.log_and_raise_error import log_and_raise_error
 
 
 class TestLog_And_Raise_Error:

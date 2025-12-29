@@ -152,12 +152,56 @@ cd client && npx tsc --noEmit
 - **Presentation only**: Components focus on rendering and user interactions
 - **No client-side unit testing**: All testing happens on the server side
 
-### Server: DHH-Style Architecture
-- **1 SQL file per route**: Each route has a corresponding SQL file in `server/sql/v3/[resource]/[operation].sql`
-- **1 Python file per route**: Each route is a single Python file (e.g., `new.py`, `create.py`)
-- **No abstraction layers**: Routes directly execute SQL using `load_sql()` helper - no service/repository layers
+### Server: DHH-Style Architecture with PostgreSQL Functions
+
+**⚠️ CRITICAL: All endpoints follow the agents-style architecture pattern**
+
+#### API Endpoints (HTTP)
+- **1 SQL file per route**: Each route has exactly one SQL file in `server/app/sql/v3/[resource]/[operation]_complete.sql`
+- **1 Python file per route**: Each route is a single Python file (e.g., `list.py`, `create.py`)
+- **PostgreSQL functions**: SQL files define PostgreSQL functions with `RETURNS TABLE`, not raw queries
+- **Composite types**: Nested structures use composite types in `types` schema (never JSONB)
+- **Auto-generated types**: All types generated from SQL introspection via `execute_sql_typed()` helper
+- **No abstraction layers**: Routes directly execute SQL using `execute_sql_typed()` - no service/repository layers
 - **Direct SQL execution**: Routes own transaction and execution control
+- **No inline SQL**: All SQL must be in `.sql` files, never embedded as strings in Python code
 - **Testing**: Unit tests (utils), integration tests (endpoints), E2E tests (Playwright)
+
+**See `server/app/api/v3/STANDARDS.md` for complete API standards.**
+
+#### WebSocket Endpoints
+- **1 event per file**: Each Python file defines exactly one event handler (`@sio.event` or `@internal_sio.on`)
+- **1 SQL file per event**: Each event has exactly one SQL file in `server/app/sql/v3/[resource]/[operation]_complete.sql`
+- **PostgreSQL functions**: SQL files define PostgreSQL functions with `RETURNS TABLE`, not raw queries
+- **Composite types**: Nested structures use composite types in `types` schema (never JSONB)
+- **Auto-generated types**: All types generated from SQL introspection via `execute_sql_typed()` helper
+- **Required event files**: Main operations require `generate.py`, `regenerate.py`, `progress.py`, `complete.py`, `error.py` (ALL REQUIRED)
+- **Profile ID from `sid`**: Always retrieve via `find_profile_by_socket(sid)` - never in payloads
+- **Rate limiting**: Always check rate limits when creating runs (in SQL, not Python)
+- **Atomic context + run creation**: Use SQL files like `get_[operation]_run_context_and_create_run_complete.sql`
+- **Zero logging**: Socket.IO handles all logging - no logger calls in event handlers
+- **No inline SQL**: All SQL must be in `.sql` files, never embedded as strings in Python code
+
+**See `server/app/socket/v3/STANDARDS.md` for complete WebSocket standards.**
+
+#### Key Principles (Both API and WebSocket)
+
+**No JSONB - Use Composite Types:**
+- **⚠️ CRITICAL: JSONB is NEVER allowed**, even for complex nested structures
+- **Composite types for complex structures**: Use composite types in `types` schema for nested data
+- **Arrays everywhere**: Collections return as arrays of composite types, not JSONB objects
+- **Type preservation**: Use native PostgreSQL types (`uuid`, `timestamptz`) instead of `text` when possible
+
+**Type Generation:**
+- **Auto-detection**: `execute_sql_typed()` automatically detects PostgreSQL functions
+- **Introspection**: Queries `pg_proc` and `pg_type` to extract function signatures
+- **Pydantic models**: Generates `{RouteName}SqlParams`, `{RouteName}SqlRow`, `{RouteName}ApiRequest`, `{RouteName}ApiResponse`
+- **No manual types**: Always use auto-generated types from SQL introspection
+
+**SQL File Organization:**
+- **Idempotent migrations**: Use `BEGIN; DROP FUNCTION; DROP TYPE; CREATE TYPE; CREATE FUNCTION; COMMIT;` pattern
+- **Standardized drop patterns**: Use dynamic DO blocks to handle function signature changes
+- **Versioned types**: Include `v3` in type names for future compatibility
 
 ### Database: BCNF & No Nulls
 - **Chris Date principles**: Minimize nulls, eliminate redundancy
@@ -206,11 +250,30 @@ tree -I node_modules -I uploads -I history -I screenshots -I queries -I mutation
 - Examples: `get_persona_detail_complete.sql`, `create_persona_complete.sql`
 
 ### Common Gotchas
-- **JSON aggregation**: Use `COALESCE(json_agg(...), '[]'::json)` to avoid NULL
+
+**API Endpoints:**
+- **Double star pattern**: Use `**request.model_dump()` for parameter construction (no manual parsing)
+- **Existence checks in SQL**: Detail endpoints return `*_exists boolean` fields from SQL functions
 - **Cache invalidation**: Always call `invalidate_tags()` after mutations
+- **UUID serialization**: Use `model_dump(mode='json')` for caching (serializes UUIDs correctly)
 - **Transactions**: Use `async with transaction(conn):` for mutations, not reads
-- **Profile ID**: Always include in request body for mutations
+- **Profile ID**: Always retrieved from header (set by router-level dependency), never in request body
 - **Error tracking**: Initialize `sql_query` and `sql_params` at route start
+
+**WebSocket Endpoints:**
+- **Profile ID from `sid`**: Always retrieve via `find_profile_by_socket(sid)` - O(1) Redis lookup
+- **`group_id` pattern**: First events omit it (SQL creates), regenerate events require it (from previous run)
+- **`trace_id` from groups**: Always retrieve from `groups.trace_id` via SQL, never generate manually
+- **Rate limiting**: Always check rate limits when creating runs (in SQL, not Python)
+- **Atomic context + run creation**: Use SQL files like `get_[operation]_run_context_and_create_run_complete.sql`
+- **Zero logging**: Socket.IO handles all logging - no logger calls in event handlers
+- **Database connection**: Use `get_db_connection()` helper, catch `RuntimeError` and emit error events
+
+**Both API and WebSocket:**
+- **No JSONB**: Use composite types + arrays instead of JSONB (never `jsonb_build_object`, `json_agg`, etc.)
+- **No inline SQL**: All SQL must be in `.sql` files, never embedded as strings in Python code
+- **No manual types**: Always use auto-generated `{RouteName}ApiRequest` types from SQL introspection
+- **Type preservation**: Composite types use `uuid`/`timestamptz` for IDs/timestamps (not `text` unless truly needed)
 
 ### Testing Profile ID
 - Use `965bd24f-dfae-4063-b370-e1373df46322` for testing (see `.cursor/commands/profile.md`)

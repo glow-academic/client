@@ -6,10 +6,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool, sio
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

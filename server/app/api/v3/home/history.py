@@ -1,8 +1,14 @@
 """Home history endpoint - POST /home/history"""
 
-from typing import Annotated, Any, cast, Dict
+from typing import Annotated, Any, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,11 +18,6 @@ from app.sql.types import (
     GetHomeHistorySqlParams,
     GetHomeHistorySqlRow,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.cache_key import cache_key
-from utils.cache.get_cached import get_cached
-from utils.cache.set_cached import set_cached
-from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/home/get_home_history_complete.sql"
@@ -72,7 +73,9 @@ async def get_home_history(
         # Use mode='json' to keep dates as ISO strings (SQL params model expects strings, not datetime objects)
         # Use double-star pattern - SQL handles page/offset_count calculation via COALESCE in params CTE
         # Note: model_dump(mode='json') returns strings for dates at runtime, but type checker infers datetime
-        params = GetHomeHistorySqlParams(**request.model_dump(mode="json"), profile_id=profile_id)  # type: ignore[arg-type]
+        params = GetHomeHistorySqlParams(
+            **request.model_dump(mode="json"), profile_id=profile_id
+        )  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present

@@ -6,11 +6,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-
-from app.main import IMAGE_FOLDER, get_internal_sio, get_pool, sio
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import IMAGE_FOLDER, get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -462,7 +462,9 @@ async def _emit_image_error(
     if pool:
         try:
             async with pool.acquire() as conn:
-                sql_update_image = load_sql("app/sql/v3/images/update_image_completed.sql")
+                sql_update_image = load_sql(
+                    "app/sql/v3/images/update_image_completed.sql"
+                )
                 await conn.execute(sql_update_image, image_id, True)
         except Exception as e:
             logger.error(f"Failed to update image record on error: {e}")

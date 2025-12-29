@@ -1,6 +1,7 @@
 """Integration tests for app.infra.v3.health."""
 
 import pytest
+
 from app.infra.v3.health import (
     check_database,
     check_keycloak,
@@ -8,7 +9,7 @@ from app.infra.v3.health import (
     check_websocket,
     run_service_checks,
 )
-from app.main import get_pool, get_redis_client, get_sio_instance
+from app.main import get_pool, get_redis_client
 
 pytestmark = pytest.mark.asyncio
 
@@ -35,7 +36,9 @@ class TestCheckDatabase:
         assert result.latency_ms >= 0
         # If it fails, it should be due to pool being busy, not a real error
         if not result.ok:
-            assert "operation is in progress" in result.error or "no pool" in result.error
+            assert (
+                "operation is in progress" in result.error or "no pool" in result.error
+            )
 
     async def test_check_database_no_pool(self) -> None:
         """Test database check with no pool."""
@@ -58,7 +61,10 @@ class TestCheckRedis:
 
         # Assert
         assert result.ok is False
-        assert "redis disabled" in result.error.lower() or "not configured" in result.error.lower()
+        assert (
+            "redis disabled" in result.error.lower()
+            or "not configured" in result.error.lower()
+        )
 
     async def test_check_redis_with_client(self) -> None:
         """Test Redis check with client (if available)."""
@@ -130,4 +136,3 @@ class TestRunServiceChecks:
         # But pool might be busy with test transactions, so just verify it ran
         assert isinstance(results["database"].ok, bool)
         assert results["database"].latency_ms >= 0
-

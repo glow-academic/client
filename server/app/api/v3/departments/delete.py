@@ -3,10 +3,14 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.auth.keycloak_sync import delete_department_realm
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, get_internal_sio
-from app.infra.v3.auth.keycloak_sync import delete_department_realm
 from app.sql.types import (
     DeleteDepartmentApiRequest,
     DeleteDepartmentApiResponse,
@@ -14,9 +18,6 @@ from app.sql.types import (
     DeleteDepartmentSqlRow,
     load_sql_query,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
@@ -58,7 +59,9 @@ async def delete_department(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = DeleteDepartmentSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = DeleteDepartmentSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
@@ -93,10 +96,15 @@ async def delete_department(
             audit_set(
                 http_request,
                 actor={"name": actor_name, "id": profile_id},
-                department={"title": department_title or "Unknown", "id": str(request.department_id)},
+                department={
+                    "title": department_title or "Unknown",
+                    "id": str(request.department_id),
+                },
             )
 
-        result_response = DeleteDepartmentApiResponse.model_validate(result.model_dump())
+        result_response = DeleteDepartmentApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

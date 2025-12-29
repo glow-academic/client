@@ -3,14 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (DeleteKeyApiRequest, DeleteKeyApiResponse,
-                           DeleteKeySqlParams, DeleteKeySqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    DeleteKeyApiRequest,
+    DeleteKeyApiResponse,
+    DeleteKeySqlParams,
+    DeleteKeySqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/keys/delete_key_complete.sql"
@@ -69,7 +75,7 @@ async def delete_key(
                 raise HTTPException(
                     status_code=404, detail=f"Key {request.key_id} not found"
                 )
-            
+
             if not result.key_id:
                 # Key exists but user doesn't have permission to delete
                 raise HTTPException(

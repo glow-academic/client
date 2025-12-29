@@ -3,14 +3,17 @@
 import uuid
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_pool, sio
-from app.socket.v3.agents.simulation_text.start import (StartSimulationPayload,
-                                                  _simulation_text_start_impl)
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import get_pool, sio
+from app.socket.v3.agents.simulation_text.start import (
+    StartSimulationPayload,
+    _simulation_text_start_impl,
+)
 
 logger = get_logger(__name__)
 
@@ -87,7 +90,6 @@ async def _simulation_text_practice_impl(
             return
 
         async with pool.acquire() as conn:
-
             # Standard mode: find practice simulation with persona
             if not data.persona_id:
                 await simulation_text_practice_error(
@@ -100,7 +102,9 @@ async def _simulation_text_practice_impl(
 
             # Find practice simulation with persona
             department_ids = [data.department_id] if data.department_id else []
-            sql = load_sql("app/sql/v3/practice/find_practice_simulation_with_persona.sql")
+            sql = load_sql(
+                "app/sql/v3/practice/find_practice_simulation_with_persona.sql"
+            )
             result = await conn.fetchrow(sql, data.persona_id, department_ids)
 
             if not result:
@@ -199,7 +203,9 @@ async def _simulation_text_practice_impl(
                 # Link persona (use selected persona for standard mode)
                 if data.persona_id:
                     persona_id_to_link = uuid.UUID(data.persona_id)
-                    sql = load_sql("app/sql/v3/scenario/insert_scenario_persona_link.sql")
+                    sql = load_sql(
+                        "app/sql/v3/scenario/insert_scenario_persona_link.sql"
+                    )
                     await conn.execute(sql, new_scenario_id, persona_id_to_link, True)
                     logger.info(
                         f"Linked persona {persona_id_to_link} to child scenario"
@@ -326,4 +332,3 @@ async def simulation_text_practice_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while creating practice scenario."""
     return {"success": True}
-

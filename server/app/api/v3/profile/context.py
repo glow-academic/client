@@ -3,17 +3,22 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetProfileContextApiRequest,
-                           GetProfileContextApiResponse,
-                           GetProfileContextSqlParams, GetProfileContextSqlRow,
-                           QGetProfileContextV3ThemeTokens, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request
 from utils.sql_helper import execute_sql_typed
 from utils.theme.color_utils import ensure_contrast, shade, tint
 from utils.theme.oklch_to_hex import hex_to_oklch
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    GetProfileContextApiRequest,
+    GetProfileContextApiResponse,
+    GetProfileContextSqlParams,
+    GetProfileContextSqlRow,
+    QGetProfileContextV3ThemeTokens,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/profile/get_profile_context_complete.sql"
@@ -35,7 +40,7 @@ async def get_profile_context(
 ) -> GetProfileContextApiResponse:
     """
     Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
-    
+
     NOTE: Theme derivation stays in Python because it requires complex color math utilities
     (hex_to_oklch, ensure_contrast, shade, tint) that are not available in PostgreSQL.
     All other business logic is handled in SQL (see get_profile_context_complete.sql).
@@ -54,7 +59,7 @@ async def get_profile_context(
             actual_profile_id = http_request.state.profile_id
         except AttributeError:
             actual_profile_id = None
-        
+
         try:
             effective_profile_id = http_request.state.effective_profile_id
         except AttributeError:
@@ -136,12 +141,36 @@ async def get_profile_context(
             and not effective_profile_id
             and auth_mode_cookie in ("default-account", "default-guest")
         ):
-            guest_login_enabled = result.guest_login_enabled if result.guest_login_enabled is not None else False
-            active_dept_count = result.active_departments_count if result.active_departments_count is not None else 0
-            dept_auth_count = result.department_auth_providers_count if result.department_auth_providers_count is not None else 0
-            default_auth_count = result.default_settings_auth_providers_count if result.default_settings_auth_providers_count is not None else 0
-            depts_without_auth_count = result.departments_without_auth_providers_count if result.departments_without_auth_providers_count is not None else 0
-            department_exists = result.department_exists if result.department_exists is not None else False
+            guest_login_enabled = (
+                result.guest_login_enabled
+                if result.guest_login_enabled is not None
+                else False
+            )
+            active_dept_count = (
+                result.active_departments_count
+                if result.active_departments_count is not None
+                else 0
+            )
+            dept_auth_count = (
+                result.department_auth_providers_count
+                if result.department_auth_providers_count is not None
+                else 0
+            )
+            default_auth_count = (
+                result.default_settings_auth_providers_count
+                if result.default_settings_auth_providers_count is not None
+                else 0
+            )
+            depts_without_auth_count = (
+                result.departments_without_auth_providers_count
+                if result.departments_without_auth_providers_count is not None
+                else 0
+            )
+            department_exists = (
+                result.department_exists
+                if result.department_exists is not None
+                else False
+            )
 
             # Check authorization based on auth_mode
             if auth_mode_cookie == "default-account":
@@ -196,15 +225,21 @@ async def get_profile_context(
                 )
             return hex_to_oklch(f"#{hex_clean}")
 
-        def derive_theme_tokens(primitives: dict[str, str]) -> QGetProfileContextV3ThemeTokens:
+        def derive_theme_tokens(
+            primitives: dict[str, str],
+        ) -> QGetProfileContextV3ThemeTokens:
             """Derive full ThemeTokens from user-editable ThemePrimitives."""
             # Normalize all color inputs to oklch format
             background = normalize_color_to_oklch(primitives.get("background", ""))
             surface = normalize_color_to_oklch(primitives.get("surface", ""))
             primary = normalize_color_to_oklch(primitives.get("primary", ""))
             accent = normalize_color_to_oklch(primitives.get("accent", ""))
-            sidebar_bg = normalize_color_to_oklch(primitives.get("sidebar_background", ""))
-            sidebar_primary = normalize_color_to_oklch(primitives.get("sidebar_primary", ""))
+            sidebar_bg = normalize_color_to_oklch(
+                primitives.get("sidebar_background", "")
+            )
+            sidebar_primary = normalize_color_to_oklch(
+                primitives.get("sidebar_primary", "")
+            )
             success = normalize_color_to_oklch(primitives.get("success", ""))
             warning = normalize_color_to_oklch(primitives.get("warning", ""))
             error = normalize_color_to_oklch(primitives.get("error", ""))
@@ -287,15 +322,23 @@ async def get_profile_context(
 
         # Access result fields directly instead of manual dict construction
         theme_primitives = {
-            "primary": result.settings_primary_color if result.settings_primary_color else "",
+            "primary": result.settings_primary_color
+            if result.settings_primary_color
+            else "",
             "accent": result.settings_accent if result.settings_accent else "",
-            "background": result.settings_background if result.settings_background else "",
+            "background": result.settings_background
+            if result.settings_background
+            else "",
             "surface": result.settings_surface if result.settings_surface else "",
             "success": result.settings_success if result.settings_success else "",
             "warning": result.settings_warning if result.settings_warning else "",
             "error": result.settings_error if result.settings_error else "",
-            "sidebar_background": result.settings_sidebar_background if result.settings_sidebar_background else "",
-            "sidebar_primary": result.settings_sidebar_primary if result.settings_sidebar_primary else "",
+            "sidebar_background": result.settings_sidebar_background
+            if result.settings_sidebar_background
+            else "",
+            "sidebar_primary": result.settings_sidebar_primary
+            if result.settings_sidebar_primary
+            else "",
             "chart1": result.settings_chart1 if result.settings_chart1 else "",
             "chart2": result.settings_chart2 if result.settings_chart2 else "",
             "chart3": result.settings_chart3 if result.settings_chart3 else "",
@@ -316,8 +359,8 @@ async def get_profile_context(
 
         # Construct response properly with computed theme tokens (no manual dict manipulation)
         api_response = GetProfileContextApiResponse(
-            **result.model_dump(exclude={'settings_tokens'}),
-            settings_tokens=theme_tokens
+            **result.model_dump(exclude={"settings_tokens"}),
+            settings_tokens=theme_tokens,
         )
 
         return api_response

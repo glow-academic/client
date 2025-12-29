@@ -8,22 +8,22 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetPerSimulationMetricsSqlParams,
+    GetPerSimulationMetricsSqlRow,
     GetReportsBundleApiRequest,
     GetReportsBundleApiResponse,
     GetReportsBundleSqlParams,
     GetReportsBundleSqlRow,
-    GetPerSimulationMetricsSqlParams,
-    GetPerSimulationMetricsSqlRow,
     load_sql_query,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -84,10 +84,10 @@ async def _get_per_simulation_metrics(
     for metric in result.metrics:
         profile_id_str = str(metric.profile_id)
         simulation_id_str = str(metric.simulation_id)
-        
+
         if profile_id_str not in per_sim_metrics:
             per_sim_metrics[profile_id_str] = {}
-        
+
         per_sim_metrics[profile_id_str][simulation_id_str] = {
             "averageScore": metric.average_score,
             "highestScore": metric.highest_score,
@@ -128,10 +128,14 @@ async def export_reports(
             )
 
         # Use bundle request (inherits from GetReportsBundleApiRequest)
-        bundle_request = GetReportsBundleApiRequest(**request.model_dump(exclude={"metrics", "brightspace_format"}))
+        bundle_request = GetReportsBundleApiRequest(
+            **request.model_dump(exclude={"metrics", "brightspace_format"})
+        )
 
         sql_query = load_sql_query(BUNDLE_SQL_PATH)
-        params = GetReportsBundleSqlParams(**bundle_request.model_dump(), profile_id=profile_id)
+        params = GetReportsBundleSqlParams(
+            **bundle_request.model_dump(), profile_id=profile_id
+        )
         # SQL handles date conversion from text to timestamptz - no manual parsing needed
         sql_params = params.to_tuple()
 
@@ -149,10 +153,14 @@ async def export_reports(
 
         # Set audit context
         if bundle_result.actor_name:
-            audit_set(http_request, actor={"name": bundle_result.actor_name, "id": profile_id})
+            audit_set(
+                http_request, actor={"name": bundle_result.actor_name, "id": profile_id}
+            )
 
         # Convert bundle result to API response
-        bundle_response = GetReportsBundleApiResponse.model_validate(bundle_result.model_dump())
+        bundle_response = GetReportsBundleApiResponse.model_validate(
+            bundle_result.model_dump()
+        )
 
         # Extract data and simulations from bundle result (arrays, not dicts)
         bundle_data = bundle_response.data or []
@@ -182,7 +190,9 @@ async def export_reports(
             filtered_data = [
                 p
                 for p in filtered_data
-                if any(sid in request.simulation_ids for sid in (p.simulation_ids or []))
+                if any(
+                    sid in request.simulation_ids for sid in (p.simulation_ids or [])
+                )
             ]
         if request.scenario_ids and len(request.scenario_ids) > 0:
             filtered_data = [
@@ -205,13 +215,15 @@ async def export_reports(
                 f"simulation_ids={len(request.simulation_ids) if request.simulation_ids else 0}, "
                 f"scenario_ids={len(request.scenario_ids) if request.scenario_ids else 0}"
             )
-            
+
             per_simulation_metrics = await _get_per_simulation_metrics(
                 conn=conn,
                 bundle_request=bundle_request,
                 profile_id=profile_id,
                 profile_ids=request.profile_ids if request.profile_ids else None,
-                simulation_ids=request.simulation_ids if request.simulation_ids else None,
+                simulation_ids=request.simulation_ids
+                if request.simulation_ids
+                else None,
                 scenario_ids=request.scenario_ids if request.scenario_ids else None,
             )
             logger.info(
@@ -224,21 +236,41 @@ async def export_reports(
             # Extract metrics from composite types
             metrics_obj = profile.metrics
             export_metrics = {}
-            
+
             # Map metric keys to their values
             metric_map = {
-                "averageScore": metrics_obj.average_score.current_value if metrics_obj.average_score else 0,
-                "highestScore": metrics_obj.highest_score.current_value if metrics_obj.highest_score else 0,
-                "completionPercentage": metrics_obj.completion_percentage.current_value if metrics_obj.completion_percentage else 0,
-                "firstAttemptPassRate": metrics_obj.first_attempt_pass_rate.current_value if metrics_obj.first_attempt_pass_rate else 0,
-                "messagesPerSession": metrics_obj.messages_per_session.current_value if metrics_obj.messages_per_session else 0,
-                "personaResponseTimes": metrics_obj.persona_response_times.current_value if metrics_obj.persona_response_times else 0,
-                "sessionEfficiency": metrics_obj.session_efficiency.current_value if metrics_obj.session_efficiency else 0,
-                "stagnationRate": metrics_obj.stagnation_rate.current_value if metrics_obj.stagnation_rate else 0,
-                "timeSpent": metrics_obj.time_spent.current_value if metrics_obj.time_spent else 0,
-                "totalAttempts": metrics_obj.total_attempts.current_value if metrics_obj.total_attempts else 0,
+                "averageScore": metrics_obj.average_score.current_value
+                if metrics_obj.average_score
+                else 0,
+                "highestScore": metrics_obj.highest_score.current_value
+                if metrics_obj.highest_score
+                else 0,
+                "completionPercentage": metrics_obj.completion_percentage.current_value
+                if metrics_obj.completion_percentage
+                else 0,
+                "firstAttemptPassRate": metrics_obj.first_attempt_pass_rate.current_value
+                if metrics_obj.first_attempt_pass_rate
+                else 0,
+                "messagesPerSession": metrics_obj.messages_per_session.current_value
+                if metrics_obj.messages_per_session
+                else 0,
+                "personaResponseTimes": metrics_obj.persona_response_times.current_value
+                if metrics_obj.persona_response_times
+                else 0,
+                "sessionEfficiency": metrics_obj.session_efficiency.current_value
+                if metrics_obj.session_efficiency
+                else 0,
+                "stagnationRate": metrics_obj.stagnation_rate.current_value
+                if metrics_obj.stagnation_rate
+                else 0,
+                "timeSpent": metrics_obj.time_spent.current_value
+                if metrics_obj.time_spent
+                else 0,
+                "totalAttempts": metrics_obj.total_attempts.current_value
+                if metrics_obj.total_attempts
+                else 0,
             }
-            
+
             for metric_key, current_value in metric_map.items():
                 # Format value based on metric type
                 if metric_key in [

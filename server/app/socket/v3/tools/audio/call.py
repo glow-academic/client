@@ -5,13 +5,14 @@ from typing import Any
 
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.debug.debug_info import DebugContext
-from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -166,7 +167,9 @@ async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None
                 return None
 
             # Get audio uploads for the specified messages
-            sql_get_audio = load_sql("app/sql/v3/simulations/get_messages_with_audio.sql")
+            sql_get_audio = load_sql(
+                "app/sql/v3/simulations/get_messages_with_audio.sql"
+            )
             sql_query = sql_get_audio
             sql_params = (str(chat_id_uuid), message_ids)
             audio_rows = await conn.fetch(sql_get_audio, str(chat_id_uuid), message_ids)
@@ -287,7 +290,9 @@ Please provide a detailed analysis based on this request. Consider aspects such 
             agent_instance = audio_agent.agent()
 
             # Create model run for audio grading
-            sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+            sql_create_run = load_sql(
+                "app/sql/v3/model_runs/create_model_run_complete.sql"
+            )
             model_run_row = await conn.fetchrow(
                 sql_create_run,
                 str(department_id_uuid),

@@ -1,7 +1,6 @@
 """Document certificate generation endpoint - v3 API following DHH principles."""
 
 import io
-import json
 import os
 import subprocess
 import tempfile
@@ -9,14 +8,18 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.main import get_db
-from app.sql.types import (GetCertificateDataApiRequest, GetCertificateDataSqlParams,
-                           GetCertificateDataSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.main import get_db
+from app.sql.types import (
+    GetCertificateDataApiRequest,
+    GetCertificateDataSqlParams,
+    GetCertificateDataSqlRow,
+)
 
 logger = get_logger(__name__)
 
@@ -52,7 +55,9 @@ async def generate_certificate(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetCertificateDataSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetCertificateDataSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
 
         # Execute SQL with typed helper - automatically detects and calls function if present
         result = cast(
@@ -88,17 +93,20 @@ async def generate_certificate(
             # Drawing and Rect not used, removed to fix F401
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import ParagraphStyle  # type: ignore
-            from reportlab.lib.styles import \
-                getSampleStyleSheet  # type: ignore
+            from reportlab.lib.styles import (
+                ParagraphStyle,  # type: ignore
+                getSampleStyleSheet,  # type: ignore
+            )
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import Frame  # type: ignore
-            from reportlab.platypus import PageTemplate  # type: ignore
-            from reportlab.platypus import Paragraph  # type: ignore
-            from reportlab.platypus import SimpleDocTemplate  # type: ignore
-            from reportlab.platypus import Spacer  # type: ignore
-            from reportlab.platypus import Table  # type: ignore
-            from reportlab.platypus import TableStyle  # type: ignore
+            from reportlab.platypus import (
+                Frame,  # type: ignore
+                PageTemplate,  # type: ignore
+                Paragraph,  # type: ignore
+                SimpleDocTemplate,  # type: ignore
+                Spacer,  # type: ignore
+                Table,  # type: ignore
+                TableStyle,  # type: ignore
+            )
 
             # Create PDF in memory
             buffer = io.BytesIO()

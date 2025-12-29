@@ -6,7 +6,6 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
-from utils.sql_helper import load_sql
 
 from app.socket.v3.simulations.group.link import (
     _simulation_group_link_impl,
@@ -102,4 +101,3 @@ async def test_simulation_group_link_impl_direct(
         "SELECT * FROM simulation_groups WHERE chat_id = $1", chat_id
     )
     assert group_row is not None
-

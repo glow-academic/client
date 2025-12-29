@@ -1,8 +1,9 @@
 """Integration tests for simulation_enter WebSocket event."""
 
+from datetime import UTC, datetime
+
 import asyncpg  # type: ignore
 import pytest
-from datetime import datetime, UTC
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
@@ -68,7 +69,10 @@ async def test_simulation_enter_missing_chat_id(
     error_events = mock_sio.get_events("simulations_enter_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "chat_id" in error_events[0]["message"].lower() or "missing" in error_events[0]["message"].lower()
+    assert (
+        "chat_id" in error_events[0]["message"].lower()
+        or "missing" in error_events[0]["message"].lower()
+    )
 
 
 async def test_simulation_enter_invalid_created_at(
@@ -97,5 +101,7 @@ async def test_simulation_enter_invalid_created_at(
     error_events = mock_sio.get_events("simulations_enter_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "format" in error_events[0]["message"].lower() or "invalid" in error_events[0]["message"].lower()
-
+    assert (
+        "format" in error_events[0]["message"].lower()
+        or "invalid" in error_events[0]["message"].lower()
+    )

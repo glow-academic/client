@@ -29,7 +29,9 @@ class InlineSQLChecker(ast.NodeVisitor):
         self.file_path = file_path
         self.violations: list[tuple[int, str, str]] = []  # (line, sql_snippet, context)
         self.load_sql_vars: set[str] = set()  # Variables assigned from load_sql()
-        self.inline_sql_vars: dict[str, tuple[int, str]] = {}  # var_name -> (line, sql_snippet)
+        self.inline_sql_vars: dict[
+            str, tuple[int, str]
+        ] = {}  # var_name -> (line, sql_snippet)
         self.current_line = 0
 
     def visit(self, node: ast.AST) -> Any:
@@ -53,7 +55,10 @@ class InlineSQLChecker(ast.NodeVisitor):
         """Track variables assigned from load_sql() calls or inline SQL strings."""
         # Check if assignment is from load_sql() call
         if isinstance(node.value, ast.Call):
-            if isinstance(node.value.func, ast.Name) and node.value.func.id == "load_sql":
+            if (
+                isinstance(node.value.func, ast.Name)
+                and node.value.func.id == "load_sql"
+            ):
                 # Track all targets as load_sql variables
                 for target in node.targets:
                     if isinstance(target, ast.Name):
@@ -67,7 +72,10 @@ class InlineSQLChecker(ast.NodeVisitor):
 
         # Check for .replace() operations on load_sql variables
         if isinstance(node.value, ast.Call):
-            if isinstance(node.value.func, ast.Attribute) and node.value.func.attr == "replace":
+            if (
+                isinstance(node.value.func, ast.Attribute)
+                and node.value.func.attr == "replace"
+            ):
                 if isinstance(node.value.func.value, ast.Name):
                     var_name = node.value.func.value.id
                     if var_name in self.load_sql_vars:
@@ -97,7 +105,9 @@ class InlineSQLChecker(ast.NodeVisitor):
             method_name = node.func.attr
             if method_name in ("execute", "fetchrow", "fetchval", "fetch"):
                 # Check if first argument is a string literal (inline SQL)
-                sql_str = self._extract_string_value(node.args[0]) if node.args else None
+                sql_str = (
+                    self._extract_string_value(node.args[0]) if node.args else None
+                )
                 if sql_str:
                     self._check_sql_violation(sql_str, node.lineno, method_name)
                 # Check if first argument is a variable that might be inline SQL
@@ -145,7 +155,7 @@ class InlineSQLChecker(ast.NodeVisitor):
 
 def find_python_files() -> list[Path]:
     """Find all Python files in server/app/ and server/utils/ directories.
-    
+
     Excludes scripts/ directory - scripts are tooling code where inline SQL is acceptable.
     """
     python_files: list[Path] = []
@@ -183,7 +193,7 @@ def check_file(file_path: Path) -> list[tuple[int, str, str]]:
 
 
 def group_by_directory(
-    violations: list[tuple[Path, int, str, str]]
+    violations: list[tuple[Path, int, str, str]],
 ) -> dict[str, list[tuple[Path, int, str, str]]]:
     """Group violations by their directory."""
     grouped = defaultdict(list)
@@ -193,7 +203,9 @@ def group_by_directory(
         if "app" in parts:
             idx = parts.index("app")
             if idx + 1 < len(parts):
-                dir_name = "/".join(parts[idx + 1 : -1])  # Everything after "app" except filename
+                dir_name = "/".join(
+                    parts[idx + 1 : -1]
+                )  # Everything after "app" except filename
             else:
                 dir_name = "app"
         elif "utils" in parts:
@@ -238,9 +250,7 @@ def main() -> int:
         print("INLINE SQL VIOLATIONS")
         print("=" * 70)
         print()
-        print(
-            "❌ Zero tolerance: ALL SQL operations (INSERT, UPDATE, DELETE, SELECT)"
-        )
+        print("❌ Zero tolerance: ALL SQL operations (INSERT, UPDATE, DELETE, SELECT)")
         print("   must be in separate .sql files loaded via load_sql()")
         print()
         print("Exceptions allowed:")
@@ -251,7 +261,9 @@ def main() -> int:
         grouped = group_by_directory(all_violations)
         for dir_name in sorted(grouped.keys()):
             violations_in_dir = grouped[dir_name]
-            print(f"📁 {dir_name}/ ({len(violations_in_dir)} violation{'s' if len(violations_in_dir) != 1 else ''})")
+            print(
+                f"📁 {dir_name}/ ({len(violations_in_dir)} violation{'s' if len(violations_in_dir) != 1 else ''})"
+            )
             for file_path, line_no, sql_snippet, context in sorted(
                 violations_in_dir, key=lambda x: x[1]
             ):
@@ -270,4 +282,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

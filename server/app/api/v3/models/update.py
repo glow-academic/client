@@ -3,14 +3,19 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (UpdateModelApiRequest, UpdateModelApiResponse,
-                           UpdateModelSqlParams, UpdateModelSqlRow)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    UpdateModelApiRequest,
+    UpdateModelApiResponse,
+    UpdateModelSqlParams,
+    UpdateModelSqlRow,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/models/update_model_complete.sql"
@@ -74,7 +79,10 @@ async def update_model(
                 audit_set(
                     http_request,
                     actor={"name": result.actor_name, "id": profile_id},
-                    model={"name": result.model_name or "Unknown", "id": str(request.model_id)},
+                    model={
+                        "name": result.model_name or "Unknown",
+                        "id": str(request.model_id),
+                    },
                 )
 
             # Convert SQL result to API response

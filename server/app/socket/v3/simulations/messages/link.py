@@ -5,10 +5,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -84,9 +84,7 @@ async def simulation_messages_link_internal(data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in simulation_messages_link: {e}")
     except Exception as e:
-        logger.error(
-            f"Error in simulation_messages_link_internal: {e}", exc_info=True
-        )
+        logger.error(f"Error in simulation_messages_link_internal: {e}", exc_info=True)
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -96,4 +94,3 @@ async def simulation_messages_link_api(
 ) -> dict[str, bool]:
     """Internal event: Link system/developer messages to a run."""
     return {"success": True}
-

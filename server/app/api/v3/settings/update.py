@@ -3,15 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (UpdateSettingsApiRequest, UpdateSettingsApiResponse,
-                           UpdateSettingsSqlParams, UpdateSettingsSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    UpdateSettingsApiRequest,
+    UpdateSettingsApiResponse,
+    UpdateSettingsSqlParams,
+    UpdateSettingsSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/settings/update_settings_complete.sql"
@@ -55,7 +60,9 @@ async def update_settings(
             # Convert API request to SQL params using double star pattern
             # Frontend now sends arrays directly (provider_keys, auth_keys, etc.)
             # Pydantic handles UUID conversion automatically
-            params = UpdateSettingsSqlParams(**request.model_dump(), profile_id=profile_id)
+            params = UpdateSettingsSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper
@@ -83,11 +90,13 @@ async def update_settings(
                 )
 
             # Convert SQL result to API response
-            api_response = UpdateSettingsApiResponse.model_validate({
-                "settings_id": result.settings_id,
-                "settings_name": settings_name,
-                "actor_name": actor_name,
-            })
+            api_response = UpdateSettingsApiResponse.model_validate(
+                {
+                    "settings_id": result.settings_id,
+                    "settings_name": settings_name,
+                    "actor_name": actor_name,
+                }
+            )
 
             # Invalidate cache after mutation
             await invalidate_tags(tags)

@@ -9,7 +9,6 @@ from tests.integration.socket.helpers import (
 )
 
 from app.socket.v3.scenarios.tools.video import (
-    _scenario_tool_video_impl,
     scenario_tool_video,
     scenario_tool_video_internal,
 )
@@ -118,4 +117,3 @@ async def test_scenario_tool_video_missing_trace_id(
     error_events = mock_sio.get_events("scenarios_tools_video_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

@@ -5,10 +5,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool, sio
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -113,7 +113,9 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
             )
 
             # Load SQL query at top (DHH style - one SQL file per websocket event)
-            sql = load_sql("app/sql/v3/documents/complete_document_creation_complete.sql")
+            sql = load_sql(
+                "app/sql/v3/documents/complete_document_creation_complete.sql"
+            )
 
             sql_query = sql
             sql_params = (

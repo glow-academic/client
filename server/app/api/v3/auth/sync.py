@@ -2,10 +2,11 @@
 
 from typing import Any
 
-from app.infra.v3.activity.audit import audit_activity
-from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+
+from app.infra.v3.activity.audit import audit_activity
+from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
 
 
 class SyncKeycloakRequest(BaseModel):

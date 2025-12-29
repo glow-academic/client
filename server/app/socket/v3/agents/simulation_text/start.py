@@ -7,23 +7,29 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import asyncpg  # type: ignore
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
-                    trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.debug.debug_info import DebugContext
-from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
-from app.infra.v3.documents.format_document_info import format_document_info
-from app.infra.v3.tools.build_pydantic_fields import \
-    build_function_signature_string
-from app.main import get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
+from app.infra.v3.documents.format_document_info import format_document_info
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -683,56 +689,53 @@ async def _create_chat_with_randomization(
 
             scenario_tools: list[Tool] = []
 
-            title_desc_config = tool_config_map.get("set_title_and_description")
-            if title_desc_config:
-                title_desc = title_desc_config.get("argument_descriptions", {}).get(
-                    "title", "Short, descriptive title for the scenario (5-10 words)"
-                )
-                scenario_desc = title_desc_config.get("argument_descriptions", {}).get(
-                    "scenario",
-                    "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it",
+            statement_config = tool_config_map.get("create_statement")
+            if statement_config:
+                statement_desc = statement_config.get("argument_descriptions", {}).get(
+                    "statement",
+                    "The problem statement for the scenario (1-2 sentences)",
                 )
             else:
-                title_desc = "Short, descriptive title for the scenario (5-10 words)"
-                scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
+                statement_desc = (
+                    "The problem statement for the scenario (1-2 sentences)"
+                )
 
-            async def set_title_description(
-                title: str = Field(description=title_desc),
-                scenario: str = Field(description=scenario_desc),
+            async def create_statement(
+                statement: str = Field(description=statement_desc),
             ) -> str:
-                """Set the title and description for the scenario."""
-                scenario_results["title"] = title
-                scenario_results["description"] = scenario
-                logger.info(f"✓ Set title: {title}")
-                return "Set title and description successfully"
+                """Create the problem statement for the scenario."""
+                scenario_results["description"] = statement
+                logger.info(f"✓ Created statement: {statement[:50]}...")
+                return "Created problem statement successfully"
 
-            scenario_tools.append(function_tool(set_title_description))
+            scenario_tools.append(function_tool(create_statement))
 
             if objectives_enabled:
-                objectives_config = tool_config_map.get("set_objectives")
-                if objectives_config:
-                    objectives_desc = objectives_config.get(
+                objective_config = tool_config_map.get("create_objective")
+                if objective_config:
+                    objective_desc = objective_config.get(
                         "argument_descriptions", {}
                     ).get(
-                        "objectives",
-                        "List of 1-3 specific learning objectives that GTAs should achieve in this scenario",
+                        "objective",
+                        "A specific learning objective that GTAs should achieve in this scenario",
                     )
                 else:
-                    objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
+                    objective_desc = "A specific learning objective that GTAs should achieve in this scenario"
 
-                async def set_objectives(
-                    objectives: list[str] = Field(description=objectives_desc),
+                async def create_objective(
+                    objective: str = Field(description=objective_desc),
                 ) -> str:
-                    """Set the learning objectives for this scenario."""
-                    objectives = objectives[:3]
-                    scenario_results["objectives"] = objectives
-                    logger.info(f"✓ Set {len(objectives)} objectives")
-                    return f"Set {len(objectives)} learning objectives successfully"
+                    """Create a learning objective for this scenario. Call multiple times to create multiple objectives."""
+                    if "objectives" not in scenario_results:
+                        scenario_results["objectives"] = []
+                    scenario_results["objectives"].append(objective)
+                    logger.info(f"✓ Created objective: {objective[:50]}...")
+                    return f"Created learning objective successfully (total: {len(scenario_results['objectives'])})"
 
-                scenario_tools.append(function_tool(set_objectives))
+                scenario_tools.append(function_tool(create_objective))
 
             if images_enabled:
-                image_config = tool_config_map.get("generate_image")
+                image_config = tool_config_map.get("create_image")
                 if image_config:
                     name_desc = image_config.get("argument_descriptions", {}).get(
                         "name", "Descriptive name for the generated image"
@@ -744,18 +747,18 @@ async def _create_chat_with_randomization(
                     name_desc = "Descriptive name for the generated image"
                     prompt_desc = "Detailed, descriptive prompt for image generation"
 
-                async def generate_image(
+                async def create_image(
                     name: str = Field(description=name_desc),
                     prompt: str = Field(description=prompt_desc),
                 ) -> str:
-                    """Generate an image from a detailed prompt."""
+                    """Create an image for this scenario."""
                     if "image_requests" not in scenario_results:
                         scenario_results["image_requests"] = {}
                     scenario_results["image_requests"][name] = prompt
-                    logger.info(f"✓ Queued image generation: {name}")
-                    return f"Image generation queued for '{name}'"
+                    logger.info(f"✓ Queued image creation: {name}")
+                    return f"Image creation queued for '{name}'"
 
-                scenario_tools.append(function_tool(generate_image))
+                scenario_tools.append(function_tool(create_image))
 
             scenario_tools.append(debug_info_tool)
             logger.info(
@@ -766,9 +769,9 @@ async def _create_chat_with_randomization(
                 tool_context: RunContextWrapper[Any],
                 tool_results: list[FunctionToolResult],
             ) -> ToolsToFinalOutputResult:
-                required_tools = ["title_description"]
+                required_tools = ["create_statement"]
                 if objectives_enabled:
-                    required_tools.append("objectives")
+                    required_tools.append("create_objective")
                 completed_tools: list[str] = []
                 logger.info(
                     f"Tool use check: required={required_tools}, tool_results={len(tool_results)}"
@@ -788,13 +791,20 @@ async def _create_chat_with_randomization(
 
                     if tool_name and isinstance(tool_name, str):
                         normalized_name = tool_name
-                        if (
-                            "title" in tool_name.lower()
-                            and "description" in tool_name.lower()
+                        if tool_name == "create_statement" or (
+                            "statement" in tool_name.lower()
+                            and (
+                                "create" in tool_name.lower()
+                                or "title" in tool_name.lower()
+                                or "description" in tool_name.lower()
+                            )
                         ):
-                            normalized_name = "title_description"
-                        elif "objective" in tool_name.lower():
-                            normalized_name = "objectives"
+                            normalized_name = "create_statement"
+                        elif tool_name == "create_objective" or (
+                            "objective" in tool_name.lower()
+                            and "create" in tool_name.lower()
+                        ):
+                            normalized_name = "create_objective"
                         completed_tools.append(normalized_name)
                         logger.info(
                             f"Tool result {idx}: tool_name={tool_name} normalized={normalized_name}"
@@ -852,7 +862,9 @@ async def _create_chat_with_randomization(
                     error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                 raise ValueError(error_message)
 
-            sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+            sql_create_run = load_sql(
+                "app/sql/v3/model_runs/create_model_run_complete.sql"
+            )
             model_run_row = await conn.fetchrow(
                 sql_create_run,
                 selected_department_id,
@@ -888,7 +900,9 @@ async def _create_chat_with_randomization(
 
             usage = result.context_wrapper.usage
 
-            sql_update_tokens = load_sql("app/sql/v3/model_runs/update_model_run_tokens.sql")
+            sql_update_tokens = load_sql(
+                "app/sql/v3/model_runs/update_model_run_tokens.sql"
+            )
             await conn.execute(
                 sql_update_tokens,
                 str(model_run_id),
@@ -1070,7 +1084,7 @@ async def _create_chat_with_randomization(
 @internal_sio.on("simulation_chat_create")
 async def simulation_chat_create_internal(data: dict[str, Any]) -> None:
     """Handle simulation_chat_create event from internal bus (server-to-server).
-    
+
     This handler creates a new chat with randomization logic.
     Called by end.py when it needs to create a new chat.
     """
@@ -1138,7 +1152,7 @@ async def simulation_chat_create_impl(
     mark_completed: bool,
 ) -> dict[str, Any] | None:
     """Direct callable implementation for creating chat with randomization.
-    
+
     This can be called directly when the return value is needed (e.g., from end.py).
     The internal event handler wraps this function.
     """
@@ -1207,7 +1221,6 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             return
 
         async with pool.acquire() as conn:
-
             # Parse infinite_time_limit
             # Note: infinite_time_limit parameter removed - time limits now managed via
             # simulation_time_limits junction table. Use infinite_mode boolean to bypass limits.
@@ -1216,7 +1229,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             trace_id = gen_trace_id()
 
             # Create attempt and chat using SQL
-            sql = load_sql("app/sql/v3/simulations/start_simulation_attempt_complete.sql")
+            sql = load_sql(
+                "app/sql/v3/simulations/start_simulation_attempt_complete.sql"
+            )
             row = await conn.fetchrow(
                 sql,
                 simulation_id,
@@ -1310,7 +1325,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         )
                     elif attempt_profile_id:
                         # Fallback to profile's departments
-                        sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
+                        sql = load_sql(
+                            "app/sql/v3/profile/get_departments_for_profile.sql"
+                        )
                         profile_dept_rows = await conn.fetch(sql, attempt_profile_id)
                         if profile_dept_rows and len(profile_dept_rows) > 0:
                             dept_id_raw = profile_dept_rows[0]["id"]
@@ -1337,19 +1354,26 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     from datetime import timedelta
                     from zoneinfo import ZoneInfo
 
-                    from agents import (FunctionToolResult, RunContextWrapper,
-                                        Runner, Tool, ToolsToFinalOutputResult,
-                                        function_tool, trace)
+                    from agents import (
+                        FunctionToolResult,
+                        RunContextWrapper,
+                        Runner,
+                        Tool,
+                        ToolsToFinalOutputResult,
+                        function_tool,
+                        trace,
+                    )
                     from agents.items import TResponseInputItem
+                    from pydantic import Field
+
                     from app.infra.v3.agents.generic_agent import GenericAgent
                     from app.infra.v3.debug.debug_info import DebugContext
-                    from app.infra.v3.debug.debug_info import \
-                        debug_info as debug_info_tool
-                    from app.infra.v3.documents.format_document_info import \
-                        format_document_info
-                    from app.infra.v3.tools.build_pydantic_fields import \
-                        build_function_signature_string
-                    from pydantic import Field
+                    from app.infra.v3.debug.debug_info import (
+                        debug_info as debug_info_tool,
+                    )
+                    from app.infra.v3.documents.format_document_info import (
+                        format_document_info,
+                    )
 
                     def parse_jsonb(data: Any) -> list[dict[str, Any]]:
                         """Parse JSONB data with type safety."""
@@ -1388,19 +1412,30 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         # Step 1: Department selection with fallback logic
                         if department_ids is None:
                             department_ids = []
-                        use_all_departments = not department_ids or len(department_ids) == 0
+                        use_all_departments = (
+                            not department_ids or len(department_ids) == 0
+                        )
 
                         selected_department_id: uuid.UUID | None = None
                         if department_ids and len(department_ids) > 0:
                             selected_department_id = random.choice(department_ids)
-                            logger.info(f"Using provided department_id: {selected_department_id}")
+                            logger.info(
+                                f"Using provided department_id: {selected_department_id}"
+                            )
                         elif profile_id:
-                            sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
+                            sql = load_sql(
+                                "app/sql/v3/profile/get_departments_for_profile.sql"
+                            )
                             profile_dept_rows = await conn.fetch(sql, str(profile_id))
                             if profile_dept_rows and len(profile_dept_rows) > 0:
-                                profile_dept_ids = [uuid.UUID(str(row["id"])) for row in profile_dept_rows]
+                                profile_dept_ids = [
+                                    uuid.UUID(str(row["id"]))
+                                    for row in profile_dept_rows
+                                ]
                                 selected_department_id = random.choice(profile_dept_ids)
-                                logger.info(f"Using department_id from profile: {selected_department_id}")
+                                logger.info(
+                                    f"Using department_id from profile: {selected_department_id}"
+                                )
 
                         if not selected_department_id:
                             logger.info(
@@ -1409,7 +1444,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                         # Step 1.5: Get randomization ranges
-                        sql = load_sql("app/sql/v3/scenario/get_randomization_ranges.sql")
+                        sql = load_sql(
+                            "app/sql/v3/scenario/get_randomization_ranges.sql"
+                        )
                         ranges_result = await conn.fetchrow(sql, scenario_id)
                         if not ranges_result:
                             persona_min = 1
@@ -1426,7 +1463,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             document_max = ranges_result.get("document_max", 3)
                             parameter_min = ranges_result.get("parameter_min", 0)
                             parameter_max = ranges_result.get("parameter_max", 3)
-                            field_ranges_raw = ranges_result.get("field_ranges_json", {})
+                            field_ranges_raw = ranges_result.get(
+                                "field_ranges_json", {}
+                            )
                             if isinstance(field_ranges_raw, str):
                                 try:
                                     field_ranges_json = json.loads(field_ranges_raw)
@@ -1446,7 +1485,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         dept_uuids: list[uuid.UUID] = (
                             [] if use_all_departments else [selected_department_id]
                         )
-                        sql = load_sql("app/sql/v3/scenario/get_randomization_data_complete.sql")
+                        sql = load_sql(
+                            "app/sql/v3/scenario/get_randomization_data_complete.sql"
+                        )
                         result = await conn.fetchrow(sql, dept_uuids, scenario_id)
 
                         if not result:
@@ -1456,7 +1497,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         personas_data = parse_jsonb(result.get("personas", []))
                         documents_data = parse_jsonb(result.get("documents", []))
                         parameters_data = parse_jsonb(result.get("parameters", []))
-                        parameter_items_data = parse_jsonb(result.get("parameter_items", []))
+                        parameter_items_data = parse_jsonb(
+                            result.get("parameter_items", [])
+                        )
                         document_parameter_items_data = parse_jsonb(
                             result.get("document_parameter_items", [])
                         )
@@ -1464,13 +1507,17 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         # Get existing scenario links if scenario_id provided
                         existing_persona_ids = result.get("persona_ids", []) or []
                         existing_document_ids = result.get("document_ids", []) or []
-                        existing_parameter_item_ids = result.get("parameter_item_ids", []) or []
+                        existing_parameter_item_ids = (
+                            result.get("parameter_item_ids", []) or []
+                        )
 
                         # Build lookup maps
                         active_personas = []
                         for p in personas_data:
                             if "id" not in p:
-                                logger.warning("Skipping persona entry missing 'id' field")
+                                logger.warning(
+                                    "Skipping persona entry missing 'id' field"
+                                )
                                 continue
                             active_personas.append(
                                 {
@@ -1482,7 +1529,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         active_documents = []
                         for d in documents_data:
                             if "id" not in d:
-                                logger.warning("Skipping document entry missing 'id' field")
+                                logger.warning(
+                                    "Skipping document entry missing 'id' field"
+                                )
                                 continue
                             active_documents.append(
                                 {
@@ -1494,14 +1543,20 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         active_parameters = []
                         for p in parameters_data:
                             if "id" not in p:
-                                logger.warning("Skipping parameter entry missing 'id' field")
+                                logger.warning(
+                                    "Skipping parameter entry missing 'id' field"
+                                )
                                 continue
                             active_parameters.append(
                                 {
                                     **p,
                                     "id": uuid.UUID(str(p["id"])),
-                                    "document_parameter": p.get("document_parameter", False),
-                                    "persona_parameter": p.get("persona_parameter", False),
+                                    "document_parameter": p.get(
+                                        "document_parameter", False
+                                    ),
+                                    "persona_parameter": p.get(
+                                        "persona_parameter", False
+                                    ),
                                 }
                             )
 
@@ -1530,7 +1585,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             document_parameter_items_junction.append(
                                 {
                                     "document_id": uuid.UUID(str(j["document_id"])),
-                                    "parameter_item_id": uuid.UUID(str(j["parameter_item_id"])),
+                                    "parameter_item_id": uuid.UUID(
+                                        str(j["parameter_item_id"])
+                                    ),
                                 }
                             )
 
@@ -1538,7 +1595,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         for pi in all_parameter_items:
                             parameter_items_by_id[pi["id"]] = pi
 
-                        parameter_items_by_param_id: dict[uuid.UUID, list[dict[str, Any]]] = {}
+                        parameter_items_by_param_id: dict[
+                            uuid.UUID, list[dict[str, Any]]
+                        ] = {}
                         for pi in all_parameter_items:
                             param_id = pi["parameter_id"]
                             if param_id not in parameter_items_by_param_id:
@@ -1551,16 +1610,22 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                         # Step 3: Persona selection
                         scenario_persona_ids: list[uuid.UUID] = []
-                        should_randomize_persona = not targets or "persona" in [t.lower() for t in targets]
+                        should_randomize_persona = not targets or "persona" in [
+                            t.lower() for t in targets
+                        ]
 
                         if scenario_id and existing_persona_ids:
-                            scenario_persona_ids = [uuid.UUID(p) for p in existing_persona_ids]
+                            scenario_persona_ids = [
+                                uuid.UUID(p) for p in existing_persona_ids
+                            ]
                             logger.info(
                                 f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}"
                             )
                         elif persona_ids and not should_randomize_persona:
                             scenario_persona_ids = persona_ids[:1]
-                            logger.info(f"Using provided persona_id: {scenario_persona_ids}")
+                            logger.info(
+                                f"Using provided persona_id: {scenario_persona_ids}"
+                            )
                         elif should_randomize_persona:
                             if active_personas:
                                 available_count = len(active_personas)
@@ -1570,7 +1635,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     count = random.randint(effective_min, capped_max)
                                     shuffled = active_personas.copy()
                                     random.shuffle(shuffled)
-                                    scenario_persona_ids = [p["id"] for p in shuffled[:count]]
+                                    scenario_persona_ids = [
+                                        p["id"] for p in shuffled[:count]
+                                    ]
                                     logger.info(
                                         f"Randomly selected {count} persona(s) (range: {persona_min}-{persona_max}, "
                                         f"available: {available_count}): {scenario_persona_ids}"
@@ -1584,20 +1651,28 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             else:
                                 logger.info("No active personas found")
 
-                        persona_id = scenario_persona_ids[0] if scenario_persona_ids else None
+                        persona_id = (
+                            scenario_persona_ids[0] if scenario_persona_ids else None
+                        )
 
                         # Step 3.5: Persona parameter selection
                         persona_param_ids: list[uuid.UUID] = []
                         if not targets or "persona" in [t.lower() for t in targets]:
                             persona_parameters = [
-                                p for p in active_parameters if p.get("persona_parameter", False)
+                                p
+                                for p in active_parameters
+                                if p.get("persona_parameter", False)
                             ]
                             if persona_parameters:
                                 for param in persona_parameters:
-                                    param_items = parameter_items_by_param_id.get(param["id"], [])
+                                    param_items = parameter_items_by_param_id.get(
+                                        param["id"], []
+                                    )
                                     if param_items:
                                         param_id_str = str(param["id"])
-                                        param_range = field_ranges_json.get(param_id_str, {})
+                                        param_range = field_ranges_json.get(
+                                            param_id_str, {}
+                                        )
                                         param_min = (
                                             param_range.get("min", 1)
                                             if isinstance(param_range, dict)
@@ -1614,7 +1689,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                         effective_min = min(param_min, available_count)
 
                                         if effective_min <= capped_max:
-                                            count = random.randint(effective_min, capped_max)
+                                            count = random.randint(
+                                                effective_min, capped_max
+                                            )
                                             shuffled = param_items.copy()
                                             random.shuffle(shuffled)
                                             selected_items = shuffled[:count]
@@ -1623,7 +1700,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                             )
                                         else:
                                             selected_item = random.choice(param_items)
-                                            persona_param_ids.append(selected_item["id"])
+                                            persona_param_ids.append(
+                                                selected_item["id"]
+                                            )
                                 logger.info(
                                     f"Randomly selected {len(persona_param_ids)} persona parameter_item_ids using per-parameter ranges: {persona_param_ids}"
                                 )
@@ -1635,11 +1714,17 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         ]
 
                         if scenario_id and existing_parameter_item_ids:
-                            param_ids = [uuid.UUID(p) for p in existing_parameter_item_ids]
-                            logger.info(f"Using {len(param_ids)} existing parameter_item_ids: {param_ids}")
+                            param_ids = [
+                                uuid.UUID(p) for p in existing_parameter_item_ids
+                            ]
+                            logger.info(
+                                f"Using {len(param_ids)} existing parameter_item_ids: {param_ids}"
+                            )
                         elif parameter_item_ids and not should_randomize_parameters:
                             param_ids = parameter_item_ids
-                            logger.info(f"Using provided parameter_item_ids: {param_ids}")
+                            logger.info(
+                                f"Using provided parameter_item_ids: {param_ids}"
+                            )
                         elif should_randomize_parameters:
                             general_parameters = [
                                 p
@@ -1657,13 +1742,19 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     random.shuffle(shuffled)
                                     selected_parameters = shuffled[:count]
                                 else:
-                                    selected_parameters = [random.choice(general_parameters)]
+                                    selected_parameters = [
+                                        random.choice(general_parameters)
+                                    ]
 
                                 for param in selected_parameters:
-                                    param_items = parameter_items_by_param_id.get(param["id"], [])
+                                    param_items = parameter_items_by_param_id.get(
+                                        param["id"], []
+                                    )
                                     if param_items:
                                         param_id_str = str(param["id"])
-                                        param_range = field_ranges_json.get(param_id_str, {})
+                                        param_range = field_ranges_json.get(
+                                            param_id_str, {}
+                                        )
                                         param_min = (
                                             param_range.get("min", 1)
                                             if isinstance(param_range, dict)
@@ -1680,11 +1771,15 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                         effective_min = min(param_min, available_count)
 
                                         if effective_min <= capped_max:
-                                            count = random.randint(effective_min, capped_max)
+                                            count = random.randint(
+                                                effective_min, capped_max
+                                            )
                                             shuffled = param_items.copy()
                                             random.shuffle(shuffled)
                                             selected_items = shuffled[:count]
-                                            param_ids.extend([item["id"] for item in selected_items])
+                                            param_ids.extend(
+                                                [item["id"] for item in selected_items]
+                                            )
                                         else:
                                             selected_item = random.choice(param_items)
                                             param_ids.append(selected_item["id"])
@@ -1704,26 +1799,35 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                         if scenario_id and existing_document_ids:
                             doc_ids = [uuid.UUID(d) for d in existing_document_ids]
-                            logger.info(f"Using {len(doc_ids)} existing document_ids: {doc_ids}")
+                            logger.info(
+                                f"Using {len(doc_ids)} existing document_ids: {doc_ids}"
+                            )
                         elif document_ids and not should_randomize_documents:
                             doc_ids = document_ids
                             logger.info(f"Using provided document_ids: {doc_ids}")
                         elif should_randomize_documents:
-                            doc_matching_param_item_ids = param_ids.copy() if param_ids else []
+                            doc_matching_param_item_ids = (
+                                param_ids.copy() if param_ids else []
+                            )
 
                             if not doc_matching_param_item_ids and active_parameters:
                                 for param in active_parameters:
-                                    param_items = parameter_items_by_param_id.get(param["id"], [])
+                                    param_items = parameter_items_by_param_id.get(
+                                        param["id"], []
+                                    )
                                     if param_items:
                                         selected_item = random.choice(param_items)
-                                        doc_matching_param_item_ids.append(selected_item["id"])
+                                        doc_matching_param_item_ids.append(
+                                            selected_item["id"]
+                                        )
 
                             matching_documents = []
                             if doc_matching_param_item_ids:
                                 matching_documents = [
                                     documents_by_id[j["document_id"]]
                                     for j in document_parameter_items_junction
-                                    if j["parameter_item_id"] in doc_matching_param_item_ids
+                                    if j["parameter_item_id"]
+                                    in doc_matching_param_item_ids
                                     and j["document_id"] in documents_by_id
                                 ]
                                 logger.info(
@@ -1731,7 +1835,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 )
 
                             available_documents = (
-                                matching_documents if matching_documents else active_documents
+                                matching_documents
+                                if matching_documents
+                                else active_documents
                             )
                             if available_documents:
                                 available_count = len(available_documents)
@@ -1749,9 +1855,13 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 else:
                                     if effective_min == 0:
                                         doc_ids = []
-                                        logger.info("Range allows 0 documents, selected none")
+                                        logger.info(
+                                            "Range allows 0 documents, selected none"
+                                        )
                                     else:
-                                        selected_doc = random.choice(available_documents)
+                                        selected_doc = random.choice(
+                                            available_documents
+                                        )
                                         doc_ids = [selected_doc["id"]]
                                         logger.info(
                                             f"Range invalid ({effective_min}-{capped_max}), selected 1 document: {doc_ids[0]}"
@@ -1761,7 +1871,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                         # Step 5.5: Document parameter extraction
                         document_param_ids: list[uuid.UUID] = []
-                        if doc_ids and (not targets or "documents" in [t.lower() for t in targets]):
+                        if doc_ids and (
+                            not targets or "documents" in [t.lower() for t in targets]
+                        ):
                             for doc_id in doc_ids:
                                 doc_param_items = [
                                     j["parameter_item_id"]
@@ -1769,13 +1881,22 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     if j["document_id"] == doc_id
                                 ]
                                 for param_item_id in doc_param_items:
-                                    param_item = parameter_items_by_id.get(param_item_id)
+                                    param_item = parameter_items_by_id.get(
+                                        param_item_id
+                                    )
                                     if param_item:
                                         param_id = param_item["parameter_id"]
                                         param_dict: dict[str, Any] | None = next(
-                                            (p for p in active_parameters if p["id"] == param_id), None
+                                            (
+                                                p
+                                                for p in active_parameters
+                                                if p["id"] == param_id
+                                            ),
+                                            None,
                                         )
-                                        if param_dict and param_dict.get("document_parameter", False):
+                                        if param_dict and param_dict.get(
+                                            "document_parameter", False
+                                        ):
                                             if param_item_id not in document_param_ids:
                                                 document_param_ids.append(param_item_id)
                             logger.info(
@@ -1788,12 +1909,18 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             sql = load_sql("app/sql/v3/scenario/get_scenario_by_id.sql")
                             parent_scenario_row = await conn.fetchrow(sql, scenario_id)
                             if not parent_scenario_row:
-                                raise ValueError(f"Parent scenario {scenario_id} not found")
+                                raise ValueError(
+                                    f"Parent scenario {scenario_id} not found"
+                                )
 
                             parent_scenario_dict = dict(parent_scenario_row)
 
-                            sql = load_sql("app/sql/v3/scenario/get_scenario_problem_statement_active.sql")
-                            problem_statement_row = await conn.fetchrow(sql, scenario_id)
+                            sql = load_sql(
+                                "app/sql/v3/scenario/get_scenario_problem_statement_active.sql"
+                            )
+                            problem_statement_row = await conn.fetchrow(
+                                sql, scenario_id
+                            )
                             scenario_problem_statement = (
                                 problem_statement_row["problem_statement"]
                                 if problem_statement_row
@@ -1801,20 +1928,28 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                             if not scenario_problem_statement:
-                                logger.info("No problem statement found, generating via scenario agent")
-                                scenario_agent_id = parent_scenario_dict.get("scenario_agent_id")
+                                logger.info(
+                                    "No problem statement found, generating via scenario agent"
+                                )
+                                scenario_agent_id = parent_scenario_dict.get(
+                                    "scenario_agent_id"
+                                )
                                 if not scenario_agent_id:
                                     raise ValueError(
                                         f"Parent scenario {scenario_id} has no scenario_agent_id configured"
                                     )
 
                                 agent_id_uuid = uuid.UUID(scenario_agent_id)
-                                objectives_enabled = parent_scenario_dict.get("objectives_enabled", True)
+                                objectives_enabled = parent_scenario_dict.get(
+                                    "objectives_enabled", True
+                                )
                                 images_enabled = False
-                                
+
                                 if not selected_department_id:
-                                    raise ValueError("department_id is required for scenario problem statement generation")
-                                
+                                    raise ValueError(
+                                        "department_id is required for scenario problem statement generation"
+                                    )
+
                                 logger.info(
                                     f"Generating scenario problem statement with "
                                     f"department_id={selected_department_id}, agent_id={agent_id_uuid}, persona_id={persona_id}, "
@@ -1822,8 +1957,12 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 )
 
                                 if not profile_id:
-                                    raise ValueError("profile_id is required for scenario problem statement generation")
-                                sql = load_sql("app/sql/v3/scenario/get_scenario_run_context.sql")
+                                    raise ValueError(
+                                        "profile_id is required for scenario problem statement generation"
+                                    )
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/get_scenario_run_context.sql"
+                                )
                                 context_row = await conn.fetchrow(
                                     sql,
                                     selected_department_id,
@@ -1866,7 +2005,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     "persona": {
                                         "id": context_row["persona_id"],
                                         "name": context_row["persona_name"],
-                                        "description": context_row["persona_description"],
+                                        "description": context_row[
+                                            "persona_description"
+                                        ],
                                     }
                                     if context_row["persona_id"]
                                     else None,
@@ -1874,7 +2015,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     "parameter_items": parameter_items,
                                     "req_per_day": context_row["req_per_day"],
                                     "runs_today_count": context_row["runs_today_count"],
-                                    "earliest_run_created_at": context_row["earliest_run_created_at"],
+                                    "earliest_run_created_at": context_row[
+                                        "earliest_run_created_at"
+                                    ],
                                 }
 
                                 if persona_id is None or context["persona"] is None:
@@ -1891,7 +2034,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 if not doc_ids or len(doc_ids) == 0:
                                     document_info = None
                                 else:
-                                    document_info = format_document_info(context["documents"], show_images)
+                                    document_info = format_document_info(
+                                        context["documents"], show_images
+                                    )
 
                                 if not param_ids or len(param_ids) == 0:
                                     parameter_item_info = None
@@ -1911,8 +2056,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                             )
                                             formatted_items.append(formatted_item)
 
-                                        content = "The following is the parameter item information:\n" + "\n".join(
-                                            formatted_items
+                                        content = (
+                                            "The following is the parameter item information:\n"
+                                            + "\n".join(formatted_items)
                                         )
                                         parameter_item_info = {
                                             "role": "user",
@@ -1927,91 +2073,133 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                                 # Image generation context is now passed directly to background tasks (no-op removed)
 
-                                sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
-                                rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+                                sql_get_agent_tools = load_sql(
+                                    "app/sql/v3/agents/get_agent_tools.sql"
+                                )
+                                rows = await conn.fetch(
+                                    sql_get_agent_tools, str(agent_id_uuid)
+                                )
                                 agent_tools_config = [dict(row) for row in rows]
                                 tool_config_map: dict[str, dict[str, Any]] = {
-                                    tool_config["name"]: tool_config for tool_config in agent_tools_config
+                                    tool_config["name"]: tool_config
+                                    for tool_config in agent_tools_config
                                 }
 
                                 scenario_results: dict[str, Any] = {}
                                 scenario_tools: list[Tool] = []
-                                
-                                title_desc_config = tool_config_map.get("set_title_and_description")
-                                if title_desc_config:
-                                    title_desc = title_desc_config.get("argument_descriptions", {}).get("title", "Short, descriptive title for the scenario (5-10 words)")
-                                    scenario_desc = title_desc_config.get("argument_descriptions", {}).get("scenario", "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it")
+
+                                statement_config = tool_config_map.get(
+                                    "create_statement"
+                                )
+                                if statement_config:
+                                    statement_desc = statement_config.get(
+                                        "argument_descriptions", {}
+                                    ).get(
+                                        "statement",
+                                        "The problem statement for the scenario (1-2 sentences)",
+                                    )
                                 else:
-                                    title_desc = "Short, descriptive title for the scenario (5-10 words)"
-                                    scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
-                                
-                                async def set_title_description(
-                                    title: str = Field(description=title_desc),
-                                    scenario: str = Field(description=scenario_desc),
+                                    statement_desc = "The problem statement for the scenario (1-2 sentences)"
+
+                                async def create_statement(
+                                    statement: str = Field(description=statement_desc),
                                 ) -> str:
-                                    """Set the title and description for the scenario."""
-                                    scenario_results["title"] = title
-                                    scenario_results["description"] = scenario
-                                    logger.info(f"✓ Set title: {title}")
-                                    return "Set title and description successfully"
-                                
-                                scenario_tools.append(function_tool(set_title_description))
-                                
+                                    """Create the problem statement for the scenario."""
+                                    scenario_results["description"] = statement
+                                    logger.info(
+                                        f"✓ Created statement: {statement[:50]}..."
+                                    )
+                                    return "Created problem statement successfully"
+
+                                scenario_tools.append(function_tool(create_statement))
+
                                 if objectives_enabled:
-                                    objectives_config = tool_config_map.get("set_objectives")
-                                    if objectives_config:
-                                        objectives_desc = objectives_config.get("argument_descriptions", {}).get("objectives", "List of 1-3 specific learning objectives that GTAs should achieve in this scenario")
+                                    objective_config = tool_config_map.get(
+                                        "create_objective"
+                                    )
+                                    if objective_config:
+                                        objective_desc = objective_config.get(
+                                            "argument_descriptions", {}
+                                        ).get(
+                                            "objective",
+                                            "A specific learning objective that GTAs should achieve in this scenario",
+                                        )
                                     else:
-                                        objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
-                                    
-                                    async def set_objectives(
-                                        objectives: list[str] = Field(description=objectives_desc),
+                                        objective_desc = "A specific learning objective that GTAs should achieve in this scenario"
+
+                                    async def create_objective(
+                                        objective: str = Field(
+                                            description=objective_desc
+                                        ),
                                     ) -> str:
-                                        """Set the learning objectives for this scenario."""
-                                        objectives = objectives[:3]
-                                        scenario_results["objectives"] = objectives
-                                        logger.info(f"✓ Set {len(objectives)} objectives")
-                                        return f"Set {len(objectives)} learning objectives successfully"
-                                    
-                                    scenario_tools.append(function_tool(set_objectives))
-                                
+                                        """Create a learning objective for this scenario. Call multiple times to create multiple objectives."""
+                                        if "objectives" not in scenario_results:
+                                            scenario_results["objectives"] = []
+                                        scenario_results["objectives"].append(objective)
+                                        logger.info(
+                                            f"✓ Created objective: {objective[:50]}..."
+                                        )
+                                        return f"Created learning objective successfully (total: {len(scenario_results['objectives'])})"
+
+                                    scenario_tools.append(
+                                        function_tool(create_objective)
+                                    )
+
                                 if images_enabled:
-                                    image_config = tool_config_map.get("generate_image")
+                                    image_config = tool_config_map.get("create_image")
                                     if image_config:
-                                        name_desc = image_config.get("argument_descriptions", {}).get("name", "Descriptive name for the generated image")
-                                        prompt_desc = image_config.get("argument_descriptions", {}).get("prompt", "Detailed, descriptive prompt for image generation")
+                                        name_desc = image_config.get(
+                                            "argument_descriptions", {}
+                                        ).get(
+                                            "name",
+                                            "Descriptive name for the generated image",
+                                        )
+                                        prompt_desc = image_config.get(
+                                            "argument_descriptions", {}
+                                        ).get(
+                                            "prompt",
+                                            "Detailed, descriptive prompt for image generation",
+                                        )
                                     else:
-                                        name_desc = "Descriptive name for the generated image"
+                                        name_desc = (
+                                            "Descriptive name for the generated image"
+                                        )
                                         prompt_desc = "Detailed, descriptive prompt for image generation"
-                                    
-                                    async def generate_image(
+
+                                    async def create_image(
                                         name: str = Field(description=name_desc),
                                         prompt: str = Field(description=prompt_desc),
                                     ) -> str:
-                                        """Generate an image from a detailed prompt."""
+                                        """Create an image for this scenario."""
                                         if "image_requests" not in scenario_results:
                                             scenario_results["image_requests"] = {}
-                                        scenario_results["image_requests"][name] = prompt
-                                        logger.info(f"✓ Queued image generation: {name}")
-                                        return f"Image generation queued for '{name}'"
-                                    
-                                    scenario_tools.append(function_tool(generate_image))
-                                
+                                        scenario_results["image_requests"][name] = (
+                                            prompt
+                                        )
+                                        logger.info(f"✓ Queued image creation: {name}")
+                                        return f"Image creation queued for '{name}'"
+
+                                    scenario_tools.append(function_tool(create_image))
+
                                 scenario_tools.append(debug_info_tool)
-                                logger.info(f"Created {len(scenario_tools)} scenario tools (including debug_info)")
+                                logger.info(
+                                    f"Created {len(scenario_tools)} scenario tools (including debug_info)"
+                                )
 
                                 def tool_use_behavior(
                                     tool_context: RunContextWrapper[Any],
                                     tool_results: list[FunctionToolResult],
                                 ) -> ToolsToFinalOutputResult:
-                                    required_tools = ["title_description"]
+                                    required_tools = ["create_statement"]
                                     if objectives_enabled:
-                                        required_tools.append("objectives")
+                                        required_tools.append("create_objective")
                                     completed_required = True
                                     logger.info(
                                         f"Tool use check: required={required_tools}, completed={completed_required}"
                                     )
-                                    return ToolsToFinalOutputResult(is_final_output=completed_required)
+                                    return ToolsToFinalOutputResult(
+                                        is_final_output=completed_required
+                                    )
 
                                 scenario_agent_generic = GenericAgent(
                                     agent_name=context["agent_name"],
@@ -2035,17 +2223,28 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     parameter_item_info,
                                 ]
 
-                                clean_input_items = [item for item in input_items if item is not None]
+                                clean_input_items = [
+                                    item for item in input_items if item is not None
+                                ]
 
                                 req_per_day = context["req_per_day"]
                                 runs_today_count = context["runs_today_count"]
 
-                                if req_per_day is not None and runs_today_count >= req_per_day:
-                                    earliest_run_created_at = context["earliest_run_created_at"]
+                                if (
+                                    req_per_day is not None
+                                    and runs_today_count >= req_per_day
+                                ):
+                                    earliest_run_created_at = context[
+                                        "earliest_run_created_at"
+                                    ]
                                     if earliest_run_created_at:
-                                        next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                                        next_allowed_utc = (
+                                            earliest_run_created_at + timedelta(days=1)
+                                        )
                                         eastern_tz = ZoneInfo("America/New_York")
-                                        next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                                        next_allowed_et = next_allowed_utc.astimezone(
+                                            eastern_tz
+                                        )
                                         error_message = (
                                             f"Daily request limit of {req_per_day} reached. "
                                             f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
@@ -2055,7 +2254,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                         error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                                     raise ValueError(error_message)
 
-                                sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+                                sql_create_run = load_sql(
+                                    "app/sql/v3/model_runs/create_model_run_complete.sql"
+                                )
                                 model_run_row = await conn.fetchrow(
                                     sql_create_run,
                                     selected_department_id,
@@ -2076,18 +2277,32 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     result = await Runner.run(
                                         agent_instance,
                                         input=clean_input_items,
-                                        context=DebugContext(conn=conn, run_id=model_run_id),
+                                        context=DebugContext(
+                                            conn=conn, run_id=model_run_id
+                                        ),
                                     )
 
-                                logger.info("Scenario generation completed successfully")
-                                logger.info(f"Title: {scenario_results.get('title', 'N/A')}")
-                                logger.info(f"Description: {scenario_results.get('description', 'N/A')[:100]}...")
-                                objectives = scenario_results.get("objectives", []) if objectives_enabled else []
+                                logger.info(
+                                    "Scenario generation completed successfully"
+                                )
+                                logger.info(
+                                    f"Title: {scenario_results.get('title', 'N/A')}"
+                                )
+                                logger.info(
+                                    f"Description: {scenario_results.get('description', 'N/A')[:100]}..."
+                                )
+                                objectives = (
+                                    scenario_results.get("objectives", [])
+                                    if objectives_enabled
+                                    else []
+                                )
                                 logger.info(f"Objectives: {objectives}")
 
                                 usage = result.context_wrapper.usage
 
-                                sql_update_tokens = load_sql("app/sql/v3/model_runs/update_model_run_tokens.sql")
+                                sql_update_tokens = load_sql(
+                                    "app/sql/v3/model_runs/update_model_run_tokens.sql"
+                                )
                                 await conn.execute(
                                     sql_update_tokens,
                                     str(model_run_id),
@@ -2130,11 +2345,17 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 scenario_objectives = objectives
                             else:
                                 scenario_title = parent_scenario_dict.get("name", "")
-                                sql = load_sql("app/sql/v3/scenario/get_scenario_objectives_top_n.sql")
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/get_scenario_objectives_top_n.sql"
+                                )
                                 objectives_data = await conn.fetch(sql, scenario_id, 3)
-                                scenario_objectives = [obj["objective"] for obj in objectives_data]
+                                scenario_objectives = [
+                                    obj["objective"] for obj in objectives_data
+                                ]
 
-                            sql = load_sql("app/sql/v3/scenario/insert_scenario_variant.sql")
+                            sql = load_sql(
+                                "app/sql/v3/scenario/insert_scenario_variant.sql"
+                            )
                             new_scenario_row = await conn.fetchrow(
                                 sql,
                                 scenario_title or parent_scenario_dict.get("name", ""),
@@ -2151,7 +2372,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                             if scenario_problem_statement:
-                                sql = load_sql("app/sql/v3/scenario/insert_scenario_problem_statement.sql")
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/insert_scenario_problem_statement.sql"
+                                )
                                 problem_statement_name = (
                                     scenario_title.strip()
                                     if scenario_title and scenario_title.strip()
@@ -2168,15 +2391,25 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     f"Created problem statement for child scenario {child_scenario_id}"
                                 )
 
-                            if scenario_objectives and parent_scenario_dict.get("objectives_enabled", True):
-                                sql = load_sql("app/sql/v3/scenario/insert_scenario_objective.sql")
-                                for idx, objective in enumerate(scenario_objectives[:3]):
-                                    await conn.execute(sql, child_scenario_id, idx, objective)
+                            if scenario_objectives and parent_scenario_dict.get(
+                                "objectives_enabled", True
+                            ):
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/insert_scenario_objective.sql"
+                                )
+                                for idx, objective in enumerate(
+                                    scenario_objectives[:3]
+                                ):
+                                    await conn.execute(
+                                        sql, child_scenario_id, idx, objective
+                                    )
                                 logger.info(
                                     f"Inserted {min(len(scenario_objectives), 3)} objectives for child scenario {child_scenario_id}"
                                 )
 
-                            sql = load_sql("app/sql/v3/scenario/insert_scenario_tree_edge.sql")
+                            sql = load_sql(
+                                "app/sql/v3/scenario/insert_scenario_tree_edge.sql"
+                            )
                             await conn.execute(
                                 sql,
                                 scenario_id,
@@ -2188,31 +2421,47 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                             if persona_id:
-                                sql = load_sql("app/sql/v3/scenario/insert_scenario_persona_link.sql")
-                                await conn.execute(sql, child_scenario_id, persona_id, True)
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/insert_scenario_persona_link.sql"
+                                )
+                                await conn.execute(
+                                    sql, child_scenario_id, persona_id, True
+                                )
                                 logger.info(
                                     f"Linked persona {persona_id} to child scenario {child_scenario_id}"
                                 )
 
                             if doc_ids:
-                                sql = load_sql("app/sql/v3/scenario/insert_scenario_document_link.sql")
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/insert_scenario_document_link.sql"
+                                )
                                 for doc_id in doc_ids:
-                                    await conn.execute(sql, child_scenario_id, doc_id, True)
+                                    await conn.execute(
+                                        sql, child_scenario_id, doc_id, True
+                                    )
                                 logger.info(
                                     f"Linked {len(doc_ids)} document(s) to child scenario {child_scenario_id}"
                                 )
 
                             if param_ids:
-                                sql = load_sql("app/sql/v3/scenario/insert_scenario_parameter_link.sql")
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/insert_scenario_parameter_link.sql"
+                                )
                                 for param_id in param_ids:
-                                    await conn.execute(sql, child_scenario_id, param_id, True)
+                                    await conn.execute(
+                                        sql, child_scenario_id, param_id, True
+                                    )
                                 logger.info(
                                     f"Linked {len(param_ids)} parameter item(s) to child scenario {child_scenario_id}"
                                 )
 
                             if selected_department_id:
-                                sql = load_sql("app/sql/v3/scenario/insert_scenario_department_link.sql")
-                                await conn.execute(sql, child_scenario_id, selected_department_id, True)
+                                sql = load_sql(
+                                    "app/sql/v3/scenario/insert_scenario_department_link.sql"
+                                )
+                                await conn.execute(
+                                    sql, child_scenario_id, selected_department_id, True
+                                )
                                 logger.info(
                                     f"Linked department {selected_department_id} to child scenario {child_scenario_id}"
                                 )
@@ -2223,7 +2472,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                         # Combine all parameter item IDs
                         all_param_item_ids = (
-                            list(param_ids) + list(persona_param_ids) + list(document_param_ids)
+                            list(param_ids)
+                            + list(persona_param_ids)
+                            + list(document_param_ids)
                         )
                         seen = set()
                         unique_param_item_ids = []
@@ -2253,7 +2504,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         )
 
                         # Update chat to use child scenario instead of parent
-                        sql = load_sql("app/sql/v3/simulations/update_chat_scenario_id.sql")
+                        sql = load_sql(
+                            "app/sql/v3/simulations/update_chat_scenario_id.sql"
+                        )
                         await conn.execute(sql, row["chat_id"], new_scenario_id)
                         logger.info(
                             f"Updated chat {row['chat_id']} to use child scenario {new_scenario_id}"

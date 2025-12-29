@@ -5,25 +5,30 @@ import os
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
-                    trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
+from utils.logging.db_logger import get_logger
+from utils.settings.theme import ThemePrimitives, derive_theme_tokens
+from utils.sql_helper import load_sql
+
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
 from app.infra.v3.documents.format_document_info import format_document_info
 from app.infra.v3.templates.jinja_renderer import render_template
-from app.infra.v3.tools.build_pydantic_fields import \
-    build_function_signature_string
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
-from fastapi import APIRouter
-from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
-                      create_model)
-from utils.logging.db_logger import get_logger
-from utils.settings.theme import ThemePrimitives, derive_theme_tokens
-from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -370,7 +375,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
             field_ids_str = [str(f) for f in field_ids] if field_ids else []
 
-            sql = load_sql("app/sql/v3/scenario/get_scenario_run_context_and_create_run.sql")
+            sql = load_sql(
+                "app/sql/v3/scenario/get_scenario_run_context_and_create_run.sql"
+            )
             # Scenario Agent ID should be provided in payload (UI filters and selects appropriate agent)
             scenario_agent_id = (
                 uuid.UUID(data.scenarioAgentId)
@@ -678,34 +685,32 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
                 # Image generation context is now passed directly to background tasks (no-op removed)
 
-            # 1. Title and Description Tool (always included)
+            # 1. Statement Tool (always included, replaces title_and_description)
             # Build signature from database config if available
-            title_desc_config = tool_config_map.get("set_title_and_description")
-            if title_desc_config:
-                # Get field descriptions from config
-                title_desc = title_desc_config.get("argument_descriptions", {}).get("title", "Short, descriptive title for the scenario (5-10 words)")
-                scenario_desc = title_desc_config.get("argument_descriptions", {}).get("scenario", "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it")
+            statement_config = tool_config_map.get("create_statement")
+            if statement_config:
+                statement_desc = statement_config.get("argument_descriptions", {}).get(
+                    "statement",
+                    "The problem statement for the scenario (1-2 sentences)",
+                )
             else:
-                # Fallback to hardcoded descriptions
-                title_desc = "Short, descriptive title for the scenario (5-10 words)"
-                scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
-            
-            async def set_title_description(
-                title: str = Field(description=title_desc),
-                scenario: str = Field(description=scenario_desc),
-            ) -> str:
-                """Set the title and description for the scenario.
+                statement_desc = (
+                    "The problem statement for the scenario (1-2 sentences)"
+                )
 
-                The title should be concise and descriptive (5-10 words).
-                The scenario description must be exactly 1-2 sentences and should:
+            async def create_statement(
+                statement: str = Field(description=statement_desc),
+            ) -> str:
+                """Create the problem statement for the scenario.
+
+                The problem statement must be exactly 1-2 sentences and should:
                 - Subtly show the student's persona without stating it directly
                 - Incorporate environmental parameters (crowdedness, intensity, time, deadline, location)
                 - Focus on the course topic from the documents
                 - Build a scene that shows, not tells
 
                 Args:
-                    title: Short descriptive title
-                    scenario: 1-2 sentence scenario description
+                    statement: 1-2 sentence problem statement
 
                 Returns:
                     Confirmation message
@@ -716,27 +721,32 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     {
                         "sid": sid,
                         "trace_id": trace_id,
-                        "title": title,
-                        "description": scenario,
+                        "title": "",  # No longer used, but kept for compatibility
+                        "description": statement,
                         "scenario_id": data.scenarioId if data.scenarioId else None,
                     },
                 )
 
                 logger.info(
                     f"[generate_scenario] Emitted problem statement to internal bus: "
-                    f"title={title}, description_length={len(scenario)}"
+                    f"statement_length={len(statement)}"
                 )
-                return "Set title and description successfully"
+                return "Created problem statement successfully"
 
-            scenario_tools.append(function_tool(set_title_description))
-            logger.info("Created title and description tool")
+            scenario_tools.append(function_tool(create_statement))
+            logger.info("Created statement tool")
 
             # 2. Objectives Tool (if enabled)
             if objectives_enabled:
                 # Build signature from database config if available
                 objectives_config = tool_config_map.get("set_objectives")
                 if objectives_config:
-                    objectives_desc = objectives_config.get("argument_descriptions", {}).get("objectives", "List of 1-3 specific learning objectives that GTAs should achieve in this scenario")
+                    objectives_desc = objectives_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "objectives",
+                        "List of 1-3 specific learning objectives that GTAs should achieve in this scenario",
+                    )
                 else:
                     objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
 
@@ -1149,19 +1159,29 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     )
                 else:
                     video_agent_id = uuid.UUID(data.videoAgentId)
-                    
+
                     # Build signature from database config if available
-                    video_config = tool_config_map.get("generate_video")
+                    video_config = tool_config_map.get("create_video")
                     if video_config:
-                        prompt_desc = video_config.get("argument_descriptions", {}).get("prompt", "Detailed prompt describing the video to generate. Include specific details about the scenario, setting, characters, and actions.")
-                        image_ids_desc = video_config.get("argument_descriptions", {}).get("image_ids", "Optional list of image IDs to use as reference for video generation. If provided, video generation will wait for these images to be ready.")
+                        prompt_desc = video_config.get("argument_descriptions", {}).get(
+                            "prompt",
+                            "Detailed prompt describing the video to generate. Include specific details about the scenario, setting, characters, and actions.",
+                        )
+                        image_ids_desc = video_config.get(
+                            "argument_descriptions", {}
+                        ).get(
+                            "image_ids",
+                            "Optional list of image IDs to use as reference for video generation. If provided, video generation will wait for these images to be ready.",
+                        )
                     else:
                         prompt_desc = "Detailed prompt describing the video to generate. Include specific details about the scenario, setting, characters, and actions."
                         image_ids_desc = "Optional list of image IDs to use as reference for video generation. If provided, video generation will wait for these images to be ready."
 
-                    async def generate_video(
+                    async def create_video(
                         prompt: str = Field(description=prompt_desc),
-                        image_ids: list[str] | None = Field(default=None, description=image_ids_desc),
+                        image_ids: list[str] | None = Field(
+                            default=None, description=image_ids_desc
+                        ),
                     ) -> str:
                         """Generate a video for this scenario.
 
@@ -1179,9 +1199,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             logger.warning(
                                 "[generate_scenario] scenarioId missing; skipping video generation tool"
                             )
-                            return (
-                                "Video generation skipped because scenarioId was not provided."
-                            )
+                            return "Video generation skipped because scenarioId was not provided."
                         # Emit to internal bus for video generation
                         await internal_sio.emit(
                             "scenario_tool_video",
@@ -1207,65 +1225,113 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         )
                         return "Video generation started successfully"
 
-                    scenario_tools.append(function_tool(generate_video))
-                    logger.info("Created video generation tool")
+                    scenario_tools.append(function_tool(create_video))
+                    logger.info("Created video creation tool")
             else:
                 logger.info("Video generation tool skipped (video_enabled=False)")
 
             # 5. Questions Generation Tool (if enabled)
             if questions_enabled:
                 # Build signature from database config if available
-                questions_config = tool_config_map.get("create_questions")
+                question_config = tool_config_map.get("create_question")
                 if questions_config:
-                    questions_desc = questions_config.get("argument_descriptions", {}).get("questions", "List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]")
-                    timestamps_desc = questions_config.get("argument_descriptions", {}).get("question_timestamps", "Optional dictionary mapping question indices (as strings: '0', '1', '2', etc.) to lists of timestamps (in seconds) where each question should appear in the video. Only used if video is also generated. Example: {'0': [10, 30], '1': [45]}")
+                    questions_desc = questions_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "questions",
+                        "List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]",
+                    )
+                    timestamps_desc = questions_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "question_timestamps",
+                        "Optional dictionary mapping question indices (as strings: '0', '1', '2', etc.) to lists of timestamps (in seconds) where each question should appear in the video. Only used if video is also generated. Example: {'0': [10, 30], '1': [45]}",
+                    )
                 else:
                     questions_desc = "List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]"
                     timestamps_desc = "Optional dictionary mapping question indices (as strings: '0', '1', '2', etc.) to lists of timestamps (in seconds) where each question should appear in the video. Only used if video is also generated. Example: {'0': [10, 30], '1': [45]}"
 
-                async def create_questions(
-                    questions: list[dict[str, Any]] = Field(description=questions_desc),
-                    question_timestamps: dict[str, list[int]] | None = Field(default=None, description=timestamps_desc),
+                async def create_question(
+                    question_text: str = Field(description=question_text_desc),
+                    allow_multiple: bool = Field(description=allow_multiple_desc),
+                    options: list[dict[str, Any]] | None = Field(
+                        default=None, description=options_desc
+                    ),
+                    question_timestamp: int | None = Field(
+                        default=None, description=question_timestamp_desc
+                    ),
                 ) -> str:
-                    """Create questions for this scenario.
+                    """Create a question for this scenario. Call multiple times to create multiple questions.
 
                     Questions should test understanding of the scenario and help GTAs practice
                     their responses. Each question should have clear options with one or more
                     correct answers.
 
                     Args:
-                        questions: List of question dicts with question_text, allow_multiple, and options
-                        question_timestamps: Optional mapping of question indices to video timestamps
+                        question_text: The question text
+                        allow_multiple: Whether multiple answers are allowed
+                        options: List of option dicts with option_text, type, is_correct
+                        question_timestamp: Optional timestamp in seconds for video
 
                     Returns:
-                        Confirmation message
+                        Confirmation message with total count
                     """
+                    if "questions" not in scenario_results:
+                        scenario_results["questions"] = []
+                    if "question_timestamps" not in scenario_results:
+                        scenario_results["question_timestamps"] = {}
+
+                    question_dict = {
+                        "question_text": question_text,
+                        "allow_multiple": allow_multiple,
+                        "options": options or [],
+                    }
+                    scenario_results["questions"].append(question_dict)
+
+                    if question_timestamp is not None:
+                        question_index = len(scenario_results["questions"]) - 1
+                        if (
+                            str(question_index)
+                            not in scenario_results["question_timestamps"]
+                        ):
+                            scenario_results["question_timestamps"][
+                                str(question_index)
+                            ] = []
+                        scenario_results["question_timestamps"][
+                            str(question_index)
+                        ].append(question_timestamp)
+
+                    current_count = len(scenario_results["questions"])
+
                     # Get video_id if video was generated (from context or previous tool results)
                     video_id = (
                         None  # TODO: Extract from previous tool results if available
                     )
 
-                    # Emit to internal bus for questions creation
+                    # Emit to internal bus for question creation (accumulate, emit all at end if needed)
+                    logger.info(
+                        f"[generate_scenario] Created question {current_count}: {question_text[:50]}..."
+                    )
+
+                    # For now, emit each question individually (can be optimized later)
                     await internal_sio.emit(
                         "scenario_tool_questions",
                         {
                             "sid": sid,
                             "trace_id": trace_id,
-                            "questions": questions,
+                            "questions": scenario_results["questions"],
                             "scenario_id": data.scenarioId if data.scenarioId else None,
                             "video_id": video_id,
-                            "question_timestamps": question_timestamps,
+                            "question_timestamps": scenario_results[
+                                "question_timestamps"
+                            ],
                         },
                     )
 
-                    logger.info(
-                        f"[generate_scenario] Emitted questions to internal bus: "
-                        f"{len(questions)} questions"
-                    )
-                    return f"Created {len(questions)} questions successfully"
+                    return f"Created question successfully (total: {current_count})"
 
-                scenario_tools.append(function_tool(create_questions))
-                logger.info("Created questions generation tool")
+                scenario_tools.append(function_tool(create_question))
+                logger.info("Created question tool")
             else:
                 logger.info(
                     "Questions generation tool skipped (questions_enabled=False)"
@@ -1279,15 +1345,22 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     )
                 else:
                     # Build signature from database config if available
-                    image_config = tool_config_map.get("generate_image")
+                    image_config = tool_config_map.get("create_image")
                     if image_config:
-                        name_desc = image_config.get("argument_descriptions", {}).get("name", "Descriptive name for the generated image")
-                        prompt_desc = image_config.get("argument_descriptions", {}).get("prompt", "Detailed, descriptive prompt for image generation")
+                        name_desc = image_config.get("argument_descriptions", {}).get(
+                            "name", "Descriptive name for the generated image"
+                        )
+                        prompt_desc = image_config.get("argument_descriptions", {}).get(
+                            "prompt",
+                            "Detailed, descriptive prompt for image generation",
+                        )
                     else:
                         name_desc = "Descriptive name for the generated image"
-                        prompt_desc = "Detailed, descriptive prompt for image generation"
+                        prompt_desc = (
+                            "Detailed, descriptive prompt for image generation"
+                        )
 
-                    async def generate_image(
+                    async def create_image(
                         name: str = Field(description=name_desc),
                         prompt: str = Field(description=prompt_desc),
                     ) -> str:
@@ -1333,8 +1406,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         )
                         return f"Image generation initiated for '{name}'. Image will be created and linked when ready."
 
-                    scenario_tools.append(function_tool(generate_image))
-                    logger.info("Created image generation tool")
+                    scenario_tools.append(function_tool(create_image))
+                    logger.info("Created image creation tool")
             else:
                 logger.info("Image generation tool skipped (images_enabled=False)")
 
@@ -1351,13 +1424,13 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 """Check if all required tools have been called.
 
                 Required tools:
-                - title_description (always required)
-                - objectives (if objectives_enabled)
+                - create_statement (always required, replaces title_description)
+                - create_objective (if objectives_enabled, can be called multiple times)
                 - create_document (if has_template_documents)
                 """
-                required_tools = ["title_description"]
+                required_tools = ["create_statement"]
                 if objectives_enabled:
-                    required_tools.append("objectives")
+                    required_tools.append("create_objective")
                 if has_template_documents:
                     required_tools.append("create_document")
 
@@ -1410,20 +1483,42 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         logger.info(
                             f"Tool result {idx}: Processing tool_name={tool_name}"
                         )
-                        # Normalize tool names (handle variations like set_title_and_description -> title_description)
+                        # Normalize tool names to match required_tools
                         normalized_name = tool_name
-                        if (
-                            "title" in tool_name.lower()
-                            and "description" in tool_name.lower()
+                        if tool_name == "create_statement" or (
+                            "statement" in tool_name.lower()
+                            and (
+                                "create" in tool_name.lower()
+                                or "title" in tool_name.lower()
+                                or "description" in tool_name.lower()
+                            )
                         ):
-                            normalized_name = "title_description"
-                        elif "objective" in tool_name.lower():
-                            normalized_name = "objectives"
-                        elif "create_document" in tool_name.lower() or (
+                            normalized_name = "create_statement"
+                        elif tool_name == "create_objective" or (
+                            "objective" in tool_name.lower()
+                            and "create" in tool_name.lower()
+                        ):
+                            normalized_name = "create_objective"
+                        elif tool_name == "create_document" or (
                             "create" in tool_name.lower()
                             and "document" in tool_name.lower()
                         ):
                             normalized_name = "create_document"
+                        elif tool_name == "create_image" or (
+                            "image" in tool_name.lower()
+                            and "create" in tool_name.lower()
+                        ):
+                            normalized_name = "create_image"
+                        elif tool_name == "create_video" or (
+                            "video" in tool_name.lower()
+                            and "create" in tool_name.lower()
+                        ):
+                            normalized_name = "create_video"
+                        elif tool_name == "create_question" or (
+                            "question" in tool_name.lower()
+                            and "create" in tool_name.lower()
+                        ):
+                            normalized_name = "create_question"
                         completed_tools.append(normalized_name)
                         logger.info(
                             f"Tool result {idx}: Normalized to {normalized_name}"

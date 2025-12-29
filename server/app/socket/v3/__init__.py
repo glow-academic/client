@@ -1,9 +1,19 @@
-"""Socket v3 API router aggregator - collects all socket API endpoints."""
+"""Socket v3 API router aggregator - collects all socket API endpoints.
+
+This router aggregates all WebSocket v3 event handlers following the agents-style architecture pattern:
+- PostgreSQL functions with RETURNS TABLE instead of raw SQL queries
+- Composite types in the `types` schema for strongly typed nested structures
+- Auto-generated Pydantic models from SQL introspection
+- Single SQL file per event with idempotent drop/recreate pattern
+- One event per file, one SQL file per event
+
+See `server/app/socket/v3/STANDARDS.md` for complete WebSocket standards.
+See `AGENTS.md` for overall architecture principles.
+"""
 
 from fastapi import APIRouter
 
-from . import (actions, agents, connect, disconnect, evals, log, simulations,
-               tools)
+from . import actions, agents, connect, disconnect, evals, log, simulations, tools
 
 # Create main router
 router = APIRouter(prefix="/socket/v3", tags=["socket"])

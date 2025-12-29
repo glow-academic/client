@@ -1,9 +1,10 @@
 """Integration tests for app.infra.v3.error.handle_route_error."""
 
 import pytest
-from app.infra.v3.error.handle_route_error import handle_route_error
 from fastapi import HTTPException
 from utils.sql_helper import load_sql
+
+from app.infra.v3.error.handle_route_error import handle_route_error
 
 
 class TestHandleRouteError:
@@ -49,9 +50,10 @@ class TestHandleRouteError:
         error = ValueError("Test error")
         route_path = "/api/v3/test"
         operation = "test_operation"
-        
+
         # Create a proper Request object with required scope fields
         from starlette.requests import Request as StarletteRequest
+
         scope = {
             "type": "http",
             "method": "GET",
@@ -70,4 +72,3 @@ class TestHandleRouteError:
                 operation=operation,
                 request=request,
             )
-

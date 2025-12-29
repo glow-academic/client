@@ -5,7 +5,6 @@ Tests for app.utils.auth.derive_key
 import os
 
 import pytest
-
 from utils.auth.derive_key import derive_key
 
 

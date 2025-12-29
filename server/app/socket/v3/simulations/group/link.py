@@ -5,10 +5,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -48,9 +48,7 @@ async def _simulation_group_link_impl(
 
             group_id = link_row["group_id"]
 
-            logger.info(
-                f"Linked run {run_id} to group {group_id} for chat {chat_id}"
-            )
+            logger.info(f"Linked run {run_id} to group {group_id} for chat {chat_id}")
             return True
 
         except Exception as e:
@@ -74,9 +72,7 @@ async def simulation_group_link_internal(data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in simulation_group_link: {e}")
     except Exception as e:
-        logger.error(
-            f"Error in simulation_group_link_internal: {e}", exc_info=True
-        )
+        logger.error(f"Error in simulation_group_link_internal: {e}", exc_info=True)
 
 
 # FastAPI endpoint for OpenAPI documentation

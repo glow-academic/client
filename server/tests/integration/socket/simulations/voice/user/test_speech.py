@@ -65,4 +65,3 @@ async def test_simulation_voice_user_speech_missing_chat_id(
 
     # Assert - handler may complete without error (chat_id validation happens inside)
     # Verify handler doesn't crash
-

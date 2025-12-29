@@ -26,4 +26,3 @@ async def test_generate_image_success(
     # Assert - verify image generation started
     # Image generation is async and may emit events
     # Handler should complete without error
-

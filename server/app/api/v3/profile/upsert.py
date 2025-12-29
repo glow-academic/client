@@ -4,16 +4,20 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (CreateOrUpdateProfileApiRequest,
-                           CreateOrUpdateProfileApiResponse,
-                           CreateOrUpdateProfileSqlParams,
-                           CreateOrUpdateProfileSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    CreateOrUpdateProfileApiRequest,
+    CreateOrUpdateProfileApiResponse,
+    CreateOrUpdateProfileSqlParams,
+    CreateOrUpdateProfileSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/profile/create_or_update_profile_complete.sql"
@@ -67,7 +71,9 @@ async def create_or_update_profile(
         # Pydantic handles UUID conversion from strings automatically if types are correct
         # SQL handles None-to-empty conversions via COALESCE in params CTE
         # Exclude profile_id_new and current_profile_id from request if present (we generate/override them)
-        request_dict = request.model_dump(exclude={'profile_id_new', 'current_profile_id'}, exclude_none=False)
+        request_dict = request.model_dump(
+            exclude={"profile_id_new", "current_profile_id"}, exclude_none=False
+        )
         params = CreateOrUpdateProfileSqlParams(
             **request_dict,
             profile_id_new=profile_id_new,
@@ -99,7 +105,9 @@ async def create_or_update_profile(
             if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": result.actor_name, "id": current_profile_id} if current_profile_id else {},
+                    actor={"name": result.actor_name, "id": current_profile_id}
+                    if current_profile_id
+                    else {},
                     created="created" if created else "updated",
                     profile={
                         "name": profile_name,
@@ -108,7 +116,9 @@ async def create_or_update_profile(
                 )
 
         # Convert SQL result to API response
-        response_data = CreateOrUpdateProfileApiResponse.model_validate(result.model_dump())
+        response_data = CreateOrUpdateProfileApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Invalidate cache after mutation
         tags = ["profile"]  # Profile operations

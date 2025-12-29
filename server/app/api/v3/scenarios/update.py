@@ -3,15 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (UpdateScenarioApiRequest, UpdateScenarioApiResponse,
-                           UpdateScenarioSqlParams, UpdateScenarioSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    UpdateScenarioApiRequest,
+    UpdateScenarioApiResponse,
+    UpdateScenarioSqlParams,
+    UpdateScenarioSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/scenarios/update_scenario_complete.sql"
@@ -66,7 +71,7 @@ async def update_scenario(
             )
 
         # Each parameter's fields: 1-3 per parameter
-        for param in (request.parameters or []):
+        for param in request.parameters or []:
             field_ids = param.field_ids or []
             field_count = len(field_ids)
             if field_count < 1 or field_count > 3:
@@ -126,7 +131,10 @@ async def update_scenario(
             audit_set(
                 http_request,
                 actor={"name": actor_name, "id": profile_id},
-                scenario={"name": result.name or "", "id": str(result.scenario_id) if result.scenario_id else ""},
+                scenario={
+                    "name": result.name or "",
+                    "id": str(result.scenario_id) if result.scenario_id else "",
+                },
             )
 
         # Convert SQL result to API response

@@ -2,11 +2,12 @@
 
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import sio
 
 logger = get_logger(__name__)
 
@@ -107,4 +108,3 @@ async def eval_joined_api(request: EvalJoinedPayload) -> dict[str, bool]:
 async def eval_join_error_api(request: EvalJoinErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while joining eval room."""
     return {"success": True}
-

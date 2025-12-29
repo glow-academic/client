@@ -2,25 +2,30 @@
 
 import json
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC
 from typing import Any
-from zoneinfo import ZoneInfo
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
-from app.infra.v3.debug.debug_info import DebugContext
-from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
-from app.infra.v3.tools.build_pydantic_fields import \
-    build_function_signature_string
-from app.main import get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.agents.create_safe_field_name import create_safe_field_name
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -128,7 +133,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # This validates rate limits and creates run atomically
             # Pattern: All AI operations use atomic context+run creation SQL files
             # See WEBSOCKET_STANDARDS.md for details
-            sql = load_sql("app/sql/v3/grading/get_grading_run_context_and_create_run.sql")
+            sql = load_sql(
+                "app/sql/v3/grading/get_grading_run_context_and_create_run.sql"
+            )
             sql_query = sql
             sql_params = (str(simulation_chat_id), str(department_id))
             try:
@@ -301,7 +308,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 )
 
             # Get messages using SQL file
-            sql_messages = load_sql("app/sql/v3/simulations/get_simulation_messages.sql")
+            sql_messages = load_sql(
+                "app/sql/v3/simulations/get_simulation_messages.sql"
+            )
             message_rows = await conn.fetch(sql_messages, str(simulation_chat_id))
             messages = [dict(row) for row in message_rows]
 
@@ -314,13 +323,18 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             # Always enable message numbering for grading (inlined from get_simulation_conversation_history)
             from datetime import datetime
+
             include_message_numbers = True
             conversation_history: list[TResponseInputItem] = []
             message_id_map: dict[str, int] = {}
             message_number = 1
 
             # Filter out error messages and make a list of all items
-            items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
+            items = [
+                msg
+                for msg in messages
+                if not msg.get("content", "").startswith("Error:")
+            ]
 
             # sort items by created_at
             items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
@@ -374,7 +388,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                     }
                     conversation_history.append(user_message_item)
                 # Check if this is an assistant message (type="response" or role="assistant")
-                elif (msg_type == "response" or msg_role == "assistant") and msg_content != "":
+                elif (
+                    msg_type == "response" or msg_role == "assistant"
+                ) and msg_content != "":
                     # Collect response messages to find the latest one
                     current_response_messages.append(item)
 
@@ -565,38 +581,44 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             profile_id_str = context.get("profile_id")
             grading_tools: list[Tool] = []
             total_standard_groups = len(standard_groups)
-            
+
             # Get base grading tool config from database
-            base_grading_config = tool_config_map_grading.get("grade_standard_group")
-            
+            base_grading_config = tool_config_map_grading.get("create_grade")
+
             for group in standard_groups:
                 safe_name = create_safe_field_name(group["short_name"])
-                
+
                 # Get standards for this group and build rating scale
                 group_standards = [
                     s for s in standards if s["standard_group_id"] == group["id"]
                 ]
                 group_standards.sort(key=lambda x: x["points"], reverse=True)
-                
+
                 rating_scale = "\n".join(
                     [
                         f"  {std['points']} - {std['name']}: {std.get('description', '')}"
                         for std in group_standards
                     ]
                 )
-                
+
                 full_description = (
                     f"{group.get('description', '')}\n\nRating Scale:\n{rating_scale}"
                 )
-                
+
                 # Get descriptions from database config if available
                 if base_grading_config:
-                    score_desc = base_grading_config.get("argument_descriptions", {}).get("score", f"Score for {group['name']} (1-5)")
-                    feedback_desc = base_grading_config.get("argument_descriptions", {}).get("feedback", f"Feedback explaining the score for {group['name']}")
+                    score_desc = base_grading_config.get(
+                        "argument_descriptions", {}
+                    ).get("score", f"Score for {group['name']} (1-5)")
+                    feedback_desc = base_grading_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "feedback", f"Feedback explaining the score for {group['name']}"
+                    )
                 else:
                     score_desc = f"Score for {group['name']} (1-5)"
                     feedback_desc = f"Feedback explaining the score for {group['name']}"
-                
+
                 # Create function with proper closure capture
                 def make_grading_function(
                     group_dict: dict[str, Any],
@@ -624,10 +646,11 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                         )
                         if not grade_id:
                             return "Error: Grade ID not available"
-                        
+
                         from app.main import get_internal_sio
+
                         internal_sio = get_internal_sio()
-                        
+
                         # Call feedback tool handler via internal WebSocket
                         await internal_sio.emit(
                             "grading_tool_feedback",
@@ -641,7 +664,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                                 "profile_id": profile_id_str,
                             },
                         )
-                        
+
                         # Emit progress event
                         await emit_progress_wrapper(
                             {
@@ -657,43 +680,64 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                                 "total_count": total_standard_groups,
                             }
                         )
-                        
+
                         logger.info(
                             f"✓ Graded {group_dict['name']}: {score}/5 - {feedback[:50]}..."
                         )
                         return f"Graded {group_dict['name']} with score {score}"
-                    
+
                     grade_standard_group.__name__ = f"grade_{safe_name}"
                     return grade_standard_group
-                
-                grade_func = make_grading_function(group, full_description, score_desc, feedback_desc)
+
+                grade_func = make_grading_function(
+                    group, full_description, score_desc, feedback_desc
+                )
                 grading_tools.append(function_tool(grade_func))
                 logger.info(f"Created grading tool for: {group['name']}")
-            
+
             # Add message_strength tool if grade_id and message_id_map are available
             if grade_id and message_id_map:
-                message_strength_config = tool_config_map_grading.get("message_strength")
+                message_strength_config = tool_config_map_grading.get(
+                    "create_feedback_strength"
+                )
                 if message_strength_config:
-                    message_num_desc = message_strength_config.get("argument_descriptions", {}).get("message_number", "Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to")
-                    feedback_desc = message_strength_config.get("argument_descriptions", {}).get("feedback", "Description of what was strong about this message")
-                    highlight_desc = message_strength_config.get("argument_descriptions", {}).get("highlight", "List of sections to highlight as strengths (e.g., ['section1', 'section2'])")
+                    message_num_desc = message_strength_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "message_number",
+                        "Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to",
+                    )
+                    feedback_desc = message_strength_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "feedback", "Description of what was strong about this message"
+                    )
+                    highlight_desc = message_strength_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "highlight",
+                        "List of sections to highlight as strengths (e.g., ['section1', 'section2'])",
+                    )
                 else:
                     message_num_desc = "Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to"
                     feedback_desc = "Description of what was strong about this message"
                     highlight_desc = "List of sections to highlight as strengths (e.g., ['section1', 'section2'])"
-                
+
                 async def message_strength(
                     message_number: int = Field(description=message_num_desc),
                     feedback: str = Field(description=feedback_desc),
-                    highlight: list[str] | None = Field(default=None, description=highlight_desc),
+                    highlight: list[str] | None = Field(
+                        default=None, description=highlight_desc
+                    ),
                 ) -> str:
                     """Add strength feedback to a specific message."""
                     if not grade_id or not message_id_map:
                         return "Error: Grade ID or message map not available"
-                    
+
                     from app.main import get_internal_sio
+
                     internal_sio = get_internal_sio()
-                    
+
                     await internal_sio.emit(
                         "grading_tool_message_strength",
                         {
@@ -707,7 +751,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                             "profile_id": profile_id_str,
                         },
                     )
-                    
+
                     await emit_progress_wrapper(
                         {
                             "type": "message_strength_added",
@@ -718,36 +762,60 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                             else feedback,
                         }
                     )
-                    
-                    logger.info(f"✓ Added strength feedback to message {message_number}")
+
+                    logger.info(
+                        f"✓ Added strength feedback to message {message_number}"
+                    )
                     return f"Strength feedback added to message {message_number}"
-                
+
                 grading_tools.append(function_tool(message_strength))
                 logger.info("Created message_strength tool")
-                
+
                 # Add message_improvement tool
-                message_improvement_config = tool_config_map_grading.get("message_improvement")
+                message_improvement_config = tool_config_map_grading.get(
+                    "create_feedback_improvement"
+                )
                 if message_improvement_config:
-                    message_num_desc = message_improvement_config.get("argument_descriptions", {}).get("message_number", "Message number (as shown in conversation history, e.g., 1, 3, 5) to add improvement feedback to")
-                    feedback_desc = message_improvement_config.get("argument_descriptions", {}).get("feedback", "Description of what could be improved about this message")
-                    strike_desc = message_improvement_config.get("argument_descriptions", {}).get("strike", "List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])")
+                    message_num_desc = message_improvement_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "message_number",
+                        "Message number (as shown in conversation history, e.g., 1, 3, 5) to add improvement feedback to",
+                    )
+                    feedback_desc = message_improvement_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "feedback",
+                        "Description of what could be improved about this message",
+                    )
+                    strike_desc = message_improvement_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "strike",
+                        "List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])",
+                    )
                 else:
                     message_num_desc = "Message number (as shown in conversation history, e.g., 1, 3, 5) to add improvement feedback to"
-                    feedback_desc = "Description of what could be improved about this message"
+                    feedback_desc = (
+                        "Description of what could be improved about this message"
+                    )
                     strike_desc = "List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])"
-                
+
                 async def message_improvement(
                     message_number: int = Field(description=message_num_desc),
                     feedback: str = Field(description=feedback_desc),
-                    strike: list[dict[str, str]] | None = Field(default=None, description=strike_desc),
+                    strike: list[dict[str, str]] | None = Field(
+                        default=None, description=strike_desc
+                    ),
                 ) -> str:
                     """Add improvement feedback to a specific message."""
                     if not grade_id or not message_id_map:
                         return "Error: Grade ID or message map not available"
-                    
+
                     from app.main import get_internal_sio
+
                     internal_sio = get_internal_sio()
-                    
+
                     await internal_sio.emit(
                         "grading_tool_message_improvement",
                         {
@@ -761,7 +829,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                             "profile_id": profile_id_str,
                         },
                     )
-                    
+
                     await emit_progress_wrapper(
                         {
                             "type": "message_improvement_added",
@@ -772,22 +840,33 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                             else feedback,
                         }
                     )
-                    
-                    logger.info(f"✓ Added improvement feedback to message {message_number}")
+
+                    logger.info(
+                        f"✓ Added improvement feedback to message {message_number}"
+                    )
                     return f"Improvement feedback added to message {message_number}"
-                
+
                 grading_tools.append(function_tool(message_improvement))
                 logger.info("Created message_improvement tool")
 
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and grade_voice_agent_id:
-                from app.socket.v3.tools.audio.call import \
-                    _grading_tool_audio_impl
+                from app.socket.v3.tools.audio.call import _grading_tool_audio_impl
 
-                grade_audio_config = tool_config_map_grading.get("grade_audio")
+                grade_audio_config = tool_config_map_grading.get("create_analysis")
                 if grade_audio_config:
-                    message_nums_desc = grade_audio_config.get("argument_descriptions", {}).get("message_numbers", "List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze")
-                    what_to_analyze_desc = grade_audio_config.get("argument_descriptions", {}).get("what_to_analyze", "Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')")
+                    message_nums_desc = grade_audio_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "message_numbers",
+                        "List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze",
+                    )
+                    what_to_analyze_desc = grade_audio_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "what_to_analyze",
+                        "Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')",
+                    )
                 else:
                     message_nums_desc = "List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze"
                     what_to_analyze_desc = "Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')"
@@ -973,7 +1052,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             )
 
             # 3. Mark chat as completed
-            sql_mark_completed = load_sql("app/sql/v3/simulations/mark_chat_completed.sql")
+            sql_mark_completed = load_sql(
+                "app/sql/v3/simulations/mark_chat_completed.sql"
+            )
             await conn.execute(sql_mark_completed, str(simulation_chat_id))
 
             logger.info(

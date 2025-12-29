@@ -3,6 +3,7 @@
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
+
 from pydantic import BaseModel, ValidationError
 
 from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
@@ -21,12 +22,12 @@ async def handle_client_event(
     error_response_type: type[TResponse] | None = None,
 ) -> None:
     """Wrapper for client-to-server event handlers.
-    
+
     Handles:
     - Profile ID lookup from sid
     - Request validation with auto-generated types
     - Error handling and emission
-    
+
     Args:
         sid: Socket ID
         data: Raw event data
@@ -49,9 +50,9 @@ async def handle_client_event(
                     room=sid,
                 )
             return
-        
+
         profile_id = uuid.UUID(profile_id_str)
-        
+
         # Validate with auto-generated type
         validated = request_type(**data)
         await handler(sid, validated, profile_id)
@@ -77,14 +78,14 @@ async def handle_internal_event(
     error_response_type: type[TResponse] | None = None,
 ) -> None:
     """Wrapper for internal (server-to-server) event handlers.
-    
+
     Handles:
     - sid extraction
     - Profile ID lookup
     - group_id extraction
     - Request validation
     - Error handling
-    
+
     Args:
         data: Raw event data with sid and group_id
         request_type: Auto-generated ApiRequest type
@@ -95,7 +96,7 @@ async def handle_internal_event(
     sid = data.get("sid")
     if not sid:
         return  # Socket.IO logs missing sid automatically
-    
+
     try:
         # Get profile_id from sid (O(1) Redis lookup)
         profile_id_str = await find_profile_by_socket(sid)
@@ -110,13 +111,13 @@ async def handle_internal_event(
                     room=sid,
                 )
             return
-        
+
         profile_id = uuid.UUID(profile_id_str)
-        
+
         # Extract group_id (required for grouping runs)
         group_id_str = data.get("group_id")
         group_id = uuid.UUID(group_id_str) if group_id_str else None
-        
+
         # Remove sid and group_id before validation (not in ApiRequest)
         payload_dict = {k: v for k, v in data.items() if k not in ("sid", "group_id")}
         validated = request_type(**payload_dict)
@@ -133,4 +134,3 @@ async def handle_internal_event(
                 ),
                 room=sid,
             )
-

@@ -3,16 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (CreateSimulationApiRequest,
-                           CreateSimulationApiResponse,
-                           CreateSimulationSqlParams, CreateSimulationSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    CreateSimulationApiRequest,
+    CreateSimulationApiResponse,
+    CreateSimulationSqlParams,
+    CreateSimulationSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v3/simulations/create_simulation_complete.sql"
@@ -54,7 +58,9 @@ async def create_simulation(
 
         async with transaction(conn):
             # Convert API request to SQL params (add profile_id from header)
-            params = CreateSimulationSqlParams(**request.model_dump(), profile_id=profile_id)
+            params = CreateSimulationSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
             sql_params = params.to_tuple()
 
             # Execute query with typed helper
@@ -77,7 +83,10 @@ async def create_simulation(
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    simulation={"title": request.title, "id": str(result.simulation_id)},
+                    simulation={
+                        "title": request.title,
+                        "id": str(result.simulation_id),
+                    },
                 )
 
         # Convert SQL result to API response

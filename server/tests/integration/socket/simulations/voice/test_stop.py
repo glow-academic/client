@@ -44,5 +44,7 @@ async def test_simulation_voice_stop_missing_chat_id(
     error_events = mock_sio.get_events("simulations_voice_stop_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "chat_id" in error_events[0]["message"].lower() or "missing" in error_events[0]["message"].lower()
-
+    assert (
+        "chat_id" in error_events[0]["message"].lower()
+        or "missing" in error_events[0]["message"].lower()
+    )

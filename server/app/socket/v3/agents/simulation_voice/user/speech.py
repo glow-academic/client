@@ -5,6 +5,8 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 from app.main import (
     _voice_message_ids,
@@ -17,8 +19,6 @@ from app.socket.v3.agents.simulation_text.send import (
     SimulationRunCompletePayload,
     simulation_run_complete,
 )
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -135,7 +135,9 @@ async def _simulation_voice_user_speech_impl(
 
             async with pool.acquire() as conn:
                 # Get chat context (department_id, model_id, agent_id, profile_id, key_id)
-                sql_context = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
+                sql_context = load_sql(
+                    "app/sql/v3/simulations/get_simulation_run_context.sql"
+                )
                 context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
 
                 if not context_row:
@@ -195,7 +197,9 @@ async def _simulation_voice_user_speech_impl(
                 # Get active settings for profile (or default if no profile)
                 if profile_id_uuid:
                     # Get active settings for profile
-                    sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_with_profile.sql")
+                    sql_get_key = load_sql(
+                        "app/sql/v3/settings/get_key_id_for_model_with_profile.sql"
+                    )
                     key_id_row = await conn.fetchrow(
                         sql_get_key,
                         model_id_uuid,
@@ -203,7 +207,9 @@ async def _simulation_voice_user_speech_impl(
                     )
                 else:
                     # Use default settings if no profile_id
-                    sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_default.sql")
+                    sql_get_key = load_sql(
+                        "app/sql/v3/settings/get_key_id_for_model_default.sql"
+                    )
                     key_id_row = await conn.fetchrow(
                         sql_get_key,
                         model_id_uuid,

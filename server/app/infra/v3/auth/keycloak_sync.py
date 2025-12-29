@@ -7,10 +7,11 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
-from app.main import get_pool
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_pool
 
 logger = get_logger(__name__)
 
@@ -151,7 +152,9 @@ async def get_realm_name_for_department(department_id: str | None, pool: Any) ->
 
     try:
         async with pool.acquire() as conn:
-            realm_sql = load_sql("app/sql/v3/keycloak/get_realm_name_for_department.sql")
+            realm_sql = load_sql(
+                "app/sql/v3/keycloak/get_realm_name_for_department.sql"
+            )
             realm_name = await conn.fetchval(realm_sql, department_id)
             return realm_name or "master"
     except Exception as e:

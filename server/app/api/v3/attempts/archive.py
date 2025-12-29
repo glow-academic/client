@@ -3,6 +3,11 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,10 +17,6 @@ from app.sql.types import (
     BulkArchiveAttemptsSqlParams,
     BulkArchiveAttemptsSqlRow,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.invalidate_tags import invalidate_tags
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -59,7 +60,7 @@ async def bulk_archive_attempts(
         # If attempt_ids is provided and non-empty, use attempt_ids mode
         # Otherwise, use filter mode (requires start_date and end_date)
         use_attempt_ids_mode = request.attempt_ids and len(request.attempt_ids) > 0
-        
+
         if not use_attempt_ids_mode:
             # Filter mode requires start_date and end_date
             if not request.start_date or not request.end_date:
@@ -70,7 +71,9 @@ async def bulk_archive_attempts(
 
         # Convert API request to SQL params (add profile_id from header)
         # Use double star pattern - function handles defaults via NULL checks
-        params = BulkArchiveAttemptsSqlParams(**request.model_dump(), profile_id=current_profile_id)
+        params = BulkArchiveAttemptsSqlParams(
+            **request.model_dump(), profile_id=current_profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
@@ -125,7 +128,9 @@ async def bulk_archive_attempts(
         response.headers["X-Invalidate-Tags"] = ",".join(invalidation_tags)
 
         # Convert SQL result to API response
-        api_response = BulkArchiveAttemptsApiResponse.model_validate(result.model_dump())
+        api_response = BulkArchiveAttemptsApiResponse.model_validate(
+            result.model_dump()
+        )
 
         return api_response
     except HTTPException:

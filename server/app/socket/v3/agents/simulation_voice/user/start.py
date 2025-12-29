@@ -6,9 +6,9 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
 
 from app.main import get_voice_speech_timestamps, get_voice_speech_timestamps_lock, sio
-from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

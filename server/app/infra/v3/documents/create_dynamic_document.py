@@ -6,20 +6,20 @@ from typing import Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import Request
-
-from app.sql.types import (
-    GetActiveSettingsSqlParams,
-    GetActiveSettingsSqlRow,
-)
+from utils.logging.db_logger import get_logger
 from utils.settings.theme import (
     ThemePrimitives,
     ThemeTokens,
     derive_theme_tokens,
 )
-from app.main import UPLOAD_FOLDER
-from app.infra.v3.templates.jinja_renderer import render_template
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed, load_sql
+
+from app.infra.v3.templates.jinja_renderer import render_template
+from app.main import UPLOAD_FOLDER
+from app.sql.types import (
+    GetActiveSettingsSqlParams,
+    GetActiveSettingsSqlRow,
+)
 
 logger = get_logger(__name__)
 
@@ -215,41 +215,40 @@ def _get_default_theme_tokens() -> ThemeTokens:
     """Get default theme tokens when no settings are available."""
     return ThemeTokens(
         primary="#000000",
-            primaryForeground="#ffffff",
-            background="#ffffff",
-            foreground="#000000",
-            card="#ffffff",
-            cardForeground="#000000",
-            popover="#ffffff",
-            popoverForeground="#000000",
-            secondary="#f3f4f6",
-            secondaryForeground="#000000",
-            muted="#f3f4f6",
-            mutedForeground="#6b7280",
-            accent="#f3f4f6",
-            accentForeground="#000000",
-            destructive="#ef4444",
-            border="#e5e7eb",
-            input="#ffffff",
-            ring="#000000",
-            success="#10b981",
-            successForeground="#ffffff",
-            warning="#f59e0b",
-            warningForeground="#ffffff",
-            info="#3b82f6",
-            infoForeground="#ffffff",
-            chart1="#8884d8",
-            chart2="#82ca9d",
-            chart3="#ffc658",
-            chart4="#ff7300",
-            chart5="#0088fe",
-            sidebar="#ffffff",
-            sidebarForeground="#000000",
-            sidebarPrimary="#000000",
-            sidebarPrimaryForeground="#ffffff",
-            sidebarAccent="#f3f4f6",
-            sidebarAccentForeground="#000000",
-            sidebarBorder="#e5e7eb",
+        primaryForeground="#ffffff",
+        background="#ffffff",
+        foreground="#000000",
+        card="#ffffff",
+        cardForeground="#000000",
+        popover="#ffffff",
+        popoverForeground="#000000",
+        secondary="#f3f4f6",
+        secondaryForeground="#000000",
+        muted="#f3f4f6",
+        mutedForeground="#6b7280",
+        accent="#f3f4f6",
+        accentForeground="#000000",
+        destructive="#ef4444",
+        border="#e5e7eb",
+        input="#ffffff",
+        ring="#000000",
+        success="#10b981",
+        successForeground="#ffffff",
+        warning="#f59e0b",
+        warningForeground="#ffffff",
+        info="#3b82f6",
+        infoForeground="#ffffff",
+        chart1="#8884d8",
+        chart2="#82ca9d",
+        chart3="#ffc658",
+        chart4="#ff7300",
+        chart5="#0088fe",
+        sidebar="#ffffff",
+        sidebarForeground="#000000",
+        sidebarPrimary="#000000",
+        sidebarPrimaryForeground="#ffffff",
+        sidebarAccent="#f3f4f6",
+        sidebarAccentForeground="#000000",
+        sidebarBorder="#e5e7eb",
         sidebarRing="#000000",
     )
-

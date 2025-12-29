@@ -6,10 +6,10 @@ from typing import Any
 import asyncpg  # type: ignore
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool, sio
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -433,7 +433,9 @@ async def _simulation_message_complete_impl(
         )
 
         # Also emit updated message with completed=True
-        sql_get_message = load_sql("app/sql/v3/messages/get_message_role_and_created_at.sql")
+        sql_get_message = load_sql(
+            "app/sql/v3/messages/get_message_role_and_created_at.sql"
+        )
         message_row = await conn.fetchrow(sql_get_message, validated.message_id)
         if message_row:
             # Try to get persona_id
@@ -517,9 +519,7 @@ async def _simulation_message_link_persona_impl(
         sql_link_persona = load_sql(
             "app/sql/v3/simulations/link_message_to_persona.sql"
         )
-        await conn.execute(
-            sql_link_persona, validated.message_id, persona_id_str
-        )
+        await conn.execute(sql_link_persona, validated.message_id, persona_id_str)
         logger.info(
             f"Linked persona {persona_id_str} to message {validated.message_id}"
         )

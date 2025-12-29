@@ -8,4 +8,3 @@ router = APIRouter(prefix="/health", tags=["health"])
 
 # Include endpoint routers
 router.include_router(bundle_router)
-

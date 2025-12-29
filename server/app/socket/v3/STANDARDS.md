@@ -1,0 +1,401 @@
+# WebSocket v3 Standards
+
+This document defines the standards and best practices for WebSocket v3 event handlers. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
+
+## Overview
+
+WebSocket v3 endpoints follow the agents-style architecture pattern, which uses:
+
+- **PostgreSQL functions** with `RETURNS TABLE` instead of raw SQL queries
+- **Composite types** in the `types` schema for strongly typed nested structures
+- **Auto-generated Pydantic models** from SQL introspection instead of manual type definitions
+- **Single SQL file per event** with idempotent drop/recreate pattern
+- **Automatic type conversion** via `execute_sql_typed()` helper
+- **Strong typing** for both inputs and outputs
+
+## Key Principles
+
+### 1. One Event Per File, One SQL File Per Event
+
+**⚠️ CRITICAL: One Event Per File, One SQL File Per Event, No Inline SQL**
+
+- **One event definition per file**: Each Python file defines exactly one event handler (`@sio.event` or `@internal_sio.on`)
+- **One SQL file per WebSocket event**: Each event has exactly one SQL file in `server/app/sql/v3/[resource]/[operation]_complete.sql`
+- **No inline SQL**: All SQL must be in the `.sql` file, never embedded as strings in Python code
+- **Function-based**: SQL files define PostgreSQL functions, not raw queries
+- **File naming**: Pattern `[operation]_[resource]_complete.sql` (e.g., `get_rubric_run_context_and_create_run_complete.sql`)
+
+**Why This Matters:**
+
+- ✅ Type generation requires SQL files to introspect function signatures
+- ✅ SQL files can be version controlled and reviewed independently
+- ✅ No SQL string concatenation or dynamic SQL in Python code
+- ✅ Clear separation: SQL logic in `.sql` files, Python logic in event handlers
+- ✅ One event = one file = one SQL function ensures proper typing and separation
+
+### 2. Profile ID from `sid` Lookup
+
+- **Never pass `profile_id` in payloads**: Always retrieve via `find_profile_by_socket(sid)` - O(1) Redis lookup
+- **SQL functions include `profile_id`**: Functions receive `profile_id` as a parameter (from `sid` lookup)
+- **Consistent pattern**: All event handlers retrieve `profile_id` from `sid` before calling SQL functions
+
+### 3. `group_id` Pattern
+
+- **First events**: No `group_id` in payload → SQL creates group → Returns `group_id` and `trace_id`
+- **Regenerate events**: `group_id` required in payload → SQL uses existing group → Returns same `group_id` and `trace_id`
+- **SQL functions**: `group_id uuid DEFAULT NULL` → Handles both cases (NULL = create, provided = use existing)
+
+### 4. `trace_id` from Groups Table
+
+- **`trace_id` already exists**: `groups.trace_id` has `DEFAULT gen_trace_id()` - never NULL
+- **No manual generation**: `trace_id` comes from `groups.trace_id` via SQL query
+- **All runs in group share `trace_id`**: Retrieved from groups table, not generated per event
+- **Never pass `trace_id` in payloads**: Always pass `group_id`, retrieve `trace_id` from SQL
+- **SQL returns `trace_id`**: All SQL functions that work with groups return `trace_id` from `groups.trace_id`
+
+### 5. Rate Limiting and Run Creation
+
+**⚠️ CRITICAL: Always Check Rate Limits and Create Runs**
+
+**Key Requirements:**
+
+1. **Rate Limit Validation**: Every time we create a run, rate limits MUST be validated in SQL
+2. **Run Creation**: Every time we run an agent, a run MUST be created
+3. **Atomic Operation**: Context fetching and run creation MUST happen atomically in a single SQL transaction
+
+**Pattern: Atomic Context + Run Creation**
+
+Use SQL files following the pattern `get_[operation]_run_context_and_create_run_complete.sql` that:
+
+1. **Get context data**: All data needed to run the agent (agent config, model, keys, prompts, etc.)
+2. **Validate rate limit**: Check rate limits using `validate_rate_limit()` function (raises exception if exceeded)
+3. **Create run**: Insert into `runs` table with all junction records (run_models, run_profiles, etc.)
+4. **Return context + run_id**: Return all context data plus the created run_id
+
+### 6. Required Event Files for Main Operations
+
+For main operations (generate, regenerate), **ALL** of the following event files are **REQUIRED**:
+
+1. **`generate.py`**: Handles the generation/processing event (client-to-server) - **REQUIRED**
+   - Event name: `rubric_generate`, `scenario_generate`, etc.
+   - SQL function: `socket_get_rubric_run_context_and_create_run_v3(...)`
+   - Runs AI agent, performs database operations
+   - Emits progress/complete/error events via `emit_to_internal()` (server-to-server)
+
+2. **`regenerate.py`**: Handles regeneration events (client-to-server) - **REQUIRED**
+   - Event name: `rubric_regenerate`, `scenario_regenerate`, etc.
+   - SQL function: `socket_get_rubric_regeneration_run_context_and_create_run_v3(...)`
+   - Uses `group_id` to get previous context from previous run
+   - Takes user instructions for second turn
+   - Runs same agent as generate (second turn)
+
+3. **`progress.py`**: Handles progress update events (server-to-server) - **REQUIRED**
+   - Event name: `rubric_progress`, `scenario_progress`, etc.
+   - SQL function: `socket_rubric_generation_progress_v3(...)` (can be no-op)
+   - Receives internal event, emits progress events to client with typed payload
+
+4. **`complete.py`**: Handles the completion event (server-to-server) - **REQUIRED**
+   - Event name: `rubric_complete`, `scenario_complete`, etc.
+   - SQL function: `socket_rubric_generation_complete_v3(...)` (can be no-op)
+   - Receives internal event, emits final completion event to client with typed payload
+
+5. **`error.py`**: Handles error events (server-to-server) - **REQUIRED**
+   - Event name: `rubric_error`, `scenario_error`, etc.
+   - SQL function: `socket_rubric_generation_error_v3(...)` (can be no-op)
+   - Receives internal event, emits error events to client with typed payload
+
+### 7. Tool Event Structure - Tool Name as Folder
+
+For tools, use the **tool name as the folder name** (not a generic "tools/" folder). Each tool folder contains **ALL REQUIRED** event files:
+
+- `server/app/socket/v3/rubrics/standard_group_descriptions/` - Tool folder (tool name as folder)
+- `call.py` - One event: `rubric_tool_standard_group_descriptions` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `complete.py` - One event: `standard_group_descriptions_complete` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `error.py` - One event: `standard_group_descriptions_error` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `progress.py` - One event: `standard_group_descriptions_progress` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+
+### 8. No JSONB - Use Composite Types
+
+**⚠️ CRITICAL: JSONB is NEVER allowed, even for complex nested structures.**
+
+**Key Principles:**
+
+- **No JSONB in inputs**: Function parameters must use native PostgreSQL types (`uuid`, `text`, `uuid[]`, etc.) or composite types, never JSONB
+- **Composite types for complex inputs**: If you need complex nested structures in request bodies, use composite types as function parameters
+- **No JSONB in outputs**: Collections are arrays, not JSONB objects - Use `ARRAY_AGG(...)::types.composite_type[]` instead of `json_agg(jsonb_build_object(...))`
+- **No JSONB parsing**: Composite types are automatically decoded by `asyncpg` and converted to Pydantic models
+- **Lists everywhere**: All collections return as arrays of composite types, not nested JSONB structures
+
+### 9. Zero Logging Pattern
+
+- **Socket.IO handles ALL logging**: Event reception, emission, validation errors, connection issues, and framework errors are automatically logged by Socket.IO (`logger=True`, `engineio_logger=True`)
+- **ZERO logging statements**: WebSocket endpoints should have **zero** `logger.info()`, `logger.error()`, `logger.warning()`, or `logger.debug()` calls
+- **Emit error events instead**: When errors occur, emit error events via `sio.emit()` - don't log them
+- **No exceptions**: Even business logic errors should emit error events, not log - Socket.IO will log the event emission
+
+### 10. Database Connection Pattern
+
+- **Use `get_db_connection()` helper**: Always use `get_db_connection()` from `app.infra.v3.websocket.get_db_connection` instead of manual pool checks
+- **No manual pool checks**: Never check `get_pool()` manually - `get_db_connection()` handles it and raises `RuntimeError` if pool unavailable
+- **Consistent with HTTP routes**: Same pattern as HTTP routes using `Depends(get_db)` - clean, consistent, and maintainable
+- **Error handling**: Catch `RuntimeError` and emit error events (don't log - Socket.IO already logs framework errors)
+
+### 11. Eliminating Cross-File Dependencies
+
+- **No cross-file imports**: Each file is independent - never import emit functions from other event files
+- **Use `emit_to_internal()` with event name strings**: Instead of importing functions, use `emit_to_internal()` with event name strings
+- **Event chaining via internal bus**: Events chain via internal bus using typed payloads, not direct function calls
+- **Type-safe payloads**: Use auto-generated `SqlRow` types for event payloads
+
+### 12. Type-Safe Event Chaining
+
+When one event emits to another internal event, the payload MUST use the target event's auto-generated `{TargetEvent}ApiRequest` type or `SqlRow` type. This ensures:
+
+- **Type safety**: Emitter and receiver use the same type from SQL introspection
+- **Compile-time checking**: If SQL function signature changes, both emitter and receiver break at type-check time
+- **Consistency**: All event chains follow the same pattern
+- **Maintainability**: Changes to SQL function automatically update types for both sides
+
+## Infrastructure Helpers
+
+**⚠️ CRITICAL: Use Infrastructure Helpers for Consistency**
+
+All WebSocket endpoints should use the infrastructure helpers to ensure consistency, eliminate boilerplate, and follow DHH principles.
+
+**Available Helpers:**
+
+1. **`typed_emit.py`**: Typed wrappers for Socket.IO emit operations
+   - `emit_to_client(event_name, payload, room)` - Emit typed event to client
+   - `emit_to_internal(event_name, payload, sid, group_id)` - Emit typed event to internal bus
+
+2. **`handler_wrapper.py`**: Wrappers for common event handler patterns
+   - `handle_client_event(sid, data, request_type, handler, error_event_name, error_response_type)` - Client-to-server wrapper
+   - `handle_internal_event(data, request_type, handler, error_event_name, error_response_type)` - Server-to-server wrapper
+
+3. **`openapi_helpers.py`**: Helpers for registering FastAPI endpoints
+   - `register_client_endpoint(router, path, request_type, description)` - Register client-to-server endpoint
+   - `register_server_endpoint(router, path, response_type, description)` - Register server-to-client endpoint
+
+## Common Patterns
+
+### Client Event Handler (Using Infrastructure Helpers)
+
+```python
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_client_event
+from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_client, emit_to_internal
+from app.main import sio
+from app.sql.types import (
+    GetRubricRunContextApiRequest,
+    GetRubricRunContextSqlParams,
+    GetRubricRunContextSqlRow,
+    RubricGenerationErrorSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v3/rubrics/get_rubric_run_context_complete.sql"
+
+@sio.event  # type: ignore
+async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    await handle_client_event(
+        sid=sid,
+        data=data,
+        request_type=GetRubricRunContextApiRequest,
+        handler=_rubric_generate_impl,
+        error_event_name="rubrics_generation_error",
+        error_response_type=RubricGenerationErrorSqlRow,
+    )
+
+async def _rubric_generate_impl(
+    sid: str,
+    data: GetRubricRunContextApiRequest,
+    profile_id: uuid.UUID
+) -> None:
+    """Internal implementation using typed SQL execution"""
+    try:
+        async with get_db_connection() as conn:
+            params = GetRubricRunContextSqlParams(
+                **data.model_dump(),
+                profile_id=profile_id
+            )
+            result = cast(
+                GetRubricRunContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+            # Emit response using typed wrapper
+            await emit_to_client("rubrics_generation_complete", result, room=sid)
+    except RuntimeError:
+        # Pool not initialized - emit error event
+        await emit_to_client(
+            "rubrics_generation_error",
+            RubricGenerationErrorSqlRow(
+                success=False,
+                message="Database connection pool not available",
+            ),
+            room=sid,
+        )
+```
+
+### Internal Event Handler (Using Infrastructure Helpers)
+
+```python
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_internal_event
+from app.infra.v3.websocket.typed_emit import emit_to_client
+from app.main import get_internal_sio
+from app.sql.types import (
+    UpdateStandardDescriptionsApiRequest,
+    UpdateStandardDescriptionsSqlParams,
+    UpdateStandardDescriptionsSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
+
+internal_sio = get_internal_sio()
+SQL_PATH = "app/sql/v3/rubrics/update_standard_descriptions_complete.sql"
+
+@internal_sio.on("rubric_tool_standard_group_descriptions")
+async def rubric_tool_standard_group_descriptions_internal(
+    data: dict[str, Any],
+) -> None:
+    """Handle event from internal bus (server-to-server)."""
+    await handle_internal_event(
+        data=data,
+        request_type=UpdateStandardDescriptionsApiRequest,
+        handler=_rubric_tool_standard_group_descriptions_impl,
+        error_event_name="rubrics_generation_error",
+        error_response_type=RubricGenerationErrorSqlRow,
+    )
+```
+
+## Common Pitfalls
+
+### Pitfall 1: Manual Pool Checks and Logging
+
+```python
+# ❌ BAD: Manual pool check
+pool = get_pool()
+if not pool:
+    logger.error("Database connection pool not available")
+    return
+
+# ❌ BAD: Any logging at all
+logger = get_logger(__name__)
+logger.info(f"Received rubric_generate request from {sid}")
+
+# ✅ GOOD: Use get_db_connection() helper - NO logger imports
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+
+try:
+    async with get_db_connection() as conn:
+        # ...
+except RuntimeError:
+    # Pool not initialized - emit error event (Socket.IO logs automatically)
+    await emit_to_client("rubrics_generation_error", ...)
+```
+
+### Pitfall 2: JSONB in WebSocket Events
+
+```python
+# ❌ BAD: Manual JSONB conversion
+import json
+descriptions_json = json.dumps(validated.descriptions)
+result = await conn.fetchrow(sql, str(rubric_id_uuid), descriptions_json)
+
+# ✅ GOOD: Composite type array
+params = UpdateStandardDescriptionsSqlParams(
+    rubric_id=rubric_id_uuid,
+    descriptions=[  # List of composite type objects
+        UpdateStandardDescriptionsDescription(...)
+        for desc in validated.descriptions
+    ],
+    profile_id=profile_id
+)
+result = await execute_sql_typed(conn, SQL_PATH, params=params)
+```
+
+### Pitfall 3: Missing Profile ID Lookup
+
+```python
+# ❌ BAD: Passing profile_id in payload
+@sio.event
+async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
+    profile_id = data.get("profile_id")  # Never do this!
+
+# ✅ GOOD: Retrieve profile_id from sid lookup
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+
+@sio.event
+async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
+    profile_id_str = await find_profile_by_socket(sid)  # O(1) Redis lookup
+    if not profile_id_str:
+        # Handle error
+        return
+    profile_id = uuid.UUID(profile_id_str)
+```
+
+### Pitfall 4: Manual Trace ID Generation
+
+```python
+# ❌ BAD: Manual trace_id generation
+from agents import gen_trace_id
+
+async def _rubric_generate_impl(...) -> None:
+    trace_id = gen_trace_id()  # Never do this!
+
+# ✅ GOOD: Retrieve trace_id from groups table via SQL
+async def _rubric_generate_impl(...) -> None:
+    # SQL function returns trace_id from groups.trace_id
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
+    trace_id = result.trace_id  # From groups.trace_id (never NULL)
+    group_id = result.group_id  # Created or existing
+```
+
+## Testing Checklist
+
+### SQL & Types
+
+- [ ] **One event definition per file** (each Python file has exactly one `@sio.event` or `@internal_sio.on`)
+- [ ] **One SQL file per event** (e.g., `update_standard_descriptions_complete.sql`)
+- [ ] **Separate event files for main operations** (if using `generate.py`, always have separate `regenerate.py`, `progress.py`, `complete.py`, `error.py` - ALL REQUIRED)
+- [ ] **Tool folder structure** (tool name as folder: `standard_group_descriptions/` not `tools/standard_group_descriptions.py`)
+- [ ] **Tool event files** (tools must have `call.py`, `complete.py`, `error.py`, `progress.py` - ALL REQUIRED, no regenerate.py)
+- [ ] **No inline SQL** (all SQL in `.sql` files, none in Python code)
+- [ ] **No JSONB parsing in event handler** - No `json.loads()` or `json.dumps()` calls
+- [ ] **No JSONB in inputs** - Function parameters use native PostgreSQL types or composite types, never JSONB
+- [ ] **All JSONB aggregations converted** - No `jsonb_build_object`, `json_agg`, or `jsonb_agg` in SQL files
+- [ ] **Profile ID from `sid` lookup** - Always retrieve via `find_profile_by_socket(sid)`, never in payloads
+- [ ] **`group_id` pattern** - First events omit it (SQL creates), regenerate events require it (from previous run)
+- [ ] **`trace_id` from groups** - Always retrieve from `groups.trace_id` via SQL, never generate manually
+- [ ] **Rate limit validation** - Always check rate limits when creating runs (in SQL, not Python)
+- [ ] **Run creation** - Always create a run every time we run an agent (atomic with context fetch)
+- [ ] **Zero logging** - Remove ALL logger imports and logger calls - Socket.IO handles all logging
+
+### WebSocket Event Testing
+
+- [ ] Test all events via WebSocket client
+- [ ] Verify collections are arrays, not dicts/JSONB objects
+- [ ] Verify no JSONB parsing errors in server logs
+- [ ] Internal events chain correctly via `internal_sio.emit()`
+- [ ] Session ID (`sid`) handled correctly in internal events
+- [ ] Profile ID retrieved from `sid` lookup (O(1) Redis) in all event handlers
+- [ ] `group_id` handled correctly (omitted for first events, required for regenerate events)
+- [ ] `trace_id` retrieved from `groups.trace_id` via SQL (never generated manually)
+
+## Reference Implementation
+
+See `server/app/socket/v3/rubrics/standard_group_descriptions/` as the reference implementation for tool events.
+
+See `server/app/socket/v3/rubrics/generate.py`, `regenerate.py`, `progress.py`, `complete.py`, `error.py` as reference implementations for main operations.
+
+## Benefits
+
+1. **Strong Typing**: PostgreSQL enforces types at database level, Pydantic enforces at API level
+2. **Type Safety**: All types generated from SQL, no drift between SQL and Python
+3. **Maintainability**: Single SQL file, clear function signature, idempotent migrations
+4. **Performance**: No JSONB aggregation overhead - composite types are more efficient, direct type decoding without parsing
+5. **Consistency**: All websocket handlers follow the same pattern via helpers
+6. **Zero Logging**: Socket.IO handles all logging automatically
+7. **Type safety**: Compile-time checking with auto-generated types
+

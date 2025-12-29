@@ -55,7 +55,7 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
 
     Reads all Python files once and extracts all load_sql() paths.
     Returns a set of all referenced SQL file paths in normalized format (app/sql/v3/...).
-    
+
     Normalizes paths to standard format:
     - sql/v3/... -> app/sql/v3/... (legacy format, should be migrated)
     - app/sql/v3/... -> app/sql/v3/... (standard format)
@@ -83,7 +83,9 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
     return referenced_paths
 
 
-def group_by_directory(unused_files: list[tuple[str, Path]]) -> dict[str, list[tuple[str, Path]]]:
+def group_by_directory(
+    unused_files: list[tuple[str, Path]],
+) -> dict[str, list[tuple[str, Path]]]:
     """Group unused files by their resource directory."""
     grouped = defaultdict(list)
     for load_path, file_path in unused_files:
@@ -110,7 +112,7 @@ def main() -> int:
     python_files = find_python_files()
     print(f"Searching in {len(python_files)} Python files")
     print("Extracting load_sql() references...")
-    
+
     referenced_paths = extract_all_load_sql_paths(python_files)
     print(f"Found {len(referenced_paths)} referenced SQL files")
     print()
@@ -158,4 +160,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

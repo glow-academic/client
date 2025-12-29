@@ -1,8 +1,9 @@
 """Integration tests for eval_enter WebSocket event."""
 
+from datetime import UTC, datetime
+
 import asyncpg  # type: ignore
 import pytest
-from datetime import datetime, UTC
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
@@ -27,7 +28,7 @@ async def test_eval_enter_success(
     run_id = await db.fetchval(
         "INSERT INTO runs(input_tokens, output_tokens) VALUES (0, 0) RETURNING id"
     )
-    
+
     # Create test (tests table requires title, trace_id, and run_id)
     test_id = await db.fetchval(
         "INSERT INTO tests(title, trace_id, run_id) "
@@ -46,9 +47,7 @@ async def test_eval_enter_success(
     await eval_enter(sid, data)
 
     # Assert - verify test created_at was updated
-    test_row = await db.fetchrow(
-        "SELECT * FROM tests WHERE id = $1", test_id
-    )
+    test_row = await db.fetchrow("SELECT * FROM tests WHERE id = $1", test_id)
     assert test_row is not None
 
     # Verify event was emitted
@@ -74,4 +73,3 @@ async def test_eval_enter_missing_test_id(
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("evals_enter_error")
     assert len(error_events) >= 1
-

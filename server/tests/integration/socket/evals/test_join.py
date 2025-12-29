@@ -24,8 +24,7 @@ async def test_eval_join_success(
 
     # Create an eval attempt (eval_attempts table - no profile_id or active columns)
     attempt_id = await db.fetchval(
-        "INSERT INTO eval_attempts(eval_id) "
-        "VALUES ($1) RETURNING id",
+        "INSERT INTO eval_attempts(eval_id) VALUES ($1) RETURNING id",
         eval_id,
     )
 
@@ -46,4 +45,3 @@ async def test_eval_join_success(
     events = mock_sio.get_events("evals_joined")
     assert len(events) == 1
     assert events[0]["attempt_id"] == str(attempt_id)
-

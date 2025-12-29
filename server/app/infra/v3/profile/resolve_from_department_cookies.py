@@ -1,7 +1,6 @@
 """Resolve profile ID from department-id + auth-mode cookies."""
 
 import logging
-from typing import Any
 
 import asyncpg  # type: ignore
 
@@ -31,16 +30,14 @@ async def resolve_profile_from_department_cookies(
 
     try:
         async with db_pool.acquire() as conn:
-            from app.infra.v3.profile.resolve_from_department import \
-                resolve_profile_from_department
-
-            return await resolve_profile_from_department(
-                department_id, auth_mode, conn
+            from app.infra.v3.profile.resolve_from_department import (
+                resolve_profile_from_department,
             )
+
+            return await resolve_profile_from_department(department_id, auth_mode, conn)
     except Exception:
         # Log error but don't break request processing
         logger.warning(
             "Failed to resolve profile from department cookies", exc_info=True
         )
         return None
-

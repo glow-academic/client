@@ -6,7 +6,6 @@ import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from utils.cache.get_cached import get_cached
 
 

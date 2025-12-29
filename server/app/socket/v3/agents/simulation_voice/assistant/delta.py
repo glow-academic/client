@@ -6,12 +6,18 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 from app.main import (
     get_pool,
     get_simulation_tool_calls_dict,
     get_simulation_tool_calls_locks,
     sio,
+)
+from app.socket.v3.agents.simulation_text.send import (
+    extract_new_message_chars,
+    extract_persona_from_json,
 )
 from app.socket.v3.simulations.streaming.message import (
     _simulation_message_start_impl,
@@ -21,12 +27,6 @@ from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_start_impl,
     _simulation_tool_call_token_impl,
 )
-from app.socket.v3.agents.simulation_text.send import (
-    extract_new_message_chars,
-    extract_persona_from_json,
-)
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -286,31 +286,44 @@ async def _simulation_voice_assistant_delta_impl(
                         if tool_call_state["persona_so_far"]:
                             # Inline find_persona_by_name logic
                             def sanitize_persona_name(name: str) -> str:
-                                sanitized = "".join(c if c.isalnum() or c == " " else "" for c in name)
+                                sanitized = "".join(
+                                    c if c.isalnum() or c == " " else "" for c in name
+                                )
                                 sanitized = sanitized.replace(" ", "_").lower()
                                 return sanitized or "persona"
-                            
+
                             def find_persona_by_name_inline(
                                 persona_name: str, personas: list[dict[str, Any]]
                             ) -> tuple[uuid.UUID, str] | None:
                                 if not persona_name or not persona_name.strip():
                                     return None
                                 persona_name_normalized = persona_name.strip()
-                                sanitized_search = sanitize_persona_name(persona_name_normalized)
+                                sanitized_search = sanitize_persona_name(
+                                    persona_name_normalized
+                                )
                                 for persona in personas:
-                                    persona_id_str = persona.get("persona_id") or persona.get("id")
+                                    persona_id_str = persona.get(
+                                        "persona_id"
+                                    ) or persona.get("id")
                                     if not persona_id_str:
                                         continue
-                                    persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                                    persona_display_name = persona.get(
+                                        "persona_name"
+                                    ) or persona.get("name", "")
                                     if not persona_display_name:
                                         continue
-                                    if persona_name_normalized.lower() == persona_display_name.lower():
+                                    if (
+                                        persona_name_normalized.lower()
+                                        == persona_display_name.lower()
+                                    ):
                                         try:
                                             persona_id = uuid.UUID(str(persona_id_str))
                                             return (persona_id, persona_display_name)
                                         except (ValueError, TypeError):
                                             continue
-                                    sanitized_persona = sanitize_persona_name(persona_display_name)
+                                    sanitized_persona = sanitize_persona_name(
+                                        persona_display_name
+                                    )
                                     if sanitized_search == sanitized_persona:
                                         try:
                                             persona_id = uuid.UUID(str(persona_id_str))
@@ -318,20 +331,27 @@ async def _simulation_voice_assistant_delta_impl(
                                         except (ValueError, TypeError):
                                             continue
                                 for persona in personas:
-                                    persona_id_str = persona.get("persona_id") or persona.get("id")
+                                    persona_id_str = persona.get(
+                                        "persona_id"
+                                    ) or persona.get("id")
                                     if not persona_id_str:
                                         continue
-                                    persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                                    persona_display_name = persona.get(
+                                        "persona_name"
+                                    ) or persona.get("name", "")
                                     if not persona_display_name:
                                         continue
-                                    if persona_name_normalized.lower() in persona_display_name.lower():
+                                    if (
+                                        persona_name_normalized.lower()
+                                        in persona_display_name.lower()
+                                    ):
                                         try:
                                             persona_id = uuid.UUID(str(persona_id_str))
                                             return (persona_id, persona_display_name)
                                         except (ValueError, TypeError):
                                             continue
                                 return None
-                            
+
                             persona_match = find_persona_by_name_inline(
                                 tool_call_state["persona_so_far"],
                                 tool_call_state["personas"],

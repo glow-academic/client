@@ -83,7 +83,9 @@ async def get_or_create_test_model(
         return str(model_id)
 
     # Create provider first
-    provider_id = await db.fetchval("SELECT id FROM providers WHERE active = true LIMIT 1")
+    provider_id = await db.fetchval(
+        "SELECT id FROM providers WHERE active = true LIMIT 1"
+    )
     if not provider_id:
         provider_id = await db.fetchval(
             "INSERT INTO providers(name, description, value, active) "
@@ -101,7 +103,9 @@ async def get_or_create_test_model(
 
 
 async def get_or_create_test_agent(
-    db: asyncpg.Connection, name: str = "Test Agent", description: str = "Test Description"
+    db: asyncpg.Connection,
+    name: str = "Test Agent",
+    description: str = "Test Description",
 ) -> str:
     """Get existing agent or create a new one."""
     agent_id = await db.fetchval("SELECT id FROM agents WHERE active = true LIMIT 1")
@@ -115,4 +119,3 @@ async def get_or_create_test_agent(
         description,
     )
     return str(agent_id)
-

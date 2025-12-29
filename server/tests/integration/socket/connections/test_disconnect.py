@@ -2,12 +2,13 @@
 
 import asyncpg  # type: ignore
 import pytest
+from tests.integration.socket.conftest import MockSocketIO
+from tests.integration.socket.helpers import get_or_create_test_profile
+
 from app.infra.v3.websocket.add_guest_socket import add_guest_socket
 from app.infra.v3.websocket.set_active_connection import set_active_connection
 from app.socket.v3.connect import connect
 from app.socket.v3.disconnect import disconnect
-from tests.integration.socket.conftest import MockSocketIO
-from tests.integration.socket.helpers import get_or_create_test_profile
 
 pytestmark = pytest.mark.asyncio
 
@@ -92,8 +93,7 @@ async def test_disconnect_removes_active_connections(
 
     # Assert
     # Verify active connections were removed
-    from app.infra.v3.websocket.get_active_connection import \
-        get_active_connection
+    from app.infra.v3.websocket.get_active_connection import get_active_connection
 
     await get_active_connection(chat_id_1)
     await get_active_connection(chat_id_2)

@@ -11,8 +11,8 @@ from tests.integration.socket.helpers import (
 )
 
 from app.socket.v3.simulations.run.create import (
-    simulation_run_create_internal,
     _simulation_run_create_impl,
+    simulation_run_create_internal,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -28,7 +28,7 @@ async def test_simulation_run_create_success(
 
     # Get or create required entities
     from tests.integration.socket.helpers import get_or_create_test_model
-    
+
     model_id_str = await get_or_create_test_model(db)
     model_id = model_id_str
 
@@ -77,7 +77,7 @@ async def test_simulation_run_create_impl_direct(
     department_id = await get_or_create_test_department(db)
 
     from tests.integration.socket.helpers import get_or_create_test_model
-    
+
     model_id_str = await get_or_create_test_model(db)
     model_id = model_id_str
 
@@ -123,4 +123,3 @@ async def test_simulation_run_create_validation_error(
 
     # Assert - should handle validation error gracefully
     # No database changes expected
-

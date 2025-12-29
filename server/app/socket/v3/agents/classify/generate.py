@@ -5,17 +5,25 @@ import uuid
 import zipfile
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.debug.debug_info import DebugContext
-from app.main import TUS_UPLOADS_DIR, get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.main import TUS_UPLOADS_DIR, get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -73,9 +81,7 @@ async def classify_upload_complete(
     await sio.emit("uploads_classification_complete", payload.model_dump(), room=room)
 
 
-async def classify_upload_error(
-    payload: ClassifyUploadErrorPayload, room: str
-) -> None:
+async def classify_upload_error(payload: ClassifyUploadErrorPayload, room: str) -> None:
     await sio.emit("uploads_classification_error", payload.model_dump(), room=room)
 
 
@@ -125,7 +131,9 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 "app/sql/v3/profile/get_first_department_for_profile.sql"
             )
             user_dept_rows = await conn.fetch(sql_get_department, profile_id)
-            department_id = user_dept_rows[0]["department_id"] if user_dept_rows else None
+            department_id = (
+                user_dept_rows[0]["department_id"] if user_dept_rows else None
+            )
 
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
@@ -245,7 +253,9 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
             if data.parameterIds:
                 parameter_ids_filter = [uuid.UUID(pid) for pid in data.parameterIds]
 
-            sql_param_items = load_sql("app/sql/v3/uploads/get_classification_context.sql")
+            sql_param_items = load_sql(
+                "app/sql/v3/uploads/get_classification_context.sql"
+            )
             rows = await conn.fetch(
                 sql_param_items,
                 parameter_ids_filter if parameter_ids_filter else [],
@@ -325,9 +335,7 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                         f"List of file numbers (from the file list above) that match the parameter item '{item['name']}'",
                     )
                 else:
-                    file_names_desc = (
-                        f"List of file numbers (from the file list above) that match the parameter item '{item['name']}'"
-                    )
+                    file_names_desc = f"List of file numbers (from the file list above) that match the parameter item '{item['name']}'"
 
                 # Create function with proper closure capture
                 def make_classification_function(
@@ -345,9 +353,7 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
 
                         Returns:
                             Confirmation message
-                        """.format(
-                            item_name=item_dict["name"]
-                        )
+                        """.format(item_name=item_dict["name"])
                         # Store classification result in function-scoped dict
                         valid_file_numbers: list[str] = []
                         for file_number in file_numbers:
@@ -362,7 +368,9 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
 
                         if item_dict["id"] not in classification_results:
                             classification_results[item_dict["id"]] = []
-                        classification_results[item_dict["id"]].extend(valid_file_numbers)
+                        classification_results[item_dict["id"]].extend(
+                            valid_file_numbers
+                        )
                         logger.info(
                             f"✓ Classified {len(valid_file_numbers)} files for {item_dict['name']}"
                         )

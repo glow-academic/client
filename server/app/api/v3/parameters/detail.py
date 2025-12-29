@@ -3,18 +3,22 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetParameterDetailApiRequest,
-                           GetParameterDetailApiResponse,
-                           GetParameterDetailSqlParams,
-                           GetParameterDetailSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    GetParameterDetailApiRequest,
+    GetParameterDetailApiResponse,
+    GetParameterDetailSqlParams,
+    GetParameterDetailSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/parameters/get_parameter_detail_complete.sql"
@@ -66,7 +70,9 @@ async def get_parameter_detail(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetParameterDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetParameterDetailSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present
@@ -85,7 +91,7 @@ async def get_parameter_detail(
             raise HTTPException(
                 status_code=404, detail=f"Parameter {request.parameter_id} not found"
             )
-        
+
         if not result.name:
             # Parameter exists but user doesn't have access
             raise HTTPException(
@@ -109,7 +115,7 @@ async def get_parameter_detail(
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": api_response.model_dump(mode='json')},
+            {"data": api_response.model_dump(mode="json")},
             ttl=60,
             tags=tags,
         )

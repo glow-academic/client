@@ -10,7 +10,6 @@ from tests.integration.socket.helpers import (
 
 from app.socket.v3.simulations.text.start import (
     simulation_text_start,
-    _simulation_text_start_impl,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -155,4 +154,3 @@ async def test_simulation_text_start_infinite_mode(
     )
     assert attempt_row is not None
     assert attempt_row["infinite_mode"] is True
-

@@ -11,10 +11,10 @@ class TestParseOklch:
         """Test parsing basic oklch color."""
         # Arrange
         oklch_str = "oklch(0.5 0.1 120)"
-        
+
         # Act
         result = parse_oklch(oklch_str)
-        
+
         # Assert
         assert result == (0.5, 0.1, 120.0)
 
@@ -22,10 +22,10 @@ class TestParseOklch:
         """Test parsing oklch color with alpha (ignored)."""
         # Arrange
         oklch_str = "oklch(0.5 0.1 120 / 0.8)"
-        
+
         # Act
         result = parse_oklch(oklch_str)
-        
+
         # Assert
         assert result == (0.5, 0.1, 120.0)
 
@@ -33,7 +33,7 @@ class TestParseOklch:
         """Test parsing invalid oklch format raises error."""
         # Arrange
         oklch_str = "invalid"
-        
+
         # Act & Assert
         with pytest.raises(ValueError, match="Invalid oklch format"):
             parse_oklch(oklch_str)
@@ -46,10 +46,10 @@ class TestOklchToHex:
         """Test converting white oklch to hex."""
         # Arrange
         oklch_str = "oklch(1.0 0.0 0.0)"
-        
+
         # Act
         result = oklch_to_hex(oklch_str)
-        
+
         # Assert
         assert result == "#ffffff"
 
@@ -57,10 +57,10 @@ class TestOklchToHex:
         """Test converting black oklch to hex."""
         # Arrange
         oklch_str = "oklch(0.0 0.0 0.0)"
-        
+
         # Act
         result = oklch_to_hex(oklch_str)
-        
+
         # Assert
         assert result == "#000000"
 
@@ -68,10 +68,10 @@ class TestOklchToHex:
         """Test converting red oklch to hex."""
         # Arrange
         oklch_str = "oklch(0.627 0.258 29.234)"
-        
+
         # Act
         result = oklch_to_hex(oklch_str)
-        
+
         # Assert
         assert result.startswith("#")
         assert len(result) == 7
@@ -82,11 +82,11 @@ class TestOklchToHex:
         """Test roundtrip conversion maintains approximate color."""
         # Arrange
         original_hex = "#ff0000"
-        
+
         # Act
         oklch = hex_to_oklch(original_hex)
         result_hex = oklch_to_hex(oklch)
-        
+
         # Assert
         assert result_hex.startswith("#")
         assert len(result_hex) == 7
@@ -103,10 +103,10 @@ class TestHexToOklch:
         """Test converting white hex to oklch."""
         # Arrange
         hex_str = "#ffffff"
-        
+
         # Act
         result = hex_to_oklch(hex_str)
-        
+
         # Assert
         assert result.startswith("oklch(")
         l, c, h = parse_oklch(result)
@@ -116,10 +116,10 @@ class TestHexToOklch:
         """Test converting black hex to oklch."""
         # Arrange
         hex_str = "#000000"
-        
+
         # Act
         result = hex_to_oklch(hex_str)
-        
+
         # Assert
         assert result.startswith("oklch(")
         l, c, h = parse_oklch(result)
@@ -129,10 +129,10 @@ class TestHexToOklch:
         """Test converting hex without hash prefix."""
         # Arrange
         hex_str = "ff0000"
-        
+
         # Act
         result = hex_to_oklch(hex_str)
-        
+
         # Assert
         assert result.startswith("oklch(")
 
@@ -140,13 +140,12 @@ class TestHexToOklch:
         """Test converting red hex to oklch."""
         # Arrange
         hex_str = "#ff0000"
-        
+
         # Act
         result = hex_to_oklch(hex_str)
-        
+
         # Assert
         assert result.startswith("oklch(")
         l, c, h = parse_oklch(result)
         assert c > 0.1  # Should have chroma (color)
         assert 0 <= h <= 360  # Valid hue range
-

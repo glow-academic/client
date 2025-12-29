@@ -102,4 +102,3 @@ async def test_get_eval_attempt_not_found(
     )
 
     assert response.status_code == 404
-

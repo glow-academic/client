@@ -4,15 +4,20 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (CreateProfileApiRequest, CreateProfileApiResponse,
-                           CreateProfileSqlParams, CreateProfileSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    CreateProfileApiRequest,
+    CreateProfileApiResponse,
+    CreateProfileSqlParams,
+    CreateProfileSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/profile/create_profile_complete.sql"
@@ -70,7 +75,9 @@ async def create_profile(
         # Convert API request to SQL params using double star pattern
         # Note: cohort_ids and department_ids are already UUIDs from auto-generated types - no conversion needed
         # Note: current_profile_id comes from header, not request body - exclude it from model_dump if present
-        request_dict = request.model_dump(exclude={'current_profile_id'}, exclude_none=False)
+        request_dict = request.model_dump(
+            exclude={"current_profile_id"}, exclude_none=False
+        )
         params = CreateProfileSqlParams(
             **request_dict,
             profile_id=profile_id,

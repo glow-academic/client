@@ -26,4 +26,3 @@ async def log_service_health(
     """
     sql = load_sql("app/sql/v3/infrastructure/metrics/health_complete.sql")
     await conn.execute(sql, ts, service, ok, latency_ms, error)
-

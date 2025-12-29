@@ -4,15 +4,20 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (UpsertStaffApiRequest, UpsertStaffApiResponse,
-                           UpsertStaffSqlParams, UpsertStaffSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    UpsertStaffApiRequest,
+    UpsertStaffApiResponse,
+    UpsertStaffSqlParams,
+    UpsertStaffSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/staff/upsert_staff_complete.sql"
@@ -54,7 +59,7 @@ async def bulk_create_or_update_staff(
             if not profile_req.emails or len(profile_req.emails) == 0:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Profile {i+1} must have at least one email",
+                    detail=f"Profile {i + 1} must have at least one email",
                 )
             primary_index = (
                 profile_req.primary_email_index
@@ -64,7 +69,7 @@ async def bulk_create_or_update_staff(
             if primary_index < 0 or primary_index >= len(profile_req.emails):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Profile {i+1} has invalid primary_email_index",
+                    detail=f"Profile {i + 1} has invalid primary_email_index",
                 )
 
         # Convert API request to SQL params (add current_profile_id from header)
@@ -99,9 +104,17 @@ async def bulk_create_or_update_staff(
         # Set audit context
         if result.actor_name:
             action = "upserted"
-            if result.created_count and result.created_count > 0 and result.updated_count == 0:
+            if (
+                result.created_count
+                and result.created_count > 0
+                and result.updated_count == 0
+            ):
                 action = "created"
-            elif result.updated_count and result.updated_count > 0 and result.created_count == 0:
+            elif (
+                result.updated_count
+                and result.updated_count > 0
+                and result.created_count == 0
+            ):
                 action = "updated"
             audit_set(
                 http_request,

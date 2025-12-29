@@ -23,7 +23,9 @@ async def test_simulation_text_end_success(
     department_id = await get_or_create_test_department(db)
 
     # Create complete test setup using SQL file
-    sql_setup = load_sql("tests/sql/integration/socket/create_test_simulation_attempt.sql")
+    sql_setup = load_sql(
+        "tests/sql/integration/socket/create_test_simulation_attempt.sql"
+    )
     setup_row = await db.fetchrow(sql_setup, profile_id, department_id, None)
     assert setup_row is not None
     attempt_id = setup_row["attempt_id"]
@@ -40,9 +42,7 @@ async def test_simulation_text_end_success(
     await simulation_text_end(sid, data)
 
     # Assert - verify chat was marked as completed
-    chat_row = await db.fetchrow(
-        "SELECT * FROM chats WHERE id = $1", chat_id
-    )
+    chat_row = await db.fetchrow("SELECT * FROM chats WHERE id = $1", chat_id)
     assert chat_row is not None
     # Chat should be marked as completed
     assert chat_row["completed"] is True
@@ -81,7 +81,9 @@ async def test_simulation_text_end_missing_attempt_id(
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
 
-    sql_setup = load_sql("tests/sql/integration/socket/create_test_simulation_attempt.sql")
+    sql_setup = load_sql(
+        "tests/sql/integration/socket/create_test_simulation_attempt.sql"
+    )
     setup_row = await db.fetchrow(sql_setup, profile_id, department_id, None)
     assert setup_row is not None
     chat_id = setup_row["chat_id"]
@@ -99,4 +101,3 @@ async def test_simulation_text_end_missing_attempt_id(
     error_events = mock_sio.get_events("simulations_text_end_error")
     # May or may not emit error depending on implementation
     assert len(error_events) >= 0
-

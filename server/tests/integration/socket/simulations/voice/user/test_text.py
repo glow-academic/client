@@ -43,4 +43,3 @@ async def test_simulation_voice_user_text_missing_chat_id(
     await simulation_voice_user_text(sid, data)
 
     # Assert - handler may complete without error
-

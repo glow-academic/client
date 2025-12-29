@@ -4,9 +4,9 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
 
 from app.main import _voice_sessions, sio
-from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -67,9 +67,7 @@ async def _simulation_voice_assistant_interrupted_impl(
                 f"Missing chat_id in simulation_voice_assistant_interrupted from {sid}"
             )
             await simulation_voice_assistant_interrupted_error(
-                VoiceInterruptedErrorPayload(
-                    success=False, message="Missing chat_id"
-                ),
+                VoiceInterruptedErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
             return

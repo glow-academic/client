@@ -3,7 +3,6 @@
 from typing import Any
 
 from fastapi import Request
-
 from utils.cache.cache_key import cache_key
 from utils.cache.set_cached import set_cached
 

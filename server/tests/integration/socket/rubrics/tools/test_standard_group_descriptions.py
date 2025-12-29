@@ -5,7 +5,6 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
 from app.socket.v3.rubrics.tools.standard_group_descriptions import (
-    _rubric_tool_standard_group_descriptions_impl,
     rubric_tool_standard_group_descriptions,
     rubric_tool_standard_group_descriptions_internal,
 )
@@ -145,7 +144,8 @@ async def test_rubric_tool_standard_group_descriptions_missing_trace_id(
     await rubric_tool_standard_group_descriptions(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("rubrics_tools_standard_group_descriptions_error")
+    error_events = mock_sio.get_events(
+        "rubrics_tools_standard_group_descriptions_error"
+    )
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

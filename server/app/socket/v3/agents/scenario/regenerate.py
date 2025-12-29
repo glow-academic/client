@@ -4,21 +4,27 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
-                    trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.debug.debug_info import DebugContext
-from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
-from app.infra.v3.tools.build_pydantic_fields import \
-    build_function_signature_string
-from app.main import get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -170,8 +176,12 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             previous_run_id = uuid.UUID(previous_run_row["run_id"])
 
             # Get scenario's current persona/document/parameter IDs and agent_id
-            sql_get_scenario_ids = load_sql("app/sql/v3/scenario/get_scenario_ids_for_regeneration.sql")
-            scenario_ids_row = await conn.fetchrow(sql_get_scenario_ids, str(scenario_id))
+            sql_get_scenario_ids = load_sql(
+                "app/sql/v3/scenario/get_scenario_ids_for_regeneration.sql"
+            )
+            scenario_ids_row = await conn.fetchrow(
+                sql_get_scenario_ids, str(scenario_id)
+            )
 
             if not scenario_ids_row:
                 await scenario_regeneration_error(
@@ -349,8 +359,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Format input items (same as generation)
-            from app.infra.v3.documents.format_document_info import \
-                format_document_info
+            from app.infra.v3.documents.format_document_info import format_document_info
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:
@@ -426,18 +435,23 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # Create scenario generation tools inline (same as generate handler)
             # Use closure variables to collect results directly (no storage needed)
             scenario_results: dict[str, Any] = {}
-            
+
             scenario_tools: list[Tool] = []
-            
+
             # 1. Title and Description Tool (always included)
             title_desc_config = tool_config_map.get("set_title_and_description")
             if title_desc_config:
-                title_desc = title_desc_config.get("argument_descriptions", {}).get("title", "Short, descriptive title for the scenario (5-10 words)")
-                scenario_desc = title_desc_config.get("argument_descriptions", {}).get("scenario", "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it")
+                title_desc = title_desc_config.get("argument_descriptions", {}).get(
+                    "title", "Short, descriptive title for the scenario (5-10 words)"
+                )
+                scenario_desc = title_desc_config.get("argument_descriptions", {}).get(
+                    "scenario",
+                    "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it",
+                )
             else:
                 title_desc = "Short, descriptive title for the scenario (5-10 words)"
                 scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
-            
+
             async def set_title_description(
                 title: str = Field(description=title_desc),
                 scenario: str = Field(description=scenario_desc),
@@ -455,19 +469,26 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         "scenario_id": str(scenario_id),
                     },
                 )
-                logger.info(f"[regenerate_scenario] Emitted problem statement: title={title}")
+                logger.info(
+                    f"[regenerate_scenario] Emitted problem statement: title={title}"
+                )
                 return "Set title and description successfully"
-            
+
             scenario_tools.append(function_tool(set_title_description))
-            
+
             # 2. Objectives Tool (if enabled)
             if objectives_enabled:
                 objectives_config = tool_config_map.get("set_objectives")
                 if objectives_config:
-                    objectives_desc = objectives_config.get("argument_descriptions", {}).get("objectives", "List of 1-3 specific learning objectives that GTAs should achieve in this scenario")
+                    objectives_desc = objectives_config.get(
+                        "argument_descriptions", {}
+                    ).get(
+                        "objectives",
+                        "List of 1-3 specific learning objectives that GTAs should achieve in this scenario",
+                    )
                 else:
                     objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
-                
+
                 async def set_objectives(
                     objectives: list[str] = Field(description=objectives_desc),
                 ) -> str:
@@ -483,11 +504,13 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                             "scenario_id": str(scenario_id),
                         },
                     )
-                    logger.info(f"[regenerate_scenario] Emitted objectives: {len(objectives)} objectives")
+                    logger.info(
+                        f"[regenerate_scenario] Emitted objectives: {len(objectives)} objectives"
+                    )
                     return f"Set {len(objectives)} learning objectives successfully"
-                
+
                 scenario_tools.append(function_tool(set_objectives))
-            
+
             # 3. Dynamic Document Tool (if enabled) - simplified version for regeneration
             if documents_enabled and context["document_templates"]:
                 # For regeneration, use a simpler fallback approach
@@ -506,19 +529,23 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     )
                     logger.info("[regenerate_scenario] Emitted document creation")
                     return "Dynamic document creation queued"
-                
+
                 scenario_tools.append(function_tool(create_document_fallback))  # type: ignore[arg-type]
-            
+
             # 4. Image Generation Tool (if enabled)
             if images_enabled:
                 image_config = tool_config_map.get("generate_image")
                 if image_config:
-                    name_desc = image_config.get("argument_descriptions", {}).get("name", "Descriptive name for the generated image")
-                    prompt_desc = image_config.get("argument_descriptions", {}).get("prompt", "Detailed, descriptive prompt for image generation")
+                    name_desc = image_config.get("argument_descriptions", {}).get(
+                        "name", "Descriptive name for the generated image"
+                    )
+                    prompt_desc = image_config.get("argument_descriptions", {}).get(
+                        "prompt", "Detailed, descriptive prompt for image generation"
+                    )
                 else:
                     name_desc = "Descriptive name for the generated image"
                     prompt_desc = "Detailed, descriptive prompt for image generation"
-                
+
                 async def generate_image(
                     name: str = Field(description=name_desc),
                     prompt: str = Field(description=prompt_desc),
@@ -532,16 +559,20 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                             "name": name,
                             "prompt": prompt,
                             "agent_id": context["agent_id"],
-                            "department_id": str(department_id) if department_id else None,
-                            "profile_id": str(final_profile_id) if final_profile_id else None,
+                            "department_id": str(department_id)
+                            if department_id
+                            else None,
+                            "profile_id": str(final_profile_id)
+                            if final_profile_id
+                            else None,
                             "scenario_id": str(scenario_id),
                         },
                     )
                     logger.info(f"[regenerate_scenario] Emitted image: name={name}")
                     return f"Image generation initiated for '{name}'"
-                
+
                 scenario_tools.append(function_tool(generate_image))
-            
+
             scenario_tools.append(debug_info_tool)
 
             # Check if template documents are available (require create_document if so)
@@ -609,11 +640,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             agent_instance = scenario_agent_generic.agent()
 
             # Use default guest profile from context if no profile_id provided
-            final_profile_id = (
-                profile_id
-                if profile_id
-                else profile_id
-            )
+            final_profile_id = profile_id if profile_id else profile_id
             if not final_profile_id:
                 await scenario_regeneration_error(
                     ScenarioRegenerationErrorPayload(
@@ -646,7 +673,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Log regeneration messages (reuse existing system/developer, add user + assistant)
             assistant_output = getattr(result, "final_output", None) or ""
-            
+
             # Get latest message from previous run (assistant if exists, otherwise developer/system)
             sql_get_latest = load_sql(
                 "app/sql/v3/scenario/get_latest_message_without_children_for_run.sql"
@@ -692,7 +719,9 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # Create assistant message with branch from user message (if exists) or latest message
             if assistant_output and assistant_output.strip():
                 # Use user message as parent if it exists, otherwise use the latest message from previous run
-                assistant_parent_id = user_message_id if user_message_id else parent_message_id
+                assistant_parent_id = (
+                    user_message_id if user_message_id else parent_message_id
+                )
 
                 sql_create_assistant = load_sql(
                     "app/sql/v3/messages/create_assistant_message_with_branch.sql"

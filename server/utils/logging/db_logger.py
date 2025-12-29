@@ -5,16 +5,11 @@ Provides a logger with automatic module-based logger names and profile ID contex
 
 import contextvars
 import logging
-from typing import Any
-
-import asyncpg  # type: ignore
 
 # Context variable to store profile_id for logger access
 profile_id_context: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "profile_id", default=None
 )
-
-
 
 
 def get_logger(name: str) -> logging.Logger:

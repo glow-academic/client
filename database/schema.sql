@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict avyC1vI8H692Fqduy4hhWYbbAdXgyxOOgSqabbLJseWrdXYQjxKoJkfRhrqlzM2
+\restrict X5vHITXzu8uqwEHWpIzLTtf20fTOa2mDq4gf4KYDu0X2GRFCnbbROqXWrqP9LDg
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -212,7 +212,14 @@ CREATE TYPE public.tool_type AS ENUM (
     'message_improvement',
     'grade_audio',
     'classification',
-    'end_conversation'
+    'end_conversation',
+    'statement',
+    'objective',
+    'question',
+    'grade',
+    'feedback_strength',
+    'feedback_improvement',
+    'analysis'
 );
 
 
@@ -1894,6 +1901,20 @@ CREATE TABLE public.rubric_groups (
 
 
 --
+-- Name: rubric_standard_groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rubric_standard_groups (
+    rubric_id uuid NOT NULL,
+    standard_group_id uuid NOT NULL,
+    "position" integer DEFAULT 1 NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: rubrics; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2502,10 +2523,8 @@ CREATE TABLE public.standard_groups (
     description text NOT NULL,
     points integer NOT NULL,
     pass_points integer NOT NULL,
-    "position" integer DEFAULT 1 NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT standard_groups_id_v7_not_null NOT NULL,
-    rubric_id uuid,
     tool_call_id uuid NOT NULL
 );
 
@@ -3426,6 +3445,14 @@ ALTER TABLE ONLY public.rubric_departments
 
 ALTER TABLE ONLY public.rubric_groups
     ADD CONSTRAINT rubric_groups_pkey PRIMARY KEY (rubric_id, group_id);
+
+
+--
+-- Name: rubric_standard_groups rubric_standard_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_standard_groups
+    ADD CONSTRAINT rubric_standard_groups_pkey PRIMARY KEY (rubric_id, standard_group_id);
 
 
 --
@@ -5363,6 +5390,27 @@ CREATE INDEX rubric_groups_rubric_id_v7_idx ON public.rubric_groups USING btree 
 
 
 --
+-- Name: rubric_standard_groups_rubric_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_standard_groups_rubric_id_idx ON public.rubric_standard_groups USING btree (rubric_id);
+
+
+--
+-- Name: rubric_standard_groups_rubric_position_uniq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX rubric_standard_groups_rubric_position_uniq ON public.rubric_standard_groups USING btree (rubric_id, "position");
+
+
+--
+-- Name: rubric_standard_groups_standard_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_standard_groups USING btree (standard_group_id);
+
+
+--
 -- Name: rubrics_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6060,27 +6108,6 @@ CREATE INDEX simulations_simulation_text_agent_id_v7_idx ON public.simulations U
 --
 
 CREATE INDEX simulations_simulation_voice_agent_id_v7_idx ON public.simulations USING btree (simulation_voice_agent_id);
-
-
---
--- Name: standard_groups_id_rubric_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX standard_groups_id_rubric_idx ON public.standard_groups USING btree (id, rubric_id);
-
-
---
--- Name: standard_groups_rubric_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX standard_groups_rubric_id_v7_idx ON public.standard_groups USING btree (rubric_id);
-
-
---
--- Name: standard_groups_rubric_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX standard_groups_rubric_idx ON public.standard_groups USING btree (rubric_id);
 
 
 --
@@ -7621,6 +7648,22 @@ ALTER TABLE ONLY public.rubric_groups
 
 
 --
+-- Name: rubric_standard_groups rubric_standard_groups_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_standard_groups
+    ADD CONSTRAINT rubric_standard_groups_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rubric_standard_groups rubric_standard_groups_standard_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_standard_groups
+    ADD CONSTRAINT rubric_standard_groups_standard_group_id_fkey FOREIGN KEY (standard_group_id) REFERENCES public.standard_groups(id) ON DELETE CASCADE;
+
+
+--
 -- Name: rubrics rubrics_rubric_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8237,14 +8280,6 @@ ALTER TABLE ONLY public.simulations
 
 
 --
--- Name: standard_groups standard_groups_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.standard_groups
-    ADD CONSTRAINT standard_groups_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id);
-
-
---
 -- Name: standard_groups standard_groups_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8384,5 +8419,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict avyC1vI8H692Fqduy4hhWYbbAdXgyxOOgSqabbLJseWrdXYQjxKoJkfRhrqlzM2
+\unrestrict X5vHITXzu8uqwEHWpIzLTtf20fTOa2mDq4gf4KYDu0X2GRFCnbbROqXWrqP9LDg
 

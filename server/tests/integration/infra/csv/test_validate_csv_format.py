@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-import pytest
+
 from app.infra.v3.csv.validate_csv_format import validate_csv_format
 
 
@@ -81,4 +81,3 @@ class TestValidateCsvFormat:
             assert result["row_count"] == 0
         finally:
             Path(temp_path).unlink()
-

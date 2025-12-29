@@ -3,6 +3,9 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity
 from app.main import get_db
 from app.sql.types import (
@@ -11,8 +14,6 @@ from app.sql.types import (
     GetLoginDataSqlParams,
     GetLoginDataSqlRow,
 )
-from fastapi import APIRouter, Depends
-from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/auth/get_login_data_complete.sql"
@@ -54,7 +55,7 @@ async def get_login_providers(
         api_response = GetLoginDataApiResponse.model_validate(result.model_dump())
 
         return api_response
-    except Exception as e:
+    except Exception:
         # Return empty response if error occurs
         return GetLoginDataApiResponse(
             providers=[],

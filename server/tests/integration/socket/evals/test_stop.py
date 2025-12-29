@@ -4,7 +4,6 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
-from utils.sql_helper import load_sql
 
 from app.socket.v3.evals.stop import eval_stop
 
@@ -85,7 +84,10 @@ async def test_eval_stop_missing_attempt_id(
     error_events = mock_sio.get_events("evals_stop_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "attempt_id" in error_events[0]["message"].lower() or "missing" in error_events[0]["message"].lower()
+    assert (
+        "attempt_id" in error_events[0]["message"].lower()
+        or "missing" in error_events[0]["message"].lower()
+    )
 
 
 async def test_eval_stop_no_active_run(
@@ -117,5 +119,6 @@ async def test_eval_stop_no_active_run(
     assert len(events) == 1
     assert events[0]["attempt_id"] == str(attempt_id)
     assert events[0]["success"] is False
-    assert "active" in events[0]["message"].lower() or "no" in events[0]["message"].lower()
-
+    assert (
+        "active" in events[0]["message"].lower() or "no" in events[0]["message"].lower()
+    )

@@ -3,6 +3,12 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
+from utils.sql_helper import execute_sql_typed
+
 from app.api.v3.reports.export import router as export_router
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
@@ -14,11 +20,6 @@ from app.sql.types import (
     GetReportsBundleSqlRow,
     load_sql_query,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.cache_key import cache_key
-from utils.cache.get_cached import get_cached
-from utils.cache.set_cached import set_cached
-from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/reports/get_reports_bundle_complete.sql"
@@ -74,7 +75,9 @@ async def get_reports(
         # Use double star pattern: **request.model_dump()
         # Note: request fields are snake_case (start_date, end_date, etc.)
         # SQL handles date conversion from text to timestamptz - no manual parsing needed
-        params = GetReportsBundleSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetReportsBundleSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Disable JIT compilation for this complex query to avoid re-compilation overhead

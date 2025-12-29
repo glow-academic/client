@@ -1,8 +1,9 @@
 """Insert activity record for WebSocket events."""
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.profile_exists import profile_exists
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.profile_exists import profile_exists
 
 
 async def insert_activity_websocket(
@@ -32,4 +33,3 @@ async def insert_activity_websocket(
 
     sql = load_sql("app/sql/v3/infrastructure/activity/insert_websocket_complete.sql")
     await conn.execute(sql, message, endpoint, profile_id_uuid, error)
-

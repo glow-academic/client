@@ -2,9 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.v3.actions.keycloak import keycloak_sync
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
+
+from app.socket.v3.actions.keycloak import keycloak_sync
 
 pytestmark = pytest.mark.asyncio
 
@@ -44,4 +45,3 @@ async def test_keycloak_sync_missing_profile_id(
 
     # Assert - handler should handle missing profile_id gracefully
     # May emit error or return early
-

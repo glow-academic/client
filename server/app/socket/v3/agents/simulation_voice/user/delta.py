@@ -5,9 +5,9 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
 
 from app.main import sio
-from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

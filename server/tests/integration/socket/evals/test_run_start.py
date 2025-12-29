@@ -36,7 +36,9 @@ async def test_eval_run_start_success(
     )
 
     # Create eval with runs
-    sql_create_eval = load_sql("tests/sql/integration/socket/create_test_eval_with_runs.sql")
+    sql_create_eval = load_sql(
+        "tests/sql/integration/socket/create_test_eval_with_runs.sql"
+    )
     eval_row = await db.fetchrow(sql_create_eval, agent_id, eval_agent_id, rubric_id)
     assert eval_row is not None
     eval_id = eval_row["eval_id"]
@@ -101,7 +103,10 @@ async def test_eval_run_start_missing_attempt_id(
     error_events = mock_sio.get_events("evals_run_start_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "attempt_id" in error_events[0]["message"].lower() or "missing" in error_events[0]["message"].lower()
+    assert (
+        "attempt_id" in error_events[0]["message"].lower()
+        or "missing" in error_events[0]["message"].lower()
+    )
 
 
 async def test_eval_run_start_missing_run_id(
@@ -131,7 +136,10 @@ async def test_eval_run_start_missing_run_id(
     error_events = mock_sio.get_events("evals_run_start_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "run_id" in error_events[0]["message"].lower() or "missing" in error_events[0]["message"].lower()
+    assert (
+        "run_id" in error_events[0]["message"].lower()
+        or "missing" in error_events[0]["message"].lower()
+    )
 
 
 async def test_eval_run_start_already_completed(
@@ -194,4 +202,3 @@ async def test_eval_run_start_already_completed(
     assert len(events) == 1
     assert events[0]["success"] is True
     assert "already completed" in events[0]["message"].lower()
-

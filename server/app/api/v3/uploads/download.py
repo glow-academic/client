@@ -1,26 +1,27 @@
 """Upload download endpoint - v3 API following DHH principles."""
 
-import json
 import os
 import urllib.parse
 import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import FileResponse, Response
+from utils.document.pdf_first_page_to_image_bytes import pdf_first_page_to_image_bytes
+from utils.mime.get_content_type import get_content_type
 from utils.settings.theme import ThemeTokens
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.infra.v3.templates.jinja_renderer import render_template
 from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
-from app.sql.types import (GetUploadFileInfoApiRequest,
-                           GetUploadFileInfoSqlParams, GetUploadFileInfoSqlRow,
-                           load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, Response
-from utils.document.pdf_first_page_to_image_bytes import \
-    pdf_first_page_to_image_bytes
-from utils.mime.get_content_type import get_content_type
-from utils.sql_helper import execute_sql_typed
+from app.sql.types import (
+    GetUploadFileInfoSqlParams,
+    GetUploadFileInfoSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/uploads/get_upload_file_info_complete.sql"
@@ -49,13 +50,21 @@ async def download_upload(
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        profile_id = http_request.state.profile_id if hasattr(http_request.state, "profile_id") else None
+        profile_id = (
+            http_request.state.profile_id
+            if hasattr(http_request.state, "profile_id")
+            else None
+        )
 
         # Convert upload_id to UUID and prepare SQL params
         # Use double star pattern for parameter construction
         upload_id_uuid = uuid.UUID(upload_id)
-        profile_id_uuid = uuid.UUID(profile_id) if profile_id else uuid.UUID("00000000-0000-0000-0000-000000000000")
-        
+        profile_id_uuid = (
+            uuid.UUID(profile_id)
+            if profile_id
+            else uuid.UUID("00000000-0000-0000-0000-000000000000")
+        )
+
         params = GetUploadFileInfoSqlParams(
             upload_id=upload_id_uuid,
             profile_id=profile_id_uuid,
@@ -112,9 +121,9 @@ async def download_upload(
             # If preview generation fails, fallback to original file
 
         # Handle template HTML processing
-        is_html = content_type == "text/html" or (result.file_path or "").lower().endswith(
-            ".html"
-        )
+        is_html = content_type == "text/html" or (
+            result.file_path or ""
+        ).lower().endswith(".html")
         if is_html and result.is_template:
             # Template args are already returned from SQL function as JSONB
             # JSONB is automatically converted to dict by asyncpg, but we need to handle it properly

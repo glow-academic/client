@@ -81,4 +81,3 @@ async def test_simulation_text_stop_invalid_chat_id(
     error_events = mock_sio.get_events("simulations_text_stop_error")
     # Handler may emit error when chat is not found
     assert len(error_events) >= 0
-

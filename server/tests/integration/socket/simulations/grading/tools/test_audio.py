@@ -113,4 +113,3 @@ async def test_grading_tool_audio_missing_required_fields(
     error_events = mock_sio.get_events("grading_tools_audio_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

@@ -131,4 +131,3 @@ async def test_document_template_create_without_document_id(
     # Assert - verify upload was created
     assert result is not None
     assert result["upload_id"] is not None
-

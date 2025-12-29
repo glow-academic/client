@@ -24,19 +24,20 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
         GenericAgent instance configured for hint generation
     """
 
-    # Create tool use behavior - require all 3 hint tools to be called
+    # Create tool use behavior - require at least 3 hints to be created
     # Note: Progress checking happens synchronously, but storage is async
     # For now, we'll check progress after tool execution completes
     def tool_use_behavior(
         tool_context: RunContextWrapper[Any],
         tool_results: list[FunctionToolResult],
     ) -> ToolsToFinalOutputResult:
-        # Count hint tools that have been called
-        hint_tool_count = sum(
-            1
-            for result in tool_results
-            if result.tool_name and result.tool_name.startswith("provide_hint_")
-        )
+        # Count create_hint tool calls (can be called multiple times)
+        hint_tool_count = 0
+        for result in tool_results:
+            # Try to get tool_name from result (may not always be present)
+            tool_name = getattr(result, "tool_name", None)  # type: ignore[misc,attr-defined]
+            if tool_name == "create_hint":
+                hint_tool_count += 1
 
         all_hints_complete = hint_tool_count >= 3
 
@@ -46,7 +47,7 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
             f"tool_results_count={len(tool_results)}"
         )
 
-        # Return False to continue until all 3 hints are provided
+        # Return False to continue until at least 3 hints are created
         return ToolsToFinalOutputResult(is_final_output=all_hints_complete)
 
     return GenericAgent(

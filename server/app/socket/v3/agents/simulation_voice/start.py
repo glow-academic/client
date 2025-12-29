@@ -9,13 +9,14 @@ from typing import Any, get_type_hints
 
 import httpx
 from agents import function_tool
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.agents.utils.build_voice_agent import build_voice_agent
-from app.main import _voice_sessions, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.utils.build_voice_agent import build_voice_agent
+from app.main import _voice_sessions, get_pool, sio
 
 logger = get_logger(__name__)
 
@@ -165,7 +166,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
         async with pool.acquire() as conn:
             # Get chat context (similar to send_message)
-            sql_context = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
+            sql_context = load_sql(
+                "app/sql/v3/simulations/get_simulation_run_context.sql"
+            )
             context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
 
             if not context_row:
@@ -335,7 +338,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Get active settings for profile (or default if no profile)
             if profile_id_uuid:
                 # Get active settings for profile
-                sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_with_profile.sql")
+                sql_get_key = load_sql(
+                    "app/sql/v3/settings/get_key_id_for_model_with_profile.sql"
+                )
                 key_id_row = await conn.fetchrow(
                     sql_get_key,
                     model_id_uuid,
@@ -343,7 +348,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 )
             else:
                 # Use default settings if no profile_id
-                sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_default.sql")
+                sql_get_key = load_sql(
+                    "app/sql/v3/settings/get_key_id_for_model_default.sql"
+                )
                 key_id_row = await conn.fetchrow(
                     sql_get_key,
                     model_id_uuid,
@@ -388,9 +395,12 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Import emit functions from send_message
             from app.socket.v3.agents.simulation_text.send import (
                 SimulationMessageCompletePayload,
-                SimulationMessageTokenPayload, SimulationNewMessagePayload,
-                simulation_message_complete, simulation_message_token,
-                simulation_new_message)
+                SimulationMessageTokenPayload,
+                SimulationNewMessagePayload,
+                simulation_message_complete,
+                simulation_message_token,
+                simulation_new_message,
+            )
 
             # Create emit wrapper functions for persona tools
             async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
@@ -419,41 +429,51 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             tool_config_map_voice: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
-            
+
             # Build speak tool inline
             speak_config = tool_config_map_voice.get("speak")
             if speak_config:
-                persona_desc = speak_config.get("argument_descriptions", {}).get("persona", "The name of the persona that should speak")
-                message_desc = speak_config.get("argument_descriptions", {}).get("message", "The message content that the persona should say")
+                persona_desc = speak_config.get("argument_descriptions", {}).get(
+                    "persona", "The name of the persona that should speak"
+                )
+                message_desc = speak_config.get("argument_descriptions", {}).get(
+                    "message", "The message content that the persona should say"
+                )
             else:
                 # Build list of available persona names for tool description
                 persona_names = []
                 for persona in personas:
-                    persona_name = persona.get("persona_name") or persona.get("name", "")
+                    persona_name = persona.get("persona_name") or persona.get(
+                        "name", ""
+                    )
                     if persona_name:
                         persona_names.append(persona_name)
-                
+
                 if persona_names:
                     persona_names_str = ", ".join(f'"{name}"' for name in persona_names)
                     persona_desc = f"The name of the persona that should speak. Must be one of: {persona_names_str}."
                 else:
                     persona_desc = "The name of the persona that should speak"
                 message_desc = "The message content that the persona should say"
-            
+
             async def speak(
                 persona: str = Field(description=persona_desc),
                 message: str = Field(description=message_desc),
             ) -> str:
                 """Make a persona speak by calling this tool with the persona name and message."""
-                logger.info(f"Speak tool called: persona={persona}, message_length={len(message)}")
-                
+                logger.info(
+                    f"Speak tool called: persona={persona}, message_length={len(message)}"
+                )
+
                 # Find persona by name
                 # Inline find_persona_by_name logic
                 def sanitize_persona_name(name: str) -> str:
-                    sanitized = "".join(c if c.isalnum() or c == " " else "" for c in name)
+                    sanitized = "".join(
+                        c if c.isalnum() or c == " " else "" for c in name
+                    )
                     sanitized = sanitized.replace(" ", "_").lower()
                     return sanitized or "persona"
-                
+
                 def find_persona_by_name_inline(
                     persona_name: str, personas: list[dict[str, Any]]
                 ) -> tuple[uuid.UUID, str] | None:
@@ -465,10 +485,15 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                         persona_id_str = persona.get("persona_id") or persona.get("id")
                         if not persona_id_str:
                             continue
-                        persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                        persona_display_name = persona.get(
+                            "persona_name"
+                        ) or persona.get("name", "")
                         if not persona_display_name:
                             continue
-                        if persona_name_normalized.lower() == persona_display_name.lower():
+                        if (
+                            persona_name_normalized.lower()
+                            == persona_display_name.lower()
+                        ):
                             try:
                                 persona_id = uuid.UUID(str(persona_id_str))
                                 return (persona_id, persona_display_name)
@@ -485,30 +510,42 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                         persona_id_str = persona.get("persona_id") or persona.get("id")
                         if not persona_id_str:
                             continue
-                        persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                        persona_display_name = persona.get(
+                            "persona_name"
+                        ) or persona.get("name", "")
                         if not persona_display_name:
                             continue
-                        if persona_name_normalized.lower() in persona_display_name.lower():
+                        if (
+                            persona_name_normalized.lower()
+                            in persona_display_name.lower()
+                        ):
                             try:
                                 persona_id = uuid.UUID(str(persona_id_str))
                                 return (persona_id, persona_display_name)
                             except (ValueError, TypeError):
                                 continue
                     return None
-                
-                persona_match = find_persona_by_name_inline(persona.strip() if persona else "", personas)
+
+                persona_match = find_persona_by_name_inline(
+                    persona.strip() if persona else "", personas
+                )
                 if not persona_match:
-                    available_list = "\n".join(f"  - {p.get('persona_name') or p.get('name', '')}" for p in personas)
+                    available_list = "\n".join(
+                        f"  - {p.get('persona_name') or p.get('name', '')}"
+                        for p in personas
+                    )
                     error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"
                     logger.error(error_msg)
                     return f"Error: {error_msg}"
-                
+
                 persona_id, persona_display_name = persona_match
-                logger.info(f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})")
-                
+                logger.info(
+                    f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})"
+                )
+
                 # Tool call validation only - actual DB operations happen in streaming handler
                 return f"Tool call confirmed for {persona_display_name}"
-            
+
             persona_tools = [function_tool(speak)]
 
             # Tool context map is no longer needed since we have a single speak tool
@@ -785,7 +822,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Get conversation history for RealtimeSession
             # Fetch messages using the same SQL as text mode
-            sql_messages = load_sql("app/sql/v3/simulations/get_simulation_messages.sql")
+            sql_messages = load_sql(
+                "app/sql/v3/simulations/get_simulation_messages.sql"
+            )
             message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
             messages = [dict(row) for row in message_rows]
 

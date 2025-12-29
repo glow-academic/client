@@ -3,24 +3,27 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
-from app.sql.types import (StandardGroupDescriptionsCompleteApiRequest,
-                           StandardGroupDescriptionsErrorSqlRow,
-                           UpdateStandardDescriptionsApiRequest,
-                           UpdateStandardDescriptionsSqlParams,
-                           UpdateStandardDescriptionsSqlRow)
-from fastapi import APIRouter
-from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import execute_sql_typed
+from app.sql.types import (
+    StandardGroupDescriptionsCompleteApiRequest,
+    StandardGroupDescriptionsErrorSqlRow,
+    UpdateStandardDescriptionsApiRequest,
+    UpdateStandardDescriptionsSqlParams,
+    UpdateStandardDescriptionsSqlRow,
+)
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/rubrics/standard_group_descriptions/update_standard_descriptions_complete.sql"
+SQL_PATH = "app/sql/v3/rubrics/update_standard_descriptions_complete.sql"
 
 
 async def _rubric_tool_standard_group_descriptions_impl(
@@ -51,7 +54,9 @@ async def _rubric_tool_standard_group_descriptions_impl(
                         message="Failed to update standard descriptions",
                     ),
                     sid=sid,
-                    group_id=str(result.group_id) if result and result.group_id else None,
+                    group_id=str(result.group_id)
+                    if result and result.group_id
+                    else None,
                 )
                 return
 
@@ -113,4 +118,3 @@ register_server_endpoint(
     UpdateStandardDescriptionsApiRequest,
     "Update standard group descriptions from rubric generation tool",
 )
-

@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-import pytest
+
 from app.infra.v3.csv.parse_csv_file import parse_csv_file
 
 
@@ -101,4 +101,3 @@ class TestParseCsvFile:
             assert len(result["users"]) == 0
         finally:
             Path(temp_path).unlink()
-

@@ -3,10 +3,11 @@
 import asyncio
 from typing import Any
 
-from app.main import get_pool
-from app.infra.v3.activity.audit import jinja
 from utils.logging.db_logger import get_logger
+
+from app.infra.v3.activity.audit import jinja
 from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+from app.main import get_pool
 
 logger = get_logger(__name__)
 
@@ -123,4 +124,3 @@ async def _insert_activity(
     except Exception:
         # Never break logging if DB write fails
         pass
-

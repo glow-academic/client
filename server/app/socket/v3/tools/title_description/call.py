@@ -3,14 +3,15 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+from pydantic import BaseModel
+from utils.sql_helper import load_sql
+
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
-from fastapi import APIRouter
-from pydantic import BaseModel
-from utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()
@@ -37,15 +38,15 @@ async def _title_description_tool_call_impl(
             sql = load_sql(
                 "app/sql/v3/problem_statements/insert_problem_statement_complete.sql"
             )
-            scenario_id_uuid = (
-                uuid.UUID(data.scenario_id) if data.scenario_id else None
-            )
+            scenario_id_uuid = uuid.UUID(data.scenario_id) if data.scenario_id else None
 
             result = await conn.fetchrow(
                 sql,
                 data.description,  # problem_statement
                 data.title,  # problem_statement_name
-                str(scenario_id_uuid) if scenario_id_uuid else None,  # scenario_id (nullable)
+                str(scenario_id_uuid)
+                if scenario_id_uuid
+                else None,  # scenario_id (nullable)
                 True,  # active
             )
 
@@ -119,4 +120,3 @@ register_server_endpoint(
     TitleDescriptionToolPayload,
     "Create problem statement from scenario generation tool",
 )
-

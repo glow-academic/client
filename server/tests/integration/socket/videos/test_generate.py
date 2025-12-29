@@ -82,4 +82,3 @@ async def test_video_generate_missing_prompt(
     error_events = mock_sio.get_events("videos_generation_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

@@ -1,18 +1,18 @@
 """Handler for simulation_text_end WebSocket event."""
 
 import uuid
-from datetime import UTC, datetime
 from typing import Any
 
-import asyncpg  # type: ignore
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_internal_sio, get_pool, sio
-# Import chat creation function from start.py
-from app.socket.v3.agents.simulation_text.start import simulation_chat_create_impl
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import get_internal_sio, get_pool, sio
+
+# Import chat creation function from start.py
+from app.socket.v3.agents.simulation_text.start import simulation_chat_create_impl
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -146,9 +146,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             chat = await conn.fetchrow(sql, chat_id)
             if not chat:
                 await simulation_text_end_error(
-                    EndSimulationErrorPayload(
-                        success=False, message="Chat not found"
-                    ),
+                    EndSimulationErrorPayload(success=False, message="Chat not found"),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Chat not found")
@@ -256,7 +254,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 return
 
             # Load scenarios for this simulation from junction table
-            sql = load_sql("app/sql/v3/simulations/get_simulation_scenarios_ordered.sql")
+            sql = load_sql(
+                "app/sql/v3/simulations/get_simulation_scenarios_ordered.sql"
+            )
             scenario_links = await conn.fetch(sql, str(simulation["id"]))
             is_infinite_mode = bool(simulation_attempt["infinite_mode"])
 
@@ -466,7 +466,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         prev_chat_id = previous_chat_map[scenario_id_str]
                         if prev_chat_id:
                             # Link the previous chat to current attempt via junction table
-                            sql = load_sql("app/sql/v3/attempts/link_chat_to_attempt.sql")
+                            sql = load_sql(
+                                "app/sql/v3/attempts/link_chat_to_attempt.sql"
+                            )
                             await conn.execute(sql, attempt_id, prev_chat_id)
 
                             # Check if the previous chat has a grade and update scenarios_with_grades_set
@@ -515,7 +517,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 # If end_all but no previous_chat_map or previous_chat_id, mark all remaining incomplete chats as completed (skipped)
                 for existing_chat in existing_chats:
                     if not existing_chat["completed"]:
-                        sql = load_sql("app/sql/v3/simulations/update_chat_completed.sql")
+                        sql = load_sql(
+                            "app/sql/v3/simulations/update_chat_completed.sql"
+                        )
                         await conn.execute(sql, str(existing_chat["id"]))
 
             # Create next chat if not end_all (works for both previous_chat_id and normal cases)
@@ -549,7 +553,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
                         if most_recent_child_scenario_id:
                             # Recursively map child scenario ID to root parent scenario ID
-                            sql = load_sql("app/sql/v3/scenario/get_root_scenario_id.sql")
+                            sql = load_sql(
+                                "app/sql/v3/scenario/get_root_scenario_id.sql"
+                            )
                             parent_row = await conn.fetchrow(
                                 sql, most_recent_child_scenario_id
                             )
@@ -642,7 +648,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             if not previous_chat_id and not previous_chat_map:
                 # Use optimized batch query to get message counts
                 existing_chat_ids = [str(c["id"]) for c in existing_chats]
-                sql = load_sql("app/sql/v3/simulations/get_messages_count_by_chat_ids.sql")
+                sql = load_sql(
+                    "app/sql/v3/simulations/get_messages_count_by_chat_ids.sql"
+                )
                 message_counts = await conn.fetch(sql, existing_chat_ids)
                 message_count_map = {
                     str(row["chat_id"]): row["message_count"] for row in message_counts
@@ -709,7 +717,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             if end_all and not previous_chat_id and not previous_chat_map:
                 # End any other incomplete chats for this attempt
                 existing_chat_ids = [str(c["id"]) for c in existing_chats]
-                sql = load_sql("app/sql/v3/simulations/get_messages_count_by_chat_ids.sql")
+                sql = load_sql(
+                    "app/sql/v3/simulations/get_messages_count_by_chat_ids.sql"
+                )
                 message_counts = await conn.fetch(sql, existing_chat_ids)
                 message_count_map = {
                     str(row["chat_id"]): row["message_count"] for row in message_counts
@@ -732,7 +742,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                                     "sid": sid,
                                 },
                             )
-                        sql = load_sql("app/sql/v3/simulations/update_chat_completed.sql")
+                        sql = load_sql(
+                            "app/sql/v3/simulations/update_chat_completed.sql"
+                        )
                         await conn.execute(sql, str(existing_chat["id"]))
 
                 # Calculate and create remaining chats in order
@@ -840,9 +852,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 # Emit to requester
                 await simulation_ended(ended_payload, room=sid)
                 # Also broadcast to the simulation room so watchers stay in sync
-                await simulation_ended(
-                    ended_payload, room=f"simulation_{chat_id}"
-                )
+                await simulation_ended(ended_payload, room=f"simulation_{chat_id}")
 
                 logger.info(
                     f"Simulation ended successfully: completed_chat={result['completed_chat_id']}, next_chat={result['next_chat_id']}"
@@ -983,4 +993,3 @@ async def end_chat_started_api(request: EndChatStartedPayload) -> dict[str, bool
 async def end_all_completed_api(request: EndAllCompletedPayload) -> dict[str, bool]:
     """Server-to-client event: Ending all chats completed."""
     return {"success": True}
-

@@ -3,16 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetKeyForDecryptApiRequest,
-                           GetKeyForDecryptApiResponse,
-                           GetKeyForDecryptSqlParams, GetKeyForDecryptSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    GetKeyForDecryptApiRequest,
+    GetKeyForDecryptApiResponse,
+    GetKeyForDecryptSqlParams,
+    GetKeyForDecryptSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/keys/get_key_for_decrypt_complete.sql"
@@ -51,7 +55,9 @@ async def decrypt_key(
 
         # Convert API request to SQL params (add profile_id from header)
         # Use double star pattern: **request.model_dump()
-        params = GetKeyForDecryptSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetKeyForDecryptSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present
@@ -84,9 +90,11 @@ async def decrypt_key(
             )
 
         # Convert SQL result to API response
-        api_response = GetKeyForDecryptApiResponse.model_validate({
-            "key": decrypted_key,
-        })
+        api_response = GetKeyForDecryptApiResponse.model_validate(
+            {
+                "key": decrypted_key,
+            }
+        )
 
         return api_response
     except HTTPException:

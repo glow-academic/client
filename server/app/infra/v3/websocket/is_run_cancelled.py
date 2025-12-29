@@ -1,7 +1,8 @@
 """Check if a run has been cancelled."""
 
-from app.main import get_redis_client
 from utils.logging.db_logger import get_logger
+
+from app.main import get_redis_client
 
 logger = get_logger(__name__)
 

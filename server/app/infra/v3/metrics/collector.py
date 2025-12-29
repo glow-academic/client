@@ -287,4 +287,3 @@ async def get_current_metrics() -> dict[str, Any]:
         "sample_count": len(_latency_samples),
         "backend": "memory",
     }
-

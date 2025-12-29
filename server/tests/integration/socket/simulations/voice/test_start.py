@@ -44,4 +44,3 @@ async def test_simulation_voice_start_success(
     # Assert - verify handler completed
     # Voice start creates voice session and starts voice agent
     # Exact assertions depend on implementation
-

@@ -5,12 +5,14 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool, sio
-from app.socket.v3.agents.hint.generate import (
-    HintGenerationProgressPayload, hint_generation_progress)
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool
+from app.socket.v3.agents.hint.generate import (
+    HintGenerationProgressPayload,
+    hint_generation_progress,
+)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -47,16 +49,12 @@ async def _simulation_hints_create_impl(
             non_empty_hints = [h for h in hints if h and h.strip()]
 
             if not non_empty_hints:
-                logger.warning(
-                    f"No non-empty hints provided for message {message_id}"
-                )
+                logger.warning(f"No non-empty hints provided for message {message_id}")
                 return []
 
             # Create hints in single transaction
             sql = load_sql("app/sql/v3/simulations/create_hints_complete.sql")
-            result_row = await conn.fetchrow(
-                sql, str(message_id), non_empty_hints
-            )
+            result_row = await conn.fetchrow(sql, str(message_id), non_empty_hints)
 
             if not result_row or not result_row.get("hint_ids"):
                 logger.error(f"Failed to create hints for message {message_id}")
@@ -111,8 +109,7 @@ async def simulation_hints_create_internal(data: dict[str, Any]) -> None:
                     chat_id=validated.chat_id,
                     message_id=validated.message_id,
                     hint_ids=[
-                        f"{h['simulation_message_id']}_{h['idx']}"
-                        for h in hint_ids
+                        f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids
                     ],
                     hints_count=len(hint_ids),
                     hints=hints_for_event,
@@ -123,9 +120,7 @@ async def simulation_hints_create_internal(data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in simulation_hints_create: {e}")
     except Exception as e:
-        logger.error(
-            f"Error in simulation_hints_create_internal: {e}", exc_info=True
-        )
+        logger.error(f"Error in simulation_hints_create_internal: {e}", exc_info=True)
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -135,4 +130,3 @@ async def simulation_hints_create_api(
 ) -> dict[str, bool]:
     """Internal event: Create simulation hints for a message."""
     return {"success": True}
-

@@ -146,4 +146,3 @@ async def test_simulation_hints_create_impl_direct(
 
     # Assert
     assert len(result) == 2
-

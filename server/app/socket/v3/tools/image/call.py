@@ -7,10 +7,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool, sio
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -119,7 +119,9 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
         async with pool.acquire() as conn:
             async with conn.transaction():
                 # Create image record immediately
-                sql_insert_image = load_sql("app/sql/v3/images/insert_image_complete.sql")
+                sql_insert_image = load_sql(
+                    "app/sql/v3/images/insert_image_complete.sql"
+                )
                 image_row = await conn.fetchrow(sql_insert_image, validated.name)
 
                 if not image_row:
@@ -174,14 +176,10 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
                 async with _pending_video_generations_lock:
                     pending = _pending_video_generations.get(pending_key)
                     if pending:
-                        completed_image_ids = pending.get(
-                            "completed_image_ids", set()
-                        )
+                        completed_image_ids = pending.get("completed_image_ids", set())
                         completed_image_ids.add(str(image_id))
 
-                        expected_image_ids = pending.get(
-                            "expected_image_ids", set()
-                        )
+                        expected_image_ids = pending.get("expected_image_ids", set())
 
                         if expected_image_ids.issubset(completed_image_ids):
                             logger.info(

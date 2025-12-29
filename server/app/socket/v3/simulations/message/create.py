@@ -3,13 +3,16 @@
 import uuid
 from typing import Any
 
-from app.main import get_internal_sio, get_pool, sio
-from app.socket.v3.simulations.streaming.message import (
-    SimulationNewMessagePayload, simulation_new_message)
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool
+from app.socket.v3.simulations.streaming.message import (
+    SimulationNewMessagePayload,
+    simulation_new_message,
+)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -104,9 +107,7 @@ async def simulation_message_create_internal(data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in simulation_message_create: {e}")
     except Exception as e:
-        logger.error(
-            f"Error in simulation_message_create_internal: {e}", exc_info=True
-        )
+        logger.error(f"Error in simulation_message_create_internal: {e}", exc_info=True)
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -116,4 +117,3 @@ async def simulation_message_create_api(
 ) -> dict[str, bool]:
     """Internal event: Create a user message for a simulation."""
     return {"success": True}
-

@@ -40,4 +40,3 @@ async def test_document_generate_success(
     # Verify log_run event was emitted
     log_events = mock_internal_sio.get_events("log_run")
     # Should have log_run event after generation completes
-

@@ -1,21 +1,24 @@
 """Simulation detail endpoint - v3 API following DHH principles."""
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetSimulationDetailApiRequest,
-                           GetSimulationDetailApiResponse,
-                           GetSimulationDetailSqlParams,
-                           GetSimulationDetailSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    GetSimulationDetailApiRequest,
+    GetSimulationDetailApiResponse,
+    GetSimulationDetailSqlParams,
+    GetSimulationDetailSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v3/simulations/get_simulation_detail_complete.sql"
@@ -67,7 +70,9 @@ async def get_simulation_detail(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetSimulationDetailSqlParams(**request_data.model_dump(), profile_id=profile_id)
+        params = GetSimulationDetailSqlParams(
+            **request_data.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper
@@ -92,16 +97,21 @@ async def get_simulation_detail(
             audit_set(
                 http_request,
                 actor={"name": result.actor_name, "id": profile_id},
-                simulation={"name": result.name or "", "id": str(request_data.simulation_id)},
+                simulation={
+                    "name": result.name or "",
+                    "id": str(request_data.simulation_id),
+                },
             )
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
-        api_response = GetSimulationDetailApiResponse.model_validate(result.model_dump())
+        api_response = GetSimulationDetailApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": api_response.model_dump(mode='json')},
+            {"data": api_response.model_dump(mode="json")},
             ttl=60,
             tags=tags,
         )

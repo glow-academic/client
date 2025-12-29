@@ -9,7 +9,6 @@ from tests.integration.socket.helpers import (
 )
 
 from app.socket.v3.scenarios.tools.image import (
-    _scenario_tool_image_impl,
     scenario_tool_image,
     scenario_tool_image_internal,
 )
@@ -110,4 +109,3 @@ async def test_scenario_tool_image_missing_trace_id(
     error_events = mock_sio.get_events("scenarios_tools_image_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

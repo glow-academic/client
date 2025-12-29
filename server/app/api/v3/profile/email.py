@@ -3,15 +3,19 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetProfileByEmailApiRequest,
-                           GetProfileByEmailApiResponse,
-                           GetProfileByEmailSqlParams, GetProfileByEmailSqlRow,
-                           load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request
-from utils.sql_helper import execute_sql_typed
+from app.sql.types import (
+    GetProfileByEmailApiRequest,
+    GetProfileByEmailApiResponse,
+    GetProfileByEmailSqlParams,
+    GetProfileByEmailSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/profile/get_profile_by_email_complete.sql"
@@ -42,7 +46,9 @@ async def get_profile_by_email(
 
         # Convert API request to SQL params using double star pattern
         # Note: profile_id is passed to SQL function for actor_name computation (optional)
-        params = GetProfileByEmailSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetProfileByEmailSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper

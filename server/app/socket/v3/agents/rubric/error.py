@@ -3,16 +3,19 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio
-from app.sql.types import (RubricGenerationErrorApiRequest,
-                           RubricGenerationErrorSqlParams,
-                           RubricGenerationErrorSqlRow)
-from fastapi import APIRouter
-from utils.sql_helper import execute_sql_typed
+from app.sql.types import (
+    RubricGenerationErrorApiRequest,
+    RubricGenerationErrorSqlParams,
+    RubricGenerationErrorSqlRow,
+)
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()
@@ -71,4 +74,3 @@ register_server_endpoint(
     RubricGenerationErrorSqlRow,
     "Error occurred during rubric generation",
 )
-

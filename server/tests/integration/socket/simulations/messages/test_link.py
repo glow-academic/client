@@ -111,4 +111,3 @@ async def test_simulation_messages_link_impl_direct(
 
     # Assert
     assert result is True
-

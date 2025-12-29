@@ -1,18 +1,17 @@
 """Handler for disconnect WebSocket event."""
 
+from fastapi import APIRouter
+from utils.logging.db_logger import get_logger
+
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.v3.websocket.find_chats_by_socket import find_chats_by_socket
-from app.infra.v3.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v3.websocket.is_guest_socket import is_guest_socket
-from app.infra.v3.websocket.remove_active_connection import \
-    remove_active_connection
+from app.infra.v3.websocket.remove_active_connection import remove_active_connection
 from app.infra.v3.websocket.remove_guest_socket import remove_guest_socket
 from app.infra.v3.websocket.remove_socket_owner import remove_socket_owner
 from app.main import sio
-from fastapi import APIRouter
-from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -43,15 +42,18 @@ async def disconnect(sid: str) -> None:
     profile_to_cleanup = await find_profile_by_socket(sid)
 
     if profile_to_cleanup:
-        logger.info(f"Cleaning up profile {profile_to_cleanup} connections - socket disconnect")
+        logger.info(
+            f"Cleaning up profile {profile_to_cleanup} connections - socket disconnect"
+        )
         # Remove from socket ownership using Redis
         await remove_socket_owner(profile_to_cleanup)
         # Update database to mark profile as inactive
         try:
             from datetime import UTC, datetime
 
-            from app.main import get_pool
             from utils.sql_helper import load_sql
+
+            from app.main import get_pool
 
             pool = get_pool()
             if pool:
@@ -62,9 +64,13 @@ async def disconnect(sid: str) -> None:
                         )
                         last_active = datetime.now(UTC)
                         await conn.fetchrow(sql, profile_to_cleanup, last_active)
-                logger.info(f"Updated profile {profile_to_cleanup} to inactive in database")
+                logger.info(
+                    f"Updated profile {profile_to_cleanup} to inactive in database"
+                )
         except Exception as e:
-            logger.error(f"Error updating profile {profile_to_cleanup} in database: {e}")
+            logger.error(
+                f"Error updating profile {profile_to_cleanup} in database: {e}"
+            )
 
     # If this was a guest connection, update counter
     if await is_guest_socket(sid):

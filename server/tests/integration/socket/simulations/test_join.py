@@ -101,4 +101,3 @@ async def test_simulation_join_missing_chat_id(
     # Handler may not join room if chat_id is empty
     events = mock_sio.get_events("simulations_joined")
     # May or may not emit event if chat_id is missing
-

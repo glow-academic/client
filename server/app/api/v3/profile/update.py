@@ -3,15 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (UpdateProfileApiRequest, UpdateProfileApiResponse,
-                           UpdateProfileSqlParams, UpdateProfileSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    UpdateProfileApiRequest,
+    UpdateProfileApiResponse,
+    UpdateProfileSqlParams,
+    UpdateProfileSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/profile/update_profile_complete.sql"
@@ -64,22 +69,20 @@ async def update_profile(
         if request.emails and (
             primary_index < 0 or primary_index >= len(request.emails)
         ):
-            raise HTTPException(
-                status_code=400, detail="Invalid primary_email_index"
-            )
+            raise HTTPException(status_code=400, detail="Invalid primary_email_index")
 
         # Convert API request to SQL params using double star pattern
         # SQL function expects: target_profile_id (UUID - the profile to update), profile_id (UUID - actor from header), and other fields
         # Note: target_profile_id should be in API request type (the profile being updated)
-        request_dict = request.model_dump(exclude={'profile_id'}, exclude_none=False)
+        request_dict = request.model_dump(exclude={"profile_id"}, exclude_none=False)
         # Get target_profile_id from request body (required for update)
-        target_profile_id = request_dict.get('target_profile_id')
+        target_profile_id = request_dict.get("target_profile_id")
         if not target_profile_id:
             raise HTTPException(
                 status_code=400,
                 detail="target_profile_id is required in request body",
             )
-        
+
         # Use double star pattern - SQL handles None-to-empty conversions via COALESCE in params CTE
         params = UpdateProfileSqlParams(
             **request_dict,

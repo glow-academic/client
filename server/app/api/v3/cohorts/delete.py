@@ -3,15 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (DeleteCohortApiRequest, DeleteCohortApiResponse,
-                           DeleteCohortSqlParams, DeleteCohortSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    DeleteCohortApiRequest,
+    DeleteCohortApiResponse,
+    DeleteCohortSqlParams,
+    DeleteCohortSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/cohorts/delete_cohort_complete.sql"
@@ -75,7 +80,10 @@ async def delete_cohort(
             audit_set(
                 http_request,
                 actor={"name": result.actor_name, "id": profile_id},
-                cohort={"name": result.title or "Unknown", "id": str(request.cohort_id)},
+                cohort={
+                    "name": result.title or "Unknown",
+                    "id": str(request.cohort_id),
+                },
             )
 
         # Convert SQL result to API response (no manual conversion needed)

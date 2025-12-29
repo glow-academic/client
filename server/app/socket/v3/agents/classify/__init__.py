@@ -17,4 +17,3 @@ server_router.include_router(generate_server_router)
 server_router.include_router(complete_server_router)
 server_router.include_router(error_server_router)
 server_router.include_router(progress_server_router)
-

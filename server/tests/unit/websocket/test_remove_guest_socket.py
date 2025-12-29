@@ -5,6 +5,7 @@ Tests for app.utils.websocket.remove_guest_socket
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.infra.v3.websocket.remove_guest_socket import remove_guest_socket
 
 

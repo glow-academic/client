@@ -2,10 +2,13 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.v3.simulations.hints.generate import simulation_hints_generate
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
-from tests.integration.socket.helpers import (get_or_create_test_department,
-                                              get_or_create_test_profile)
+from tests.integration.socket.helpers import (
+    get_or_create_test_department,
+    get_or_create_test_profile,
+)
+
+from app.socket.v3.simulations.hints.generate import simulation_hints_generate
 
 pytestmark = pytest.mark.asyncio
 
@@ -104,4 +107,3 @@ async def test_simulation_hints_generate_missing_chat_id(
     # May have error event
     error_events = [e for e in progress_events if e.get("type") == "error"]
     assert len(error_events) >= 0  # May have validation error or progress error
-

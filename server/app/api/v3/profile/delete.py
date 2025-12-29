@@ -1,18 +1,22 @@
 """Profile delete endpoint - delete a profile."""
 
-import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (DeleteProfileApiRequest, DeleteProfileApiResponse,
-                           DeleteProfileSqlParams, DeleteProfileSqlRow,
-                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    DeleteProfileApiRequest,
+    DeleteProfileApiResponse,
+    DeleteProfileSqlParams,
+    DeleteProfileSqlRow,
+    load_sql_query,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/profile/delete_profile_complete.sql"
@@ -50,8 +54,12 @@ async def delete_profile(
 
         # Convert API request to SQL params using double star pattern (add current_profile_id from header)
         # Exclude current_profile_id from request if present (it comes from header, not request body)
-        request_dict = request.model_dump(exclude={'current_profile_id'}, exclude_none=False)
-        params = DeleteProfileSqlParams(**request_dict, current_profile_id=current_profile_id)
+        request_dict = request.model_dump(
+            exclude={"current_profile_id"}, exclude_none=False
+        )
+        params = DeleteProfileSqlParams(
+            **request_dict, current_profile_id=current_profile_id
+        )
         sql_params = params.to_tuple()
 
         result = cast(
@@ -66,7 +74,8 @@ async def delete_profile(
         # Check if profile exists
         if not result.profile_exists:
             raise HTTPException(
-                status_code=404, detail=f"Profile not found: {request.target_profile_id}"
+                status_code=404,
+                detail=f"Profile not found: {request.target_profile_id}",
             )
 
         # Verify deletion occurred

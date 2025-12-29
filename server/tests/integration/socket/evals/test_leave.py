@@ -23,8 +23,7 @@ async def test_eval_leave_success(
     )
 
     attempt_id = await db.fetchval(
-        "INSERT INTO eval_attempts(eval_id) "
-        "VALUES ($1) RETURNING id",
+        "INSERT INTO eval_attempts(eval_id) VALUES ($1) RETURNING id",
         eval_id,
     )
 
@@ -41,4 +40,3 @@ async def test_eval_leave_success(
 
     # Assert - verify socket left room
     assert sid not in mock_sio.rooms.get(room_name, set())
-

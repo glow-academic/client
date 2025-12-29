@@ -2,10 +2,21 @@
 
 Routes have full control over transaction and execution.
 This follows DHH principles - route owns the execution.
+
+This module implements the agents-style architecture pattern:
+- PostgreSQL functions with RETURNS TABLE instead of raw SQL queries
+- Auto-detection of functions via `execute_sql_typed()` helper
+- Automatic type conversion from PostgreSQL types to Pydantic models
+- Support for composite types in the `types` schema
+
+See:
+- `server/app/api/v3/STANDARDS.md` for API endpoint standards
+- `server/app/socket/v3/STANDARDS.md` for WebSocket endpoint standards
+- `AGENTS.md` for overall architecture principles
 """
 
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any, Protocol
 
 import asyncpg  # type: ignore
 from pydantic import BaseModel
@@ -44,24 +55,24 @@ def load_sql(file_path: str) -> str:
 
 def _detect_function_in_sql(sql_text: str) -> tuple[bool, str | None, str | None]:
     """Detect if SQL contains a CREATE OR REPLACE FUNCTION and extract name/schema.
-    
+
     Args:
         sql_text: SQL query text
-    
+
     Returns:
         Tuple of (is_function, function_name, schema_name)
     """
     import re
 
     # Pattern: CREATE OR REPLACE FUNCTION [schema.]function_name
-    pattern = r'CREATE\s+OR\s+REPLACE\s+FUNCTION\s+(?:(\w+)\.)?(\w+)\s*\('
+    pattern = r"CREATE\s+OR\s+REPLACE\s+FUNCTION\s+(?:(\w+)\.)?(\w+)\s*\("
     match = re.search(pattern, sql_text, re.IGNORECASE)
-    
+
     if match:
         schema = match.group(1) or "public"
         func_name = match.group(2)
         return True, func_name, schema
-    
+
     return False, None, None
 
 
@@ -94,7 +105,7 @@ async def execute_sql_typed(
         ```python
         from app.sql.types import GetAgentNewSqlParams, GetAgentNewSqlRow
         from typing import cast
-        
+
         params = GetAgentNewSqlParams(profile_id="...")
         result = cast(
             GetAgentNewSqlRow,
@@ -109,18 +120,17 @@ async def execute_sql_typed(
         ```
     """
     # Import here to avoid circular imports
-    from typing import Type
 
     from app.sql.types import get_sql_types, load_sql_query
 
     # Load SQL file to check if it's a function
     sql_text = load_sql(sql_path)
     is_function, function_name, schema = _detect_function_in_sql(sql_text)
-    
+
     # Get types (works for both functions and raw SQL)
     InputType, OutputType = get_sql_types(sql_path)
     # Type annotation to help type checker understand OutputType is Type[BaseModel]
-    OutputTypeClass: Type[BaseModel] = OutputType
+    OutputTypeClass: type[BaseModel] = OutputType
 
     # Prepare parameters
     if params:
@@ -132,20 +142,22 @@ async def execute_sql_typed(
     if is_function and function_name:
         # It's a function - call it with SELECT * FROM schema.function_name($1, $2, ...)
         num_params = len(sql_params)
-        param_placeholders = ", ".join([f"${i+1}" for i in range(num_params)])
-        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
-        
+        param_placeholders = ", ".join([f"${i + 1}" for i in range(num_params)])
+        function_call_sql = (
+            f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
+        )
+
         # Functions return single row (RETURNS TABLE)
         if sql_params:
             row = await conn.fetchrow(function_call_sql, *sql_params)
         else:
             row = await conn.fetchrow(function_call_sql)
-        
+
         if row:
             # Convert row to dict - asyncpg handles composite types automatically
             # Composite arrays are decoded as list of Record objects
             row_dict = dict(row)
-            
+
             # Recursively convert Record objects to dicts and datetime to strings for composite types
             def convert_records_to_dicts(obj: Any) -> Any:
                 """Recursively convert asyncpg Record objects to dicts, datetime to ISO strings, UUID to strings, and JSON strings to dicts."""
@@ -155,23 +167,30 @@ async def execute_sql_typed(
                     return [convert_records_to_dicts(item) for item in obj]
                 elif isinstance(obj, dict):
                     return {k: convert_records_to_dicts(v) for k, v in obj.items()}
-                elif isinstance(obj, str) and (obj.startswith('{') or obj.startswith('[')):
+                elif isinstance(obj, str) and (
+                    obj.startswith("{") or obj.startswith("[")
+                ):
                     # Try to parse JSON strings (JSONB fields from PostgreSQL)
                     try:
                         import json
+
                         parsed = json.loads(obj)
-                        return convert_records_to_dicts(parsed)  # Recursively process parsed JSON
+                        return convert_records_to_dicts(
+                            parsed
+                        )  # Recursively process parsed JSON
                     except (json.JSONDecodeError, ValueError):
                         return obj  # Not JSON, return as-is
-                elif hasattr(obj, 'isoformat'):  # datetime objects
+                elif hasattr(obj, "isoformat"):  # datetime objects
                     return obj.isoformat()
-                elif type(obj).__name__ == 'UUID' or (hasattr(obj, 'hex') and hasattr(obj, 'int')):  # UUID objects
+                elif type(obj).__name__ == "UUID" or (
+                    hasattr(obj, "hex") and hasattr(obj, "int")
+                ):  # UUID objects
                     return str(obj)  # Convert UUID to string
                 else:
                     return obj
-            
+
             row_dict = convert_records_to_dicts(row_dict)
-            
+
             # Use model_validate since we have the actual data structure
             return OutputTypeClass.model_validate(row_dict)
         else:
@@ -181,7 +200,7 @@ async def execute_sql_typed(
     else:
         # It's raw SQL - execute normally
         sql_query = load_sql_query(sql_path)
-        
+
         if sql_params:
             rows = await conn.fetch(sql_query, *sql_params)
         else:
@@ -198,4 +217,3 @@ async def execute_sql_typed(
             # Provide empty dicts for dict fields to avoid validation errors
             empty_nested_data: dict[str, Any] = {}
             return OutputTypeClass.model_construct(**empty_nested_data)
-

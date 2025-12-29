@@ -2,8 +2,9 @@
 
 import asyncpg
 import pytest
-from app.infra.v3.activity.insert import insert_activity
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.insert import insert_activity
 
 pytestmark = pytest.mark.asyncio
 
@@ -11,12 +12,12 @@ pytestmark = pytest.mark.asyncio
 class TestInsertActivity:
     """Tests for insert_activity function."""
 
-    async def test_insert_activity_success(
-        self, db: asyncpg.Connection
-    ) -> None:
+    async def test_insert_activity_success(self, db: asyncpg.Connection) -> None:
         """Test successful activity insertion."""
         # Arrange
-        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        insert_profile_sql = load_sql(
+            "tests/sql/integration/infra/activity/insert_test_profile.sql"
+        )
         profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
@@ -30,7 +31,9 @@ class TestInsertActivity:
         )
 
         # Assert
-        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message_and_endpoint.sql")
+        get_activity_sql = load_sql(
+            "tests/sql/integration/infra/activity/get_activity_by_message_and_endpoint.sql"
+        )
         activity = await db.fetchrow(
             get_activity_sql,
             "Test activity message",
@@ -42,12 +45,12 @@ class TestInsertActivity:
         assert activity["profile_id"] == profile_id
         assert activity["error"] is False
 
-    async def test_insert_activity_with_error(
-        self, db: asyncpg.Connection
-    ) -> None:
+    async def test_insert_activity_with_error(self, db: asyncpg.Connection) -> None:
         """Test activity insertion with error flag."""
         # Arrange
-        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        insert_profile_sql = load_sql(
+            "tests/sql/integration/infra/activity/insert_test_profile.sql"
+        )
         profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
@@ -61,7 +64,9 @@ class TestInsertActivity:
         )
 
         # Assert
-        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
+        get_activity_sql = load_sql(
+            "tests/sql/integration/infra/activity/get_activity_by_message.sql"
+        )
         activity = await db.fetchrow(
             get_activity_sql,
             "Error occurred",
@@ -83,7 +88,9 @@ class TestInsertActivity:
         )
 
         # Assert
-        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
+        get_activity_sql = load_sql(
+            "tests/sql/integration/infra/activity/get_activity_by_message.sql"
+        )
         activity = await db.fetchrow(
             get_activity_sql,
             "Anonymous activity",
@@ -108,7 +115,9 @@ class TestInsertActivity:
         )
 
         # Assert
-        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
+        get_activity_sql = load_sql(
+            "tests/sql/integration/infra/activity/get_activity_by_message.sql"
+        )
         activity = await db.fetchrow(
             get_activity_sql,
             "Activity with fake profile",
@@ -116,4 +125,3 @@ class TestInsertActivity:
         assert activity is not None
         # Profile ID should be NULL since profile doesn't exist
         assert activity["profile_id"] is None
-

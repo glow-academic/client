@@ -8,9 +8,7 @@ from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_complete_impl,
     _simulation_tool_call_start_impl,
     _simulation_tool_call_token_impl,
-    simulation_tool_call_complete_internal,
     simulation_tool_call_start_internal,
-    simulation_tool_call_token_internal,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -171,4 +169,3 @@ async def test_simulation_tool_call_start_missing_tool(
 
     # Assert - verify None returned (tool not found)
     assert tool_call_id is None
-

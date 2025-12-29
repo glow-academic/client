@@ -53,7 +53,10 @@ async def test_regenerate_scenario_success(
     error_events = mock_sio.get_events("scenarios_regeneration_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "previous run" in error_events[0]["message"].lower() or "no" in error_events[0]["message"].lower()
+    assert (
+        "previous run" in error_events[0]["message"].lower()
+        or "no" in error_events[0]["message"].lower()
+    )
 
 
 async def test_regenerate_scenario_missing_profile_id(
@@ -107,4 +110,3 @@ async def test_regenerate_scenario_missing_scenario_id(
     error_events = mock_sio.get_events("scenarios_regeneration_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

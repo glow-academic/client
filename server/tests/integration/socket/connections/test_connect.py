@@ -2,9 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.v3.connect import connect
 from tests.integration.socket.conftest import MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
+
+from app.socket.v3.connect import connect
 
 pytestmark = pytest.mark.asyncio
 

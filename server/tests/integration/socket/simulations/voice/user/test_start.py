@@ -47,4 +47,3 @@ async def test_simulation_voice_user_start_missing_chat_id(
 
     # Assert - handler may complete without error (chat_id is optional)
     # Verify no events emitted if chat_id is missing
-

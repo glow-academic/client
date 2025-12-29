@@ -31,4 +31,3 @@ client_router.include_router(leave_client_router)
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
 server_router.include_router(leave_server_router)
-

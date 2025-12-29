@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
-
 from utils.sql_helper import load_sql
 
 

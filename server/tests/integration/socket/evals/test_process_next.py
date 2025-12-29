@@ -36,7 +36,9 @@ async def test_eval_process_next_success(
     )
 
     # Create eval with runs
-    sql_create_eval = load_sql("tests/sql/integration/socket/create_test_eval_with_runs.sql")
+    sql_create_eval = load_sql(
+        "tests/sql/integration/socket/create_test_eval_with_runs.sql"
+    )
     eval_row = await db.fetchrow(sql_create_eval, agent_id, eval_agent_id, rubric_id)
     assert eval_row is not None
     eval_id = eval_row["eval_id"]
@@ -164,4 +166,3 @@ async def test_eval_process_next_missing_required_fields(
     error_events = mock_sio.get_events("evals_process_next_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

@@ -591,4 +591,3 @@ def get_redirect_path_for_role(role: ProfileRole) -> str:
         "superadmin": "/analytics/dashboard",  # Superadmins start at analytics dashboard
     }
     return redirect_map.get(role, "/home")  # Default fallback to home
-

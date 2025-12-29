@@ -1,10 +1,22 @@
-"""V3 API router - DHH-style architecture with SQL files and utility functions."""
+"""V3 API router - DHH-style architecture with SQL files and utility functions.
+
+This router aggregates all API v3 endpoints following the agents-style architecture pattern:
+- PostgreSQL functions with RETURNS TABLE instead of raw SQL queries
+- Composite types in the `types` schema for strongly typed nested structures
+- Auto-generated Pydantic models from SQL introspection
+- Single SQL file per route with idempotent drop/recreate pattern
+
+See `server/app/api/v3/STANDARDS.md` for complete API standards.
+See `AGENTS.md` for overall architecture principles.
+"""
 # mypy: ignore-errors
 
 # ============================================================================
 # Batch F: Supporting Resources
 # ============================================================================
 from fastapi import APIRouter, Depends
+from utils.profile.get_effective_profile_id import get_effective_profile_id
+from utils.profile.get_profile_id import get_profile_id
 
 from app.api.v3.activity import router as activity_router
 from app.api.v3.agents import router as agents_router
@@ -27,6 +39,7 @@ from app.api.v3.documents import router as documents_router
 from app.api.v3.evals import router as evals_router
 from app.api.v3.feedback import router as feedback_router
 from app.api.v3.fields import router as fields_router
+from app.api.v3.health import router as health_router
 
 # ============================================================================
 # Batch G: Utility Routes
@@ -34,7 +47,6 @@ from app.api.v3.fields import router as fields_router
 from app.api.v3.home import router as home_router
 from app.api.v3.keys import router as keys_router
 from app.api.v3.leaderboard import router as leaderboard_router
-from app.api.v3.health import router as health_router
 from app.api.v3.models import router as models_router
 from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
@@ -58,8 +70,6 @@ from app.api.v3.settings import router as settings_router
 from app.api.v3.simulations import router as simulations_router
 from app.api.v3.staff import router as staff_router
 from app.api.v3.uploads import router as uploads_router
-from utils.profile.get_effective_profile_id import get_effective_profile_id
-from utils.profile.get_profile_id import get_profile_id
 
 # ============================================================================
 # Main Router Configuration

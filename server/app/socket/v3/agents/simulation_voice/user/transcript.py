@@ -6,6 +6,8 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 from app.main import (
     get_pool,
@@ -16,8 +18,6 @@ from app.main import (
 from app.socket.v3.simulations.streaming.message import (
     _simulation_message_start_impl,
 )
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -142,7 +142,9 @@ async def _simulation_voice_user_transcript_impl(
                     normalized_chat_id in timestamps_dict
                     and data.item_id in timestamps_dict[normalized_chat_id]
                 ):
-                    speech_started_at = timestamps_dict[normalized_chat_id][data.item_id]
+                    speech_started_at = timestamps_dict[normalized_chat_id][
+                        data.item_id
+                    ]
                     # Clean up the timestamp entry after use
                     del timestamps_dict[normalized_chat_id][data.item_id]
                     # Clean up empty chat_id entry if no more timestamps
@@ -188,7 +190,9 @@ async def _simulation_voice_user_transcript_impl(
             user_message_id = uuid.UUID(db_message_id_str)
 
             # Get created_at for emission
-            sql_get_created_at = load_sql("app/sql/v3/messages/get_message_created_at.sql")
+            sql_get_created_at = load_sql(
+                "app/sql/v3/messages/get_message_created_at.sql"
+            )
             message_row = await conn.fetchrow(sql_get_created_at, user_message_id)
             created_at = message_row["created_at"] if message_row else None
 

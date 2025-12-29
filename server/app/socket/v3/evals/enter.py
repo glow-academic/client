@@ -3,12 +3,13 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import get_pool, sio
 
 logger = get_logger(__name__)
 
@@ -173,4 +174,3 @@ async def eval_enter_response_api(
 async def eval_enter_error_api(request: EvalEnterErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while updating test created_at timestamp."""
     return {"success": True}
-

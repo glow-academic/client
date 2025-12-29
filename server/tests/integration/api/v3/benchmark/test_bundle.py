@@ -132,4 +132,3 @@ async def test_get_benchmark_bundle_with_filters(
     assert "attempts" in data
     assert isinstance(data["evals"], list)
     assert isinstance(data["attempts"], list)
-

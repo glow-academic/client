@@ -6,6 +6,7 @@ import uuid
 from typing import Any
 
 import pytest
+
 from app.infra.v3.websocket.emit_hint_progress import emit_hint_progress
 
 

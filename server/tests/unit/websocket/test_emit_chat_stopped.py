@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+
 from app.infra.v3.websocket.emit_chat_stopped import emit_chat_stopped
 
 

@@ -5,10 +5,10 @@ from typing import Any
 import asyncpg  # type: ignore
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -81,9 +81,7 @@ async def _simulation_tool_call_start_impl(
     try:
         async with conn.transaction():
             # Look up tool_id by tool_name
-            sql_get_tool_id = load_sql(
-                "app/sql/v3/tool_calls/get_tool_id_by_name.sql"
-            )
+            sql_get_tool_id = load_sql("app/sql/v3/tool_calls/get_tool_id_by_name.sql")
             row = await conn.fetchrow(sql_get_tool_id, validated.tool_name)
             tool_id = row["id"] if row else None
             if not tool_id:
@@ -167,7 +165,9 @@ async def _simulation_tool_call_token_impl(
 
     try:
         # Update tool call arguments in database
-        sql_update_args = load_sql("app/sql/v3/tool_calls/update_tool_call_arguments.sql")
+        sql_update_args = load_sql(
+            "app/sql/v3/tool_calls/update_tool_call_arguments.sql"
+        )
         await conn.execute(
             sql_update_args, validated.tool_call_id, validated.arguments_raw
         )

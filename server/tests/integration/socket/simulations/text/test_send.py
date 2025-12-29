@@ -23,7 +23,9 @@ async def test_simulation_text_send_success(
     department_id = await get_or_create_test_department(db)
 
     # Create complete test setup using SQL file
-    sql_setup = load_sql("tests/sql/integration/socket/create_test_simulation_attempt.sql")
+    sql_setup = load_sql(
+        "tests/sql/integration/socket/create_test_simulation_attempt.sql"
+    )
     setup_row = await db.fetchrow(sql_setup, profile_id, department_id, None)
     assert setup_row is not None
     attempt_id = setup_row["attempt_id"]
@@ -70,7 +72,10 @@ async def test_simulation_text_send_missing_chat_id(
     error_events = mock_sio.get_events("simulations_text_send_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-    assert "chat_id" in error_events[0]["message"].lower() or "invalid" in error_events[0]["message"].lower()
+    assert (
+        "chat_id" in error_events[0]["message"].lower()
+        or "invalid" in error_events[0]["message"].lower()
+    )
 
 
 async def test_simulation_text_send_missing_message(
@@ -81,7 +86,9 @@ async def test_simulation_text_send_missing_message(
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
 
-    sql_setup = load_sql("tests/sql/integration/socket/create_test_simulation_attempt.sql")
+    sql_setup = load_sql(
+        "tests/sql/integration/socket/create_test_simulation_attempt.sql"
+    )
     setup_row = await db.fetchrow(sql_setup, profile_id, department_id, None)
     assert setup_row is not None
     chat_id = setup_row["chat_id"]
@@ -123,4 +130,3 @@ async def test_simulation_text_send_invalid_chat_id(
     error_events = mock_sio.get_events("simulations_text_send_error")
     # Handler may emit error when chat is not found or during processing
     # The key is that an error is emitted, not a success
-

@@ -3,14 +3,19 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (DeleteModelApiRequest, DeleteModelApiResponse,
-                           DeleteModelSqlParams, DeleteModelSqlRow)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
+
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    DeleteModelApiRequest,
+    DeleteModelApiResponse,
+    DeleteModelSqlParams,
+    DeleteModelSqlRow,
+)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/models/delete_model_complete.sql"
@@ -72,17 +77,20 @@ async def delete_model(
             # Check usage counts
             if result.personas_usage_count and result.personas_usage_count > 0:
                 raise HTTPException(
-                    status_code=400, detail="Cannot delete model: It is in use by personas"
+                    status_code=400,
+                    detail="Cannot delete model: It is in use by personas",
                 )
 
             if result.agents_usage_count and result.agents_usage_count > 0:
                 raise HTTPException(
-                    status_code=400, detail="Cannot delete model: It is in use by agents"
+                    status_code=400,
+                    detail="Cannot delete model: It is in use by agents",
                 )
 
             if not result.deleted:
                 raise HTTPException(
-                    status_code=400, detail=f"Failed to delete model: {request.model_id}"
+                    status_code=400,
+                    detail=f"Failed to delete model: {request.model_id}",
                 )
 
             # Set audit context with data from SQL query
@@ -90,7 +98,10 @@ async def delete_model(
                 audit_set(
                     http_request,
                     actor={"name": result.actor_name, "id": profile_id},
-                    model={"name": result.name or "Unknown", "id": str(request.model_id)},
+                    model={
+                        "name": result.name or "Unknown",
+                        "id": str(request.model_id),
+                    },
                 )
 
             # Convert SQL result to API response

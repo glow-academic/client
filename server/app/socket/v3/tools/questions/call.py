@@ -6,10 +6,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_internal_sio, get_pool, sio
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -135,7 +135,9 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
     try:
         async with pool.acquire() as conn:
             scenario_id_uuid = uuid.UUID(validated.scenario_id)
-            video_id_uuid = uuid.UUID(validated.video_id) if validated.video_id else None
+            video_id_uuid = (
+                uuid.UUID(validated.video_id) if validated.video_id else None
+            )
 
             async with conn.transaction():
                 # Convert questions to JSON format expected by SQL

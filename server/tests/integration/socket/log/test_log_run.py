@@ -1,7 +1,5 @@
 """Integration tests for log_run WebSocket event."""
 
-import uuid
-
 import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
@@ -24,18 +22,25 @@ async def test_log_run_success(
     # Arrange
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
-    
+
     # Create a run first using proper SQL helper
     from utils.sql_helper import load_sql
-    
+
     # Get or create required entities
     model_id_str = await get_or_create_test_model(db)
     agent_id_str = await get_or_create_test_agent(db)
     agent_id = agent_id_str
-    
+
     sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
     run_row = await db.fetchrow(
-        sql_create_run, department_id, model_id_str, None, "agent", profile_id, None, agent_id_str
+        sql_create_run,
+        department_id,
+        model_id_str,
+        None,
+        "agent",
+        profile_id,
+        None,
+        agent_id_str,
     )
     run_id = run_row["run_id"] if run_row else None
     assert run_id is not None
@@ -55,9 +60,7 @@ async def test_log_run_success(
     await log_run(sid, data)
 
     # Assert - verify run was updated in database
-    run_row = await db.fetchrow(
-        "SELECT * FROM runs WHERE id = $1", run_id
-    )
+    run_row = await db.fetchrow("SELECT * FROM runs WHERE id = $1", run_id)
     assert run_row is not None
     assert run_row["input_tokens"] == 100
     assert run_row["output_tokens"] == 50
@@ -70,18 +73,25 @@ async def test_log_run_internal_success(
     # Arrange
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
-    
+
     # Create a run first using proper SQL helper
     from utils.sql_helper import load_sql
-    
+
     # Get or create required entities
     model_id_str = await get_or_create_test_model(db)
     agent_id_str = await get_or_create_test_agent(db)
     agent_id = agent_id_str
-    
+
     sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
     run_row = await db.fetchrow(
-        sql_create_run, department_id, model_id_str, None, "agent", profile_id, None, agent_id_str
+        sql_create_run,
+        department_id,
+        model_id_str,
+        None,
+        "agent",
+        profile_id,
+        None,
+        agent_id_str,
     )
     run_id = run_row["run_id"] if run_row else None
     assert run_id is not None
@@ -98,9 +108,7 @@ async def test_log_run_internal_success(
     await log_run_internal(data)
 
     # Assert - verify run was updated in database
-    run_row = await db.fetchrow(
-        "SELECT * FROM runs WHERE id = $1", run_id
-    )
+    run_row = await db.fetchrow("SELECT * FROM runs WHERE id = $1", run_id)
     assert run_row is not None
     assert run_row["input_tokens"] == 200
     assert run_row["output_tokens"] == 100
@@ -113,18 +121,25 @@ async def test_log_run_with_developer_messages(
     # Arrange
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
-    
+
     # Create a run first using proper SQL helper
     from utils.sql_helper import load_sql
-    
+
     # Get or create required entities
     model_id_str = await get_or_create_test_model(db)
     agent_id_str = await get_or_create_test_agent(db)
     agent_id = agent_id_str
-    
+
     sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
     run_row = await db.fetchrow(
-        sql_create_run, department_id, model_id_str, None, "agent", profile_id, None, agent_id_str
+        sql_create_run,
+        department_id,
+        model_id_str,
+        None,
+        "agent",
+        profile_id,
+        None,
+        agent_id_str,
     )
     run_id = run_row["run_id"] if run_row else None
     assert run_id is not None
@@ -195,4 +210,3 @@ async def test_log_run_missing_run_id(
 
     # Assert - should handle missing runId gracefully
     # Validation error should be logged but not raise
-

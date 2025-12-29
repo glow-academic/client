@@ -4,14 +4,15 @@ import asyncio
 import uuid
 from typing import Any, Literal
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import VIDEO_FOLDER, get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import VIDEO_FOLDER, get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

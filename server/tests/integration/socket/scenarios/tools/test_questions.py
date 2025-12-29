@@ -5,7 +5,6 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
 from app.socket.v3.scenarios.tools.questions import (
-    _scenario_tool_questions_impl,
     scenario_tool_questions,
     scenario_tool_questions_internal,
 )
@@ -116,4 +115,3 @@ async def test_scenario_tool_questions_missing_scenario_id(
     error_events = mock_sio.get_events("scenarios_tools_questions_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

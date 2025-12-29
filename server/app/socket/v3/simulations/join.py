@@ -2,12 +2,13 @@
 
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.websocket.set_active_connection import set_active_connection
-from app.main import sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.websocket.set_active_connection import set_active_connection
+from app.main import sio
 
 logger = get_logger(__name__)
 
@@ -73,9 +74,7 @@ async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:
     room_name = f"{chat_type}_{chat_id}"
     await sio.enter_room(sid, room_name)
     await set_active_connection(room_name, sid)
-    logger.info(
-        f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})"
-    )
+    logger.info(f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})")
     await simulation_joined(
         SimulationJoinedPayload(chat_id=chat_id, chat_type=chat_type), room=sid
     )

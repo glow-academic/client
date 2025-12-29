@@ -5,7 +5,6 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
 from app.socket.v3.images.complete import (
-    _image_generation_complete_impl,
     image_generation_complete,
     image_generation_complete_internal,
 )
@@ -104,4 +103,3 @@ async def test_image_generation_complete_missing_image_id(
     # Assert - verify error was emitted (validation error)
     # Handler may complete without error but not update database
     # Check that handler doesn't crash
-

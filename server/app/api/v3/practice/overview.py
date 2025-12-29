@@ -3,6 +3,12 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,11 +18,6 @@ from app.sql.types import (
     GetPracticeOverviewSqlParams,
     GetPracticeOverviewSqlRow,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.cache_key import cache_key
-from utils.cache.get_cached import get_cached
-from utils.cache.set_cached import set_cached
-from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/practice/get_practice_overview_complete.sql"
@@ -46,7 +47,7 @@ async def get_practice_overview(
     tags = ["practice"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump(mode='json')
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -79,7 +80,9 @@ async def get_practice_overview(
 
         # Convert API request to SQL params (add profile_id from header)
         # Use double star pattern: **request.model_dump()
-        params = GetPracticeOverviewSqlParams(**request.model_dump(), profile_id=profile_id_final)
+        params = GetPracticeOverviewSqlParams(
+            **request.model_dump(), profile_id=profile_id_final
+        )
         sql_params = params.to_tuple()
 
         # Disable JIT compilation for this complex query to avoid re-compilation overhead
@@ -97,15 +100,19 @@ async def get_practice_overview(
 
         # Set audit context
         if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id_final})
+            audit_set(
+                http_request, actor={"name": result.actor_name, "id": profile_id_final}
+            )
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
-        api_response = GetPracticeOverviewApiResponse.model_validate(result.model_dump())
+        api_response = GetPracticeOverviewApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": api_response.model_dump(mode='json')},
+            {"data": api_response.model_dump(mode="json")},
             ttl=300,
             tags=tags,
         )

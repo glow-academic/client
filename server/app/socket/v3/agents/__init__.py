@@ -63,4 +63,3 @@ server_router.include_router(classify_server_router)
 server_router.include_router(hint_server_router)
 server_router.include_router(grade_text_server_router)
 server_router.include_router(grade_voice_server_router)
-

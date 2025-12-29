@@ -3,12 +3,13 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import get_pool, sio
 
 logger = get_logger(__name__)
 
@@ -97,7 +98,9 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
 
         async with pool.acquire() as conn:
             # Load and execute SQL query
-            sql_query = load_sql("app/sql/v3/attempts/update_chat_created_at_complete.sql")
+            sql_query = load_sql(
+                "app/sql/v3/attempts/update_chat_created_at_complete.sql"
+            )
             result = await conn.fetchrow(sql_query, created_at_dt, chat_id)
 
             if result and result.get("chat_id"):

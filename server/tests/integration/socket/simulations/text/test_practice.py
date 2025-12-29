@@ -88,4 +88,3 @@ async def test_simulation_text_practice_missing_profile_id(
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("simulations_text_practice_error")
     assert len(error_events) >= 1
-

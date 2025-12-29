@@ -7,8 +7,6 @@ from tests.integration.socket.helpers import get_or_create_test_profile
 
 from app.socket.v3.simulations.streaming.message import (
     simulation_message_start_internal,
-    simulation_message_token_internal,
-    simulation_message_complete_internal,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -54,4 +52,3 @@ async def test_simulation_message_start_internal(
         "response",
     )
     assert message_row is not None
-

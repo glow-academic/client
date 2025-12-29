@@ -7,6 +7,8 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 from app.main import (
     _voice_message_ids,
@@ -23,8 +25,6 @@ from app.socket.v3.simulations.streaming.message import (
 from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_complete_impl,
 )
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -240,10 +240,12 @@ async def _simulation_voice_assistant_done_impl(
                 # Look up persona_id from persona name
                 # Inline find_persona_by_name logic
                 def sanitize_persona_name(name: str) -> str:
-                    sanitized = "".join(c if c.isalnum() or c == " " else "" for c in name)
+                    sanitized = "".join(
+                        c if c.isalnum() or c == " " else "" for c in name
+                    )
                     sanitized = sanitized.replace(" ", "_").lower()
                     return sanitized or "persona"
-                
+
                 def find_persona_by_name_inline(
                     persona_name: str, personas: list[dict[str, Any]]
                 ) -> tuple[uuid.UUID, str] | None:
@@ -255,10 +257,15 @@ async def _simulation_voice_assistant_done_impl(
                         persona_id_str = persona.get("persona_id") or persona.get("id")
                         if not persona_id_str:
                             continue
-                        persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                        persona_display_name = persona.get(
+                            "persona_name"
+                        ) or persona.get("name", "")
                         if not persona_display_name:
                             continue
-                        if persona_name_normalized.lower() == persona_display_name.lower():
+                        if (
+                            persona_name_normalized.lower()
+                            == persona_display_name.lower()
+                        ):
                             try:
                                 persona_id = uuid.UUID(str(persona_id_str))
                                 return (persona_id, persona_display_name)
@@ -275,18 +282,25 @@ async def _simulation_voice_assistant_done_impl(
                         persona_id_str = persona.get("persona_id") or persona.get("id")
                         if not persona_id_str:
                             continue
-                        persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                        persona_display_name = persona.get(
+                            "persona_name"
+                        ) or persona.get("name", "")
                         if not persona_display_name:
                             continue
-                        if persona_name_normalized.lower() in persona_display_name.lower():
+                        if (
+                            persona_name_normalized.lower()
+                            in persona_display_name.lower()
+                        ):
                             try:
                                 persona_id = uuid.UUID(str(persona_id_str))
                                 return (persona_id, persona_display_name)
                             except (ValueError, TypeError):
                                 continue
                     return None
-                
-                persona_match = find_persona_by_name_inline(persona_name_normalized, personas)
+
+                persona_match = find_persona_by_name_inline(
+                    persona_name_normalized, personas
+                )
 
                 if not persona_match:
                     persona_names = [

@@ -6,6 +6,10 @@ from typing import Any, cast
 
 from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import Field
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
@@ -18,26 +22,28 @@ from app.sql.types import (
     GetRubricRegenerationRunContextAndCreateRunApiRequest,
     GetRubricRegenerationRunContextAndCreateRunSqlParams,
     GetRubricRegenerationRunContextAndCreateRunSqlRow,
-    IRubricRegenRunContextCreateRunV3Msg, IRubricRegenRunContextCreateRunV3Sg,
-    IRubricRegenRunContextCreateRunV3Std,
     IUpdateStandardDescriptionsV3Description,
-    RubricGenerationCompleteApiRequest, RubricGenerationErrorApiRequest,
-    RubricGenerationErrorSqlRow, RubricGenerationProgressApiRequest,
-    UpdateStandardDescriptionsApiRequest)
-from fastapi import APIRouter
-from pydantic import Field
-from utils.sql_helper import execute_sql_typed
+    RubricGenerationCompleteApiRequest,
+    RubricGenerationErrorApiRequest,
+    RubricGenerationErrorSqlRow,
+    RubricGenerationProgressApiRequest,
+    UpdateStandardDescriptionsApiRequest,
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql"
+SQL_PATH = (
+    "app/sql/v3/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql"
+)
 
 internal_sio = get_internal_sio()
 
 
 async def _rubric_regenerate_impl(
-    sid: str, data: GetRubricRegenerationRunContextAndCreateRunApiRequest, profile_id: uuid.UUID
+    sid: str,
+    data: GetRubricRegenerationRunContextAndCreateRunApiRequest,
+    profile_id: uuid.UUID,
 ) -> None:
     """Handle rubric regeneration requests via WebSocket."""
     trace_id: str | None = None
@@ -115,7 +121,9 @@ async def _rubric_regenerate_impl(
                 return
 
             # result.group_id and result.trace_id come from groups table
-            trace_id = result.trace_id or ""  # From groups.trace_id (never NULL due to DEFAULT)
+            trace_id = (
+                result.trace_id or ""
+            )  # From groups.trace_id (never NULL due to DEFAULT)
             if not result.group_id:
                 await emit_to_internal(
                     "rubric_error",
@@ -213,7 +221,9 @@ async def _rubric_regenerate_impl(
                 # Emit to internal bus with type-safe payload
                 # rubric_id is required for UpdateStandardDescriptionsApiRequest
                 if not rubric_id:
-                    raise ValueError("rubric_id is required for updating standard descriptions")
+                    raise ValueError(
+                        "rubric_id is required for updating standard descriptions"
+                    )
                 # Type narrowing: rubric_id is guaranteed to be UUID here
                 rubric_id_uuid: uuid.UUID = rubric_id
                 payload = UpdateStandardDescriptionsApiRequest(
@@ -275,16 +285,15 @@ Generate descriptions for ALL combinations of standard groups and standards."""
 
             # Append user instructions on top (most recent instruction goes last)
             if user_instructions and user_instructions.strip():
-                input_items.append({
-                    "role": "user",
-                    "content": f"{rubric_context_text}\n\nUser Instructions: {user_instructions}"
-                })
+                input_items.append(
+                    {
+                        "role": "user",
+                        "content": f"{rubric_context_text}\n\nUser Instructions: {user_instructions}",
+                    }
+                )
             else:
                 # If no instructions, just add the rubric context
-                input_items.append({
-                    "role": "user",
-                    "content": rubric_context_text
-                })
+                input_items.append({"role": "user", "content": rubric_context_text})
 
             # Rate limit validation and run creation are now handled in SQL
             # (get_rubric_regeneration_run_context_and_create_run.sql) - both happen atomically
@@ -296,7 +305,9 @@ Generate descriptions for ALL combinations of standard groups and standards."""
             with trace(
                 "Rubric Agent",
                 trace_id=trace_id,  # From groups table
-                group_id=str(rubric_id) if rubric_id else None,  # Resource ID, not database group_id
+                group_id=str(rubric_id)
+                if rubric_id
+                else None,  # Resource ID, not database group_id
             ):
                 run_result = await Runner.run(
                     rubric_agent.agent(),
@@ -407,4 +418,3 @@ register_client_endpoint(
     GetRubricRegenerationRunContextAndCreateRunApiRequest,
     "Regenerate rubric descriptions using AI",
 )
-

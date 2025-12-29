@@ -1,22 +1,24 @@
 """Document template rendering endpoint - v3 API following DHH principles."""
 
-import json
 import os
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request
+from utils.logging.db_logger import get_logger
+from utils.settings.theme import ThemePrimitives, derive_theme_tokens
+from utils.sql_helper import execute_sql_typed
+
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.infra.v3.templates.jinja_renderer import render_template
 from app.main import UPLOAD_FOLDER, get_db
-from app.sql.types import (RenderTemplateApiRequest, RenderTemplateApiResponse,
-                           RenderTemplateSqlParams, RenderTemplateSqlRow,
-                           load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.logging.db_logger import get_logger
-from utils.settings.theme import (ThemePrimitives, ThemeTokens,
-                                  derive_theme_tokens)
-from utils.sql_helper import execute_sql_typed
+from app.sql.types import (
+    RenderTemplateApiRequest,
+    RenderTemplateSqlParams,
+    RenderTemplateSqlRow,
+    load_sql_query,
+)
 
 logger = get_logger(__name__)
 
@@ -252,8 +254,10 @@ async def render_document_template(
         # Get template args from request body (not in SQL params, so access from raw body)
         # templateArgs is sent by client but not in the API request model since SQL doesn't use it
         request_body = await http_request.json()
-        template_args_from_request = request_body.get("templateArgs") or request_body.get("template_args") or {}
-        
+        template_args_from_request = (
+            request_body.get("templateArgs") or request_body.get("template_args") or {}
+        )
+
         # Merge placeholders as defaults with request args
         # This ensures placeholders are always present in the context
         merged_args = deep_merge_with_defaults(
@@ -490,7 +494,7 @@ async def render_document_template(
         # a response dict with all fields from result plus rendered_html
         response_dict = result.model_dump()
         response_dict["rendered_html"] = rendered_html
-        
+
         # Return dict - FastAPI will serialize it
         # We can't use model_validate because rendered_html isn't in the generated model
         return response_dict

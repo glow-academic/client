@@ -5,7 +5,6 @@ import logging
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from utils.sql_helper import load_sql
 
 logger = logging.getLogger(__name__)
@@ -197,4 +196,3 @@ def cancel_eval_tasks(eval_id: str) -> None:
     ]
     for key in keys_to_remove:
         _active_eval_tasks.pop(key, None)
-

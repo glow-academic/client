@@ -2,8 +2,9 @@
 
 import asyncpg
 import pytest
-from app.infra.v3.activity.profile_exists import profile_exists
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.profile_exists import profile_exists
 
 pytestmark = pytest.mark.asyncio
 
@@ -11,12 +12,12 @@ pytestmark = pytest.mark.asyncio
 class TestProfileExists:
     """Tests for profile_exists function."""
 
-    async def test_profile_exists_true(
-        self, db: asyncpg.Connection
-    ) -> None:
+    async def test_profile_exists_true(self, db: asyncpg.Connection) -> None:
         """Test profile_exists returns True for existing profile."""
         # Arrange
-        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        insert_profile_sql = load_sql(
+            "tests/sql/integration/infra/activity/insert_test_profile.sql"
+        )
         profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
@@ -26,9 +27,7 @@ class TestProfileExists:
         # Assert
         assert result is True
 
-    async def test_profile_exists_false(
-        self, db: asyncpg.Connection
-    ) -> None:
+    async def test_profile_exists_false(self, db: asyncpg.Connection) -> None:
         """Test profile_exists returns False for nonexistent profile."""
         # Arrange
         fake_profile_id = "00000000-0000-0000-0000-000000000000"
@@ -39,9 +38,7 @@ class TestProfileExists:
         # Assert
         assert result is False
 
-    async def test_profile_exists_invalid_uuid(
-        self, db: asyncpg.Connection
-    ) -> None:
+    async def test_profile_exists_invalid_uuid(self, db: asyncpg.Connection) -> None:
         """Test profile_exists returns False for invalid UUID."""
         # Arrange
         invalid_uuid = "not-a-valid-uuid"
@@ -51,4 +48,3 @@ class TestProfileExists:
 
         # Assert
         assert result is False
-

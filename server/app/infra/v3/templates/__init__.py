@@ -1,2 +1,1 @@
 """Template rendering utilities."""
-

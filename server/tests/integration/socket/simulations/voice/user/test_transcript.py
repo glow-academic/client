@@ -4,7 +4,9 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.simulations.voice.user.transcript import simulation_voice_user_transcript
+from app.socket.v3.simulations.voice.user.transcript import (
+    simulation_voice_user_transcript,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -46,4 +48,3 @@ async def test_simulation_voice_user_transcript_missing_chat_id(
     await simulation_voice_user_transcript(sid, data)
 
     # Assert - handler may complete without error
-

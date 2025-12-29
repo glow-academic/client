@@ -92,4 +92,3 @@ async def test_simulation_leave_missing_chat_id(
 
     # Assert - verify handler completes (chat_id is optional)
     # Handler may not leave room if chat_id is empty
-

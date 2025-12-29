@@ -6,9 +6,9 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
 
 from app.main import get_internal_sio, get_pool, sio
-from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -116,7 +116,9 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
 
             async with image_tool_module._pending_video_generations_lock:
                 # Check if this scenario_id was already pending (meaning images just completed)
-                was_pending = pending_key in image_tool_module._pending_video_generations
+                was_pending = (
+                    pending_key in image_tool_module._pending_video_generations
+                )
 
                 if was_pending:
                     # Images are ready - proceed with video generation
@@ -176,7 +178,9 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
 
                 async with conn.transaction():
                     # Create video
-                    create_video_sql = load_sql("app/sql/v3/videos/create_video_basic.sql")
+                    create_video_sql = load_sql(
+                        "app/sql/v3/videos/create_video_basic.sql"
+                    )
                     video_result = await conn.fetchrow(
                         create_video_sql,
                         "Generated Video",  # name (will be updated after generation)

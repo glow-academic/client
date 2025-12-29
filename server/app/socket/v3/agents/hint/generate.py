@@ -2,20 +2,20 @@
 
 import json
 import uuid
-from collections.abc import Awaitable, Callable
 from typing import Any
 
 from agents import Runner, Tool, function_tool, trace
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
+
 from app.infra.v3.agents.utils.build_hint_agent import build_hint_agent
 from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.documents.format_document_info import format_document_info
 from app.main import get_internal_sio, get_pool, sio
-from fastapi import APIRouter
-from pydantic import BaseModel, Field, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -262,12 +262,17 @@ async def _generate_hints_impl(
 
             # Build conversation history (inlined from get_simulation_conversation_history)
             from datetime import datetime
+
             conversation_history: list[TResponseInputItem] = []
             message_id_map: dict[str, int] = {}
             message_number = 1
 
             # Filter out error messages and make a list of all items
-            items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
+            items = [
+                msg
+                for msg in messages
+                if not msg.get("content", "").startswith("Error:")
+            ]
 
             # sort items by created_at
             items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
@@ -310,7 +315,9 @@ async def _generate_hints_impl(
                     }
                     conversation_history.append(user_message_item)
                 # Check if this is an assistant message (type="response" or role="assistant")
-                elif (msg_type == "response" or msg_role == "assistant") and msg_content != "":
+                elif (
+                    msg_type == "response" or msg_role == "assistant"
+                ) and msg_content != "":
                     # Collect response messages to find the latest one
                     current_response_messages.append(item)
 
@@ -334,7 +341,7 @@ async def _generate_hints_impl(
             # Add developer message at the end to explicitly request hint generation
             developer_message: TResponseInputItem = {
                 "role": "developer",
-                "content": "Now please generate the hints based on the previous conversation. You must call all three hint tools (provide_hint_1, provide_hint_2, and provide_hint_3) to provide short, concise guidance for the GTA.",
+                "content": "Now please generate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student (e.g., content explanation, emotional support, pedagogical approach).",
             }
             input_items.append(developer_message)
 
@@ -350,37 +357,33 @@ async def _generate_hints_impl(
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
 
-            # Create hint tools inline
+            # Create single hint tool (can be called multiple times)
             # Use closure variables to collect hints directly (no storage needed)
-            hint_results: dict[str, str] = {}
-            
+            hint_results: list[str] = []
+
             hint_tools: list[Tool] = []
-            for i in range(1, 4):  # 1, 2, 3
-                tool_name = f"provide_hint_{i}"
-                hint_config = tool_config_map.get(tool_name)
-                if hint_config:
-                    hint_desc = hint_config.get("argument_descriptions", {}).get(
-                        "hint",
-                        f"A concise, practical teaching strategy or communication tip for the GTA. This is hint #{i} of 3 required hints.",
-                    )
+            hint_config = tool_config_map.get("create_hint")
+            if hint_config:
+                hint_desc = hint_config.get("argument_descriptions", {}).get(
+                    "hint",
+                    "A concise, practical teaching strategy or communication tip for the GTA",
+                )
+            else:
+                hint_desc = "A concise, practical teaching strategy or communication tip for the GTA"
+
+            async def create_hint(
+                hint: str = Field(description=hint_desc),
+            ) -> str:
+                """Create a strategic hint for the GTA. Call this tool multiple times to create multiple hints."""
+                hint_results.append(hint)
+                current_count = len(hint_results)
+                logger.info(f"✓ Created hint {current_count}: {hint[:80]}...")
+                if current_count < 3:
+                    return f"Hint {current_count} created successfully. Continue until at least 3 hints are created."
                 else:
-                    hint_desc = f"A concise, practical teaching strategy or communication tip for the GTA. This is hint #{i} of 3 required hints."
+                    return f"Hint {current_count} created successfully. You have created {current_count} hints."
 
-                # Create function with proper closure capture
-                def make_hint_function(
-                    hint_number: int, description: str
-                ) -> Callable[[str], Awaitable[str]]:
-                    async def provide_hint(hint: str = Field(description=description)) -> str:
-                        """Provide a strategic hint for the GTA."""
-                        hint_results[f"hint_{hint_number}"] = hint
-                        logger.info(f"✓ Hint {hint_number} recorded: {hint[:80]}...")
-                        return f"Hint {hint_number} recorded successfully. Continue until all 3 hints are provided."
-
-                    provide_hint.__name__ = tool_name
-                    return provide_hint
-
-                provide_hint_func = make_hint_function(i, hint_desc)
-                hint_tools.append(function_tool(provide_hint_func))
+            hint_tools.append(function_tool(create_hint))
 
             # Add debug_info tool
             from app.infra.v3.debug.debug_info import debug_info
@@ -404,7 +407,7 @@ async def _generate_hints_impl(
             # This handles token updates and message logging in background
             usage = result.context_wrapper.usage
             assistant_output = getattr(result, "final_output", None) or ""
-            hint_dev_content = "Now please generate the hints based on the previous conversation. You must call all three hint tools (provide_hint_1, provide_hint_2, and provide_hint_3) to provide short, concise guidance for the GTA."
+            hint_dev_content = "Now please generate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student."
             # Create input_items with developer message for logging
             input_items_with_dev = input_items + [
                 {"role": "developer", "content": hint_dev_content}
@@ -425,24 +428,18 @@ async def _generate_hints_impl(
 
             logger.info("Hint agent completed successfully")
 
-            # Extract hints from closure variables
-            hint_1 = hint_results.get("hint_1", "")
-            hint_2 = hint_results.get("hint_2", "")
-            hint_3 = hint_results.get("hint_3", "")
-
-            # Log what was generated
-            hints_generated = sum([bool(hint_1), bool(hint_2), bool(hint_3)])
-            logger.info(f"Generated {hints_generated}/3 hints")
+            # Extract hints from closure variables (now a list)
+            hints_generated = len(hint_results)
+            logger.info(f"Generated {hints_generated} hints")
 
             if hints_generated < 3:
                 logger.warning(
                     f"Not all hints were generated for message {message_id}. "
-                    f"Got: hint_1={bool(hint_1)}, hint_2={bool(hint_2)}, hint_3={bool(hint_3)}"
+                    f"Got {hints_generated} hints, expected at least 3"
                 )
 
             # Emit internal event to create hints (separate event for database operations)
-            hints_list = [hint_1, hint_2, hint_3]
-            non_empty_hints = [h for h in hints_list if h and h.strip()]
+            non_empty_hints = [h for h in hint_results if h and h.strip()]
 
             if non_empty_hints:
                 await internal_sio.emit(
@@ -536,4 +533,3 @@ async def hint_generation_progress_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Hint generation progress update."""
     return {"success": True}
-

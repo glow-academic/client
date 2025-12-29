@@ -2,14 +2,14 @@
 
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_internal_sio, get_pool, sio
-from app.socket.v3.tools.image.call import (ImageToolCompletePayload,
-                                                 image_tool_complete)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import get_internal_sio, get_pool, sio
+from app.socket.v3.tools.image.call import ImageToolCompletePayload, image_tool_complete
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

@@ -2,11 +2,12 @@
 
 from typing import Any
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import _voice_message_ids, _voice_message_ids_lock, _voice_sessions, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import _voice_message_ids, _voice_message_ids_lock, _voice_sessions, sio
 
 logger = get_logger(__name__)
 
