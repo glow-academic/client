@@ -12,7 +12,9 @@ interface BreadcrumbItem {
 
 // Helper function to determine if a segment should be dropped (single digit or single letter)
 const shouldDropSegment = (segment: string): boolean => {
-  return /^[a-z]$/.test(segment); // Single letter segments like 'c', 'a', 's', 'u', 'r', 'e'
+  return (
+    /^[a-z]$/.test(segment) || /^\d+$/.test(segment)
+  ); // Single letter segments like 'c', 'a', 's', 'u', 'r', 'e' or numeric IDs
 };
 
 // Helper function to get section from path segments

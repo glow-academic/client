@@ -67,6 +67,13 @@ async def _eval_join_impl(sid: str, data: EvalJoinPayload) -> None:
             )
         except Exception as log_error:
             logger.warning(f"Error logging eval join activity: {log_error}")
+    else:
+        await eval_join_error(
+            EvalJoinErrorPayload(
+                success=False, message="Missing attempt_id for eval join"
+            ),
+            room=sid,
+        )
 
 
 @sio.event  # type: ignore

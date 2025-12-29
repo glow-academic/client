@@ -49,7 +49,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
     agent_id = data.agent_id
     department_id = data.department_id
     profile_id = data.profile_id
-    room = data.room
+    room = data.room or sid
 
     pool = get_pool()
     if not pool:
@@ -126,7 +126,11 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
             # Emit progress event
             await _emit_image_progress(
-                image_id, room, "generating", "Generating image..."
+                image_id,
+                room,
+                "generating",
+                "Generating image...",
+                trace_id=data.trace_id,
             )
 
             # Generate image using litellm
@@ -231,7 +235,9 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                         f"Response: {truncated_response}"
                     )
                     logger.error(error_msg)
-                    await _emit_image_error(image_id, room, error_msg)
+                    await _emit_image_error(
+                        image_id, room, error_msg, trace_id=data.trace_id
+                    )
                     return
 
                 # Download image if URL provided
@@ -259,7 +265,9 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                             f"Exception type: {type(download_error).__name__}"
                         )
                         logger.error(error_msg, exc_info=True)
-                        await _emit_image_error(image_id, room, error_msg)
+                        await _emit_image_error(
+                            image_id, room, error_msg, trace_id=data.trace_id
+                        )
                         return
 
                 if not image_bytes:
@@ -268,7 +276,9 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                         f"image_url={image_url}, image_bytes={image_bytes}"
                     )
                     logger.error(error_msg)
-                    await _emit_image_error(image_id, room, error_msg)
+                    await _emit_image_error(
+                        image_id, room, error_msg, trace_id=data.trace_id
+                    )
                     return
 
             except Exception as e:
@@ -277,7 +287,9 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     f"Exception type: {type(e).__name__}"
                 )
                 logger.error(error_msg, exc_info=True)
-                await _emit_image_error(image_id, room, error_msg)
+                await _emit_image_error(
+                    image_id, room, error_msg, trace_id=data.trace_id
+                )
                 return
 
             # Determine file extension and mime type
@@ -337,7 +349,9 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     f"Exception type: {type(write_error).__name__}"
                 )
                 logger.error(error_msg, exc_info=True)
-                await _emit_image_error(image_id, room, error_msg)
+                await _emit_image_error(
+                    image_id, room, error_msg, trace_id=data.trace_id
+                )
                 return
 
             file_size = len(image_bytes)
@@ -383,7 +397,9 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             f"Error in image generation for {image_id}: {e}",
             exc_info=True,
         )
-        await _emit_image_error(image_id, room, f"Unexpected error: {str(e)}")
+        await _emit_image_error(
+            image_id, room, f"Unexpected error: {str(e)}", trace_id=data.trace_id
+        )
 
 
 async def _emit_image_progress(
@@ -391,24 +407,38 @@ async def _emit_image_progress(
     room: str | None,
     progress_type: str,
     message: str | None = None,
+    trace_id: str | None = None,
 ) -> None:
     """Emit WebSocket event for image generation progress."""
-    from app.socket.v3.scenarios.generate import (
-        ScenarioImageGenerationProgressPayload,
-        scenario_image_generation_progress,
-    )
-
     if not room:
         logger.warning(
             f"No room specified for image {image_id}, cannot emit WebSocket event"
         )
         return
 
+    if not trace_id:
+        await sio.emit(
+            "images_generation_progress",
+            {
+                "type": progress_type,
+                "message": message,
+                "image_id": image_id,
+            },
+            room=room,
+        )
+        return
+
+    from app.socket.v3.scenarios.generate import (
+        ScenarioImageGenerationProgressPayload,
+        scenario_image_generation_progress,
+    )
+
     await scenario_image_generation_progress(
         ScenarioImageGenerationProgressPayload(
             type=progress_type,
             message=message,
             image_id=image_id,
+            trace_id=trace_id,
         ),
         room=room,
     )
@@ -418,13 +448,9 @@ async def _emit_image_error(
     image_id: str,
     room: str | None,
     error_message: str,
+    trace_id: str | None = None,
 ) -> None:
     """Emit WebSocket event for image generation error."""
-    from app.socket.v3.scenarios.generate import (
-        ScenarioImageGenerationErrorPayload,
-        scenario_image_generation_error,
-    )
-
     if not room:
         logger.warning(
             f"No room specified for image {image_id}, cannot emit WebSocket event"
@@ -441,11 +467,29 @@ async def _emit_image_error(
         except Exception as e:
             logger.error(f"Failed to update image record on error: {e}")
 
+    if not trace_id:
+        await sio.emit(
+            "images_generation_error",
+            {
+                "success": False,
+                "image_id": image_id,
+                "message": error_message,
+            },
+            room=room,
+        )
+        return
+
+    from app.socket.v3.scenarios.generate import (
+        ScenarioImageGenerationErrorPayload,
+        scenario_image_generation_error,
+    )
+
     await scenario_image_generation_error(
         ScenarioImageGenerationErrorPayload(
             success=False,
             image_id=image_id,
             message=error_message,
+            trace_id=trace_id,
         ),
         room=room,
     )

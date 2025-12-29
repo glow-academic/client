@@ -130,9 +130,8 @@ export function ScenarioBasicInfoSection({
   const filteredScenarioAgentIds =
     validAgentIds?.filter((id) => {
       const agent = agentMapping[id];
-      const agentRole = agent?.roles?.[0];
       // Include only agents with 'scenario' role
-      return agentRole === "scenario";
+      return agent?.roles?.includes("scenario");
     }) || [];
 
   const imageAgentIds =

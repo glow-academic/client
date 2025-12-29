@@ -17973,6 +17973,63 @@
         ]
       }
     },
+    "/socket/v3/server/simulations/voice/user/start_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Voice User Start Error Api",
+        "description": "Server-to-client event: Error while starting user speech in voice simulation.",
+        "operationId": "simulation_voice_user_start_error_api_socket_v3_server_simulations_voice_user_start_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserStartErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Start Error Api Socket V3 Server Simulations Voice User Start Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v3/server/simulations/voice/user/delta": {
       "post": {
         "tags": [
@@ -18006,6 +18063,63 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Voice User Delta Server Api Socket V3 Server Simulations Voice User Delta Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/voice/user/delta_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Voice User Delta Error Api",
+        "description": "Server-to-client event: Error while handling user speech delta.",
+        "operationId": "simulation_voice_user_delta_error_api_socket_v3_server_simulations_voice_user_delta_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserDeltaErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Delta Error Api Socket V3 Server Simulations Voice User Delta Error Post"
                 }
               }
             }
@@ -18405,6 +18519,63 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Voice Assistant Interrupted Server Api Socket V3 Server Simulations Voice Assistant Interrupted Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/voice/assistant/interrupted_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Voice Assistant Interrupted Error Api",
+        "description": "Server-to-client event: Error while handling assistant interruption.",
+        "operationId": "simulation_voice_assistant_interrupted_error_api_socket_v3_server_simulations_voice_assistant_interrupted_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceInterruptedErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Assistant Interrupted Error Api Socket V3 Server Simulations Voice Assistant Interrupted Error Post"
                 }
               }
             }
@@ -21402,28 +21573,11 @@
         }
       }
     },
-    "/metrics": {
+    "/metrics/snapshot": {
       "post": {
         "summary": "Metrics Snapshot",
         "description": "Trigger metrics snapshot to database.\n\nCalled by notify service to log metrics snapshot.\nNo leader election needed since notify service is single instance.",
-        "operationId": "metrics_snapshot_metrics_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/init": {
-      "post": {
-        "summary": "Init System",
-        "description": "Initialize system - triggers Keycloak sync for identity providers.\n\nThis endpoint performs the Keycloak sync process synchronously and returns\nthe actual result. The sync process:\n- Creates/updates department realms\n- Syncs identity providers (Microsoft, Google, etc.) with credentials from database\n- Updates client configurations\n\nArgs:\n    request: FastAPI request object (may contain optional department_id in body)\n\nReturns:\n    JSONResponse with success status, message, and optional error details",
-        "operationId": "init_system_init_post",
+        "operationId": "metrics_snapshot_metrics_snapshot_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -76103,6 +76257,29 @@
             "type": "boolean",
             "title": "Is Retry",
             "default": false
+          },
+          "assistant_audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Audio Enabled"
+          },
+          "sketch_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sketch Data"
           }
         },
         "type": "object",
@@ -80568,6 +80745,25 @@
         "title": "VoiceDebugInfoPayload",
         "description": "Request to send debug info in voice simulation."
       },
+      "VoiceInterruptedErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "VoiceInterruptedErrorPayload",
+        "description": "Response indicating an error occurred while handling interruption."
+      },
       "VoiceInterruptedPayload": {
         "properties": {
           "chat_id": {
@@ -80696,6 +80892,25 @@
         "title": "VoiceUsage",
         "description": "Token usage information from Realtime API."
       },
+      "VoiceUserDeltaErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "VoiceUserDeltaErrorPayload",
+        "description": "Response indicating an error occurred in user speech delta."
+      },
       "VoiceUserDeltaPayload": {
         "properties": {
           "chat_id": {
@@ -80806,6 +81021,25 @@
         ],
         "title": "VoiceUserSpeechPayload",
         "description": "Request to send user speech audio in voice simulation."
+      },
+      "VoiceUserStartErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "VoiceUserStartErrorPayload",
+        "description": "Response indicating an error occurred in user speech start."
       },
       "VoiceUserStartPayload": {
         "properties": {

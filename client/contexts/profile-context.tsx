@@ -357,7 +357,6 @@ export function ProfileProviderClient({
       }
       const payload = {
         simulation_id: data.simulation_id,
-        profile_id: data.profile_id ?? "",
         ...(data.scenario_id !== undefined && {
           scenario_id: data.scenario_id,
         }),
@@ -366,6 +365,9 @@ export function ProfileProviderClient({
           infinite_time_limit: data.infinite_time_limit,
         }),
       };
+      if (data.profile_id) {
+        payload.profile_id = data.profile_id;
+      }
 
       setStartingSimulationId(data.simulation_id);
       socketRef.current.emit("simulation_text_start", payload);
@@ -388,7 +390,7 @@ export function ProfileProviderClient({
         return;
       }
       const payload: Record<string, unknown> = {
-        profile_id: data.profile_id ?? "",
+        ...(data.profile_id ? { profile_id: data.profile_id } : {}),
       };
       if (data.persona_id !== undefined && data.persona_id !== null) {
         payload["persona_id"] = data.persona_id;

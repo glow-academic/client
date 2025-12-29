@@ -231,6 +231,8 @@ class SendSimulationMessagePayload(BaseModel):
     chat_id: str
     message: str | None = None
     is_retry: bool = False
+    assistant_audio_enabled: bool | None = None
+    sketch_data: dict[str, Any] | None = None
 
 
 # Emit helper functions
@@ -300,14 +302,19 @@ async def _simulation_text_send_impl(
         chat_id = data.chat_id
         message = data.message
         is_retry = data.is_retry
-        # Note: assistant_audio_enabled and sketch_data not in payload model yet
-        # These may need to be added if they're required
-        assistant_audio_enabled = False
-        sketch_data = None
+        assistant_audio_enabled = bool(data.assistant_audio_enabled)
+        sketch_data = data.sketch_data
 
         if not chat_id or (not message and not sketch_data):
             logger.error(
                 f"Missing chat_id or both message and sketch_data in request from {sid}"
+            )
+            await simulation_text_send_error(
+                SendSimulationMessageErrorPayload(
+                    success=False,
+                    message="Missing chat_id or message/sketch_data",
+                ),
+                room=sid,
             )
             return
 
@@ -2067,6 +2074,7 @@ Tool Usage Instructions:
                                                             chat_id=chat_id_str,
                                                             final_content=final_message,
                                                         ),
+                                                        room=f"simulation_{chat_id_str}",
                                                     )
 
                                                     completed_tool_messages.append(

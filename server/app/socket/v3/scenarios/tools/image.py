@@ -1,6 +1,7 @@
 """Handler for scenario_tool_image WebSocket event."""
 
 import asyncio
+import time
 import uuid
 from typing import Any
 
@@ -18,9 +19,22 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # Track pending video generations that wait for images
-# Format: {scenario_id: {"image_ids": set, "prompt": str, "agent_id": str, "department_id": str, "sid": str, "trace_id": str, "video_id": str}}
+# Format: {scenario_id:trace_id: {"expected_image_ids": set, "completed_image_ids": set, "prompt": str, "agent_id": str, "department_id": str, "sid": str, "trace_id": str, "video_id": str}}
 _pending_video_generations: dict[str, dict[str, Any]] = {}
 _pending_video_generations_lock = asyncio.Lock()
+_PENDING_VIDEO_TTL_SECONDS = 10 * 60
+
+
+async def _prune_pending_video_generations() -> None:
+    now = time.monotonic()
+    async with _pending_video_generations_lock:
+        stale_keys = [
+            key
+            for key, value in _pending_video_generations.items()
+            if now - value.get("created_at", now) > _PENDING_VIDEO_TTL_SECONDS
+        ]
+        for key in stale_keys:
+            del _pending_video_generations[key]
 
 
 class ImageToolPayload(BaseModel):
@@ -101,38 +115,38 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     try:
+        await _prune_pending_video_generations()
         async with pool.acquire() as conn:
-            # Create image record immediately
-            sql_insert_image = load_sql("app/sql/v3/images/insert_image_complete.sql")
-            image_row = await conn.fetchrow(sql_insert_image, validated.name)
+            async with conn.transaction():
+                # Create image record immediately
+                sql_insert_image = load_sql("app/sql/v3/images/insert_image_complete.sql")
+                image_row = await conn.fetchrow(sql_insert_image, validated.name)
 
-            if not image_row:
-                await image_tool_error(
-                    ImageToolErrorPayload(
-                        success=False,
-                        message="Failed to create image record",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
-                )
-                return
+                if not image_row:
+                    await image_tool_error(
+                        ImageToolErrorPayload(
+                            success=False,
+                            message="Failed to create image record",
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
 
-            image_id = image_row["id"]
+                image_id = image_row["id"]
 
-            # Optionally link to scenario if scenario_id provided (via separate event)
-            if validated.scenario_id:
-                scenario_id_uuid = uuid.UUID(validated.scenario_id)
-                # Emit internal event to link image to scenario (separate event for database operations)
-                from app.socket.v3.scenarios.image.link import (
-                    _scenario_image_link_impl,
-                )
-
-                await _scenario_image_link_impl(
-                    scenario_id_uuid,
-                    image_id,
-                    True,  # active
-                    sid,
-                )
+                # Optionally link to scenario if scenario_id provided
+                if validated.scenario_id:
+                    scenario_id_uuid = uuid.UUID(validated.scenario_id)
+                    sql_link = load_sql(
+                        "app/sql/v3/scenarios/insert_scenario_image_link.sql"
+                    )
+                    await conn.execute(
+                        sql_link,
+                        str(scenario_id_uuid),
+                        str(image_id),
+                        True,
+                    )
 
             # Emit to internal bus for background image generation with all context
             await internal_sio.emit(
@@ -156,17 +170,24 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
 
             # Check if there's a pending video generation waiting for this image
             if validated.scenario_id:
+                pending_key = f"{validated.scenario_id}:{trace_id}"
                 async with _pending_video_generations_lock:
-                    pending = _pending_video_generations.get(validated.scenario_id)
+                    pending = _pending_video_generations.get(pending_key)
                     if pending:
-                        image_ids = pending.get("image_ids", set())
-                        image_ids.add(str(image_id))
+                        completed_image_ids = pending.get(
+                            "completed_image_ids", set()
+                        )
+                        completed_image_ids.add(str(image_id))
 
-                        # Check if all required images are complete (for now, trigger on first image)
-                        if len(image_ids) > 0:
+                        expected_image_ids = pending.get(
+                            "expected_image_ids", set()
+                        )
+
+                        if expected_image_ids.issubset(completed_image_ids):
                             logger.info(
                                 f"All images ready for scenario {validated.scenario_id}, triggering video generation"
                             )
+                            del _pending_video_generations[pending_key]
 
                             # Trigger video generation by calling the handler directly
                             from app.socket.v3.scenarios.tools.video import (
@@ -178,7 +199,7 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
                                 "prompt": pending["prompt"],
                                 "scenario_id": validated.scenario_id,
                                 "video_id": pending.get("video_id"),
-                                "image_ids": list(image_ids),
+                                "image_ids": list(completed_image_ids),
                                 "agent_id": pending["agent_id"],
                                 "department_id": pending["department_id"],
                             }

@@ -5,7 +5,7 @@ import uuid
 from typing import Any, Literal
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
+from app.main import VIDEO_FOLDER, get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
@@ -280,51 +280,65 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                         if hasattr(video_response, "read"):
                             video_content_bytes = video_response.read()  # type: ignore[attr-defined]
 
-                    video_filename = f"{video_id}_{uuid.uuid4()}.mp4"
-                    video_path = UPLOAD_FOLDER / video_filename
-                    video_path.write_bytes(video_content_bytes)
-
-                    logger.info(f"Video saved to: {video_path}")
-
-                    # Create upload record
-                    mime_type = "video/mp4"
-                    file_size = len(video_content_bytes)
-                    sql_query = load_sql("app/sql/v3/uploads/insert_upload.sql")
-                    upload_id_str = await conn.fetchval(
-                        sql_query,
-                        video_filename,
-                        mime_type,
-                        file_size,
-                    )
-
-                    if not upload_id_str:
+                    if not video_content_bytes:
                         await video_generation_error(
                             VideoGenerationErrorPayload(
                                 success=False,
-                                message="Failed to create upload record",
+                                message="Video generation returned empty content",
                                 video_id=str(video_id),
                             ),
                             room=sid,
                         )
                         return
 
-                    logger.info(
-                        f"Created upload record: {upload_id_str}, file_path: {video_filename}"
-                    )
+                    video_filename = f"{video_id}_{uuid.uuid4()}.mp4"
+                    video_relative_path = f"video/{video_filename}"
+                    VIDEO_FOLDER.mkdir(parents=True, exist_ok=True)
+                    video_path = VIDEO_FOLDER / video_filename
+                    await asyncio.to_thread(video_path.write_bytes, video_content_bytes)
 
-                    # Create generation and link to video (with run_id from SQL)
-                    sql_create_generation = load_sql(
-                        "app/sql/v3/videos/create_generation_and_link.sql"
-                    )
-                    generation_result = await conn.fetchrow(
-                        sql_create_generation,
-                        str(video_id),
-                        video_filename,
-                        mime_type,
-                        uuid.UUID(upload_id_str),
-                        True,  # active
-                        str(model_run_id),  # run_id - now created in SQL
-                    )
+                    logger.info(f"Video saved to: {video_path}")
+
+                    async with conn.transaction():
+                        # Create upload record
+                        mime_type = "video/mp4"
+                        file_size = len(video_content_bytes)
+                        sql_query = load_sql("app/sql/v3/uploads/insert_upload.sql")
+                        upload_id_str = await conn.fetchval(
+                            sql_query,
+                            video_relative_path,
+                            mime_type,
+                            file_size,
+                        )
+
+                        if not upload_id_str:
+                            await video_generation_error(
+                                VideoGenerationErrorPayload(
+                                    success=False,
+                                    message="Failed to create upload record",
+                                    video_id=str(video_id),
+                                ),
+                                room=sid,
+                            )
+                            return
+
+                        logger.info(
+                            f"Created upload record: {upload_id_str}, file_path: {video_relative_path}"
+                        )
+
+                        # Create generation and link to video (with run_id from SQL)
+                        sql_create_generation = load_sql(
+                            "app/sql/v3/videos/create_generation_and_link.sql"
+                        )
+                        generation_result = await conn.fetchrow(
+                            sql_create_generation,
+                            str(video_id),
+                            video_relative_path,
+                            mime_type,
+                            uuid.UUID(upload_id_str),
+                            True,  # active
+                            str(model_run_id),  # run_id - now created in SQL
+                        )
 
                     # Emit async pricing event (non-blocking)
                     # Video generation doesn't use LLM tokens, so we set tokens to 0

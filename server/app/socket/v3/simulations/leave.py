@@ -14,6 +14,8 @@ logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
+_ALLOWED_CHAT_TYPES = {"assistant", "simulation"}
+_CHAT_TYPE_ALIASES = {"any": "simulation"}
 
 
 # Pydantic models for server-to-client events (imported by server/leave.py)
@@ -42,25 +44,40 @@ async def simulation_leave_error(
 async def _simulation_leave_impl(sid: str, data: SimulationLeavePayload) -> None:
     """Leave a specific chat room"""
     chat_id = data.chat_id
-    chat_type = data.chat_type
+    chat_type = _CHAT_TYPE_ALIASES.get(data.chat_type, data.chat_type)
 
-    if chat_id:
-        room_name = f"{chat_type}_{chat_id}"
-        await sio.leave_room(sid, room_name)
-        await remove_active_connection(chat_id)
-        logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
-        # Log activity
-        try:
-            await log_websocket_activity(
-                sid=sid,
-                event_key="simulations.left",
-                template="{{ actor.name }} left simulation chat",
-                context={"chat_id": chat_id, "chat_type": chat_type},
-                endpoint="/socket/v3/simulations/leave",
-                error=False,
-            )
-        except Exception as log_error:
-            logger.warning(f"Error logging simulation leave activity: {log_error}")
+    if not chat_id:
+        await simulation_leave_error(
+            SimulationLeaveErrorPayload(success=False, message="Missing chat_id"),
+            room=sid,
+        )
+        return
+
+    if chat_type not in _ALLOWED_CHAT_TYPES:
+        await simulation_leave_error(
+            SimulationLeaveErrorPayload(
+                success=False, message=f"Invalid chat_type: {chat_type}"
+            ),
+            room=sid,
+        )
+        return
+
+    room_name = f"{chat_type}_{chat_id}"
+    await sio.leave_room(sid, room_name)
+    await remove_active_connection(room_name, sid)
+    logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
+    # Log activity
+    try:
+        await log_websocket_activity(
+            sid=sid,
+            event_key="simulations.left",
+            template="{{ actor.name }} left simulation chat",
+            context={"chat_id": chat_id, "chat_type": chat_type},
+            endpoint="/socket/v3/simulations/leave",
+            error=False,
+        )
+    except Exception as log_error:
+        logger.warning(f"Error logging simulation leave activity: {log_error}")
 
 
 @sio.event  # type: ignore

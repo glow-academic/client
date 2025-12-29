@@ -444,7 +444,6 @@ async def _document_generate_impl(
                     template="{{ actor.name }} generated document template",
                     context={
                         "department_id": str(department_id),
-                        "upload_id": upload_id,
                     },
                     endpoint="/socket/v3/documents/generate",
                     error=False,

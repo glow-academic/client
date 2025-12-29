@@ -5005,6 +5005,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/server/simulations/voice/user/start_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Start Error Api
+         * @description Server-to-client event: Error while starting user speech in voice simulation.
+         */
+        post: operations["simulation_voice_user_start_error_api_socket_v3_server_simulations_voice_user_start_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/server/simulations/voice/user/delta": {
         parameters: {
             query?: never;
@@ -5019,6 +5039,26 @@ export interface paths {
          * @description Server-to-client event: User speech delta from voice simulation.
          */
         post: operations["simulation_voice_user_delta_server_api_socket_v3_server_simulations_voice_user_delta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/voice/user/delta_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Delta Error Api
+         * @description Server-to-client event: Error while handling user speech delta.
+         */
+        post: operations["simulation_voice_user_delta_error_api_socket_v3_server_simulations_voice_user_delta_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5159,6 +5199,26 @@ export interface paths {
          * @description Server-to-client event: Signal that assistant was interrupted in voice simulation.
          */
         post: operations["simulation_voice_assistant_interrupted_server_api_socket_v3_server_simulations_voice_assistant_interrupted_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/voice/assistant/interrupted_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Assistant Interrupted Error Api
+         * @description Server-to-client event: Error while handling assistant interruption.
+         */
+        post: operations["simulation_voice_assistant_interrupted_error_api_socket_v3_server_simulations_voice_assistant_interrupted_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6308,7 +6368,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/metrics": {
+    "/metrics/snapshot": {
         parameters: {
             query?: never;
             header?: never;
@@ -6324,39 +6384,7 @@ export interface paths {
          *     Called by notify service to log metrics snapshot.
          *     No leader election needed since notify service is single instance.
          */
-        post: operations["metrics_snapshot_metrics_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/init": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Init System
-         * @description Initialize system - triggers Keycloak sync for identity providers.
-         *
-         *     This endpoint performs the Keycloak sync process synchronously and returns
-         *     the actual result. The sync process:
-         *     - Creates/updates department realms
-         *     - Syncs identity providers (Microsoft, Google, etc.) with credentials from database
-         *     - Updates client configurations
-         *
-         *     Args:
-         *         request: FastAPI request object (may contain optional department_id in body)
-         *
-         *     Returns:
-         *         JSONResponse with success status, message, and optional error details
-         */
-        post: operations["init_system_init_post"];
+        post: operations["metrics_snapshot_metrics_snapshot_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18460,6 +18488,12 @@ export interface components {
              * @default false
              */
             is_retry: boolean;
+            /** Assistant Audio Enabled */
+            assistant_audio_enabled?: boolean | null;
+            /** Sketch Data */
+            sketch_data?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * SimulationEndedPayload
@@ -19916,6 +19950,16 @@ export interface components {
             content: string;
         };
         /**
+         * VoiceInterruptedErrorPayload
+         * @description Response indicating an error occurred while handling interruption.
+         */
+        VoiceInterruptedErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * VoiceInterruptedPayload
          * @description Request to signal that assistant was interrupted in voice simulation.
          */
@@ -19978,6 +20022,16 @@ export interface components {
             output_tokens: number;
         };
         /**
+         * VoiceUserDeltaErrorPayload
+         * @description Response indicating an error occurred in user speech delta.
+         */
+        VoiceUserDeltaErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * VoiceUserDeltaPayload
          * @description Request to send incremental user speech delta in voice simulation.
          */
@@ -20027,6 +20081,16 @@ export interface components {
             /** Conversation Id */
             conversation_id: string;
             usage: components["schemas"]["VoiceUsage"];
+        };
+        /**
+         * VoiceUserStartErrorPayload
+         * @description Response indicating an error occurred in user speech start.
+         */
+        VoiceUserStartErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * VoiceUserStartPayload
@@ -29541,6 +29605,41 @@ export interface operations {
             };
         };
     };
+    simulation_voice_user_start_error_api_socket_v3_server_simulations_voice_user_start_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserStartErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     simulation_voice_user_delta_server_api_socket_v3_server_simulations_voice_user_delta_post: {
         parameters: {
             query?: never;
@@ -29551,6 +29650,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VoiceUserDeltaPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_delta_error_api_socket_v3_server_simulations_voice_user_delta_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserDeltaErrorPayload"];
             };
         };
         responses: {
@@ -29796,6 +29930,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VoiceInterruptedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_assistant_interrupted_error_api_socket_v3_server_simulations_voice_assistant_interrupted_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceInterruptedErrorPayload"];
             };
         };
         responses: {
@@ -31786,27 +31955,7 @@ export interface operations {
             };
         };
     };
-    metrics_snapshot_metrics_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    init_system_init_post: {
+    metrics_snapshot_metrics_snapshot_post: {
         parameters: {
             query?: never;
             header?: never;

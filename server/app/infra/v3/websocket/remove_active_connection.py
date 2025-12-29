@@ -6,13 +6,17 @@ from utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 
-async def remove_active_connection(chat_id: str) -> None:
-    """Remove an active chat connection from Redis."""
+async def remove_active_connection(chat_id: str, socket_id: str) -> None:
+    """Remove a socket ID from an active chat connection set in Redis."""
     redis_client = get_redis_client()
     if not redis_client:
         return
 
     try:
-        await redis_client.delete(f"active_connection:{chat_id}")
+        key = f"active_connection:{chat_id}"
+        await redis_client.srem(key, socket_id)
+        remaining = await redis_client.scard(key)
+        if remaining == 0:
+            await redis_client.delete(key)
     except Exception as e:
         logger.error(f"Redis error removing active connection for chat {chat_id}: {e}")

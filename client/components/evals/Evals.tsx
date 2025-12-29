@@ -76,7 +76,13 @@ export default function Evals({
   const evalsData = serverListData;
 
   // Extract data from response
-  const evalsList = useMemo(() => evalsData?.evals || [], [evalsData?.evals]);
+  const [evalsList, setEvalsList] = useState<EvalsListOut["evals"]>(
+    evalsData?.evals || [],
+  );
+
+  useEffect(() => {
+    setEvalsList(evalsData?.evals || []);
+  }, [evalsData?.evals]);
 
   // Build agent options from mapping
   const agentOptions = useMemo(
@@ -102,18 +108,26 @@ export default function Evals({
       status: string;
       message: string;
     }) => {
-      // WebSocket handler - state updates removed as evals state was unused
-      // eslint-disable-next-line no-console
-      console.log("Eval progress:", data);
+      setEvalsList((prev) =>
+        prev.map((evalItem) =>
+          evalItem.eval_id === data.eval_id
+            ? { ...evalItem, status: data.status }
+            : evalItem,
+        ),
+      );
     };
 
     const handleEvalCompleted = (data: {
       eval_id: string;
       message: string;
     }) => {
-      // WebSocket handler - state updates removed as evals state was unused
-      // eslint-disable-next-line no-console
-      console.log("Eval completed:", data);
+      setEvalsList((prev) =>
+        prev.map((evalItem) =>
+          evalItem.eval_id === data.eval_id
+            ? { ...evalItem, status: "completed" }
+            : evalItem,
+        ),
+      );
     };
 
     const handleEvalStopped = (data: {
@@ -121,9 +135,13 @@ export default function Evals({
       success: boolean;
       stopped_count: number;
     }) => {
-      // WebSocket handler - state updates removed as evals state was unused
-      // eslint-disable-next-line no-console
-      console.log("Eval stopped:", data);
+      setEvalsList((prev) =>
+        prev.map((evalItem) =>
+          evalItem.eval_id === data.eval_id
+            ? { ...evalItem, status: data.success ? "completed" : "pending" }
+            : evalItem,
+        ),
+      );
     };
 
     socket.on("eval_progress", handleEvalProgress);

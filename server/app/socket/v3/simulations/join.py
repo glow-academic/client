@@ -13,6 +13,8 @@ logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
+_ALLOWED_CHAT_TYPES = {"assistant", "simulation"}
+_CHAT_TYPE_ALIASES = {"any": "simulation"}
 
 
 # Pydantic models for server-to-client events (imported by server/join.py)
@@ -50,30 +52,45 @@ async def simulation_join_error(payload: SimulationJoinErrorPayload, room: str) 
 async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:
     """Join a specific chat room for real-time updates"""
     chat_id = data.chat_id
-    chat_type = data.chat_type
+    chat_type = _CHAT_TYPE_ALIASES.get(data.chat_type, data.chat_type)
 
-    if chat_id:
-        room_name = f"{chat_type}_{chat_id}"
-        await sio.enter_room(sid, room_name)
-        await set_active_connection(chat_id, sid)
-        logger.info(
-            f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})"
+    if not chat_id:
+        await simulation_join_error(
+            SimulationJoinErrorPayload(success=False, message="Missing chat_id"),
+            room=sid,
         )
-        await simulation_joined(
-            SimulationJoinedPayload(chat_id=chat_id, chat_type=chat_type), room=sid
+        return
+
+    if chat_type not in _ALLOWED_CHAT_TYPES:
+        await simulation_join_error(
+            SimulationJoinErrorPayload(
+                success=False, message=f"Invalid chat_type: {chat_type}"
+            ),
+            room=sid,
         )
-        # Log activity
-        try:
-            await log_websocket_activity(
-                sid=sid,
-                event_key="simulations.joined",
-                template="{{ actor.name }} joined simulation chat",
-                context={"chat_id": chat_id, "chat_type": chat_type},
-                endpoint="/socket/v3/simulations/join",
-                error=False,
-            )
-        except Exception as log_error:
-            logger.warning(f"Error logging simulation join activity: {log_error}")
+        return
+
+    room_name = f"{chat_type}_{chat_id}"
+    await sio.enter_room(sid, room_name)
+    await set_active_connection(room_name, sid)
+    logger.info(
+        f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})"
+    )
+    await simulation_joined(
+        SimulationJoinedPayload(chat_id=chat_id, chat_type=chat_type), room=sid
+    )
+    # Log activity
+    try:
+        await log_websocket_activity(
+            sid=sid,
+            event_key="simulations.joined",
+            template="{{ actor.name }} joined simulation chat",
+            context={"chat_id": chat_id, "chat_type": chat_type},
+            endpoint="/socket/v3/simulations/join",
+            error=False,
+        )
+    except Exception as log_error:
+        logger.warning(f"Error logging simulation join activity: {log_error}")
 
 
 @sio.event  # type: ignore

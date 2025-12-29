@@ -27,7 +27,7 @@ export {
 export const isMainScreen = (pathname: string): boolean => {
   // Special case: allow /create/cohorts/new to be treated as a main screen
   if (pathname === "/create/cohorts/new") {
-    return false;
+    return true;
   }
 
   // Remove leading slash and count remaining slashes
@@ -205,7 +205,7 @@ export const getSectionRoute = (
       }
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");
-        return `/departments/d/${departmentId}`;
+        return `/system/departments/d/${departmentId}`;
       }
       if (section.startsWith("persona-")) {
         const personaId = section.replace("persona-", "");

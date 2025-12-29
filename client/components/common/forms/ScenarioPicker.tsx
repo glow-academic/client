@@ -108,10 +108,16 @@ export function ScenarioPicker<
 
   // Build scenarios from mapping (server already filters to root scenarios only)
   const baseScenarios = React.useMemo(() => {
-    const scenarios = validScenarioIds.map((id) => ({
-      id,
-      ...scenarioMapping[id],
-    }));
+    const scenarios = validScenarioIds
+      .map((id) => {
+        const scenario = scenarioMapping[id];
+        if (!scenario) return null;
+        return {
+          id,
+          ...scenario,
+        };
+      })
+      .filter((scenario): scenario is { id: string } & T => scenario !== null);
 
     // Sort by name
     return scenarios.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
@@ -126,22 +132,20 @@ export function ScenarioPicker<
     let hasNoPersona = false;
 
     baseScenarios.forEach((sc) => {
-      // TODO: Handle multiple personas
       if (!sc.persona_ids || sc.persona_ids.length === 0) {
         hasNoPersona = true;
       } else {
-        const persona = Object.entries(sc.persona_mapping || {}).find(
-          ([id]) => id === sc.persona_ids?.[0],
-        )?.[1];
-        if (persona) {
-          const existing = personaMap.get(sc.persona_ids?.[0] || "");
-          personaMap.set(sc.persona_ids?.[0] || "", {
+        sc.persona_ids.forEach((personaId) => {
+          const persona = sc.persona_mapping?.[personaId];
+          if (!persona) return;
+          const existing = personaMap.get(personaId);
+          personaMap.set(personaId, {
             name: persona.name,
             color: persona.color,
             icon: persona.icon,
             count: (existing?.count || 0) + 1,
           });
-        }
+        });
       }
     });
 
@@ -157,7 +161,7 @@ export function ScenarioPicker<
       options.push({
         id: NO_PERSONA_KEY,
         name: "No Persona",
-        color: "#gray",
+        color: "#808080",
         icon: "user-x",
         count: baseScenarios.filter(
           (sc) => !sc.persona_ids || sc.persona_ids.length === 0,
@@ -288,10 +292,9 @@ export function ScenarioPicker<
       // Persona filter (OR within group)
       if (filterPersonaIds.length > 0) {
         const hasNoPersona = filterPersonaIds.includes(NO_PERSONA_KEY);
-        const matchesPersona =
-          scenario.persona_ids &&
-          scenario.persona_ids.length > 0 &&
-          filterPersonaIds.includes(scenario.persona_ids?.[0] || "");
+        const matchesPersona = scenario.persona_ids?.some((personaId) =>
+          filterPersonaIds.includes(personaId),
+        );
         if (!hasNoPersona && !matchesPersona) return false;
         if (
           hasNoPersona &&
@@ -346,6 +349,12 @@ export function ScenarioPicker<
   const [peekedScenario, setPeekedScenario] = React.useState<
     ({ id: string } & T) | undefined
   >(filteredScenarios[0] as ({ id: string } & T) | undefined);
+
+  React.useEffect(() => {
+    setPeekedScenario(
+      filteredScenarios[0] as ({ id: string } & T) | undefined,
+    );
+  }, [filteredScenarios]);
 
   const handleSelect = (scenarioId: string) => {
     const isSelected = selectedScenarioIds.includes(scenarioId);

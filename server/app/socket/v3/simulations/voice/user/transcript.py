@@ -1,12 +1,18 @@
 """Handler for simulation_voice_user_transcript WebSocket event."""
 
+import datetime
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
-from app.main import get_pool, get_voice_speech_timestamps, sio
+from app.main import (
+    get_pool,
+    get_voice_speech_timestamps,
+    get_voice_speech_timestamps_lock,
+    sio,
+)
 from app.socket.v3.simulations.streaming.message import (
     _simulation_message_start_impl,
 )
@@ -84,7 +90,8 @@ async def _simulation_voice_user_transcript_impl(
             )
             return
 
-        room = f"simulation_{chat_id}"
+        normalized_chat_id = str(uuid.UUID(chat_id))
+        room = f"simulation_{normalized_chat_id}"
 
         # First, relay the event for UI updates (so optimistic message shows transcript immediately)
         await simulation_voice_user_transcript_emit(data, room)
@@ -128,21 +135,29 @@ async def _simulation_voice_user_transcript_impl(
 
             # Get stored timestamp for this speech event (if available)
             timestamps_dict = get_voice_speech_timestamps()
+            timestamps_lock = get_voice_speech_timestamps_lock()
             speech_started_at = None
-            if chat_id in timestamps_dict and data.item_id in timestamps_dict[chat_id]:
-                speech_started_at = timestamps_dict[chat_id][data.item_id]
-                # Clean up the timestamp entry after use
-                del timestamps_dict[chat_id][data.item_id]
-                # Clean up empty chat_id entry if no more timestamps
-                if not timestamps_dict[chat_id]:
-                    del timestamps_dict[chat_id]
-                logger.info(
-                    f"Using stored speech_started timestamp for item_id={data.item_id}: {speech_started_at}"
-                )
-            else:
-                logger.warning(
-                    f"No stored timestamp found for item_id={data.item_id}, using NOW()"
-                )
+            async with timestamps_lock:
+                if (
+                    normalized_chat_id in timestamps_dict
+                    and data.item_id in timestamps_dict[normalized_chat_id]
+                ):
+                    speech_started_at = timestamps_dict[normalized_chat_id][data.item_id]
+                    # Clean up the timestamp entry after use
+                    del timestamps_dict[normalized_chat_id][data.item_id]
+                    # Clean up empty chat_id entry if no more timestamps
+                    if not timestamps_dict[normalized_chat_id]:
+                        del timestamps_dict[normalized_chat_id]
+                    logger.info(
+                        "Using stored speech_started timestamp for item_id=%s: %s",
+                        data.item_id,
+                        speech_started_at,
+                    )
+                else:
+                    logger.warning(
+                        "No stored timestamp found for item_id=%s, using NOW()",
+                        data.item_id,
+                    )
 
             # Create user message with stored timestamp via unified handler
             db_message_id_str = await _simulation_message_start_impl(
@@ -213,7 +228,9 @@ async def _simulation_voice_user_transcript_impl(
                     message_id=str(user_message_id),
                     chat_id=str(chat_id_uuid),
                     message=transcript,
-                    created_at=created_at.isoformat() if created_at else "",
+                    created_at=(
+                        created_at or datetime.datetime.now(datetime.UTC)
+                    ).isoformat(),
                 ),
                 room=room,
             )
@@ -252,6 +269,12 @@ async def simulation_voice_user_transcript(sid: str, data: dict[str, Any]) -> No
     except ValidationError as e:
         logger.error(
             f"Validation error in simulation_voice_user_transcript for {sid}: {e}"
+        )
+        await simulation_voice_user_transcript_error(
+            VoiceUserTranscriptErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
         )
 
 

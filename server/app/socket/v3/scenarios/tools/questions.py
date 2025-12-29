@@ -118,45 +118,54 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
         )
         return
 
+    if validated.question_timestamps and not validated.video_id:
+        await scenario_questions_tool_error(
+            ScenarioQuestionsToolErrorPayload(
+                success=False,
+                message="question_timestamps provided without video_id",
+                trace_id=trace_id,
+            ),
+            room=sid,
+        )
+        return
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
         async with pool.acquire() as conn:
             scenario_id_uuid = uuid.UUID(validated.scenario_id)
-            video_id_uuid = (
-                uuid.UUID(validated.video_id) if validated.video_id else None
-            )
+            video_id_uuid = uuid.UUID(validated.video_id) if validated.video_id else None
 
-            # Convert questions to JSON format expected by SQL
-            questions_dicts = [q.model_dump() for q in validated.questions]
-            questions_json = json.dumps(questions_dicts)
+            async with conn.transaction():
+                # Convert questions to JSON format expected by SQL
+                questions_dicts = [q.model_dump() for q in validated.questions]
+                questions_json = json.dumps(questions_dicts)
 
-            # Create questions and link to scenario
-            sql = load_sql("app/sql/v3/questions/create_questions_with_options.sql")
-            sql_query = sql
-            sql_params = (questions_json,)
+                # Create questions and link to scenario
+                sql = load_sql("app/sql/v3/questions/create_questions_with_options.sql")
+                sql_query = sql
+                sql_params = (questions_json,)
 
-            question_rows = await conn.fetch(sql, *sql_params)
+                question_rows = await conn.fetch(sql, *sql_params)
 
-            if not question_rows or len(question_rows) == 0:
-                await scenario_questions_tool_error(
-                    ScenarioQuestionsToolErrorPayload(
-                        success=False,
-                        message="Failed to create questions",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
+                if not question_rows or len(question_rows) == 0:
+                    await scenario_questions_tool_error(
+                        ScenarioQuestionsToolErrorPayload(
+                            success=False,
+                            message="Failed to create questions",
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+
+                question_ids = [str(row["question_id"]) for row in question_rows]
+
+                # Link questions to scenario
+                link_questions_sql = load_sql(
+                    "app/sql/v3/scenarios/link_questions_to_scenario.sql"
                 )
-                return
-
-            question_ids = [str(row["question_id"]) for row in question_rows]
-
-            # Link questions to scenario
-            link_questions_sql = load_sql(
-                "app/sql/v3/scenarios/link_questions_to_scenario.sql"
-            )
-            try:
                 for question_id in question_ids:
                     await conn.execute(
                         link_questions_sql,
@@ -167,18 +176,13 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
                 logger.info(
                     f"✓ Linked {len(question_ids)} questions to scenario {scenario_id_uuid}"
                 )
-            except Exception as e:
-                logger.warning(
-                    f"Failed to link questions to scenario (may need to create SQL file): {e}"
-                )
 
-            # Save question timestamps if provided (requires video_id)
-            if validated.question_timestamps and video_id_uuid:
-                # Link timestamps to scenario_question_times
-                save_timestamps_sql = load_sql(
-                    "app/sql/v3/scenarios/save_question_timestamps.sql"
-                )
-                try:
+                # Save question timestamps if provided (requires video_id)
+                if validated.question_timestamps and video_id_uuid:
+                    # Link timestamps to scenario_question_times
+                    save_timestamps_sql = load_sql(
+                        "app/sql/v3/scenarios/save_question_timestamps.sql"
+                    )
                     timestamps_json = json.dumps(validated.question_timestamps)
                     await conn.execute(
                         save_timestamps_sql,
@@ -189,8 +193,6 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
                     logger.info(
                         f"✓ Saved question timestamps for scenario {scenario_id_uuid} and video {video_id_uuid}"
                     )
-                except Exception as e:
-                    logger.warning(f"Failed to save question timestamps: {e}")
 
             logger.info(
                 f"✓ Created {len(question_ids)} questions for scenario {scenario_id_uuid} "

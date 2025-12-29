@@ -153,6 +153,10 @@ export function GenericPicker<T>({
     itemsArray[0],
   );
 
+  React.useEffect(() => {
+    setPeekedItem(itemsArray[0]);
+  }, [itemsArray]);
+
   const handleSelect = (itemId: string) => {
     if (multiSelect) {
       const isSelected = selectedIds.includes(itemId);
@@ -172,8 +176,11 @@ export function GenericPicker<T>({
     setOpen(false);
   };
 
-  const handleRemoveItem = (itemId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleRemoveItem = (
+    itemId: string,
+    e?: React.MouseEvent | React.KeyboardEvent,
+  ) => {
+    e?.stopPropagation?.();
     const newIds = selectedIds.filter((id) => id !== itemId);
     onSelect(newIds);
   };
@@ -269,7 +276,7 @@ export function GenericPicker<T>({
               return (
                 <React.Fragment key={itemId}>
                   {chipRenderer(item, () =>
-                    handleRemoveItem(itemId, {} as React.MouseEvent),
+                    handleRemoveItem(itemId),
                   )}
                 </React.Fragment>
               );
@@ -381,12 +388,12 @@ export function GenericPicker<T>({
                 const chipRenderer = renderChip || defaultRenderChip;
                 return (
                   <React.Fragment key={itemId}>
-                    {chipRenderer(item, () =>
-                      handleRemoveItem(itemId, {} as React.MouseEvent),
-                    )}
-                  </React.Fragment>
-                );
-              })}
+                  {chipRenderer(item, () =>
+                    handleRemoveItem(itemId),
+                  )}
+                </React.Fragment>
+              );
+            })}
             </div>
             {showClearAll && (
               <Button

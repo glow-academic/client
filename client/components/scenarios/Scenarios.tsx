@@ -222,7 +222,7 @@ export function Scenarios({
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("persona_id") as string[]) ?? [];
           if (value.length === 0) return true;
-          if (rowIds.length === 0) return true; // Show items with no personas when no filter
+          if (rowIds.length === 0) return false;
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -252,7 +252,7 @@ export function Scenarios({
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
-          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          if (rowIds.length === 0) return false;
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -263,13 +263,18 @@ export function Scenarios({
         header: "Persona",
         cell: ({ row }) => {
           const personaIds = row.original.persona_ids ?? [];
-          const personaId = personaIds[0]; // TODO: Handle multiple personas
           return (
-            <div className="text-sm">
-              {personaId && personaMapping[personaId] ? (
-                <span className="text-sm">
-                  {personaMapping[personaId].name}
-                </span>
+            <div className="text-sm flex flex-wrap gap-1">
+              {personaIds.length > 0 ? (
+                personaIds.map((personaId) => {
+                  const persona = personaMapping[personaId];
+                  if (!persona) return null;
+                  return (
+                    <span key={personaId} className="text-sm">
+                      {persona.name}
+                    </span>
+                  );
+                })
               ) : (
                 <span className="text-muted-foreground">No persona</span>
               )}
@@ -292,10 +297,82 @@ export function Scenarios({
     ];
   }, [personaMapping]);
 
+  const filterValues = useMemo(() => {
+    return columnFilters.reduce<Record<string, unknown>>((acc, filter) => {
+      acc[filter.id] = filter.value;
+      return acc;
+    }, {});
+  }, [columnFilters]);
+
+  const scenarioMatchesFilters = useMemo(() => {
+    return (scenario: (typeof scenarios)[number]) => {
+      const titleFilter = filterValues["title"];
+      if (typeof titleFilter === "string" && titleFilter.length > 0) {
+        const title = scenario.title || "";
+        if (!title.toLowerCase().includes(titleFilter.toLowerCase())) {
+          return false;
+        }
+      }
+
+      const personaFilter = filterValues["persona_id"] as string[] | undefined;
+      if (personaFilter && personaFilter.length > 0) {
+        const personaIds = scenario.persona_ids ?? [];
+        if (
+          personaIds.length === 0 ||
+          !personaIds.some((id) => personaFilter.includes(id))
+        ) {
+          return false;
+        }
+      }
+
+      const simulationFilter = filterValues["simulation_ids"] as
+        | string[]
+        | undefined;
+      if (simulationFilter && simulationFilter.length > 0) {
+        const simulationIds = scenario.simulation_ids ?? [];
+        if (
+          simulationIds.length === 0 ||
+          !simulationIds.some((id) => simulationFilter.includes(id))
+        ) {
+          return false;
+        }
+      }
+
+      const departmentFilter = filterValues["departments"] as
+        | string[]
+        | undefined;
+      if (departmentFilter && departmentFilter.length > 0) {
+        const departmentIds = scenario.department_ids ?? [];
+        if (
+          departmentIds.length === 0 ||
+          !departmentIds.some((id) => departmentFilter.includes(id))
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    };
+  }, [filterValues]);
+
   // Create parent scenarios for table (root scenarios only)
   const parentScenarios = useMemo(() => {
-    return scenarios.filter((scenario) => !scenario.parent_scenario_id);
-  }, [scenarios]);
+    const parents = scenarios.filter((scenario) => !scenario.parent_scenario_id);
+    if (columnFilters.length === 0) {
+      return parents;
+    }
+
+    return parents.filter((parent) => {
+      if (scenarioMatchesFilters(parent)) {
+        return true;
+      }
+      return scenarios.some(
+        (scenario) =>
+          scenario.parent_scenario_id === parent.scenario_id &&
+          scenarioMatchesFilters(scenario),
+      );
+    });
+  }, [scenarios, scenarioMatchesFilters, columnFilters.length]);
 
   // Create table instance
   const table = useReactTable({
@@ -339,7 +416,7 @@ export function Scenarios({
     // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
     sortingKey,
     columnFiltersKey,
-    parentScenarios.length,
+    parentScenarios,
     // Use pagination primitives directly (not object references)
     pageIndex,
     pageSize,
@@ -606,34 +683,34 @@ export function Scenarios({
             {scenario.persona_ids && scenario.persona_ids.length > 0 && (
               <>
                 <span className="text-muted-foreground">•</span>
-                {(() => {
-                  const firstPersonaId = scenario.persona_ids[0];
-                  if (!firstPersonaId) return null;
-                  const persona = personaMapping[firstPersonaId];
-                  if (!persona) return null;
-                  return (
-                    <Tooltip key={firstPersonaId}>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: persona.color
-                              ? `${persona.color}20`
-                              : undefined,
-                            borderColor: persona.color || undefined,
-                            color: persona.color || undefined,
-                          }}
-                        >
-                          {persona.name}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{persona.description || persona.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })()}
+                <div className="flex items-center gap-1 flex-wrap">
+                  {scenario.persona_ids.map((personaId) => {
+                    const persona = personaMapping[personaId];
+                    if (!persona) return null;
+                    return (
+                      <Tooltip key={personaId}>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className="text-xs"
+                            style={{
+                              backgroundColor: persona.color
+                                ? `${persona.color}20`
+                                : undefined,
+                              borderColor: persona.color || undefined,
+                              color: persona.color || undefined,
+                            }}
+                          >
+                            {persona.name}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{persona.description || persona.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </>
             )}
             {/* Parameter item badges (max 3) - grouped together without dots */}

@@ -54,6 +54,13 @@ async def _eval_leave_impl(sid: str, data: EvalLeavePayload) -> None:
             )
         except Exception as log_error:
             logger.warning(f"Error logging eval leave activity: {log_error}")
+    else:
+        await eval_leave_error(
+            EvalLeaveErrorPayload(
+                success=False, message="Missing attempt_id for eval leave"
+            ),
+            room=sid,
+        )
 
 
 @sio.event  # type: ignore

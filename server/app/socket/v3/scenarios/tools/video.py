@@ -1,5 +1,6 @@
 """Handler for scenario_tool_video WebSocket event."""
 
+import time
 import uuid
 from typing import Any
 
@@ -100,6 +101,9 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     try:
+        import app.socket.v3.scenarios.tools.image as image_tool_module
+
+        await image_tool_module._prune_pending_video_generations()
         scenario_id_uuid = uuid.UUID(validated.scenario_id)
 
         # If image_ids provided, check if this is a retry after images completed
@@ -108,13 +112,11 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
             # Check if images are already complete (this call came from image tool)
             # If so, proceed with video generation immediately
             # Otherwise, store as pending and wait
-            import app.socket.v3.scenarios.tools.image as image_tool_module
+            pending_key = f"{validated.scenario_id}:{trace_id}"
 
             async with image_tool_module._pending_video_generations_lock:
                 # Check if this scenario_id was already pending (meaning images just completed)
-                was_pending = (
-                    validated.scenario_id in image_tool_module._pending_video_generations
-                )
+                was_pending = pending_key in image_tool_module._pending_video_generations
 
                 if was_pending:
                     # Images are ready - proceed with video generation
@@ -123,9 +125,9 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                     )
                     # Remove from pending
                     pending_data = image_tool_module._pending_video_generations[
-                        validated.scenario_id
+                        pending_key
                     ]
-                    del image_tool_module._pending_video_generations[validated.scenario_id]
+                    del image_tool_module._pending_video_generations[pending_key]
                     # Use pending video_id if available
                     validated.video_id = pending_data.get("video_id")
                     # Fall through to video generation below
@@ -137,14 +139,16 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                         )
                     else:
                         # Store pending video generation - image tool will trigger when ready
-                        image_tool_module._pending_video_generations[validated.scenario_id] = {
-                            "image_ids": set(validated.image_ids),
+                        image_tool_module._pending_video_generations[pending_key] = {
+                            "expected_image_ids": set(validated.image_ids),
+                            "completed_image_ids": set(),
                             "prompt": validated.prompt,
                             "agent_id": validated.agent_id,
                             "department_id": validated.department_id,
                             "sid": sid,
                             "trace_id": trace_id,
                             "video_id": validated.video_id,
+                            "created_at": time.monotonic(),
                         }
                         logger.info(
                             f"Video generation queued for scenario {validated.scenario_id}, waiting for {len(validated.image_ids)} images"
@@ -170,32 +174,45 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                 # Create new video and link to scenario
                 from utils.sql_helper import load_sql
 
-                # Create video
-                create_video_sql = load_sql("app/sql/v3/videos/create_video_basic.sql")
-                video_result = await conn.fetchrow(
-                    create_video_sql,
-                    "Generated Video",  # name (will be updated after generation)
-                    8,  # length_seconds (default, will be updated after generation)
-                )
-                if not video_result:
-                    raise ValueError("Failed to create video")
-                video_id_uuid = video_result["id"]
+                async with conn.transaction():
+                    # Create video
+                    create_video_sql = load_sql("app/sql/v3/videos/create_video_basic.sql")
+                    video_result = await conn.fetchrow(
+                        create_video_sql,
+                        "Generated Video",  # name (will be updated after generation)
+                        8,  # length_seconds (default, will be updated after generation)
+                    )
+                    if not video_result:
+                        raise ValueError("Failed to create video")
+                    video_id_uuid = video_result["id"]
 
-                # Link video to scenario (only one active at a time)
-                link_video_sql = load_sql("app/sql/v3/scenarios/link_video_to_scenario.sql")
-                await conn.execute(
-                    link_video_sql,
-                    str(scenario_id_uuid),
-                    str(video_id_uuid),
-                    True,  # active
-                )
-                logger.info(
-                    f"Created and linked video {video_id_uuid} to scenario {validated.scenario_id}"
-                )
+                    # Link video to scenario (only one active at a time)
+                    link_video_sql = load_sql(
+                        "app/sql/v3/scenarios/link_video_to_scenario.sql"
+                    )
+                    await conn.execute(
+                        link_video_sql,
+                        str(scenario_id_uuid),
+                        str(video_id_uuid),
+                        True,  # active
+                    )
+                    logger.info(
+                        f"Created and linked video {video_id_uuid} to scenario {validated.scenario_id}"
+                    )
 
-        # Call video generation handler (we'll need to adapt this)
-        # For now, emit completion - actual video generation will be handled separately
-        # TODO: Integrate with video generation handler adapted for scenarios
+        from app.socket.v3.videos.generate import (
+            GenerateVideoPayload,
+            _video_generate_impl,
+        )
+
+        await _video_generate_impl(
+            sid,
+            GenerateVideoPayload(
+                videoId=str(video_id_uuid),
+                prompt=validated.prompt,
+                imageReferenceId=None,
+            ),
+        )
 
         logger.info(
             f"✓ Video tool completed for scenario {validated.scenario_id} "
@@ -205,10 +222,10 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
         await scenario_video_tool_complete(
             ScenarioVideoToolCompletePayload(
                 success=True,
-                generation_id=None,  # Will be set by video generation handler
+                generation_id=None,
                 video_id=str(video_id_uuid),
                 trace_id=trace_id,
-                message="Video generation started",
+                message="Video generation completed",
             ),
             room=sid,
         )

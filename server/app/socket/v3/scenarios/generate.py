@@ -9,7 +9,6 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     ToolsToFinalOutputResult, function_tool, gen_trace_id,
                     trace)
 from agents.items import TResponseInputItem
-from utils.settings.theme import ThemePrimitives, derive_theme_tokens
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
@@ -23,6 +22,7 @@ from fastapi import APIRouter
 from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
                       create_model)
 from utils.logging.db_logger import get_logger
+from utils.settings.theme import ThemePrimitives, derive_theme_tokens
 from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
@@ -156,7 +156,7 @@ async def scenario_image_generation_complete(
 async def scenario_image_generation_error(
     payload: ScenarioImageGenerationErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenarios_generation_error", payload.model_dump(), room=room)
+    await sio.emit("scenario_image_generation_error", payload.model_dump(), room=room)
 
 
 # Helper function to build Pydantic models dynamically from template schemas
@@ -1175,6 +1175,13 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         Returns:
                             Confirmation message
                         """
+                        if not data.scenarioId:
+                            logger.warning(
+                                "[generate_scenario] scenarioId missing; skipping video generation tool"
+                            )
+                            return (
+                                "Video generation skipped because scenarioId was not provided."
+                            )
                         # Emit to internal bus for video generation
                         await internal_sio.emit(
                             "scenario_tool_video",

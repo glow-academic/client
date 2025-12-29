@@ -769,11 +769,46 @@ async def _create_chat_with_randomization(
                 required_tools = ["title_description"]
                 if objectives_enabled:
                     required_tools.append("objectives")
-                completed_required = True
+                completed_tools: list[str] = []
                 logger.info(
-                    f"Tool use check: required={required_tools}, completed={completed_required}"
+                    f"Tool use check: required={required_tools}, tool_results={len(tool_results)}"
                 )
-                return ToolsToFinalOutputResult(is_final_output=completed_required)
+
+                for idx, result in enumerate(tool_results):
+                    tool_name = None
+                    if hasattr(result, "tool_name"):
+                        tool_name = result.tool_name  # type: ignore[attr-defined]
+                    else:
+                        tool_name = getattr(result, "tool_name", None)  # type: ignore[misc]
+
+                    if not tool_name:
+                        tool_obj = getattr(result, "tool", None)  # type: ignore[misc]
+                        if tool_obj:
+                            tool_name = getattr(tool_obj, "name", None)  # type: ignore[misc]
+
+                    if tool_name and isinstance(tool_name, str):
+                        normalized_name = tool_name
+                        if (
+                            "title" in tool_name.lower()
+                            and "description" in tool_name.lower()
+                        ):
+                            normalized_name = "title_description"
+                        elif "objective" in tool_name.lower():
+                            normalized_name = "objectives"
+                        completed_tools.append(normalized_name)
+                        logger.info(
+                            f"Tool result {idx}: tool_name={tool_name} normalized={normalized_name}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Tool result {idx}: Could not extract tool name. tool_name={tool_name}"
+                        )
+
+                all_completed = all(tool in completed_tools for tool in required_tools)
+                logger.info(
+                    f"Tool use behavior check: required={required_tools}, completed={completed_tools}, all_completed={all_completed}"
+                )
+                return ToolsToFinalOutputResult(is_final_output=all_completed)
 
             scenario_agent_generic = GenericAgent(
                 agent_name=context["agent_name"],
@@ -859,6 +894,21 @@ async def _create_chat_with_randomization(
                 str(model_run_id),
                 usage.input_tokens,
                 usage.output_tokens,
+            )
+            assistant_output = getattr(result, "final_output", None) or ""
+
+            await internal_sio.emit(
+                "log_run",
+                {
+                    "runId": str(model_run_id),
+                    "operationType": "scenario",
+                    "inputTextTokens": usage.input_tokens,
+                    "outputTextTokens": usage.output_tokens,
+                    "systemPrompt": context["system_prompt"],
+                    "inputItems": clean_input_items,
+                    "assistantOutput": assistant_output,
+                    "departmentId": str(department_id) if department_id else None,
+                },
             )
 
             title = scenario_results.get("title") or ""
@@ -2043,6 +2093,25 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                     str(model_run_id),
                                     usage.input_tokens,
                                     usage.output_tokens,
+                                )
+                                assistant_output = (
+                                    getattr(result, "final_output", None) or ""
+                                )
+
+                                await internal_sio.emit(
+                                    "log_run",
+                                    {
+                                        "runId": str(model_run_id),
+                                        "operationType": "scenario",
+                                        "inputTextTokens": usage.input_tokens,
+                                        "outputTextTokens": usage.output_tokens,
+                                        "systemPrompt": context["system_prompt"],
+                                        "inputItems": clean_input_items,
+                                        "assistantOutput": assistant_output,
+                                        "departmentId": str(department_id)
+                                        if department_id
+                                        else None,
+                                    },
                                 )
 
                                 title = scenario_results.get("title") or ""

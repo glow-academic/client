@@ -258,11 +258,17 @@ def get_simulation_tool_calls_locks() -> dict[str, dict[str, asyncio.Lock]]:
 
 # Global storage for voice speech started timestamps (chat_id -> {item_id -> datetime})
 _voice_speech_timestamps: dict[str, dict[str, datetime.datetime]] = {}
+_voice_speech_timestamps_lock = asyncio.Lock()
 
 
 def get_voice_speech_timestamps() -> dict[str, dict[str, datetime.datetime]]:
     """Get the voice speech timestamps dictionary."""
     return _voice_speech_timestamps
+
+
+def get_voice_speech_timestamps_lock() -> asyncio.Lock:
+    """Get the voice speech timestamps lock."""
+    return _voice_speech_timestamps_lock
 
 
 def get_sio_instance() -> socketio.AsyncServer:
@@ -428,7 +434,8 @@ async def transaction(
         raise
 
 
-# Keycloak sync moved to infra/v3/auth/keycloak_sync.py - no longer needed here
+# Import Keycloak sync module to register event handlers
+from app.socket.v3.actions import keycloak  # noqa: F401
 from app.socket.v3.documents.template.create import \
     document_template_create_internal  # noqa: F401
 # Import WebSocket handlers after sio is created to avoid circular imports
@@ -797,7 +804,7 @@ async def health_services() -> JSONResponse:
     )
 
 
-@fastapi_app.post("/metrics")
+@fastapi_app.post("/metrics/snapshot")
 async def metrics_snapshot() -> JSONResponse:
     """Trigger metrics snapshot to database.
 
@@ -824,79 +831,6 @@ async def metrics_snapshot() -> JSONResponse:
             content={
                 "success": False,
                 "message": f"Failed to log metrics snapshot: {str(e)}",
-            },
-        )
-
-
-@fastapi_app.post("/init")
-async def init_system(request: Request) -> JSONResponse:
-    """Initialize system - triggers Keycloak sync for identity providers.
-
-    This endpoint performs the Keycloak sync process synchronously and returns
-    the actual result. The sync process:
-    - Creates/updates department realms
-    - Syncs identity providers (Microsoft, Google, etc.) with credentials from database
-    - Updates client configurations
-
-    Args:
-        request: FastAPI request object (may contain optional department_id in body)
-
-    Returns:
-        JSONResponse with success status, message, and optional error details
-    """
-    from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
-    from pydantic import BaseModel
-
-    class InitSystemRequest(BaseModel):
-        """Request to initialize system."""
-
-        department_id: str | None = None
-
-    try:
-        # Parse request body if present
-        department_id: str | None = None
-        try:
-            body = await request.json()
-            if body:
-                init_request = InitSystemRequest(**body)
-                department_id = init_request.department_id
-        except Exception:
-            # If body is empty or invalid JSON, use None (sync all)
-            pass
-
-        # Perform sync directly and get result
-        result = await perform_keycloak_sync(department_id=department_id)
-
-        # Return response based on result
-        if result.success:
-            return JSONResponse(
-                content={
-                    "success": True,
-                    "message": result.message,
-                    "department_id": result.department_id,
-                }
-            )
-        else:
-            # Sync failed - return error response with error details
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "success": False,
-                    "message": result.message,
-                    "department_id": result.department_id,
-                    "error": result.error,
-                },
-            )
-    except Exception as e:
-        from utils.logging.db_logger import get_logger
-
-        logger = get_logger("app.main")
-        logger.error(f"Failed to trigger Keycloak sync: {e}", exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={
-                "success": False,
-                "message": f"Failed to trigger Keycloak sync: {str(e)}",
             },
         )
 

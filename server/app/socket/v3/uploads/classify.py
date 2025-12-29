@@ -299,6 +299,7 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
 
             # Function-scoped classification results storage
             classification_results: dict[str, list[str]] = {}
+            invalid_file_numbers: list[str] = []
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
@@ -330,7 +331,9 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
 
                 # Create function with proper closure capture
                 def make_classification_function(
-                    item_dict: dict[str, Any], file_names_descr: str
+                    item_dict: dict[str, Any],
+                    file_names_descr: str,
+                    file_names_count: int,
                 ):
                     async def classify_parameter_item(
                         file_numbers: list[str] = Field(description=file_names_descr),
@@ -346,13 +349,24 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                             item_name=item_dict["name"]
                         )
                         # Store classification result in function-scoped dict
+                        valid_file_numbers: list[str] = []
+                        for file_number in file_numbers:
+                            try:
+                                file_index = int(file_number) - 1
+                                if 0 <= file_index < file_names_count:
+                                    valid_file_numbers.append(file_number)
+                                else:
+                                    invalid_file_numbers.append(file_number)
+                            except (TypeError, ValueError):
+                                invalid_file_numbers.append(str(file_number))
+
                         if item_dict["id"] not in classification_results:
                             classification_results[item_dict["id"]] = []
-                        classification_results[item_dict["id"]].extend(file_numbers)
+                        classification_results[item_dict["id"]].extend(valid_file_numbers)
                         logger.info(
-                            f"✓ Classified {len(file_numbers)} files for {item_dict['name']}"
+                            f"✓ Classified {len(valid_file_numbers)} files for {item_dict['name']}"
                         )
-                        return f"Classified {len(file_numbers)} file(s) for {item_dict['name']}"
+                        return f"Classified {len(valid_file_numbers)} file(s) for {item_dict['name']}"
 
                     # Set unique function name
                     safe_name = "".join(
@@ -362,7 +376,9 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                     classify_parameter_item.__name__ = f"classify_{safe_name}"
                     return classify_parameter_item
 
-                classify_func = make_classification_function(item, file_names_desc)
+                classify_func = make_classification_function(
+                    item, file_names_desc, len(file_names)
+                )
                 classification_tools.append(function_tool(classify_func))
 
             logger.info(f"Created {len(classification_tools)} classification tools")
@@ -514,6 +530,19 @@ Use the provided classification tools to indicate which files match each paramet
                     "departmentId": str(department_id) if department_id else None,
                 },
             )
+
+            if invalid_file_numbers:
+                await classify_upload_error(
+                    ClassifyUploadErrorPayload(
+                        success=False,
+                        message=(
+                            "Invalid file numbers in classification results: "
+                            f"{', '.join(sorted(set(invalid_file_numbers)))}"
+                        ),
+                    ),
+                    room=sid,
+                )
+                return
 
             # Map results: file_name -> [parameter_item_ids]
             suggested_items: dict[str, list[str]] = {}

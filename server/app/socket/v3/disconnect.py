@@ -78,7 +78,7 @@ async def disconnect(sid: str) -> None:
     # Remove from all active connections using Redis
     chat_ids = await find_chats_by_socket(sid)
     for chat_id in chat_ids:
-        await remove_active_connection(chat_id)
+        await remove_active_connection(chat_id, sid)
 
 
 # FastAPI endpoint for OpenAPI documentation (disconnect is a lifecycle event, no request payload)
