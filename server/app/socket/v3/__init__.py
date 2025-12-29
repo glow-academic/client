@@ -3,17 +3,13 @@
 from fastapi import APIRouter
 
 from . import (
+    actions,
+    agents,
     connect,
     disconnect,
-    documents,
-    evals,
-    images,
     log,
-    rubrics,
-    scenarios,
     simulations,
-    uploads,
-    videos,
+    tools,
 )
 
 # Create main router
@@ -30,24 +26,17 @@ client_router.include_router(log.client_router)
 
 server_router.include_router(connect.server_router)
 
-# Include resource routers
-client_router.include_router(simulations.client_router)
-client_router.include_router(scenarios.client_router)
-client_router.include_router(documents.client_router)
-client_router.include_router(videos.client_router)
-client_router.include_router(images.client_router)
-client_router.include_router(evals.client_router)
-client_router.include_router(rubrics.client_router)
-client_router.include_router(uploads.client_router)
+# Include agent routers
+client_router.include_router(agents.client_router)
+server_router.include_router(agents.server_router)
 
+# Include tool routers
+client_router.include_router(tools.client_router)
+server_router.include_router(tools.server_router)
+
+# Include simulation operation routers
+client_router.include_router(simulations.client_router)
 server_router.include_router(simulations.server_router)
-server_router.include_router(scenarios.server_router)
-server_router.include_router(documents.server_router)
-server_router.include_router(videos.server_router)
-server_router.include_router(images.server_router)
-server_router.include_router(evals.server_router)
-server_router.include_router(rubrics.server_router)
-server_router.include_router(uploads.server_router)
 
 # Include both routers in main router
 router.include_router(client_router)

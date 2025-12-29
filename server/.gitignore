@@ -1,8 +1,6 @@
 __pycache__/
 **/__pycache__/
 
-audio/
-sketches/
 htmlcov/
 
 dump.rdb

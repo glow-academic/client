@@ -434,40 +434,38 @@ async def transaction(
         raise
 
 
-# Import Keycloak sync module to register event handlers
-from app.socket.v3.actions import keycloak  # noqa: F401
-from app.socket.v3.documents.template.create import \
+from app.socket.v3.agents.document.template.create import \
     document_template_create_internal  # noqa: F401
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.v3.images.complete import \
+from app.socket.v3.agents.image.complete import \
     image_generation_complete  # noqa: F401
 # Import image modules to register internal_sio handlers
-from app.socket.v3.images.generate import generate_image  # noqa: F401
+from app.socket.v3.agents.image.generate import generate_image  # noqa: F401
 # Import log module to register internal_sio handler
 from app.socket.v3.log import log_run  # noqa: F401
 # Import quiz handlers
 # Note: Quiz events removed - questions now handled through scenarios
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.document import \
+from app.socket.v3.tools.document.call import \
     scenario_tool_document  # noqa: F401
-from app.socket.v3.scenarios.tools.image import \
+from app.socket.v3.tools.image.call import \
     scenario_tool_image  # noqa: F401
-from app.socket.v3.scenarios.tools.objectives import \
+from app.socket.v3.tools.objectives.call import \
     scenario_tool_objectives  # noqa: F401
-from app.socket.v3.scenarios.tools.questions import \
+from app.socket.v3.tools.questions.call import \
     scenario_tool_questions  # noqa: F401
-from app.socket.v3.scenarios.tools.statement import \
+from app.socket.v3.tools.title_description.call import \
     scenario_tool_problem_statement  # noqa: F401
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.video import \
+from app.socket.v3.tools.video.call import \
     scenario_tool_video  # noqa: F401
 from app.socket.v3.simulations.group.link import \
     simulation_group_link_internal  # noqa: F401
-from app.socket.v3.simulations.hints.create import \
+from app.socket.v3.agents.hint.create import \
     simulation_hints_create_internal  # noqa: F401
 # Import simulation hints to register internal_sio handler
-from app.socket.v3.simulations.hints.generate import \
+from app.socket.v3.agents.hint.generate import \
     simulation_hints_generate_internal  # noqa: F401
 from app.socket.v3.simulations.message.create import \
     simulation_message_create_internal  # noqa: F401

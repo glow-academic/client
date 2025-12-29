@@ -5,7 +5,8 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, get_internal_sio, transaction
+from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
+from app.main import get_db, transaction
 from app.sql.types import (
     CreateAuthApiRequest,
     CreateAuthApiResponse,
@@ -16,7 +17,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
-internal_sio = get_internal_sio()
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/auth/create_auth_complete.sql"
@@ -87,7 +87,7 @@ async def create_auth(
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         # Trigger Keycloak sync (fire-and-forget)
-        await internal_sio.emit("keycloak_sync", {})
+        await perform_keycloak_sync(department_id=None)
 
         # Convert SQL result to API response
         api_response = CreateAuthApiResponse.model_validate(result.model_dump())
