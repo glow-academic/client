@@ -1229,15 +1229,15 @@ export default function AttemptInput({
           // Get upload_id for this item_id if it exists
           const uploadId = audioUploadIdRef.current.get(evt.item_id);
 
-          // Transport transcript to server
+          // Transport transcript to server via member_progress
           // This will:
-          // 1. Update optimistic UI (via simulation_voice_user_transcript event)
-          // 2. Create the real user message (via simulation_new_message event)
-          // 3. Link audio upload to message if upload_id is available
-          socket.emit("simulation_voice_user_transcript", {
+          // 1. Upsert user message and run (with audio=true)
+          // 2. Link run to group and system/developer messages
+          // 3. Trigger simulation_voice_generate
+          socket.emit("member_progress", {
             chat_id: currentChat.id,
-            item_id: evt.item_id,
-            transcript: transcript,
+            message: transcript,
+            voice_mode: true,
             upload_id: uploadId || undefined,
           });
 
@@ -1248,11 +1248,11 @@ export default function AttemptInput({
 
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] Transported simulation_voice_user_transcript to server:",
+            "[Voice] Transported user transcript to member_progress:",
             {
               chat_id: currentChat.id,
-              item_id: evt.item_id,
-              transcript: transcript.substring(0, 100),
+              transcript_length: transcript.length,
+              upload_id: uploadId || undefined,
             }
           );
           // eslint-disable-next-line no-console
@@ -1439,8 +1439,8 @@ export default function AttemptInput({
           }
         }
 
-        // Notify server of interruption
-        socket.emit("simulation_voice_assistant_interrupted", {
+        // Notify server of interruption via simulation_text_stop
+        socket.emit("simulation_text_stop", {
           chat_id: currentChat.id,
         });
       });
@@ -1699,15 +1699,18 @@ export default function AttemptInput({
           if (!finalText) return;
           if (!socket || !currentChat?.id) return;
 
-          socket.emit("simulation_voice_user_text", {
+          // Emit to member_progress with voice_mode=true
+          socket.emit("member_progress", {
             chat_id: currentChat.id,
             message: finalText,
+            voice_mode: true,
+            upload_id: undefined,
           });
 
           // eslint-disable-next-line no-console
-          console.log("[Voice] Forwarded user message from history_added:", {
+          console.log("[Voice] Forwarded user message to member_progress:", {
             itemId: item.itemId,
-            message: finalText,
+            message: finalText.substring(0, 100),
           });
         } catch (err) {
           // eslint-disable-next-line no-console

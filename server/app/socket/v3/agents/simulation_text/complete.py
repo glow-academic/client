@@ -1,32 +1,92 @@
-"""Handler for simulation_text_complete WebSocket event - ONE EVENT PER FILE."""
+"""Handler for simulation_text_complete internal event - finalizes DB and emits to client."""
 
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_client
-from app.main import get_internal_sio
+from app.main import get_internal_sio, get_pool, sio
 
+logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
 server_router = APIRouter()
 
 
+# Pydantic models for internal events
 class SimulationTextCompletePayload(BaseModel):
-    """Response indicating Simulation Text generation completed successfully."""
+    """Internal event for simulation text completion."""
 
-    success: bool
-    message: str | None = None
+    sid: str
+    type: str  # "tool_call_complete" | "run_complete"
+    chat_id: str
+    run_id: str
+    tool_call_id: str | None = None
+    call_id: str | None = None
+    tool_name: str | None = None
+    final_message: str | None = None
+    final_persona: str | None = None
+    arguments_raw: str | None = None
 
 
-class SimulationTextErrorPayload(BaseModel):
-    """Response indicating an error occurred in Simulation Text generation."""
+class SimulationTextCompleteErrorPayload(BaseModel):
+    """Response indicating an error occurred in simulation text completion."""
 
     success: bool
     message: str
+
+
+# Client-facing payload models
+class SimulationMessageCompletePayload(BaseModel):
+    """Response indicating Simulation message completed successfully."""
+
+    message_id: str
+    chat_id: str
+    final_content: str
+
+
+class SimulationNewMessagePayload(BaseModel):
+    """Response indicating a new simulation message was created."""
+
+    message_id: str
+    chat_id: str
+    role: str
+    content: str
+    completed: bool
+    created_at: str
+    persona_id: str | None = None
+
+
+class SimulationRunCompletePayload(BaseModel):
+    """Response indicating Simulation run completed successfully."""
+
+    chat_id: str
+
+
+# Client emission functions
+async def simulation_message_complete(
+    payload: SimulationMessageCompletePayload, room: str
+) -> None:
+    await sio.emit("simulations_text_message_complete", payload.model_dump(), room=room)
+
+
+async def simulation_new_message(
+    payload: SimulationNewMessagePayload, room: str
+) -> None:
+    await sio.emit("simulations_text_new_message", payload.model_dump(), room=room)
+
+
+async def simulation_run_complete(
+    payload: SimulationRunCompletePayload, room: str
+) -> None:
+    await sio.emit("simulations_text_run_complete", payload.model_dump(), room=room)
 
 
 async def _simulation_text_complete_impl(
@@ -35,12 +95,188 @@ async def _simulation_text_complete_impl(
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Internal implementation - emits to client."""
-    await emit_to_client(
-        "simulations_text_complete",
-        data,
-        room=sid,
-    )
+    """Handle simulation_text_complete internal event - finalizes DB and emits to client."""
+    try:
+        chat_id_uuid = uuid.UUID(data.chat_id)
+        run_id_uuid = uuid.UUID(data.run_id)
+        chat_id_str = data.chat_id
+        room = f"simulation_{chat_id_uuid}"
+
+        logger.debug(
+            f"Received simulation_text_complete: type={data.type}, chat_id={chat_id_str}"
+        )
+
+        pool = get_pool()
+        if not pool:
+            logger.error("Database connection pool not available")
+            return
+
+        async with pool.acquire() as conn:
+            if data.type == "tool_call_complete":
+                # Tool call completed - finalize message and tool call
+                if not data.final_message:
+                    logger.warning("Missing final_message in tool_call_complete")
+                    return
+
+                # Resolve persona_id if final_persona provided
+                persona_id_uuid = None
+                if data.final_persona:
+                    sql_get_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
+                    persona_rows = await conn.fetch(sql_get_personas, chat_id_str)
+                    personas = [dict(row) for row in persona_rows]
+
+                    def find_persona_by_name_inline(
+                        persona_name: str, personas_list: list[dict[str, Any]]
+                    ) -> tuple[uuid.UUID, str] | None:
+                        persona_name_lower = persona_name.lower().strip()
+                        for persona in personas_list:
+                            p_name = (
+                                persona.get("persona_name") or persona.get("name", "")
+                            ).lower()
+                            if persona_name_lower in p_name or p_name in persona_name_lower:
+                                return (
+                                    uuid.UUID(persona["persona_id"]),
+                                    persona.get("persona_name") or persona.get("name", ""),
+                                )
+                        return None
+
+                    persona_match = find_persona_by_name_inline(
+                        data.final_persona, personas
+                    )
+                    if persona_match:
+                        persona_id_uuid = persona_match[0]
+
+                # Get message_id from tool_call via SQL query
+                message_id_uuid = None
+                if data.tool_call_id:
+                    # Get message from tool_call_id
+                    sql_get_message = load_sql(
+                        "app/sql/v3/simulations/get_message_id_from_tool_call.sql"
+                    )
+                    message_row = await conn.fetchrow(
+                        sql_get_message,
+                        uuid.UUID(data.tool_call_id),
+                        str(run_id_uuid),
+                    )
+                    if message_row:
+                        message_id_uuid = message_row["message_id"]
+                elif data.call_id:
+                    # Get tool_call_id from call_id, then get message
+                    sql_get_tool_call = load_sql(
+                        "app/sql/v3/tool_calls/get_tool_call_by_call_id.sql"
+                    )
+                    tool_call_row = await conn.fetchrow(
+                        sql_get_tool_call, data.call_id
+                    )
+                    if tool_call_row:
+                        sql_get_message = load_sql(
+                            "app/sql/v3/simulations/get_message_id_from_tool_call.sql"
+                        )
+                        message_row = await conn.fetchrow(
+                            sql_get_message,
+                            tool_call_row["id"],
+                            str(run_id_uuid),
+                        )
+                        if message_row:
+                            message_id_uuid = message_row["message_id"]
+
+                if not message_id_uuid:
+                    logger.error("Failed to get message_id from tool_call")
+                    return
+
+                # Finalize via consolidated SQL file
+                sql_finalize = load_sql(
+                    "app/sql/v3/simulation_text/text_complete_finalize_complete.sql"
+                )
+                try:
+                    result_row = await conn.fetchrow(
+                        sql_finalize,
+                        str(chat_id_uuid),
+                        str(run_id_uuid),
+                        uuid.UUID(data.tool_call_id) if data.tool_call_id else None,
+                        data.call_id,
+                        message_id_uuid,
+                        data.final_message,
+                        persona_id_uuid,
+                    )
+
+                    if not result_row:
+                        logger.error("Failed to finalize message/tool call")
+                        return
+
+                    final_message_id = result_row["message_id"]
+                    final_content = result_row["final_content"]
+                    completed = result_row["completed"]
+
+                    # Emit completion to client
+                    await simulation_message_complete(
+                        SimulationMessageCompletePayload(
+                            message_id=final_message_id,
+                            chat_id=chat_id_str,
+                            final_content=final_content,
+                        ),
+                        room=room,
+                    )
+
+                    # Emit final message update
+                    sql_get_created_at = load_sql(
+                        "app/sql/v3/messages/get_message_created_at.sql"
+                    )
+                    message_row = await conn.fetchrow(
+                        sql_get_created_at, uuid.UUID(final_message_id)
+                    )
+                    created_at = (
+                        message_row["created_at"].isoformat()
+                        if message_row and message_row.get("created_at")
+                        else ""
+                    )
+
+                    await simulation_new_message(
+                        SimulationNewMessagePayload(
+                            message_id=final_message_id,
+                            chat_id=chat_id_str,
+                            role="assistant",
+                            content=final_content,
+                            completed=completed,
+                            created_at=created_at,
+                            persona_id=str(persona_id_uuid) if persona_id_uuid else None,
+                        ),
+                        room=room,
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error finalizing message/tool call: {e}",
+                        exc_info=True,
+                    )
+                    await internal_sio.emit(
+                        "simulation_text_error",
+                        {
+                            "sid": sid,
+                            "success": False,
+                            "message": f"Failed to finalize: {str(e)}",
+                        },
+                    )
+
+            elif data.type == "run_complete":
+                # Run completed - emit run complete event
+                await simulation_run_complete(
+                    SimulationRunCompletePayload(chat_id=chat_id_str),
+                    room=room,
+                )
+
+    except Exception as e:
+        logger.error(
+            f"Error in simulation_text_complete for {sid}: {str(e)}", exc_info=True
+        )
+        await internal_sio.emit(
+            "simulation_text_error",
+            {
+                "sid": sid,
+                "success": False,
+                "message": str(e),
+            },
+        )
 
 
 @internal_sio.on("simulation_text_complete")  # type: ignore
@@ -52,8 +288,8 @@ async def simulation_text_complete_internal(
         data=data,
         request_type=SimulationTextCompletePayload,
         handler=_simulation_text_complete_impl,  # type: ignore[arg-type]
-        error_event_name="simulations_text_error",
-        error_response_type=SimulationTextErrorPayload,
+        error_event_name="simulation_text_error",
+        error_response_type=SimulationTextCompleteErrorPayload,
     )
 
 

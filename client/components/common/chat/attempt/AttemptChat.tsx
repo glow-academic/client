@@ -634,10 +634,12 @@ export default function AttemptChat({
       setIsSendingMessage(true);
 
       try {
-        socket.emit("simulation_text_send", {
+        // Emit directly to member_progress (voice_mode=false for text mode)
+        socket.emit("member_progress", {
           chat_id: currentChat.id,
           message: message,
-          is_retry: isRetry ?? false,
+          voice_mode: false,
+          upload_id: undefined,
         });
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
@@ -855,7 +857,7 @@ export default function AttemptChat({
       }
     };
 
-    const handleSendSimulationMessageError = (data: {
+    const handleMemberProgressError = (data: {
       success: boolean;
       message: string;
     }) => {
@@ -1202,7 +1204,7 @@ export default function AttemptChat({
     socket.on("simulations_text_stopped", handleSimulationStopped);
     socket.on("simulations_text_ended", handleSimulationContinued);
     socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
-    socket.on("simulations_text_send_error", handleSendSimulationMessageError);
+    socket.on("member_progress_error", handleMemberProgressError);
     socket.on("simulations_text_stop_error", handleStopSimulationError);
     socket.on("simulations_text_end_error", handleContinueSimulationError);
     socket.on(
@@ -1277,10 +1279,7 @@ export default function AttemptChat({
       socket.off("simulations_text_stopped", handleSimulationStopped);
       socket.off("simulations_text_ended", handleSimulationContinued);
       socket.off("simulations_text_end_all_completed", handleEndAllCompleted);
-      socket.off(
-        "simulation_text_send_error",
-        handleSendSimulationMessageError
-      );
+      socket.off("member_progress_error", handleMemberProgressError);
       socket.off("simulation_text_stop_error", handleStopSimulationError);
       socket.off("simulations_text_end_error", handleContinueSimulationError);
       socket.off(

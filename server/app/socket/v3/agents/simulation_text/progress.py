@@ -1,32 +1,84 @@
-"""Handler for simulation_text_progress WebSocket event - ONE EVENT PER FILE."""
+"""Handler for simulation_text_progress internal event - updates DB incrementally and emits to client."""
 
 import uuid
 from typing import Any
 
+import asyncpg  # type: ignore
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_client
-from app.main import get_internal_sio
+from app.main import get_internal_sio, get_pool, sio
 
+logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
 server_router = APIRouter()
 
 
+# Pydantic models for internal events
 class SimulationTextProgressPayload(BaseModel):
-    """Response indicating progress in Simulation Text generation."""
+    """Internal event for simulation text progress updates."""
 
-    type: str
-    message: str | None = None
+    sid: str
+    type: str  # "tool_call_start" | "message_token"
+    chat_id: str
+    run_id: str
+    tool_call_id: str | None = None
+    call_id: str | None = None
+    tool_name: str | None = None
+    token: str | None = None
+    accumulated_content: str | None = None
+    arguments_raw: str | None = None
+    persona_so_far: str | None = None
+    parent_message_id: str | None = None
 
 
-class SimulationTextErrorPayload(BaseModel):
-    """Response indicating an error occurred in Simulation Text generation."""
+class SimulationTextProgressErrorPayload(BaseModel):
+    """Response indicating an error occurred in simulation text progress."""
 
     success: bool
     message: str
+
+
+# Client-facing payload models
+class SimulationNewMessagePayload(BaseModel):
+    """Response indicating a new simulation message was created."""
+
+    message_id: str
+    chat_id: str
+    role: str
+    content: str
+    completed: bool
+    created_at: str
+    persona_id: str | None = None
+
+
+class SimulationMessageTokenPayload(BaseModel):
+    """Response indicating a token was received for a simulation message."""
+
+    message_id: str
+    chat_id: str
+    token: str
+    accumulated_content: str
+
+
+# Client emission functions
+async def simulation_new_message(
+    payload: SimulationNewMessagePayload, room: str
+) -> None:
+    await sio.emit("simulations_text_new_message", payload.model_dump(), room=room)
+
+
+async def simulation_message_token(
+    payload: SimulationMessageTokenPayload, room: str
+) -> None:
+    await sio.emit("simulations_text_message_token", payload.model_dump(), room=room)
 
 
 async def _simulation_text_progress_impl(
@@ -35,12 +87,156 @@ async def _simulation_text_progress_impl(
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Internal implementation - emits to client."""
-    await emit_to_client(
-        "simulations_text_progress",
-        data,
-        room=sid,
-    )
+    """Handle simulation_text_progress internal event - updates DB and emits to client."""
+    try:
+        chat_id_uuid = uuid.UUID(data.chat_id)
+        run_id_uuid = uuid.UUID(data.run_id)
+        chat_id_str = data.chat_id
+        room = f"simulation_{chat_id_uuid}"
+
+        logger.debug(
+            f"Received simulation_text_progress: type={data.type}, chat_id={chat_id_str}"
+        )
+
+        pool = get_pool()
+        if not pool:
+            logger.error("Database connection pool not available")
+            return
+
+        async with pool.acquire() as conn:
+            if data.type == "tool_call_start":
+                # Tool call started - create tool call and initial message
+                # This will be handled by the SQL file when message_token is received
+                logger.debug(
+                    f"Tool call started: call_id={data.call_id}, tool_name={data.tool_name}"
+                )
+
+            elif data.type == "message_token":
+                # Message token received - update DB incrementally
+                if not data.token or not data.accumulated_content:
+                    logger.warning("Missing token or accumulated_content in message_token")
+                    return
+
+                # Resolve persona_id if persona_so_far provided
+                persona_id_uuid = None
+                if data.persona_so_far:
+                    sql_get_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
+                    persona_rows = await conn.fetch(sql_get_personas, chat_id_str)
+                    personas = [dict(row) for row in persona_rows]
+
+                    def find_persona_by_name_inline(
+                        persona_name: str, personas_list: list[dict[str, Any]]
+                    ) -> tuple[uuid.UUID, str] | None:
+                        persona_name_lower = persona_name.lower().strip()
+                        for persona in personas_list:
+                            p_name = (
+                                persona.get("persona_name") or persona.get("name", "")
+                            ).lower()
+                            if persona_name_lower in p_name or p_name in persona_name_lower:
+                                return (
+                                    uuid.UUID(persona["persona_id"]),
+                                    persona.get("persona_name") or persona.get("name", ""),
+                                )
+                        return None
+
+                    persona_match = find_persona_by_name_inline(
+                        data.persona_so_far, personas
+                    )
+                    if persona_match:
+                        persona_id_uuid = persona_match[0]
+
+                # Update DB via consolidated SQL file
+                sql_update = load_sql(
+                    "app/sql/v3/simulation_text/text_progress_update_complete.sql"
+                )
+                try:
+                    result_row = await conn.fetchrow(
+                        sql_update,
+                        str(chat_id_uuid),
+                        str(run_id_uuid),
+                        data.tool_call_id,
+                        data.call_id,
+                        data.tool_name,
+                        data.token,
+                        data.accumulated_content,
+                        data.arguments_raw,
+                        None,  # message_id - will be created/retrieved by SQL
+                        uuid.UUID(data.parent_message_id) if data.parent_message_id else None,
+                        persona_id_uuid,
+                    )
+
+                    if not result_row:
+                        logger.error("Failed to update message/tool call in progress")
+                        return
+
+                    message_id = result_row["message_id"]
+                    tool_call_id = result_row.get("tool_call_id")
+                    accumulated_content = result_row["accumulated_content"]
+
+                    # Emit token to client
+                    await simulation_message_token(
+                        SimulationMessageTokenPayload(
+                            message_id=message_id,
+                            chat_id=chat_id_str,
+                            token=data.token,
+                            accumulated_content=accumulated_content,
+                        ),
+                        room=room,
+                    )
+
+                    # Emit new message event if this is the first token (message just created)
+                    if data.token == accumulated_content[: len(data.token)]:
+                        sql_get_created_at = load_sql(
+                            "app/sql/v3/messages/get_message_created_at.sql"
+                        )
+                        message_row = await conn.fetchrow(
+                            sql_get_created_at, uuid.UUID(message_id)
+                        )
+                        created_at = (
+                            message_row["created_at"].isoformat()
+                            if message_row and message_row.get("created_at")
+                            else ""
+                        )
+
+                        await simulation_new_message(
+                            SimulationNewMessagePayload(
+                                message_id=message_id,
+                                chat_id=chat_id_str,
+                                role="assistant",
+                                content=accumulated_content,
+                                completed=False,
+                                created_at=created_at,
+                                persona_id=str(persona_id_uuid) if persona_id_uuid else None,
+                            ),
+                            room=room,
+                        )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error updating message/tool call in progress: {e}",
+                        exc_info=True,
+                    )
+                    await internal_sio.emit(
+                        "simulation_text_error",
+                        {
+                            "sid": sid,
+                            "success": False,
+                            "message": f"Failed to update progress: {str(e)}",
+                        },
+                    )
+
+    except Exception as e:
+        logger.error(
+            f"Error in simulation_text_progress for {sid}: {str(e)}", exc_info=True
+        )
+        await internal_sio.emit(
+            "simulation_text_error",
+            {
+                "sid": sid,
+                "success": False,
+                "message": str(e),
+            },
+        )
 
 
 @internal_sio.on("simulation_text_progress")  # type: ignore
@@ -52,8 +248,8 @@ async def simulation_text_progress_internal(
         data=data,
         request_type=SimulationTextProgressPayload,
         handler=_simulation_text_progress_impl,  # type: ignore[arg-type]
-        error_event_name="simulations_text_error",
-        error_response_type=SimulationTextErrorPayload,
+        error_event_name="simulation_text_error",
+        error_response_type=SimulationTextProgressErrorPayload,
     )
 
 

@@ -220,26 +220,7 @@ export function ProfileProviderClient({
 
       // Set up event handlers for simulation tracking
       // Note: Socket.IO server-to-client events use requestBody as payload
-      socket.on(
-        "simulations_text_started",
-        (
-          data: Parameters<ServerToClientEvents["simulations_text_started"]>[0]
-        ) => {
-          setStartingSimulationId(null);
-          if (data.success) {
-            toast.success(data.message);
-            window.dispatchEvent(
-              new CustomEvent("simulationStarted", {
-                detail: { attemptId: data.attempt_id },
-              })
-            );
-          } else {
-            toast.error(data.message);
-          }
-        }
-      );
-
-      // Listen for new simulations_started event (used by start.py)
+      // Listen for simulations_started event (used by start.py)
       socket.on(
         "simulations_started",
         (
@@ -389,7 +370,7 @@ export function ProfileProviderClient({
       }
 
       setStartingSimulationId(data.simulation_id);
-      socketRef.current.emit("simulation_text_start", payload);
+      socketRef.current.emit("simulation_start", payload);
     },
     [isConnected]
   );

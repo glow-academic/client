@@ -50,12 +50,6 @@ from .stop import (
 from .stop import (
     server_router as stop_server_router,
 )
-from .streaming import (
-    client_router as streaming_client_router,
-)
-from .streaming import (
-    server_router as streaming_server_router,
-)
 
 client_router = APIRouter(prefix="/simulations", tags=["socket-client"])
 server_router = APIRouter(prefix="/simulations", tags=["socket-server"])
@@ -63,7 +57,6 @@ server_router = APIRouter(prefix="/simulations", tags=["socket-server"])
 client_router.include_router(enter_client_router)
 client_router.include_router(join_client_router)
 client_router.include_router(leave_client_router)
-client_router.include_router(streaming_client_router)
 client_router.include_router(start_client_router)
 client_router.include_router(end_client_router)
 client_router.include_router(next_client_router)
@@ -73,7 +66,6 @@ client_router.include_router(stop_client_router)
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
 server_router.include_router(leave_server_router)
-server_router.include_router(streaming_server_router)
 server_router.include_router(start_server_router)
 server_router.include_router(end_server_router)
 server_router.include_router(next_server_router)

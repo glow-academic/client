@@ -85,7 +85,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             # Import randomization logic from start.py
             # For now, we'll reuse the _create_chat_with_randomization function
             # but extract just the scenario creation part
-            from app.socket.v3.agents.simulation_text.start import (
+            from app.socket.v3.simulations.start import (
                 _create_chat_with_randomization,
             )
 

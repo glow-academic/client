@@ -1,1 +1,0 @@
-"""Simulation messages event handlers."""

@@ -12,7 +12,7 @@ from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.main import get_internal_sio, get_pool, sio
 
 # Import chat creation function from start.py
-from app.socket.v3.agents.simulation_text.start import simulation_chat_create_impl
+from app.socket.v3.simulations.start import simulation_chat_create_impl
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
