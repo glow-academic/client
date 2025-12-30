@@ -470,20 +470,128 @@ async def _document_generate_impl(
                 )
                 return
 
-            # Emit internal event to create template (separate event for database operations)
-            # Completion event will be emitted by the create handler
-            await internal_sio.emit(
-                "document_template_create",
-                {
-                    "document_id": data.documentId,
-                    "document_name": data.documentName,
-                    "template_html": template_html,
-                    "template_schema": template_schema,
-                    "run_id": str(model_run_id),
-                    "sid": sid,
-                    "room": sid,
-                },
-            )
+            # Create template directly in database
+            import os
+            from utils.cache.invalidate_tags import invalidate_tags
+            from app.main import UPLOAD_FOLDER
+
+            try:
+                # Save template HTML to file and create upload record
+                upload_uuid = uuid.uuid4()
+                file_path = f"{upload_uuid}.html"
+                full_path = os.path.join(UPLOAD_FOLDER, file_path)
+
+                # Ensure uploads directory exists
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+                # Write template HTML to file
+                with open(full_path, "w", encoding="utf-8") as f:
+                    f.write(template_html)
+
+                template_mapping: dict[str, Any] | None = None
+
+                async with conn.transaction():
+                    # Create upload record
+                    sql_insert_upload = load_sql("app/sql/v3/uploads/insert_upload.sql")
+                    upload_id_result = await conn.fetchrow(
+                        sql_insert_upload,
+                        file_path,
+                        "text/html",
+                        len(template_html.encode("utf-8")),
+                    )
+                    upload_id = upload_id_result["id"]
+
+                    # If documentId is provided, create template and link to document and run
+                    if data.documentId:
+                        template_schema_jsonb = json.dumps(template_schema)
+                        template_name = f"Template for {data.documentName or 'Document'}"
+
+                        # Create template and link to document and run
+                        sql_create_template = load_sql(
+                            "app/sql/v3/documents/create_template_and_link.sql"
+                        )
+                        template_result = await conn.fetchrow(
+                            sql_create_template,
+                            data.documentId,
+                            str(uuid.UUID(upload_id)),
+                            template_name,
+                            template_schema_jsonb,
+                            True,  # active = true
+                            str(model_run_id),  # run_id
+                        )
+
+                        if template_result:
+                            template_id = template_result["template_id"]
+                            logger.info(
+                                "Created template %s and linked to document %s and run %s",
+                                template_id,
+                                data.documentId,
+                                model_run_id,
+                            )
+
+                        # Fetch updated templates and build mapping from array (no JSONB)
+                        sql_templates = load_sql(
+                            "app/sql/v3/documents/get_document_templates.sql"
+                        )
+                        template_rows = await conn.fetch(sql_templates, data.documentId)
+
+                        # Build mapping from array (replacing JSONB pattern)
+                        template_mapping = {}
+                        for row in template_rows:
+                            upload_id_str = str(row["upload_id"])
+                            template_mapping[upload_id_str] = {
+                                "template_id": str(row["template_id"]),
+                                "template_args": row["template_args"]
+                                if isinstance(row["template_args"], dict)
+                                else json.loads(row["template_args"])
+                                if isinstance(row["template_args"], str)
+                                else {},
+                                "active": row["active"],
+                                "created_at": row["created_at"].isoformat()
+                                if row["created_at"]
+                                else None,
+                                "updated_at": row["updated_at"].isoformat()
+                                if row["updated_at"]
+                                else None,
+                            }
+
+                if data.documentId:
+                    # Invalidate documents cache
+                    await invalidate_tags(["documents"])
+                    logger.info(
+                        "Template saved to document %s with upload_id %s",
+                        data.documentId,
+                        upload_id,
+                    )
+
+                # Emit completion event
+                await document_template_generation_complete(
+                    DocumentTemplateGenerationCompletePayload(
+                        success=True,
+                        message="Document template created successfully",
+                        template_html=template_html,
+                        template_schema=template_schema,
+                        upload_id=upload_id,
+                        template_mapping=template_mapping,
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+
+            except Exception as create_error:
+                logger.error(
+                    f"Error creating document template: {create_error}",
+                    exc_info=True,
+                )
+                await document_template_generation_error(
+                    DocumentTemplateGenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to create template: {str(create_error)}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
             # Log activity
             try:
                 await log_websocket_activity(

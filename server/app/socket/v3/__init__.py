@@ -13,7 +13,7 @@ See `AGENTS.md` for overall architecture principles.
 
 from fastapi import APIRouter
 
-from . import actions, agents, connect, disconnect, evals, log, simulations, tools
+from . import agents, connect, disconnect, evals, log, simulations, tools
 
 # Create main router
 router = APIRouter(prefix="/socket/v3", tags=["socket"])

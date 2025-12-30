@@ -325,3 +325,4 @@ async def scenario_randomize_api(
 ) -> dict[str, bool]:
     """Client-to-server event: Randomize scenario selections."""
     return {"success": True}
+

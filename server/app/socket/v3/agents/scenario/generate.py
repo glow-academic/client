@@ -108,6 +108,8 @@ class GenerateScenarioAIPayload(BaseModel):
     fieldIds: list[str] | None = None
     profileId: str | None = None
     scenarioId: str | None = None  # Optional scenario ID to link generated resources
+    simulationId: str | None = None  # Optional simulation ID - if present, will emit advance after generation
+    attemptId: str | None = None  # Optional attempt ID - used with simulationId for advance
     objectivesMin: int | None = None
     objectivesMax: int | None = None
     imagesEnabled: bool = False  # Flag to enable image generation
@@ -1674,6 +1676,22 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 ),
                 room=sid,
             )
+
+            # If simulation_id is present, emit advance event after generation completes
+            # This allows scenario generation to trigger advance automatically when done
+            if data.simulationId and data.scenarioId:
+                logger.info(
+                    f"Scenario generation completed with simulation_id={data.simulationId}, emitting advance event"
+                )
+                await internal_sio.emit(
+                    "simulation_advance",
+                    {
+                        "scenario_id": str(data.scenarioId),
+                        "attempt_id": data.attemptId,
+                        "profile_id": data.profileId,
+                        "simulation_id": str(data.simulationId),
+                    },
+                )
             # Log activity
             try:
                 await log_websocket_activity(

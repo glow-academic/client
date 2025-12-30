@@ -239,12 +239,31 @@ export function ProfileProviderClient({
         }
       );
 
+      // Listen for new simulations_started event (used by start.py)
       socket.on(
-        "simulations_text_practice_error",
+        "simulations_started",
         (
-          data: Parameters<
-            ServerToClientEvents["simulations_text_practice_error"]
-          >[0]
+          data: Parameters<ServerToClientEvents["simulations_started"]>[0]
+        ) => {
+          setStartingSimulationId(null);
+          if (data.success) {
+            toast.success(data.message);
+            window.dispatchEvent(
+              new CustomEvent("simulationStarted", {
+                detail: { attemptId: data.attempt_id },
+              })
+            );
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      // Listen for simulation start errors (used by start.py, replaces practice errors)
+      socket.on(
+        "simulations_start_error",
+        (
+          data: Parameters<ServerToClientEvents["simulations_start_error"]>[0]
         ) => {
           setStartingSimulationId(null);
           toast.error(data.message);
@@ -389,35 +408,26 @@ export function ProfileProviderClient({
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
+      // Convert practice payload to start simulation payload with practice_mode=True
       const payload: Record<string, unknown> = {
+        practice_mode: true,
         ...(data.profile_id ? { profile_id: data.profile_id } : {}),
       };
       if (data.persona_id !== undefined && data.persona_id !== null) {
-        payload["persona_id"] = data.persona_id;
+        payload["practice_persona_id"] = data.persona_id;
       }
       if (data.parameter_item_ids !== undefined) {
-        payload["parameter_item_ids"] = data.parameter_item_ids;
+        payload["practice_parameter_item_ids"] = data.parameter_item_ids;
       }
       if (data.department_id !== undefined && data.department_id !== null) {
-        payload["department_id"] = data.department_id;
+        payload["practice_department_id"] = data.department_id;
       }
       if (data.infinite_mode !== undefined) {
-        payload["infinite_mode"] = data.infinite_mode;
+        payload["infinite"] = data.infinite_mode;
       }
-      if (
-        data.infinite_time_limit !== undefined &&
-        data.infinite_time_limit !== null
-      ) {
-        payload["infinite_time_limit"] = data.infinite_time_limit;
-      }
-      if (data.simulation_id !== undefined && data.simulation_id !== null) {
-        payload["simulation_id"] = data.simulation_id;
-      }
+      // Note: simulation_id is optional in practice mode (will be found by server)
 
-      if (data.simulation_id) {
-        setStartingSimulationId(data.simulation_id);
-      }
-      socketRef.current.emit("simulation_text_practice", payload);
+      socketRef.current.emit("simulation_start", payload);
     },
     [isConnected]
   );

@@ -438,24 +438,74 @@ async def _generate_hints_impl(
                     f"Got {hints_generated} hints, expected at least 3"
                 )
 
-            # Emit internal event to create hints (separate event for database operations)
+            # Create hints directly in database
             non_empty_hints = [h for h in hint_results if h and h.strip()]
 
             if non_empty_hints:
-                await internal_sio.emit(
-                    "simulation_hints_create",
-                    {
-                        "chat_id": str(chat_id),
-                        "message_id": str(message_id),
-                        "hints": non_empty_hints,
-                    },
-                )
+                try:
+                    # Create hints in single transaction
+                    sql_create_hints = load_sql("app/sql/v3/simulations/create_hints_complete.sql")
+                    result_row = await conn.fetchrow(sql_create_hints, str(message_id), non_empty_hints)
 
-            # Note: Completion event will be emitted by simulation_hints_create handler
-            # after hints are successfully created in the database
-            logger.info(
-                f"Hint generation completed: {len(non_empty_hints)} hints to be created"
-            )
+                    if result_row and result_row.get("hint_ids"):
+                        hint_ids = result_row["hint_ids"]
+                        if isinstance(hint_ids, str):
+                            hint_ids = json.loads(hint_ids)
+                        elif hint_ids is None:
+                            hint_ids = []
+
+                        logger.info(
+                            f"Created {len(hint_ids)} hints for message {message_id} in chat {chat_id}"
+                        )
+
+                        # Emit completion event
+                        hints_for_event = [
+                            HintItem(idx=h["idx"], hint=h.get("hint", "")) for h in hint_ids
+                        ]
+
+                        await hint_generation_progress(
+                            HintGenerationProgressPayload(
+                                type="complete",
+                                message="Hints created successfully",
+                                chat_id=str(chat_id),
+                                message_id=str(message_id),
+                                hint_ids=[
+                                    f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids
+                                ],
+                                hints_count=len(hint_ids),
+                                hints=hints_for_event,
+                            ),
+                            room=f"simulation_{chat_id}",
+                        )
+                    else:
+                        logger.error(f"Failed to create hints for message {message_id}")
+                        await hint_generation_progress(
+                            HintGenerationProgressPayload(
+                                type="error",
+                                message="Failed to create hints in database",
+                                error="Database operation failed",
+                                chat_id=str(chat_id),
+                                message_id=str(message_id),
+                            ),
+                            room=f"simulation_{chat_id}",
+                        )
+                except Exception as create_error:
+                    logger.error(
+                        f"Error creating hints for message {message_id}: {create_error}",
+                        exc_info=True,
+                    )
+                    await hint_generation_progress(
+                        HintGenerationProgressPayload(
+                            type="error",
+                            message=f"Failed to create hints: {str(create_error)}",
+                            error=str(create_error),
+                            chat_id=str(chat_id),
+                            message_id=str(message_id),
+                        ),
+                        room=f"simulation_{chat_id}",
+                    )
+            else:
+                logger.warning(f"No non-empty hints provided for message {message_id}")
         except Exception as e:
             logger.error(
                 f"Hint generation failed for message {message_id}: {e}",

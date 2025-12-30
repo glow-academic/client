@@ -445,9 +445,6 @@ from app.socket.v3.log import log_run  # noqa: F401
 from app.socket.v3.simulations.group.link import (
     simulation_group_link_internal,  # noqa: F401
 )
-from app.socket.v3.simulations.hint_create import (
-    simulation_hints_create_internal,  # noqa: F401
-)
 from app.socket.v3.simulations.message.create import (
     simulation_message_create_internal,  # noqa: F401
 )

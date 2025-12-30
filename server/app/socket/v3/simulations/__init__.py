@@ -26,14 +26,23 @@ from .leave import (
 from .leave import (
     server_router as leave_server_router,
 )
-from .practice import (
-    client_router as practice_client_router,
+from .next import (
+    client_router as next_client_router,
 )
-from .practice import (
-    server_router as practice_server_router,
+from .next import (
+    server_router as next_server_router,
 )
-from .randomize import (
-    client_router as randomize_client_router,
+from .advance import (
+    client_router as advance_client_router,
+)
+from .advance import (
+    server_router as advance_server_router,
+)
+from .start import (
+    client_router as start_client_router,
+)
+from .start import (
+    server_router as start_server_router,
 )
 from .stop import (
     client_router as stop_client_router,
@@ -55,15 +64,18 @@ client_router.include_router(enter_client_router)
 client_router.include_router(join_client_router)
 client_router.include_router(leave_client_router)
 client_router.include_router(streaming_client_router)
+client_router.include_router(start_client_router)
 client_router.include_router(end_client_router)
-client_router.include_router(practice_client_router)
+client_router.include_router(next_client_router)
+client_router.include_router(advance_client_router)
 client_router.include_router(stop_client_router)
-client_router.include_router(randomize_client_router)
 
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
 server_router.include_router(leave_server_router)
 server_router.include_router(streaming_server_router)
+server_router.include_router(start_server_router)
 server_router.include_router(end_server_router)
-server_router.include_router(practice_server_router)
+server_router.include_router(next_server_router)
+server_router.include_router(advance_server_router)
 server_router.include_router(stop_server_router)

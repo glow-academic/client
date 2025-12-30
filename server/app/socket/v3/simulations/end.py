@@ -522,125 +522,33 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         )
                         await conn.execute(sql, str(existing_chat["id"]))
 
-            # Create next chat if not end_all (works for both previous_chat_id and normal cases)
+            # Check for next incomplete scenario and emit to next.py if found
+            # (Don't create chat here - let next.py handle it)
             next_chat_id: str | None = None
-            if not end_all and scenario_links:
-                next_scenario_id = None
-                if is_infinite_mode:
-                    # Cycle through the configured scenarios indefinitely in order (1,2,3,1,2,3...)
-                    # Compute last used scenario index to continue from where we left off
-                    num_scenarios = len(scenario_links)
-                    last_used_index = 0  # Default to start from beginning
+            if not end_all:
+                # Check if there's a next incomplete scenario
+                sql = load_sql(
+                    "app/sql/v3/simulations/check_next_incomplete_scenario.sql"
+                )
+                next_scenario_row = await conn.fetchrow(sql, attempt_id)
 
-                    if num_scenarios > 0 and existing_chats:
-                        # Get the most recent chat's scenario
-                        # Query for the most recent chat with created_at to get accurate ordering
-                        sql = """
-                            SELECT sc.scenario_id, sc.created_at
-                            FROM attempt_chats ac
-                            JOIN simulation_chats sc ON sc.id = ac.chat_id
-                            WHERE ac.attempt_id = $1::uuid
-                            ORDER BY sc.created_at DESC
-                            LIMIT 1
-                        """
-                        most_recent_row = await conn.fetchrow(sql, attempt_id)
-                        if most_recent_row:
-                            most_recent_child_scenario_id = str(
-                                most_recent_row["scenario_id"]
-                            )
-                        else:
-                            most_recent_child_scenario_id = ""
-
-                        if most_recent_child_scenario_id:
-                            # Recursively map child scenario ID to root parent scenario ID
-                            sql = load_sql(
-                                "app/sql/v3/scenario/get_root_scenario_id.sql"
-                            )
-                            parent_row = await conn.fetchrow(
-                                sql, most_recent_child_scenario_id
-                            )
-                            most_recent_parent_id = (
-                                str(parent_row["root_scenario_id"])
-                                if parent_row and parent_row.get("root_scenario_id")
-                                else most_recent_child_scenario_id
-                            )
-
-                            # Find the index of this parent scenario in scenario_links
-                            for idx, scenario_link in enumerate(scenario_links):
-                                if (
-                                    str(scenario_link["scenario_id"])
-                                    == most_recent_parent_id
-                                ):
-                                    last_used_index = idx
-                                    break
-
-                    # Start cycling from the next scenario after the last used one
-                    # In infinite mode, allow cycling back to the same scenario (especially important for single-scenario simulations)
-                    start_index = (last_used_index + 1) % num_scenarios
-
-                    # Cycle through scenarios starting from start_index
-                    # In infinite mode, we allow repeating scenarios, so no exclusion check needed
-                    for offset in range(num_scenarios):
-                        cycling_index = (start_index + offset) % num_scenarios
-                        next_scenario_id = scenario_links[cycling_index]["scenario_id"]
-                        break
-                elif next_index is not None and next_index < len(scenario_links):
-                    # Use the next scenario that doesn't have a graded chat
-                    # (next_index already excludes current_chat_scenario_id)
-                    next_scenario_id = scenario_links[next_index]["scenario_id"]
-
-                if next_scenario_id is not None:
-                    # Double-check that this scenario is valid
-                    scenario_id_str = str(next_scenario_id)
-                    # For infinite mode, allow creating chats for any scenario (including the current one)
-                    # This enables cycling through scenarios indefinitely, especially important for single-scenario simulations
-                    # For normal mode, check grades and existing chats as well
-                    should_create = False
-                    if is_infinite_mode:
-                        # In infinite mode, always allow creating the next chat (cycling logic already selected the appropriate scenario)
-                        should_create = True
-                    else:
-                        # Double-check that this scenario doesn't already have a graded chat,
-                        # is not the current chat's scenario, and doesn't already have a chat
-                        # (it might have been created between the query and now)
-                        should_create = (
-                            scenario_id_str not in scenarios_with_grades_set
-                            and scenario_id_str != current_chat_scenario_id
-                            and scenario_id_str not in existing_scenario_ids
+                if next_scenario_row and next_scenario_row.get("has_next_scenario"):
+                    next_scenario_id = next_scenario_row.get("next_scenario_id")
+                    if next_scenario_id:
+                        logger.info(
+                            f"Found next scenario {next_scenario_id} for attempt {attempt_id}, emitting to next.py"
                         )
-
-                    if should_create:
-                        created_next_chat = await simulation_chat_create_impl(
-                            conn,
-                            scenario_id_str,
-                            attempt_id,
-                            profile_id,
-                            mark_completed=False,
+                        # Emit to next.py handler - it will create the scenario/chat
+                        await internal_sio.emit(
+                            "simulation_next",
+                            {
+                                "attempt_id": str(attempt_id),
+                                "scenario_id": str(next_scenario_id),
+                                "profile_id": str(profile_id) if profile_id else None,
+                                "simulation_id": str(simulation["id"]),
+                            },
                         )
-                        if created_next_chat is None:
-                            await simulation_text_end_error(
-                                EndSimulationErrorPayload(
-                                    success=False, message="Next scenario not found"
-                                ),
-                                room=sid,
-                            )
-                            logger.error(
-                                f"Emitted error to {sid}: Next scenario not found"
-                            )
-                            return
-                        if "id" not in created_next_chat:
-                            await simulation_text_end_error(
-                                EndSimulationErrorPayload(
-                                    success=False,
-                                    message=f"Created chat missing 'id' field: {created_next_chat}",
-                                ),
-                                room=sid,
-                            )
-                            logger.error(
-                                f"Emitted error to {sid}: Created chat missing 'id' field: {created_next_chat}"
-                            )
-                            return
-                        next_chat_id = created_next_chat["id"]
+                        # Note: next_chat_id will be None here - client will receive it via advance event
 
             # Grade the just-completed chat if it has at least 2 messages
             # Skip grading if using previous_chat_id or previous_chat_map (user is reusing previous scores)
