@@ -1,4 +1,4 @@
-"""Handler for grade_voice_progress WebSocket event - ONE EVENT PER FILE."""
+"""Handler for audio_progress WebSocket event - ONE EVENT PER FILE."""
 
 import uuid
 from typing import Any
@@ -15,23 +15,23 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-class GradeVoiceProgressPayload(BaseModel):
-    """Response indicating progress in Grade Voice generation."""
+class AudioProgressPayload(BaseModel):
+    """Response indicating progress in Audio grading generation."""
 
     type: str
     message: str | None = None
 
 
-class GradeVoiceErrorPayload(BaseModel):
-    """Response indicating an error occurred in Grade Voice generation."""
+class AudioErrorPayload(BaseModel):
+    """Response indicating an error occurred in Audio grading generation."""
 
     success: bool
     message: str
 
 
-async def _grade_voice_progress_impl(
+async def _audio_progress_impl(
     sid: str,
-    data: GradeVoiceProgressPayload,
+    data: AudioProgressPayload,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
@@ -43,23 +43,23 @@ async def _grade_voice_progress_impl(
     )
 
 
-@internal_sio.on("grade_voice_progress")  # type: ignore
-async def grade_voice_progress_internal(
+@internal_sio.on("audio_progress")  # type: ignore
+async def audio_progress_internal(
     data: dict[str, Any],
 ) -> None:
-    """Handle grade_voice_progress event from internal bus (server-to-server)."""
+    """Handle audio_progress event from internal bus (server-to-server)."""
     await handle_internal_event(
         data=data,
-        request_type=GradeVoiceProgressPayload,
-        handler=_grade_voice_progress_impl,  # type: ignore[arg-type]
+        request_type=AudioProgressPayload,
+        handler=_audio_progress_impl,  # type: ignore[arg-type]
         error_event_name="simulations_voice_grading_error",
-        error_response_type=GradeVoiceErrorPayload,
+        error_response_type=AudioErrorPayload,
     )
 
 
 register_server_endpoint(
     server_router,
-    "/grade_voice_progress",
-    GradeVoiceProgressPayload,
-    "Progress update for Grade Voice generation",
+    "/audio_progress",
+    AudioProgressPayload,
+    "Progress update for Audio grading generation",
 )

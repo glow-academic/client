@@ -449,17 +449,17 @@ export default function Agent({
     output: string[];
   } => {
     switch (agentType) {
-      case "simulation-text":
+      case "simulation":
       case "hint":
       case "question":
-      case "outline":
       case "scenario":
       case "grade":
       case "document":
       case "classify":
       case "eval":
         return { input: ["text"], output: ["text"] };
-      case "simulation-voice":
+      case "voice":
+      case "audio":
         return { input: ["text", "audio"], output: ["text", "audio"] };
       case "image":
         return { input: [], output: ["image"] };

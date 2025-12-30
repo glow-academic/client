@@ -709,8 +709,8 @@ selected_agents_from_simulation AS (
     FROM simulation_base sb
     JOIN agents a ON (
         (a.id = sb.hint_agent_id AND a.role = 'hint')
-        OR (a.id = sb.simulation_text_agent_id AND a.role = 'simulation-text')
-        OR (a.id = sb.simulation_voice_agent_id AND a.role = 'simulation-voice')
+        OR (a.id = sb.simulation_text_agent_id AND a.role = 'simulation')
+        OR (a.id = sb.simulation_voice_agent_id AND a.role = 'voice')
     )
     WHERE a.active = true
       AND (
@@ -724,7 +724,7 @@ selected_agents_from_simulation AS (
     FROM simulation_base sb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-    JOIN agents a ON a.id = rga.grade_text_agent_id AND a.role IN ('grade', 'grade-text')
+    JOIN agents a ON a.id = rga.grade_text_agent_id AND a.role IN ('grade')
     WHERE a.active = true
     UNION
     SELECT DISTINCT a.id, a.name, a.description, a.role
@@ -732,7 +732,7 @@ selected_agents_from_simulation AS (
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     JOIN rubric_grade_agents_voice rgav ON rgav.rubric_grade_agent_id = rga.id
-    JOIN agents a ON a.id = rgav.grade_voice_agent_id AND a.role IN ('grade', 'grade-voice')
+    JOIN agents a ON a.id = rgav.grade_voice_agent_id AND a.role IN ('audio')
     WHERE a.active = true
 ),
 agents_data AS (
@@ -747,7 +747,7 @@ agents_data AS (
         FROM agents a
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND a.role IN ('hint', 'grade', 'grade-text', 'grade-voice', 'simulation-text', 'simulation-voice')
+        AND a.role IN ('hint', 'grade', 'audio', 'simulation', 'voice')
         GROUP BY a.id, a.name, a.description, a.role
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0

@@ -983,19 +983,13 @@ export default function Simulation({
     const gradeTextAgentIds =
       validAgentIds.filter((id) => {
         const agent = agentMapping[id];
-        return (
-          agent?.roles?.includes("grade") ||
-          agent?.roles?.includes("grade-text")
-        );
+        return agent?.roles?.includes("grade");
       }) || [];
 
     const gradeVoiceAgentIds =
       validAgentIds.filter((id) => {
         const agent = agentMapping[id];
-        return (
-          agent?.roles?.includes("grade") ||
-          agent?.roles?.includes("grade-voice")
-        );
+        return agent?.roles?.includes("audio");
       }) || [];
 
     const simulationTextAgentIds =
@@ -2155,7 +2149,7 @@ export default function Simulation({
                       itemIds={(() => {
                         const roleFilteredIds = validAgentIds.filter((id) => {
                           const agent = agentMapping[id];
-                          return agent?.roles?.includes("simulation-text");
+                          return agent?.roles?.includes("simulation");
                         });
                         // Always include selected agent ID even if it doesn't have the role
                         // (for backward compatibility with agents that may not have roles set)
@@ -2234,7 +2228,7 @@ export default function Simulation({
                       itemIds={(() => {
                         const roleFilteredIds = validAgentIds.filter((id) => {
                           const agent = agentMapping[id];
-                          return agent?.roles?.includes("simulation-voice");
+                          return agent?.roles?.includes("voice");
                         });
                         // Always include selected agent ID even if it doesn't have the role
                         // (for backward compatibility with agents that may not have roles set)

@@ -1,5 +1,5 @@
--- Get previous run_id and latest message_id for an entity (scenario, template, outline)
--- Parameters: $1=entity_id (uuid), $2=entity_type ('scenario'|'template'|'outline')
+-- Get previous run_id and latest message_id for an entity (scenario, template)
+-- Parameters: $1=entity_id (uuid), $2=entity_type ('scenario'|'template')
 -- Returns: run_id, latest_message_id (assistant if exists, otherwise developer/system, otherwise null)
 -- Latest message is the one with no active children in message_tree (leaf node)
 WITH previous_runs AS (

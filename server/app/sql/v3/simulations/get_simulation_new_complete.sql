@@ -493,7 +493,7 @@ agents_data AS (
         FROM agents a
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND a.role IN ('hint', 'grade', 'grade-text', 'grade-voice')
+        AND a.role IN ('hint', 'grade', 'audio')
         GROUP BY a.id, a.name, a.description, a.role
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0

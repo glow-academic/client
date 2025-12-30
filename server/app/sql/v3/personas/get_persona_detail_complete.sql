@@ -204,7 +204,7 @@ agent_mapping_data AS (
         ARRAY[a.role::text] as roles
     FROM agents a
     WHERE a.active = true
-    AND a.role IN ('simulation-text', 'simulation-voice')
+    AND a.role IN ('simulation', 'voice')
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad 

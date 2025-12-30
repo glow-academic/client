@@ -1,4 +1,4 @@
-"""Handler for grade_voice_complete WebSocket event - ONE EVENT PER FILE."""
+"""Handler for audio_complete WebSocket event - ONE EVENT PER FILE."""
 
 import uuid
 from typing import Any
@@ -15,23 +15,23 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-class GradeVoiceCompletePayload(BaseModel):
-    """Response indicating Grade Voice generation completed successfully."""
+class AudioCompletePayload(BaseModel):
+    """Response indicating Audio grading generation completed successfully."""
 
     success: bool
     message: str | None = None
 
 
-class GradeVoiceErrorPayload(BaseModel):
-    """Response indicating an error occurred in Grade Voice generation."""
+class AudioErrorPayload(BaseModel):
+    """Response indicating an error occurred in Audio grading generation."""
 
     success: bool
     message: str
 
 
-async def _grade_voice_complete_impl(
+async def _audio_complete_impl(
     sid: str,
-    data: GradeVoiceCompletePayload,
+    data: AudioCompletePayload,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
@@ -43,23 +43,23 @@ async def _grade_voice_complete_impl(
     )
 
 
-@internal_sio.on("grade_voice_complete")  # type: ignore
-async def grade_voice_complete_internal(
+@internal_sio.on("audio_complete")  # type: ignore
+async def audio_complete_internal(
     data: dict[str, Any],
 ) -> None:
-    """Handle grade_voice_complete event from internal bus (server-to-server)."""
+    """Handle audio_complete event from internal bus (server-to-server)."""
     await handle_internal_event(
         data=data,
-        request_type=GradeVoiceCompletePayload,
-        handler=_grade_voice_complete_impl,  # type: ignore[arg-type]
+        request_type=AudioCompletePayload,
+        handler=_audio_complete_impl,  # type: ignore[arg-type]
         error_event_name="simulations_voice_grading_error",
-        error_response_type=GradeVoiceErrorPayload,
+        error_response_type=AudioErrorPayload,
     )
 
 
 register_server_endpoint(
     server_router,
-    "/grade_voice_complete",
-    GradeVoiceCompletePayload,
-    "Grade Voice generation completed successfully",
+    "/audio_complete",
+    AudioCompletePayload,
+    "Audio grading generation completed successfully",
 )

@@ -3707,7 +3707,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/grade-text/start": {
+    "/socket/v3/client/agents/grade/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -3720,14 +3720,14 @@ export interface paths {
          * Simulation Grading Start Api
          * @description Client-to-server event: Start grading for a simulation chat.
          */
-        post: operations["simulation_grading_start_api_socket_v3_client_agents_grade_text_start_post"];
+        post: operations["simulation_grading_start_api_socket_v3_client_agents_grade_start_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/grade-voice/start": {
+    "/socket/v3/client/agents/audio/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -3740,7 +3740,7 @@ export interface paths {
          * Simulation Grading Start Api
          * @description Client-to-server event: Start grading for a simulation chat.
          */
-        post: operations["simulation_grading_start_api_socket_v3_client_agents_grade_voice_start_post"];
+        post: operations["simulation_grading_start_api_socket_v3_client_agents_audio_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4067,7 +4067,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/text/simulation_text_complete": {
+    "/socket/v3/server/agents/simulation/simulation_text_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4080,14 +4080,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_text_simulation_text_complete_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_simulation_simulation_text_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/text/simulation_text_error": {
+    "/socket/v3/server/agents/simulation/simulation_text_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4100,14 +4100,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_text_simulation_text_error_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_simulation_simulation_text_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/text/simulation_text_progress": {
+    "/socket/v3/server/agents/simulation/simulation_text_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4120,7 +4120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_text_simulation_text_progress_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_simulation_simulation_text_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5227,7 +5227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-text/progress": {
+    "/socket/v3/server/agents/grade/progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5240,14 +5240,14 @@ export interface paths {
          * Simulation Grading Progress Api
          * @description Server-to-client event: Simulation grading progress update.
          */
-        post: operations["simulation_grading_progress_api_socket_v3_server_agents_grade_text_progress_post"];
+        post: operations["simulation_grading_progress_api_socket_v3_server_agents_grade_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-text/grade_text_complete": {
+    "/socket/v3/server/agents/grade/grade_text_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5260,14 +5260,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grade_text_grade_text_complete_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_grade_grade_text_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-text/grade_text_error": {
+    "/socket/v3/server/agents/grade/grade_text_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5280,14 +5280,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grade_text_grade_text_error_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_grade_grade_text_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-text/grade_text_progress": {
+    "/socket/v3/server/agents/grade/grade_text_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5300,14 +5300,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grade_text_grade_text_progress_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_grade_grade_text_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-voice/progress": {
+    "/socket/v3/server/agents/audio/progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5320,14 +5320,14 @@ export interface paths {
          * Simulation Grading Progress Api
          * @description Server-to-client event: Simulation grading progress update.
          */
-        post: operations["simulation_grading_progress_api_socket_v3_server_agents_grade_voice_progress_post"];
+        post: operations["simulation_grading_progress_api_socket_v3_server_agents_audio_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-voice/grade_voice_complete": {
+    "/socket/v3/server/agents/audio/audio_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5340,14 +5340,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_complete_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_audio_audio_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-voice/grade_voice_error": {
+    "/socket/v3/server/agents/audio/audio_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5360,14 +5360,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_error_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_audio_audio_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grade-voice/grade_voice_progress": {
+    "/socket/v3/server/agents/audio/audio_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5380,7 +5380,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_progress_post"];
+        post: operations["endpoint_handler_socket_v3_server_agents_audio_audio_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7015,8 +7015,8 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
-            /** Rubric Grade Agents */
-            rubric_grade_agents: components["schemas"]["ICreateEvalV3RubricGradeAgent"][];
+            /** Use Groups */
+            use_groups: boolean;
             /** Model Run Ids */
             model_run_ids: string[];
             /** Department Ids */
@@ -9462,8 +9462,6 @@ export interface components {
             rubrics?: components["schemas"]["QGetEvalDetailV3Rubric"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids?: string[] | null;
-            /** Rubric Grade Agents */
-            rubric_grade_agents?: components["schemas"]["QGetEvalDetailV3RubricGradeAgent"][] | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */
@@ -9534,8 +9532,8 @@ export interface components {
             rubrics?: components["schemas"]["QGetEvalDetailV3Rubric"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids?: string[] | null;
-            /** Rubric Grade Agents */
-            rubric_grade_agents?: components["schemas"]["QGetEvalDetailV3RubricGradeAgent"][] | null;
+            /** Use Groups */
+            use_groups?: boolean | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */
@@ -11893,13 +11891,6 @@ export interface components {
             /** Key Id */
             key_id: string | null;
         };
-        /** ICreateEvalV3RubricGradeAgent */
-        ICreateEvalV3RubricGradeAgent: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Grade Text Agent Id */
-            grade_text_agent_id: string | null;
-        };
         /** ICreateModelV3Pricing */
         ICreateModelV3Pricing: {
             /** Pricing Type */
@@ -11989,13 +11980,6 @@ export interface components {
             active: boolean | null;
             /** Key Id */
             key_id: string | null;
-        };
-        /** IUpdateEvalV3RubricGradeAgent */
-        IUpdateEvalV3RubricGradeAgent: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Grade Text Agent Id */
-            grade_text_agent_id: string | null;
         };
         /** IUpdateModelV3Pricing */
         IUpdateModelV3Pricing: {
@@ -13986,6 +13970,8 @@ export interface components {
             grade_passed: boolean | null;
             /** Grade Created At */
             grade_created_at: string | null;
+            /** Rubric Grade Agents */
+            rubric_grade_agents: components["schemas"]["QGetEvalDetailV3RubricGradeAgent"][] | null;
         };
         /** QGetEvalDetailV3Rubric */
         QGetEvalDetailV3Rubric: {
@@ -17481,6 +17467,8 @@ export interface components {
             description: string | null;
             /** Agent Id */
             agent_id: string | null;
+            /** Use Groups */
+            use_groups: boolean | null;
             /** Rubric Id */
             rubric_id: string | null;
             /** Rubric Name */
@@ -20020,8 +20008,8 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
-            /** Rubric Grade Agents */
-            rubric_grade_agents: components["schemas"]["IUpdateEvalV3RubricGradeAgent"][];
+            /** Use Groups */
+            use_groups: boolean;
             /** Model Run Ids */
             model_run_ids: string[];
             /** Department Ids */
@@ -27343,7 +27331,7 @@ export interface operations {
             };
         };
     };
-    simulation_grading_start_api_socket_v3_client_agents_grade_text_start_post: {
+    simulation_grading_start_api_socket_v3_client_agents_grade_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -27378,7 +27366,7 @@ export interface operations {
             };
         };
     };
-    simulation_grading_start_api_socket_v3_client_agents_grade_voice_start_post: {
+    simulation_grading_start_api_socket_v3_client_agents_audio_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -27973,7 +27961,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_text_simulation_text_complete_post: {
+    endpoint_handler_socket_v3_server_agents_simulation_simulation_text_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28008,7 +27996,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_text_simulation_text_error_post: {
+    endpoint_handler_socket_v3_server_agents_simulation_simulation_text_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28043,7 +28031,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_text_simulation_text_progress_post: {
+    endpoint_handler_socket_v3_server_agents_simulation_simulation_text_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30003,7 +29991,7 @@ export interface operations {
             };
         };
     };
-    simulation_grading_progress_api_socket_v3_server_agents_grade_text_progress_post: {
+    simulation_grading_progress_api_socket_v3_server_agents_grade_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30038,7 +30026,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grade_text_grade_text_complete_post: {
+    endpoint_handler_socket_v3_server_agents_grade_grade_text_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30073,7 +30061,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grade_text_grade_text_error_post: {
+    endpoint_handler_socket_v3_server_agents_grade_grade_text_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30108,7 +30096,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grade_text_grade_text_progress_post: {
+    endpoint_handler_socket_v3_server_agents_grade_grade_text_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30143,7 +30131,7 @@ export interface operations {
             };
         };
     };
-    simulation_grading_progress_api_socket_v3_server_agents_grade_voice_progress_post: {
+    simulation_grading_progress_api_socket_v3_server_agents_audio_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30178,7 +30166,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_complete_post: {
+    endpoint_handler_socket_v3_server_agents_audio_audio_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30213,7 +30201,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_error_post: {
+    endpoint_handler_socket_v3_server_agents_audio_audio_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30248,7 +30236,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_progress_post: {
+    endpoint_handler_socket_v3_server_agents_audio_audio_progress_post: {
         parameters: {
             query?: never;
             header?: never;

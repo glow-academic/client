@@ -31,16 +31,11 @@ import { cn } from "@/lib/utils";
 // Agent role enum values (from database schema)
 export const AGENT_ROLES = [
   { id: "classify", name: "Classify", description: "Classification agent" },
-  { id: "grade", name: "Grade", description: "Grading agent" },
+  { id: "grade", name: "Grade", description: "Text-based grading agent" },
   {
-    id: "grade-text",
-    name: "Grade Text",
-    description: "Text-based grading agent",
-  },
-  {
-    id: "grade-voice",
-    name: "Grade Voice",
-    description: "Voice-based grading agent",
+    id: "audio",
+    name: "Audio",
+    description: "Audio-based grading agent",
   },
   { id: "hint", name: "Hint", description: "Hint generation agent" },
   {
@@ -52,17 +47,16 @@ export const AGENT_ROLES = [
   { id: "image", name: "Image", description: "Image generation agent" },
   { id: "video", name: "Video", description: "Video generation agent" },
   {
-    id: "simulation-text",
-    name: "Simulation Text",
+    id: "simulation",
+    name: "Simulation",
     description: "Text-based simulation agent",
   },
   {
-    id: "simulation-voice",
-    name: "Simulation Voice",
+    id: "voice",
+    name: "Voice",
     description: "Voice-based simulation agent",
   },
   { id: "eval", name: "Eval", description: "Evaluation agent" },
-  { id: "outline", name: "Outline", description: "Outline generation agent" },
   {
     id: "question",
     name: "Question",

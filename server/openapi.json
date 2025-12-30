@@ -13655,7 +13655,7 @@
         }
       }
     },
-    "/socket/v3/client/agents/grade-text/start": {
+    "/socket/v3/client/agents/grade/start": {
       "post": {
         "tags": [
           "socket",
@@ -13665,7 +13665,7 @@
         ],
         "summary": "Simulation Grading Start Api",
         "description": "Client-to-server event: Start grading for a simulation chat.",
-        "operationId": "simulation_grading_start_api_socket_v3_client_agents_grade_text_start_post",
+        "operationId": "simulation_grading_start_api_socket_v3_client_agents_grade_start_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13686,7 +13686,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Grading Start Api Socket V3 Client Agents Grade Text Start Post"
+                  "title": "Response Simulation Grading Start Api Socket V3 Client Agents Grade Start Post"
                 }
               }
             }
@@ -13704,7 +13704,7 @@
         }
       }
     },
-    "/socket/v3/client/agents/grade-voice/start": {
+    "/socket/v3/client/agents/audio/start": {
       "post": {
         "tags": [
           "socket",
@@ -13714,7 +13714,7 @@
         ],
         "summary": "Simulation Grading Start Api",
         "description": "Client-to-server event: Start grading for a simulation chat.",
-        "operationId": "simulation_grading_start_api_socket_v3_client_agents_grade_voice_start_post",
+        "operationId": "simulation_grading_start_api_socket_v3_client_agents_audio_start_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13735,7 +13735,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Grading Start Api Socket V3 Client Agents Grade Voice Start Post"
+                  "title": "Response Simulation Grading Start Api Socket V3 Client Agents Audio Start Post"
                 }
               }
             }
@@ -14520,7 +14520,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/text/simulation_text_complete": {
+    "/socket/v3/server/agents/simulation/simulation_text_complete": {
       "post": {
         "tags": [
           "socket",
@@ -14530,7 +14530,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_text_simulation_text_complete_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_simulation_simulation_text_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14551,7 +14551,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Text Simulation Text Complete Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Simulation Simulation Text Complete Post"
                 }
               }
             }
@@ -14569,7 +14569,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/text/simulation_text_error": {
+    "/socket/v3/server/agents/simulation/simulation_text_error": {
       "post": {
         "tags": [
           "socket",
@@ -14579,7 +14579,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_text_simulation_text_error_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_simulation_simulation_text_error_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14600,7 +14600,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Text Simulation Text Error Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Simulation Simulation Text Error Post"
                 }
               }
             }
@@ -14618,7 +14618,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/text/simulation_text_progress": {
+    "/socket/v3/server/agents/simulation/simulation_text_progress": {
       "post": {
         "tags": [
           "socket",
@@ -14628,7 +14628,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_text_simulation_text_progress_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_simulation_simulation_text_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14649,7 +14649,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Text Simulation Text Progress Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Simulation Simulation Text Progress Post"
                 }
               }
             }
@@ -17362,7 +17362,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-text/progress": {
+    "/socket/v3/server/agents/grade/progress": {
       "post": {
         "tags": [
           "socket",
@@ -17372,7 +17372,7 @@
         ],
         "summary": "Simulation Grading Progress Api",
         "description": "Server-to-client event: Simulation grading progress update.",
-        "operationId": "simulation_grading_progress_api_socket_v3_server_agents_grade_text_progress_post",
+        "operationId": "simulation_grading_progress_api_socket_v3_server_agents_grade_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17393,7 +17393,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Grading Progress Api Socket V3 Server Agents Grade Text Progress Post"
+                  "title": "Response Simulation Grading Progress Api Socket V3 Server Agents Grade Progress Post"
                 }
               }
             }
@@ -17411,7 +17411,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-text/grade_text_complete": {
+    "/socket/v3/server/agents/grade/grade_text_complete": {
       "post": {
         "tags": [
           "socket",
@@ -17421,7 +17421,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_grade_text_grade_text_complete_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_grade_grade_text_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17442,7 +17442,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Text Grade Text Complete Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Grade Text Complete Post"
                 }
               }
             }
@@ -17460,7 +17460,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-text/grade_text_error": {
+    "/socket/v3/server/agents/grade/grade_text_error": {
       "post": {
         "tags": [
           "socket",
@@ -17470,7 +17470,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_grade_text_grade_text_error_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_grade_grade_text_error_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17491,7 +17491,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Text Grade Text Error Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Grade Text Error Post"
                 }
               }
             }
@@ -17509,7 +17509,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-text/grade_text_progress": {
+    "/socket/v3/server/agents/grade/grade_text_progress": {
       "post": {
         "tags": [
           "socket",
@@ -17519,7 +17519,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_grade_text_grade_text_progress_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_grade_grade_text_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17540,7 +17540,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Text Grade Text Progress Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Grade Text Progress Post"
                 }
               }
             }
@@ -17558,7 +17558,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-voice/progress": {
+    "/socket/v3/server/agents/audio/progress": {
       "post": {
         "tags": [
           "socket",
@@ -17568,7 +17568,7 @@
         ],
         "summary": "Simulation Grading Progress Api",
         "description": "Server-to-client event: Simulation grading progress update.",
-        "operationId": "simulation_grading_progress_api_socket_v3_server_agents_grade_voice_progress_post",
+        "operationId": "simulation_grading_progress_api_socket_v3_server_agents_audio_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17589,7 +17589,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Grading Progress Api Socket V3 Server Agents Grade Voice Progress Post"
+                  "title": "Response Simulation Grading Progress Api Socket V3 Server Agents Audio Progress Post"
                 }
               }
             }
@@ -17607,7 +17607,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-voice/grade_voice_complete": {
+    "/socket/v3/server/agents/audio/audio_complete": {
       "post": {
         "tags": [
           "socket",
@@ -17617,7 +17617,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_complete_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_audio_audio_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17638,7 +17638,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Voice Grade Voice Complete Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Audio Audio Complete Post"
                 }
               }
             }
@@ -17656,7 +17656,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-voice/grade_voice_error": {
+    "/socket/v3/server/agents/audio/audio_error": {
       "post": {
         "tags": [
           "socket",
@@ -17666,7 +17666,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_error_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_audio_audio_error_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17687,7 +17687,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Voice Grade Voice Error Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Audio Audio Error Post"
                 }
               }
             }
@@ -17705,7 +17705,7 @@
         }
       }
     },
-    "/socket/v3/server/agents/grade-voice/grade_voice_progress": {
+    "/socket/v3/server/agents/audio/audio_progress": {
       "post": {
         "tags": [
           "socket",
@@ -17715,7 +17715,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_grade_voice_grade_voice_progress_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_audio_audio_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17736,7 +17736,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Grade Voice Grade Voice Progress Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Audio Audio Progress Post"
                 }
               }
             }

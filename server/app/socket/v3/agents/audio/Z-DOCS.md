@@ -1,8 +1,8 @@
-# Grade Voice Agent Documentation
+# Audio Agent Documentation
 
 ## Purpose
 
-The grade voice agent grades voice-based simulation conversations. It evaluates student performance across multiple standard groups and standards, generating detailed feedback and scores for voice interactions.
+The audio agent grades voice-based simulation conversations. It evaluates student performance across multiple standard groups and standards, generating detailed feedback and scores for voice interactions.
 
 ## Event Flow
 
@@ -13,21 +13,21 @@ The grade voice agent grades voice-based simulation conversations. It evaluates 
    - `department_id`: UUID of the department
    - `sid`: Optional WebSocket session ID
 
-2. **Server (`grade_voice/generate.py`)**:
+2. **Server (`audio/generate.py`)**:
    - Gets context (chat, scenario, rubric, conversation history)
    - Creates grading agent with tools (one per standard group)
    - Runs agent with streaming
-   - Emits `grade_voice_progress` internal events for each tool call
+   - Emits `audio_progress` internal events for each tool call
    - Emits `log_run` for token/pricing logging
-   - Emits `grade_voice_complete` on completion
+   - Emits `audio_complete` on completion
 
-3. **Server (`grade_voice/progress.py`)**:
-   - Receives `grade_voice_progress` internal events
+3. **Server (`audio/progress.py`)**:
+   - Receives `audio_progress` internal events
    - Updates grading progress incrementally
    - Emits `simulations_voice_grading_progress` to client
 
-4. **Server (`grade_voice/complete.py`)**:
-   - Receives `grade_voice_complete` internal events
+4. **Server (`audio/complete.py`)**:
+   - Receives `audio_complete` internal events
    - Finalizes grading in database
    - Emits `simulations_voice_grading_complete` to client
 
@@ -39,12 +39,12 @@ The grade voice agent grades voice-based simulation conversations. It evaluates 
 - Parameters: `chat_id`, `department_id`, `profile_id`
 - Returns: All context fields (chat, scenario, rubric, standard groups, standards, conversation history, agent, model, provider, etc.)
 
-### `grade_voice_progress_update_complete.sql`
+### `audio_progress_update_complete.sql`
 - Updates grading progress incrementally
 - Parameters: `chat_id`, `run_id`, `standard_group_id`, `standard_id`, `score`, `feedback`
 - Returns: `chat_id`, `standard_group_id`, `standard_id`, `updated`
 
-### `grade_voice_complete_finalize_complete.sql`
+### `audio_complete_finalize_complete.sql`
 - Finalizes grading in database
 - Parameters: `chat_id`, `run_id`
 - Returns: `chat_id`, `completed`, `total_score`
@@ -66,7 +66,7 @@ The grade voice agent grades voice-based simulation conversations. It evaluates 
 ## File Structure
 
 ```
-grade_voice/
+audio/
 ├── __init__.py          # Event registration
 ├── Z-DOCS.md           # This file
 ├── generate.py          # Main grading handler
@@ -88,4 +88,21 @@ grade_voice/
 ### `simulations_voice_grading_error`
 - Emitted by: `generate.py`, `error.py`
 - Payload: `success`, `message`, `chat_id`
+
+## Internal Events
+
+### `audio_progress`
+- Internal event name (was `grade_voice_progress`)
+- Emitted by: `generate.py`
+- Handled by: `progress.py`
+
+### `audio_complete`
+- Internal event name (was `grade_voice_complete`)
+- Emitted by: `generate.py`
+- Handled by: `complete.py`
+
+### `audio_error`
+- Internal event name (was `grade_voice_error`)
+- Emitted by: `generate.py`
+- Handled by: `error.py`
 

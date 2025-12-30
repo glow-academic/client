@@ -129,7 +129,7 @@ agent_mapping_data AS (
         COALESCE(a.description, '') as description,
         ARRAY[a.role::text] as roles
     FROM params x
-    JOIN agents a ON a.active = true AND a.role IN ('simulation-text', 'simulation-voice')
+    JOIN agents a ON a.active = true AND a.role IN ('simulation', 'voice')
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     GROUP BY a.id, a.name, a.description, a.role
     HAVING 
