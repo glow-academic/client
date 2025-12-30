@@ -167,12 +167,13 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
                 )
                 return
 
-            # Get eval data (agent_id, rubric_grade_agent_id, dynamic)
+            # Get eval data (agent_ids from eval_agents, rubric_grade_agent_id, dynamic)
             # Get rubric_grade_agent for this specific run from junction table
+            # Get first agent from eval_agents for backward compatibility (UI will allow selecting agents per run later)
             eval_row = await conn.fetchrow(
                 """
                 SELECT 
-                    e.agent_id::text as agent_id,
+                    (SELECT ea.agent_id::text FROM eval_agents ea WHERE ea.eval_id = e.id ORDER BY ea.created_at LIMIT 1) as agent_id,
                     errga.rubric_grade_agent_id::text as rubric_grade_agent_id,
                     rga.rubric_id::text as rubric_id,
                     rga.grade_text_agent_id::text as eval_agent_id,

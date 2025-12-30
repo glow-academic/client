@@ -53,8 +53,7 @@ CREATE TYPE types.q_get_eval_detail_v3_agent AS (
 CREATE TYPE types.q_get_eval_detail_v3_rubric AS (
     rubric_id uuid,
     name text,
-    description text,
-    agent_role text
+    description text
 );
 
 CREATE TYPE types.q_get_eval_detail_v3_rubric_grade_agent AS (
@@ -109,13 +108,13 @@ CREATE OR REPLACE FUNCTION api_get_eval_detail_v3(
     available_model_runs_page int DEFAULT 1,
     available_model_runs_page_size int DEFAULT 50
 )
-RETURNS TABLE (
+    RETURNS TABLE (
     eval_exists boolean,
     actor_name text,
     eval_id uuid,
     name text,
     description text,
-    agent_id uuid,
+    agent_ids text[],
     active boolean,
     dynamic boolean,
     created_at timestamptz,
@@ -174,7 +173,6 @@ eval_data AS (
         e.id as eval_id,
         e.name,
         e.description,
-        e.agent_id,
         e.use_groups,
         e.active,
         e.dynamic,
@@ -182,6 +180,14 @@ eval_data AS (
         e.updated_at
     FROM params x
     JOIN evals e ON e.id = x.eval_id
+),
+eval_agents_data AS (
+    SELECT 
+        ea.eval_id,
+        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids
+    FROM params x
+    JOIN eval_agents ea ON ea.eval_id = x.eval_id
+    GROUP BY ea.eval_id
 ),
 -- Get rubric_grade_agents per run (when use_groups = false)
 runs_rubric_grade_agents_data AS (
@@ -383,8 +389,7 @@ valid_rubrics_data AS (
     SELECT DISTINCT
         r.id,
         r.name,
-        COALESCE(r.description, '') as description,
-        r.agent_role::text as agent_role
+        COALESCE(r.description, '') as description
     FROM params x
     JOIN rubrics r ON r.active = true
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
@@ -397,8 +402,7 @@ valid_rubrics_data AS (
     SELECT DISTINCT
         r2.id,
         r2.name,
-        COALESCE(r2.description, '') as description,
-        r2.agent_role::text as agent_role
+        COALESCE(r2.description, '') as description
     FROM params x
     JOIN evals e ON e.id = x.eval_id
     LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND e.use_groups = false
@@ -409,7 +413,7 @@ valid_rubrics_data AS (
 ),
 rubrics_array AS (
     SELECT COALESCE(
-        ARRAY_AGG((vr.id, vr.name, vr.description, vr.agent_role)::types.q_get_eval_detail_v3_rubric),
+        ARRAY_AGG((vr.id, vr.name, vr.description)::types.q_get_eval_detail_v3_rubric),
         '{}'::types.q_get_eval_detail_v3_rubric[]
     ) as rubrics,
     COALESCE(ARRAY_AGG(vr.id::text), ARRAY[]::text[]) as rubric_ids
@@ -540,7 +544,7 @@ SELECT
     ed.eval_id,
     ed.name,
     ed.description,
-    ed.agent_id,
+    COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
     ed.active,
     ed.dynamic,
     ed.created_at,
@@ -574,6 +578,7 @@ SELECT
 FROM eval_exists_check eec
 CROSS JOIN params
 CROSS JOIN eval_data ed
+LEFT JOIN eval_agents_data ead ON ead.eval_id = ed.eval_id
 LEFT JOIN eval_departments_data edd ON edd.eval_id = ed.eval_id
 LEFT JOIN eval_status_summary ess ON ess.eval_id = ed.eval_id
 CROSS JOIN model_runs_array mra

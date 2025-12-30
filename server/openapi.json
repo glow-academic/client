@@ -22003,10 +22003,13 @@
             "type": "string",
             "title": "Description"
           },
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
+          "agent_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Agent Ids"
           },
           "use_groups": {
             "type": "boolean",
@@ -22041,7 +22044,7 @@
         "required": [
           "name",
           "description",
-          "agent_id",
+          "agent_ids",
           "use_groups",
           "model_run_ids",
           "department_ids",
@@ -26347,32 +26350,10 @@
             ],
             "title": "Profile Id"
           },
-          "conversation_mode": {
+          "infinite_mode": {
             "type": "boolean",
-            "title": "Conversation Mode",
+            "title": "Infinite Mode",
             "default": false
-          },
-          "conversation_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Agent Id"
-          },
-          "conversation_max_turns": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Max Turns"
           }
         },
         "type": "object",
@@ -30964,17 +30945,19 @@
             ],
             "title": "Description"
           },
-          "agent_id": {
+          "agent_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Agent Id"
+            "title": "Agent Ids"
           },
           "active": {
             "anyOf": [
@@ -31390,18 +31373,6 @@
               }
             ],
             "title": "Description"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
           },
           "agent_ids": {
             "anyOf": [
@@ -47620,17 +47591,19 @@
             ],
             "title": "Rubric Id"
           },
-          "agent_id": {
+          "agent_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Agent Id"
+            "title": "Agent Ids"
           },
           "dynamic": {
             "anyOf": [
@@ -47774,7 +47747,7 @@
           "name",
           "description",
           "rubric_id",
-          "agent_id",
+          "agent_ids",
           "dynamic",
           "rubric_name",
           "rubric_description",
@@ -54301,7 +54274,7 @@
             ],
             "title": "Archived"
           },
-          "conversation_mode": {
+          "infinite_mode": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -54310,30 +54283,7 @@
                 "type": "null"
               }
             ],
-            "title": "Conversation Mode"
-          },
-          "conversation_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Agent Id"
-          },
-          "conversation_max_turns": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Max Turns"
+            "title": "Infinite Mode"
           }
         },
         "type": "object",
@@ -54342,9 +54292,7 @@
           "created_at",
           "eval_id",
           "archived",
-          "conversation_mode",
-          "conversation_agent_id",
-          "conversation_max_turns"
+          "infinite_mode"
         ],
         "title": "QGetEvalAttemptV3Attempt"
       },
@@ -54384,17 +54332,19 @@
             ],
             "title": "Description"
           },
-          "agent_id": {
+          "agent_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Agent Id"
+            "title": "Agent Ids"
           },
           "dynamic": {
             "anyOf": [
@@ -54463,17 +54413,6 @@
               }
             ],
             "title": "System Prompt"
-          },
-          "conversation_agent_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conversation Agent Name"
           }
         },
         "type": "object",
@@ -54481,14 +54420,13 @@
           "eval_id",
           "name",
           "description",
-          "agent_id",
+          "agent_ids",
           "dynamic",
           "rubric_id",
           "rubric_name",
           "rubric_description",
           "eval_agent_id",
-          "system_prompt",
-          "conversation_agent_name"
+          "system_prompt"
         ],
         "title": "QGetEvalAttemptV3Eval"
       },
@@ -55295,25 +55233,13 @@
               }
             ],
             "title": "Description"
-          },
-          "agent_role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Role"
           }
         },
         "type": "object",
         "required": [
           "rubric_id",
           "name",
-          "description",
-          "agent_role"
+          "description"
         ],
         "title": "QGetEvalDetailV3Rubric"
       },
@@ -63881,17 +63807,6 @@
             ],
             "title": "Pass Percentage"
           },
-          "agent_role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Role"
-          },
           "department_ids": {
             "anyOf": [
               {
@@ -63999,7 +63914,6 @@
           "points",
           "pass_points",
           "pass_percentage",
-          "agent_role",
           "department_ids",
           "simulation_ids",
           "active_simulation_count",
@@ -74625,17 +74539,19 @@
             ],
             "title": "Description"
           },
-          "agent_id": {
+          "agent_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Agent Id"
+            "title": "Agent Ids"
           },
           "use_groups": {
             "anyOf": [
@@ -74790,7 +74706,7 @@
           "eval_id",
           "name",
           "description",
-          "agent_id",
+          "agent_ids",
           "use_groups",
           "rubric_id",
           "rubric_name",
@@ -86587,10 +86503,13 @@
             "type": "string",
             "title": "Description"
           },
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
+          "agent_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Agent Ids"
           },
           "use_groups": {
             "type": "boolean",
@@ -86626,7 +86545,7 @@
           "eval_id",
           "name",
           "description",
-          "agent_id",
+          "agent_ids",
           "use_groups",
           "model_run_ids",
           "department_ids",

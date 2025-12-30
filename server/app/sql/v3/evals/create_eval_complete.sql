@@ -23,7 +23,7 @@ END $$;
 CREATE OR REPLACE FUNCTION api_create_eval_v3(
     name text,
     description text,
-    agent_id uuid,
+    agent_ids uuid[],
     use_groups boolean,
     model_run_ids uuid[],
     department_ids uuid[],
@@ -42,7 +42,7 @@ WITH params AS (
     SELECT 
         name AS name,
         description AS description,
-        agent_id AS agent_id,
+        COALESCE(agent_ids, ARRAY[]::uuid[]) AS agent_ids,
         COALESCE(use_groups, false) AS use_groups,
         model_run_ids AS model_run_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
@@ -65,10 +65,24 @@ validate_create_permissions AS (
     FROM user_profile up
 ),
 new_eval AS (
-    INSERT INTO evals (name, description, agent_id, use_groups, active, dynamic, created_at, updated_at)
-    SELECT name, description, agent_id, use_groups, active, dynamic, NOW(), NOW()
+    INSERT INTO evals (name, description, use_groups, active, dynamic, created_at, updated_at)
+    SELECT name, description, use_groups, active, dynamic, NOW(), NOW()
     FROM params
     RETURNING id as eval_id
+),
+link_agents AS (
+    INSERT INTO eval_agents (eval_id, agent_id, created_at, updated_at)
+    SELECT 
+        ne.eval_id,
+        a_id,
+        NOW(),
+        NOW()
+    FROM new_eval ne
+    CROSS JOIN params p
+    CROSS JOIN UNNEST(p.agent_ids) as a_id
+    WHERE COALESCE(array_length(p.agent_ids, 1), 0) > 0
+    ON CONFLICT (eval_id, agent_id) DO UPDATE SET
+        updated_at = NOW()
 ),
 link_departments AS (
     INSERT INTO eval_departments (eval_id, department_id, active, created_at, updated_at)

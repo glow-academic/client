@@ -11,9 +11,11 @@ The eval agent manages evaluation attempts and runs. It handles starting eval at
 1. **Client emits `eval_start`** with:
    - `eval_id`: UUID of the eval to start
    - `profile_id`: Optional UUID of the profile
+   - `infinite_mode`: Boolean flag for infinite mode (cycles through runs indefinitely)
 
 2. **Server (`eval/start.py`)**:
-   - Creates eval_attempt record
+   - Creates eval_attempt record with `infinite_mode` flag
+   - Gets agent_ids from `eval_agents` junction table (replaces old `evals.agent_id`)
    - Emits `evals_started` to client
 
 3. **Client emits `eval_run_start`** with:
@@ -23,6 +25,8 @@ The eval agent manages evaluation attempts and runs. It handles starting eval at
 
 4. **Server (`eval/run_start.py`)**:
    - Starts a single eval run (idempotent)
+   - Gets agent_id from `eval_agents` junction table (first agent for backward compatibility)
+   - Gets rubric_grade_agent_id from `eval_runs_rubric_grade_agents` or `eval_groups_rubric_grade_agents`
    - Checks if run is already completed/in_progress
    - Emits `evals_run_started` to client
 
@@ -36,6 +40,10 @@ The eval agent manages evaluation attempts and runs. It handles starting eval at
 
 7. **Server (`eval/process_next.py`)**:
    - Processes next pending eval run
+   - Checks `infinite_mode` from `eval_attempts` table
+   - If `infinite_mode=true`, cycles back to first run when all runs completed
+   - If `infinite_mode=false`, emits completion event when all runs completed
+   - Gets agent_id from `eval_agents` via `get_eval_dynamic_and_agent.sql`
    - Triggers scenario generation for eval run
    - Emits `evals_process_next` to client
 
@@ -58,10 +66,10 @@ The eval agent manages evaluation attempts and runs. It handles starting eval at
 
 ## SQL Files
 
-### `create_eval_attempt_complete.sql`
-- Creates eval_attempt record
-- Parameters: `eval_id`, `profile_id`
-- Returns: `attempt_id`, `eval_id`, `created_at`
+### `start_eval_attempt_complete.sql`
+- Creates eval_attempt record with infinite_mode flag
+- Parameters: `eval_id`, `profile_id`, `infinite_mode`
+- Returns: `attempt_id`, `eval_id`, `infinite_mode`, `created_at`
 
 ### `start_eval_run_complete.sql`
 - Starts a single eval run (idempotent)
@@ -90,11 +98,54 @@ The eval agent manages evaluation attempts and runs. It handles starting eval at
 
 ## Key Responsibilities
 
-1. **Attempt Management**: Creates and manages eval attempts
+1. **Attempt Management**: Creates and manages eval attempts with `infinite_mode` support
 2. **Run Management**: Starts, stops, and processes individual eval runs
 3. **Batch Processing**: Supports starting all runs at once
 4. **Workflow Orchestration**: Processes runs sequentially and triggers scenario generation
 5. **State Management**: Tracks run status (pending, in_progress, completed, stopped)
+6. **Infinite Mode**: Cycles through runs indefinitely when `infinite_mode=true`
+7. **Agent Selection**: Uses `eval_agents` junction table for multiple agents per eval (replaces single `evals.agent_id`)
+
+## Agent Selection Pattern
+
+**Migration from single agent to multiple agents:**
+
+- **Old pattern**: `evals.agent_id` (single UUID column)
+- **New pattern**: `eval_agents` junction table (many-to-many relationship)
+
+**SQL Pattern**:
+```sql
+-- Get agent_ids array from junction table
+SELECT ARRAY_AGG(ea.agent_id ORDER BY ea.created_at) as agent_ids
+FROM eval_agents ea
+WHERE ea.eval_id = $1::uuid
+```
+
+**Backward Compatibility**: 
+- `run_start.py` gets first agent from `eval_agents` for backward compatibility
+- Future UI will allow selecting specific agents per group/run
+
+## Infinite Mode Pattern
+
+**Purpose**: Allow eval attempts to cycle through runs indefinitely instead of stopping when all runs complete.
+
+**Implementation**:
+- `eval_attempts.infinite_mode` boolean column (defaults to `false`)
+- When `infinite_mode=true`, `process_next.py` cycles back to first run when all runs completed
+- When `infinite_mode=false`, emits completion event when all runs completed
+
+**SQL Pattern**:
+```sql
+-- Check infinite_mode from attempt
+SELECT infinite_mode FROM eval_attempts WHERE id = $1::uuid
+
+-- In infinite mode, cycle to first run
+IF infinite_mode THEN
+    next_run_id := all_run_ids[1]; -- Cycle to first
+ELSE
+    -- Emit completion event
+END IF;
+```
 
 ## Integration Points
 

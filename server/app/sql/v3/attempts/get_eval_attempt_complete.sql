@@ -64,23 +64,20 @@ CREATE TYPE types.q_get_eval_attempt_v3_attempt AS (
     created_at timestamptz,
     eval_id uuid,
     archived boolean,
-    conversation_mode boolean,
-    conversation_agent_id uuid,
-    conversation_max_turns int
+    infinite_mode boolean
 );
 
 CREATE TYPE types.q_get_eval_attempt_v3_eval AS (
     eval_id uuid,
     name text,
     description text,
-    agent_id uuid,
+    agent_ids text[],
     dynamic boolean,
     rubric_id uuid,
     rubric_name text,
     rubric_description text,
     eval_agent_id uuid,
-    system_prompt text,
-    conversation_agent_name text
+    system_prompt text
 );
 
 CREATE TYPE types.q_get_eval_attempt_v3_status_summary AS (
@@ -129,27 +126,27 @@ attempt_data AS (
         ea.created_at,
         ea.eval_id,
         ea.archived,
-        ea.conversation_mode,
-        ea.conversation_agent_id,
-        ea.conversation_max_turns
+        ea.infinite_mode
     FROM params x
     JOIN eval_attempts ea ON ea.id = x.attempt_id
 ),
--- Get conversation agent name
-conversation_agent_info AS (
+-- Get eval agents for system prompt (use first agent)
+eval_agents_data AS (
     SELECT 
-        a.id as agent_id,
-        a.name as agent_name
+        ea.eval_id,
+        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids,
+        (ARRAY_AGG(ea.agent_id ORDER BY ea.created_at))[1] as first_agent_id
     FROM attempt_data ad
-    LEFT JOIN agents a ON a.id = ad.conversation_agent_id
+    JOIN eval_agents ea ON ea.eval_id = ad.eval_id
+    GROUP BY ea.eval_id
 ),
--- Get system prompt from eval's agent_id (default active prompt)
+-- Get system prompt from eval's first agent (default active prompt)
 agent_system_prompt AS (
     SELECT 
         COALESCE(pr.system_prompt, '') as system_prompt
     FROM attempt_data ad
-    JOIN evals e ON e.id = ad.eval_id
-    LEFT JOIN agent_prompts ap ON ap.agent_id = e.agent_id AND ap.active = true
+    LEFT JOIN eval_agents_data ead ON ead.eval_id = ad.eval_id
+    LEFT JOIN agent_prompts ap ON ap.agent_id = ead.first_agent_id AND ap.active = true
     LEFT JOIN prompts pr ON pr.id = ap.prompt_id
     LIMIT 1
 ),
@@ -158,7 +155,7 @@ eval_info AS (
         e.id as eval_id,
         e.name as eval_name,
         e.description as eval_description,
-        e.agent_id,
+        COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
         e.dynamic,
         -- Get first rubric and eval_agent from junction table
         -- Get first rubric from runs (when use_groups = false) or groups (when use_groups = true)
@@ -218,6 +215,7 @@ eval_info AS (
          LIMIT 1) as eval_agent_id
     FROM attempt_data ad
     JOIN evals e ON e.id = ad.eval_id
+    LEFT JOIN eval_agents_data ead ON ead.eval_id = e.id
 ),
 -- Get all runs for this eval (from eval_runs)
 eval_runs_data AS (
@@ -381,8 +379,8 @@ runs_aggregated AS (
 SELECT 
     aec.attempt_exists,
     ap.actor_name,
-    (ad.id, ad.created_at, ad.eval_id, ad.archived, ad.conversation_mode, ad.conversation_agent_id, ad.conversation_max_turns)::types.q_get_eval_attempt_v3_attempt as attempt,
-    (ei.eval_id, ei.eval_name, ei.eval_description, ei.agent_id, ei.dynamic, ei.rubric_id, ei.rubric_name, ei.rubric_description, ei.eval_agent_id, COALESCE(asp.system_prompt, ''), cai.agent_name)::types.q_get_eval_attempt_v3_eval as eval,
+    (ad.id, ad.created_at, ad.eval_id, ad.archived, ad.infinite_mode)::types.q_get_eval_attempt_v3_attempt as attempt,
+    (ei.eval_id, ei.eval_name, ei.eval_description, ei.agent_ids, ei.dynamic, ei.rubric_id, ei.rubric_name, ei.rubric_description, ei.eval_agent_id, COALESCE(asp.system_prompt, ''))::types.q_get_eval_attempt_v3_eval as eval,
     COALESCE(ra.runs, '{}'::types.q_get_eval_attempt_v3_run[]) as runs,
     (ss.not_started, ss.in_progress, ss.completed, ss.total)::types.q_get_eval_attempt_v3_status_summary as status_summary
 FROM attempt_exists_check aec
@@ -392,7 +390,6 @@ CROSS JOIN status_summary ss
 CROSS JOIN actor_profile ap
 CROSS JOIN agent_system_prompt asp
 CROSS JOIN runs_aggregated ra
-LEFT JOIN conversation_agent_info cai ON cai.agent_id = ad.conversation_agent_id
 $$;
 
 COMMIT;

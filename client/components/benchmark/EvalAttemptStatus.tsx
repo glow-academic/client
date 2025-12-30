@@ -55,19 +55,12 @@ export default function EvalAttemptStatus({
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());
   const [stoppingRunIds, setStoppingRunIds] = useState<Set<string>>(new Set());
   
-  // Conversation settings state
+  // Attempt and eval info
   const attempt = attemptData.attempt;
   const evalInfo = attemptData.eval;
-  const [conversationMode] = useState(attempt.conversation_mode || false);
-  const [conversationAgentId, setConversationAgentId] = useState<string | null>(
-    attempt.conversation_agent_id || null
-  );
-  const [conversationMaxTurns, setConversationMaxTurns] = useState<number | null>(
-    attempt.conversation_max_turns || null
-  );
+  const [infiniteMode] = useState(attempt.infinite_mode || false);
   const [systemPrompt, setSystemPrompt] = useState(evalInfo.system_prompt || "");
   const [applySystemPromptToAll, setApplySystemPromptToAll] = useState(false);
-  const [applyConversationSettingsToAll, setApplyConversationSettingsToAll] = useState(false);
   
   // Build agent mapping for picker
   const agentMapping = useMemo(() => {
@@ -400,9 +393,9 @@ export default function EvalAttemptStatus({
                 {statusSummary.not_started}
               </span>
             </div>
-            {conversationMode && (
+            {infiniteMode && (
               <div>
-                <span className="text-muted-foreground">Conversation Mode: </span>
+                <span className="text-muted-foreground">Infinite Mode: </span>
                 <Badge variant="secondary">Enabled</Badge>
               </div>
             )}
@@ -466,74 +459,6 @@ export default function EvalAttemptStatus({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Conversation Settings Accordion */}
-            {conversationMode && (
-              <AccordionItem value="conversation-settings">
-                <AccordionTrigger>
-                  <div className="flex items-center gap-2">
-                    <span>Conversation Settings</span>
-                    {applyConversationSettingsToAll && (
-                      <Check className="h-4 w-4 text-green-600" />
-                    )}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="conversation-agent">Conversation Agent</Label>
-                      <GenericPicker
-                        items={agentMapping}
-                        itemIds={validAgentIds}
-                        selectedIds={conversationAgentId ? [conversationAgentId] : []}
-                        onSelect={(ids: string[]) => setConversationAgentId(ids[0] || null)}
-                        getId={(item: { id: string }) => item.id}
-                        getLabel={(item: { name: string }) => item.name}
-                        getSearchText={(item: { name: string; description?: string }) =>
-                          `${item.name} ${item.description || ""}`
-                        }
-                        placeholder="Select conversation agent..."
-                        disabled={false}
-                        multiSelect={false}
-                        hideSelectedChips={true}
-                        buttonClassName="w-full"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="max-turns">Max Turns</Label>
-                      <Input
-                        id="max-turns"
-                        type="number"
-                        min="1"
-                        value={conversationMaxTurns || ""}
-                        onChange={(e) =>
-                          setConversationMaxTurns(
-                            e.target.value ? parseInt(e.target.value, 10) : null
-                          )
-                        }
-                        disabled={false}
-                        placeholder="Enter max conversation turns..."
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="apply-conversation-all"
-                        checked={applyConversationSettingsToAll}
-                        onCheckedChange={(checked) =>
-                          setApplyConversationSettingsToAll(checked === true)
-                        }
-                      />
-                      <Label
-                        htmlFor="apply-conversation-all"
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        Apply to all runs
-                      </Label>
-                    </div>
-                    {/* Note: Settings update functionality removed - use websocket events if needed */}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
           </Accordion>
         </CardContent>
       </Card>

@@ -45,7 +45,6 @@ CREATE TYPE types.q_get_rubrics_list_v3_rubric AS (
     points int,
     pass_points int,
     pass_percentage int,
-    agent_role text,
     department_ids text[],
     simulation_ids text[],
     active_simulation_count int,
@@ -186,7 +185,6 @@ rubric_data AS (
         r.description,
         r.points,
         r.pass_points as pass_points,
-        r.agent_role::text as agent_role,
         COALESCE(rdd.department_ids, NULL) as department_ids,
         COALESCE(rsd.simulation_ids, ARRAY[]::text[]) as simulation_ids,
         COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
@@ -212,7 +210,7 @@ rubric_data AS (
     LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
     LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
     CROSS JOIN user_profile up
-    GROUP BY r.id, r.name, r.description, r.points, r.pass_points, r.agent_role, rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
+    GROUP BY r.id, r.name, r.description, r.points, r.pass_points, rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
     HAVING 
         COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -394,7 +392,6 @@ SELECT
              rd.points,
              rd.pass_points,
              CASE WHEN rd.points > 0 THEN ROUND((rd.pass_points::numeric / rd.points::numeric) * 100) ELSE 0 END::int,
-             rd.agent_role,
              rd.department_ids,
              rd.simulation_ids,
              rd.active_simulation_count,

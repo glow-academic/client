@@ -104,7 +104,7 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
             return
 
         async with pool.acquire() as conn:
-            # Get eval data (dynamic flag and agent_id)
+            # Get eval data (dynamic flag and agent_id) and attempt infinite_mode
             sql_get_eval = load_sql("app/sql/v3/evals/get_eval_dynamic_and_agent.sql")
             eval_row = await conn.fetchrow(sql_get_eval, eval_id)
             if not eval_row:
@@ -118,44 +118,34 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                 )
                 return
 
+            # Get infinite_mode from attempt
+            attempt_row = await conn.fetchrow(
+                "SELECT infinite_mode FROM eval_attempts WHERE id = $1::uuid",
+                attempt_id,
+            )
+            infinite_mode = attempt_row.get("infinite_mode", False) if attempt_row else False
+
             dynamic = eval_row.get("dynamic", False)
             agent_id = eval_row.get("agent_id")
 
-            # Get next pending run for this eval (after current_run_id)
-            sql_get_next_run = load_sql("app/sql/v3/evals/run_eval.sql")
-            result = await conn.fetchrow(sql_get_next_run, eval_id)
+            # Get all runs for this eval (for infinite mode cycling)
+            sql_get_all_runs = load_sql("app/sql/v3/evals/run_eval.sql")
+            all_runs_result = await conn.fetchrow(sql_get_all_runs, eval_id)
+            all_run_ids = all_runs_result.get("pending_run_ids", []) if all_runs_result else []
 
-            if not result:
-                # No more pending runs - emit completion event
+            if not all_run_ids:
+                # No runs at all - emit completion
                 await eval_completed(
                     EvalCompletedPayload(
                         eval_id=eval_id,
                         attempt_id=attempt_id,
-                        message="All runs completed",
+                        message="No runs to evaluate",
                     ),
                     room=f"eval_{attempt_id}",
                 )
-                logger.info(f"All runs completed for eval {eval_id}")
-                # Log activity (skip if background processing)
-                if sid != "background":
-                    try:
-                        await log_websocket_activity(
-                            sid=sid,
-                            event_key="evals.process_next",
-                            template="{{ actor.name }} completed processing eval runs",
-                            context={"eval_id": eval_id, "attempt_id": attempt_id},
-                            endpoint="/socket/v3/evals/process_next",
-                            error=False,
-                        )
-                    except Exception as log_error:
-                        logger.warning(
-                            f"Error logging eval process_next activity: {log_error}"
-                        )
+                logger.info(f"No runs found for eval {eval_id}")
                 return
 
-            pending_run_ids = result.get("pending_run_ids") or []
-
-            # Filter out runs that have already been processed (including current_run_id)
             # Get all completed runs for this eval
             sql_get_completed_runs = load_sql(
                 "app/sql/v3/evals/get_completed_runs_for_eval.sql"
@@ -163,40 +153,60 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
             completed_runs = await conn.fetch(sql_get_completed_runs, eval_id)
             completed_run_ids = {row["run_id"] for row in completed_runs}
 
-            # Find next unprocessed run
+            # Find next unprocessed run (skip current_run_id)
             next_run_id = None
-            for run_id in pending_run_ids:
+            for run_id in all_run_ids:
                 if run_id not in completed_run_ids and run_id != current_run_id:
                     next_run_id = run_id
                     break
 
             if not next_run_id:
-                # No more pending runs - emit completion event
-                await eval_completed(
-                    EvalCompletedPayload(
-                        eval_id=eval_id,
-                        attempt_id=attempt_id,
-                        message="All runs completed",
-                    ),
-                    room=f"eval_{attempt_id}",
-                )
-                logger.info(f"All runs completed for eval {eval_id}")
-                # Log activity (skip if background processing)
-                if sid != "background":
-                    try:
-                        await log_websocket_activity(
-                            sid=sid,
-                            event_key="evals.process_next",
-                            template="{{ actor.name }} completed processing eval runs",
-                            context={"eval_id": eval_id, "attempt_id": attempt_id},
-                            endpoint="/socket/v3/evals/process_next",
-                            error=False,
+                # No more unprocessed runs
+                if infinite_mode:
+                    # In infinite mode, cycle back to beginning - use first run from all runs
+                    # (even if it was already completed, we'll process it again)
+                    if all_run_ids:
+                        next_run_id = all_run_ids[0]
+                        logger.info(f"Infinite mode: cycling to first run {next_run_id} for eval {eval_id}")
+                    else:
+                        # No runs at all - emit completion
+                        await eval_completed(
+                            EvalCompletedPayload(
+                                eval_id=eval_id,
+                                attempt_id=attempt_id,
+                                message="No runs to evaluate",
+                            ),
+                            room=f"eval_{attempt_id}",
                         )
-                    except Exception as log_error:
-                        logger.warning(
-                            f"Error logging eval process_next activity: {log_error}"
-                        )
-                return
+                        logger.info(f"No runs found for eval {eval_id}")
+                        return
+                else:
+                    # Not infinite mode - emit completion event
+                    await eval_completed(
+                        EvalCompletedPayload(
+                            eval_id=eval_id,
+                            attempt_id=attempt_id,
+                            message="All runs completed",
+                        ),
+                        room=f"eval_{attempt_id}",
+                    )
+                    logger.info(f"All runs completed for eval {eval_id}")
+                    # Log activity (skip if background processing)
+                    if sid != "background":
+                        try:
+                            await log_websocket_activity(
+                                sid=sid,
+                                event_key="evals.process_next",
+                                template="{{ actor.name }} completed processing eval runs",
+                                context={"eval_id": eval_id, "attempt_id": attempt_id},
+                                endpoint="/socket/v3/evals/process_next",
+                                error=False,
+                            )
+                        except Exception as log_error:
+                            logger.warning(
+                                f"Error logging eval process_next activity: {log_error}"
+                            )
+                    return
 
             # Get department_id from next run if not provided
             if not department_id:

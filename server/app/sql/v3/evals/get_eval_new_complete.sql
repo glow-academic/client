@@ -47,8 +47,7 @@ BEGIN
         CREATE TYPE types.q_get_eval_detail_v3_rubric AS (
             rubric_id uuid,
             name text,
-            description text,
-            agent_role text
+            description text
         );
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'q_get_eval_detail_v3_available_model_run' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')) THEN
@@ -90,7 +89,6 @@ RETURNS TABLE (
     eval_id uuid,
     name text,
     description text,
-    agent_id uuid,
     agent_ids text[],
     model_run_ids text[],
     active boolean,
@@ -206,8 +204,7 @@ valid_rubrics_data AS (
     SELECT DISTINCT
         r.id,
         r.name,
-        COALESCE(r.description, '') as description,
-        r.agent_role::text as agent_role
+        COALESCE(r.description, '') as description
     FROM params x
     JOIN rubrics r ON r.active = true
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
@@ -219,7 +216,7 @@ valid_rubrics_data AS (
 ),
 rubrics_array AS (
     SELECT COALESCE(
-        ARRAY_AGG((vr.id, vr.name, vr.description, vr.agent_role)::types.q_get_eval_detail_v3_rubric),
+        ARRAY_AGG((vr.id, vr.name, vr.description)::types.q_get_eval_detail_v3_rubric),
         '{}'::types.q_get_eval_detail_v3_rubric[]
     ) as rubrics,
     COALESCE(ARRAY_AGG(vr.id::text), ARRAY[]::text[]) as rubric_ids
@@ -346,7 +343,6 @@ SELECT
     NULL::uuid as eval_id,
     ''::text as name,
     ''::text as description,
-    NULL::uuid as agent_id,
     ARRAY[]::text[] as agent_ids,
     ARRAY[]::text[] as model_run_ids,
     true as active,

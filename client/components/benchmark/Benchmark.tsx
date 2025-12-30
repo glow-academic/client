@@ -159,7 +159,7 @@ export default function Benchmark({
   }, [socket, setStartingEvalId]);
 
   const handleStartEval = useCallback(
-    async (evalId: string, conversationMode: boolean = false) => {
+    async (evalId: string, infiniteMode: boolean = false) => {
       try {
         // Only enforce profile for non-guests
         if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
@@ -182,7 +182,7 @@ export default function Benchmark({
         }
 
         const toastId = toast.loading(
-          conversationMode ? "Starting conversation mode eval..." : "Starting eval...",
+          infiniteMode ? "Starting infinite mode eval..." : "Starting eval...",
           {
             dismissible: true,
           }
@@ -199,7 +199,7 @@ export default function Benchmark({
         socket.emit("eval_start", {
           eval_id: evalId,
           profile_id: profileIdForEmit || null,
-          conversation_mode: conversationMode,
+          infinite_mode: infiniteMode,
         });
 
         // timeout...
@@ -231,7 +231,7 @@ export default function Benchmark({
     ]
   );
 
-  const handleStartConversationMode = useCallback(
+  const handleStartInfiniteMode = useCallback(
     async (evalId: string) => {
       await handleStartEval(evalId, true);
     },
@@ -257,7 +257,7 @@ export default function Benchmark({
               | "guest",
           }}
           onStartEval={handleStartEval}
-          onStartConversationMode={handleStartConversationMode}
+          onStartInfiniteMode={handleStartInfiniteMode}
           loadingEval={loadingEval}
           rubricMappings={rubricMappings}
         />

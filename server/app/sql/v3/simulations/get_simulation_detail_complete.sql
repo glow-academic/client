@@ -466,7 +466,6 @@ valid_rubrics_data AS (
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE r.active = true
-      AND r.agent_role = 'member'::agent_role
       AND (
           rd.department_id = ANY(udi.ids)
           OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -480,7 +479,7 @@ valid_rubrics_data AS (
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_sb ON ssrga_sb.simulation_id = sb.id
     LEFT JOIN rubric_grade_agents rga_sb ON rga_sb.id = ssrga_sb.rubric_grade_agent_id
     JOIN rubrics r2 ON r2.id = rga_sb.rubric_id
-    WHERE rga_sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = 'member'::agent_role
+    WHERE rga_sb.rubric_id IS NOT NULL AND r2.active = true
     UNION
     SELECT DISTINCT
         r3.id,

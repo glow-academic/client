@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_update_eval_v3(
     eval_id uuid,
     name text,
     description text,
-    agent_id uuid,
+    agent_ids uuid[],
     use_groups boolean,
     model_run_ids uuid[],
     department_ids uuid[],
@@ -45,7 +45,7 @@ WITH params AS (
         eval_id AS eval_id,
         name AS name,
         description AS description,
-        agent_id AS agent_id,
+        COALESCE(agent_ids, ARRAY[]::uuid[]) AS agent_ids,
         use_groups AS use_groups,
         COALESCE(model_run_ids, ARRAY[]::uuid[]) AS model_run_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
@@ -84,7 +84,6 @@ update_eval AS (
     UPDATE evals SET
         name = p.name,
         description = p.description,
-        agent_id = COALESCE(p.agent_id, evals.agent_id),
         use_groups = COALESCE(p.use_groups, evals.use_groups),
         active = COALESCE(p.active, evals.active),
         dynamic = COALESCE(p.dynamic, evals.dynamic),
@@ -92,6 +91,25 @@ update_eval AS (
     FROM params p
     WHERE evals.id = p.eval_id
     RETURNING evals.id as eval_id, evals.name as eval_name
+),
+remove_existing_agent_links AS (
+    DELETE FROM eval_agents
+    USING params p
+    WHERE eval_agents.eval_id = p.eval_id
+    AND COALESCE(array_length(p.agent_ids, 1), 0) > 0
+),
+add_new_agent_links AS (
+    INSERT INTO eval_agents (eval_id, agent_id, created_at, updated_at)
+    SELECT 
+        p.eval_id,
+        a_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN UNNEST(p.agent_ids) as a_id
+    WHERE COALESCE(array_length(p.agent_ids, 1), 0) > 0
+    ON CONFLICT (eval_id, agent_id) DO UPDATE SET
+        updated_at = NOW()
 ),
 remove_existing_dept_links AS (
     DELETE FROM eval_departments

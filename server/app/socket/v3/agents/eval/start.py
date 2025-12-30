@@ -39,9 +39,7 @@ class EvalStartPayload(BaseModel):
 
     eval_id: str
     profile_id: str | None = None
-    conversation_mode: bool = False
-    conversation_agent_id: str | None = None
-    conversation_max_turns: int | None = None
+    infinite_mode: bool = False
 
 
 # Emit helper functions
@@ -97,9 +95,7 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
             row = await conn.fetchrow(
                 sql,
                 eval_id,
-                data.conversation_mode,
-                data.conversation_agent_id if data.conversation_agent_id else None,
-                data.conversation_max_turns,
+                data.infinite_mode,
             )
 
             if not row:

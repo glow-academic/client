@@ -724,9 +724,7 @@ class QGetEvalAttemptV3Attempt(BaseModel):
     created_at: str | None
     eval_id: UUID | None
     archived: bool | None
-    conversation_mode: bool | None
-    conversation_agent_id: UUID | None
-    conversation_max_turns: int | None
+    infinite_mode: bool | None
 
 
 
@@ -736,14 +734,13 @@ class QGetEvalAttemptV3Eval(BaseModel):
     eval_id: UUID | None
     name: str | None
     description: str | None
-    agent_id: UUID | None
+    agent_ids: list[str] | None
     dynamic: bool | None
     rubric_id: UUID | None
     rubric_name: str | None
     rubric_description: str | None
     eval_agent_id: UUID | None
     system_prompt: str | None
-    conversation_agent_name: str | None
 
 
 
@@ -1759,7 +1756,7 @@ class QGetBenchmarkBundleV3Eval(BaseModel):
     name: str | None
     description: str | None
     rubric_id: UUID | None
-    agent_id: UUID | None
+    agent_ids: list[str] | None
     dynamic: bool | None
     rubric_name: str | None
     rubric_description: str | None
@@ -4103,7 +4100,7 @@ class CreateEvalSqlParams(BaseModel):
 
     name: str
     description: str
-    agent_id: UUID
+    agent_ids: list[UUID]
     use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
@@ -4115,7 +4112,7 @@ class CreateEvalSqlParams(BaseModel):
         return (
             self.name,
             self.description,
-            self.agent_id,
+            self.agent_ids,
             self.use_groups,
             self.model_run_ids,
             self.department_ids,
@@ -4133,7 +4130,7 @@ class CreateEvalApiRequest(BaseModel):
 
     name: str
     description: str
-    agent_id: UUID
+    agent_ids: list[UUID]
     use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
@@ -4272,7 +4269,6 @@ class QGetEvalDetailV3Rubric(BaseModel):
     rubric_id: UUID | None
     name: str | None
     description: str | None
-    agent_role: str | None
 
 class GetEvalDetailSqlRow(BaseModel):
 
@@ -4281,7 +4277,7 @@ class GetEvalDetailSqlRow(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    agent_id: UUID | None = None
+    agent_ids: list[str] | None = None
     active: bool | None = None
     dynamic: bool | None = None
     created_at: str | None = None
@@ -4323,7 +4319,7 @@ class GetEvalDetailApiResponse(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    agent_id: UUID | None = None
+    agent_ids: list[str] | None = None
     active: bool | None = None
     dynamic: bool | None = None
     created_at: str | None = None
@@ -4377,7 +4373,6 @@ class GetEvalNewSqlRow(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    agent_id: UUID | None = None
     agent_ids: list[str] | None = None
     model_run_ids: list[str] | None = None
     active: bool | None = None
@@ -4413,7 +4408,6 @@ class GetEvalNewApiResponse(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    agent_id: UUID | None = None
     agent_ids: list[str] | None = None
     model_run_ids: list[str] | None = None
     active: bool | None = None
@@ -4472,7 +4466,7 @@ class QListEvalsV3Eval(BaseModel):
     eval_id: UUID | None
     name: str | None
     description: str | None
-    agent_id: UUID | None
+    agent_ids: list[str] | None
     use_groups: bool | None
     rubric_id: UUID | None
     rubric_name: str | None
@@ -4577,7 +4571,7 @@ class UpdateEvalSqlParams(BaseModel):
     eval_id: UUID
     name: str
     description: str
-    agent_id: UUID
+    agent_ids: list[UUID]
     use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
@@ -4590,7 +4584,7 @@ class UpdateEvalSqlParams(BaseModel):
             self.eval_id,
             self.name,
             self.description,
-            self.agent_id,
+            self.agent_ids,
             self.use_groups,
             self.model_run_ids,
             self.department_ids,
@@ -4610,7 +4604,7 @@ class UpdateEvalApiRequest(BaseModel):
     eval_id: UUID
     name: str
     description: str
-    agent_id: UUID
+    agent_ids: list[UUID]
     use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
@@ -10729,7 +10723,6 @@ class QGetRubricsListV3Rubric(BaseModel):
     points: int | None
     pass_points: int | None
     pass_percentage: int | None
-    agent_role: str | None
     department_ids: list[str] | None
     simulation_ids: list[str] | None
     active_simulation_count: int | None

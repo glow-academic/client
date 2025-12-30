@@ -37,7 +37,6 @@ eval_data AS (
         e.name,
         e.description,
         e.rubric_id,
-        e.agent_id,
         e.dynamic,
         e.created_at,
         e.updated_at,
@@ -113,10 +112,18 @@ department_mapping_data AS (
     LEFT JOIN departments d ON d.id::text = adi.department_id
     WHERE d.active = true
 ),
+eval_agents_data AS (
+    SELECT 
+        ea.eval_id,
+        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids
+    FROM eval_agents ea
+    WHERE ea.eval_id IN (SELECT eval_id FROM eval_data)
+    GROUP BY ea.eval_id
+),
 all_agent_ids AS (
-    SELECT DISTINCT agent_id::uuid as agent_id
-    FROM eval_data
-    WHERE agent_id IS NOT NULL
+    SELECT DISTINCT ea.agent_id::uuid as agent_id
+    FROM eval_agents ea
+    WHERE ea.eval_id IN (SELECT eval_id FROM eval_data)
 ),
 agent_mapping_data AS (
     SELECT COALESCE(
@@ -204,7 +211,7 @@ SELECT
     ed.name,
     ed.description,
     ed.rubric_id::text,
-    ed.agent_id::text,
+    COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
     ed.dynamic,
     ed.rubric_name,
     ed.rubric_description,
@@ -231,6 +238,7 @@ SELECT
     END as can_delete,
     ap.actor_name
 FROM eval_data ed
+LEFT JOIN eval_agents_data ead ON ead.eval_id = ed.eval_id
 LEFT JOIN eval_departments edept ON edept.eval_id = ed.eval_id
 CROSS JOIN user_profile up
 CROSS JOIN actor_profile ap

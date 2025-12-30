@@ -49,7 +49,7 @@ export interface EvalCardProps {
   pendingRuns: number;
   rubricName: string;
   onStartEval: (evalId: string) => void;
-  onStartConversationMode?: ((evalId: string) => void) | undefined;
+  onStartInfiniteMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
   effectiveProfile: ProfileItem;
   // Rubric data for dialog
@@ -74,7 +74,7 @@ export default function EvalCard({
   pendingRuns: _pendingRuns,
   rubricName: _rubricName,
   onStartEval,
-  onStartConversationMode,
+  onStartInfiniteMode,
   loadingEval,
   effectiveProfile,
   standard_groups,
@@ -251,22 +251,22 @@ export default function EvalCard({
                   </>
                 )}
               </Button>
-              {onStartConversationMode && (
+              {onStartInfiniteMode && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      onClick={() => onStartConversationMode(evalId)}
+                      onClick={() => onStartInfiniteMode(evalId)}
                       disabled={isDisabled}
                       variant="default"
                       size="icon"
                       className="flex-shrink-0 hover:scale-105 transition-all duration-300"
-                      data-testid={`start-conversation-${evalId}`}
+                      data-testid={`start-infinite-${evalId}`}
                     >
                       <MessageSquare className="h-4 w-4 text-white" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Conversation Mode</p>
+                    <p>Infinite Mode</p>
                   </TooltipContent>
                 </Tooltip>
               )}

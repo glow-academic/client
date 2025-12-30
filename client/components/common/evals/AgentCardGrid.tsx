@@ -84,8 +84,12 @@ export function AgentCardGrid({
   const handleSelect = (agentId: string) => {
     if (readonly) return;
     const isSelected = selectedAgentIds.includes(agentId);
-    // Single selection: if clicking the same agent, deselect; otherwise select only this agent
-    onSelect(isSelected ? [] : [agentId]);
+    // Multiple selection: toggle this agent in the selection
+    if (isSelected) {
+      onSelect(selectedAgentIds.filter((id) => id !== agentId));
+    } else {
+      onSelect([...selectedAgentIds, agentId]);
+    }
   };
 
   return (

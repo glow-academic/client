@@ -41,7 +41,7 @@ CREATE TYPE types.q_list_evals_v3_eval AS (
     eval_id uuid,
     name text,
     description text,
-    agent_id uuid,
+    agent_ids text[],
     use_groups boolean,
     rubric_id uuid,
     rubric_name text,
@@ -150,7 +150,6 @@ eval_data AS (
         e.id as eval_id,
         e.name,
         e.description,
-        e.agent_id,
         e.use_groups,
         e.dynamic,
         e.created_at,
@@ -243,10 +242,18 @@ filtered_evals AS (
             OR up.role IN ('admin'::profile_role, 'superadmin'::profile_role)
         )
 ),
+eval_agents_aggregated AS (
+    SELECT 
+        ea.eval_id,
+        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids
+    FROM eval_agents ea
+    WHERE ea.eval_id IN (SELECT eval_id FROM filtered_evals)
+    GROUP BY ea.eval_id
+),
 evals_aggregated AS (
     SELECT 
         ARRAY_AGG(
-            (fe.eval_id, fe.name, fe.description, fe.agent_id, fe.use_groups,
+            (fe.eval_id, fe.name, fe.description, COALESCE(eaa.agent_ids, ARRAY[]::text[]), fe.use_groups,
              fe.rubric_id, fe.rubric_name, fe.rubric_description, fe.total_runs, fe.completed_runs,
              fe.pending_runs, fe.status, fe.created_at, fe.updated_at,
              fe.department_ids,
@@ -256,6 +263,7 @@ evals_aggregated AS (
             ORDER BY fe.updated_at DESC NULLS LAST
         ) as evals_array
     FROM filtered_evals fe
+    LEFT JOIN eval_agents_aggregated eaa ON eaa.eval_id = fe.eval_id
 ),
 all_rubric_ids AS (
     SELECT DISTINCT rga.rubric_id 
@@ -271,7 +279,8 @@ all_department_ids AS (
 ),
 all_agent_ids AS (
     SELECT DISTINCT agent_id
-    FROM filtered_evals
+    FROM eval_agents ea
+    JOIN filtered_evals fe ON fe.eval_id = ea.eval_id
     WHERE agent_id IS NOT NULL
 ),
 all_standard_group_ids AS (

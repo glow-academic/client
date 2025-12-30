@@ -21,7 +21,6 @@ eval_data AS (
         e.name,
         e.description,
         e.rubric_id,
-        e.agent_id::text,
         e.eval_agent_id::text,
         e.active,
         e.dynamic,
@@ -241,12 +240,19 @@ user_department_ids_for_rubrics AS (
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND d.active = true
 ),
+eval_agents_data AS (
+    SELECT 
+        ea.eval_id,
+        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids
+    FROM eval_agents ea
+    WHERE ea.eval_id = $1
+    GROUP BY ea.eval_id
+),
 valid_rubrics_data AS (
     SELECT DISTINCT
         r.id,
         r.name,
-        COALESCE(r.description, '') as description,
-        r.agent_role::text as agent_role
+        COALESCE(r.description, '') as description
     FROM rubrics r
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids_for_rubrics udi
@@ -260,8 +266,7 @@ valid_rubrics_data AS (
     SELECT DISTINCT
         r2.id,
         r2.name,
-        COALESCE(r2.description, '') as description,
-        r2.agent_role::text as agent_role
+        COALESCE(r2.description, '') as description
     FROM eval_data ed
     JOIN rubrics r2 ON r2.id = ed.rubric_id
     WHERE r2.active = true
@@ -272,8 +277,7 @@ rubric_mapping_data AS (
             vr.id::text,
             jsonb_build_object(
                 'name', vr.name,
-                'description', vr.description,
-                'agent_role', vr.agent_role
+                'description', vr.description
             )
         ),
         '{}'::jsonb
@@ -286,7 +290,7 @@ SELECT
     ed.name,
     ed.description,
     ed.rubric_id::text,
-    ed.agent_id,
+    COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
     ed.eval_agent_id,
     ed.active,
     ed.dynamic,
@@ -325,6 +329,7 @@ SELECT
     END as can_delete,
     up.actor_name
 FROM eval_data ed
+LEFT JOIN eval_agents_data ead ON ead.eval_id = ed.eval_id
 LEFT JOIN eval_departments_data edd ON edd.eval_id = ed.eval_id
 LEFT JOIN eval_status_summary ess ON ess.eval_id = ed.eval_id
 CROSS JOIN runs_json rj

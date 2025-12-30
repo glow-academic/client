@@ -7010,11 +7010,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Ids */
+            agent_ids: string[];
             /** Use Groups */
             use_groups: boolean;
             /** Model Run Ids */
@@ -8387,14 +8384,10 @@ export interface components {
             /** Profile Id */
             profile_id?: string | null;
             /**
-             * Conversation Mode
+             * Infinite Mode
              * @default false
              */
-            conversation_mode: boolean;
-            /** Conversation Agent Id */
-            conversation_agent_id?: string | null;
-            /** Conversation Max Turns */
-            conversation_max_turns?: number | null;
+            infinite_mode: boolean;
         };
         /**
          * EvalStartedPayload
@@ -9424,8 +9417,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
             /** Active */
             active?: boolean | null;
             /** Dynamic */
@@ -9504,8 +9497,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
             /** Agent Ids */
             agent_ids?: string[] | null;
             /** Model Run Ids */
@@ -12604,8 +12595,8 @@ export interface components {
             description: string | null;
             /** Rubric Id */
             rubric_id: string | null;
-            /** Agent Id */
-            agent_id: string | null;
+            /** Agent Ids */
+            agent_ids: string[] | null;
             /** Dynamic */
             dynamic: boolean | null;
             /** Rubric Name */
@@ -13807,12 +13798,8 @@ export interface components {
             eval_id: string | null;
             /** Archived */
             archived: boolean | null;
-            /** Conversation Mode */
-            conversation_mode: boolean | null;
-            /** Conversation Agent Id */
-            conversation_agent_id: string | null;
-            /** Conversation Max Turns */
-            conversation_max_turns: number | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
         };
         /** QGetEvalAttemptV3Eval */
         QGetEvalAttemptV3Eval: {
@@ -13822,8 +13809,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Agent Id */
-            agent_id: string | null;
+            /** Agent Ids */
+            agent_ids: string[] | null;
             /** Dynamic */
             dynamic: boolean | null;
             /** Rubric Id */
@@ -13836,8 +13823,6 @@ export interface components {
             eval_agent_id: string | null;
             /** System Prompt */
             system_prompt: string | null;
-            /** Conversation Agent Name */
-            conversation_agent_name: string | null;
         };
         /** QGetEvalAttemptV3Run */
         QGetEvalAttemptV3Run: {
@@ -13981,8 +13966,6 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Agent Role */
-            agent_role: string | null;
         };
         /** QGetEvalDetailV3RubricGradeAgent */
         QGetEvalDetailV3RubricGradeAgent: {
@@ -15553,8 +15536,6 @@ export interface components {
             pass_points: number | null;
             /** Pass Percentage */
             pass_percentage: number | null;
-            /** Agent Role */
-            agent_role: string | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Simulation Ids */
@@ -17465,8 +17446,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Agent Id */
-            agent_id: string | null;
+            /** Agent Ids */
+            agent_ids: string[] | null;
             /** Use Groups */
             use_groups: boolean | null;
             /** Rubric Id */
@@ -20003,11 +19984,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Ids */
+            agent_ids: string[];
             /** Use Groups */
             use_groups: boolean;
             /** Model Run Ids */

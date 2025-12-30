@@ -263,6 +263,115 @@ server/app/sql/v3/agents/
 - **Pydantic models**: Generates `{RouteName}SqlParams`, `{RouteName}SqlRow`, `{RouteName}ApiRequest`, `{RouteName}ApiResponse`
 - **Composite models**: Generates nested Pydantic models for composite types
 
+## Junction Tables and Many-to-Many Relationships
+
+### Eval Agents Pattern
+
+**Pattern**: Use junction tables for many-to-many relationships between evals and agents.
+
+**Example**: `eval_agents` table links evals to multiple agents:
+
+```sql
+-- Junction table for eval-to-agent relationships
+CREATE TABLE eval_agents (
+    eval_id uuid NOT NULL REFERENCES evals(id) ON DELETE CASCADE,
+    agent_id uuid NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (eval_id, agent_id)
+);
+
+CREATE INDEX eval_agents_eval_id_idx ON eval_agents(eval_id);
+CREATE INDEX eval_agents_agent_id_idx ON eval_agents(agent_id);
+```
+
+**SQL Query Pattern**: Join with junction table to get agent arrays:
+
+```sql
+-- ✅ Good: Get agent_ids array from junction table
+SELECT 
+    e.id as eval_id,
+    e.name,
+    ARRAY_AGG(ea.agent_id ORDER BY ea.created_at) FILTER (WHERE ea.agent_id IS NOT NULL) as agent_ids
+FROM evals e
+LEFT JOIN eval_agents ea ON ea.eval_id = e.id
+WHERE e.id = $1::uuid
+GROUP BY e.id
+```
+
+**Migration Pattern**: Migrate from single column to junction table:
+
+```sql
+-- Migrate existing data
+INSERT INTO eval_agents (eval_id, agent_id)
+SELECT id, agent_id FROM evals WHERE agent_id IS NOT NULL;
+
+-- Then drop the old column
+ALTER TABLE evals DROP COLUMN agent_id;
+```
+
+### Group Stop and Order Tables
+
+**Pattern**: Standardized junction tables for group-level tool and agent ordering.
+
+**Purpose**: 
+- `group_stop`: Defines tools that should be called to stop a group operation
+- `group_order`: Defines the order of agents for a group operation
+
+**Example**:
+
+```sql
+-- Tools to call for stopping group operations
+CREATE TABLE group_stop (
+    group_id uuid NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    tool_id uuid NOT NULL REFERENCES tools(id) ON DELETE CASCADE,
+    position_idx integer NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (group_id, tool_id, position_idx),
+    UNIQUE (group_id, position_idx) -- Ensure unique ordering
+);
+
+-- Agent ordering for group operations
+CREATE TABLE group_order (
+    group_id uuid NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    agent_id uuid NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    position_idx integer NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (group_id, agent_id, position_idx),
+    UNIQUE (group_id, position_idx) -- Ensure unique ordering
+);
+```
+
+**SQL Query Pattern**: Join with ordering tables when needed:
+
+```sql
+-- ✅ Good: Get ordered tools for stopping
+SELECT 
+    g.id as group_id,
+    ARRAY_AGG(gs.tool_id ORDER BY gs.position_idx) as stop_tool_ids
+FROM groups g
+LEFT JOIN group_stop gs ON gs.group_id = g.id
+WHERE g.id = $1::uuid
+GROUP BY g.id
+
+-- ✅ Good: Get ordered agents
+SELECT 
+    g.id as group_id,
+    ARRAY_AGG(go.agent_id ORDER BY go.position_idx) as agent_ids
+FROM groups g
+LEFT JOIN group_order go ON go.group_id = g.id
+WHERE g.id = $1::uuid
+GROUP BY g.id
+```
+
+**Key Principles**:
+- Use `position_idx` for ordering (integer, not timestamp)
+- Use `UNIQUE (group_id, position_idx)` to ensure no duplicate positions
+- Always `ORDER BY position_idx` when aggregating
+- These tables are standardized across all group types (chat_groups, scenario_groups, etc.)
+
 ## Common Patterns
 
 ### Simple Function (No Composite Types)

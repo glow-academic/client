@@ -43,7 +43,7 @@ CREATE TYPE types.q_get_benchmark_bundle_v3_eval AS (
     name text,
     description text,
     rubric_id uuid,
-    agent_id uuid,
+    agent_ids text[],
     dynamic boolean,
     rubric_name text,
     rubric_description text,
@@ -212,7 +212,6 @@ eval_data AS (
         e.name,
         e.description,
         e.rubric_id,
-        e.agent_id,
         e.dynamic,
         e.created_at,
         e.updated_at,
@@ -282,9 +281,9 @@ all_department_ids AS (
     WHERE department_ids IS NOT NULL
 ),
 all_agent_ids AS (
-    SELECT DISTINCT agent_id::uuid as agent_id
-    FROM filtered_evals
-    WHERE agent_id IS NOT NULL
+    SELECT DISTINCT ea.agent_id::uuid as agent_id
+    FROM filtered_evals fe
+    JOIN eval_agents ea ON ea.eval_id = fe.eval_id
 ),
 -- Get eval attempts with eval info
 attempts_with_eval AS (
@@ -424,11 +423,19 @@ total_count AS (
     SELECT COUNT(*) as count
     FROM filtered_attempts
 ),
+eval_agents_aggregated AS (
+    SELECT 
+        ea.eval_id,
+        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids
+    FROM eval_agents ea
+    WHERE ea.eval_id IN (SELECT eval_id FROM filtered_evals)
+    GROUP BY ea.eval_id
+),
 -- Build composite type arrays for evals
 evals_array AS (
     SELECT COALESCE(
         ARRAY_AGG(
-            (fe.eval_id, fe.name, fe.description, fe.rubric_id, fe.agent_id, fe.dynamic,
+            (fe.eval_id, fe.name, fe.description, fe.rubric_id, COALESCE(eaa.agent_ids, ARRAY[]::text[]), fe.dynamic,
              fe.rubric_name, fe.rubric_description, fe.total_runs, fe.completed_runs, fe.pending_runs,
              fe.status, fe.created_at, fe.updated_at,
              COALESCE(fe.department_ids, ARRAY[]::text[]),
@@ -439,6 +446,7 @@ evals_array AS (
         '{}'::types.q_get_benchmark_bundle_v3_eval[]
     ) as evals
     FROM filtered_evals fe
+    LEFT JOIN eval_agents_aggregated eaa ON eaa.eval_id = fe.eval_id
 ),
 -- Build composite type arrays for attempts
 attempts_array AS (
@@ -590,9 +598,9 @@ department_options_array AS (
 ),
 -- Collect all agent IDs actually assigned to evals
 assigned_agent_ids AS (
-    SELECT DISTINCT agent_id
-    FROM filtered_evals
-    WHERE agent_id IS NOT NULL
+    SELECT DISTINCT ea.agent_id::uuid as agent_id
+    FROM filtered_evals fe
+    JOIN eval_agents ea ON ea.eval_id = fe.eval_id
 ),
 agent_options_array AS (
     SELECT COALESCE(
