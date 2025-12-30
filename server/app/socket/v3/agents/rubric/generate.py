@@ -8,7 +8,7 @@ from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import Field
-from utils.sql_helper import execute_sql_typed
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
@@ -158,6 +158,15 @@ async def _rubric_generate_impl(
             # Extract run_id from result (created in same transaction)
             model_run_id = uuid.UUID(result.run_id)
 
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(context["agent_id"])
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
+            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+            agent_tools_config = [dict(row) for row in rows]
+            tool_config_map_rubric: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
             # Build rubric structure context for the agent (convert back to dicts for JSON serialization)
             # Use snake_case to match server convention (server is source of truth)
             rubric_context = {
@@ -233,7 +242,38 @@ async def _rubric_generate_impl(
 
                 return f"Generated {len(descriptions)} standard group descriptions successfully"
 
-            rubric_tools = [function_tool(generate_standard_group_descriptions)]
+            # Create title tool
+            title_config = tool_config_map_rubric.get("create_title")
+            if title_config:
+                title_desc = title_config.get("argument_descriptions", {}).get(
+                    "title",
+                    "A descriptive title for this content item",
+                )
+            else:
+                title_desc = "A descriptive title for this content item"
+
+            async def create_title(
+                title: str = Field(description=title_desc),
+            ) -> str:
+                """Create a descriptive title for this rubric."""
+                # Emit to internal bus for title creation
+                await internal_sio.emit(
+                    "rubric_tool_title",
+                    {
+                        "sid": sid,
+                        "trace_id": trace_id,
+                        "title": title,
+                        "rubric_id": str(rubric_id) if rubric_id else None,
+                    },
+                )
+                logger.info(f"✓ Created title: {title}")
+                return "Created title successfully"
+
+            rubric_tools = [
+                function_tool(generate_standard_group_descriptions),
+                function_tool(create_title),
+            ]
+            logger.info("Created title tool for rubric agent")
 
             # Build rubric agent with tools
             rubric_agent = GenericAgent(

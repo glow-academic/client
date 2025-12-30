@@ -25,6 +25,8 @@ from .questions import server_router as questions_server_router
 from .standard_group_descriptions import (
     server_router as standard_group_descriptions_server_router,
 )
+from .title import client_router as title_client_router
+from .title import server_router as title_server_router
 from .title_description import (
     client_router as title_description_client_router,
 )
@@ -38,6 +40,7 @@ client_router = APIRouter(prefix="/tools", tags=["socket-client"])
 server_router = APIRouter(prefix="/tools", tags=["socket-server"])
 
 client_router.include_router(document_client_router)
+client_router.include_router(title_client_router)
 client_router.include_router(title_description_client_router)
 client_router.include_router(objectives_client_router)
 client_router.include_router(image_client_router)
@@ -49,6 +52,7 @@ client_router.include_router(message_strength_client_router)
 client_router.include_router(message_improvement_client_router)
 
 server_router.include_router(document_server_router)
+server_router.include_router(title_server_router)
 server_router.include_router(title_description_server_router)
 server_router.include_router(objectives_server_router)
 server_router.include_router(image_server_router)

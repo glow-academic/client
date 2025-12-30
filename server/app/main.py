@@ -459,6 +459,11 @@ from app.socket.v3.tools.document.call import scenario_tool_document  # noqa: F4
 from app.socket.v3.tools.image.call import scenario_tool_image  # noqa: F401
 from app.socket.v3.tools.objectives.call import scenario_tool_objectives  # noqa: F401
 from app.socket.v3.tools.questions.call import scenario_tool_questions  # noqa: F401
+from app.socket.v3.tools.title.call import (  # noqa: F401
+    document_tool_title_internal,
+    rubric_tool_title_internal,
+    scenario_tool_title_internal,
+)
 from app.socket.v3.tools.title_description.call import (
     scenario_tool_problem_statement,  # noqa: F401
 )

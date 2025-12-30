@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict X5vHITXzu8uqwEHWpIzLTtf20fTOa2mDq4gf4KYDu0X2GRFCnbbROqXWrqP9LDg
+\restrict T5WO45FFJJOw8oPKST88vNkBk6w8UMAVbXKF6vA2Vh8cKrmxGC2Kaqmxe77Iq7J
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -219,7 +219,8 @@ CREATE TYPE public.tool_type AS ENUM (
     'grade',
     'feedback_strength',
     'feedback_improvement',
-    'analysis'
+    'analysis',
+    'title'
 );
 
 
@@ -8419,5 +8420,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict X5vHITXzu8uqwEHWpIzLTtf20fTOa2mDq4gf4KYDu0X2GRFCnbbROqXWrqP9LDg
+\unrestrict T5WO45FFJJOw8oPKST88vNkBk6w8UMAVbXKF6vA2Vh8cKrmxGC2Kaqmxe77Iq7J
 

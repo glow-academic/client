@@ -736,10 +736,52 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             scenario_tools.append(function_tool(create_statement))
             logger.info("Created statement tool")
 
+            # 1.5. Title Tool (always included)
+            title_config = tool_config_map.get("create_title")
+            if title_config:
+                title_desc = title_config.get("argument_descriptions", {}).get(
+                    "title",
+                    "A descriptive title for this content item",
+                )
+            else:
+                title_desc = "A descriptive title for this content item"
+
+            async def create_title(
+                title: str = Field(description=title_desc),
+            ) -> str:
+                """Create a descriptive title for this scenario.
+
+                The title should be concise and descriptive (5-10 words).
+
+                Args:
+                    title: Short, descriptive title for the scenario
+
+                Returns:
+                    Confirmation message
+                """
+                # Emit to internal bus for title creation
+                await internal_sio.emit(
+                    "scenario_tool_title",
+                    {
+                        "sid": sid,
+                        "trace_id": trace_id,
+                        "title": title,
+                        "scenario_id": data.scenarioId if data.scenarioId else None,
+                    },
+                )
+
+                logger.info(
+                    f"[generate_scenario] Emitted title to internal bus: title={title}"
+                )
+                return "Created title successfully"
+
+            scenario_tools.append(function_tool(create_title))
+            logger.info("Created title tool")
+
             # 2. Objectives Tool (if enabled)
             if objectives_enabled:
                 # Build signature from database config if available
-                objectives_config = tool_config_map.get("set_objectives")
+                objectives_config = tool_config_map.get("create_objective")
                 if objectives_config:
                     objectives_desc = objectives_config.get(
                         "argument_descriptions", {}

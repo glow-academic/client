@@ -439,7 +439,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             scenario_tools: list[Tool] = []
 
             # 1. Title and Description Tool (always included)
-            title_desc_config = tool_config_map.get("set_title_and_description")
+            title_desc_config = tool_config_map.get("create_statement")
             if title_desc_config:
                 title_desc = title_desc_config.get("argument_descriptions", {}).get(
                     "title", "Short, descriptive title for the scenario (5-10 words)"
@@ -478,7 +478,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # 2. Objectives Tool (if enabled)
             if objectives_enabled:
-                objectives_config = tool_config_map.get("set_objectives")
+                objectives_config = tool_config_map.get("create_objective")
                 if objectives_config:
                     objectives_desc = objectives_config.get(
                         "argument_descriptions", {}
@@ -534,7 +534,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # 4. Image Generation Tool (if enabled)
             if images_enabled:
-                image_config = tool_config_map.get("generate_image")
+                image_config = tool_config_map.get("create_image")
                 if image_config:
                     name_desc = image_config.get("argument_descriptions", {}).get(
                         "name", "Descriptive name for the generated image"

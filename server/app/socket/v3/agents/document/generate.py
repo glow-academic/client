@@ -235,6 +235,38 @@ async def _document_generate_impl(
             # Build document tools inline
             document_tools: list[Tool] = []
 
+            # Create title tool
+            title_config = tool_config_map_doc.get("create_title")
+            if title_config:
+                title_desc = title_config.get("argument_descriptions", {}).get(
+                    "title",
+                    "A descriptive title for this content item",
+                )
+            else:
+                title_desc = "A descriptive title for this content item"
+
+            async def create_title(
+                title: str = Field(description=title_desc),
+            ) -> str:
+                """Create a descriptive title for this document."""
+                document_results["title"] = title
+                document_progress["title"] = True
+                logger.info(f"✓ Created title: {title}")
+                # Emit to internal bus for title creation
+                await internal_sio.emit(
+                    "document_tool_title",
+                    {
+                        "sid": sid,
+                        "trace_id": trace_id,
+                        "title": title,
+                        "document_id": data.documentId if hasattr(data, "documentId") else None,
+                    },
+                )
+                return "Created title successfully"
+
+            document_tools.append(function_tool(create_title))
+            logger.info("Created title tool")
+
             # Generate template HTML tool
             html_config = tool_config_map_doc.get("generate_template_html")
             if html_config:
