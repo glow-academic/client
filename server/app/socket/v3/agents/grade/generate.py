@@ -854,7 +854,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and grade_voice_agent_id:
-                from app.socket.v3.tools.audio.call import _grading_tool_audio_impl
+                from app.socket.v3.tools.analysis.call import _grading_tool_audio_impl
 
                 grade_audio_config = tool_config_map_grading.get("create_analysis")
                 if grade_audio_config:

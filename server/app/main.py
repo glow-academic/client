@@ -448,14 +448,14 @@ from app.socket.v3.log import log_run  # noqa: F401
 # Import scenario tools to register internal_sio handlers
 from app.socket.v3.tools.document.call import scenario_tool_document  # noqa: F401
 from app.socket.v3.tools.image.call import scenario_tool_image  # noqa: F401
-from app.socket.v3.tools.objectives.call import scenario_tool_objectives  # noqa: F401
-from app.socket.v3.tools.questions.call import scenario_tool_questions  # noqa: F401
+from app.socket.v3.tools.objective.call import scenario_tool_objectives  # noqa: F401
+from app.socket.v3.tools.question.call import scenario_tool_questions  # noqa: F401
 from app.socket.v3.tools.title.call import (  # noqa: F401
     document_tool_title_internal,
     rubric_tool_title_internal,
     scenario_tool_title_internal,
 )
-from app.socket.v3.tools.title_description.call import (
+from app.socket.v3.tools.statement.call import (
     scenario_tool_problem_statement_internal,  # noqa: F401
 )
 
