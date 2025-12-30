@@ -147,20 +147,20 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 
 **Key Principles:**
 
-1. **Preferred: Use enum_type.label syntax**
+1. **Preferred: Explicit cast syntax**
    ```sql
-   -- ✅ Good: Strong comparison using enum label
-   WHERE a.role = agent_role.eval
-   WHERE p.role = profile_role.superadmin
-   WHERE m.role = message_role.user
-   ```
-
-2. **Alternative: Explicit cast**
-   ```sql
-   -- ✅ Good: Strong comparison using explicit cast
+   -- ✅ Good: Strong comparison using explicit cast (preferred)
    WHERE a.role = 'eval'::agent_role
    WHERE p.role = 'superadmin'::profile_role
    WHERE m.role = 'user'::message_role
+   ```
+
+2. **Alternative: Shorthand syntax**
+   ```sql
+   -- ✅ Good: Strong comparison using shorthand (alternative)
+   WHERE a.role = agent_role 'eval'
+   WHERE p.role = profile_role 'superadmin'
+   WHERE m.role = message_role 'user'
    ```
 
 3. **Never compare enums to raw strings**
@@ -173,13 +173,16 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 
 4. **IN clauses with enum columns**
    ```sql
-   -- ✅ Good: Strong comparison
-   WHERE role IN (profile_role.admin, profile_role.superadmin)
-   WHERE agent_role IN (agent_role.hint, agent_role.grade, agent_role.simulation)
+   -- ✅ Good: Strong comparison with explicit casts
+   WHERE role IN ('admin'::profile_role, 'superadmin'::profile_role)
+   WHERE agent_role IN ('hint'::agent_role, 'grade'::agent_role, 'simulation'::agent_role)
    
-   -- ❌ Bad: Weak comparison
+   -- ❌ Bad: Weak comparison (no cast)
    WHERE role IN ('admin', 'superadmin')
    WHERE agent_role IN ('hint', 'grade', 'simulation')
+   
+   -- ❌ Bad: Invalid syntax (PostgreSQL doesn't support enum_type.value)
+   WHERE role IN (profile_role.admin, profile_role.superadmin)
    ```
 
 5. **ANY clauses with text arrays**
@@ -195,12 +198,14 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 
 6. **CASE statements**
    ```sql
-   -- ✅ Good: Strong comparison
-   CASE WHEN role = profile_role.superadmin THEN ...
+   -- ✅ Good: Strong comparison with explicit cast
    CASE WHEN role = 'superadmin'::profile_role THEN ...
    
-   -- ❌ Bad: Weak comparison
+   -- ❌ Bad: Weak comparison (no cast)
    CASE WHEN role = 'superadmin' THEN ...
+   
+   -- ❌ Bad: Invalid syntax (PostgreSQL doesn't support enum_type.value)
+   CASE WHEN role = profile_role.superadmin THEN ...
    ```
 
 7. **Function parameters typed as text[]**
@@ -208,16 +213,16 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
    ```sql
    -- ✅ Good: Cast text parameter to enum before comparison
    WHERE role = ANY(SELECT unnest($5::text[])::profile_role)
-   WHERE role_value::profile_role IN (profile_role.admin, profile_role.superadmin)
+   WHERE role_value::profile_role IN ('admin'::profile_role, 'superadmin'::profile_role)
    ```
 
 8. **Old enum value references**
    After enum migrations (e.g., migration 152), update old values:
-   - `'simulation-text'` → `'simulation'` (use `agent_role.simulation`)
-   - `'simulation-voice'` → `'voice'` (use `agent_role.voice`)
-   - `'grade-text'` → `'grade'` (use `agent_role.grade`)
-   - `'grade-voice'` → `'audio'` (use `agent_role.audio`)
-   - `'outline'` → `'scenario'` (use `agent_role.scenario`)
+   - `'simulation-text'` → `'simulation'` (use `'simulation'::agent_role`)
+   - `'simulation-voice'` → `'voice'` (use `'voice'::agent_role`)
+   - `'grade-text'` → `'grade'` (use `'grade'::agent_role`)
+   - `'grade-voice'` → `'audio'` (use `'audio'::agent_role`)
+   - `'outline'` → `'scenario'` (use `'scenario'::agent_role`)
 
 **Enum Types in Codebase:**
 - `agent_role` (used in `agents.role`, `tools.agent_role`, `rubrics.agent_role`)
@@ -399,7 +404,7 @@ await set_cached(
 - [ ] **All JSONB aggregations converted** - No `jsonb_build_object`, `json_agg`, or `jsonb_agg` in SQL files
 - [ ] **Type preservation**: Composite types use `uuid`/`timestamptz` for IDs/timestamps (not `text` unless truly needed)
 - [ ] **No manual request types** - All endpoints use auto-generated `{RouteName}ApiRequest` types from SQL introspection
-- [ ] **Strong enum comparisons** - All enum comparisons use `enum_type.label` or `'value'::enum_type` syntax (checked by `make sql-format`)
+- [ ] **Strong enum comparisons** - All enum comparisons use `'value'::enum_type` or `enum_type 'value'` syntax (checked by `make sql-format`)
 - [ ] **No old enum values** - All references to old enum values updated after migrations (checked by `make sql-format`)
 
 ### API Testing

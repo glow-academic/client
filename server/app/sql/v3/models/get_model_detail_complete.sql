@@ -262,7 +262,7 @@ model_all_keys AS (
         )
         OR
         -- Superadmin can see all keys
-        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profiles p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND p.role = profile_role.superadmin)
+        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profiles p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND p.role = 'superadmin'::profile_role)
     )
 ),
 keys_data AS (

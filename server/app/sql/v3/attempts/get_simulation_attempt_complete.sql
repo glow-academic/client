@@ -1089,7 +1089,7 @@ messages_with_tree AS (
         SELECT 
             m.id, 
             c.id AS chat_id, 
-            CASE WHEN m.role = message_role.user THEN 'query' ELSE 'response' END as type, 
+            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
             mc.content, 
             m.created_at, 
             m.completed, 
@@ -1108,7 +1108,7 @@ messages_with_tree AS (
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
-          AND m.role IN (message_role.user, message_role.assistant)
+          AND m.role IN ('user'::message_role, 'assistant'::message_role)
           AND NOT EXISTS (
               SELECT 1 FROM message_tree mt 
               WHERE mt.parent_id = m.id AND mt.active = true
@@ -1119,7 +1119,7 @@ messages_with_tree AS (
         SELECT 
             m.id, 
             mp.chat_id, 
-            CASE WHEN m.role = message_role.user THEN 'query' ELSE 'response' END as type, 
+            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
             mc.content, 
             m.created_at, 
             m.completed, 
@@ -1140,7 +1140,7 @@ messages_with_tree AS (
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE mp.depth < 1000
-          AND m.role IN (message_role.user, message_role.assistant)
+          AND m.role IN ('user'::message_role, 'assistant'::message_role)
           AND c.id = mp.chat_id
           AND c.id = ANY(cil.chat_ids)
     ),
@@ -1148,7 +1148,7 @@ messages_with_tree AS (
         SELECT 
             m.id, 
             c.id AS chat_id, 
-            CASE WHEN m.role = message_role.user THEN 'query' ELSE 'response' END as type, 
+            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
             mc.content, 
             m.created_at, 
             m.completed, 
@@ -1167,7 +1167,7 @@ messages_with_tree AS (
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
-          AND m.role IN (message_role.user, message_role.assistant)
+          AND m.role IN ('user'::message_role, 'assistant'::message_role)
           AND NOT EXISTS (
               SELECT 1 FROM message_tree mt 
               WHERE mt.child_id = m.id AND mt.active = true
@@ -1299,7 +1299,7 @@ hints_data AS (
                      '{}'::types.q_get_simulation_attempt_v3_hint[]
                  )
                 )::types.q_get_simulation_attempt_v3_hints_by_message
-            ) FILTER (WHERE m.role = message_role.assistant),
+            ) FILTER (WHERE m.role = 'assistant'::message_role),
             '{}'::types.q_get_simulation_attempt_v3_hints_by_message[]
         ) as hints
     FROM params x
@@ -1320,7 +1320,7 @@ hints_data AS (
     JOIN messages m ON m.id = mr.message_id
     CROSS JOIN chat_ids_list cil
     WHERE c.id = ANY(cil.chat_ids)
-      AND m.role IN (message_role.user, message_role.assistant)
+      AND m.role IN ('user'::message_role, 'assistant'::message_role)
       AND ab.sim_practice_simulation = true
     GROUP BY c.id
 ),

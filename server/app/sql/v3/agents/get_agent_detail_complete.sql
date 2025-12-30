@@ -296,7 +296,7 @@ user_has_agent_access AS (
         JOIN user_departments ud ON ud.id = ad.department_id::uuid
     ) OR EXISTS(
         SELECT 1 FROM params x
-        JOIN profiles p ON p.id = x.profile_id AND p.role = profile_role.superadmin
+        JOIN profiles p ON p.id = x.profile_id AND p.role = 'superadmin'::profile_role
     ) OR (
         -- Default agents (no department links) are accessible to all
         SELECT COUNT(*) FROM params x
@@ -436,8 +436,8 @@ SELECT
     CASE 
         -- Default agents (no department_ids) are read-only for non-superadmin
         WHEN (COALESCE(add.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false::boolean
-        WHEN up.role = profile_role.superadmin THEN true::boolean
-        WHEN up.role IN (profile_role.admin, profile_role.instructional) AND uhaa.has_access THEN true::boolean
+        WHEN up.role = 'superadmin'::profile_role THEN true::boolean
+        WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role) AND uhaa.has_access THEN true::boolean
         ELSE false::boolean
     END as can_edit,
     -- Temperature bounds for selected model

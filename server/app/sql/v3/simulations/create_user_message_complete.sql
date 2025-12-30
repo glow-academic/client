@@ -27,7 +27,7 @@ latest_message AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
-    WHERE m.role IN (message_role.user, message_role.assistant, message_role.system, message_role.developer)
+    WHERE m.role IN ('user'::message_role, 'assistant'::message_role, 'system'::message_role, 'developer'::message_role)
       AND c.id = $1::uuid
     ORDER BY m.created_at DESC
     LIMIT 1

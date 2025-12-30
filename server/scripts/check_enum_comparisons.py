@@ -25,7 +25,7 @@ class Violation(NamedTuple):
 
     file_path: Path
     line_no: int
-    violation_type: str  # 'weak_comparison', 'old_enum_value', 'in_clause', 'any_clause', 'case_statement'
+    violation_type: str  # 'weak_comparison', 'old_enum_value', 'in_clause', 'any_clause', 'case_statement', 'invalid_enum_syntax'
     column: str
     enum_type: str
     value: str
@@ -204,13 +204,24 @@ def extract_enum_value_from_string(s: str) -> str | None:
 
 def is_strong_comparison(value_str: str) -> bool:
     """Check if a comparison value uses strong enum syntax."""
-    # Check for enum_type.label syntax
-    if re.search(r"\w+\.\w+", value_str):
-        return True
-    # Check for explicit cast 'value'::enum_type
+    # Check for explicit cast 'value'::enum_type (preferred)
     if re.search(r"::\w+", value_str):
         return True
+    # Check for shorthand enum_type 'value'
+    if re.search(r"\b(agent_role|profile_role|message_role|pricing_type|modality_type|feedback_type|message_feedback_type|option_type|quality|reasoning_effort|tool_type|unit_category|voice)\s+['\"][^'\"]+['\"]", value_str, re.IGNORECASE):
+        return True
     return False
+
+
+def is_invalid_enum_syntax(value_str: str) -> bool:
+    """Check if a comparison value uses invalid enum_type.value syntax."""
+    # Detect patterns like agent_role.rubric, message_role.system, etc.
+    # This is invalid PostgreSQL syntax (PostgreSQL interprets it as table.column)
+    invalid_pattern = re.compile(
+        r"\b(agent_role|profile_role|message_role|pricing_type|modality_type|feedback_type|message_feedback_type|option_type|quality|reasoning_effort|tool_type|unit_category|voice)\.\w+",
+        re.IGNORECASE
+    )
+    return bool(invalid_pattern.search(value_str))
 
 
 def check_file(file_path: Path) -> list[Violation]:
@@ -244,10 +255,39 @@ def check_file(file_path: Path) -> list[Violation]:
         r"CASE\s+WHEN\s+(\w+(?:\.\w+)?)\s*=\s*['\"]([^'\"]+)['\"]", re.IGNORECASE
     )
 
+    # Pattern 5: Invalid enum syntax - enum_type.value (e.g., agent_role.rubric, message_role.system)
+    invalid_enum_pattern = re.compile(
+        r"(\w+(?:\.\w+)?)\s*(?:=|IN)\s*.*?\b(agent_role|profile_role|message_role|pricing_type|modality_type|feedback_type|message_feedback_type|option_type|quality|reasoning_effort|tool_type|unit_category|voice)\.(\w+)",
+        re.IGNORECASE
+    )
+
     for line_no, line in enumerate(lines, start=1):
         # Skip comments
         if line.strip().startswith("--"):
             continue
+
+        # Check for invalid enum_type.value syntax first
+        invalid_match = invalid_enum_pattern.search(line)
+        if invalid_match:
+            column = invalid_match.group(1)
+            enum_type_name = invalid_match.group(2).lower()
+            enum_value = invalid_match.group(3)
+            
+            if column.lower() in ENUM_COLUMNS:
+                enum_type = ENUM_COLUMNS[column.lower()]
+                violations.append(
+                    Violation(
+                        file_path=file_path,
+                        line_no=line_no,
+                        violation_type="invalid_enum_syntax",
+                        column=column,
+                        enum_type=enum_type,
+                        value=f"{enum_type_name}.{enum_value}",
+                        context=line.strip(),
+                        suggestion=f"Replace {enum_type_name}.{enum_value} with '{enum_value}'::{enum_type_name}",
+                    )
+                )
+                continue  # Skip further checks for this line
 
         # Pattern 1: Direct equality
         for match in equality_pattern.finditer(line):
@@ -275,7 +315,7 @@ def check_file(file_path: Path) -> list[Violation]:
                                 enum_type=enum_type,
                                 value=value,
                                 context=line.strip(),
-                                suggestion=f"Replace '{value}' with '{old_mapping}' and use strong comparison: {column} = {enum_type}.{old_mapping} or {column} = '{old_mapping}'::{enum_type}",
+                                suggestion=f"Replace '{value}' with '{old_mapping}' and use strong comparison: {column} = '{old_mapping}'::{enum_type}",
                             )
                         )
                     elif (
@@ -291,7 +331,7 @@ def check_file(file_path: Path) -> list[Violation]:
                                 enum_type=enum_type,
                                 value=value,
                                 context=line.strip(),
-                                suggestion=f"Use strong comparison: {column} = {enum_type}.{value} or {column} = '{value}'::{enum_type}",
+                                suggestion=f"Use strong comparison: {column} = '{value}'::{enum_type}",
                             )
                         )
 
@@ -338,7 +378,7 @@ def check_file(file_path: Path) -> list[Violation]:
                                 enum_type=enum_type,
                                 value=old_val,
                                 context=line.strip(),
-                                suggestion=f"Replace '{old_val}' with '{new_val}' in IN clause and use strong comparison",
+                                suggestion=f"Replace '{old_val}' with '{new_val}' in IN clause and use strong comparison: {column} IN ('{new_val}'::{enum_type}, ...)",
                             )
                         )
                 elif has_weak:
@@ -351,7 +391,7 @@ def check_file(file_path: Path) -> list[Violation]:
                             enum_type=enum_type,
                             value="",
                             context=line.strip(),
-                            suggestion=f"Use strong comparison: {column} IN ({enum_type}.value1, {enum_type}.value2) or cast values",
+                            suggestion=f"Use strong comparison: {column} IN ('value1'::{enum_type}, 'value2'::{enum_type})",
                         )
                     )
 
@@ -397,7 +437,7 @@ def check_file(file_path: Path) -> list[Violation]:
                             enum_type=enum_type,
                             value=value,
                             context=line.strip(),
-                            suggestion=f"Replace '{value}' with '{old_mapping}' and use strong comparison: CASE WHEN {column} = {enum_type}.{old_mapping}",
+                            suggestion=f"Replace '{value}' with '{old_mapping}' and use strong comparison: CASE WHEN {column} = '{old_mapping}'::{enum_type}",
                         )
                     )
                 elif (
@@ -415,7 +455,7 @@ def check_file(file_path: Path) -> list[Violation]:
                                 enum_type=enum_type,
                                 value=value,
                                 context=line.strip(),
-                                suggestion=f"Use strong comparison: CASE WHEN {column} = {enum_type}.{value} or {column} = '{value}'::{enum_type}",
+                                suggestion=f"Use strong comparison: CASE WHEN {column} = '{value}'::{enum_type}",
                             )
                         )
 

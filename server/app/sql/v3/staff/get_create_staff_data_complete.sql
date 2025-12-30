@@ -217,7 +217,7 @@ staff_rows AS (
     CROSS JOIN user_profile up
     WHERE (
         -- Superadmin sees all staff
-        up.role = profile_role.superadmin
+        up.role = 'superadmin'::profile_role
         OR
         -- For create-staff-data, show all staff with active departments
         true

@@ -224,7 +224,7 @@ SELECT
     sd.*,
     CASE 
         WHEN COALESCE(sd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_edit,
     CASE 
@@ -232,11 +232,11 @@ SELECT
         WHEN COALESCE(sd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
         WHEN sd.practice_simulation = true THEN false
         WHEN sd.total_cohort_links > 0 THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_delete,
     CASE 
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_duplicate,
     sm.mapping as scenario_mapping,

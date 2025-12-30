@@ -47,7 +47,7 @@ best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    WHERE a.role = agent_role.hint
+    WHERE a.role = 'hint'::agent_role
     AND a.active = true
     AND (
         -- Include if agent is linked to the specified department

@@ -131,7 +131,7 @@ filtered_attempts AS (
                 JOIN user_departments ud ON ud.department_id::text = ANY(ed.department_ids)
                 WHERE ed.eval_id = eval_id
             )
-            OR EXISTS (SELECT 1 FROM user_profile WHERE role IN (profile_role.admin, profile_role.superadmin))
+            OR EXISTS (SELECT 1 FROM user_profile WHERE role IN ('admin'::profile_role, 'superadmin'::profile_role))
         )
 ),
 -- Apply pagination

@@ -150,7 +150,7 @@ persona_department_access_check AS (
     SELECT 
         p.id as persona_id,
         CASE 
-            WHEN up.role = profile_role.superadmin THEN true
+            WHEN up.role = 'superadmin'::profile_role THEN true
             WHEN EXISTS (
                 SELECT 1 FROM persona_departments pd 
                 WHERE pd.persona_id = p.id 
@@ -204,7 +204,7 @@ agent_mapping_data AS (
         ARRAY[a.role::text] as roles
     FROM agents a
     WHERE a.active = true
-    AND a.role IN (agent_role.simulation, agent_role.voice)
+    AND a.role IN ('simulation'::agent_role, 'voice'::agent_role)
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad 
@@ -291,7 +291,7 @@ accessible_personas AS (
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     CROSS JOIN user_profile up
     WHERE (
-        up.role = profile_role.superadmin
+        up.role = 'superadmin'::profile_role
         OR pd.department_id IN (SELECT department_id FROM user_departments)
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
     )
@@ -332,14 +332,14 @@ permissions_data AS (
         CASE 
             WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
             WHEN ud.usage_count > 0 THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_edit,
         true as can_duplicate,
         CASE 
             WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
             WHEN ud.usage_count > 0 THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_delete
     FROM persona_data pd

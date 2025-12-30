@@ -146,7 +146,7 @@ SELECT
     CASE 
         WHEN pd.active_scenario_count > 0 THEN false
         WHEN NOT pd.has_dept_links AND up.role != 'superadmin' THEN false
-        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+        WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_edit,
     true as can_duplicate,
@@ -154,7 +154,7 @@ SELECT
         -- Can't delete if can't edit (stricter than can_edit)
         WHEN NOT pd.has_dept_links AND up.role != 'superadmin' THEN false
         WHEN pd.total_scenario_links > 0 THEN false
-        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+        WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_delete,
     sm.mapping as scenario_mapping,

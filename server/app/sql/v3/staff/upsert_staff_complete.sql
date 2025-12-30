@@ -102,10 +102,10 @@ role_validation AS (
         pe.profile_idx,
         pe.role as profile_role,
         CASE 
-            WHEN cur.role = profile_role.superadmin AND pe.role IN (profile_role.superadmin, profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest) THEN true
-            WHEN cur.role = profile_role.admin AND pe.role IN (profile_role.instructional, profile_role.member, profile_role.guest) THEN true
-            WHEN cur.role = profile_role.instructional AND pe.role IN (profile_role.member, profile_role.guest) THEN true
-            WHEN cur.role = profile_role.member AND pe.role = profile_role.guest THEN true
+            WHEN cur.role = 'superadmin'::profile_role AND pe.role::profile_role IN ('superadmin'::profile_role, 'admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role) THEN true
+            WHEN cur.role = 'admin'::profile_role AND pe.role::profile_role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role) THEN true
+            WHEN cur.role = 'instructional'::profile_role AND pe.role::profile_role IN ('member'::profile_role, 'guest'::profile_role) THEN true
+            WHEN cur.role = 'member'::profile_role AND pe.role::profile_role = 'guest'::profile_role THEN true
             ELSE false
         END as can_assign
     FROM current_user_role cur

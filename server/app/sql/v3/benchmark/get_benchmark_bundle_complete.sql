@@ -251,11 +251,11 @@ filtered_evals AS (
         ed.*,
         edept.department_ids,
         CASE 
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_edit,
         CASE 
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_delete
     FROM eval_data ed
@@ -270,7 +270,7 @@ filtered_evals AS (
                 SELECT 1 FROM user_departments ud
                 WHERE ud.department_id::text = ANY(edept.department_ids)
             )
-            OR up.role IN (profile_role.admin, profile_role.superadmin)
+            OR up.role IN ('admin'::profile_role, 'superadmin'::profile_role)
         )
 ),
 all_rubric_ids AS (

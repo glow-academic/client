@@ -193,16 +193,16 @@ rubric_data AS (
         COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links,
         CASE 
             WHEN COALESCE(rasl.active_simulation_count, 0) > 0 THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(rasl_all.total_simulation_links, 0) > 0 THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_delete,
         CASE 
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_duplicate
     FROM rubrics r

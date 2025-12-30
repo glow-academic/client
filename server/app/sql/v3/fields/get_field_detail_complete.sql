@@ -104,7 +104,7 @@ valid_departments_data AS (
         COALESCE(d.description, '') as description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
-       OR EXISTS (SELECT 1 FROM user_profile WHERE role = profile_role.superadmin)
+       OR EXISTS (SELECT 1 FROM user_profile WHERE role = 'superadmin'::profile_role)
 ),
 valid_parameters_data AS (
     SELECT 
@@ -125,7 +125,7 @@ user_has_field_access AS (
     ) OR EXISTS(
         SELECT 1 FROM params x
         JOIN profiles p ON p.id = x.profile_id
-        WHERE p.role = profile_role.superadmin
+        WHERE p.role = 'superadmin'::profile_role
     ) OR (
         SELECT NOT EXISTS(
             SELECT 1 FROM field_departments fd2
@@ -168,7 +168,7 @@ SELECT
      FROM valid_parameters_data) as valid_parameter_ids,
     CASE 
         WHEN COALESCE(fdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-        WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+        WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_edit,
     up.actor_name

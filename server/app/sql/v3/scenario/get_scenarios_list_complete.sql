@@ -230,7 +230,7 @@ scenario_data AS (
         CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
         CASE 
             WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) 
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) 
                  AND COALESCE(ss.num_simulations, 0) = 0 
             THEN true
             ELSE false
@@ -238,7 +238,7 @@ scenario_data AS (
         CASE 
             -- Can't delete if can't edit (stricter than can_edit)
             WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) 
+            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) 
                  AND COALESCE(sal.total_links, 0) = 0 
             THEN true
             ELSE false

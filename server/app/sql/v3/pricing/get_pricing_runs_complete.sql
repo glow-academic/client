@@ -510,10 +510,10 @@ model_pricing_aggregated AS (
     -- Aggregate pricing per model: sum all input/output prices normalized to per-million tokens
     SELECT 
         mrf.model_id,
-        COALESCE(SUM(CASE WHEN mp.pricing_type = pricing_type.input THEN mp.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as input_ppm,
-        COALESCE(SUM(CASE WHEN mp.pricing_type = pricing_type.output THEN mp.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as output_ppm
+        COALESCE(SUM(CASE WHEN mp.pricing_type = 'input'::pricing_type THEN mp.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as input_ppm,
+        COALESCE(SUM(CASE WHEN mp.pricing_type = 'output'::pricing_type THEN mp.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as output_ppm
     FROM (SELECT DISTINCT model_id FROM runs_filtered WHERE model_id IS NOT NULL) mrf
-    LEFT JOIN model_pricing mp ON mp.model_id = mrf.model_id AND mp.active = true AND mp.pricing_type IN (pricing_type.input, pricing_type.output)
+    LEFT JOIN model_pricing mp ON mp.model_id = mrf.model_id AND mp.active = true AND mp.pricing_type IN ('input'::pricing_type, 'output'::pricing_type)
     LEFT JOIN units u ON u.id = mp.unit_id
     GROUP BY mrf.model_id
 )

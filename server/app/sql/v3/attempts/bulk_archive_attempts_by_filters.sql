@@ -92,11 +92,11 @@ history_attempts AS (
       AND (cardinality($6::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $6::uuid[]::text[])
       -- Role hierarchy filtering
       AND (
-        hvr.role = profile_role.superadmin OR
-        (hvr.role = profile_role.admin AND p_attempt.role IN (profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest)) OR
-        (hvr.role = profile_role.instructional AND p_attempt.role IN (profile_role.instructional, profile_role.member, profile_role.guest)) OR
-        (hvr.role = profile_role.member AND p_attempt.role IN (profile_role.member, profile_role.guest)) OR
-        (hvr.role = profile_role.guest AND p_attempt.role = profile_role.guest)
+        hvr.role = 'superadmin'::profile_role OR
+        (hvr.role = 'admin'::profile_role AND p_attempt.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
+        (hvr.role = 'instructional'::profile_role AND p_attempt.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
+        (hvr.role = 'member'::profile_role AND p_attempt.role IN ('member'::profile_role, 'guest'::profile_role)) OR
+        (hvr.role = 'guest'::profile_role AND p_attempt.role = 'guest'::profile_role)
       )
 ),
 -- Get cohorts for each attempt's profile

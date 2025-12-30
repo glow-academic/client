@@ -240,7 +240,7 @@ filtered_evals AS (
                 SELECT 1 FROM user_departments ud
                 WHERE ud.department_id::text = ANY(edept.department_ids)
             )
-            OR up.role IN (profile_role.admin, profile_role.superadmin)
+            OR up.role IN ('admin'::profile_role, 'superadmin'::profile_role)
         )
 ),
 evals_aggregated AS (

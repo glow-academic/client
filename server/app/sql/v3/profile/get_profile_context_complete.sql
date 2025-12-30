@@ -420,9 +420,9 @@ emulation_validation AS (
                       AND p_effective.id = (SELECT effective_profile_id FROM resolved_profile_ids)
                       AND p_effective.id != p_actual.id
                       AND CASE 
-                        WHEN p_actual.role = profile_role.superadmin THEN true
-                        WHEN p_actual.role = profile_role.admin THEN p_effective.role IN (profile_role.instructional, profile_role.member, profile_role.guest)
-                        WHEN p_actual.role = profile_role.instructional THEN p_effective.role IN (profile_role.member, profile_role.guest)
+                        WHEN p_actual.role = 'superadmin'::profile_role THEN true
+                        WHEN p_actual.role = 'admin'::profile_role THEN p_effective.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+                        WHEN p_actual.role = 'instructional'::profile_role THEN p_effective.role IN ('member'::profile_role, 'guest'::profile_role)
                         ELSE false
                       END
                 )
@@ -441,10 +441,10 @@ scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
     SELECT 
         CASE 
-            WHEN epr.role = profile_role.superadmin THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::text[]
-            WHEN epr.role = profile_role.admin THEN ARRAY['admin', 'instructional', 'member', 'guest']::text[]
-            WHEN epr.role = profile_role.instructional THEN ARRAY['instructional', 'member', 'guest']::text[]
-            WHEN epr.role = profile_role.member THEN ARRAY['member']::text[]
+            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'admin'::profile_role THEN ARRAY['admin', 'instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'instructional'::profile_role THEN ARRAY['instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'member'::profile_role THEN ARRAY['member']::text[]
             ELSE ARRAY['guest']::text[]
         END as scoped_roles
     FROM effective_profile_role epr
@@ -784,10 +784,10 @@ available_sections_computed AS (
     -- Replicates get_available_subsections_for_role logic
     SELECT 
         CASE 
-            WHEN epr.role = profile_role.superadmin THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
-            WHEN epr.role = profile_role.admin THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
-            WHEN epr.role = profile_role.instructional THEN ARRAY['home', 'practice', 'analytics', 'create']::text[]
-            WHEN epr.role = profile_role.member THEN ARRAY['home', 'practice']::text[]
+            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
+            WHEN epr.role = 'admin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
+            WHEN epr.role = 'instructional'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create']::text[]
+            WHEN epr.role = 'member'::profile_role THEN ARRAY['home', 'practice']::text[]
             ELSE ARRAY['practice']::text[]  -- guest
         END as available_sections
     FROM effective_profile_role epr
@@ -797,11 +797,11 @@ redirect_path_computed AS (
     -- Replicates get_redirect_path_for_role logic
     SELECT 
         CASE 
-            WHEN epr.role = profile_role.guest THEN '/practice'::text
-            WHEN epr.role = profile_role.member THEN '/home'::text
-            WHEN epr.role = profile_role.instructional THEN '/analytics/dashboard'::text
-            WHEN epr.role = profile_role.admin THEN '/analytics/dashboard'::text
-            WHEN epr.role = profile_role.superadmin THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'guest'::profile_role THEN '/practice'::text
+            WHEN epr.role = 'member'::profile_role THEN '/home'::text
+            WHEN epr.role = 'instructional'::profile_role THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'admin'::profile_role THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'superadmin'::profile_role THEN '/analytics/dashboard'::text
             ELSE '/home'::text
         END as redirect_path
     FROM effective_profile_role epr

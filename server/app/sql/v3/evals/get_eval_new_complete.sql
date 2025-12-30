@@ -159,7 +159,7 @@ valid_eval_agents_list AS (
         COALESCE(a.description, '') as description,
         ARRAY[a.role::text] as roles
     FROM params x
-    JOIN agents a ON a.active = true AND a.role = agent_role.eval
+    JOIN agents a ON a.active = true AND a.role = 'eval'::agent_role
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     GROUP BY a.id, a.name, a.description, a.role
     HAVING 
@@ -361,8 +361,8 @@ SELECT
     COALESCE(ra.rubrics, '{}'::types.q_get_eval_detail_v3_rubric[]) as rubrics,
     COALESCE(ra.rubric_ids, ARRAY[]::text[]) as valid_rubric_ids,
     false as use_groups,
-    CASE WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true ELSE false END as can_edit,
-    CASE WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true ELSE false END as can_delete,
+    CASE WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END as can_edit,
+    CASE WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END as can_delete,
     COALESCE(amra.available_model_runs, '{}'::types.q_get_eval_detail_v3_available_model_run[]) as available_model_runs,
     COALESCE(amra.total_count, 0) as available_model_runs_total_count,
     COALESCE(amra.page, 1) as available_model_runs_page,

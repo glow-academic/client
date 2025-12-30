@@ -372,16 +372,16 @@ parameters_data AS (
         ) as sample_items,
         CASE 
             WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(pasl_all.total_scenario_links, 0) > 0 THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_delete,
         CASE 
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_duplicate
     FROM filtered_parameters fp

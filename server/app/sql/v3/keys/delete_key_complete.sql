@@ -71,8 +71,8 @@ check_permissions AS (
         CASE 
             -- Default keys (no department_ids) can only be deleted by superadmin
             WHEN COALESCE(kdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role = profile_role.superadmin THEN true
-            WHEN up.role = profile_role.admin THEN true
+            WHEN up.role = 'superadmin'::profile_role THEN true
+            WHEN up.role = 'admin'::profile_role THEN true
             ELSE false
         END as can_delete
     FROM user_profile up

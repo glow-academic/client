@@ -16,7 +16,7 @@ WITH params AS (
 member_agent AS (
     SELECT id as agent_id
     FROM agents
-    WHERE role = agent_role.member AND active = true
+    WHERE role = 'member'::agent_role AND active = true
     LIMIT 1
 ),
 -- Get chat context
@@ -136,7 +136,7 @@ latest_user_message AS (
     FROM upserted_run ur
     JOIN message_runs mr ON mr.run_id = ur.run_id
     JOIN messages m ON m.id = mr.message_id
-    WHERE m.role = message_role.user
+    WHERE m.role = 'user'::message_role
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
@@ -206,7 +206,7 @@ latest_message_for_branch AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
-    WHERE m.role IN (message_role.user, message_role.assistant, message_role.system, message_role.developer)
+    WHERE m.role IN ('user'::message_role, 'assistant'::message_role, 'system'::message_role, 'developer'::message_role)
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
@@ -305,7 +305,7 @@ existing_system_message AS (
     FROM messages m
     JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN system_message_hash smh ON message_content_hash(mc.content, 'system') = smh.hash
-    WHERE m.role = message_role.system
+    WHERE m.role = 'system'::message_role
     LIMIT 1
 ),
 new_system_message AS (
@@ -357,7 +357,7 @@ existing_scenario_developer_message AS (
     FROM messages m
     JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN scenario_developer_hash sdh ON message_content_hash(mc.content, 'developer') = sdh.hash
-    WHERE m.role = message_role.developer
+    WHERE m.role = 'developer'::message_role
     LIMIT 1
 ),
 new_scenario_developer_message AS (

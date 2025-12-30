@@ -94,13 +94,13 @@ provider_data AS (
         p.updated_at,
         COALESCE(pe.base_url, '') as base_url,
         CASE 
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_edit,
         CASE 
             -- Check if provider is used by models
             WHEN EXISTS (SELECT 1 FROM models m WHERE m.provider_id = p.id AND m.active = true) THEN false
-            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate

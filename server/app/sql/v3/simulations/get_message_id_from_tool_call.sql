@@ -8,7 +8,7 @@ JOIN message_runs mr ON mr.run_id = tcr.run_id
 JOIN messages m ON m.id = mr.message_id
 WHERE tc.id = $1::uuid
   AND tcr.run_id = $2::uuid
-  AND m.role = message_role.assistant
+  AND m.role = 'assistant'::message_role
 ORDER BY m.created_at DESC
 LIMIT 1
 

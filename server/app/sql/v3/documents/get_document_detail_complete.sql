@@ -288,7 +288,7 @@ agent_data AS (
         COALESCE(a.description, '') as description,
         ARRAY[a.role::text] as roles
     FROM params x
-    JOIN agents a ON a.active = true AND a.role IN (agent_role.classify, agent_role.document)
+    JOIN agents a ON a.active = true AND a.role IN ('classify'::agent_role, 'document'::agent_role)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN document_data dd
     WHERE (
@@ -364,12 +364,12 @@ SELECT
     COALESCE(dd.scenario_ids, ARRAY[]::uuid[])::uuid[] as scenario_ids,
     CASE 
         WHEN dd.active_scenario_count > 0 THEN false
-        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+        WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END::boolean as can_edit,
     CASE 
         WHEN dd.total_scenario_links > 0 THEN false
-        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
+        WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END::boolean as can_delete,
     ARRAY['homework', 'exam', 'lab', 'project']::text[] as document_type_options,
