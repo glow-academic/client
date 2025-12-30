@@ -1352,9 +1352,26 @@ simulations_final AS (
                 (sim.id,
                  sim.title,
                  COALESCE(sim.description, ''),
-                 (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id AND ss.active = true ORDER BY ss.position LIMIT 1),
-                 (SELECT r.points FROM rubrics r WHERE r.id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id AND ss.active = true ORDER BY ss.position LIMIT 1)),
-                 (SELECT r.pass_points FROM rubrics r WHERE r.id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id AND ss.active = true ORDER BY ss.position LIMIT 1))
+                 (SELECT rga.rubric_id FROM simulation_scenarios ss 
+                  JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+                  JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+                  WHERE ss.simulation_id = sim.id AND ss.active = true 
+                  ORDER BY ss.position 
+                  LIMIT 1),
+                 (SELECT r.points FROM simulation_scenarios ss 
+                  JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+                  JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+                  JOIN rubrics r ON r.id = rga.rubric_id
+                  WHERE ss.simulation_id = sim.id AND ss.active = true 
+                  ORDER BY ss.position 
+                  LIMIT 1),
+                 (SELECT r.pass_points FROM simulation_scenarios ss 
+                  JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+                  JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+                  JOIN rubrics r ON r.id = rga.rubric_id
+                  WHERE ss.simulation_id = sim.id AND ss.active = true 
+                  ORDER BY ss.position 
+                  LIMIT 1)
                 )::types.q_reports_bundle_v3_simulation
                 ORDER BY sim.title
             ),

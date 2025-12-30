@@ -329,64 +329,6 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
         async with pool.acquire() as conn:
             # Handle practice mode: find simulation and create variant if needed
             if data.practice_mode:
-    """
-    Handle simulation start requests via WebSocket.
-    Creates attempt and checks for next incomplete scenario, then emits to next.py if found.
-    """
-    try:
-        logger.info(
-            f"Received simulation_start request from {sid} with data: {data}"
-        )
-
-        simulation_id = data.simulation_id
-        profile_id = data.profile_id
-        scenario_id_override = data.scenario_id
-        infinite = data.infinite
-
-        # Validate profile_id is required
-        if not profile_id or profile_id == "" or profile_id == "null":
-            await simulation_start_error(
-                StartSimulationErrorPayload(
-                    success=False, message="profileId is required"
-                ),
-                room=sid,
-            )
-            logger.error(f"Emitted error to {sid}: profileId is required")
-            return
-
-        # Validate simulation_id (required unless in practice mode)
-        if not data.practice_mode and not simulation_id:
-            logger.error(f"Missing simulation_id in request from {sid}")
-            await simulation_start_error(
-                StartSimulationErrorPayload(
-                    success=False, message="Missing simulation_id"
-                ),
-                room=sid,
-            )
-            logger.error(f"Emitted error to {sid}: Missing simulation_id")
-            return
-
-        logger.info(
-            f"Processing simulation start: simulation_id={simulation_id}, profile_id={profile_id}, practice_mode={data.practice_mode}, sid={sid}"
-        )
-
-        # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await simulation_start_error(
-                StartSimulationErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            logger.error(
-                f"Emitted error to {sid}: Database connection pool not available"
-            )
-            return
-
-        async with pool.acquire() as conn:
-            # Handle practice mode: find simulation and create variant if needed
-            if data.practice_mode:
                 # Practice mode: find practice simulation with persona
                 if not data.practice_persona_id:
                     await simulation_start_error(

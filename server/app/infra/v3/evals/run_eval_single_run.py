@@ -24,8 +24,7 @@ async def run_eval_single_run(
     attempt_id: str,
     test_id: str | None,
     run_id: str,
-    eval_agent_id: str,
-    rubric_id: str,
+    rubric_grade_agent_id: str,
     department_id: str | None,
     profile_id: str | None,
     dynamic: bool = False,
@@ -41,8 +40,7 @@ async def run_eval_single_run(
         attempt_id: The eval attempt ID
         test_id: The test ID (if already created, None to create new)
         run_id: The original run ID to evaluate
-        eval_agent_id: The eval agent ID (agent performing evaluation)
-        rubric_id: The rubric ID for grading
+        rubric_grade_agent_id: The rubric_grade_agent ID (contains rubric and eval agent)
         department_id: Optional department ID
         profile_id: Optional profile ID
         dynamic: If true, re-run the agent being evaluated with modified system prompt
@@ -346,17 +344,34 @@ async def run_eval_single_run(
                 f"Completed dynamic agent run {agent_run_id}, proceeding with eval_agent grading"
             )
 
-        # 3. Get eval_agent context
+        # 3. Get rubric and eval_agent from rubric_grade_agent
+        rga_row = await conn.fetchrow(
+            """
+            SELECT 
+                rga.rubric_id::text as rubric_id,
+                rga.grade_text_agent_id::text as eval_agent_id
+            FROM rubric_grade_agents rga
+            WHERE rga.id = $1::uuid
+            """,
+            rubric_grade_agent_id,
+        )
+        if not rga_row:
+            raise ValueError(f"Rubric grade agent not found: {rubric_grade_agent_id}")
+        
+        rubric_id = rga_row["rubric_id"]
+        eval_agent_id = rga_row["eval_agent_id"]
+        
+        # 4. Get eval_agent context (using eval_id and run_id to query from junction table)
         sql_get_context = load_sql("app/sql/v3/evals/get_eval_agent_context.sql")
         context_row = await conn.fetchrow(
-            sql_get_context, eval_agent_id, department_id, profile_id
+            sql_get_context, eval_id, run_id, None, department_id, profile_id
         )
         if not context_row:
-            raise ValueError(f"Eval agent context not found for agent {eval_agent_id}")
+            raise ValueError(f"Eval agent context not found for eval {eval_id}, run {run_id}")
 
         context = dict(context_row)
 
-        # 4. Get department_id from original run if not provided (if not already set in dynamic mode)
+        # 5. Get department_id from original run if not provided (if not already set in dynamic mode)
         if not department_id:
             dept_row = await conn.fetchrow(
                 """
@@ -373,14 +388,14 @@ async def run_eval_single_run(
             if dept_row:
                 department_id = dept_row["department_id"]
 
-        # 5. Create test if not exists
+        # 6. Create test if not exists
         if not test_id:
             trace_id = f"eval_{attempt_id}_{run_id}"
             test_title = f"Eval Test for Run {run_id[:8]}"
             # We'll create the test after creating the run
             test_id = None
 
-        # 6. Create run for eval_agent
+        # 7. Create run for eval_agent
         sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
         eval_run_row = await conn.fetchrow(
             sql_create_run,
@@ -397,7 +412,7 @@ async def run_eval_single_run(
 
         eval_run_id = eval_run_row["run_id"]
 
-        # 7. Create test now that we have eval_run_id
+        # 8. Create test now that we have eval_run_id
         if not test_id:
             trace_id = f"eval_{attempt_id}_{run_id}"
             test_title = f"Eval Test for Run {run_id[:8]}"
@@ -438,7 +453,7 @@ async def run_eval_single_run(
                 test_id,
             )
 
-        # 8. Prepare messages: Convert to TResponseInputItem format and filter out system/developer messages
+        # 9. Prepare messages: Convert to TResponseInputItem format and filter out system/developer messages
         # Filter out system and developer messages (they contain original agent's prompt)
         # Keep only user and assistant messages
         input_items: list[TResponseInputItem] = []
@@ -451,7 +466,7 @@ async def run_eval_single_run(
                 mapped_role = "assistant" if role == "response" else role
                 input_items.append({"role": mapped_role, "content": content})  # type: ignore[list-item]
 
-        # 9. Create GenericAgent with eval_agent's context
+        # 10. Create GenericAgent with eval_agent's context
         eval_agent = GenericAgent(
             agent_name=context["agent_name"],
             system_prompt=context["system_prompt"],
@@ -463,7 +478,7 @@ async def run_eval_single_run(
             reasoning=context["reasoning"],
         )
 
-        # 10. Log system prompt and messages inline
+        # 11. Log system prompt and messages inline
         eval_run_id_uuid = uuid.UUID(eval_run_id)
         if context["system_prompt"]:
             sql_link_sys_dev = load_sql(
@@ -509,7 +524,7 @@ async def run_eval_single_run(
                 else:
                     developer_message_ids_eval.append(uuid.UUID(str(message_id)))
 
-        # 11. Run eval_agent
+        # 12. Run eval_agent
         logger.info(f"Running eval_agent {eval_agent_id} for run {run_id}")
         with trace(
             f"Eval Agent Run {run_id[:8]}",
@@ -522,7 +537,7 @@ async def run_eval_single_run(
                 context=DebugContext(conn=conn, run_id=uuid.UUID(eval_run_id)),
             )
 
-        # 12. Save assistant output message
+        # 13. Save assistant output message
         usage = result.context_wrapper.usage
         assistant_output = getattr(result, "final_output", None) or ""
 
@@ -561,7 +576,7 @@ async def run_eval_single_run(
                 str(parent_message_id_eval) if parent_message_id_eval else None,
             )
 
-        # 13. Handle pricing/logs (emit log_run event via internal_sio)
+        # 14. Handle pricing/logs (emit log_run event via internal_sio)
         await internal_sio.emit(
             "log_run",
             {
@@ -576,7 +591,7 @@ async def run_eval_single_run(
             },
         )
 
-        # 14. Grade the result (create grade via create_eval_grade.sql)
+        # 15. Grade the result (create grade via create_eval_grade.sql)
         # For now, use placeholder grading logic (similar to run_eval_worker.py)
         rubric = await conn.fetchrow(
             "SELECT id, name, points, pass_points FROM rubrics WHERE id = $1",
@@ -596,7 +611,7 @@ async def run_eval_single_run(
             True,  # passed (placeholder)
             rubric["points"],  # score (placeholder - use full points)
             0,  # time_taken (placeholder)
-            rubric_id,  # rubric_id
+            rubric_grade_agent_id,  # rubric_grade_agent_id
         )
 
         if not grade_result:
@@ -604,7 +619,7 @@ async def run_eval_single_run(
 
         grade_id = grade_result["grade_id"]
 
-        # 15. Mark test as completed
+        # 16. Mark test as completed
         await conn.execute(
             """
             UPDATE tests SET completed = true, updated_at = NOW()
@@ -613,7 +628,7 @@ async def run_eval_single_run(
             test_id,
         )
 
-        # 16. Mark eval_runs.completed = true for this run
+        # 17. Mark eval_runs.completed = true for this run
         await conn.execute(
             """
             UPDATE eval_runs SET completed = true, updated_at = NOW()
@@ -623,7 +638,7 @@ async def run_eval_single_run(
             run_id,
         )
 
-        # 17. Emit progress event via WebSocket
+        # 18. Emit progress event via WebSocket
         if emit_progress_func:
             await emit_progress_func(
                 {

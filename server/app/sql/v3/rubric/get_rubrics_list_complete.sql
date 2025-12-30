@@ -110,20 +110,24 @@ user_departments AS (
 ),
 rubric_active_simulation_links AS (
     SELECT 
-        ss.rubric_id,
+        rga.rubric_id,
         COUNT(DISTINCT ss.simulation_id) as active_simulation_count
     FROM simulation_scenarios ss
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     JOIN simulations s ON s.id = ss.simulation_id
-    WHERE ss.active = true AND s.active = true AND ss.rubric_id IS NOT NULL
-    GROUP BY ss.rubric_id
+    WHERE ss.active = true AND s.active = true AND rga.rubric_id IS NOT NULL
+    GROUP BY rga.rubric_id
 ),
 rubric_all_simulation_links AS (
     SELECT 
-        ss.rubric_id,
+        rga.rubric_id,
         COUNT(DISTINCT ss.simulation_id) as total_simulation_links
     FROM simulation_scenarios ss
-    WHERE ss.rubric_id IS NOT NULL
-    GROUP BY ss.rubric_id
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    WHERE rga.rubric_id IS NOT NULL
+    GROUP BY rga.rubric_id
 ),
 simulation_department_access_for_rubrics AS (
     -- Pre-compute which simulations the user has access to (for filtering rubric_simulations_data)
@@ -141,15 +145,17 @@ simulation_department_access_for_rubrics AS (
     GROUP BY s.id
 ),
 rubric_simulations_distinct AS (
-    SELECT DISTINCT ON (ss.rubric_id, s.id)
-        ss.rubric_id,
+    SELECT DISTINCT ON (rga.rubric_id, s.id)
+        rga.rubric_id,
         s.id as simulation_id,
         s.title as simulation_title
     FROM simulations s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
     INNER JOIN simulation_scenarios ss ON ss.simulation_id = s.id AND ss.active = true
-    WHERE s.active = true AND ss.rubric_id IS NOT NULL
-    ORDER BY ss.rubric_id, s.id, s.title
+    INNER JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+    INNER JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    WHERE s.active = true AND rga.rubric_id IS NOT NULL
+    ORDER BY rga.rubric_id, s.id, s.title
 ),
 rubric_simulations_data AS (
     SELECT 

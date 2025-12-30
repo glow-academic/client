@@ -30,11 +30,23 @@ DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_parameter_item_detail;
 DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_persona;
 DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_field;
 DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_rubric;
+DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_rubric_grade_agent;
 DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_department;
 DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_parameter;
 DROP TYPE IF EXISTS types.q_get_simulation_detail_v3_agent;
 
 -- 3) Recreate types
+-- Create rubric_grade_agent type first (used by scenario type)
+CREATE TYPE types.q_get_simulation_detail_v3_rubric_grade_agent AS (
+    rubric_grade_agent_id uuid,
+    rubric_id uuid,
+    rubric_name text,
+    grade_text_agent_id uuid,
+    grade_text_agent_name text,
+    grade_voice_agent_id uuid,
+    grade_voice_agent_name text
+);
+
 CREATE TYPE types.q_get_simulation_detail_v3_scenario AS (
     scenario_id uuid,
     title text,
@@ -46,13 +58,13 @@ CREATE TYPE types.q_get_simulation_detail_v3_scenario AS (
     copy_paste_allowed boolean,
     audio_enabled boolean,
     text_enabled boolean,
-    rubric_id uuid,
     time_limit_seconds int,
     usage_count int,
     success_rate int,
     last_used timestamptz,
     can_remove boolean,
-    has_active_video boolean
+    has_active_video boolean,
+    rubric_grade_agents types.q_get_simulation_detail_v3_rubric_grade_agent[]
 );
 
 CREATE TYPE types.q_get_simulation_detail_v3_parameter_item AS (
@@ -155,8 +167,6 @@ RETURNS TABLE (
     active boolean,
     practice_simulation boolean,
     hint_agent_id uuid,
-    grade_text_agent_id uuid,
-    grade_voice_agent_id uuid,
     simulation_text_agent_id uuid,
     simulation_voice_agent_id uuid,
     can_edit boolean,
@@ -239,11 +249,14 @@ simulation_base AS (
         s.active,
         s.practice_simulation,
         s.hint_agent_id,
-        s.grade_text_agent_id,
-        s.grade_voice_agent_id,
         s.simulation_text_agent_id,
         s.simulation_voice_agent_id,
-        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
+        (SELECT rga.rubric_id FROM simulation_scenarios ss 
+         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+         WHERE ss.simulation_id = s.id AND ss.active = true 
+         ORDER BY ss.position 
+         LIMIT 1) as rubric_id,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -277,6 +290,7 @@ user_department_ids AS (
 ),
 simulation_scenarios_base AS (
     SELECT 
+        ss.simulation_id,
         s.id as scenario_id,
         s.name,
         COALESCE(s.description, '') as description,
@@ -287,7 +301,7 @@ simulation_scenarios_base AS (
         ss.copy_paste_allowed,
         ss.audio_enabled,
         ss.text_enabled,
-        ss.rubric_id,
+        -- rubric_id removed from simulation_scenarios - now in rubric_grade_agents array
         stl.time_limit_seconds,
         COALESCE(
             (SELECT ARRAY_AGG(DISTINCT sf.field_id)
@@ -359,12 +373,30 @@ scenario_statistics AS (
     WHERE ss.simulation_id = (SELECT simulation_id FROM params)
     GROUP BY ss.scenario_id
 ),
+scenario_rubric_grade_agents_data AS (
+    SELECT 
+        ssrga.scenario_id,
+        ARRAY_AGG(
+            (ssrga.rubric_grade_agent_id, rga.rubric_id, r.name, 
+             rga.grade_text_agent_id, a_text.name,
+             rgav.grade_voice_agent_id, a_voice.name)::types.q_get_simulation_detail_v3_rubric_grade_agent
+            ORDER BY r.name
+        ) as rubric_grade_agents
+    FROM simulation_scenarios_base ssb
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ssb.simulation_id AND ssrga.scenario_id = ssb.scenario_id
+    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    JOIN rubrics r ON r.id = rga.rubric_id
+    JOIN agents a_text ON a_text.id = rga.grade_text_agent_id
+    LEFT JOIN rubric_grade_agents_voice rgav ON rgav.rubric_grade_agent_id = rga.id
+    LEFT JOIN agents a_voice ON a_voice.id = rgav.grade_voice_agent_id
+    GROUP BY ssrga.scenario_id
+),
 scenarios_data AS (
     SELECT 
         ARRAY_AGG(
             (sb.scenario_id, sb.name, sb.description, sb.active, sb.position,
              sb.parameter_item_ids, sb.hints_enabled, sb.copy_paste_allowed,
-             sb.audio_enabled, sb.text_enabled, sb.rubric_id, sb.time_limit_seconds,
+             sb.audio_enabled, sb.text_enabled, sb.time_limit_seconds,
              COALESCE(stats.usage_count, 0), COALESCE(stats.success_rate, 0),
              stats.last_used_date, COALESCE(stats.usage_count, 0) = 0,
              CASE 
@@ -374,13 +406,15 @@ scenarios_data AS (
                      AND sv.active = true
                  ) THEN true 
                  ELSE false 
-             END
+             END,
+             COALESCE(srgad.rubric_grade_agents, '{}'::types.q_get_simulation_detail_v3_rubric_grade_agent[])
             )::types.q_get_simulation_detail_v3_scenario
             ORDER BY sb.position
         ) as scenarios,
         ARRAY_AGG(sb.scenario_id) as scenario_ids
     FROM simulation_scenarios_base sb
     LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
+    LEFT JOIN scenario_rubric_grade_agents_data srgad ON srgad.scenario_id = sb.scenario_id
 ),
 valid_scenarios_list AS (
     SELECT DISTINCT
@@ -443,16 +477,20 @@ valid_rubrics_data AS (
         r2.name,
         COALESCE(r2.description, '') as description
     FROM simulation_base sb
-    JOIN rubrics r2 ON r2.id = sb.rubric_id
-    WHERE sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = 'member'
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_sb ON ssrga_sb.simulation_id = sb.id
+    LEFT JOIN rubric_grade_agents rga_sb ON rga_sb.id = ssrga_sb.rubric_grade_agent_id
+    JOIN rubrics r2 ON r2.id = rga_sb.rubric_id
+    WHERE rga_sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = 'member'
     UNION
     SELECT DISTINCT
         r3.id,
         r3.name,
         COALESCE(r3.description, '') as description
     FROM simulation_scenarios_base ssb
-    JOIN rubrics r3 ON r3.id = ssb.rubric_id
-    WHERE ssb.rubric_id IS NOT NULL AND r3.active = true
+    JOIN simulation_scenarios_rubric_grade_agents ssrga_ssb ON ssrga_ssb.simulation_id = ssb.simulation_id AND ssrga_ssb.scenario_id = ssb.scenario_id
+    JOIN rubric_grade_agents rga_ssb ON rga_ssb.id = ssrga_ssb.rubric_grade_agent_id
+    JOIN rubrics r3 ON r3.id = rga_ssb.rubric_id
+    WHERE rga_ssb.rubric_id IS NOT NULL AND r3.active = true
 ),
 rubrics_data AS (
     SELECT 
@@ -671,19 +709,31 @@ selected_agents_from_simulation AS (
     FROM simulation_base sb
     JOIN agents a ON (
         (a.id = sb.hint_agent_id AND a.role = 'hint')
-        OR (a.id = sb.grade_text_agent_id AND a.role IN ('grade', 'grade-text'))
-        OR (a.id = sb.grade_voice_agent_id AND a.role IN ('grade', 'grade-voice'))
         OR (a.id = sb.simulation_text_agent_id AND a.role = 'simulation-text')
         OR (a.id = sb.simulation_voice_agent_id AND a.role = 'simulation-voice')
     )
     WHERE a.active = true
       AND (
           sb.hint_agent_id IS NOT NULL
-          OR sb.grade_text_agent_id IS NOT NULL
-          OR sb.grade_voice_agent_id IS NOT NULL
           OR sb.simulation_text_agent_id IS NOT NULL
           OR sb.simulation_voice_agent_id IS NOT NULL
       )
+    UNION
+    -- Get grade agents from junction tables
+    SELECT DISTINCT a.id, a.name, a.description, a.role
+    FROM simulation_base sb
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
+    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    JOIN agents a ON a.id = rga.grade_text_agent_id AND a.role IN ('grade', 'grade-text')
+    WHERE a.active = true
+    UNION
+    SELECT DISTINCT a.id, a.name, a.description, a.role
+    FROM simulation_base sb
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
+    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    JOIN rubric_grade_agents_voice rgav ON rgav.rubric_grade_agent_id = rga.id
+    JOIN agents a ON a.id = rgav.grade_voice_agent_id AND a.role IN ('grade', 'grade-voice')
+    WHERE a.active = true
 ),
 agents_data AS (
     SELECT 
@@ -723,8 +773,6 @@ SELECT
     sb.active,
     sb.practice_simulation,
     sb.hint_agent_id,
-    sb.grade_text_agent_id,
-    sb.grade_voice_agent_id,
     sb.simulation_text_agent_id,
     sb.simulation_voice_agent_id,
     CASE 

@@ -66,6 +66,15 @@ BEGIN
             actor_type text
         );
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'q_get_eval_detail_v3_rubric_grade_agent' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')) THEN
+        CREATE TYPE types.q_get_eval_detail_v3_rubric_grade_agent AS (
+            rubric_grade_agent_id uuid,
+            rubric_id uuid,
+            rubric_name text,
+            agent_id uuid,
+            agent_name text
+        );
+    END IF;
 END $$;
 
 -- 4) Recreate function (reuse composite types from detail endpoint)
@@ -81,8 +90,6 @@ RETURNS TABLE (
     eval_id uuid,
     name text,
     description text,
-    rubric_id uuid,
-    eval_agent_id uuid,
     agent_id uuid,
     agent_ids text[],
     model_run_ids text[],
@@ -97,6 +104,7 @@ RETURNS TABLE (
     valid_agent_ids text[],
     rubrics types.q_get_eval_detail_v3_rubric[],
     valid_rubric_ids text[],
+    use_groups boolean,
     can_edit boolean,
     can_delete boolean,
     available_model_runs types.q_get_eval_detail_v3_available_model_run[],
@@ -338,8 +346,6 @@ SELECT
     NULL::uuid as eval_id,
     ''::text as name,
     ''::text as description,
-    NULL::uuid as rubric_id,
-    NULL::uuid as eval_agent_id,
     NULL::uuid as agent_id,
     ARRAY[]::text[] as agent_ids,
     ARRAY[]::text[] as model_run_ids,
@@ -354,6 +360,7 @@ SELECT
     COALESCE(aa.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     COALESCE(ra.rubrics, '{}'::types.q_get_eval_detail_v3_rubric[]) as rubrics,
     COALESCE(ra.rubric_ids, ARRAY[]::text[]) as valid_rubric_ids,
+    false as use_groups,
     CASE WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true ELSE false END as can_edit,
     CASE WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true ELSE false END as can_delete,
     COALESCE(amra.available_model_runs, '{}'::types.q_get_eval_detail_v3_available_model_run[]) as available_model_runs,

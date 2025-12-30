@@ -167,24 +167,35 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
                 )
                 return
 
-            # Get eval data (agent_id, eval_agent_id, rubric_id, dynamic)
+            # Get eval data (agent_id, rubric_grade_agent_id, dynamic)
+            # Get rubric_grade_agent for this specific run from junction table
             eval_row = await conn.fetchrow(
                 """
                 SELECT 
                     e.agent_id::text as agent_id,
-                    e.eval_agent_id::text as eval_agent_id,
-                    e.rubric_id::text as rubric_id,
-                    e.dynamic
+                    errga.rubric_grade_agent_id::text as rubric_grade_agent_id,
+                    rga.rubric_id::text as rubric_id,
+                    rga.grade_text_agent_id::text as eval_agent_id,
+                    e.dynamic,
+                    e.use_groups
                 FROM evals e
+                LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND errga.run_id = $2::uuid AND e.use_groups = false
+                LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id AND egga.group_id IN (
+                    SELECT gr.group_id FROM group_runs gr WHERE gr.run_id = $2::uuid
+                ) AND e.use_groups = true
+                LEFT JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
                 WHERE e.id = $1::uuid
+                ORDER BY COALESCE(errga.created_at, egga.created_at)
+                LIMIT 1
                 """,
                 eval_id,
+                run_id,
             )
-            if not eval_row:
+            if not eval_row or not eval_row.get("rubric_grade_agent_id"):
                 await eval_run_start_error(
                     EvalRunStartErrorPayload(
                         success=False,
-                        message=f"Eval not found: {eval_id}",
+                        message=f"Eval not found or has no rubric_grade_agent for run: {eval_id}",
                         run_id=run_id,
                     ),
                     room=sid,
@@ -192,8 +203,9 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
                 return
 
             agent_id = eval_row["agent_id"]
-            eval_agent_id = eval_row["eval_agent_id"]
+            rubric_grade_agent_id = eval_row["rubric_grade_agent_id"]
             rubric_id = eval_row["rubric_id"]
+            eval_agent_id = eval_row["eval_agent_id"]
             dynamic = eval_row.get("dynamic", False)
 
             # Get department_id from run
@@ -227,8 +239,7 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
                 attempt_id=attempt_id,
                 test_id=None,  # Will be created
                 run_id=run_id,
-                eval_agent_id=eval_agent_id,
-                rubric_id=rubric_id,
+                rubric_grade_agent_id=rubric_grade_agent_id,
                 department_id=department_id,
                 profile_id=profile_id,
                 dynamic=dynamic,

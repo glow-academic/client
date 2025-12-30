@@ -12,10 +12,12 @@ import {
   Copy,
   Lightbulb,
   Mic,
+  Plus,
   Power,
   Text,
   Clock,
   ChevronDown,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +55,9 @@ export interface SimulationScenarioSectionProps {
   totalItems: number;
   rubricMapping: Record<string, { name: string; description?: string }>;
   validRubricIds: string[];
+  agentMapping?: Record<string, { name: string; description?: string; roles?: string[] }>;
+  validGradeTextAgentIds?: string[];
+  validGradeVoiceAgentIds?: string[];
 
   // Callbacks
   onActiveToggle: (contentId: string, active: boolean) => void;
@@ -65,6 +70,14 @@ export interface SimulationScenarioSectionProps {
   onAudioToggle?: (contentId: string, enabled: boolean) => void;
   onTextToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
+  onRubricGradeAgentsChange?: (
+    contentId: string,
+    rubricGradeAgents: Array<{
+      rubric_id: string;
+      grade_text_agent_id: string;
+      grade_voice_agent_id?: string | null;
+    }>
+  ) => void;
   onTimeLimitChange?: (
     contentId: string,
     timeLimitMinutes: number | null,
@@ -89,6 +102,9 @@ export function SimulationScenarioSection({
   totalItems,
   rubricMapping,
   validRubricIds,
+  agentMapping = {},
+  validGradeTextAgentIds = [],
+  validGradeVoiceAgentIds = [],
   onActiveToggle,
   onMoveUp,
   onMoveDown,
@@ -97,6 +113,7 @@ export function SimulationScenarioSection({
   onAudioToggle,
   onTextToggle,
   onRubricChange,
+  onRubricGradeAgentsChange,
   onTimeLimitChange,
   readonly = false,
   stepStatus = "active",

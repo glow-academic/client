@@ -159,8 +159,6 @@ RETURNS TABLE (
     active boolean,
     practice_simulation boolean,
     hint_agent_id uuid,
-    grade_text_agent_id uuid,
-    grade_voice_agent_id uuid,
     simulation_text_agent_id uuid,
     simulation_voice_agent_id uuid,
     can_edit boolean,
@@ -521,8 +519,6 @@ SELECT
     true as active,
     false as practice_simulation,
     NULL::uuid as hint_agent_id,
-    NULL::uuid as grade_text_agent_id,
-    NULL::uuid as grade_voice_agent_id,
     NULL::uuid as simulation_text_agent_id,
     NULL::uuid as simulation_voice_agent_id,
     CASE 

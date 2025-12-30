@@ -1,8 +1,28 @@
--- Get eval_agent context: active prompt, model, provider, api_key, etc.
--- Parameters: $1=eval_agent_id (uuid), $2=department_id (uuid, nullable), $3=profile_id (uuid, required)
+-- Get eval_agent context from rubric_grade_agent: active prompt, model, provider, api_key, etc.
+-- Parameters: $1=eval_id (uuid), $2=run_id (uuid, nullable), $3=group_id (uuid, nullable), $4=department_id (uuid, nullable), $5=profile_id (uuid, required)
+-- Note: Either run_id or group_id must be provided (not both)
 -- Returns: agent_id, agent_name, system_prompt, model_id, model_name, provider, base_url, api_key, temperature, reasoning, profile_id, req_per_day, runs_today_count, earliest_run_created_at
 WITH params AS (
-    SELECT $1::uuid as eval_agent_id, $2::uuid as department_id, $3::uuid as profile_id
+    SELECT 
+        $1::uuid as eval_id,
+        $2::uuid as run_id,
+        $3::uuid as group_id,
+        $4::uuid as department_id,
+        $5::uuid as profile_id
+),
+-- Get rubric_grade_agent_id from appropriate junction table
+rubric_grade_agent_from_run_or_group AS (
+    SELECT rga.grade_text_agent_id as eval_agent_id
+    FROM params p
+    LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = p.eval_id AND errga.run_id = p.run_id AND p.run_id IS NOT NULL
+    LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = p.eval_id AND egga.group_id = p.group_id AND p.group_id IS NOT NULL
+    JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
+    WHERE (p.run_id IS NOT NULL OR p.group_id IS NOT NULL)
+    ORDER BY COALESCE(errga.created_at, egga.created_at)
+    LIMIT 1
+),
+eval_agent_from_rubric_grade_agent AS (
+    SELECT eval_agent_id FROM rubric_grade_agent_from_run_or_group
 ),
 profile_rate_limit AS (
     SELECT prl.requests_per_day as req_per_day
@@ -114,7 +134,8 @@ context_data AS (
         rt.earliest_run_created_at
         
     FROM params p
-    INNER JOIN agents a ON a.id = p.eval_agent_id AND a.active = true
+    CROSS JOIN eval_agent_from_rubric_grade_agent earga
+    INNER JOIN agents a ON a.id = earga.eval_agent_id AND a.active = true
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
         AND adp_prompt.department_id = p.department_id 

@@ -248,7 +248,9 @@ user_sim_status AS (
             (SELECT ROUND(100.0 * r.pass_points::numeric / NULLIF(r.points,0))
              FROM simulations s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
-             LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
+             LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
+             LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
+             LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
              WHERE s.id = aa.simulation_id
              ORDER BY ss_rubric.position
              LIMIT 1), 0
@@ -296,13 +298,20 @@ sim_meta AS (
              WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
             0
         ) as time_limit,
-        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
+        (SELECT rga.rubric_id FROM simulation_scenarios ss 
+         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+         WHERE ss.simulation_id = s.id AND ss.active = true 
+         ORDER BY ss.position 
+         LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
         COALESCE(r.points, 0) AS rubric_points,
         COALESCE(r.pass_points, 0) AS rubric_pass_points
     FROM simulations s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
-    LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
+    LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
+    LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
     WHERE s.id IN (SELECT simulation_id FROM cohort_sim)
 ),
 -- Simulation persona metadata
@@ -332,7 +341,9 @@ sim_standard_groups AS (
         ss.simulation_id,
         ARRAY_AGG(sg.id::text ORDER BY sg.id) FILTER (WHERE sg.id IS NOT NULL) AS standard_group_ids
     FROM simulation_scenarios ss
-    JOIN rubric_standard_groups rsg ON rsg.rubric_id = ss.rubric_id AND rsg.active = true
+    JOIN simulation_scenarios_rubric_grade_agents ssrga_rsg ON ssrga_rsg.simulation_id = ss.simulation_id AND ssrga_rsg.scenario_id = ss.scenario_id
+    JOIN rubric_grade_agents rga_rsg ON rga_rsg.id = ssrga_rsg.rubric_grade_agent_id
+    JOIN rubric_standard_groups rsg ON rsg.rubric_id = rga_rsg.rubric_id AND rsg.active = true
     JOIN standard_groups sg ON sg.id = rsg.standard_group_id
     WHERE ss.simulation_id IN (SELECT simulation_id FROM sim_meta) AND ss.active = true
     GROUP BY ss.simulation_id, ss.position

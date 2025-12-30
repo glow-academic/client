@@ -320,6 +320,16 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # Always enable message numbering for grading so agent can reference messages
             has_audio_messages = any(msg.get("audio", False) for msg in messages)
             grade_voice_agent_id = context_row.get("grade_voice_agent_id")
+            rubric_grade_agent_id = context_row.get("rubric_grade_agent_id")
+            
+            # For voice grading, use voice agent if available, otherwise use text agent
+            if grade_voice_agent_id:
+                # Override agent_id in context to use voice agent
+                context["agent"]["id"] = grade_voice_agent_id
+                # Also update agent_id_uuid for tool loading
+                agent_id_uuid_for_tools = uuid.UUID(grade_voice_agent_id)
+            else:
+                agent_id_uuid_for_tools = uuid.UUID(context["agent"]["id"])
 
             # Always enable message numbering for grading (inlined from get_simulation_conversation_history)
             from datetime import datetime
@@ -551,10 +561,13 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # Create grade record at START with placeholder values
             # Tools will insert feedbacks as they're called
             sql_create_grade = load_sql("app/sql/v3/grading/create_grade_complete.sql")
+            rubric_grade_agent_id = context_row.get("rubric_grade_agent_id")
+            if not rubric_grade_agent_id:
+                raise ValueError("rubric_grade_agent_id not found in context")
             grade_row = await conn.fetchrow(
                 sql_create_grade,
                 str(model_run_id),  # run_id
-                str(rubric_id),
+                str(rubric_grade_agent_id),  # rubric_grade_agent_id
                 "",  # description (placeholder)
                 False,  # passed (placeholder)
                 0,  # score (placeholder)
@@ -568,10 +581,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 f"Created grade record {grade_id} for chat {simulation_chat_id}"
             )
 
-            # Load agent tools from database
-            agent_id_uuid = uuid.UUID(context["agent"]["id"])
+            # Load agent tools from database (use voice agent if available)
             sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
-            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid_for_tools))
             agent_tools_config = [dict(row) for row in rows]
             tool_config_map_grading: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config

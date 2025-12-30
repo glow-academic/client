@@ -424,34 +424,22 @@ async def rubric_tool_title_internal(data: dict[str, Any]) -> None:
 # Register OpenAPI endpoints
 register_client_endpoint(
     client_router,
-    "POST",
     "/scenario_tool_title",
-    _scenario_tool_title_impl,
     ScenarioTitleToolPayload,
-    dict[str, bool],
-    summary="Create/update scenario title",
-    description="Handler for scenario_tool_title WebSocket event",
+    "Create/update scenario title",
 )
 
 register_client_endpoint(
     client_router,
-    "POST",
     "/document_tool_title",
-    _document_tool_title_impl,
     DocumentTitleToolPayload,
-    dict[str, bool],
-    summary="Create/update document title",
-    description="Handler for document_tool_title WebSocket event",
+    "Create/update document title",
 )
 
 register_client_endpoint(
     client_router,
-    "POST",
     "/rubric_tool_title",
-    _rubric_tool_title_impl,
     RubricTitleToolPayload,
-    dict[str, bool],
-    summary="Create/update rubric title",
-    description="Handler for rubric_tool_title WebSocket event",
+    "Create/update rubric title",
 )
 

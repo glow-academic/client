@@ -213,6 +213,36 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                     "evals_status_update", event_data, room=f"eval_{attempt_id}"
                 )
 
+            # Get rubric_grade_agent_id for this specific run from junction table
+            rga_row = await conn.fetchrow(
+                """
+                SELECT 
+                    errga.rubric_grade_agent_id::text as rubric_grade_agent_id
+                FROM evals e
+                LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND errga.run_id = $2::uuid AND e.use_groups = false
+                LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id AND egga.group_id IN (
+                    SELECT gr.group_id FROM group_runs gr WHERE gr.run_id = $2::uuid
+                ) AND e.use_groups = true
+                WHERE e.id = $1::uuid
+                ORDER BY COALESCE(errga.created_at, egga.created_at)
+                LIMIT 1
+                """,
+                eval_id,
+                next_run_id,
+            )
+            if not rga_row or not rga_row.get("rubric_grade_agent_id"):
+                await eval_process_next_error(
+                    EvalProcessNextErrorPayload(
+                        success=False,
+                        message=f"No rubric_grade_agent found for run {next_run_id}",
+                        eval_id=eval_id,
+                    ),
+                    room=f"eval_{attempt_id}",
+                )
+                return
+            
+            rubric_grade_agent_id = rga_row["rubric_grade_agent_id"]
+
             # Process next run
             logger.info(
                 f"Processing next run {next_run_id} for eval attempt {attempt_id}"
@@ -223,8 +253,7 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                 attempt_id=attempt_id,
                 test_id=None,  # Will be created
                 run_id=next_run_id,
-                eval_agent_id=eval_agent_id,
-                rubric_id=rubric_id,
+                rubric_grade_agent_id=rubric_grade_agent_id,
                 department_id=department_id,
                 profile_id=profile_id,
                 dynamic=dynamic,

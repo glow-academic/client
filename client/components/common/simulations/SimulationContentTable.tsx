@@ -75,7 +75,12 @@ export interface ContentItem {
   show_problem_statement?: boolean; // Scenarios and videos
   show_objectives?: boolean; // Scenarios and videos
   show_image?: boolean; // Scenarios and videos
-  rubric_id?: string | null;
+  rubric_id?: string | null; // Deprecated - use rubric_grade_agents instead
+  rubric_grade_agents?: Array<{
+    rubric_id: string;
+    grade_text_agent_id: string;
+    grade_voice_agent_id?: string | null;
+  }>;
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
   has_active_video?: boolean; // True if scenario has an active video attached
 }

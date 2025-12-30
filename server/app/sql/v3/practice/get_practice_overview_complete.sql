@@ -174,18 +174,25 @@ sim_meta AS (
              WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
             0
         ) AS time_limit,
-        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
+        (SELECT rga.rubric_id FROM simulation_scenarios ss 
+         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+         WHERE ss.simulation_id = s.id AND ss.active = true 
+         ORDER BY ss.position 
+         LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
         r.points AS rubric_points,
         r.pass_points AS rubric_pass_points,
         s.updated_at
     FROM simulations s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
-    LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
+    LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
+    LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE s.active = TRUE
       AND s.practice_simulation = TRUE
-    GROUP BY s.id, s.title, s.description, r.points, r.pass_points, s.updated_at, ss_rubric.rubric_id
+    GROUP BY s.id, s.title, s.description, r.points, r.pass_points, s.updated_at, rga_rubric.rubric_id
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
@@ -262,7 +269,9 @@ sim_pass_pct AS (
                 ELSE 70 END AS pass_pct
     FROM simulations s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
-    LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
+    LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
+    LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE s.practice_simulation = TRUE
       AND s.active = TRUE

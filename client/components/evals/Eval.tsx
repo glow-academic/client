@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { AgentCardGrid } from "@/components/common/evals/AgentCardGrid";
 import { ModelRunCardGrid } from "@/components/common/evals/ModelRunCardGrid";
+import { GroupCardGrid } from "@/components/common/evals/GroupCardGrid";
 import { RubricCardGrid } from "@/components/common/evals/RubricCardGrid";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -47,7 +48,7 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Check, Loader2, Power } from "lucide-react";
+import { Check, Loader2, Power, Plus, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Import types from new page (create action)
@@ -77,13 +78,30 @@ interface FormErrors {
   name?: string;
 }
 
+interface RubricGradeAgent {
+  rubric_id: string;
+  grade_text_agent_id: string;
+}
+
+interface EvalRun {
+  run_id: string;
+  rubric_grade_agents: RubricGradeAgent[];
+}
+
+interface EvalGroup {
+  group_id: string;
+  rubric_grade_agents: RubricGradeAgent[];
+}
+
 interface FormData {
   name: string;
   description: string;
   active: boolean;
   dynamic: boolean;
+  use_groups: boolean;
   departmentIds: string[] | null;
-  eval_agent_id: string | null;
+  eval_runs: EvalRun[];
+  eval_groups: EvalGroup[];
 }
 
 type StepStatus = "pending" | "active" | "completed";
@@ -155,8 +173,10 @@ export default function Eval({
       description: "",
       active: true,
       dynamic: false,
+      use_groups: false,
       departmentIds: defaultDepartmentIds,
-      eval_agent_id: null,
+      eval_runs: [],
+      eval_groups: [],
     };
   }, [defaultDepartmentIds]);
 
@@ -167,10 +187,10 @@ export default function Eval({
 
   // State for selected agents (being evaluated)
   const [currentAgentIds, setCurrentAgentIds] = useState<string[]>([]);
-  // State for selected rubric
-  const [currentRubricId, setCurrentRubricId] = useState<string | null>(null);
   // State for selected model runs
   const [currentModelRunIds, setCurrentModelRunIds] = useState<string[]>([]);
+  // State for selected groups
+  const [currentGroupIds, setCurrentGroupIds] = useState<string[]>([]);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const evalDetail = serverEvalDetail;
@@ -284,30 +304,36 @@ export default function Eval({
       updateUrlParams({
         agentIds: singleAgentId.length > 0 ? singleAgentId : null,
       });
-      // Reset rubric selection if agent changes and current rubric is invalid
-      if (currentRubricId && !validRubricIds.includes(currentRubricId)) {
-        setCurrentRubricId(null);
-        updateUrlParams({ rubricId: null });
-      }
-    },
-    [updateUrlParams, currentRubricId, validRubricIds]
-  );
-
-  // Handle rubric selection
-  const handleRubricSelection = useCallback(
-    (rubricId: string | null) => {
-      setCurrentRubricId(rubricId);
-      updateUrlParams({
-        rubricId: rubricId || null,
-      });
     },
     [updateUrlParams]
   );
+
 
   // Handle model run selection
   const handleModelRunSelection = useCallback(
     (modelRunIds: string[]) => {
       setCurrentModelRunIds(modelRunIds);
+      // Update formData.eval_runs to match selected runs
+      setFormData((prev) => {
+        const existingRunIds = new Set(prev.eval_runs.map(r => r.run_id));
+        const newRunIds = new Set(modelRunIds);
+        
+        // Remove runs that are no longer selected
+        const updatedRuns = prev.eval_runs.filter(r => newRunIds.has(r.run_id));
+        
+        // Add new runs that weren't in the list
+        const runsToAdd = modelRunIds
+          .filter(id => !existingRunIds.has(id))
+          .map(runId => ({
+            run_id: runId,
+            rubric_grade_agents: [] as RubricGradeAgent[],
+          }));
+        
+        return {
+          ...prev,
+          eval_runs: [...updatedRuns, ...runsToAdd],
+        };
+      });
       updateUrlParams({
         modelRunIds: modelRunIds.length > 0 ? modelRunIds : null,
       });
@@ -319,7 +345,6 @@ export default function Eval({
   useEffect(() => {
     const agentIdsFromUrl =
       searchParams.get("agentIds")?.split(",").filter(Boolean) || [];
-    const rubricIdFromUrl = searchParams.get("rubricId") || null;
     const modelRunIdsFromUrl =
       searchParams.get("modelRunIds")?.split(",").filter(Boolean) || [];
 
@@ -335,9 +360,6 @@ export default function Eval({
     if (!agentIdsEqual) {
       setCurrentAgentIds(agentIdsFromUrl);
     }
-    if (rubricIdFromUrl !== currentRubricId) {
-      setCurrentRubricId(rubricIdFromUrl);
-    }
     if (!modelRunIdsEqual) {
       setCurrentModelRunIds(modelRunIdsFromUrl);
     }
@@ -348,13 +370,29 @@ export default function Eval({
   useEffect(() => {
     if (evalData && isEditMode) {
       const deptIds = evalData.department_ids || [];
+      const useGroups = evalData.use_groups ?? false;
+      
+      // Extract eval_runs with rubric_grade_agents from model_runs
+      const evalRuns: EvalRun[] = (evalData.model_runs || []).map((run: any) => ({
+        run_id: run.model_run_id,
+        rubric_grade_agents: (run.rubric_grade_agents || []).map((rga: any) => ({
+          rubric_id: rga.rubric_id,
+          grade_text_agent_id: rga.agent_id,
+        })),
+      }));
+      
+      // TODO: Extract eval_groups when groups are implemented
+      const evalGroups: EvalGroup[] = [];
+      
       const evalFormData = {
         name: evalData.name || "",
         description: evalData.description || "",
         active: evalData.active ?? true,
         dynamic: evalData.dynamic ?? false,
+        use_groups: useGroups,
         departmentIds: deptIds,
-        eval_agent_id: evalData.eval_agent_id || null,
+        eval_runs: evalRuns,
+        eval_groups: evalGroups,
       };
 
       // Only update if the data has actually changed to prevent infinite loops
@@ -364,9 +402,13 @@ export default function Eval({
           prev.description !== evalFormData.description ||
           prev.active !== evalFormData.active ||
           prev.dynamic !== evalFormData.dynamic ||
+          prev.use_groups !== evalFormData.use_groups ||
           JSON.stringify(prev.departmentIds?.sort()) !==
             JSON.stringify(evalFormData.departmentIds?.sort()) ||
-          prev.eval_agent_id !== evalFormData.eval_agent_id;
+          JSON.stringify(prev.eval_runs) !==
+            JSON.stringify(evalFormData.eval_runs) ||
+          JSON.stringify(prev.eval_groups) !==
+            JSON.stringify(evalFormData.eval_groups);
 
         return hasChanged ? evalFormData : prev;
       });
@@ -535,29 +577,37 @@ export default function Eval({
     (stepId: string): StepStatus => {
       const hasName = !!formData?.name?.trim();
       const hasAgents = currentAgentIds.length > 0;
-      const hasRubric = !!currentRubricId;
-      const hasModelRuns = currentModelRunIds.length > 0;
+      // Check if runs/groups have rubric_grade_agents based on use_groups
+      const hasRubricGradeAgents = formData.use_groups
+        ? formData.eval_groups.length > 0 && 
+          formData.eval_groups.every(g => g.rubric_grade_agents.length > 0 && 
+            g.rubric_grade_agents.every(rga => rga.rubric_id && rga.grade_text_agent_id))
+        : formData.eval_runs.length > 0 && 
+          formData.eval_runs.every(r => r.rubric_grade_agents.length > 0 && 
+            r.rubric_grade_agents.every(rga => rga.rubric_id && rga.grade_text_agent_id));
+      const hasRunsOrGroups = formData.use_groups 
+        ? formData.eval_groups.length > 0
+        : formData.eval_runs.length > 0;
 
       switch (stepId) {
         case "basic":
-          return hasName ? "completed" : "active";
+          return hasName && hasRubricGradeAgents ? "completed" : "active";
         case "agents":
-          if (!hasName) return "pending";
+          if (!hasName || !hasRubricGradeAgents) return "pending";
           return hasAgents ? "completed" : "active";
-        case "rubrics":
-          if (!hasAgents) return "pending";
-          return hasRubric ? "completed" : "active";
         case "modelRuns":
-          if (!hasRubric) return "pending";
-          return hasModelRuns ? "completed" : "active";
+          if (!hasAgents) return "pending";
+          return hasRunsOrGroups ? "completed" : "active";
         default:
           return "pending";
       }
     },
     [
       formData?.name,
+      formData?.use_groups,
+      formData?.eval_runs,
+      formData?.eval_groups,
       currentAgentIds.length,
-      currentRubricId,
       currentModelRunIds.length,
     ]
   );
@@ -569,7 +619,7 @@ export default function Eval({
         id: "basic",
         title: "Basic Information",
         description:
-          "Set the eval name, description, departments, active status, and eval agent.",
+          "Set the eval name, description, departments, active status, and rubric/agent pairs.",
         status: getStepStatus("basic"),
       },
       {
@@ -577,12 +627,6 @@ export default function Eval({
         title: "Agents",
         description: "Select agents to evaluate.",
         status: getStepStatus("agents"),
-      },
-      {
-        id: "rubrics",
-        title: "Rubrics",
-        description: "Select a rubric for evaluation.",
-        status: getStepStatus("rubrics"),
       },
       {
         id: "modelRuns",
@@ -605,19 +649,41 @@ export default function Eval({
       return false;
     }
 
-    if (!currentRubricId) {
-      toast.error("Please select a rubric");
-      return false;
-    }
-
-    if (currentModelRunIds.length === 0) {
-      toast.error("Please select at least one model run");
-      return false;
-    }
-
-    if (!formData.eval_agent_id) {
-      toast.error("Please select an eval agent");
-      return false;
+    // Validate runs/groups have rubric_grade_agents based on use_groups
+    if (formData.use_groups) {
+      if (formData.eval_groups.length === 0) {
+        toast.error("Please select at least one group");
+        return false;
+      }
+      for (const group of formData.eval_groups) {
+        if (group.rubric_grade_agents.length === 0) {
+          toast.error(`Please add at least one rubric and grading agent pair for group ${group.group_id.slice(0, 8)}`);
+          return false;
+        }
+        for (const rga of group.rubric_grade_agents) {
+          if (!rga.rubric_id || !rga.grade_text_agent_id) {
+            toast.error("Each rubric must have a grading agent selected");
+            return false;
+          }
+        }
+      }
+    } else {
+      if (formData.eval_runs.length === 0) {
+        toast.error("Please select at least one model run");
+        return false;
+      }
+      for (const run of formData.eval_runs) {
+        if (run.rubric_grade_agents.length === 0) {
+          toast.error(`Please add at least one rubric and grading agent pair for run ${run.run_id.slice(0, 8)}`);
+          return false;
+        }
+        for (const rga of run.rubric_grade_agents) {
+          if (!rga.rubric_id || !rga.grade_text_agent_id) {
+            toast.error("Each rubric must have a grading agent selected");
+            return false;
+          }
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -625,14 +691,14 @@ export default function Eval({
   };
 
   const resetFormAndState = () => {
-    setFormData(initialFormData);
+      setFormData(initialFormData);
     setOriginalFormData(initialFormData);
     setEditingEvalId(null);
     setErrors({});
     setCurrentAgentIds([]);
-    setCurrentRubricId(null);
     setCurrentModelRunIds([]);
   };
+
 
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -655,35 +721,37 @@ export default function Eval({
       if (targetEvalId) {
         // UPDATE mode - convert camelCase to snake_case
         const updateRequest: UpdateEvalBody = {
-          eval_id: targetEvalId, // Convert evalId to eval_id
+          eval_id: targetEvalId,
           name: formData.name || "",
           description: formData.description || "",
-          rubric_id: currentRubricId || "",
-          agent_id: currentAgentIds[0] || "", // Convert to UUID string (API will validate)
-          eval_agent_id: formData.eval_agent_id || "",
+          agent_id: currentAgentIds[0] || "", // Agent being evaluated
+          use_groups: formData.use_groups ?? false,
           department_ids: finalDepartmentIds || [],
           active: formData.active ?? true,
           dynamic: formData.dynamic ?? false,
-          model_run_ids: currentModelRunIds,
+          model_run_ids: formData.use_groups ? [] : formData.eval_runs.map(r => r.run_id),
         };
         await handleUpdateEval(updateRequest);
 
+        // TODO: Call separate endpoints to add runs/groups with rubric_grade_agents
+        // For now, this is a placeholder - full implementation requires API endpoints for add_eval_runs/add_eval_groups
         toast.success("Eval updated successfully!");
       } else {
         // CREATE mode - already using snake_case
         const createRequest: CreateEvalBody = {
           name: formData.name || "",
           description: formData.description || "",
-          rubric_id: currentRubricId || "",
-          agent_id: currentAgentIds[0] || "", // Convert to UUID string (API will validate)
-          eval_agent_id: formData.eval_agent_id || "",
+          agent_id: currentAgentIds[0] || "", // Agent being evaluated
+          use_groups: formData.use_groups ?? false,
           department_ids: finalDepartmentIds || [],
           active: formData.active || true,
           dynamic: formData.dynamic || false,
-          model_run_ids: currentModelRunIds,
+          model_run_ids: formData.use_groups ? [] : formData.eval_runs.map(r => r.run_id),
         };
-        await handleCreateEval(createRequest);
+        const createResult = await handleCreateEval(createRequest);
 
+        // TODO: Call separate endpoints to add runs/groups with rubric_grade_agents
+        // For now, this is a placeholder - full implementation requires API endpoints for add_eval_runs/add_eval_groups
         toast.success("Eval created successfully!");
       }
 
@@ -854,59 +922,108 @@ export default function Eval({
                 </div>
               )}
 
-            {/* Eval Agent Selection */}
-            {validEvalAgentIds.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="eval_agent_id">Eval Agent</Label>
-                {formData?.eval_agent_id !== undefined ? (
-                  <GenericPicker
-                    items={evalAgentsArray}
-                    itemIds={validEvalAgentIds}
-                    selectedIds={
-                      formData.eval_agent_id ? [formData.eval_agent_id] : []
-                    }
-                    onSelect={(ids) =>
-                      handleInputChange("eval_agent_id", ids[0] || null)
-                    }
-                    getId={(item) => item.agent_id}
-                    getLabel={(item) => item.name || ""}
-                    getSearchText={(item) =>
-                      `${item.name} ${item.description || ""}`
-                    }
-                    renderPreview={(item) => (
-                      <div className="grid gap-2">
-                        <h4 className="font-medium leading-none">
-                          {item.name || "No agent selected"}
-                        </h4>
-                        <div className="text-sm text-muted-foreground">
-                          {item.description || "No description available"}
+            {/* Rubrics and Grading Agents */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Rubrics and Grading Agents</Label>
+                {!isReadonly && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddRubricGradeAgent}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Pair
+                  </Button>
+                )}
+              </div>
+              {formData.rubric_grade_agents.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-md">
+                  No rubric/agent pairs added. Click "Add Pair" to add one.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {formData.rubric_grade_agents.map((rga, index) => (
+                    <Card key={index} className="p-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Pair {index + 1}</span>
+                          {!isReadonly && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveRubricGradeAgent(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                      </div>
-                    )}
-                    renderItem={(item, _isSelected) => (
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate">{item.name}</div>
-                            {item.description && (
-                              <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {item.description}
-                              </div>
-                            )}
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Rubric Selection */}
+                          <div className="space-y-2">
+                            <Label htmlFor={`rubric-${index}`}>Rubric</Label>
+                            <GenericPicker
+                              items={evalData?.rubrics || []}
+                              itemIds={validRubricIds}
+                              selectedIds={rga.rubric_id ? [rga.rubric_id] : []}
+                              onSelect={(ids) =>
+                                handleUpdateRubricGradeAgent(
+                                  index,
+                                  "rubric_id",
+                                  ids[0] || ""
+                                )
+                              }
+                              getId={(item) => item.rubric_id}
+                              getLabel={(item) => item.name || ""}
+                              getSearchText={(item) =>
+                                `${item.name} ${item.description || ""}`
+                              }
+                              placeholder="Select rubric"
+                              disabled={isReadonly}
+                              multiSelect={false}
+                              hideSelectedChips={true}
+                              buttonClassName="w-full"
+                            />
+                          </div>
+                          {/* Grading Agent Selection */}
+                          <div className="space-y-2">
+                            <Label htmlFor={`agent-${index}`}>Grading Agent</Label>
+                            <GenericPicker
+                              items={evalAgentsArray}
+                              itemIds={validEvalAgentIds}
+                              selectedIds={
+                                rga.grade_text_agent_id
+                                  ? [rga.grade_text_agent_id]
+                                  : []
+                              }
+                              onSelect={(ids) =>
+                                handleUpdateRubricGradeAgent(
+                                  index,
+                                  "grade_text_agent_id",
+                                  ids[0] || ""
+                                )
+                              }
+                              getId={(item) => item.agent_id}
+                              getLabel={(item) => item.name || ""}
+                              getSearchText={(item) =>
+                                `${item.name} ${item.description || ""}`
+                              }
+                              placeholder="Select grading agent"
+                              disabled={isReadonly}
+                              multiSelect={false}
+                              hideSelectedChips={true}
+                              buttonClassName="w-full"
+                            />
                           </div>
                         </div>
                       </div>
-                    )}
-                    placeholder="Select eval agent"
-                    disabled={isReadonly}
-                    multiSelect={false}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                    groupHeading="Agents"
-                  />
-                ) : null}
-              </div>
-            )}
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Active Switch */}
             <div className="space-y-2 pt-2">
@@ -1079,15 +1196,15 @@ export default function Eval({
           </Card>
         )}
 
-        {/* Step 4: Model Runs Selection */}
-        {currentRubricId && (
+        {/* Step 3: Model Runs Selection */}
+        {formData.rubric_grade_agents.length > 0 && (
           <Card
             className={cn(
               "transition-all",
               !isEditMode &&
-                steps[3]?.status === "active" &&
+                steps[2]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[3]?.status === "pending" && "opacity-50"
+              !isEditMode && steps[2]?.status === "pending" && "opacity-50"
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1095,44 +1212,401 @@ export default function Eval({
                 <div
                   className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                    steps[3]?.status === "completed"
+                    steps[2]?.status === "completed"
                       ? "bg-green-500 text-white"
-                      : steps[3]?.status === "active"
+                      : steps[2]?.status === "active"
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted"
                   )}
                 >
-                  {steps[3]?.status === "completed" ? (
+                  {steps[2]?.status === "completed" ? (
                     <Check className="w-4 h-4" />
                   ) : (
-                    <span>4</span>
+                    <span>3</span>
                   )}
                 </div>
                 <div>
                   <CardTitle className="text-lg">
-                    {steps[3]?.title || "Model Runs"}
+                    {steps[2]?.title || "Model Runs"}
                   </CardTitle>
                   <CardDescription>
-                    {steps[3]?.description || "Select model runs to evaluate."}
+                    {steps[2]?.description || "Select model runs to evaluate."}
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3 px-6">
               {effectiveProfile?.id && (
-                <ModelRunCardGrid
-                  profileId={effectiveProfile.id}
-                  selectedModelRunIds={
-                    searchParams
-                      .get("modelRunIds")
-                      ?.split(",")
-                      .filter(Boolean) || currentModelRunIds
-                  }
-                  onSelect={handleModelRunSelection}
-                  agentIds={currentAgentIds}
-                  readonly={isReadonly}
-                  evalId={evalId || editingEvalId || undefined}
-                />
+                <>
+                  <ModelRunCardGrid
+                    profileId={effectiveProfile.id}
+                    selectedModelRunIds={
+                      searchParams
+                        .get("modelRunIds")
+                        ?.split(",")
+                        .filter(Boolean) || currentModelRunIds
+                    }
+                    onSelect={handleModelRunSelection}
+                    agentIds={currentAgentIds}
+                    readonly={isReadonly}
+                    evalId={evalId || editingEvalId || undefined}
+                  />
+                  
+                  {/* Rubric/Agent Pairs for Selected Runs */}
+                  {formData.eval_runs.length > 0 && (
+                    <div className="space-y-4 mt-6 pt-6 border-t">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-semibold">
+                          Rubrics and Grading Agents per Run
+                        </Label>
+                      </div>
+                      <div className="space-y-4">
+                        {formData.eval_runs.map((evalRun) => {
+                          const runData = evalData?.model_runs?.find(
+                            (mr) => mr.model_run_id === evalRun.run_id
+                          );
+                          const runDisplayName = runData
+                            ? `${runData.model_name || "Run"} - ${runData.agent_name || ""}`
+                            : `Run ${evalRun.run_id.slice(0, 8)}`;
+                          
+                          return (
+                            <Card key={evalRun.run_id} className="p-4">
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium">
+                                    {runDisplayName}
+                                  </span>
+                                </div>
+                                
+                                {evalRun.rubric_grade_agents.length === 0 ? (
+                                  <div className="text-sm text-muted-foreground py-2 text-center border border-dashed rounded-md">
+                                    No rubric/agent pairs added. Click "Add Pair" to add one.
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {evalRun.rubric_grade_agents.map((rga, index) => (
+                                      <div
+                                        key={index}
+                                        className="grid grid-cols-2 gap-4 p-3 border rounded-md"
+                                      >
+                                        <div className="space-y-2">
+                                          <Label htmlFor={`rubric-${evalRun.run_id}-${index}`}>
+                                            Rubric
+                                          </Label>
+                                          <GenericPicker
+                                            items={evalData?.rubrics || []}
+                                            itemIds={validRubricIds}
+                                            selectedIds={rga.rubric_id ? [rga.rubric_id] : []}
+                                            onSelect={(ids) =>
+                                              handleUpdateRubricGradeAgentInRun(
+                                                evalRun.run_id,
+                                                index,
+                                                "rubric_id",
+                                                ids[0] || ""
+                                              )
+                                            }
+                                            getId={(item) => item.rubric_id}
+                                            getLabel={(item) => item.name || ""}
+                                            getSearchText={(item) =>
+                                              `${item.name} ${item.description || ""}`
+                                            }
+                                            placeholder="Select rubric"
+                                            disabled={isReadonly}
+                                            multiSelect={false}
+                                            hideSelectedChips={true}
+                                            buttonClassName="w-full"
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between">
+                                            <Label htmlFor={`agent-${evalRun.run_id}-${index}`}>
+                                              Grading Agent
+                                            </Label>
+                                            {!isReadonly && (
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                  handleRemoveRubricGradeAgentFromRun(
+                                                    evalRun.run_id,
+                                                    index
+                                                  )
+                                                }
+                                              >
+                                                <X className="h-4 w-4" />
+                                              </Button>
+                                            )}
+                                          </div>
+                                          <GenericPicker
+                                            items={evalAgentsArray}
+                                            itemIds={validEvalAgentIds}
+                                            selectedIds={
+                                              rga.grade_text_agent_id
+                                                ? [rga.grade_text_agent_id]
+                                                : []
+                                            }
+                                            onSelect={(ids) =>
+                                              handleUpdateRubricGradeAgentInRun(
+                                                evalRun.run_id,
+                                                index,
+                                                "grade_text_agent_id",
+                                                ids[0] || ""
+                                              )
+                                            }
+                                            getId={(item) => item.agent_id}
+                                            getLabel={(item) => item.name || ""}
+                                            getSearchText={(item) =>
+                                              `${item.name} ${item.description || ""}`
+                                            }
+                                            placeholder="Select grading agent"
+                                            disabled={isReadonly}
+                                            multiSelect={false}
+                                            hideSelectedChips={true}
+                                            buttonClassName="w-full"
+                                          />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {!isReadonly && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleAddRubricGradeAgentToRun(evalRun.run_id)
+                                    }
+                                    className="w-full"
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Rubric/Agent Pair
+                                  </Button>
+                                )}
+                              </div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Groups Selection */}
+        {formData.use_groups && currentAgentIds.length > 0 && (
+          <Card
+            className={cn(
+              "transition-all",
+              !isEditMode &&
+                steps[2]?.status === "active" &&
+                "ring-2 ring-primary",
+              !isEditMode && steps[2]?.status === "pending" && "opacity-50"
+            )}
+          >
+            <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+              <div className="flex items-center space-x-3">
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                    steps[2]?.status === "completed"
+                      ? "bg-green-500 text-white"
+                      : steps[2]?.status === "active"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                  )}
+                >
+                  {steps[2]?.status === "completed" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <span>3</span>
+                  )}
+                </div>
+                <div>
+                  <CardTitle className="text-lg">
+                    {steps[2]?.title || "Groups"}
+                  </CardTitle>
+                  <CardDescription>
+                    {steps[2]?.description || "Select groups to evaluate."}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 px-6">
+              {effectiveProfile?.id && (
+                <>
+                  <GroupCardGrid
+                    profileId={effectiveProfile.id}
+                    selectedGroupIds={currentGroupIds}
+                    onSelect={(ids) => {
+                      setCurrentGroupIds(ids);
+                      // Update formData.eval_groups to match selected groups
+                      setFormData((prev) => {
+                        const existingGroupIds = new Set(prev.eval_groups.map(g => g.group_id));
+                        const newGroupIds = new Set(ids);
+                        
+                        // Remove groups that are no longer selected
+                        const updatedGroups = prev.eval_groups.filter(g => newGroupIds.has(g.group_id));
+                        
+                        // Add new groups that weren't in the list
+                        const groupsToAdd = ids
+                          .filter(id => !existingGroupIds.has(id))
+                          .map(groupId => ({
+                            group_id: groupId,
+                            rubric_grade_agents: [] as RubricGradeAgent[],
+                          }));
+                        
+                        return {
+                          ...prev,
+                          eval_groups: [...updatedGroups, ...groupsToAdd],
+                        };
+                      });
+                    }}
+                    readonly={isReadonly}
+                    evalId={evalId || editingEvalId || undefined}
+                  />
+                  
+                  {/* Rubric/Agent Pairs for Selected Groups */}
+                  {formData.eval_groups.length > 0 && (
+                    <div className="space-y-4 mt-6 pt-6 border-t">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-semibold">
+                          Rubrics and Grading Agents per Group
+                        </Label>
+                      </div>
+                      <div className="space-y-4">
+                        {formData.eval_groups.map((evalGroup) => {
+                          const groupDisplayName = `Group ${evalGroup.group_id.slice(0, 8)}`;
+                          
+                          return (
+                            <Card key={evalGroup.group_id} className="p-4">
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium">
+                                    {groupDisplayName}
+                                  </span>
+                                </div>
+                                
+                                {evalGroup.rubric_grade_agents.length === 0 ? (
+                                  <div className="text-sm text-muted-foreground py-2 text-center border border-dashed rounded-md">
+                                    No rubric/agent pairs added. Click "Add Pair" to add one.
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {evalGroup.rubric_grade_agents.map((rga, index) => (
+                                      <div
+                                        key={index}
+                                        className="grid grid-cols-2 gap-4 p-3 border rounded-md"
+                                      >
+                                        <div className="space-y-2">
+                                          <Label htmlFor={`rubric-${evalGroup.group_id}-${index}`}>
+                                            Rubric
+                                          </Label>
+                                          <GenericPicker
+                                            items={evalData?.rubrics || []}
+                                            itemIds={validRubricIds}
+                                            selectedIds={rga.rubric_id ? [rga.rubric_id] : []}
+                                            onSelect={(ids) =>
+                                              handleUpdateRubricGradeAgentInGroup(
+                                                evalGroup.group_id,
+                                                index,
+                                                "rubric_id",
+                                                ids[0] || ""
+                                              )
+                                            }
+                                            getId={(item) => item.rubric_id}
+                                            getLabel={(item) => item.name || ""}
+                                            getSearchText={(item) =>
+                                              `${item.name} ${item.description || ""}`
+                                            }
+                                            placeholder="Select rubric"
+                                            disabled={isReadonly}
+                                            multiSelect={false}
+                                            hideSelectedChips={true}
+                                            buttonClassName="w-full"
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between">
+                                            <Label htmlFor={`agent-${evalGroup.group_id}-${index}`}>
+                                              Grading Agent
+                                            </Label>
+                                            {!isReadonly && (
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                  handleRemoveRubricGradeAgentFromGroup(
+                                                    evalGroup.group_id,
+                                                    index
+                                                  )
+                                                }
+                                              >
+                                                <X className="h-4 w-4" />
+                                              </Button>
+                                            )}
+                                          </div>
+                                          <GenericPicker
+                                            items={evalAgentsArray}
+                                            itemIds={validEvalAgentIds}
+                                            selectedIds={
+                                              rga.grade_text_agent_id
+                                                ? [rga.grade_text_agent_id]
+                                                : []
+                                            }
+                                            onSelect={(ids) =>
+                                              handleUpdateRubricGradeAgentInGroup(
+                                                evalGroup.group_id,
+                                                index,
+                                                "grade_text_agent_id",
+                                                ids[0] || ""
+                                              )
+                                            }
+                                            getId={(item) => item.agent_id}
+                                            getLabel={(item) => item.name || ""}
+                                            getSearchText={(item) =>
+                                              `${item.name} ${item.description || ""}`
+                                            }
+                                            placeholder="Select grading agent"
+                                            disabled={isReadonly}
+                                            multiSelect={false}
+                                            hideSelectedChips={true}
+                                            buttonClassName="w-full"
+                                          />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {!isReadonly && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleAddRubricGradeAgentToGroup(evalGroup.group_id)
+                                    }
+                                    className="w-full"
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Rubric/Agent Pair
+                                  </Button>
+                                )}
+                              </div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

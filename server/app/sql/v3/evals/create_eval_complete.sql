@@ -23,9 +23,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_create_eval_v3(
     name text,
     description text,
-    rubric_id uuid,
     agent_id uuid,
-    eval_agent_id uuid,
+    use_groups boolean,
     model_run_ids uuid[],
     department_ids uuid[],
     active boolean,
@@ -43,9 +42,8 @@ WITH params AS (
     SELECT 
         name AS name,
         description AS description,
-        rubric_id AS rubric_id,
         agent_id AS agent_id,
-        eval_agent_id AS eval_agent_id,
+        COALESCE(use_groups, false) AS use_groups,
         model_run_ids AS model_run_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(active, true) AS active,
@@ -67,8 +65,8 @@ validate_create_permissions AS (
     FROM user_profile up
 ),
 new_eval AS (
-    INSERT INTO evals (name, description, rubric_id, agent_id, eval_agent_id, active, dynamic, created_at, updated_at)
-    SELECT name, description, rubric_id, agent_id, eval_agent_id, active, dynamic, NOW(), NOW()
+    INSERT INTO evals (name, description, agent_id, use_groups, active, dynamic, created_at, updated_at)
+    SELECT name, description, agent_id, use_groups, active, dynamic, NOW(), NOW()
     FROM params
     RETURNING id as eval_id
 ),

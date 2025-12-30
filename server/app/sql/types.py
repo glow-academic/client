@@ -736,12 +736,12 @@ class QGetEvalAttemptV3Eval(BaseModel):
     eval_id: UUID | None
     name: str | None
     description: str | None
-    rubric_id: UUID | None
     agent_id: UUID | None
-    eval_agent_id: UUID | None
     dynamic: bool | None
+    rubric_id: UUID | None
     rubric_name: str | None
     rubric_description: str | None
+    eval_agent_id: UUID | None
     system_prompt: str | None
     conversation_agent_name: str | None
 
@@ -4050,15 +4050,61 @@ class UpdateDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: add_eval_groups
+
+class IAddEvalGroupsV3RubricGradeAgent(BaseModel):
+
+    rubric_id: UUID | None
+    grade_text_agent_id: UUID | None
+
+class IAddEvalGroupsV3Group(BaseModel):
+
+    group_id: UUID | None
+    rubric_grade_agents: list[IAddEvalGroupsV3RubricGradeAgent] | None
+
+class AddEvalGroupsSqlParams(BaseModel):
+
+    eval_id: UUID
+    groups: list[IAddEvalGroupsV3Group]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert groups composite array to tuples for asyncpg
+        groups_tuples = [
+            (conn.group_id, conn.rubric_grade_agents)
+            for conn in self.groups
+        ]
+        return (
+            self.eval_id,
+            groups_tuples,
+            self.profile_id,
+        )
+
+class AddEvalGroupsSqlRow(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+class AddEvalGroupsApiRequest(BaseModel):
+
+    eval_id: UUID
+    groups: list[IAddEvalGroupsV3Group]
+
+class AddEvalGroupsApiResponse(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_eval
 
 class CreateEvalSqlParams(BaseModel):
 
     name: str
     description: str
-    rubric_id: UUID
     agent_id: UUID
-    eval_agent_id: UUID
+    use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
     active: bool
@@ -4069,9 +4115,8 @@ class CreateEvalSqlParams(BaseModel):
         return (
             self.name,
             self.description,
-            self.rubric_id,
             self.agent_id,
-            self.eval_agent_id,
+            self.use_groups,
             self.model_run_ids,
             self.department_ids,
             self.active,
@@ -4088,9 +4133,8 @@ class CreateEvalApiRequest(BaseModel):
 
     name: str
     description: str
-    rubric_id: UUID
     agent_id: UUID
-    eval_agent_id: UUID
+    use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
     active: bool
@@ -4191,6 +4235,14 @@ class QGetEvalDetailV3Department(BaseModel):
 
 
 
+class QGetEvalDetailV3RubricGradeAgent(BaseModel):
+
+    rubric_grade_agent_id: UUID | None
+    rubric_id: UUID | None
+    rubric_name: str | None
+    agent_id: UUID | None
+    agent_name: str | None
+
 class QGetEvalDetailV3ModelRun(BaseModel):
 
     model_run_id: UUID | None
@@ -4210,6 +4262,7 @@ class QGetEvalDetailV3ModelRun(BaseModel):
     grade_score: int | None
     grade_passed: bool | None
     grade_created_at: str | None
+    rubric_grade_agents: list[QGetEvalDetailV3RubricGradeAgent] | None
 
 
 
@@ -4228,15 +4281,9 @@ class GetEvalDetailSqlRow(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    rubric_id: UUID | None = None
     agent_id: UUID | None = None
-    eval_agent_id: UUID | None = None
     active: bool | None = None
     dynamic: bool | None = None
-    rubric_name: str | None = None
-    rubric_description: str | None = None
-    rubric_points: int | None = None
-    rubric_pass_points: int | None = None
     created_at: str | None = None
     updated_at: str | None = None
     department_ids: list[str] | None = None
@@ -4276,15 +4323,9 @@ class GetEvalDetailApiResponse(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    rubric_id: UUID | None = None
     agent_id: UUID | None = None
-    eval_agent_id: UUID | None = None
     active: bool | None = None
     dynamic: bool | None = None
-    rubric_name: str | None = None
-    rubric_description: str | None = None
-    rubric_points: int | None = None
-    rubric_pass_points: int | None = None
     created_at: str | None = None
     updated_at: str | None = None
     department_ids: list[str] | None = None
@@ -4336,8 +4377,6 @@ class GetEvalNewSqlRow(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    rubric_id: UUID | None = None
-    eval_agent_id: UUID | None = None
     agent_id: UUID | None = None
     agent_ids: list[str] | None = None
     model_run_ids: list[str] | None = None
@@ -4352,6 +4391,7 @@ class GetEvalNewSqlRow(BaseModel):
     valid_agent_ids: list[str] | None = None
     rubrics: list[QGetEvalDetailV3Rubric] | None = None
     valid_rubric_ids: list[str] | None = None
+    use_groups: bool | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
@@ -4373,8 +4413,6 @@ class GetEvalNewApiResponse(BaseModel):
     eval_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    rubric_id: UUID | None = None
-    eval_agent_id: UUID | None = None
     agent_id: UUID | None = None
     agent_ids: list[str] | None = None
     model_run_ids: list[str] | None = None
@@ -4389,6 +4427,7 @@ class GetEvalNewApiResponse(BaseModel):
     valid_agent_ids: list[str] | None = None
     rubrics: list[QGetEvalDetailV3Rubric] | None = None
     valid_rubric_ids: list[str] | None = None
+    use_groups: bool | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
@@ -4433,8 +4472,9 @@ class QListEvalsV3Eval(BaseModel):
     eval_id: UUID | None
     name: str | None
     description: str | None
-    rubric_id: UUID | None
     agent_id: UUID | None
+    use_groups: bool | None
+    rubric_id: UUID | None
     rubric_name: str | None
     rubric_description: str | None
     total_runs: int | None
@@ -4537,9 +4577,8 @@ class UpdateEvalSqlParams(BaseModel):
     eval_id: UUID
     name: str
     description: str
-    rubric_id: UUID
     agent_id: UUID
-    eval_agent_id: UUID
+    use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
     active: bool
@@ -4551,9 +4590,8 @@ class UpdateEvalSqlParams(BaseModel):
             self.eval_id,
             self.name,
             self.description,
-            self.rubric_id,
             self.agent_id,
-            self.eval_agent_id,
+            self.use_groups,
             self.model_run_ids,
             self.department_ids,
             self.active,
@@ -4572,9 +4610,8 @@ class UpdateEvalApiRequest(BaseModel):
     eval_id: UUID
     name: str
     description: str
-    rubric_id: UUID
     agent_id: UUID
-    eval_agent_id: UUID
+    use_groups: bool
     model_run_ids: list[UUID]
     department_ids: list[UUID]
     active: bool
@@ -12436,17 +12473,17 @@ class UpdateScenarioApiResponse(BaseModel):
 
 
 
-# Generated from: get_settings_detail
+# Generated from: get_active_settings
 
-class GetSettingsDetailSqlParams(BaseModel):
+class GetActiveSettingsSqlParams(BaseModel):
 
-    settings_id: UUID
-    profile_id: UUID
+    profile_id: str
+    department_id: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.settings_id,
             self.profile_id,
+            self.department_id,
         )
 
 class QGetSettingsDetailV3AuthItem(BaseModel):
@@ -12467,6 +12504,97 @@ class QGetSettingsDetailV3Auth(BaseModel):
 
 
 
+
+class QGetSettingsDetailV3Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    active: bool | None
+
+class GetActiveSettingsSqlRow(BaseModel):
+
+    settings_id: UUID | None = None
+    created_at: str | None = None
+    active: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    guest_login_enabled: bool | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+    auth_ids: list[str] | None = None
+    auths: list[QGetSettingsDetailV3Auth] | None = None
+    provider_ids: list[str] | None = None
+    providers: list[QGetSettingsDetailV3Provider] | None = None
+    default_guest_profile_id: UUID | None = None
+    default_account_profile_id: UUID | None = None
+
+class GetActiveSettingsApiRequest(BaseModel):
+
+    department_id: str | None = None
+
+class GetActiveSettingsApiResponse(BaseModel):
+
+    settings_id: UUID | None = None
+    created_at: str | None = None
+    active: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    guest_login_enabled: bool | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+    auth_ids: list[str] | None = None
+    auths: list[QGetSettingsDetailV3Auth] | None = None
+    provider_ids: list[str] | None = None
+    providers: list[QGetSettingsDetailV3Provider] | None = None
+    default_guest_profile_id: UUID | None = None
+    default_account_profile_id: UUID | None = None
+
+
+
+# Generated from: get_settings_detail
+
+class GetSettingsDetailSqlParams(BaseModel):
+
+    settings_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.settings_id,
+            self.profile_id,
+        )
 
 class QGetSettingsDetailV3AuthKeyItem(BaseModel):
 
@@ -12490,17 +12618,6 @@ class QGetSettingsDetailV3AuthValue(BaseModel):
 
     auth_id: UUID | None
     items: list[QGetSettingsDetailV3AuthValueItem] | None
-
-
-
-
-class QGetSettingsDetailV3Provider(BaseModel):
-
-    provider_id: UUID | None
-    name: str | None
-    description: str | None
-    value: str | None
-    active: bool | None
 
 
 
@@ -12822,6 +12939,13 @@ class UpdateSettingsApiResponse(BaseModel):
 
 # Generated from: create_simulation
 
+class ICreateSimulationV3ScenarioRubricGradeAgent(BaseModel):
+
+    scenario_id: UUID | None
+    rubric_id: UUID | None
+    grade_text_agent_id: UUID | None
+    grade_voice_agent_id: UUID | None
+
 class CreateSimulationSqlParams(BaseModel):
 
     title: str
@@ -12832,15 +12956,20 @@ class CreateSimulationSqlParams(BaseModel):
     scenario_ids: list[UUID]
     scenario_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert scenario_rubric_grade_agents composite array to tuples for asyncpg
+        scenario_rubric_grade_agents_tuples = [
+            (conn.scenario_id, conn.rubric_id, conn.grade_text_agent_id, conn.grade_voice_agent_id)
+            for conn in self.scenario_rubric_grade_agents
+        ]
         return (
             self.title,
             self.description,
@@ -12850,10 +12979,10 @@ class CreateSimulationSqlParams(BaseModel):
             self.scenario_ids,
             self.scenario_active_flags,
             self.scenario_hints_enabled,
-            self.scenario_rubric_ids,
             self.scenario_time_limit_seconds,
             self.scenario_audio_enabled,
             self.scenario_text_enabled,
+            scenario_rubric_grade_agents_tuples,
             self.simulation_text_agent_id,
             self.simulation_voice_agent_id,
             self.profile_id,
@@ -12874,10 +13003,10 @@ class CreateSimulationApiRequest(BaseModel):
     scenario_ids: list[UUID]
     scenario_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: UUID
 
@@ -13038,6 +13167,16 @@ class QGetSimulationDetailV3Rubric(BaseModel):
 
 
 
+class QGetSimulationDetailV3RubricGradeAgent(BaseModel):
+
+    rubric_grade_agent_id: UUID | None
+    rubric_id: UUID | None
+    rubric_name: str | None
+    grade_text_agent_id: UUID | None
+    grade_text_agent_name: str | None
+    grade_voice_agent_id: UUID | None
+    grade_voice_agent_name: str | None
+
 class QGetSimulationDetailV3Scenario(BaseModel):
 
     scenario_id: UUID | None
@@ -13050,13 +13189,13 @@ class QGetSimulationDetailV3Scenario(BaseModel):
     copy_paste_allowed: bool | None
     audio_enabled: bool | None
     text_enabled: bool | None
-    rubric_id: UUID | None
     time_limit_seconds: int | None
     usage_count: int | None
     success_rate: int | None
     last_used: str | None
     can_remove: bool | None
     has_active_video: bool | None
+    rubric_grade_agents: list[QGetSimulationDetailV3RubricGradeAgent] | None
 
 
 
@@ -13108,8 +13247,6 @@ class GetSimulationDetailSqlRow(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     hint_agent_id: UUID | None = None
-    grade_text_agent_id: UUID | None = None
-    grade_voice_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
     can_edit: bool | None = None
@@ -13149,8 +13286,6 @@ class GetSimulationDetailApiResponse(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     hint_agent_id: UUID | None = None
-    grade_text_agent_id: UUID | None = None
-    grade_voice_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
     can_edit: bool | None = None
@@ -13334,8 +13469,6 @@ class GetSimulationNewSqlRow(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     hint_agent_id: UUID | None = None
-    grade_text_agent_id: UUID | None = None
-    grade_voice_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
     can_edit: bool | None = None
@@ -13377,8 +13510,6 @@ class GetSimulationNewApiResponse(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     hint_agent_id: UUID | None = None
-    grade_text_agent_id: UUID | None = None
-    grade_voice_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
     can_edit: bool | None = None
@@ -13555,21 +13686,24 @@ class UpdateSimulationSqlParams(BaseModel):
     video_ids: list[UUID]
     video_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
     hint_agent_id: UUID
-    grade_text_agent_id: UUID
-    grade_voice_agent_id: UUID
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert scenario_rubric_grade_agents composite array to tuples for asyncpg
+        scenario_rubric_grade_agents_tuples = [
+            (conn.scenario_id, conn.rubric_id, conn.grade_text_agent_id, conn.grade_voice_agent_id)
+            for conn in self.scenario_rubric_grade_agents
+        ]
         return (
             self.simulation_id,
             self.title,
@@ -13582,16 +13716,14 @@ class UpdateSimulationSqlParams(BaseModel):
             self.video_ids,
             self.video_active_flags,
             self.scenario_hints_enabled,
-            self.scenario_rubric_ids,
             self.scenario_time_limit_seconds,
             self.scenario_audio_enabled,
             self.scenario_text_enabled,
+            scenario_rubric_grade_agents_tuples,
             self.video_show_problem_statement,
             self.video_show_objectives,
             self.video_show_image,
             self.hint_agent_id,
-            self.grade_text_agent_id,
-            self.grade_voice_agent_id,
             self.simulation_text_agent_id,
             self.simulation_voice_agent_id,
             self.profile_id,
@@ -13614,16 +13746,14 @@ class UpdateSimulationApiRequest(BaseModel):
     video_ids: list[UUID]
     video_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
     hint_agent_id: UUID
-    grade_text_agent_id: UUID
-    grade_voice_agent_id: UUID
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: UUID
 
@@ -14622,6 +14752,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentApiRequest",
         "UpdateDocumentApiResponse",
     ),
+    "app/sql/v3/evals/add_eval_groups_complete.sql": (
+        "AddEvalGroupsSqlParams",
+        "AddEvalGroupsSqlRow",
+        "AddEvalGroupsApiRequest",
+        "AddEvalGroupsApiResponse",
+    ),
     "app/sql/v3/evals/create_eval_complete.sql": (
         "CreateEvalSqlParams",
         "CreateEvalSqlRow",
@@ -15204,6 +15340,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateScenarioApiRequest",
         "UpdateScenarioApiResponse",
     ),
+    "app/sql/v3/settings/get_active_settings_complete.sql": (
+        "GetActiveSettingsSqlParams",
+        "GetActiveSettingsSqlRow",
+        "GetActiveSettingsApiRequest",
+        "GetActiveSettingsApiResponse",
+    ),
     "app/sql/v3/settings/get_settings_detail_complete.sql": (
         "GetSettingsDetailSqlParams",
         "GetSettingsDetailSqlRow",
@@ -15636,6 +15778,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/add_eval_groups_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -16121,6 +16268,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/scenario/update_scenario_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/settings/get_active_settings_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -866,9 +866,9 @@ async def _simulation_voice_assistant_audio_link_impl(
                     f"Linked audio upload {upload_id} to assistant message {message_id}"
                 )
             else:
-            logger.warning(
-                f"Failed to link audio upload {upload_id} to message {message_id}"
-            )
+                logger.warning(
+                    f"Failed to link audio upload {upload_id} to message {message_id}"
+                )
 
     except Exception as e:
         logger.error(

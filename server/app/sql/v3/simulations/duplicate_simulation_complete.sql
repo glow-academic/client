@@ -71,18 +71,30 @@ new_simulation AS (
     RETURNING id as simulation_id
 ),
 copy_scenarios AS (
-    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, rubric_id, created_at, updated_at)
+    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, created_at, updated_at)
     SELECT 
         ns.simulation_id,
         ss.scenario_id,
         ss.active,
         ss.position,
-        ss.rubric_id,
         NOW(),
         NOW()
     FROM source_simulation ssim
     JOIN simulation_scenarios ss ON ss.simulation_id = ssim.source_id
     CROSS JOIN new_simulation ns
+),
+copy_rubric_grade_agents AS (
+    INSERT INTO simulation_scenarios_rubric_grade_agents (simulation_id, scenario_id, rubric_grade_agent_id, created_at, updated_at)
+    SELECT 
+        ns.simulation_id,
+        ssrga.scenario_id,
+        ssrga.rubric_grade_agent_id,
+        NOW(),
+        NOW()
+    FROM source_simulation ssim
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ssim.source_id
+    CROSS JOIN new_simulation ns
+    ON CONFLICT (simulation_id, scenario_id, rubric_grade_agent_id) DO NOTHING
 ),
 copy_departments AS (
     INSERT INTO simulation_departments (simulation_id, department_id, active, created_at, updated_at)

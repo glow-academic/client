@@ -481,7 +481,9 @@ simulation_rubrics AS (
         r.points AS rubric_points,
         r.pass_points AS rubric_pass_points
     FROM simulation_scenarios ss
-    LEFT JOIN rubrics r ON r.id = ss.rubric_id
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+    LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    LEFT JOIN rubrics r ON r.id = rga.rubric_id
     WHERE ss.active = true
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM attempt_rollup)
     ORDER BY ss.simulation_id, ss.position

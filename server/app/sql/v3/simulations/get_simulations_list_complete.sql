@@ -205,7 +205,12 @@ simulation_data AS (
         ) as time_limit,
         s.active,
         s.practice_simulation,
-        (SELECT ss_rubric.rubric_id FROM simulation_scenarios ss_rubric WHERE ss_rubric.simulation_id = s.id AND ss_rubric.active = true ORDER BY ss_rubric.position LIMIT 1) as rubric_id,
+        (SELECT rga.rubric_id FROM simulation_scenarios ss_rubric 
+         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss_rubric.simulation_id AND ssrga.scenario_id = ss_rubric.scenario_id
+         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+         WHERE ss_rubric.simulation_id = s.id AND ss_rubric.active = true 
+         ORDER BY ss_rubric.position 
+         LIMIT 1) as rubric_id,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(ssd.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,

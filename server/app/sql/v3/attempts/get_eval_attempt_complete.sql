@@ -73,12 +73,12 @@ CREATE TYPE types.q_get_eval_attempt_v3_eval AS (
     eval_id uuid,
     name text,
     description text,
-    rubric_id uuid,
     agent_id uuid,
-    eval_agent_id uuid,
     dynamic boolean,
+    rubric_id uuid,
     rubric_name text,
     rubric_description text,
+    eval_agent_id uuid,
     system_prompt text,
     conversation_agent_name text
 );
@@ -158,15 +158,66 @@ eval_info AS (
         e.id as eval_id,
         e.name as eval_name,
         e.description as eval_description,
-        e.rubric_id,
         e.agent_id,
-        e.eval_agent_id,
         e.dynamic,
-        r.name as rubric_name,
-        r.description as rubric_description
+        -- Get first rubric and eval_agent from junction table
+        -- Get first rubric from runs (when use_groups = false) or groups (when use_groups = true)
+        (SELECT rga.rubric_id 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_id,
+        (SELECT r.name 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_name,
+        (SELECT r.description 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_description,
+        (SELECT rga.grade_text_agent_id 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as eval_agent_id
     FROM attempt_data ad
     JOIN evals e ON e.id = ad.eval_id
-    JOIN rubrics r ON r.id = e.rubric_id
 ),
 -- Get all runs for this eval (from eval_runs)
 eval_runs_data AS (
@@ -331,7 +382,7 @@ SELECT
     aec.attempt_exists,
     ap.actor_name,
     (ad.id, ad.created_at, ad.eval_id, ad.archived, ad.conversation_mode, ad.conversation_agent_id, ad.conversation_max_turns)::types.q_get_eval_attempt_v3_attempt as attempt,
-    (ei.eval_id, ei.eval_name, ei.eval_description, ei.rubric_id, ei.agent_id, ei.eval_agent_id, ei.dynamic, ei.rubric_name, ei.rubric_description, COALESCE(asp.system_prompt, ''), cai.agent_name)::types.q_get_eval_attempt_v3_eval as eval,
+    (ei.eval_id, ei.eval_name, ei.eval_description, ei.agent_id, ei.dynamic, ei.rubric_id, ei.rubric_name, ei.rubric_description, ei.eval_agent_id, COALESCE(asp.system_prompt, ''), cai.agent_name)::types.q_get_eval_attempt_v3_eval as eval,
     COALESCE(ra.runs, '{}'::types.q_get_eval_attempt_v3_run[]) as runs,
     (ss.not_started, ss.in_progress, ss.completed, ss.total)::types.q_get_eval_attempt_v3_status_summary as status_summary
 FROM attempt_exists_check aec

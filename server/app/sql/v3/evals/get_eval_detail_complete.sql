@@ -57,6 +57,14 @@ CREATE TYPE types.q_get_eval_detail_v3_rubric AS (
     agent_role text
 );
 
+CREATE TYPE types.q_get_eval_detail_v3_rubric_grade_agent AS (
+    rubric_grade_agent_id uuid,
+    rubric_id uuid,
+    rubric_name text,
+    agent_id uuid,
+    agent_name text
+);
+
 CREATE TYPE types.q_get_eval_detail_v3_model_run AS (
     model_run_id uuid,
     completed boolean,
@@ -74,7 +82,8 @@ CREATE TYPE types.q_get_eval_detail_v3_model_run AS (
     has_grade boolean,
     grade_score int,
     grade_passed boolean,
-    grade_created_at timestamptz
+    grade_created_at timestamptz,
+    rubric_grade_agents types.q_get_eval_detail_v3_rubric_grade_agent[]
 );
 
 CREATE TYPE types.q_get_eval_detail_v3_available_model_run AS (
@@ -106,15 +115,9 @@ RETURNS TABLE (
     eval_id uuid,
     name text,
     description text,
-    rubric_id uuid,
     agent_id uuid,
-    eval_agent_id uuid,
     active boolean,
     dynamic boolean,
-    rubric_name text,
-    rubric_description text,
-    rubric_points int,
-    rubric_pass_points int,
     created_at timestamptz,
     updated_at timestamptz,
     department_ids text[],
@@ -171,20 +174,48 @@ eval_data AS (
         e.id as eval_id,
         e.name,
         e.description,
-        e.rubric_id,
         e.agent_id,
-        e.eval_agent_id,
+        e.use_groups,
         e.active,
         e.dynamic,
         e.created_at,
-        e.updated_at,
-        r.name as rubric_name,
-        r.description as rubric_description,
-        r.points as rubric_points,
-        r.pass_points as rubric_pass_points
+        e.updated_at
     FROM params x
     JOIN evals e ON e.id = x.eval_id
-    JOIN rubrics r ON r.id = e.rubric_id
+),
+-- Get rubric_grade_agents per run (when use_groups = false)
+runs_rubric_grade_agents_data AS (
+    SELECT 
+        errga.eval_id,
+        errga.run_id,
+        ARRAY_AGG(
+            (rga.id, rga.rubric_id, r.name, rga.grade_text_agent_id, a.name)::types.q_get_eval_detail_v3_rubric_grade_agent
+            ORDER BY r.name
+        ) as rubric_grade_agents
+    FROM params x
+    JOIN evals e ON e.id = x.eval_id AND e.use_groups = false
+    JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id
+    JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
+    JOIN rubrics r ON r.id = rga.rubric_id
+    JOIN agents a ON a.id = rga.grade_text_agent_id
+    GROUP BY errga.eval_id, errga.run_id
+),
+-- Get rubric_grade_agents per group (when use_groups = true)
+groups_rubric_grade_agents_data AS (
+    SELECT 
+        egga.eval_id,
+        egga.group_id,
+        ARRAY_AGG(
+            (rga.id, rga.rubric_id, r.name, rga.grade_text_agent_id, a.name)::types.q_get_eval_detail_v3_rubric_grade_agent
+            ORDER BY r.name
+        ) as rubric_grade_agents
+    FROM params x
+    JOIN evals e ON e.id = x.eval_id AND e.use_groups = true
+    JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id
+    JOIN rubric_grade_agents rga ON rga.id = egga.rubric_grade_agent_id
+    JOIN rubrics r ON r.id = rga.rubric_id
+    JOIN agents a ON a.id = rga.grade_text_agent_id
+    GROUP BY egga.eval_id, egga.group_id
 ),
 eval_departments_data AS (
     SELECT 
@@ -222,7 +253,19 @@ runs_list AS (
         CASE WHEN g.id IS NOT NULL THEN true ELSE false END as has_grade,
         g.score as grade_score,
         g.passed as grade_passed,
-        g.created_at as grade_created_at
+        g.created_at as grade_created_at,
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (rga.id, rga.rubric_id, r2.name, rga.grade_text_agent_id, a2.name)::types.q_get_eval_detail_v3_rubric_grade_agent
+                ORDER BY r2.name
+            )
+            FROM eval_runs_rubric_grade_agents errga
+            JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
+            JOIN rubrics r2 ON r2.id = rga.rubric_id
+            JOIN agents a2 ON a2.id = rga.grade_text_agent_id
+            WHERE errga.eval_id = er.eval_id AND errga.run_id = er.run_id),
+            '{}'::types.q_get_eval_detail_v3_rubric_grade_agent[]
+        ) as rubric_grade_agents
     FROM params x
     JOIN eval_runs er ON er.eval_id = x.eval_id
     JOIN runs r ON r.id = er.run_id
@@ -250,7 +293,8 @@ model_runs_array AS (
              rl.model_run_created_at, rl.model_id, rl.model_name,
              rl.agent_id, rl.agent_name, rl.persona_id, rl.persona_name,
              rl.profile_id, rl.profile_name, rl.has_grade,
-             rl.grade_score, rl.grade_passed, rl.grade_created_at
+             rl.grade_score, rl.grade_passed, rl.grade_created_at,
+             rl.rubric_grade_agents
             )::types.q_get_eval_detail_v3_model_run
         ),
         '{}'::types.q_get_eval_detail_v3_model_run[]
@@ -356,8 +400,11 @@ valid_rubrics_data AS (
         COALESCE(r2.description, '') as description,
         r2.agent_role::text as agent_role
     FROM params x
-    JOIN eval_data ed ON ed.eval_id = x.eval_id
-    JOIN rubrics r2 ON r2.id = ed.rubric_id
+    JOIN evals e ON e.id = x.eval_id
+    LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND e.use_groups = false
+    LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id AND e.use_groups = true
+    JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
+    JOIN rubrics r2 ON r2.id = rga.rubric_id
     WHERE r2.active = true
 ),
 rubrics_array AS (
@@ -493,15 +540,9 @@ SELECT
     ed.eval_id,
     ed.name,
     ed.description,
-    ed.rubric_id,
     ed.agent_id,
-    ed.eval_agent_id,
     ed.active,
     ed.dynamic,
-    ed.rubric_name,
-    ed.rubric_description,
-    ed.rubric_points,
-    ed.rubric_pass_points,
     ed.created_at,
     ed.updated_at,
     COALESCE(edd.department_ids, ARRAY[]::text[]) as department_ids,

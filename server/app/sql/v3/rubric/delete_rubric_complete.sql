@@ -48,7 +48,10 @@ rubric_info AS (
     SELECT 
         r.id,
         r.name,
-        (SELECT COUNT(DISTINCT ss.simulation_id) FROM simulation_scenarios ss WHERE ss.rubric_id = r.id AND ss.active = true) as usage_count
+        (SELECT COUNT(DISTINCT ss.simulation_id) FROM simulation_scenarios ss 
+         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+         WHERE rga.rubric_id = r.id AND ss.active = true) as usage_count
     FROM rubrics r
     WHERE r.id = (SELECT rubric_id FROM params)
 ),

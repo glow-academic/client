@@ -598,25 +598,25 @@ async def _randomize_missing_scenario_values(
             scenario_persona_ids = [uuid.UUID(p) for p in existing_scenario_persona_ids]
             logger.info(f"Using existing scenario persona_ids: {scenario_persona_ids}")
         elif active_personas:
-        # Randomize persona
-        available_count = len(active_personas)
-        capped_max = min(persona_max, available_count)
-        effective_min = min(persona_min, available_count)
-        if effective_min <= capped_max:
-            count = random.randint(effective_min, capped_max)
-            shuffled = active_personas.copy()
-            random.shuffle(shuffled)
-            scenario_persona_ids = [p["id"] for p in shuffled[:count]]
-            logger.info(
-                f"Randomly selected {count} persona(s) (range: {persona_min}-{persona_max}, "
-                f"available: {available_count}): {scenario_persona_ids}"
-            )
-        else:
-            selected_persona = random.choice(active_personas)
-            scenario_persona_ids = [selected_persona["id"]]
-            logger.info(
-                f"Range invalid ({effective_min}-{capped_max}), selected 1 persona: {scenario_persona_ids[0]}"
-            )
+            # Randomize persona
+            available_count = len(active_personas)
+            capped_max = min(persona_max, available_count)
+            effective_min = min(persona_min, available_count)
+            if effective_min <= capped_max:
+                count = random.randint(effective_min, capped_max)
+                shuffled = active_personas.copy()
+                random.shuffle(shuffled)
+                scenario_persona_ids = [p["id"] for p in shuffled[:count]]
+                logger.info(
+                    f"Randomly selected {count} persona(s) (range: {persona_min}-{persona_max}, "
+                    f"available: {available_count}): {scenario_persona_ids}"
+                )
+            else:
+                selected_persona = random.choice(active_personas)
+                scenario_persona_ids = [selected_persona["id"]]
+                logger.info(
+                    f"Range invalid ({effective_min}-{capped_max}), selected 1 persona: {scenario_persona_ids[0]}"
+                )
     else:
         # Keep existing persona_ids if not randomizing
         if existing_persona_ids:
@@ -631,35 +631,35 @@ async def _randomize_missing_scenario_values(
             p for p in active_parameters if p.get("persona_parameter", False)
         ]
         if persona_parameters:
-        for param in persona_parameters:
-            param_items = parameter_items_by_param_id.get(param["id"], [])
-            if param_items:
-                param_id_str = str(param["id"])
-                param_range = field_ranges_json.get(param_id_str, {})
-                param_min = (
-                    param_range.get("min", 1)
-                    if isinstance(param_range, dict)
-                    else 1
-                )
-                param_max = (
-                    param_range.get("max", 3)
-                    if isinstance(param_range, dict)
-                    else 3
-                )
-                
-                available_count = len(param_items)
-                capped_max = min(param_max, available_count)
-                effective_min = min(param_min, available_count)
-                
-                if effective_min <= capped_max:
-                    count = random.randint(effective_min, capped_max)
-                    shuffled = param_items.copy()
-                    random.shuffle(shuffled)
-                    selected_items = shuffled[:count]
-                    persona_param_ids.extend([item["id"] for item in selected_items])
-                else:
-                    selected_item = random.choice(param_items)
-                    persona_param_ids.append(selected_item["id"])
+            for param in persona_parameters:
+                param_items = parameter_items_by_param_id.get(param["id"], [])
+                if param_items:
+                    param_id_str = str(param["id"])
+                    param_range = field_ranges_json.get(param_id_str, {})
+                    param_min = (
+                        param_range.get("min", 1)
+                        if isinstance(param_range, dict)
+                        else 1
+                    )
+                    param_max = (
+                        param_range.get("max", 3)
+                        if isinstance(param_range, dict)
+                        else 3
+                    )
+                    
+                    available_count = len(param_items)
+                    capped_max = min(param_max, available_count)
+                    effective_min = min(param_min, available_count)
+                    
+                    if effective_min <= capped_max:
+                        count = random.randint(effective_min, capped_max)
+                        shuffled = param_items.copy()
+                        random.shuffle(shuffled)
+                        selected_items = shuffled[:count]
+                        persona_param_ids.extend([item["id"] for item in selected_items])
+                    else:
+                        selected_item = random.choice(param_items)
+                        persona_param_ids.append(selected_item["id"])
     
     # Step 6: Parameter item selection (only if missing or randomize_type forces it)
     param_ids: list[uuid.UUID] = []
@@ -720,51 +720,51 @@ async def _randomize_missing_scenario_values(
                 and not p.get("persona_parameter", False)
             ]
             if general_parameters:
-            available_count = len(general_parameters)
-            capped_max = min(parameter_max, available_count)
-            effective_min = min(parameter_min, available_count)
-            if effective_min <= capped_max:
-                count = random.randint(effective_min, capped_max)
-                shuffled = general_parameters.copy()
-                random.shuffle(shuffled)
-                selected_parameters = shuffled[:count]
-            else:
-                selected_parameters = [random.choice(general_parameters)]
-            
-            for param in selected_parameters:
-                param_items = parameter_items_by_param_id.get(param["id"], [])
-                if param_items:
-                    param_id_str = str(param["id"])
-                    param_range = field_ranges_json.get(param_id_str, {})
-                    param_min = (
-                        param_range.get("min", 1)
-                        if isinstance(param_range, dict)
-                        else 1
-                    )
-                    param_max = (
-                        param_range.get("max", 3)
-                        if isinstance(param_range, dict)
-                        else 3
-                    )
-                    
-                    available_count = len(param_items)
-                    capped_max = min(param_max, available_count)
-                    effective_min = min(param_min, available_count)
-                    
-                    if effective_min <= capped_max:
-                        count = random.randint(effective_min, capped_max)
-                        shuffled = param_items.copy()
-                        random.shuffle(shuffled)
-                        selected_items = shuffled[:count]
-                        param_ids.extend([item["id"] for item in selected_items])
-                    else:
-                        selected_item = random.choice(param_items)
-                        param_ids.append(selected_item["id"])
-            logger.info(
-                f"Randomly selected {len(selected_parameters)} parameter(s) "
-                f"(range: {parameter_min}-{parameter_max}), "
-                f"with {len(param_ids)} parameter_item_ids: {param_ids}"
-            )
+                available_count = len(general_parameters)
+                capped_max = min(parameter_max, available_count)
+                effective_min = min(parameter_min, available_count)
+                if effective_min <= capped_max:
+                    count = random.randint(effective_min, capped_max)
+                    shuffled = general_parameters.copy()
+                    random.shuffle(shuffled)
+                    selected_parameters = shuffled[:count]
+                else:
+                    selected_parameters = [random.choice(general_parameters)]
+                
+                for param in selected_parameters:
+                    param_items = parameter_items_by_param_id.get(param["id"], [])
+                    if param_items:
+                        param_id_str = str(param["id"])
+                        param_range = field_ranges_json.get(param_id_str, {})
+                        param_min = (
+                            param_range.get("min", 1)
+                            if isinstance(param_range, dict)
+                            else 1
+                        )
+                        param_max = (
+                            param_range.get("max", 3)
+                            if isinstance(param_range, dict)
+                            else 3
+                        )
+                        
+                        available_count = len(param_items)
+                        capped_max = min(param_max, available_count)
+                        effective_min = min(param_min, available_count)
+                        
+                        if effective_min <= capped_max:
+                            count = random.randint(effective_min, capped_max)
+                            shuffled = param_items.copy()
+                            random.shuffle(shuffled)
+                            selected_items = shuffled[:count]
+                            param_ids.extend([item["id"] for item in selected_items])
+                        else:
+                            selected_item = random.choice(param_items)
+                            param_ids.append(selected_item["id"])
+                logger.info(
+                    f"Randomly selected {len(selected_parameters)} parameter(s) "
+                    f"(range: {parameter_min}-{parameter_max}), "
+                    f"with {len(param_ids)} parameter_item_ids: {param_ids}"
+                )
     else:
         # Keep existing field_ids if not randomizing
         if existing_field_ids:
@@ -785,47 +785,47 @@ async def _randomize_missing_scenario_values(
             doc_ids = [uuid.UUID(d) for d in existing_scenario_document_ids]
             logger.info(f"Using existing scenario document_ids: {doc_ids}")
         elif active_documents:
-        # Randomize documents (prefer documents matching parameter items)
-        doc_matching_param_item_ids = all_param_ids.copy() if all_param_ids else []
-        
-        if not doc_matching_param_item_ids and active_parameters:
-            for param in active_parameters:
-                param_items = parameter_items_by_param_id.get(param["id"], [])
-                if param_items:
-                    selected_item = random.choice(param_items)
-                    doc_matching_param_item_ids.append(selected_item["id"])
-        
-        matching_documents = []
-        if doc_matching_param_item_ids:
-            matching_documents = [
-                documents_by_id[j["document_id"]]
-                for j in document_parameter_items_junction
-                if j["parameter_item_id"] in doc_matching_param_item_ids
-                and j["document_id"] in documents_by_id
-            ]
-        
-        available_documents = (
-            matching_documents if matching_documents else active_documents
-        )
-        if available_documents:
-            available_count = len(available_documents)
-            capped_max = min(document_max, available_count)
-            effective_min = min(document_min, available_count)
-            if effective_min <= capped_max:
-                count = random.randint(effective_min, capped_max)
-                shuffled = available_documents.copy()
-                random.shuffle(shuffled)
-                doc_ids = [d["id"] for d in shuffled[:count]]
-                logger.info(
-                    f"Randomly selected {count} document(s) (range: {document_min}-{document_max}, "
-                    f"available: {available_count}): {doc_ids}"
-                )
-            else:
-                if effective_min == 0:
-                    doc_ids = []
+            # Randomize documents (prefer documents matching parameter items)
+            doc_matching_param_item_ids = all_param_ids.copy() if all_param_ids else []
+            
+            if not doc_matching_param_item_ids and active_parameters:
+                for param in active_parameters:
+                    param_items = parameter_items_by_param_id.get(param["id"], [])
+                    if param_items:
+                        selected_item = random.choice(param_items)
+                        doc_matching_param_item_ids.append(selected_item["id"])
+            
+            matching_documents = []
+            if doc_matching_param_item_ids:
+                matching_documents = [
+                    documents_by_id[j["document_id"]]
+                    for j in document_parameter_items_junction
+                    if j["parameter_item_id"] in doc_matching_param_item_ids
+                    and j["document_id"] in documents_by_id
+                ]
+            
+            available_documents = (
+                matching_documents if matching_documents else active_documents
+            )
+            if available_documents:
+                available_count = len(available_documents)
+                capped_max = min(document_max, available_count)
+                effective_min = min(document_min, available_count)
+                if effective_min <= capped_max:
+                    count = random.randint(effective_min, capped_max)
+                    shuffled = available_documents.copy()
+                    random.shuffle(shuffled)
+                    doc_ids = [d["id"] for d in shuffled[:count]]
+                    logger.info(
+                        f"Randomly selected {count} document(s) (range: {document_min}-{document_max}, "
+                        f"available: {available_count}): {doc_ids}"
+                    )
                 else:
-                    selected_doc = random.choice(available_documents)
-                    doc_ids = [selected_doc["id"]]
+                    if effective_min == 0:
+                        doc_ids = []
+                    else:
+                        selected_doc = random.choice(available_documents)
+                        doc_ids = [selected_doc["id"]]
     else:
         # Keep existing document_ids if not randomizing
         if existing_document_ids:

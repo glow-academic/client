@@ -551,10 +551,13 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # Create grade record at START with placeholder values
             # Tools will insert feedbacks as they're called
             sql_create_grade = load_sql("app/sql/v3/grading/create_grade_complete.sql")
+            rubric_grade_agent_id = context_row.get("rubric_grade_agent_id")
+            if not rubric_grade_agent_id:
+                raise ValueError("rubric_grade_agent_id not found in context")
             grade_row = await conn.fetchrow(
                 sql_create_grade,
                 str(model_run_id),  # run_id
-                str(rubric_id),
+                str(rubric_grade_agent_id),  # rubric_grade_agent_id
                 "",  # description (placeholder)
                 False,  # passed (placeholder)
                 0,  # score (placeholder)

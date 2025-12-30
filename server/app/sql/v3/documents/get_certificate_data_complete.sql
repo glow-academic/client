@@ -90,7 +90,12 @@ cohort_sims AS (
         pc.cohort_title,
         s.id AS simulation_id,
         s.title AS simulation_title,
-        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id
+        (SELECT rga.rubric_id FROM simulation_scenarios ss 
+         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+         WHERE ss.simulation_id = s.id AND ss.active = true 
+         ORDER BY ss.position 
+         LIMIT 1) as rubric_id
     FROM profile_cohorts pc
     JOIN cohort_simulations cs ON cs.cohort_id = pc.cohort_id
     JOIN simulations s ON s.id = cs.simulation_id
@@ -150,7 +155,9 @@ user_sim_status AS (
             (SELECT ROUND(100.0 * r.pass_points::numeric / NULLIF(r.points,0))
              FROM simulations s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
-             LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
+             LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
+             LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
+             LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
              WHERE s.id = aa.simulation_id
              ORDER BY ss_rubric.position
              LIMIT 1), 70

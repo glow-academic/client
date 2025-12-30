@@ -41,8 +41,9 @@ CREATE TYPE types.q_list_evals_v3_eval AS (
     eval_id uuid,
     name text,
     description text,
-    rubric_id uuid,
     agent_id uuid,
+    use_groups boolean,
+    rubric_id uuid,
     rubric_name text,
     rubric_description text,
     total_runs bigint,
@@ -149,13 +150,53 @@ eval_data AS (
         e.id as eval_id,
         e.name,
         e.description,
-        e.rubric_id,
         e.agent_id,
+        e.use_groups,
         e.dynamic,
         e.created_at,
         e.updated_at,
-        r.name as rubric_name,
-        r.description as rubric_description,
+        -- Get first rubric from junction table for display (from runs or groups based on use_groups)
+        (SELECT rga.rubric_id 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_id,
+        (SELECT r.name 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_name,
+        (SELECT r.description 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_description,
         COALESCE(ess.total_runs, 0) as total_runs,
         COALESCE(ess.completed_runs, 0) as completed_runs,
         COALESCE(ess.pending_runs, 0) as pending_runs,
@@ -166,7 +207,6 @@ eval_data AS (
             ELSE 'pending'
         END as status
     FROM evals e
-    JOIN rubrics r ON r.id = e.rubric_id
     LEFT JOIN eval_status_summary ess ON ess.eval_id = e.id
 ),
 rubric_departments_data AS (
@@ -206,8 +246,8 @@ filtered_evals AS (
 evals_aggregated AS (
     SELECT 
         ARRAY_AGG(
-            (fe.eval_id, fe.name, fe.description, fe.rubric_id, fe.agent_id,
-             fe.rubric_name, fe.rubric_description, fe.total_runs, fe.completed_runs,
+            (fe.eval_id, fe.name, fe.description, fe.agent_id, fe.use_groups,
+             fe.rubric_id, fe.rubric_name, fe.rubric_description, fe.total_runs, fe.completed_runs,
              fe.pending_runs, fe.status, fe.created_at, fe.updated_at,
              fe.department_ids,
              CASE WHEN (SELECT role FROM user_profile) IN ('admin', 'instructional', 'superadmin') THEN true ELSE false END,
@@ -218,7 +258,11 @@ evals_aggregated AS (
     FROM filtered_evals fe
 ),
 all_rubric_ids AS (
-    SELECT DISTINCT rubric_id FROM filtered_evals
+    SELECT DISTINCT rga.rubric_id 
+    FROM filtered_evals fe
+    LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = fe.eval_id AND fe.use_groups = false
+    LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = fe.eval_id AND fe.use_groups = true
+    JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
 ),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids) as department_id
