@@ -316,11 +316,11 @@ SELECT
     COALESCE((SELECT rubric_mapping FROM rubric_mapping_data), '{}'::jsonb) as rubric_mapping,
     COALESCE((SELECT rubric_ids FROM rubric_mapping_data), ARRAY[]::text[]) as valid_rubric_ids,
     CASE 
-        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_edit,
     CASE 
-        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_delete,
     up.actor_name
@@ -343,6 +343,6 @@ WHERE
             SELECT 1 FROM user_departments ud
             WHERE ud.department_id::text = ANY(edd.department_ids)
         )
-        OR up.role IN ('admin', 'superadmin')
+        OR up.role IN (profile_role.admin, profile_role.superadmin)
     )
 

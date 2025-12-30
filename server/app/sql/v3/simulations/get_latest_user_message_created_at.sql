@@ -7,7 +7,7 @@ JOIN groups g ON g.id = gr.group_id
 JOIN chat_groups cg ON cg.group_id = g.id
 JOIN chats c ON c.id = cg.chat_id
 WHERE c.id = $1::uuid
-  AND m.role = 'user'
+  AND m.role = message_role.user
   AND m.id != $2::uuid
 ORDER BY m.created_at DESC
 LIMIT 1

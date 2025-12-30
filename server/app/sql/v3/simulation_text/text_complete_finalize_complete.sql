@@ -49,7 +49,7 @@ get_message_from_tool_call AS (
     JOIN tool_call_runs tcr ON tcr.tool_call_id = gtc.tool_call_id
     JOIN message_runs mr ON mr.run_id = tcr.run_id
     JOIN messages m ON m.id = mr.message_id
-    WHERE m.role = 'assistant'
+    WHERE m.role = message_role.assistant
     ORDER BY m.created_at DESC
     LIMIT 1
 ),

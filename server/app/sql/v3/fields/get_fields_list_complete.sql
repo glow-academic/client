@@ -114,12 +114,12 @@ fields_data AS (
         COALESCE(fcpa.conditional_parameter_ids, ARRAY[]::text[]) as conditional_parameter_ids,
         CASE 
             WHEN COALESCE(fdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(fdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate

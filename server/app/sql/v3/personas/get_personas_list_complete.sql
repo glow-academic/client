@@ -181,13 +181,13 @@ persona_data AS (
         CASE 
             WHEN pdb.active_scenario_count > 0 THEN false
             WHEN NOT pdb.has_dept_links AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN NOT pdb.has_dept_links AND up.role != 'superadmin' THEN false
             WHEN pdb.total_scenario_links > 0 THEN false
-            WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
             ELSE false
         END as can_delete
     FROM persona_data_base pdb

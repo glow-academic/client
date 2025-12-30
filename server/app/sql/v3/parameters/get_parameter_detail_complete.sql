@@ -163,7 +163,7 @@ user_has_parameter_access AS (
     ) OR EXISTS(
         SELECT 1 FROM params x
         JOIN profiles p ON p.id = x.profile_id
-        WHERE p.role = 'superadmin'
+        WHERE p.role = profile_role.superadmin
     ) OR (
         (SELECT COUNT(*) FROM parameter_departments pd
          WHERE pd.parameter_id = (SELECT parameter_id FROM params)
@@ -191,8 +191,8 @@ parameter_data AS (
         CASE 
             WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
             WHEN (COALESCE(pda.department_ids, NULL) IS NULL OR array_length(pda.department_ids, 1) = 0) AND up.role != 'superadmin' THEN false
-            WHEN up.role = 'superadmin' THEN true
-            WHEN up.role IN ('admin', 'instructional') THEN true
+            WHEN up.role = profile_role.superadmin THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.instructional) THEN true
             ELSE false
         END as can_edit
     FROM params x

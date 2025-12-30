@@ -267,7 +267,7 @@ valid_rubrics_data AS (
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE r.active = true
-      AND r.agent_role = 'member'
+      AND r.agent_role = agent_role.member
       AND (
           rd.department_id = ANY(udi.ids)
           OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -493,7 +493,7 @@ agents_data AS (
         FROM agents a
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND a.role IN ('hint', 'grade', 'audio')
+        AND a.role IN (agent_role.hint, agent_role.grade, agent_role.audio)
         GROUP BY a.id, a.name, a.description, a.role
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -505,7 +505,7 @@ SELECT
     ''::text as name,
     ''::text as description,
     CASE 
-        WHEN up.role = 'superadmin' THEN NULL::uuid[]
+        WHEN up.role = profile_role.superadmin THEN NULL::uuid[]
         ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
     END as department_ids,
     COALESCE(dd.department_ids::uuid[], ARRAY[]::uuid[]) as valid_department_ids,
@@ -522,11 +522,11 @@ SELECT
     NULL::uuid as simulation_text_agent_id,
     NULL::uuid as simulation_voice_agent_id,
     CASE 
-        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_edit,
     CASE 
-        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_duplicate,
     false as can_delete,

@@ -73,21 +73,21 @@ profile_validation AS (
         -- Check if role assignment is allowed (hierarchy check)
         CASE 
             WHEN rp.role_value IS NULL THEN true  -- Not updating role
-            WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND rp.role_value IN ('instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND rp.role_value IN ('member', 'guest') THEN true
-            WHEN cur.role = 'member' AND rp.role_value = 'guest' THEN true
+            WHEN cur.role = profile_role.superadmin THEN true
+            WHEN cur.role = profile_role.admin AND rp.role_value::profile_role IN (profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.instructional AND rp.role_value::profile_role IN (profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.member AND rp.role_value::profile_role = profile_role.guest THEN true
             ELSE false
         END as can_assign_role,
         -- Check if role level is acceptable (cannot assign equal or higher role)
         CASE 
             WHEN rp.role_value IS NULL THEN true  -- Not updating role
-            WHEN cur.role = 'superadmin' THEN true  -- Superadmin can assign any role
+            WHEN cur.role = profile_role.superadmin THEN true  -- Superadmin can assign any role
             WHEN p.id = (SELECT profile_id FROM params) THEN true  -- Can update own role
-            WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND rp.role_value IN ('instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND rp.role_value IN ('member', 'guest') THEN true
-            WHEN cur.role = 'member' AND rp.role_value = 'guest' THEN true
+            WHEN cur.role = profile_role.superadmin THEN true
+            WHEN cur.role = profile_role.admin AND rp.role_value::profile_role IN (profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.instructional AND rp.role_value::profile_role IN (profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.member AND rp.role_value::profile_role = profile_role.guest THEN true
             ELSE false
         END as role_level_ok,
         -- All profiles can be edited based on role hierarchy

@@ -223,7 +223,7 @@ simulation_department_access_check AS (
     SELECT 
         s.id as simulation_id,
         CASE 
-            WHEN uc.role = 'superadmin' THEN true
+            WHEN uc.role = profile_role.superadmin THEN true
             WHEN EXISTS (
                 SELECT 1 FROM simulation_departments sd 
                 WHERE sd.simulation_id = s.id 
@@ -466,7 +466,7 @@ valid_rubrics_data AS (
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE r.active = true
-      AND r.agent_role = 'member'
+      AND r.agent_role = agent_role.member
       AND (
           rd.department_id = ANY(udi.ids)
           OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -480,7 +480,7 @@ valid_rubrics_data AS (
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_sb ON ssrga_sb.simulation_id = sb.id
     LEFT JOIN rubric_grade_agents rga_sb ON rga_sb.id = ssrga_sb.rubric_grade_agent_id
     JOIN rubrics r2 ON r2.id = rga_sb.rubric_id
-    WHERE rga_sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = 'member'
+    WHERE rga_sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = agent_role.member
     UNION
     SELECT DISTINCT
         r3.id,
@@ -708,9 +708,9 @@ selected_agents_from_simulation AS (
     SELECT DISTINCT a.id, a.name, a.description, a.role
     FROM simulation_base sb
     JOIN agents a ON (
-        (a.id = sb.hint_agent_id AND a.role = 'hint')
-        OR (a.id = sb.simulation_text_agent_id AND a.role = 'simulation')
-        OR (a.id = sb.simulation_voice_agent_id AND a.role = 'voice')
+        (a.id = sb.hint_agent_id AND a.role = agent_role.hint)
+        OR (a.id = sb.simulation_text_agent_id AND a.role = agent_role.simulation)
+        OR (a.id = sb.simulation_voice_agent_id AND a.role = agent_role.voice)
     )
     WHERE a.active = true
       AND (
@@ -724,7 +724,7 @@ selected_agents_from_simulation AS (
     FROM simulation_base sb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-    JOIN agents a ON a.id = rga.grade_text_agent_id AND a.role IN ('grade')
+    JOIN agents a ON a.id = rga.grade_text_agent_id AND a.role IN (agent_role.grade)
     WHERE a.active = true
     UNION
     SELECT DISTINCT a.id, a.name, a.description, a.role
@@ -732,7 +732,7 @@ selected_agents_from_simulation AS (
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     JOIN rubric_grade_agents_voice rgav ON rgav.rubric_grade_agent_id = rga.id
-    JOIN agents a ON a.id = rgav.grade_voice_agent_id AND a.role IN ('audio')
+    JOIN agents a ON a.id = rgav.grade_voice_agent_id AND a.role IN (agent_role.audio)
     WHERE a.active = true
 ),
 agents_data AS (
@@ -747,7 +747,7 @@ agents_data AS (
         FROM agents a
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND a.role IN ('hint', 'grade', 'audio', 'simulation', 'voice')
+        AND a.role IN (agent_role.hint, agent_role.grade, agent_role.audio, agent_role.simulation, agent_role.voice)
         GROUP BY a.id, a.name, a.description, a.role
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -777,18 +777,18 @@ SELECT
     sb.simulation_voice_agent_id,
     CASE 
         WHEN COALESCE(sb.department_ids, NULL) IS NULL AND uc.role != 'superadmin' THEN false
-        WHEN uc.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN uc.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_edit,
     CASE 
-        WHEN uc.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN uc.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_duplicate,
     CASE 
         WHEN COALESCE(sb.department_ids, NULL) IS NULL AND uc.role != 'superadmin' THEN false
         WHEN sb.practice_simulation = true THEN false
         WHEN cu.total_cohort_links > 0 THEN false
-        WHEN uc.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN uc.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_delete,
     CASE WHEN cu.total_cohort_links > 0 THEN true ELSE false END as in_use,

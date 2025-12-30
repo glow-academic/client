@@ -356,8 +356,8 @@ SELECT
     -- Can edit (based on role and default parameter logic)
     CASE 
         WHEN (pd.department_ids IS NULL OR array_length(pd.department_ids, 1) = 0) AND ap.role != 'superadmin' THEN false::boolean
-        WHEN ap.role = 'superadmin' THEN true::boolean
-        WHEN ap.role IN ('admin', 'instructional') THEN true::boolean
+        WHEN ap.role = profile_role.superadmin THEN true::boolean
+        WHEN ap.role IN (profile_role.admin, profile_role.instructional) THEN true::boolean
         ELSE false::boolean
     END as can_edit
 FROM actor_profile ap

@@ -111,9 +111,9 @@ simulatable_data AS (
     ) pa ON true
     WHERE p.id != (SELECT profile_id FROM params)
       AND CASE 
-        WHEN rr.role = 'superadmin' THEN true
-        WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'member', 'guest')
-        WHEN rr.role = 'instructional' THEN p.role IN ('member', 'guest')
+        WHEN rr.role = profile_role.superadmin THEN true
+        WHEN rr.role = profile_role.admin THEN p.role IN (profile_role.instructional, profile_role.member, profile_role.guest)
+        WHEN rr.role = profile_role.instructional THEN p.role IN (profile_role.member, profile_role.guest)
         ELSE false
       END
       AND ((SELECT query FROM params) IS NULL OR (SELECT query FROM params) = '' OR (p.first_name ILIKE '%' || (SELECT query FROM params) || '%' OR p.last_name ILIKE '%' || (SELECT query FROM params) || '%' OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE '%' || (SELECT query FROM params) || '%') OR p.role::text ILIKE '%' || (SELECT query FROM params) || '%' OR (p.first_name || ' ' || p.last_name) ILIKE '%' || (SELECT query FROM params) || '%'))

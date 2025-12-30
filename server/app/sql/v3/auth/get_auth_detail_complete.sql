@@ -89,7 +89,7 @@ auth_data AS (
         a.description,
         a.active,
         CASE 
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
             ELSE false
         END as can_edit
     FROM params x

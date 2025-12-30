@@ -378,12 +378,12 @@ SELECT
              COALESCE(dvf.valid_field_ids, ARRAY[]::text[]), dd.active_scenario_count, dd.total_scenario_links,
              CASE 
                  WHEN dd.active_scenario_count > 0 THEN false
-                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+                 WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
                  ELSE false
              END,
              CASE 
                  WHEN dd.total_scenario_links > 0 THEN false
-                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+                 WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
                  ELSE false
              END
             )::types.q_list_documents_v3_document

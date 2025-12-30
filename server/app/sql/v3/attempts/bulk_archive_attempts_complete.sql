@@ -157,11 +157,11 @@ BEGIN
               AND ((profile_id::text IS NULL OR profile_id::text = '') OR ap.profile_id = profile_id)
               AND (cardinality(department_ids) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && department_ids::text[])
               AND (
-                hvr.role = 'superadmin' OR
-                (hvr.role = 'admin' AND p_attempt.role IN ('admin', 'instructional', 'member', 'guest')) OR
-                (hvr.role = 'instructional' AND p_attempt.role IN ('instructional', 'member', 'guest')) OR
-                (hvr.role = 'member' AND p_attempt.role IN ('member', 'guest')) OR
-                (hvr.role = 'guest' AND p_attempt.role = 'guest')
+                hvr.role = profile_role.superadmin OR
+                (hvr.role = profile_role.admin AND p_attempt.role IN (profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest)) OR
+                (hvr.role = profile_role.instructional AND p_attempt.role IN (profile_role.instructional, profile_role.member, profile_role.guest)) OR
+                (hvr.role = profile_role.member AND p_attempt.role IN (profile_role.member, profile_role.guest)) OR
+                (hvr.role = profile_role.guest AND p_attempt.role = profile_role.guest)
               )
         ),
         history_attempt_cohorts AS (

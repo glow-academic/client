@@ -222,11 +222,11 @@ SELECT
     sm.mapping as standards_mapping,
     rsgm.mapping as rubric_standard_groups_mapping,
     CASE 
-        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_edit,
     CASE 
-        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.instructional, profile_role.superadmin) THEN true
         ELSE false
     END as can_delete,
     ap.actor_name
@@ -249,7 +249,7 @@ WHERE
             SELECT 1 FROM user_departments ud
             WHERE ud.department_id::text = ANY(edept.department_ids)
         )
-        OR up.role IN ('admin', 'superadmin')
+        OR up.role IN (profile_role.admin, profile_role.superadmin)
     )
 ORDER BY ed.updated_at DESC NULLS LAST
 

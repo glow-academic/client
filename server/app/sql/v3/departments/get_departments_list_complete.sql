@@ -220,19 +220,19 @@ filtered_profile_ids AS (
     JOIN profile_roles pr ON pr.profile_id IN (SELECT profile_id FROM all_profile_ids_raw)
     WHERE 
         -- superadmin can see all
-        up.role = 'superadmin'
+        up.role = profile_role.superadmin
         OR
         -- admin can see admin, instructional, member, guest
-        (up.role = 'admin' AND pr.role IN ('admin', 'instructional', 'member', 'guest'))
+        (up.role = profile_role.admin AND pr.role IN (profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest))
         OR
         -- instructional can see instructional, member, guest
-        (up.role = 'instructional' AND pr.role IN ('instructional', 'member', 'guest'))
+        (up.role = profile_role.instructional AND pr.role IN (profile_role.instructional, profile_role.member, profile_role.guest))
         OR
         -- member can see member, guest
-        (up.role = 'member' AND pr.role IN ('member', 'guest'))
+        (up.role = profile_role.member AND pr.role IN (profile_role.member, profile_role.guest))
         OR
         -- guest can only see guest
-        (up.role = 'guest' AND pr.role = 'guest')
+        (up.role = profile_role.guest AND pr.role = profile_role.guest)
 ),
 department_profiles_filtered_data AS (
     SELECT 
@@ -256,17 +256,17 @@ departments_data AS (
         COALESCE(dcd.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
         COALESCE(dpf.profile_ids, ARRAY[]::uuid[]) as profile_ids,
         CASE 
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(dacl.total_cohort_links, 0) > 0 THEN false
             WHEN COALESCE(dpwo.profiles_with_only_this_dept, 0) > 0 THEN false
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
             ELSE false
         END as can_delete,
         CASE 
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
             ELSE false
         END as can_duplicate
     FROM departments d

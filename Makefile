@@ -353,6 +353,9 @@ sql-format: check-venv
 	@echo ""
 	@echo "Checking for inline SQL violations..."
 	@$(VENV_PYTHON) server/scripts/check_inline_sql.py
+	@echo ""
+	@echo "Checking for weak enum comparisons..."
+	@$(VENV_PYTHON) server/scripts/check_enum_comparisons.py
 
 # Connect to database
 connect-db:

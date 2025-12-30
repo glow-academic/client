@@ -421,7 +421,7 @@ scenario_department_access_check AS (
     SELECT 
         s.id as scenario_id,
         CASE 
-            WHEN up.role = 'superadmin' THEN true
+            WHEN up.role = profile_role.superadmin THEN true
             WHEN EXISTS (
                 SELECT 1 FROM scenario_departments sd 
                 WHERE sd.scenario_id = s.id 
@@ -1816,7 +1816,7 @@ valid_agents_array AS (
     WHERE a.active = true 
     AND (
         a.role = ear.role
-        OR a.role = 'scenario'
+        OR a.role = agent_role.scenario
         OR a.role = 'image'
     )
     GROUP BY a.id, a.name, a.description, a.role, ear.role

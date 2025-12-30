@@ -214,7 +214,7 @@ admin_users_by_date AS (
     FROM profiles p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND p.role IN ('admin', 'superadmin')
+    AND p.role IN (profile_role.admin, profile_role.superadmin)
     GROUP BY DATE(p.created_at)
 ),
 admin_users_cumulative AS (
@@ -231,7 +231,7 @@ instructional_users_by_date AS (
     FROM profiles p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND p.role = 'instructional'
+    AND p.role = profile_role.instructional
     GROUP BY DATE(p.created_at)
 ),
 instructional_users_cumulative AS (
@@ -248,7 +248,7 @@ member_users_by_date AS (
     FROM profiles p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND p.role = 'member'
+    AND p.role = profile_role.member
     GROUP BY DATE(p.created_at)
 ),
 member_users_cumulative AS (
@@ -340,15 +340,15 @@ staff_rows AS (
     CROSS JOIN user_profile up
     WHERE (
         -- Superadmins see all profiles (bypass department filter)
-        up.role = 'superadmin' 
+        up.role = profile_role.superadmin 
         -- Non-superadmins only see profiles that share departments with them
         OR pd.department_id IN (SELECT department_id FROM user_departments)
     )
     AND (
-        up.role = 'superadmin' OR
-        (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'member', 'guest')) OR
-        (up.role = 'instructional' AND p.role IN ('instructional', 'member', 'guest')) OR
-        (up.role = 'member' AND p.role IN ('member', 'guest')) OR
+        up.role = profile_role.superadmin OR
+        (up.role = profile_role.admin AND p.role IN (profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest)) OR
+        (up.role = profile_role.instructional AND p.role IN (profile_role.instructional, profile_role.member, profile_role.guest)) OR
+        (up.role = profile_role.member AND p.role IN (profile_role.member, profile_role.guest)) OR
         (up.role = 'guest' AND p.role = 'guest')
     )
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 

@@ -105,9 +105,9 @@ SELECT
             (a.id, a.name, a.description, a.active, a.updated_at,
              COALESCE(aic.num_items, 0),
              COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v3_auth_item[]),
-             CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END,
-             CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END,
-             CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END
+             CASE WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true ELSE false END,
+             CASE WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true ELSE false END,
+             CASE WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true ELSE false END
             )::types.q_get_auth_list_v3_auth
             ORDER BY a.updated_at DESC NULLS LAST
         ),

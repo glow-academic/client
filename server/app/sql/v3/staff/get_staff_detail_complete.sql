@@ -123,11 +123,11 @@ role_visibility_check AS (
     SELECT 
         tp.*,
         CASE 
-            WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND tp.role IN ('admin', 'instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND tp.role IN ('instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'member' AND tp.role IN ('member', 'guest') THEN true
-            WHEN cur.role = 'guest' AND tp.role = 'guest' THEN true
+            WHEN cur.role = profile_role.superadmin THEN true
+            WHEN cur.role = profile_role.admin AND tp.role IN (profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.instructional AND tp.role IN (profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.member AND tp.role IN (profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.guest AND tp.role = profile_role.guest THEN true
             ELSE false
         END as can_see
     FROM target_profile tp
@@ -182,10 +182,10 @@ departments_data AS (
 can_edit_check AS (
     SELECT 
         CASE 
-            WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND vp.role IN ('admin', 'instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND vp.role IN ('instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'member' AND vp.role IN ('member', 'guest') THEN true
+            WHEN cur.role = profile_role.superadmin THEN true
+            WHEN cur.role = profile_role.admin AND vp.role IN (profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.instructional AND vp.role IN (profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.member AND vp.role IN (profile_role.member, profile_role.guest) THEN true
             ELSE false
         END as can_edit
     FROM visible_profile vp

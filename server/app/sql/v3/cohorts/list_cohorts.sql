@@ -23,11 +23,11 @@ cohort_profiles_role_filtered AS (
         cp.cohort_id,
         ARRAY_AGG(cp.profile_id) FILTER (
             WHERE 
-                (up.role = 'superadmin') OR
-                (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'member', 'guest')) OR
-                (up.role = 'instructional' AND p.role IN ('instructional', 'member', 'guest')) OR
-                (up.role = 'member' AND p.role IN ('member', 'guest')) OR
-                (up.role = 'guest' AND p.role = 'guest')
+                (up.role = profile_role.superadmin) OR
+                (up.role = profile_role.admin AND p.role IN (profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest)) OR
+                (up.role = profile_role.instructional AND p.role IN (profile_role.instructional, profile_role.member, profile_role.guest)) OR
+                (up.role = profile_role.member AND p.role IN (profile_role.member, profile_role.guest)) OR
+                (up.role = profile_role.guest AND p.role = profile_role.guest)
         ) as profile_ids
     FROM cohort_profiles cp
     JOIN profiles p ON p.id = cp.profile_id
@@ -173,13 +173,13 @@ SELECT
     COALESCE(array_length(cprf.profile_ids, 1), 0) as num_members,
     CASE 
         WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-        WHEN up.role IN ('admin', 'superadmin') THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
         ELSE false
     END as can_edit,
     CASE 
         -- Can't delete if can't edit (stricter than can_edit)
         WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-        WHEN up.role IN ('admin', 'superadmin') AND COALESCE(cu.usage_count, 0) = 0 THEN true
+        WHEN up.role IN (profile_role.admin, profile_role.superadmin) AND COALESCE(cu.usage_count, 0) = 0 THEN true
         ELSE false
     END as can_delete,
     true as can_duplicate,
@@ -245,7 +245,7 @@ CROSS JOIN user_profile up
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN scenario_mapping_data sm
 WHERE (
-        (up.role = 'instructional' AND uic.cohort_id IS NOT NULL)
+        (up.role = profile_role.instructional AND uic.cohort_id IS NOT NULL)
         OR
         up.role != 'instructional'
     )

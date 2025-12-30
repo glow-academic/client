@@ -179,7 +179,7 @@ best_agent AS (
     CROSS JOIN params p
     WHERE a.id = p.rubric_agent_id
     AND a.active = true
-    AND a.role = 'rubric'
+    AND a.role = agent_role.rubric
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile
@@ -367,7 +367,7 @@ link_existing_messages AS (
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
     JOIN messages m ON m.id = mr.message_id
-    WHERE m.role IN ('system', 'developer')
+    WHERE m.role IN (message_role.system, message_role.developer)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()
 )

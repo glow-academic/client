@@ -121,11 +121,11 @@ SELECT
              COALESCE(mtl.temperature, 0.0),
              fa.model_id, fa.role, fa.updated_at,
              COALESCE(addd.department_ids, ARRAY[]::text[]),
-             CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END,
+             CASE WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true ELSE false END,
              true,
              CASE 
                  WHEN COALESCE(adl.total_links, 0) > 0 THEN false
-                 WHEN up.role = 'superadmin' THEN true
+                 WHEN up.role = profile_role.superadmin THEN true
                  ELSE false
              END,
              m.name,

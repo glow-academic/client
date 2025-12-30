@@ -161,7 +161,7 @@ profile_role_lookup AS (
         END AS mode,
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN false
-            ELSE COALESCE((SELECT role = 'member' FROM profiles WHERE id = rpi.resolved_profile_id), false)
+            ELSE COALESCE((SELECT role = profile_role.member FROM profiles WHERE id = rpi.resolved_profile_id), false)
         END AS is_member_mode,
         -- Compute role hierarchy array based on profile's role
         CASE

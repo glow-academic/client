@@ -19,7 +19,7 @@ finalize_messages AS (
     FROM params p
     JOIN message_runs mr ON mr.message_id = messages.id
     WHERE mr.run_id = p.run_id
-      AND messages.role = 'assistant'
+      AND messages.role = message_role.assistant
       AND messages.completed = false
     RETURNING messages.id as message_id, messages.id
 ),

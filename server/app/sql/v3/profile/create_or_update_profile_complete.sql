@@ -73,10 +73,10 @@ role_validation AS (
     SELECT 
         CASE 
             WHEN (SELECT current_profile_id FROM params) IS NULL THEN true  -- No validation if no current_profile_id
-            WHEN cur.role = 'superadmin' AND p_role.role IN ('superadmin', 'admin', 'instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'admin' AND p_role.role IN ('instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND p_role.role IN ('member', 'guest') THEN true
-            WHEN cur.role = 'member' AND p_role.role = 'guest' THEN true
+            WHEN cur.role = profile_role.superadmin AND p_role.role IN (profile_role.superadmin, profile_role.admin, profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.admin AND p_role.role IN (profile_role.instructional, profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.instructional AND p_role.role IN (profile_role.member, profile_role.guest) THEN true
+            WHEN cur.role = profile_role.member AND p_role.role = profile_role.guest THEN true
             ELSE false
         END as can_assign
     FROM current_user_role cur

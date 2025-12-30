@@ -63,9 +63,9 @@ simulatable_profiles AS (
     CROSS JOIN requester_role rr
     WHERE p.id != (SELECT requester_profile_id FROM params)
       AND CASE 
-        WHEN rr.role = 'superadmin' THEN true
-        WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'member', 'guest')
-        WHEN rr.role = 'instructional' THEN p.role IN ('member', 'guest')
+        WHEN rr.role = profile_role.superadmin THEN true
+        WHEN rr.role = profile_role.admin THEN p.role IN (profile_role.instructional, profile_role.member, profile_role.guest)
+        WHEN rr.role = profile_role.instructional THEN p.role IN (profile_role.member, profile_role.guest)
         ELSE false
       END
 ),

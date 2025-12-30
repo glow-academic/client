@@ -71,7 +71,7 @@ check_permissions AS (
     SELECT 
         CASE 
             WHEN cu.is_used THEN false
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
             ELSE false
         END as can_delete
     FROM user_profile up

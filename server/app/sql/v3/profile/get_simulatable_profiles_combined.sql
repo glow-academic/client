@@ -34,9 +34,9 @@ LEFT JOIN LATERAL (
 ) pa ON true
 WHERE p.id != (SELECT resolved_profile_id FROM resolve_profile_id)
   AND CASE 
-    WHEN rr.role = 'superadmin' THEN true
-    WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'member', 'guest')
-    WHEN rr.role = 'instructional' THEN p.role IN ('member', 'guest')
+    WHEN rr.role = profile_role.superadmin THEN true
+    WHEN rr.role = profile_role.admin THEN p.role IN (profile_role.instructional, profile_role.member, profile_role.guest)
+    WHEN rr.role = profile_role.instructional THEN p.role IN (profile_role.member, profile_role.guest)
     ELSE false
   END
 GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 

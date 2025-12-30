@@ -165,7 +165,7 @@ user_has_key_access AS (
     ) OR EXISTS(
         SELECT 1 FROM params x
         JOIN profiles p ON p.id = x.profile_id
-        WHERE p.role = 'superadmin'
+        WHERE p.role = profile_role.superadmin
     ) OR (
         -- Default keys (no department links via settings) are accessible to all admins
         NOT EXISTS (
@@ -192,8 +192,8 @@ SELECT
     CASE 
         -- Default keys (no department_ids via settings) are read-only for non-superadmin
         WHEN (COALESCE(kdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND pr.user_role != 'superadmin') THEN false
-        WHEN pr.user_role = 'superadmin' THEN true
-        WHEN pr.user_role = 'admin' AND uhka.has_access THEN true
+        WHEN pr.user_role = profile_role.superadmin THEN true
+        WHEN pr.user_role = profile_role.admin AND uhka.has_access THEN true
         ELSE false
     END::boolean as can_edit,
     COALESCE(

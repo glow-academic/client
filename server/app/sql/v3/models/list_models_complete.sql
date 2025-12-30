@@ -156,7 +156,7 @@ models_aggregated AS (
                 (mwu.model_id, mwu.name, mwu.description, mwu.active, mwu.image_model, mwu.updated_at,
                  mwu.provider, mwu.provider_id, mwu.provider_name, mwu.base_url,
                  CASE 
-                     WHEN up.role IN ('admin', 'superadmin') THEN true
+                     WHEN up.role IN (profile_role.admin, profile_role.superadmin) THEN true
                      ELSE false
                  END,
                  CASE 
