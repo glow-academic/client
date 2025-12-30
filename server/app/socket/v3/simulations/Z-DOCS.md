@@ -88,24 +88,21 @@ Emit simulation_ended (client)
 
 #### 3. `next.py` - Scenario Creation Handler
 
-**Purpose**: Creates a fresh scenario variant based on parent scenario with randomization.
+**Purpose**: Creates a fresh scenario variant and delegates to `generate.py` for randomization and AI generation.
 
 **Internal Event**: `simulation_next` (emitted by `start.py` or `end.py`)
 
 **Key Responsibilities**:
-- Creates child scenario variant from parent
-- Randomizes persona, documents, and parameters
-- Links randomized selections to child scenario
+- Creates child scenario variant from parent (no links yet)
+- Links scenario tree edge (parent to child)
 - Checks which AI fields need generation (statement, objectives, videos, images, questions)
-- Routes to either:
-  - `generate_scenario` (if AI fields needed) → waits for completion → `simulation_advance`
-  - `simulation_advance` (if no AI fields needed)
+- Routes to `generate_scenario` which handles:
+  - Randomization of missing values (persona, documents, parameters)
+  - Linking randomized selections to child scenario
+  - AI generation of missing fields
+  - Emitting `simulation_advance` when complete
 
-**Randomization Logic**:
-- Selects random persona from available personas
-- Selects random documents (1-3) from available documents
-- Selects random parameters (1-3) with random parameter items (1-3 per parameter)
-- Respects department filtering and availability
+**Note**: Randomization logic is centralized in `agents/scenario/generate.py`. This ensures both frontend scenario creation and simulation flow use identical randomization logic.
 
 **Flow**:
 ```
@@ -113,33 +110,32 @@ Internal → simulation_next
   ↓
 Get parent scenario
   ↓
-Randomize selections (persona, documents, parameters)
+Create child scenario variant (no links yet)
   ↓
-Create child scenario variant
-  ↓
-Link randomized selections
+Link scenario tree edge (parent → child)
   ↓
 Check AI fields (statement, objectives, videos, images, questions)
   ↓
-If needs AI → emit generate_scenario (client)
-  ↓ (scenario generate completes)
+Emit generate_scenario (client) - always emit, even if no AI needed
   ↓
-Emit simulation_advance (internal)
+generate.py handles:
+  - Randomize missing values (persona, documents, parameters)
+  - Link randomized selections to child scenario
+  - Generate AI fields if needed
+  - Emit simulation_advance (internal) when complete
 ```
 
 **SQL Files**:
 - `get_scenario_by_id.sql` - Gets parent scenario metadata
 - `insert_scenario_variant.sql` - Creates child scenario
 - `insert_scenario_tree_edge.sql` - Links parent to child
-- `insert_scenario_persona_link.sql` - Links persona
-- `insert_scenario_document_link.sql` - Links documents
-- `insert_scenario_parameter_link.sql` - Links parameters
-- `insert_scenario_department_link.sql` - Links department
 - `get_scenario_problem_statement.sql` - Checks if statement exists
 - `get_scenario_objectives.sql` - Checks if objectives exist
 - `get_scenario_videos.sql` - Checks if videos exist
 - `get_scenario_images.sql` - Checks if images exist
 - `get_scenario_questions.sql` - Checks if questions exist
+
+**Note**: Linking of persona, documents, parameters, and department is handled by `generate.py` after randomization.
 
 #### 4. `advance.py` - Simulation Advance Handler
 
@@ -191,40 +187,28 @@ Emit simulations_advanced (client)
      │         │ next.py  │
      │         └────┬─────┘
      │              │ Create child scenario
-     │              │ Randomize selections
+     │              │ Link scenario tree edge
      │              │ Check AI fields
      │              ↓
-     │         ┌──────────────┐
-     │         │ Needs AI?    │
-     │         └──┬───────┬───┘
-     │            │       │
-     │         Yes│       │No
-     │            │       │
-     │            ↓       ↓
-     │    ┌──────────┐ ┌──────────┐
-     │    │scenario  │ │ advance.py│
-     │    │generate  │ └────┬──────┘
-     │    └────┬─────┘      │
-     │         │            │ Create chat
-     │         │            │ Emit to client
-     │         │            │
-     │         │            ↓
-     │         │      ┌──────────┐
-     │         │      │  Client  │
-     │         │      │  Refresh │
-     │         │      └──────────┘
-     │         │
-     │         │ (after generation completes)
-     │         ↓
-     │    ┌──────────┐
-     │    │ advance.py│
-     │    └────┬──────┘
-     │         │
-     │         ↓
-     │    ┌──────────┐
-     │    │  Client  │
-     │    │  Refresh │
-     │    └──────────┘
+     │         ┌──────────┐
+     │         │scenario  │
+     │         │generate  │
+     │         └────┬─────┘
+     │              │ Randomize missing values
+     │              │ Link randomized selections
+     │              │ Generate AI fields if needed
+     │              │ Emit simulation_advance
+     │              ↓
+     │         ┌──────────┐
+     │         │ advance.py│
+     │         └────┬──────┘
+     │              │ Create chat
+     │              │ Emit to client
+     │              ↓
+     │         ┌──────────┐
+     │         │  Client  │
+     │         │  Refresh │
+     │         └──────────┘
      │
      ↓
 ┌─────────┐
@@ -295,13 +279,15 @@ Emit simulations_advanced (client)
 
 ## Integration with Scenario Generation
 
-When `next.py` determines that AI fields need generation, it emits `generate_scenario` to `agents/scenario/generate.py`. The scenario generation handler:
+When `next.py` creates a child scenario variant, it always emits `generate_scenario` to `agents/scenario/generate.py`. The scenario generation handler:
 
-1. Generates missing fields (statement, objectives, videos, images, questions)
-2. On completion, checks if `simulationId` and `attemptId` are present
-3. If present, emits `simulation_advance` to continue the simulation flow
+1. **Randomizes missing values** (persona, documents, parameters) if not provided
+2. **Links randomized selections** to the child scenario
+3. **Generates missing AI fields** (statement, objectives, videos, images, questions) if needed
+4. On completion, checks if `simulationId` and `attemptId` are present
+5. If present, emits `simulation_advance` to continue the simulation flow
 
-This ensures seamless integration: scenarios are generated on-demand and automatically advance the simulation once ready.
+This ensures seamless integration: randomization and generation are centralized in one place, and scenarios automatically advance the simulation once ready.
 
 ## Key Concepts
 
@@ -310,7 +296,7 @@ This ensures seamless integration: scenarios are generated on-demand and automat
 - **Parent Scenario**: Template scenario defined in `simulation_scenarios`
 - **Child Scenario**: Generated variant created for each attempt
 - **Scenario Tree**: Links parent to child via `scenario_tree` table
-- **Randomization**: Child scenarios get randomized persona, documents, and parameters
+- **Randomization**: Child scenarios get randomized persona, documents, and parameters (handled by `generate.py`)
 
 ### Next Scenario Detection
 

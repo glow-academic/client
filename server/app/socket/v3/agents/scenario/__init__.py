@@ -17,23 +17,15 @@ from .regenerate import (
 from .regenerate import (
     server_router as regenerate_server_router,
 )
-from .randomize import (
-    client_router as randomize_client_router,
-)
-from .randomize import (
-    server_router as randomize_server_router,
-)
 
 client_router = APIRouter(prefix="/scenarios", tags=["socket-client"])
 server_router = APIRouter(prefix="/scenarios", tags=["socket-server"])
 
 client_router.include_router(generate_client_router)
 client_router.include_router(regenerate_client_router)
-client_router.include_router(randomize_client_router)
 
 server_router.include_router(generate_server_router)
 server_router.include_router(regenerate_server_router)
-server_router.include_router(randomize_server_router)
 server_router.include_router(complete_server_router)
 server_router.include_router(error_server_router)
 server_router.include_router(progress_server_router)

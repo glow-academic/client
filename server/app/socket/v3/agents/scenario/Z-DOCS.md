@@ -28,9 +28,13 @@ The scenario agent generates educational scenarios for simulations. It uses AI t
    - `videoLength`: Optional video length in seconds
 
 2. **Server (`scenario/generate.py`)**:
-   - Gets context and creates run atomically (via SQL)
-   - Creates scenario agent with tools (title, problem_statement, objectives, questions, image, video)
-   - Runs agent with streaming
+   - **Step 1: Randomize missing values** (if personaIds, documentIds, or fieldIds are not provided):
+     - Randomizes missing persona, documents, and parameters using centralized logic
+     - Links randomized selections to scenario (if scenarioId provided)
+     - Emits `scenario_randomize_complete` event to client with randomized selections
+   - **Step 2: Get context and create run** atomically (via SQL)
+   - **Step 3: Create scenario agent** with tools (title, problem_statement, objectives, questions, image, video)
+   - **Step 4: Run agent** with streaming
    - Emits `scenario_progress` internal events for tool calls
    - Emits `log_run` for token/pricing logging
    - Emits `scenario_complete` on completion
@@ -66,17 +70,35 @@ The scenario agent generates educational scenarios for simulations. It uses AI t
 
 ## Key Responsibilities
 
-1. **Scenario Generation**: Creates problem statements, objectives, and questions using AI
-2. **Resource Linking**: Links generated resources to scenarios, personas, documents, and fields
-3. **Tool Management**: Manages scenario tools (title, problem_statement, objectives, questions, image, video)
-4. **Image/Video Generation**: Optionally triggers image/video agents for media generation
-5. **Simulation Integration**: Can trigger simulation advance after generation
+1. **Randomization**: Randomizes missing values (persona, documents, parameters) before generation
+   - Centralized randomization logic used by both frontend and simulation flow
+   - Only randomizes values that are missing (None or empty)
+   - Links randomized selections to scenario if scenarioId provided
+   - Emits `scenario_randomize_complete` event before generation starts
+2. **Scenario Generation**: Creates problem statements, objectives, and questions using AI
+3. **Resource Linking**: Links generated resources to scenarios, personas, documents, and fields
+4. **Tool Management**: Manages scenario tools (title, problem_statement, objectives, questions, image, video)
+5. **Image/Video Generation**: Optionally triggers image/video agents for media generation
+6. **Simulation Integration**: Can trigger simulation advance after generation
+
+## Randomization Step
+
+The first step in `generate_scenario` is randomization of missing values:
+
+1. **Checks for missing values**: Determines which of `personaIds`, `documentIds`, or `fieldIds` are missing
+2. **Randomizes missing values**: Uses centralized `_randomize_missing_scenario_values()` helper function
+3. **Links selections**: If `scenarioId` is provided, links randomized selections to the scenario
+4. **Emits event**: Emits `scenario_randomize_complete` event to client with randomized selections
+5. **Proceeds with generation**: Continues with AI generation using randomized (or provided) values
+
+This ensures both frontend scenario creation and simulation flow (`next.py`) use identical randomization logic.
 
 ## Integration Points
 
 - **Image Agent**: Triggered when `imagesEnabled=true` and `imageAgentId` provided
 - **Video Agent**: Triggered when `videoEnabled=true` and `videoAgentId` provided
 - **Simulation Agent**: Can trigger `simulation_advance` after generation
+- **Randomization**: Centralized logic used by both frontend and simulation flow
 
 ## File Structure
 
@@ -105,4 +127,9 @@ scenario/
 ### `scenarios_generation_error`
 - Emitted by: `generate.py`, `error.py`
 - Payload: `success`, `message`, `trace_id`
+
+### `scenario_randomize_complete`
+- Emitted by: `generate.py` (during randomization step)
+- Payload: `success`, `randomized_selections` (personaIds, documentIds, fieldIds), `message`
+- Note: This event is emitted before generation starts, allowing frontend to update UI with randomized values
 
