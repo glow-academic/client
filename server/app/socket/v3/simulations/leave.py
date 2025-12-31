@@ -73,6 +73,9 @@ async def _simulation_leave_impl(sid: str, data: SimulationLeavePayload) -> None
             error=False,
         )
     except Exception as log_error:
+        pass
+
+
 @sio.event  # type: ignore
 async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -97,6 +100,9 @@ async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/leave", response_model=dict[str, bool])
 async def simulation_leave_api(request: SimulationLeavePayload) -> dict[str, bool]:

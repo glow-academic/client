@@ -50,15 +50,15 @@ async def disconnect(sid: str) -> None:
         # Remove from socket ownership using Redis
         await remove_socket_owner(profile_to_cleanup)
         # Update database to mark profile as inactive
-            try:
-                from datetime import UTC, datetime
+        try:
+            from datetime import UTC, datetime
 
-                async with get_db_connection() as conn:
-                    async with conn.transaction():
-                        params = UpdateProfileToInactiveSqlParams(
-                            profile_id=uuid.UUID(profile_to_cleanup),
-                            last_active=datetime.now(UTC).isoformat(),
-                        )
+            async with get_db_connection() as conn:
+                async with conn.transaction():
+                    params = UpdateProfileToInactiveSqlParams(
+                        profile_id=uuid.UUID(profile_to_cleanup),
+                        last_active=datetime.now(UTC).isoformat(),
+                    )
                     await cast(
                         UpdateProfileToInactiveSqlRow,
                         execute_sql_typed(

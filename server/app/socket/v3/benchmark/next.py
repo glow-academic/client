@@ -171,6 +171,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                         # Note: Completion is handled asynchronously via event listeners
                         # The tool's eval.py will emit {tool_name}_eval_complete when done
                     else:
+                        pass
             # Note: Stopping condition logic removed - tools execute sequentially
 
             # Execute agents (if not stopped)
@@ -211,6 +212,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                         # Note: Completion is handled asynchronously via event listeners
                         # The agent's eval.py will emit {agent_name}_eval_complete when done
                     else:
+                        pass
             # After agents, emit benchmark_end to complete the test
             # Note: Cycle counting and infinite mode logic removed
             await emit_to_internal(
@@ -238,6 +240,10 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             )
 
     except Exception as e:
+        await benchmark_next_error(
+            BenchmarkNextErrorPayload(success=False, message=str(e)),
+            room=sid,
+        )
 
 
 @internal_sio.on("benchmark_next")  # type: ignore
@@ -248,6 +254,9 @@ async def benchmark_next_internal(data: dict[str, Any]) -> None:
         sid = data.get("sid", "internal")
         await _benchmark_next_impl(sid, validated)
     except ValidationError as e:
+        pass
+
+
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/next", response_model=dict[str, bool])
 async def benchmark_next_api(request: BenchmarkNextPayload) -> dict[str, bool]:

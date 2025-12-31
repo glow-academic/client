@@ -817,6 +817,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 try:
                     key_id_uuid = uuid.UUID(key_id_row["key_id"])
                 except (ValueError, TypeError):
+                    pass
             # Get or create run for this chat
             sql_get_or_create_run = load_sql(
                 "app/sql/v3/simulations/get_or_create_run_for_chat.sql"

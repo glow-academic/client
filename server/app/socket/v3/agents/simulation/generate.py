@@ -915,58 +915,33 @@ Tool Usage Instructions:
 
                                     # Emit completion to complete handler
                                     await internal_sio.emit(
-                                            "simulation_text_complete",
-                                            {
-                                                "sid": sid,
-                                                "type": "tool_call_complete",
-                                                "chat_id": chat_id_str,
-                                                "run_id": str(run_id_uuid),
-                                                "tool_call_id": tool_call_id,
-                                                "call_id": call_id or tool_call_id,
-                                                "tool_name": tool_call_state["name"],
-                                                "final_message": final_message,
-                                                "final_persona": final_persona,
-                                                "arguments_raw": tool_call_state[
-                                                    "arguments_raw"
-                                                ],
-                                            },
-                                        )
+                                        "simulation_text_complete",
+                                        {
+                                            "sid": sid,
+                                            "type": "tool_call_complete",
+                                            "chat_id": chat_id_str,
+                                            "run_id": str(run_id_uuid),
+                                            "tool_call_id": tool_call_id,
+                                            "call_id": call_id or tool_call_id,
+                                            "tool_name": tool_call_state["name"],
+                                            "final_message": final_message,
+                                            "final_persona": final_persona,
+                                            "arguments_raw": tool_call_state[
+                                                "arguments_raw"
+                                            ],
+                                        },
+                                    )
 
-                                        completed_tool_messages.append(
-                                            {
-                                                "id": tool_call_state.get(
-                                                    "db_message_id"
-                                                ),
-                                                "content": final_message,
-                                            }
-                                        )
+                                    completed_tool_messages.append(
+                                        {
+                                            "id": tool_call_state.get(
+                                                "db_message_id"
+                                            ),
+                                            "content": final_message,
+                                        }
+                                    )
 
-                                        del tool_calls_dict[chat_id_str][tool_call_id]
-
-                                    except json.JSONDecodeError as e:
-                                        final_message = tool_call_state[
-                                            "message_so_far"
-                                        ]
-                                        await internal_sio.emit(
-                                            "simulation_text_complete",
-                                            {
-                                                "sid": sid,
-                                                "type": "tool_call_complete",
-                                                "chat_id": chat_id_str,
-                                                "run_id": str(run_id_uuid),
-                                                "tool_call_id": tool_call_id,
-                                                "call_id": call_id or tool_call_id,
-                                                "tool_name": tool_call_state["name"],
-                                                "final_message": final_message,
-                                                "final_persona": tool_call_state[
-                                                    "persona_so_far"
-                                                ],
-                                                "arguments_raw": tool_call_state[
-                                                    "arguments_raw"
-                                                ],
-                                            },
-                                        )
-                                        del tool_calls_dict[chat_id_str][tool_call_id]
+                                    del tool_calls_dict[chat_id_str][tool_call_id]
 
             except BaseException as stream_error:
                 if isinstance(
@@ -1042,6 +1017,8 @@ Tool Usage Instructions:
                                             )
                                     except Exception:
                                         pass
+                    except Exception:
+                        pass
                 # Clean up tool call states
                 if chat_id_str in tool_calls_dict:
                     del tool_calls_dict[chat_id_str]

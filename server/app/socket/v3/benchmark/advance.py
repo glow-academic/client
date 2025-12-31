@@ -134,6 +134,7 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                     error=False,
                 )
             except Exception as log_error:
+                pass
     except Exception as e:
         await benchmark_advance_error(
             BenchmarkAdvanceErrorPayload(success=False, message=str(e)),
@@ -150,6 +151,9 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 @internal_sio.on("benchmark_advance")  # type: ignore
 async def benchmark_advance_internal(data: dict[str, Any]) -> None:
     """Handle benchmark_advance event from internal bus (server-to-server)."""

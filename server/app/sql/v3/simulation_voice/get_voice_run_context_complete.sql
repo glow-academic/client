@@ -220,7 +220,7 @@ documents_data AS (
         s.id as scenario_id,
         COALESCE(
             ARRAY_AGG(
-                (d.id::text, d.name, d.url, d.type, d.created_at)::types.i_get_voice_run_context_v3_document
+                (d.id::text, d.name, COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), d.created_at)::types.i_get_voice_run_context_v3_document
                 ORDER BY d.created_at
             ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true AND d.active = true),
             ARRAY[]::types.i_get_voice_run_context_v3_document[]
@@ -232,6 +232,8 @@ documents_data AS (
     INNER JOIN scenarios s ON s.id = sc.scenario_id
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
     LEFT JOIN documents d ON d.id = sd.document_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     GROUP BY s.id
 )
 SELECT 
@@ -239,58 +241,54 @@ SELECT
     sc.id as chat_id,
     sc.title as chat_title,
     sc.created_at,
-    sc.trace_id,
+    COALESCE(g.trace_id, '') as trace_id,
     -- Attempt data
     sa.id as attempt_id,
     sa.simulation_id,
     -- Scenario data
     s.id as scenario_id,
-    s.problem_statement,
+    COALESCE(ps.problem_statement, '') as problem_statement,
     (SELECT department_id FROM resolved_dept) as department_id,
     -- Persona data (text fields - kept for compatibility)
-    p.id as persona_id,
-    p.name as persona_name,
-    p.system_prompt,
-    p.temperature,
-    p.reasoning,
-    -- Voice persona fields (preferred for voice mode)
-    p.voice_system_prompt,
-    p.voice_temperature,
-    p.voice_reasoning,
-    -- Model data (text fields - kept for compatibility)
-    m.id as model_id,
-    m.name as model_name,
-    m.custom_model,
-    -- Voice model fields (preferred for voice mode)
-    vm.id as voice_model_id,
-    vm.name as voice_model_name,
-    vm.custom_model as voice_custom_model,
-    -- Provider data (text fields - kept for compatibility)
-    pr.id as provider_id,
-    pr.name as provider_name,
-    pr.base_url,
-    -- Voice provider fields (preferred for voice mode)
-    vpr.id as voice_provider_id,
-    vpr.name as voice_provider,
-    vpr.base_url as voice_base_url,
+    -- Get persona from scenario_personas (chats don't have persona_id directly)
+    (SELECT p_persona.id FROM scenario_personas sp 
+     JOIN personas p_persona ON p_persona.id = sp.persona_id 
+     WHERE sp.scenario_id = s.id AND sp.active = true AND p_persona.active = true 
+     LIMIT 1) as persona_id,
+    (SELECT p_persona.name FROM scenario_personas sp 
+     JOIN personas p_persona ON p_persona.id = sp.persona_id 
+     WHERE sp.scenario_id = s.id AND sp.active = true AND p_persona.active = true 
+     LIMIT 1) as persona_name,
+    -- Persona fields not available directly from personas table (return NULL for compatibility)
+    NULL::text as system_prompt,
+    NULL::float as temperature,
+    NULL::text as reasoning,
+    -- Voice persona fields (preferred for voice mode) - not available from personas table
+    NULL::text as voice_system_prompt,
+    NULL::float as voice_temperature,
+    NULL::text as voice_reasoning,
+    -- Model data (text fields - kept for compatibility) - personas table doesn't have model_id anymore
+    NULL::uuid as model_id,
+    NULL::text as model_name,
+    NULL::text as custom_model,
+    -- Voice model fields (preferred for voice mode) - personas table doesn't have voice_model_id anymore
+    NULL::uuid as voice_model_id,
+    NULL::text as voice_model_name,
+    NULL::text as voice_custom_model,
+    -- Provider data (text fields - kept for compatibility) - not available from personas
+    NULL::uuid as provider_id,
+    NULL::text as provider_name,
+    NULL::text as base_url,
+    -- Voice provider fields (preferred for voice mode) - not available from personas
+    NULL::uuid as voice_provider_id,
+    NULL::text as voice_provider,
+    NULL::text as voice_base_url,
     -- Settings data (for API keys)
     st.id as settings_id,
-    -- API keys (text - kept for compatibility)
-    (SELECT k.value FROM keys k 
-     JOIN setting_provider_keys spk ON spk.key_id = k.id 
-     WHERE spk.settings_id = st.id 
-       AND spk.provider_id = pr.id 
-       AND spk.active = true 
-       AND k.active = true 
-     LIMIT 1) as api_key,
-    -- Voice API keys (preferred for voice mode)
-    (SELECT k.value FROM keys k 
-     JOIN setting_provider_keys spk ON spk.key_id = k.id 
-     WHERE spk.settings_id = st.id 
-       AND spk.provider_id = vpr.id 
-       AND spk.active = true 
-       AND k.active = true 
-     LIMIT 1) as voice_api_key,
+    -- API keys (text - kept for compatibility) - not available from personas
+    NULL::text as api_key,
+    -- Voice API keys (preferred for voice mode) - not available from personas
+    NULL::text as voice_api_key,
     -- Profile data
     pf.profile_id,
     -- Agent data (text - kept for compatibility)
@@ -299,22 +297,22 @@ SELECT
     sim.simulation_voice_agent_id as voice_agent_id,
     -- Documents data (composite type array)
     COALESCE(dd.documents, ARRAY[]::types.i_get_voice_run_context_v3_document[]) as documents
-FROM params p
-JOIN chats sc ON sc.id = p.chat_id
+FROM params p_params
+JOIN chats sc ON sc.id = p_params.chat_id
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios s ON s.id = sc.scenario_id
 INNER JOIN simulations sim ON sim.id = sa.simulation_id
-LEFT JOIN personas p ON p.id = sc.persona_id AND p.active = true
-LEFT JOIN models m ON m.id = p.model_id AND m.active = true
-LEFT JOIN models vm ON vm.id = p.voice_model_id AND vm.active = true
-LEFT JOIN providers pr ON pr.id = m.provider_id AND pr.active = true
-LEFT JOIN providers vpr ON vpr.id = vm.provider_id AND vpr.active = true
+LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
+LEFT JOIN groups g ON g.id = cg.group_id
 LEFT JOIN active_settings ast ON true
 LEFT JOIN settings st ON st.id = ast.settings_id
 LEFT JOIN profile_from_attempt pf ON true
 LEFT JOIN documents_data dd ON dd.scenario_id = s.id
-WHERE sc.id = p.chat_id
+WHERE sc.id = p_params.chat_id
+LIMIT 1
 $$;
 
 COMMIT;

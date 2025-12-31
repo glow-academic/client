@@ -20,25 +20,27 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
+-- 2) Drop types
 -- Drop all types matching prefix pattern to handle type additions/removals
--- If any other object depends on them, this will ERROR and stop the migration (good)
+-- Also handle truncated type names (PostgreSQL identifier limit is 63 chars)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
+    -- Drop all types matching prefix pattern (includes truncated name)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
         WHERE typname LIKE 'i_get_scenario_regeneration_run_context_and_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 
 -- 3) Recreate types for composite structures
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_document AS (
+-- Use shortened name (62 chars) to avoid PostgreSQL 63-char identifier limit issues
+CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc AS (
     id text,
     name text,
     file_path text,
@@ -89,7 +91,7 @@ RETURNS TABLE (
     persona_id text,
     persona_name text,
     persona_description text,
-    documents types.i_get_scenario_regeneration_run_context_and_create_run_v3_document[],
+    documents types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[],
     document_templates types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template[],
     parameter_items types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item[],
     profile_id text,
@@ -262,9 +264,9 @@ context_data AS (
         -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, t.args)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document
+                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, t.args)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc
                 ORDER BY array_position(p.document_ids, d.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document[]
+            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[]
             FROM documents d
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
@@ -273,7 +275,7 @@ context_data AS (
             LEFT JOIN uploads template_u ON template_u.id = t.upload_id
             WHERE d.id = ANY(p.document_ids)
             ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document[]
+            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[]
         ) as documents,
         
         -- Document templates data (aggregated as composite type array for template documents)

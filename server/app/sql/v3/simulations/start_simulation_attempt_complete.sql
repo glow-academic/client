@@ -19,7 +19,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
+-- 2) Drop types WITH CASCADE (to handle dependent composite types)
 DO $$
 DECLARE
     r RECORD;
@@ -30,7 +30,7 @@ BEGIN
         WHERE typname LIKE 'q_start_simulation_attempt_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 
@@ -128,7 +128,12 @@ simulation_data AS (
         s.practice_simulation,
         s.simulation_text_agent_id,
         s.simulation_voice_agent_id,
-        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id
+        (SELECT rga.rubric_id FROM simulation_scenarios ss 
+         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+         WHERE ss.simulation_id = s.id AND ss.active = true 
+         ORDER BY ss.position 
+         LIMIT 1) as rubric_id
     FROM simulations s
     WHERE s.id = simulation_id
 ),

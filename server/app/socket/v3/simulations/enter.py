@@ -113,6 +113,7 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                         error=False,
                     )
                 except Exception as log_error:
+                    pass
             else:
                 await simulation_enter_error(
                     SimulationEnterErrorPayload(
@@ -139,6 +140,9 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 @sio.event  # type: ignore
 async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -163,6 +167,9 @@ async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/enter", response_model=dict[str, bool])
 async def simulation_enter_api(request: SimulationEnterPayload) -> dict[str, bool]:

@@ -260,6 +260,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
+                pass
     except Exception as e:
         await benchmark_end_error(
             BenchmarkEndErrorPayload(success=False, message=str(e)),

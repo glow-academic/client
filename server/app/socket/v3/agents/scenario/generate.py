@@ -1053,208 +1053,208 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     pass
                 return
 
-                # Get all context data AND create run in single atomic transaction
-                # This validates rate limits and creates run atomically
-                # Pattern: All AI operations use atomic context+run creation SQL files
-                # See WEBSOCKET_STANDARDS.md for details
-                # Scenario Agent ID should be provided in payload (UI filters and selects appropriate agent)
-                scenario_agent_id = (
-                    uuid.UUID(data.scenarioAgentId)
-                    if hasattr(data, "scenarioAgentId") and data.scenarioAgentId
-                    else None
+            # Get all context data AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
+            # Pattern: All AI operations use atomic context+run creation SQL files
+            # See WEBSOCKET_STANDARDS.md for details
+            # Scenario Agent ID should be provided in payload (UI filters and selects appropriate agent)
+            scenario_agent_id = (
+                uuid.UUID(data.scenarioAgentId)
+                if hasattr(data, "scenarioAgentId") and data.scenarioAgentId
+                else None
+            )
+
+            if not scenario_agent_id:
+                await scenario_generation_error(
+                    ScenarioGenerationErrorPayload(
+                        success=False,
+                        message="Scenario Agent ID is required for scenario generation",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
                 )
+                return
 
-                if not scenario_agent_id:
-                    await scenario_generation_error(
-                        ScenarioGenerationErrorPayload(
-                            success=False,
-                            message="Scenario Agent ID is required for scenario generation",
-                            trace_id=trace_id,
-                        ),
-                        room=sid,
-                    )
-                    return
-
-                # Extract image agent ID (required when images are enabled)
-                image_agent_id = None
-                if hasattr(data, "imageAgentId") and data.imageAgentId:
-                    try:
-                        image_agent_id = uuid.UUID(data.imageAgentId)
-                    except (ValueError, TypeError):
-                        await scenario_generation_error(
-                            ScenarioGenerationErrorPayload(
-                                success=False,
-                                message=f"Invalid imageAgentId provided: {data.imageAgentId}",
-                                trace_id=trace_id,
-                            ),
-                            room=sid,
-                        )
-                        return
-
+            # Extract image agent ID (required when images are enabled)
+            image_agent_id = None
+            if hasattr(data, "imageAgentId") and data.imageAgentId:
                 try:
-                    # Get context AND create run in single atomic transaction
-                    # This validates rate limits and creates run atomically
-                    # Use execute_sql_typed() - auto-detects function
-                    params = GetScenarioRunContextAndCreateRunSqlParams(
-                        department_id=department_id,
-                        profile_id=profile_id,  # From sid lookup
-                        agent_id=scenario_agent_id,
-                        group_id=None,  # NULL for new group
-                        persona_id=persona_id,
-                        document_ids=document_ids if document_ids else None,
-                        parameter_item_ids=field_ids if field_ids else None,
-                    )
-                    result = cast(
-                        GetScenarioRunContextAndCreateRunSqlRow,
-                        await execute_sql_typed(conn, SQL_PATH, params=params),
-                    )
-                except Exception as e:
-                    error_msg = str(e)
-                    # Check if it's a rate limit error from SQL (PostgreSQL exception)
-                    if (
-                        isinstance(e, asyncpg.PostgresError)
-                        and "RATE_LIMIT_EXCEEDED" in error_msg
-                    ):
-                        # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
-                        user_msg = (
-                            error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                            if "RATE_LIMIT_EXCEEDED: " in error_msg
-                            else error_msg
-                        )
-                        await scenario_generation_error(
-                            ScenarioGenerationErrorPayload(
-                                success=False,
-                                message=user_msg,
-                                trace_id=trace_id,
-                            ),
-                            room=sid,
-                        )
-                        return
+                    image_agent_id = uuid.UUID(data.imageAgentId)
+                except (ValueError, TypeError):
                     await scenario_generation_error(
                         ScenarioGenerationErrorPayload(
                             success=False,
-                            message=f"Failed to initialize scenario generation: {str(e)}",
+                            message=f"Invalid imageAgentId provided: {data.imageAgentId}",
                             trace_id=trace_id,
                         ),
                         room=sid,
                     )
                     return
 
-                if not result:
+            try:
+                # Get context AND create run in single atomic transaction
+                # This validates rate limits and creates run atomically
+                # Use execute_sql_typed() - auto-detects function
+                params = GetScenarioRunContextAndCreateRunSqlParams(
+                    department_id=department_id,
+                    profile_id=profile_id,  # From sid lookup
+                    agent_id=scenario_agent_id,
+                    group_id=None,  # NULL for new group
+                    persona_id=persona_id,
+                    document_ids=document_ids if document_ids else None,
+                    parameter_item_ids=field_ids if field_ids else None,
+                )
+                result = cast(
+                    GetScenarioRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
+            except Exception as e:
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
                     await scenario_generation_error(
                         ScenarioGenerationErrorPayload(
                             success=False,
-                            message=f"No scenario agent configured for department {data.departmentId}",
+                            message=user_msg,
                             trace_id=trace_id,
                         ),
                         room=sid,
                     )
                     return
+                await scenario_generation_error(
+                    ScenarioGenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to initialize scenario generation: {str(e)}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
 
-                # result.group_id and result.trace_id come from groups table
-                group_id = result.group_id
-                if not trace_id:
-                    trace_id = result.trace_id  # From groups.trace_id
+            if not result:
+                await scenario_generation_error(
+                    ScenarioGenerationErrorPayload(
+                        success=False,
+                        message=f"No scenario agent configured for department {data.departmentId}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
 
-                # Documents, parameter_items, and document_templates are now composite type arrays
-                # No JSON parsing needed - they're already Pydantic models
-                documents = result.documents if result.documents else []
-                parameter_items = result.parameter_items if result.parameter_items else []
-                document_templates = result.document_templates if result.document_templates else []
+            # result.group_id and result.trace_id come from groups table
+            group_id = result.group_id
+            if not trace_id:
+                trace_id = result.trace_id  # From groups.trace_id
 
-                agent_role = result.agent_role or "scenario"
+            # Documents, parameter_items, and document_templates are now composite type arrays
+            # No JSON parsing needed - they're already Pydantic models
+            documents = result.documents if result.documents else []
+            parameter_items = result.parameter_items if result.parameter_items else []
+            document_templates = result.document_templates if result.document_templates else []
 
-                # Extract run_id from result (created in same transaction)
-                model_run_id = uuid.UUID(result.run_id)
+            agent_role = result.agent_role or "scenario"
 
-                # Load agent tools from database
-                agent_id_uuid = uuid.UUID(result.agent_id)
-                sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
-                rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
-                agent_tools_config = [dict(row) for row in rows]
-                # Create mapping of tool name -> tool config for quick lookup
-                tool_config_map: dict[str, dict[str, Any]] = {
-                    tool_config["name"]: tool_config for tool_config in agent_tools_config
+            # Extract run_id from result (created in same transaction)
+            model_run_id = uuid.UUID(result.run_id)
+
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(result.agent_id)
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
+            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+            agent_tools_config = [dict(row) for row in rows]
+            # Create mapping of tool name -> tool config for quick lookup
+            tool_config_map: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
+            # Convert composite types to dicts for compatibility with existing code
+            context = {
+                "agent_id": result.agent_id,
+                "agent_name": result.agent_name,
+                "agent_role": agent_role,
+                "system_prompt": result.system_prompt,
+                "temperature": float(result.temperature)
+                if result.temperature is not None
+                else 0.0,
+                "reasoning": result.reasoning,
+                "model_id": result.model_id,
+                "model_name": result.model_name,
+                "custom_model": result.custom_model,
+                "provider_id": result.provider_id,
+                "provider_name": result.provider_name,
+                "base_url": result.base_url,
+                "api_key": result.api_key,
+                "persona": {
+                    "id": result.persona_id,
+                    "name": result.persona_name,
+                    "description": result.persona_description,
                 }
-
-                # Convert composite types to dicts for compatibility with existing code
-                context = {
-                    "agent_id": result.agent_id,
-                    "agent_name": result.agent_name,
-                    "agent_role": agent_role,
-                    "system_prompt": result.system_prompt,
-                    "temperature": float(result.temperature)
-                    if result.temperature is not None
-                    else 0.0,
-                    "reasoning": result.reasoning,
-                    "model_id": result.model_id,
-                    "model_name": result.model_name,
-                    "custom_model": result.custom_model,
-                    "provider_id": result.provider_id,
-                    "provider_name": result.provider_name,
-                    "base_url": result.base_url,
-                    "api_key": result.api_key,
-                    "persona": {
-                        "id": result.persona_id,
-                        "name": result.persona_name,
-                        "description": result.persona_description,
+                if result.persona_id
+                else None,
+                "documents": [
+                    {
+                        "id": doc.id,
+                        "name": doc.name,
+                        "file_path": doc.file_path,
+                        "mime_type": doc.mime_type,
+                        "template": doc.template,
+                        "template_args": doc.template_args,
                     }
-                    if result.persona_id
-                    else None,
-                    "documents": [
-                        {
-                            "id": doc.id,
-                            "name": doc.name,
-                            "file_path": doc.file_path,
-                            "mime_type": doc.mime_type,
-                            "template": doc.template,
-                            "template_args": doc.template_args,
-                        }
-                        for doc in documents
-                    ],
-                    "parameter_items": [
-                        {
-                            "item_name": item.item_name,
-                            "item_description": item.item_description,
-                            "param_name": item.param_name,
-                            "param_description": item.param_description,
-                        }
-                        for item in parameter_items
-                    ],
-                    "document_templates": [
-                        {
-                            "document_id": dt.document_id,
-                            "document_name": dt.document_name,
-                            "document_description": dt.document_description,
-                            "classify_agent_id": dt.classify_agent_id,
-                            "document_agent_id": dt.document_agent_id,
-                            "template_args": dt.template_args,
-                            "template_upload_id": dt.template_upload_id,
-                            "template_file_path": dt.template_file_path,
-                        }
-                        for dt in document_templates
-                    ],
-                    "req_per_day": result.req_per_day,
-                    "runs_today_count": result.runs_today_count,
-                    "earliest_run_created_at": result.earliest_run_created_at,
-                    # Theme tokens for Jinja2 rendering
-                    "theme_primitives": {
-                        "primary": result.primary_color or "#000000",
-                        "accent": result.accent or "#000000",
-                        "background": result.background or "#ffffff",
-                        "surface": result.surface or "#ffffff",
-                        "success": result.success or "#10b981",
-                        "warning": result.warning or "#f59e0b",
-                        "error": result.error or "#ef4444",
-                        "sidebarBackground": result.sidebar_background or "#ffffff",
-                        "sidebarPrimary": result.sidebar_primary or "#000000",
-                        "chart1": result.chart1 or "#8884d8",
-                        "chart2": result.chart2 or "#82ca9d",
-                        "chart3": result.chart3 or "#ffc658",
-                        "chart4": result.chart4 or "#ff7300",
-                        "chart5": result.chart5 or "#0088fe",
-                    },
-                }
+                    for doc in documents
+                ],
+                "parameter_items": [
+                    {
+                        "item_name": item.item_name,
+                        "item_description": item.item_description,
+                        "param_name": item.param_name,
+                        "param_description": item.param_description,
+                    }
+                    for item in parameter_items
+                ],
+                "document_templates": [
+                    {
+                        "document_id": dt.document_id,
+                        "document_name": dt.document_name,
+                        "document_description": dt.document_description,
+                        "classify_agent_id": dt.classify_agent_id,
+                        "document_agent_id": dt.document_agent_id,
+                        "template_args": dt.template_args,
+                        "template_upload_id": dt.template_upload_id,
+                        "template_file_path": dt.template_file_path,
+                    }
+                    for dt in document_templates
+                ],
+                "req_per_day": result.req_per_day,
+                "runs_today_count": result.runs_today_count,
+                "earliest_run_created_at": result.earliest_run_created_at,
+                # Theme tokens for Jinja2 rendering
+                "theme_primitives": {
+                    "primary": result.primary_color or "#000000",
+                    "accent": result.accent or "#000000",
+                    "background": result.background or "#ffffff",
+                    "surface": result.surface or "#ffffff",
+                    "success": result.success or "#10b981",
+                    "warning": result.warning or "#f59e0b",
+                    "error": result.error or "#ef4444",
+                    "sidebarBackground": result.sidebar_background or "#ffffff",
+                    "sidebarPrimary": result.sidebar_primary or "#000000",
+                    "chart1": result.chart1 or "#8884d8",
+                    "chart2": result.chart2 or "#82ca9d",
+                    "chart3": result.chart3 or "#ffc658",
+                    "chart4": result.chart4 or "#ff7300",
+                    "chart5": result.chart5 or "#0088fe",
+                },
+            }
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:

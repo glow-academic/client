@@ -204,12 +204,12 @@ link_message_to_run AS (
 ),
 -- Link audio upload to message if upload_id provided
 link_audio_if_provided AS (
-    INSERT INTO message_uploads (message_id, upload_id, active, created_at, updated_at)
-    SELECT um.message_id, p.upload_id, true, NOW(), NOW()
+    INSERT INTO message_audio (message_id, upload_id, created_at, updated_at)
+    SELECT um.message_id, p.upload_id, NOW(), NOW()
     FROM upserted_message um
     CROSS JOIN params p
     WHERE p.upload_id IS NOT NULL
-    ON CONFLICT (message_id, upload_id) DO UPDATE SET active = true, updated_at = NOW()
+    ON CONFLICT (message_id, upload_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Create branch from latest message (if exists)
 latest_message_for_branch AS (

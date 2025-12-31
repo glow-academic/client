@@ -113,6 +113,7 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
                         error=False,
                     )
                 except Exception as log_error:
+                    pass
             else:
                 await benchmark_enter_error(
                     BenchmarkEnterErrorPayload(

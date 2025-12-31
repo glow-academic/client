@@ -149,6 +149,7 @@ async def _benchmark_start_impl(
                     error=False,
                 )
             except Exception as log_error:
+                pass
     except Exception as e:
         await benchmark_start_error(
             BenchmarkStartErrorPayload(

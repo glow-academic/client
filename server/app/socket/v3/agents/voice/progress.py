@@ -922,7 +922,9 @@ async def _simulation_voice_assistant_audio_link_impl(
                 result_row = dict(result_row_raw) if result_row_raw else None
 
             if result_row and result_row.get("upload_linked"):
+                pass
             else:
+                pass
     except Exception as e:
         await voice_assistant_audio_link_error(
             VoiceProgressErrorPayload(success=False, message=str(e)), room=sid

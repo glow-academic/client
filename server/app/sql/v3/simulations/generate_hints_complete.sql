@@ -83,7 +83,10 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH target_message AS (
+WITH params AS (
+    SELECT message_id, chat_id, department_id, profile_id
+),
+target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, mc.content, m.created_at
     FROM messages m
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
@@ -93,7 +96,8 @@ WITH target_message AS (
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
     JOIN chats c ON c.id = cg.chat_id
-    WHERE m.id = message_id AND c.id = chat_id
+    CROSS JOIN params p
+    WHERE m.id = p.message_id AND c.id = p.chat_id
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, g.trace_id, sc.title
@@ -264,7 +268,7 @@ context_data AS (
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
         p.id::text as provider_id,
-        profile_id::text as profile_id,
+        COALESCE(pi.profile_id, p_params.profile_id)::uuid as profile_id,
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at,
@@ -284,8 +288,9 @@ context_data AS (
     CROSS JOIN best_agent ba
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
+    CROSS JOIN params p_params
     INNER JOIN agents a ON a.id = ba.agent_id
-    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = department_id AND adp_prompt.active = true
+    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p_params.department_id AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id

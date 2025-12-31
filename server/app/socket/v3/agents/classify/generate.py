@@ -368,8 +368,6 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                         classification_results[item_dict["id"]].extend(
                             valid_file_numbers
                         )
-                            f"✓ Classified {len(valid_file_numbers)} files for {item_dict['name']}"
-                        )
                         return f"Classified {len(valid_file_numbers)} file(s) for {item_dict['name']}"
 
                     # Set unique function name

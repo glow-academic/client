@@ -91,7 +91,10 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH scenario_dept AS (
+WITH params AS (
+    SELECT chat_id
+),
+scenario_dept AS (
     SELECT 
         s.id as scenario_id,
         (SELECT sd.department_id FROM scenario_departments sd 
@@ -100,7 +103,8 @@ WITH scenario_dept AS (
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios s ON s.id = sc.scenario_id
-    WHERE sc.id = chat_id
+    CROSS JOIN params p
+    WHERE sc.id = p.chat_id
 ),
 profile_dept AS (
     -- Get first department from profile's accessible departments
@@ -109,7 +113,8 @@ profile_dept AS (
     JOIN profile_departments pd ON pd.department_id = d.id
     JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
-    WHERE ac.chat_id = chat_id 
+    CROSS JOIN params p
+    WHERE ac.chat_id = p.chat_id 
       AND ap.active = true 
       AND d.active = true
     LIMIT 1
@@ -133,11 +138,12 @@ profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles p
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    WHERE p.id = (SELECT ap.profile_id FROM attempt_profiles ap 
+    FROM profiles prof
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    CROSS JOIN params p
+    WHERE prof.id = (SELECT ap.profile_id FROM attempt_profiles ap 
                   JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
-                  WHERE ac.chat_id = chat_id AND ap.active = true LIMIT 1)
+                  WHERE ac.chat_id = p.chat_id AND ap.active = true LIMIT 1)
 ),
 runs_today AS (
     -- Count model runs for this profile since start of day
@@ -146,9 +152,10 @@ runs_today AS (
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
+    CROSS JOIN params p
     WHERE mrp.profile_id = (SELECT ap.profile_id FROM attempt_profiles ap 
                             JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
-                            WHERE ac.chat_id = chat_id AND ap.active = true LIMIT 1)
+                            WHERE ac.chat_id = p.chat_id AND ap.active = true LIMIT 1)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -157,7 +164,8 @@ profile_from_attempt AS (
     SELECT ap.profile_id
     FROM attempt_profiles ap 
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
-    WHERE ac.chat_id = chat_id AND ap.active = true
+    CROSS JOIN params p
+    WHERE ac.chat_id = p.chat_id AND ap.active = true
     LIMIT 1
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys)
@@ -236,7 +244,7 @@ active_settings AS (
 -- Document data for composite type aggregation
 document_data AS (
     SELECT 
-        sc.id as chat_id,
+        sc.id::text as chat_id,
         d.id as document_id,
         d.name,
         u.file_path,
@@ -249,7 +257,8 @@ document_data AS (
     LEFT JOIN documents d ON d.id = sd.document_id
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
-    WHERE sc.id = chat_id
+    CROSS JOIN params p
+    WHERE sc.id = p.chat_id
 ),
 context_data AS (
     SELECT 
@@ -387,7 +396,8 @@ context_data AS (
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     CROSS JOIN resolved_dept
-    WHERE sc.id = chat_id
+    CROSS JOIN params p_params
+    WHERE sc.id = p_params.chat_id
     GROUP BY sc.id, sc.title, g.trace_id,
              sa.id, sa.simulation_id,
              s.id, ps.problem_statement,
@@ -411,7 +421,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (dd.document_id::text, dd.name, dd.file_path, dd.mime_type)::types.q_get_simulation_run_context_v3_document
             ORDER BY dd.document_id
-        ) FROM document_data dd WHERE dd.chat_id = cd.chat_id::uuid),
+        ) FROM document_data dd WHERE dd.chat_id::text = cd.chat_id),
         '{}'::types.q_get_simulation_run_context_v3_document[]
     ) as documents
 FROM context_data cd

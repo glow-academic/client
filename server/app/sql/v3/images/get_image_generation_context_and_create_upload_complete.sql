@@ -241,24 +241,6 @@ link_profile AS (
     CROSS JOIN context_data cd
     WHERE cd.profile_id IS NOT NULL
     RETURNING run_id
-),
-link_department AS (
-    -- Link department to run (if department_id is provided)
-    INSERT INTO run_departments (run_id, department_id, active)
-    SELECT lp.run_id, cd.department_id, true
-    FROM link_profile lp
-    CROSS JOIN context_data cd
-    WHERE cd.department_id IS NOT NULL
-    RETURNING run_id
-),
-link_image AS (
-    -- Link image to run for tracking
-    INSERT INTO image_runs (image_id, run_id, created_at, updated_at)
-    SELECT p.image_id, cr.id, NOW(), NOW()
-    FROM params p
-    CROSS JOIN create_run cr
-    ON CONFLICT (image_id, run_id) DO NOTHING
-    RETURNING run_id
 )
 SELECT
     -- Context data

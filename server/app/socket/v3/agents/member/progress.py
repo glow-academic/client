@@ -176,6 +176,7 @@ async def _member_progress_impl(
                     error=False,
                 )
             except Exception as log_error:
+                pass
             # Trigger appropriate generate event based on audio flag (voice_mode)
             if audio:
                 # Voice mode: trigger simulation_voice_generate

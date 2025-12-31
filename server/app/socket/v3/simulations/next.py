@@ -241,6 +241,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
+                pass
     except Exception as e:
         await simulation_next_error(
             SimulationNextErrorPayload(success=False, message=str(e)),
@@ -257,6 +258,9 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 @internal_sio.on("simulation_next")  # type: ignore
 async def simulation_next_internal(data: dict[str, Any]) -> None:
     """Handle simulation_next event from internal bus (server-to-server)."""

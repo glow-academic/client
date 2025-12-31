@@ -53,6 +53,7 @@ async def _benchmark_leave_impl(sid: str, data: BenchmarkLeavePayload) -> None:
                 error=False,
             )
         except Exception as log_error:
+            pass
     else:
         await benchmark_leave_error(
             BenchmarkLeaveErrorPayload(

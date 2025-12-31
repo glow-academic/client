@@ -64,6 +64,7 @@ async def _benchmark_join_impl(sid: str, data: BenchmarkJoinPayload) -> None:
                 error=False,
             )
         except Exception as log_error:
+            pass
     else:
         await benchmark_join_error(
             BenchmarkJoinErrorPayload(

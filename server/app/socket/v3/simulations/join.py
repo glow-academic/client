@@ -85,6 +85,9 @@ async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:
             error=False,
         )
     except Exception as log_error:
+        pass
+
+
 @sio.event  # type: ignore
 async def simulation_join(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -109,6 +112,9 @@ async def simulation_join(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/join", response_model=dict[str, bool])
 async def simulation_join_api(request: SimulationJoinPayload) -> dict[str, bool]:

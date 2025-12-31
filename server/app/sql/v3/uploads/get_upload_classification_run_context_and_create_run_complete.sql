@@ -9,8 +9,8 @@ DROP FUNCTION IF EXISTS socket_get_upload_classification_run_context_and_create_
 
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION socket_get_upload_classification_run_context_and_create_run_v3(
-    department_id uuid DEFAULT NULL,
-    profile_id uuid
+    profile_id uuid,
+    department_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     agent_id text,
@@ -222,15 +222,6 @@ link_profile AS (
     FROM link_model lm
     CROSS JOIN context_data cd
     WHERE cd.profile_id IS NOT NULL
-    RETURNING run_id
-),
-link_department AS (
-    -- Link department to run (if department_id is provided)
-    INSERT INTO run_departments (run_id, department_id, active)
-    SELECT lp.run_id, cd.department_id, true
-    FROM link_profile lp
-    CROSS JOIN context_data cd
-    WHERE cd.department_id IS NOT NULL
     RETURNING run_id
 )
 SELECT 

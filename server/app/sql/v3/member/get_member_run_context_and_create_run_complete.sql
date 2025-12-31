@@ -1,4 +1,4 @@
--- Get all data needed to run simulation agent AND create run in single atomic transaction
+-- Get all data needed to run member agent AND create run in single atomic transaction
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
@@ -13,10 +13,10 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'socket_get_simulation_run_context_and_create_run_v3'
+        WHERE proname = 'socket_get_member_run_context_and_create_run_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_simulation_run_context_and_create_run_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_member_run_context_and_create_run_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -30,7 +30,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'q_get_simulation_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'q_get_member_run_context_and_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -38,7 +38,7 @@ BEGIN
 END $$;
 
 -- 3) Recreate types for composite structures
-CREATE TYPE types.q_get_simulation_run_context_and_create_run_v3_document AS (
+CREATE TYPE types.q_get_member_run_context_and_create_run_v3_document AS (
     id text,
     name text,
     file_path text,
@@ -46,7 +46,7 @@ CREATE TYPE types.q_get_simulation_run_context_and_create_run_v3_document AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION socket_get_simulation_run_context_and_create_run_v3(
+CREATE OR REPLACE FUNCTION socket_get_member_run_context_and_create_run_v3(
     chat_id uuid,
     profile_id uuid,
     group_id uuid DEFAULT NULL
@@ -74,24 +74,13 @@ RETURNS TABLE (
     provider_id text,
     provider_name text,
     agent_id text,
-    voice_system_prompt text,
-    voice_temperature float,
-    voice_reasoning text,
-    voice_model_id text,
-    voice_model_name text,
-    voice_provider text,
-    voice_base_url text,
-    voice_api_key text,
-    voice_custom_model text,
-    voice_provider_name text,
-    voice_agent_id text,
     image_input_enabled boolean,
     copy_paste_allowed boolean,
     profile_id text,
     req_per_day integer,
     runs_today_count bigint,
     earliest_run_created_at timestamptz,
-    documents types.q_get_simulation_run_context_and_create_run_v3_document[],
+    documents types.q_get_member_run_context_and_create_run_v3_document[],
     run_id text,
     group_id uuid
 )
@@ -242,15 +231,14 @@ default_settings_with_keys AS (
 ),
 active_settings AS (
     -- Prefer department-specific with keys, then default with keys, then any with keys, then fallback
-    -- Only use department-specific/default settings if they have keys, otherwise prefer any settings with keys
     SELECT 
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings_with_keys),
             (SELECT settings_id FROM default_settings_with_keys),
-            (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
-            (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
-            (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
-            (SELECT id FROM settings WHERE active = true LIMIT 1)  -- Last resort
+            (SELECT settings_id FROM settings_with_keys LIMIT 1),
+            (SELECT settings_id FROM dept_specific_settings),
+            (SELECT settings_id FROM default_settings),
+            (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
 ),
 create_group_if_needed AS (
@@ -273,6 +261,14 @@ group_data AS (
             (SELECT cg.trace_id FROM create_group_if_needed cg)
         ) as trace_id
 ),
+-- Get member agent (role='member')
+member_agent AS (
+    SELECT a.id as agent_id
+    FROM agents a
+    WHERE a.role = 'member'::agent_role AND a.active = true
+    ORDER BY a.created_at ASC
+    LIMIT 1
+),
 context_data AS (
     -- Get all context data (agent, model, provider, persona, documents, etc.)
     SELECT 
@@ -290,11 +286,11 @@ context_data AS (
         (SELECT department_id::text FROM resolved_dept) as department_id,
         ps.problem_statement,
         
-        -- Persona data (via scenario_personas junction - first persona for orchestrator)
+        -- Persona data (via scenario_personas junction - first persona for student)
         p.id::text as persona_id,
         p.name as persona_name,
         
-        -- Text agent/model data (backward compatibility - existing fields)
+        -- Member agent/model data
         COALESCE(
             COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
             ''
@@ -309,23 +305,7 @@ context_data AS (
         CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
         NULL::text as provider_id,
         COALESCE(p_prov.value::text, '') as provider_name,
-        a.id::text as agent_id,
-        
-        -- Voice agent/model data (prefixed with voice_*)
-        COALESCE(
-            COALESCE(pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt),
-            ''
-        ) as voice_system_prompt,
-        COALESCE(mtl_voice.temperature, 0.0) as voice_temperature,
-        mrl_voice.reasoning_level as voice_reasoning,
-        m_voice.id::text as voice_model_id,
-        m_voice.value as voice_model_name,
-        COALESCE(p_voice.value::text, '') as voice_provider,
-        COALESCE(me_voice.base_url, '') as voice_base_url,
-        k_voice.key as voice_api_key,
-        CASE WHEN me_voice.base_url IS NOT NULL AND me_voice.base_url != '' THEN m_voice.value ELSE NULL END as voice_custom_model,
-        COALESCE(p_voice.value::text, '') as voice_provider_name,
-        a_voice.id::text as voice_agent_id,
+        ma.agent_id::text as agent_id,
         
         -- Scenario settings (flags moved from scenarios to simulation_scenarios)
         COALESCE(s.images_enabled, false) as image_input_enabled,
@@ -346,10 +326,9 @@ context_data AS (
     LEFT JOIN simulation_scenarios ss ON ss.simulation_id = sa.simulation_id AND ss.scenario_id = s.id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
-    INNER JOIN simulations sim ON sim.id = sa.simulation_id
     JOIN chat_groups cg ON cg.chat_id = sc.id
     JOIN groups g ON g.id = cg.group_id
-    -- Get first persona for orchestrator (ensures single row for orchestrator config)
+    -- Get first persona for student (ensures single row for member config)
     LEFT JOIN (
         SELECT DISTINCT ON (sp.scenario_id) 
             sp.scenario_id,
@@ -362,8 +341,9 @@ context_data AS (
     ) first_persona ON first_persona.scenario_id = s.id
     LEFT JOIN personas p ON p.id = first_persona.persona_id
 
-    -- Text agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN agents a ON a.id = sim.simulation_text_agent_id AND a.active = true
+    -- Member agent joins (use member agent instead of simulation agent)
+    CROSS JOIN member_agent ma
+    JOIN agents a ON a.id = ma.agent_id AND a.active = true
     LEFT JOIN models m ON m.id = a.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
@@ -383,28 +363,6 @@ context_data AS (
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-
-    -- Voice agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN agents a_voice ON a_voice.id = sim.simulation_voice_agent_id AND a_voice.active = true
-    LEFT JOIN models m_voice ON m_voice.id = a_voice.model_id
-    LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
-    LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id
-    LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
-    LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.id = arl_voice.model_reasoning_level_id AND mrl_voice.active = true AND mrl_voice.model_id = m_voice.id
-    LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id 
-        AND adp_prompt_voice.department_id = (SELECT department_id FROM resolved_dept)
-        AND adp_prompt_voice.active = true
-    LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
-    LEFT JOIN agent_prompts ap_voice_default ON ap_voice_default.agent_id = a_voice.id AND ap_voice_default.active = true
-    LEFT JOIN prompts pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
-    LEFT JOIN model_endpoints me_voice ON me_voice.model_id = m_voice.id AND me_voice.active = true
-    -- Get voice keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN providers p_voice ON p_voice.id = m_voice.provider_id
-    CROSS JOIN active_settings act_s_voice
-    LEFT JOIN setting_provider_keys spk_voice ON spk_voice.provider_id = p_voice.id 
-        AND spk_voice.settings_id = act_s_voice.settings_id 
-        AND spk_voice.active = true
-    LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id AND k_voice.active = true
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
@@ -418,12 +376,9 @@ context_data AS (
              s.id, ps.problem_statement,
              first_persona.persona_id, first_persona.persona_name,
              p.id, p.name, 
-             -- Text agent fields
+             -- Member agent fields
              pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
-             m.id, m.value, p_prov.value, k.key, me.base_url, a.id, act_s.settings_id,
-             -- Voice agent fields
-             pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(mtl_voice.temperature, 0.0), mrl_voice.reasoning_level,
-             m_voice.id, m_voice.value, p_voice.value, k_voice.key, me_voice.base_url, a_voice.id, act_s_voice.settings_id,
+             m.id, m.value, p_prov.value, k.key, me.base_url, ma.agent_id, act_s.settings_id,
              -- Other fields
              s.images_enabled, ss.copy_paste_allowed,
              ap.profile_id,
@@ -434,7 +389,7 @@ documents_data AS (
     SELECT 
         sc.id as chat_id,
         ARRAY_AGG(
-            (d.id::text, d.name, u.file_path, u.mime_type)::types.q_get_simulation_run_context_and_create_run_v3_document
+            (d.id::text, d.name, u.file_path, u.mime_type)::types.q_get_member_run_context_and_create_run_v3_document
             ORDER BY d.id
         ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true) as documents
     FROM chats sc
@@ -488,7 +443,10 @@ link_group AS (
     SELECT 
         gd.group_id,
         cr.id as run_id,
-        0 as idx
+        COALESCE(
+            (SELECT MAX(idx) FROM group_runs WHERE group_id = gd.group_id),
+            -1
+        ) + 1 as idx
     FROM group_data gd
     CROSS JOIN create_run cr
     RETURNING group_id, run_id
@@ -517,24 +475,13 @@ SELECT
     cd.provider_id,
     cd.provider_name,
     cd.agent_id,
-    cd.voice_system_prompt,
-    cd.voice_temperature,
-    cd.voice_reasoning,
-    cd.voice_model_id,
-    cd.voice_model_name,
-    cd.voice_provider,
-    cd.voice_base_url,
-    cd.voice_api_key,
-    cd.voice_custom_model,
-    cd.voice_provider_name,
-    cd.voice_agent_id,
     cd.image_input_enabled,
     cd.copy_paste_allowed,
     cd.profile_id,
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
-    COALESCE(dd.documents, ARRAY[]::types.q_get_simulation_run_context_and_create_run_v3_document[]) as documents,
+    COALESCE(dd.documents, ARRAY[]::types.q_get_member_run_context_and_create_run_v3_document[]) as documents,
     -- Run ID (created in same transaction)
     cr.id::text as run_id,
     -- Group ID (from groups table)

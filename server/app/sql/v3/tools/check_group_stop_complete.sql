@@ -26,17 +26,21 @@ CREATE OR REPLACE FUNCTION socket_check_group_stop_v3(
     tool_id uuid
 )
 RETURNS TABLE (
-    exists boolean
+    "exists" boolean
 )
 LANGUAGE sql
 STABLE
 AS $$
+WITH params AS (
+    SELECT group_id, tool_id
+)
 SELECT EXISTS(
     SELECT 1 
-    FROM group_stop 
-    WHERE group_stop.group_id = check_group_stop_v3.group_id 
-      AND group_stop.tool_id = check_group_stop_v3.tool_id
-) as exists
+    FROM group_stop gs
+    CROSS JOIN params p
+    WHERE gs.group_id = p.group_id 
+      AND gs.tool_id = p.tool_id
+) as "exists"
 $$;
 
 COMMIT;

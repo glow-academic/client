@@ -21,13 +21,13 @@ from app.main import get_internal_sio, sio
 from app.sql.types import (
     CreateHintsSqlParams,
     CreateHintsSqlRow,
-    GetHintRunContextAndCreateRunApiRequest,
-    GetHintRunContextAndCreateRunSqlParams,
-    GetHintRunContextAndCreateRunSqlRow,
+    GenerateHintsApiRequest,
+    GenerateHintsSqlParams,
+    GenerateHintsSqlRow,
     GetSimulationMessagesSqlParams,
     GetSimulationMessagesSqlRow,
-    HintGenerationErrorSqlRow,
 )
+from app.socket.v3.agents.hint.error import HintErrorPayload
 
 internal_sio = get_internal_sio()
 
@@ -62,7 +62,7 @@ class HintGenerationProgressPayload(BaseModel):
 
 async def _generate_hints_impl(
     sid: str,
-    data: GetHintRunContextAndCreateRunApiRequest,
+    data: GenerateHintsApiRequest,
     profile_id: uuid.UUID,
 ) -> None:
     """Internal implementation for hint generation."""
@@ -76,14 +76,14 @@ async def _generate_hints_impl(
             # This validates rate limits and creates run atomically
             try:
                 # Use execute_sql_typed() - auto-detects function
-                params = GetHintRunContextAndCreateRunSqlParams(
+                params = GenerateHintsSqlParams(
                     message_id=message_id,
                     chat_id=chat_id,
                     department_id=department_id,
                     profile_id=profile_id,  # From sid lookup
                 )
                 result = cast(
-                    GetHintRunContextAndCreateRunSqlRow,
+                    GenerateHintsSqlRow,
                     await execute_sql_typed(conn, SQL_PATH_GENERATE, params=params),
                 )
             except Exception as e:
@@ -103,7 +103,7 @@ async def _generate_hints_impl(
                     )
                     await emit_to_internal(
                         "hint_error",
-                        HintGenerationErrorSqlRow(
+                        HintErrorPayload(
                             success=False,
                             message=user_msg,
                         ),
@@ -112,7 +112,7 @@ async def _generate_hints_impl(
                     return
                 await emit_to_internal(
                     "hint_error",
-                    HintGenerationErrorSqlRow(
+                    HintErrorPayload(
                         success=False,
                         message=f"Failed to initialize hint generation: {str(e)}",
                     ),
@@ -123,7 +123,7 @@ async def _generate_hints_impl(
             if not result:
                 await emit_to_internal(
                     "hint_error",
-                    HintGenerationErrorSqlRow(
+                    HintErrorPayload(
                         success=False,
                         message=(
                             f"Message {message_id} in chat {chat_id} not found or "
@@ -142,7 +142,7 @@ async def _generate_hints_impl(
             if not profile_id_str:
                 await emit_to_internal(
                     "hint_error",
-                    HintGenerationErrorSqlRow(
+                    HintErrorPayload(
                         success=False,
                         message="profileId is required",
                     ),
@@ -447,7 +447,7 @@ async def _generate_hints_impl(
                     else:
                         await emit_to_internal(
                             "hint_error",
-                            HintGenerationErrorSqlRow(
+                            HintErrorPayload(
                                 success=False,
                                 message="Failed to create hints in database",
                             ),
@@ -456,7 +456,7 @@ async def _generate_hints_impl(
                 except Exception as create_error:
                     await emit_to_internal(
                         "hint_error",
-                        HintGenerationErrorSqlRow(
+                        HintErrorPayload(
                             success=False,
                             message=f"Failed to create hints: {str(create_error)}",
                         ),
@@ -466,7 +466,7 @@ async def _generate_hints_impl(
                 # No non-empty hints provided
                 await emit_to_internal(
                     "hint_error",
-                    HintGenerationErrorSqlRow(
+                    HintErrorPayload(
                         success=False,
                         message="No valid hints generated",
                     ),
@@ -476,7 +476,7 @@ async def _generate_hints_impl(
         # Pool not initialized - emit error event
         await emit_to_internal(
             "hint_error",
-            HintGenerationErrorSqlRow(
+            HintErrorPayload(
                 success=False,
                 message="Database connection pool not available",
             ),
@@ -486,7 +486,7 @@ async def _generate_hints_impl(
         # Emit error event
         await emit_to_internal(
             "hint_error",
-            HintGenerationErrorSqlRow(
+            HintErrorPayload(
                 success=False,
                 message=f"Hint generation failed: {str(e)}",
             ),
@@ -500,10 +500,10 @@ async def simulation_hints_generate(sid: str, data: dict[str, Any]) -> None:
     await handle_client_event(
         sid=sid,
         data=data,
-        request_type=GetHintRunContextAndCreateRunApiRequest,
+        request_type=GenerateHintsApiRequest,
         handler=_generate_hints_impl,  # type: ignore[arg-type]
         error_event_name="simulation_hints_error",
-        error_response_type=HintGenerationErrorSqlRow,
+        error_response_type=HintErrorPayload,
     )
 
 
@@ -517,7 +517,7 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
     department_id = uuid.UUID(data["department_id"])
     
     # Create request object for handler
-    request = GetHintRunContextAndCreateRunApiRequest(
+    request = GenerateHintsApiRequest(
         chat_id=str(chat_id),
         message_id=str(message_id),
         department_id=str(department_id),
@@ -530,7 +530,7 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
     if not profile_id_str:
         await emit_to_internal(
             "hint_error",
-            HintGenerationErrorSqlRow(
+            HintErrorPayload(
                 success=False,
                 message="No profile found for socket",
             ),
@@ -545,7 +545,7 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
 register_client_endpoint(
     client_router,
     "/generate",
-    GetHintRunContextAndCreateRunApiRequest,
+    GenerateHintsApiRequest,
     "Generate hints for a simulation message",
 )
 

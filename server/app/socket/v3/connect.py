@@ -111,15 +111,15 @@ async def connect(
         await sio.enter_room(sid, profile_id)
 
         # Update database to mark profile as active
-            try:
-                from datetime import UTC, datetime
+        try:
+            from datetime import UTC, datetime
 
-                async with get_db_connection() as conn:
-                    async with conn.transaction():
-                        params = UpdateProfileToActiveSqlParams(
-                            profile_id=uuid.UUID(profile_id),
-                            last_active=datetime.now(UTC).isoformat(),
-                        )
+            async with get_db_connection() as conn:
+                async with conn.transaction():
+                    params = UpdateProfileToActiveSqlParams(
+                        profile_id=uuid.UUID(profile_id),
+                        last_active=datetime.now(UTC).isoformat(),
+                    )
                     await cast(
                         UpdateProfileToActiveSqlRow,
                         execute_sql_typed(
@@ -147,7 +147,8 @@ async def connect(
                 # Error adding guest - Socket.IO handles logging
                 pass
         else:
-    await connection_confirmed(
+            pass
+        await connection_confirmed(
         ConnectionConfirmedPayload(
             sid=sid,
             profile_id=profile_id,

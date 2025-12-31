@@ -739,6 +739,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         error=False,
                     )
                 except Exception as log_error:
+                    pass
     except Exception as e:
         await simulation_text_end_error(
             EndSimulationErrorPayload(
@@ -757,6 +758,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 @sio.event  # type: ignore
 async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -781,6 +785,7 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
     except Exception as e:
         await simulation_text_end_error(
             EndSimulationErrorPayload(
@@ -799,6 +804,9 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/end", response_model=dict[str, bool])
 async def simulation_text_end_api(

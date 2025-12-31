@@ -9,8 +9,8 @@ DROP FUNCTION IF EXISTS socket_get_classification_context_v3(uuid[], uuid);
 
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION socket_get_classification_context_v3(
-    parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    profile_id uuid
+    profile_id uuid,
+    parameter_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     id text,
@@ -23,10 +23,14 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH user_departments AS (
+WITH params AS (
+    SELECT profile_id, parameter_ids
+),
+user_departments AS (
     SELECT department_id
-    FROM profile_departments
-    WHERE profile_id = profile_id AND active = true
+    FROM profile_departments pd
+    CROSS JOIN params p
+    WHERE pd.profile_id = p.profile_id AND pd.active = true
 ),
 parameter_items_data AS (
     SELECT 
@@ -40,11 +44,12 @@ parameter_items_data AS (
     JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    CROSS JOIN params p_params
     WHERE p.active = true
       AND p.document_parameter = true
       AND (
           -- Filter by parameter_ids if provided
-          (COALESCE(array_length(parameter_ids, 1), 0) = 0 OR p.id = ANY(parameter_ids))
+          (COALESCE(array_length(p_params.parameter_ids, 1), 0) = 0 OR p.id = ANY(p_params.parameter_ids))
       )
       AND (
           -- Include if item is in user's departments OR is cross-department

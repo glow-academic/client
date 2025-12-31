@@ -20,9 +20,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
+-- 2) Drop types WITH CASCADE (needed for nested composite types)
 -- Drop all types matching prefix pattern to handle type additions/removals
--- If any other object depends on them, this will ERROR and stop the migration (good)
+-- CASCADE is needed because outer types contain arrays of inner types
 DO $$
 DECLARE
     r RECORD;
@@ -33,7 +33,7 @@ BEGIN
         WHERE typname LIKE 'q_get_scenario_new_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 

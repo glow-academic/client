@@ -101,6 +101,7 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                         error=False,
                     )
                 except Exception as log_error:
+                    pass
             # Always save OpenAI messages as JSON file
             try:
                 messages: list[dict[str, str]] = []
@@ -132,9 +133,11 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                         json.dump(messages, f, indent=2, ensure_ascii=False)
             except Exception as json_error:
                 # Log error but don't fail the request
+                pass
 
     except Exception as e:
         # Don't emit error to client - pricing is async and failures are logged
+        pass
 
 
 @sio.event  # type: ignore
@@ -144,6 +147,9 @@ async def log_run(sid: str, data: dict[str, Any]) -> None:
         validated = LogRunPayload(**data)
         await _log_run_impl(sid, validated)
     except ValidationError as e:
+        pass
+
+
 @internal_sio.on("log_run")
 async def log_run_internal(data: dict[str, Any]) -> None:
     """Handle log_run event from internal bus (server-to-server)."""
@@ -152,6 +158,9 @@ async def log_run_internal(data: dict[str, Any]) -> None:
         # Use empty string as sid for internal calls (not needed for async background work)
         await _log_run_impl("", validated)
     except ValidationError as e:
+        pass
+
+
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/log", response_model=dict[str, bool])
 async def log_run_api(request: LogRunPayload) -> dict[str, bool]:

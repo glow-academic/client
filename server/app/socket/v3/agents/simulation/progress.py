@@ -102,6 +102,7 @@ async def _simulation_text_progress_impl(
             if data.type == "tool_call_start":
                 # Tool call started - create tool call and initial message
                 # This will be handled by the SQL file when message_token is received
+                pass
             elif data.type == "message_token":
                 # Message token received - update DB incrementally
                 if not data.token or not data.accumulated_content:

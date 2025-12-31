@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema from FastAPI v3 API",
+    "description": "Auto-generated OpenAPI schema",
     "version": "0.1.0"
   },
   "paths": {
@@ -80,11 +80,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/update": {
@@ -161,11 +157,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/create": {
@@ -242,11 +234,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/delete": {
@@ -323,11 +311,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/upsert": {
@@ -404,11 +388,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/new": {
@@ -485,11 +465,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/email": {
@@ -566,11 +542,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/context": {
@@ -647,11 +619,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/emulate": {
@@ -728,11 +696,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/simulatable": {
@@ -809,11 +773,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/list": {
@@ -890,11 +850,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/detail": {
@@ -971,11 +927,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/new": {
@@ -1052,11 +1004,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/create": {
@@ -1133,11 +1081,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/update": {
@@ -1214,11 +1158,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/duplicate": {
@@ -1295,11 +1235,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/delete": {
@@ -1376,11 +1312,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/simulations/list": {
@@ -1457,11 +1389,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/detail": {
@@ -1538,11 +1466,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/new": {
@@ -1619,11 +1543,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/create": {
@@ -1700,11 +1620,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/update": {
@@ -1781,11 +1697,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/duplicate": {
@@ -1862,11 +1774,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/delete": {
@@ -1943,11 +1851,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/personas/list": {
@@ -2024,11 +1928,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/detail": {
@@ -2105,11 +2005,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/new": {
@@ -2186,11 +2082,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/create": {
@@ -2267,11 +2159,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/update": {
@@ -2348,11 +2236,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/duplicate": {
@@ -2429,11 +2313,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/delete": {
@@ -2510,11 +2390,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/auth/list": {
@@ -2591,11 +2467,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/detail": {
@@ -2672,11 +2544,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/new": {
@@ -2753,11 +2621,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/create": {
@@ -2834,11 +2698,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/update": {
@@ -2915,11 +2775,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/duplicate": {
@@ -2996,11 +2852,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/delete": {
@@ -3077,11 +2929,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/login": {
@@ -3158,11 +3006,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/departments/list": {
@@ -3239,11 +3083,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/detail": {
@@ -3320,11 +3160,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/new": {
@@ -3401,11 +3237,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/create": {
@@ -3482,11 +3314,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/update": {
@@ -3563,11 +3391,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/duplicate": {
@@ -3644,11 +3468,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/delete": {
@@ -3725,11 +3545,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/list": {
@@ -3806,11 +3622,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/detail": {
@@ -3887,11 +3699,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/new": {
@@ -3968,11 +3776,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/duplicate": {
@@ -4049,11 +3853,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/leave": {
@@ -4130,11 +3930,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/create": {
@@ -4211,11 +4007,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/update": {
@@ -4292,11 +4084,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/delete": {
@@ -4373,11 +4161,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/search": {
@@ -4454,11 +4238,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/documents/list": {
@@ -4535,11 +4315,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/detail": {
@@ -4616,11 +4392,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/create": {
@@ -4697,11 +4469,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/delete": {
@@ -4778,11 +4546,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/update": {
@@ -4859,11 +4623,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/certificate": {
@@ -4938,11 +4698,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/render": {
@@ -5021,11 +4777,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/evals/create": {
@@ -5102,11 +4854,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/delete": {
@@ -5183,11 +4931,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/detail": {
@@ -5264,11 +5008,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/list": {
@@ -5345,11 +5085,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/new": {
@@ -5426,11 +5162,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/update": {
@@ -5507,11 +5239,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/list": {
@@ -5588,11 +5316,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/detail": {
@@ -5669,11 +5393,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/new": {
@@ -5750,11 +5470,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/duplicate": {
@@ -5831,11 +5547,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/create": {
@@ -5912,11 +5624,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/update": {
@@ -5993,11 +5701,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/delete": {
@@ -6074,11 +5778,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/settings/list": {
@@ -6155,11 +5855,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v3/settings/detail": {
@@ -6236,11 +5932,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v3/settings/update": {
@@ -6317,11 +6009,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v3/analytics/refresh": {
@@ -6398,11 +6086,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v3/analytics/view": {
@@ -6479,11 +6163,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v3/activity/bundle": {
@@ -6560,11 +6240,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v3/activity/list": {
@@ -6641,11 +6317,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v3/dashboard/overview": {
@@ -6722,11 +6394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v3/dashboard/history": {
@@ -6803,11 +6471,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v3/reports/export": {
@@ -6883,12 +6547,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "reports",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v3/reports": {
@@ -6965,11 +6624,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v3/reports/overview": {
@@ -7046,11 +6701,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v3/reports/history": {
@@ -7127,11 +6778,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v3/leaderboard/bundle": {
@@ -7208,11 +6855,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v3/agents/list": {
@@ -7289,11 +6932,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/detail": {
@@ -7370,11 +7009,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/new": {
@@ -7451,11 +7086,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/create": {
@@ -7532,11 +7163,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/update": {
@@ -7613,11 +7240,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/duplicate": {
@@ -7694,11 +7317,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/delete": {
@@ -7775,11 +7394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/keys/list": {
@@ -7856,11 +7471,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/detail": {
@@ -7937,11 +7548,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/new": {
@@ -8018,11 +7625,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/create": {
@@ -8099,11 +7702,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/update": {
@@ -8180,11 +7779,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/delete": {
@@ -8261,11 +7856,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/decrypt": {
@@ -8342,11 +7933,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/models/list": {
@@ -8423,11 +8010,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/detail": {
@@ -8504,11 +8087,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/new": {
@@ -8585,11 +8164,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/create": {
@@ -8666,11 +8241,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/update": {
@@ -8747,11 +8318,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/delete": {
@@ -8828,11 +8395,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/duplicate": {
@@ -8909,11 +8472,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/providers/list": {
@@ -8990,11 +8549,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/detail": {
@@ -9071,11 +8626,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/new": {
@@ -9152,11 +8703,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/create": {
@@ -9233,11 +8780,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/update": {
@@ -9314,11 +8857,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/delete": {
@@ -9395,11 +8934,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/parameters/list": {
@@ -9476,11 +9011,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/detail": {
@@ -9557,11 +9088,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/new": {
@@ -9638,11 +9165,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/create": {
@@ -9719,11 +9242,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/update": {
@@ -9800,11 +9319,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/duplicate": {
@@ -9881,11 +9396,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/delete": {
@@ -9962,11 +9473,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/fields/list": {
@@ -10043,11 +9550,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/detail": {
@@ -10124,11 +9627,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/new": {
@@ -10205,11 +9704,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/create": {
@@ -10286,11 +9781,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/update": {
@@ -10367,11 +9858,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/duplicate": {
@@ -10448,11 +9935,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/delete": {
@@ -10529,11 +10012,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/feedback/create": {
@@ -10610,11 +10089,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v3/feedback/list": {
@@ -10691,11 +10166,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v3/feedback/resolve": {
@@ -10772,11 +10243,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v3/health/bundle": {
@@ -10853,11 +10320,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "health"
-        ]
+        }
       }
     },
     "/api/v3/attempts/archive": {
@@ -10934,11 +10397,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v3/attempts/simulation": {
@@ -11015,11 +10474,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v3/attempts/eval": {
@@ -11096,11 +10551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v3/prompts/delete": {
@@ -11177,11 +10628,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "prompts"
-        ]
+        }
       }
     },
     "/api/v3/staff/list": {
@@ -11258,11 +10705,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/detail": {
@@ -11339,11 +10782,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/new": {
@@ -11420,11 +10859,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/search": {
@@ -11501,11 +10936,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/csv": {
@@ -11582,11 +11013,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/data/create": {
@@ -11663,11 +11090,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/create": {
@@ -11744,11 +11167,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/update": {
@@ -11825,11 +11244,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/delete": {
@@ -11906,11 +11321,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/upsert": {
@@ -11987,11 +11398,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/benchmark/bundle": {
@@ -12068,11 +11475,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v3/home/overview": {
@@ -12149,11 +11552,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "home"
-        ]
+        }
       }
     },
     "/api/v3/home/history": {
@@ -12230,11 +11629,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "home"
-        ]
+        }
       }
     },
     "/api/v3/practice/overview": {
@@ -12311,11 +11706,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v3/practice/history": {
@@ -12392,11 +11783,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v3/pricing/analytics": {
@@ -12473,11 +11860,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v3/pricing/runs": {
@@ -12554,11 +11937,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v3/pricing/detail": {
@@ -12635,11 +12014,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v3/uploads/upload": {
@@ -12704,11 +12079,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -12771,11 +12142,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v3/uploads/upload/{upload_id}": {
@@ -12849,11 +12216,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       },
       "head": {
         "tags": [
@@ -12925,11 +12288,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -13001,11 +12360,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v3/uploads/upload/{upload_id}/finalize": {
@@ -13081,11 +12436,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v3/uploads/download/{upload_id}": {
@@ -13171,11 +12522,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/socket/v3/client/connect": {
@@ -13202,11 +12549,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/disconnect": {
@@ -13233,11 +12576,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/log": {
@@ -13284,11 +12623,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/simulations/start": {
@@ -13337,13 +12672,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/simulations/debug": {
@@ -13392,13 +12721,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/simulations/delta": {
@@ -13447,13 +12770,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/simulations/done": {
@@ -13502,13 +12819,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/simulations/audio_link": {
@@ -13557,13 +12868,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/scenarios/generate": {
@@ -13612,13 +12917,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/scenarios/randomize": {
@@ -13667,13 +12966,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/scenarios/regenerate": {
@@ -13722,13 +13015,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/documents/generate": {
@@ -13739,14 +13026,14 @@
           "socket-client",
           "socket-client"
         ],
-        "summary": "Document Generate Api",
-        "description": "Client-to-server event: Generate a document template using AI.",
-        "operationId": "document_generate_api_socket_v3_client_agents_documents_generate_post",
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "endpoint_handler_socket_v3_client_agents_documents_generate_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GenerateDocumentTemplatePayload"
+                "$ref": "#/components/schemas/BaseModel"
               }
             }
           },
@@ -13762,7 +13049,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Document Generate Api Socket V3 Client Agents Documents Generate Post"
+                  "title": "Response Endpoint Handler Socket V3 Client Agents Documents Generate Post"
                 }
               }
             }
@@ -13777,13 +13064,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/videos/generate": {
@@ -13832,13 +13113,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/images/generate": {
@@ -13887,13 +13162,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/rubrics/generate": {
@@ -13942,13 +13211,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/rubrics/regenerate": {
@@ -13997,13 +13260,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/classify/classify": {
@@ -14052,13 +13309,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/agents/hints/generate": {
@@ -14069,119 +13320,9 @@
           "socket-client",
           "socket-client"
         ],
-        "summary": "Simulation Hints Generate Api",
-        "description": "Client-to-server event: Generate hints for a simulation message.",
-        "operationId": "simulation_hints_generate_api_socket_v3_client_agents_hints_generate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GenerateHintsPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Simulation Hints Generate Api Socket V3 Client Agents Hints Generate Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
-    "/socket/v3/client/agents/grades/start": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ],
-        "summary": "Simulation Grading Start Api",
-        "description": "Client-to-server event: Start grading for a simulation chat.",
-        "operationId": "simulation_grading_start_api_socket_v3_client_agents_grades_start_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SimulationGradingStartPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Simulation Grading Start Api Socket V3 Client Agents Grades Start Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
-    "/socket/v3/client/agents/members/generate": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ],
         "summary": "Endpoint Handler",
-        "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_client_agents_members_generate_post",
+        "description": "Client-to-server event: {description}",
+        "operationId": "endpoint_handler_socket_v3_client_agents_hints_generate_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14202,7 +13343,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Client Agents Members Generate Post"
+                  "title": "Response Endpoint Handler Socket V3 Client Agents Hints Generate Post"
                 }
               }
             }
@@ -14217,13 +13358,154 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
+        }
+      }
+    },
+    "/socket/v3/client/agents/grades/start": {
+      "post": {
+        "tags": [
           "socket",
           "socket-client",
           "socket-client",
           "socket-client"
-        ]
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "endpoint_handler_socket_v3_client_agents_grades_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Client Agents Grades Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/client/agents/grades/generate": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Audio Generate Api",
+        "description": "Client-to-server event: Generate audio using AI.",
+        "operationId": "audio_generate_api_socket_v3_client_agents_grades_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateAudioPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Audio Generate Api Socket V3 Client Agents Grades Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/client/agents/members/generate": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Member Generate Api",
+        "description": "Client-to-server event: Generate member agent response.",
+        "operationId": "member_generate_api_socket_v3_client_agents_members_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberGeneratePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Member Generate Api Socket V3 Client Agents Members Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/socket/v3/client/agents/members/progress": {
@@ -14272,13 +13554,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/enter": {
@@ -14326,12 +13602,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/join": {
@@ -14379,12 +13650,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/leave": {
@@ -14432,12 +13698,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/start": {
@@ -14485,12 +13746,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/end": {
@@ -14538,12 +13794,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/next": {
@@ -14591,12 +13842,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/advance": {
@@ -14644,12 +13890,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/stop": {
@@ -14697,12 +13938,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice_stop": {
@@ -14750,12 +13986,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/enter": {
@@ -14803,12 +14034,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/join": {
@@ -14856,12 +14082,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/leave": {
@@ -14909,12 +14130,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/start": {
@@ -14962,12 +14178,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/advance": {
@@ -15015,12 +14226,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/stop": {
@@ -15068,12 +14274,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/next": {
@@ -15121,12 +14322,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/benchmark/end": {
@@ -15174,12 +14370,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/server/connection_confirmed": {
@@ -15226,11 +14417,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/simulation_text_complete": {
@@ -15279,13 +14466,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/simulation_text_error": {
@@ -15334,13 +14515,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/simulation_text_progress": {
@@ -15389,13 +14564,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/eval": {
@@ -15444,13 +14613,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/debug_info": {
@@ -15500,14 +14663,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/debug_info_complete": {
@@ -15557,14 +14713,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/debug_info_error": {
@@ -15614,14 +14763,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/debug_info_progress": {
@@ -15671,14 +14813,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/eval": {
@@ -15728,14 +14863,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/speak_tool": {
@@ -15785,14 +14913,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/speak_complete": {
@@ -15842,14 +14963,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/speak_error": {
@@ -15899,14 +15013,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tools/speak_progress": {
@@ -15956,14 +15063,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/start_response": {
@@ -16012,13 +15112,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/start_error": {
@@ -16067,13 +15161,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/simulation_voice_complete": {
@@ -16122,13 +15210,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/simulation_voice_error": {
@@ -16177,13 +15259,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/debug_error": {
@@ -16232,13 +15308,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/tool_call_error": {
@@ -16287,13 +15357,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/simulations/audio_link_error": {
@@ -16342,13 +15406,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/generation_progress": {
@@ -16397,13 +15455,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/generation_complete": {
@@ -16452,13 +15504,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/generation_error": {
@@ -16507,13 +15553,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/scenario_complete": {
@@ -16562,13 +15602,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/scenario_error": {
@@ -16617,13 +15651,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/scenario_progress": {
@@ -16672,13 +15700,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/eval": {
@@ -16727,13 +15749,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/debug_info": {
@@ -16783,14 +15799,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/debug_info_complete": {
@@ -16840,14 +15849,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/debug_info_error": {
@@ -16897,14 +15899,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/debug_info_progress": {
@@ -16954,14 +15949,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/eval": {
@@ -17011,14 +15999,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/document_complete": {
@@ -17068,14 +16049,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/document_error": {
@@ -17125,14 +16099,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/document_progress": {
@@ -17182,14 +16149,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/image_complete": {
@@ -17239,14 +16199,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/image_error": {
@@ -17296,14 +16249,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/image_progress": {
@@ -17353,14 +16299,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/objectives_complete": {
@@ -17410,14 +16349,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/objectives_error": {
@@ -17467,14 +16399,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/objectives_progress": {
@@ -17524,14 +16449,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/questions_complete": {
@@ -17581,14 +16499,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/questions_error": {
@@ -17638,14 +16549,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/questions_progress": {
@@ -17695,14 +16599,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/title_description": {
@@ -17752,14 +16649,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/title_description_complete": {
@@ -17809,14 +16699,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/title_description_error": {
@@ -17866,14 +16749,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/title_description_progress": {
@@ -17923,14 +16799,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/scenario_tool_title_complete": {
@@ -17980,14 +16849,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/scenario_tool_title_error": {
@@ -18037,14 +16899,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/scenario_tool_title_progress": {
@@ -18094,14 +16949,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/video_complete": {
@@ -18151,14 +16999,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/video_error": {
@@ -18208,14 +17049,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/scenarios/tools/video_progress": {
@@ -18265,179 +17099,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v3/server/agents/documents/generation_progress": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Document Template Generation Progress Api",
-        "description": "Server-to-client event: Progress update for document template generation.",
-        "operationId": "document_template_generation_progress_api_socket_v3_server_agents_documents_generation_progress_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DocumentTemplateGenerationProgressPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Document Template Generation Progress Api Socket V3 Server Agents Documents Generation Progress Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v3/server/agents/documents/generation_complete": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Document Template Generation Complete Api",
-        "description": "Server-to-client event: Document template generation completed successfully.",
-        "operationId": "document_template_generation_complete_api_socket_v3_server_agents_documents_generation_complete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DocumentTemplateGenerationCompletePayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Document Template Generation Complete Api Socket V3 Server Agents Documents Generation Complete Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v3/server/agents/documents/generation_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Document Template Generation Error Api",
-        "description": "Server-to-client event: Error occurred during document template generation.",
-        "operationId": "document_template_generation_error_api_socket_v3_server_agents_documents_generation_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DocumentTemplateGenerationErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Document Template Generation Error Api Socket V3 Server Agents Documents Generation Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/document_complete": {
@@ -18486,13 +17148,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/document_error": {
@@ -18541,13 +17197,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/document_progress": {
@@ -18596,13 +17246,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/eval": {
@@ -18651,13 +17295,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/tools/document_tool_title_complete": {
@@ -18707,14 +17345,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/tools/document_tool_title_error": {
@@ -18764,14 +17395,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/tools/document_tool_title_progress": {
@@ -18821,14 +17445,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/tools/eval": {
@@ -18878,17 +17495,10 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
-    "/socket/v3/server/agents/documents/tools/debug_info": {
+    "/socket/v3/server/agents/documents/tools/document_tool_debug": {
       "post": {
         "tags": [
           "socket",
@@ -18899,7 +17509,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_documents_tools_document_tool_debug_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18920,7 +17530,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Documents Tools Debug Info Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Documents Tools Document Tool Debug Post"
                 }
               }
             }
@@ -18935,14 +17545,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/tools/debug_info_complete": {
@@ -18992,14 +17595,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/tools/debug_info_error": {
@@ -19049,14 +17645,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/documents/tools/debug_info_progress": {
@@ -19106,14 +17695,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/generation_progress": {
@@ -19162,13 +17744,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/generation_complete": {
@@ -19217,13 +17793,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/generation_error": {
@@ -19272,13 +17842,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/video_complete": {
@@ -19327,13 +17891,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/video_error": {
@@ -19382,13 +17940,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/video_progress": {
@@ -19437,13 +17989,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/eval": {
@@ -19492,13 +18038,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/video_tool_title_complete": {
@@ -19548,14 +18088,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/video_tool_title_error": {
@@ -19605,14 +18138,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/video_tool_title_progress": {
@@ -19662,14 +18188,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/eval": {
@@ -19719,14 +18238,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/debug_info": {
@@ -19776,14 +18288,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/debug_info_complete": {
@@ -19833,14 +18338,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/debug_info_error": {
@@ -19890,14 +18388,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/videos/tools/debug_info_progress": {
@@ -19947,14 +18438,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/generation_complete": {
@@ -20003,13 +18487,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/generation_error": {
@@ -20058,13 +18536,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/generation_progress": {
@@ -20113,13 +18585,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/eval": {
@@ -20168,13 +18634,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/debug_info": {
@@ -20224,14 +18684,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/debug_info_complete": {
@@ -20281,14 +18734,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/debug_info_error": {
@@ -20338,14 +18784,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/debug_info_progress": {
@@ -20395,14 +18834,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/eval": {
@@ -20452,14 +18884,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/image_tool_title_complete": {
@@ -20509,14 +18934,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/image_tool_title_error": {
@@ -20566,14 +18984,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/images/tools/image_tool_title_progress": {
@@ -20623,14 +19034,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/generation_complete": {
@@ -20679,13 +19083,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/generation_error": {
@@ -20734,13 +19132,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/generation_progress": {
@@ -20789,13 +19181,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/eval": {
@@ -20844,13 +19230,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/rubric_tool_title_complete": {
@@ -20900,14 +19280,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/rubric_tool_title_error": {
@@ -20957,14 +19330,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/rubric_tool_title_progress": {
@@ -21014,14 +19380,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/eval": {
@@ -21071,14 +19430,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/debug_info": {
@@ -21128,14 +19480,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/debug_info_complete": {
@@ -21185,14 +19530,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/debug_info_error": {
@@ -21242,14 +19580,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/debug_info_progress": {
@@ -21299,14 +19630,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/rubric_tool_standard_description": {
@@ -21356,14 +19680,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/standard_description_complete": {
@@ -21413,14 +19730,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/standard_description_error": {
@@ -21470,14 +19780,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/rubrics/tools/standard_description_progress": {
@@ -21527,14 +19830,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/classification_progress": {
@@ -21583,13 +19879,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/classification_complete": {
@@ -21638,13 +19928,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/classification_error": {
@@ -21693,13 +19977,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/classify_complete": {
@@ -21748,13 +20026,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/classify_error": {
@@ -21803,13 +20075,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/classify_progress": {
@@ -21858,13 +20124,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/eval": {
@@ -21913,13 +20173,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/debug_info": {
@@ -21969,14 +20223,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/debug_info_complete": {
@@ -22026,14 +20273,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/debug_info_error": {
@@ -22083,14 +20323,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/debug_info_progress": {
@@ -22140,14 +20373,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/eval": {
@@ -22197,14 +20423,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/classification_tool": {
@@ -22254,14 +20473,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/classification_complete": {
@@ -22311,14 +20523,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/classification_error": {
@@ -22368,14 +20573,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/classify/tools/classification_progress": {
@@ -22425,14 +20623,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/generation_progress": {
@@ -22443,14 +20634,14 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Hint Generation Progress Api",
-        "description": "Server-to-client event: Hint generation progress update.",
-        "operationId": "hint_generation_progress_api_socket_v3_server_agents_hints_generation_progress_post",
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_agents_hints_generation_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/HintGenerationProgressPayload"
+                "$ref": "#/components/schemas/BaseModel"
               }
             }
           },
@@ -22466,7 +20657,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Hint Generation Progress Api Socket V3 Server Agents Hints Generation Progress Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Hints Generation Progress Post"
                 }
               }
             }
@@ -22481,13 +20672,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/hint_complete": {
@@ -22536,13 +20721,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/hint_error": {
@@ -22591,13 +20770,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/hint_progress": {
@@ -22646,13 +20819,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/eval": {
@@ -22670,7 +20837,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/app__socket__v3__agents__hint__eval__HintEvalStartPayload"
+                "$ref": "#/components/schemas/HintEvalStartPayload"
               }
             }
           },
@@ -22701,16 +20868,10 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
-    "/socket/v3/server/agents/hints/tools/debug_info": {
+    "/socket/v3/server/agents/hints/tools/hint_tool_debug": {
       "post": {
         "tags": [
           "socket",
@@ -22721,7 +20882,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_post",
+        "operationId": "endpoint_handler_socket_v3_server_agents_hints_tools_hint_tool_debug_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22742,7 +20903,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Agents Hints Tools Debug Info Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Hints Tools Hint Tool Debug Post"
                 }
               }
             }
@@ -22757,14 +20918,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/debug_info_complete": {
@@ -22814,14 +20968,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/debug_info_error": {
@@ -22871,14 +21018,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/debug_info_progress": {
@@ -22928,14 +21068,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/eval": {
@@ -22947,14 +21080,14 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Hint Eval Api",
+        "summary": "Hint Tool Hint Eval Api",
         "description": "Internal event: Execute hint tool for eval.",
-        "operationId": "hint_eval_api_socket_v3_server_agents_hints_tools_eval_post",
+        "operationId": "hint_tool_hint_eval_api_socket_v3_server_agents_hints_tools_eval_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/app__socket__v3__agents__hint__tools__hint__eval__HintEvalStartPayload"
+                "$ref": "#/components/schemas/HintToolHintEvalStartPayload"
               }
             }
           },
@@ -22970,7 +21103,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Hint Eval Api Socket V3 Server Agents Hints Tools Eval Post"
+                  "title": "Response Hint Tool Hint Eval Api Socket V3 Server Agents Hints Tools Eval Post"
                 }
               }
             }
@@ -22985,14 +21118,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/hint_tool": {
@@ -23042,14 +21168,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/hint_complete": {
@@ -23099,14 +21218,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/hint_error": {
@@ -23156,14 +21268,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/hints/tools/hint_progress": {
@@ -23213,14 +21318,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/progress": {
@@ -23231,14 +21329,14 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Simulation Grading Progress Api",
-        "description": "Server-to-client event: Simulation grading progress update.",
-        "operationId": "simulation_grading_progress_api_socket_v3_server_agents_grades_progress_post",
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_agents_grades_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SimulationGradingProgressPayload"
+                "$ref": "#/components/schemas/BaseModel"
               }
             }
           },
@@ -23254,7 +21352,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Grading Progress Api Socket V3 Server Agents Grades Progress Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Agents Grades Progress Post"
                 }
               }
             }
@@ -23269,13 +21367,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/grade_text_complete": {
@@ -23324,13 +21416,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/grade_text_error": {
@@ -23379,13 +21465,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/grade_text_progress": {
@@ -23434,13 +21514,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/eval": {
@@ -23489,13 +21563,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/audio_complete": {
@@ -23545,14 +21613,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/audio_error": {
@@ -23602,14 +21663,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/audio_progress": {
@@ -23659,14 +21713,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/eval": {
@@ -23716,14 +21763,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/message_improvement_complete": {
@@ -23773,14 +21813,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/message_improvement_error": {
@@ -23830,14 +21863,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/message_improvement_progress": {
@@ -23887,14 +21913,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/message_strength_complete": {
@@ -23944,14 +21963,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/message_strength_error": {
@@ -24001,14 +22013,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/message_strength_progress": {
@@ -24058,14 +22063,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/feedback_complete": {
@@ -24115,14 +22113,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/feedback_error": {
@@ -24172,14 +22163,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/feedback_progress": {
@@ -24229,14 +22213,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/debug_info": {
@@ -24286,14 +22263,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/debug_info_complete": {
@@ -24343,14 +22313,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/debug_info_error": {
@@ -24400,14 +22363,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/tools/debug_info_progress": {
@@ -24457,14 +22413,154 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
+        }
+      }
+    },
+    "/socket/v3/server/agents/grades/generation_progress": {
+      "post": {
+        "tags": [
           "socket",
           "socket-server",
           "socket-server",
+          "socket-server"
+        ],
+        "summary": "Audio Generation Progress Api",
+        "description": "Server-to-client event: Progress update for audio generation.",
+        "operationId": "audio_generation_progress_api_socket_v3_server_agents_grades_generation_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioGenerationProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Audio Generation Progress Api Socket V3 Server Agents Grades Generation Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/agents/grades/generation_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
           "socket-server",
           "socket-server"
-        ]
+        ],
+        "summary": "Audio Generation Complete Api",
+        "description": "Server-to-client event: Audio generation completed successfully.",
+        "operationId": "audio_generation_complete_api_socket_v3_server_agents_grades_generation_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioGenerationCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Audio Generation Complete Api Socket V3 Server Agents Grades Generation Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/agents/grades/generation_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Audio Generation Error Api",
+        "description": "Server-to-client event: Error occurred during audio generation.",
+        "operationId": "audio_generation_error_api_socket_v3_server_agents_grades_generation_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioGenerationErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Audio Generation Error Api Socket V3 Server Agents Grades Generation Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/socket/v3/server/agents/grades/audio_complete": {
@@ -24513,13 +22609,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/audio_error": {
@@ -24568,13 +22658,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/grades/audio_progress": {
@@ -24623,13 +22707,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/generate_error": {
@@ -24678,13 +22756,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/member_complete": {
@@ -24733,13 +22805,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/member_error": {
@@ -24788,13 +22854,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/eval": {
@@ -24843,13 +22903,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/progress_error": {
@@ -24898,13 +22952,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/tools/conversation_end": {
@@ -24954,14 +23002,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/tools/conversation_end_complete": {
@@ -25011,14 +23052,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/tools/conversation_end_error": {
@@ -25068,14 +23102,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/tools/conversation_end_progress": {
@@ -25125,14 +23152,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/agents/members/tools/eval": {
@@ -25182,14 +23202,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/enter_response": {
@@ -25237,12 +23250,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/enter_error": {
@@ -25290,12 +23298,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/joined": {
@@ -25343,12 +23346,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/join_error": {
@@ -25396,12 +23394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/leave_error": {
@@ -25449,12 +23442,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/start_error": {
@@ -25502,12 +23490,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/started": {
@@ -25555,12 +23538,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/end_error": {
@@ -25608,12 +23586,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/ended": {
@@ -25661,12 +23634,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/end_all_started": {
@@ -25714,12 +23682,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/end_chat_started": {
@@ -25767,12 +23730,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/end_all_completed": {
@@ -25820,12 +23778,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/next_error": {
@@ -25873,12 +23826,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/advance_error": {
@@ -25926,12 +23874,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/advanced": {
@@ -25979,12 +23922,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/stopped": {
@@ -26032,12 +23970,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/message_cancelled": {
@@ -26085,12 +24018,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/stop_error": {
@@ -26138,12 +24066,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice_stop_response": {
@@ -26191,12 +24114,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice_stop_error": {
@@ -26244,12 +24162,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/enter_response": {
@@ -26297,12 +24210,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/enter_error": {
@@ -26350,12 +24258,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/joined": {
@@ -26403,12 +24306,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/join_error": {
@@ -26456,12 +24354,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/leave_error": {
@@ -26509,12 +24402,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/advance_error": {
@@ -26562,12 +24450,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/advanced": {
@@ -26615,12 +24498,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/stopped": {
@@ -26668,12 +24546,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/stop_error": {
@@ -26721,12 +24594,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/completed": {
@@ -26774,12 +24642,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/benchmark/end_error": {
@@ -26827,12 +24690,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/": {
@@ -26889,23 +24747,82 @@
   },
   "components": {
     "schemas": {
-      "AudioToolCompletePayload": {
+      "AudioGenerationCompletePayload": {
         "properties": {
           "success": {
             "type": "boolean",
             "title": "Success"
           },
-          "chat_id": {
+          "message": {
             "type": "string",
-            "title": "Chat Id"
+            "title": "Message"
           },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
+          "audioUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audiourl"
           },
-          "analysis": {
+          "uploadId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploadid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "AudioGenerationCompletePayload",
+        "description": "Response indicating audio generation completed successfully."
+      },
+      "AudioGenerationErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
             "type": "string",
-            "title": "Analysis"
+            "title": "Message"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "AudioGenerationErrorPayload",
+        "description": "Response indicating an error occurred in audio generation."
+      },
+      "AudioGenerationProgressPayload": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
           },
           "message": {
             "anyOf": [
@@ -26917,46 +24834,47 @@
               }
             ],
             "title": "Message"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "analysis"
+          "type"
         ],
-        "title": "AudioToolCompletePayload",
-        "description": "Response indicating audio tool completed successfully."
-      },
-      "AudioToolErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "message"
-        ],
-        "title": "AudioToolErrorPayload",
-        "description": "Response indicating an error occurred in audio tool."
+        "title": "AudioGenerationProgressPayload",
+        "description": "Response indicating progress in audio generation."
       },
       "AuthorizeEmulationApiRequest": {
         "properties": {
@@ -28058,10 +25976,6 @@
             "type": "string",
             "title": "Uploadid"
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "parameterIds": {
             "anyOf": [
               {
@@ -28079,8 +25993,7 @@
         },
         "type": "object",
         "required": [
-          "uploadId",
-          "profileId"
+          "uploadId"
         ],
         "title": "ClassifyUploadPayload",
         "description": "Request to classify an uploaded file."
@@ -31588,130 +29501,6 @@
         "type": "object",
         "title": "DeleteSimulationApiResponse"
       },
-      "DocumentTemplateGenerationCompletePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "template_html": {
-            "type": "string",
-            "title": "Template Html"
-          },
-          "template_schema": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Template Schema"
-          },
-          "upload_id": {
-            "type": "string",
-            "title": "Upload Id"
-          },
-          "template_mapping": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Mapping"
-          },
-          "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "template_html",
-          "template_schema",
-          "upload_id"
-        ],
-        "title": "DocumentTemplateGenerationCompletePayload",
-        "description": "Response indicating document template generation completed successfully."
-      },
-      "DocumentTemplateGenerationErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DocumentTemplateGenerationErrorPayload",
-        "description": "Response indicating an error occurred in document template generation."
-      },
-      "DocumentTemplateGenerationProgressPayload": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type"
-        ],
-        "title": "DocumentTemplateGenerationProgressPayload",
-        "description": "Response indicating progress in document template generation."
-      },
       "DocumentTitleEvalStartPayload": {
         "properties": {
           "test_id": {
@@ -32958,75 +30747,6 @@
         "title": "FeedbackListResponse",
         "description": "Response for feedback list endpoint."
       },
-      "FeedbackToolCompletePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "feedback_id": {
-            "type": "string",
-            "title": "Feedback Id"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "feedback_id"
-        ],
-        "title": "FeedbackToolCompletePayload",
-        "description": "Response indicating feedback tool completed successfully."
-      },
-      "FeedbackToolErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "message"
-        ],
-        "title": "FeedbackToolErrorPayload",
-        "description": "Response indicating an error occurred in feedback tool."
-      },
       "FinalizeUploadApiResponse": {
         "properties": {
           "upload_id": {
@@ -33089,101 +30809,40 @@
         "type": "object",
         "title": "FinalizeUploadApiResponse"
       },
-      "GenerateDocumentTemplatePayload": {
+      "GenerateAudioPayload": {
         "properties": {
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "agentId": {
+            "type": "string",
+            "title": "Agentid"
+          },
           "departmentId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Departmentid"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
-          "documentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentid"
-          },
-          "documentName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentname"
-          },
-          "documentDescription": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentdescription"
-          },
-          "fieldIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldids"
           }
         },
         "type": "object",
         "required": [
-          "departmentId"
+          "uploadId",
+          "prompt",
+          "agentId"
         ],
-        "title": "GenerateDocumentTemplatePayload",
-        "description": "Request to generate a document template."
-      },
-      "GenerateHintsPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "message_id": {
-            "type": "string",
-            "title": "Message Id"
-          },
-          "department_id": {
-            "type": "string",
-            "title": "Department Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id",
-          "message_id",
-          "department_id"
-        ],
-        "title": "GenerateHintsPayload",
-        "description": "Request to generate hints for a simulation message."
+        "title": "GenerateAudioPayload",
+        "description": "Request to generate audio."
       },
       "GenerateImagePayload": {
         "properties": {
@@ -50305,13 +47964,21 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "HintGenerationProgressPayload": {
+      "HintEvalStartPayload": {
         "properties": {
-          "type": {
+          "test_id": {
             "type": "string",
-            "title": "Type"
+            "title": "Test Id"
           },
-          "message": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "run_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -50320,9 +47987,9 @@
                 "type": "null"
               }
             ],
-            "title": "Message"
+            "title": "Run Id"
           },
-          "error": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -50331,83 +47998,144 @@
                 "type": "null"
               }
             ],
-            "title": "Error"
+            "title": "Group Id"
           },
-          "chat_id": {
+          "agent_id": {
             "type": "string",
-            "title": "Chat Id"
+            "title": "Agent Id"
           },
-          "message_id": {
-            "type": "string",
-            "title": "Message Id"
+          "use_groups": {
+            "type": "boolean",
+            "title": "Use Groups",
+            "default": false
           },
-          "hint_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hint Ids"
-          },
-          "hints_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints Count"
-          },
-          "hints": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/HintItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "chat_id",
-          "message_id"
-        ],
-        "title": "HintGenerationProgressPayload",
-        "description": "Response indicating progress in hint generation."
-      },
-      "HintItem": {
-        "properties": {
-          "idx": {
+          "current_cycle": {
             "type": "integer",
-            "title": "Idx"
-          },
-          "hint": {
-            "type": "string",
-            "title": "Hint"
+            "title": "Current Cycle",
+            "default": 0
           }
         },
         "type": "object",
         "required": [
-          "idx",
-          "hint"
+          "test_id",
+          "attempt_id",
+          "eval_id",
+          "agent_id"
         ],
-        "title": "HintItem",
-        "description": "Individual hint item with index and text."
+        "title": "HintEvalStartPayload",
+        "description": "Request to execute hint agent for eval."
+      },
+      "HintToolDebugEvalStartPayload": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "tool_id": {
+            "type": "string",
+            "title": "Tool Id"
+          },
+          "use_groups": {
+            "type": "boolean",
+            "title": "Use Groups",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_id",
+          "attempt_id",
+          "eval_id",
+          "tool_id"
+        ],
+        "title": "HintToolDebugEvalStartPayload",
+        "description": "Request to execute hint debug tool for eval."
+      },
+      "HintToolHintEvalStartPayload": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "tool_id": {
+            "type": "string",
+            "title": "Tool Id"
+          },
+          "use_groups": {
+            "type": "boolean",
+            "title": "Use Groups",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_id",
+          "attempt_id",
+          "eval_id",
+          "tool_id"
+        ],
+        "title": "HintToolHintEvalStartPayload",
+        "description": "Request to execute hint tool for eval."
       },
       "IBulkCreateStaffV3Profile": {
         "properties": {
@@ -52186,20 +49914,21 @@
             "type": "string",
             "title": "Chat Id"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "voice_mode": {
-            "type": "boolean",
-            "title": "Voice Mode",
-            "default": false
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
-          "chat_id",
-          "message"
+          "chat_id"
         ],
         "title": "MemberGeneratePayload",
         "description": "Request to generate member agent response."
@@ -52257,144 +49986,6 @@
         ],
         "title": "MemberProgressPayload",
         "description": "Request to upsert user message and run."
-      },
-      "MessageImprovementToolCompletePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "message_feedback_id": {
-            "type": "string",
-            "title": "Message Feedback Id"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "message_feedback_id"
-        ],
-        "title": "MessageImprovementToolCompletePayload",
-        "description": "Response indicating message improvement tool completed successfully."
-      },
-      "MessageImprovementToolErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "message"
-        ],
-        "title": "MessageImprovementToolErrorPayload",
-        "description": "Response indicating an error occurred in message improvement tool."
-      },
-      "MessageStrengthToolCompletePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "message_feedback_id": {
-            "type": "string",
-            "title": "Message Feedback Id"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "message_feedback_id"
-        ],
-        "title": "MessageStrengthToolCompletePayload",
-        "description": "Response indicating message strength tool completed successfully."
-      },
-      "MessageStrengthToolErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "trace_id": {
-            "type": "string",
-            "title": "Trace Id"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "chat_id",
-          "trace_id",
-          "message"
-        ],
-        "title": "MessageStrengthToolErrorPayload",
-        "description": "Response indicating an error occurred in message strength tool."
       },
       "ObjectiveEvalStartPayload": {
         "properties": {
@@ -91892,242 +89483,6 @@
         "title": "SimulationEvalStartPayload",
         "description": "Request to execute simulation agent for eval."
       },
-      "SimulationGradingProgressPayload": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          },
-          "rubric_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Name"
-          },
-          "standards_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards Count"
-          },
-          "grade_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Id"
-          },
-          "total_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Score"
-          },
-          "passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passed"
-          },
-          "standards_graded": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards Graded"
-          },
-          "time_taken": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Taken"
-          },
-          "summary": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Summary"
-          },
-          "standard_group_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Group Name"
-          },
-          "standard_group_short_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Group Short Name"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "feedback_preview": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feedback Preview"
-          },
-          "completed_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completed Count"
-          },
-          "total_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Count"
-          },
-          "summary_preview": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Summary Preview"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "chat_id"
-        ],
-        "title": "SimulationGradingProgressPayload",
-        "description": "Response indicating progress in simulation grading."
-      },
-      "SimulationGradingStartPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "department_id": {
-            "type": "string",
-            "title": "Department Id"
-          },
-          "sid": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id",
-          "department_id"
-        ],
-        "title": "SimulationGradingStartPayload",
-        "description": "Request to start grading for a simulation chat."
-      },
       "SimulationJoinErrorPayload": {
         "properties": {
           "success": {
@@ -92442,17 +89797,6 @@
               }
             ],
             "title": "Simulation Id"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
           },
           "scenario_id": {
             "anyOf": [
@@ -96121,123 +93465,6 @@
         ],
         "title": "GradeEvalStartPayload",
         "description": "Request to execute grade tool for eval."
-      },
-      "app__socket__v3__agents__hint__eval__HintEvalStartPayload": {
-        "properties": {
-          "test_id": {
-            "type": "string",
-            "title": "Test Id"
-          },
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          },
-          "eval_id": {
-            "type": "string",
-            "title": "Eval Id"
-          },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
-          "agent_id": {
-            "type": "string",
-            "title": "Agent Id"
-          },
-          "use_groups": {
-            "type": "boolean",
-            "title": "Use Groups",
-            "default": false
-          },
-          "current_cycle": {
-            "type": "integer",
-            "title": "Current Cycle",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "test_id",
-          "attempt_id",
-          "eval_id",
-          "agent_id"
-        ],
-        "title": "HintEvalStartPayload",
-        "description": "Request to execute hint agent for eval."
-      },
-      "app__socket__v3__agents__hint__tools__hint__eval__HintEvalStartPayload": {
-        "properties": {
-          "test_id": {
-            "type": "string",
-            "title": "Test Id"
-          },
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          },
-          "eval_id": {
-            "type": "string",
-            "title": "Eval Id"
-          },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
-          "tool_id": {
-            "type": "string",
-            "title": "Tool Id"
-          },
-          "use_groups": {
-            "type": "boolean",
-            "title": "Use Groups",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "test_id",
-          "attempt_id",
-          "eval_id",
-          "tool_id"
-        ],
-        "title": "HintEvalStartPayload",
-        "description": "Request to execute hint tool for eval."
       },
       "app__socket__v3__agents__image__eval__ImageEvalStartPayload": {
         "properties": {

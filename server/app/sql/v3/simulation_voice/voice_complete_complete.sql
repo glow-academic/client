@@ -58,21 +58,20 @@ finalize_messages AS (
     SET completed = true,
         updated_at = NOW()
     FROM params p
-    JOIN message_runs mr ON mr.message_id = messages.id
-    WHERE mr.run_id = p.run_id
-      AND messages.role = 'assistant'::message_role
-      AND messages.completed = false
-    RETURNING messages.id as message_id, messages.id
+    WHERE id IN (
+        SELECT mr.message_id 
+        FROM message_runs mr 
+        WHERE mr.run_id = p.run_id
+    )
+      AND role = 'assistant'::message_role
+      AND completed = false
+    RETURNING id as message_id, id
 ),
--- Mark run as complete
+-- Mark run as complete (runs table doesn't have completed column - this is a no-op for now)
 complete_run AS (
-    UPDATE runs
-    SET completed = true,
-        updated_at = NOW()
+    SELECT p.run_id
     FROM params p
-    WHERE runs.id = p.run_id
-      AND runs.completed = false
-    RETURNING id as run_id
+    WHERE EXISTS (SELECT 1 FROM runs WHERE runs.id = p.run_id)
 )
 SELECT 
     (SELECT EXISTS(SELECT 1 FROM complete_run)) as success,

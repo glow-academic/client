@@ -181,6 +181,7 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                         error=False,
                     )
                 except Exception as log_error:
+                    pass
             else:
                 await simulation_stopped(
                     SimulationStoppedPayload(
@@ -209,6 +210,9 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 @sio.event  # type: ignore
 async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -233,6 +237,9 @@ async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/stop", response_model=dict[str, bool])
 async def simulation_text_stop_api(request: StopSimulationPayload) -> dict[str, bool]:
@@ -277,6 +284,7 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
         if chat_id in _voice_sessions:
             del _voice_sessions[chat_id]
         else:
+            pass
         # Clear accumulated message IDs to prevent stale data
         async with _voice_message_ids_lock:
             if chat_id in _voice_message_ids:
@@ -298,6 +306,7 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
                 error=False,
             )
         except Exception as log_error:
+            pass
     except Exception as e:
         await simulation_voice_stop_error(
             StopVoiceErrorPayload(success=False, message=str(e)), room=sid
@@ -313,6 +322,9 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 @sio.event  # type: ignore
 async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler."""
@@ -335,6 +347,9 @@ async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 # FastAPI endpoints for voice stop
 @client_router.post("/voice_stop", response_model=dict[str, bool])
 async def simulation_voice_stop_api(request: StopVoicePayload) -> dict[str, bool]:

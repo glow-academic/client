@@ -340,6 +340,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     if generation_result:
                         generation_id = generation_result["generation_id"]
                     else:
+                        pass
                     # Emit completion event
                     await video_generation_complete(
                         VideoGenerationCompletePayload(

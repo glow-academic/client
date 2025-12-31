@@ -118,6 +118,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
+                pass
     except Exception as e:
         await benchmark_stop_error(
             BenchmarkStopErrorPayload(
@@ -136,6 +137,9 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
+            pass
+
+
 @sio.event  # type: ignore
 async def benchmark_stop(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""

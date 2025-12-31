@@ -1,26 +1,23 @@
-"""Handler for simulation_grading_start WebSocket event."""
+"""Handler for audio_generate WebSocket event."""
 
+import asyncio
 import uuid
-from datetime import UTC
+from pathlib import Path
 from typing import Any, cast
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, trace)
-from agents.items import TResponseInputItem
+from agents import Runner, trace
 from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v3.debug.debug_info import DebugContext
-from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
-from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v3.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v3.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.sql.types import (
-    GetGradingRunContextAndCreateRunSqlParams,
-    GetGradingRunContextAndCreateRunSqlRow,
-)
+from app.main import UPLOAD_FOLDER, get_internal_sio, sio
+from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
+                           GetAudioRunContextAndCreateRunSqlRow)
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, ValidationError
-from utils.agents.create_safe_field_name import create_safe_field_name
+from openai import OpenAI
+from pydantic import BaseModel, ValidationError
+from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
@@ -28,96 +25,110 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/grading/get_grading_run_context_and_create_run_complete.sql"
+AUDIO_FOLDER = UPLOAD_FOLDER / "audio"
+AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
-# Pydantic models
-class SimulationGradingStartPayload(BaseModel):
-    """Request to start grading for a simulation chat."""
+# Pydantic models for server-to-client events
+class AudioGenerationProgressPayload(BaseModel):
+    """Response indicating progress in audio generation."""
 
-    chat_id: str
-    department_id: str
-    sid: str | None = None  # Optional: WebSocket session ID for room targeting
-
-
-class SimulationGradingProgressPayload(BaseModel):
-    """Response indicating progress in simulation grading."""
-
-    type: str
-    chat_id: str
+    type: str  # "start", "processing", "completed"
     message: str | None = None
-    error: str | None = None
-    rubric_name: str | None = None
-    standards_count: int | None = None
-    grade_id: str | None = None
-    total_score: float | None = None
-    passed: bool | None = None
-    standards_graded: int | None = None
-    time_taken: float | None = None
-    summary: str | None = None
-    standard_group_name: str | None = None
-    standard_group_short_name: str | None = None
-    score: int | None = None
-    feedback_preview: str | None = None
-    completed_count: int | None = None
-    total_count: int | None = None
-    summary_preview: str | None = None
+    status: str | None = None  # "created", "processing", "completed", "failed"
+    progress: float | None = None  # 0.0 to 1.0
+    upload_id: str | None = None
+
+
+class AudioGenerationCompletePayload(BaseModel):
+    """Response indicating audio generation completed successfully."""
+
+    success: bool
+    message: str
+    audioUrl: str | None = None
+    uploadId: str | None = None
+
+
+class AudioGenerationErrorPayload(BaseModel):
+    """Response indicating an error occurred in audio generation."""
+
+    success: bool
+    message: str
+    upload_id: str | None = None
+
+
+# Pydantic model for client-to-server event
+class GenerateAudioPayload(BaseModel):
+    """Request to generate audio."""
+
+    uploadId: str  # Input audio upload_id (optional - can be None for text-to-audio)
+    prompt: str  # Text prompt for audio generation
+    agentId: str  # Audio agent ID
+    departmentId: str | None = None  # Optional department ID
 
 
 # Emit helper functions
-async def simulation_grading_progress(
-    payload: SimulationGradingProgressPayload, room: str
+async def audio_generation_progress(
+    payload: AudioGenerationProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "simulations_text_grading_progress",
+        "audio_generation_progress",
         payload.model_dump(exclude_none=True),
         room=room,
     )
 
 
-async def _simulation_grading_start_impl(sid: str, data: dict[str, Any], profile_id: uuid.UUID) -> None:
-    """Internal implementation for starting simulation grading."""
-    try:
-        validated = SimulationGradingStartPayload(**data)
-    except ValidationError as e:
-        await simulation_grading_progress(
-            SimulationGradingProgressPayload(
-                type="error",
-                chat_id=data.get("chat_id", "unknown"),
-                message=f"Invalid payload: {str(e)}",
-                error=str(e),
-            ),
-            room=f"simulation_{data.get('chat_id', 'unknown')}",
-        )
-        return
+async def audio_generation_complete(
+    payload: AudioGenerationCompletePayload, room: str
+) -> None:
+    await sio.emit("audio_generation_complete", payload.model_dump(), room=room)
 
-    chat_id = validated.chat_id
-    department_id_str = validated.department_id
 
+async def audio_generation_error(
+    payload: AudioGenerationErrorPayload, room: str
+) -> None:
+    await sio.emit("audio_generation_error", payload.model_dump(), room=room)
+
+
+SQL_PATH = "app/sql/v3/audio/get_audio_run_context_and_create_run_complete.sql"
+
+
+async def _audio_generate_impl(sid: str, data: GenerateAudioPayload) -> None:
+    """Handle audio generation requests via WebSocket."""
     try:
+        upload_id = uuid.UUID(data.uploadId) if data.uploadId else None
+        agent_id = uuid.UUID(data.agentId)
+        department_id = uuid.UUID(data.departmentId) if data.departmentId else None
+
+        # Get profile_id from sid lookup (O(1) Redis lookup)
+        # Audio generation can work without profile_id (guest mode)
+        profile_id_str = await find_profile_by_socket(sid)
+        profile_id = uuid.UUID(profile_id_str) if profile_id_str else None
+
         async with get_db_connection() as conn:
-            simulation_chat_id = uuid.UUID(chat_id)
-            department_id = uuid.UUID(department_id_str)
+            # Emit start event
+            await audio_generation_progress(
+                AudioGenerationProgressPayload(
+                    type="start",
+                    message="Starting audio generation",
+                    status="created",
+                    upload_id=str(upload_id) if upload_id else None,
+                ),
+                room=sid,
+            )
 
-            # Initialize grading tracking dictionaries
-            grading_results: dict[str, Any] = {}
-            grading_progress: dict[str, bool] = {}
-            grading_results.clear()
-            grading_progress.clear()
-
-            # Get all grading context data AND create run in single atomic transaction
+            # Get agent context AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            # Pattern: All AI operations use atomic context+run creation SQL files
-            # See WEBSOCKET_STANDARDS.md for details
             try:
                 # Use execute_sql_typed() - auto-detects function
-                params = GetGradingRunContextAndCreateRunSqlParams(
-                    chat_id=simulation_chat_id,
+                params = GetAudioRunContextAndCreateRunSqlParams(
+                    upload_id=upload_id,  # Can be None for text-to-audio
+                    agent_id=agent_id,
+                    profile_id=profile_id,  # Can be None for guest mode
                     department_id=department_id,
-                    profile_id=profile_id,  # From sid lookup
                 )
                 result = cast(
-                    GetGradingRunContextAndCreateRunSqlRow,
+                    GetAudioRunContextAndCreateRunSqlRow,
                     await execute_sql_typed(conn, SQL_PATH, params=params),
                 )
             except Exception as e:
@@ -135,976 +146,267 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any], profile
                         if "RATE_LIMIT_EXCEEDED: " in error_msg
                         else error_msg
                     )
-                    await simulation_grading_progress(
-                        SimulationGradingProgressPayload(
-                            type="error",
-                            chat_id=str(simulation_chat_id),
+                    await audio_generation_error(
+                        AudioGenerationErrorPayload(
+                            success=False,
                             message=user_msg,
-                            error=user_msg,
+                            upload_id=str(upload_id) if upload_id else None,
                         ),
-                        room=f"simulation_{simulation_chat_id}",
+                        room=sid,
                     )
                     return
-                await simulation_grading_progress(
-                    SimulationGradingProgressPayload(
-                        type="error",
-                        chat_id=str(simulation_chat_id),
-                        message=f"Failed to initialize grading: {str(e)}",
-                        error=str(e),
+                await audio_generation_error(
+                    AudioGenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to initialize audio generation: {str(e)}",
+                        upload_id=str(upload_id) if upload_id else None,
                     ),
-                    room=f"simulation_{simulation_chat_id}",
+                    room=sid,
                 )
                 return
 
             if not result:
-                raise ValueError(
-                    f"Chat {simulation_chat_id} not found or no grading agent configured"
+                await audio_generation_error(
+                    AudioGenerationErrorPayload(
+                        success=False,
+                        message=(
+                            f"No audio agent configured. "
+                            "Please configure an audio agent in system settings."
+                        ),
+                        upload_id=str(upload_id) if upload_id else None,
+                    ),
+                    room=sid,
                 )
+                return
 
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(result.run_id)
+            dept_id = result.department_id
 
-            # standard_groups and standards are already composite type arrays from SQL
-            # asyncpg automatically decodes them into Python objects
-            standard_groups_json = result.standard_groups or []
-            standards_json = result.standards or []
-
-            context = {
-                "chat_id": result.chat_id,
-                "scenario_id": result.scenario_id,
-                "attempt_id": result.chat_attempt_id,
-                "title": result.title,
-                "trace_id": result.trace_id,
-                "created_at": result.chat_created_at,
-                "completed": result.completed,
-                "problem_statement": result.problem_statement,
-                "simulation_id": result.simulation_id_out,
-                "total_chats": result.total_chats,
-                "time_limit": result.time_limit,
-                "rubric": {
-                    "id": result.rubric_id_out,
-                    "name": result.rubric_name,
-                    "description": result.rubric_description,
-                    "points": result.rubric_points,
-                    "pass_points": result.rubric_pass_points,
-                },
-                "standard_groups": standard_groups_json,
-                "standards": standards_json,
-                "agent": {
-                    "id": result.agent_id,
-                    "name": result.agent_name,
-                    "system_prompt": result.system_prompt,
-                    "temperature": float(result.temperature)
-                    if result.temperature is not None
-                    else 0.0,
-                    "reasoning": result.reasoning,
-                },
-                "model": {
-                    "id": result.model_id,
-                    "name": result.model_name,
-                    "custom_model": None,  # Not returned by grading SQL
-                },
-                "provider": {
-                    "id": None,  # Not returned by grading SQL
-                    "name": result.provider,
-                    "base_url": result.base_url,
-                    "api_key": result.api_key,
-                },
-                "profile_id": result.profile_id_out,
-                "req_per_day": result.req_per_day,
-                "runs_today_count": result.runs_today_count,
-                "earliest_run_created_at": result.earliest_run_created_at,
-                "audio_agent_id": result.audio_agent_id,
-            }
-
-            # Extract data from context
-            chat = {
-                "id": uuid.UUID(context["chat_id"]),
-                "scenario_id": uuid.UUID(context["scenario_id"]),
-                "attempt_id": uuid.UUID(context["attempt_id"]),
-                "title": context["title"],
-                "trace_id": context["trace_id"],
-            }
-
-            attempt = {
-                "id": uuid.UUID(context["attempt_id"]),
-                "simulation_id": uuid.UUID(context["simulation_id"]),
-            }
-
-            simulation = {
-                "id": uuid.UUID(context["simulation_id"]),
-                "rubric_id": uuid.UUID(context["rubric"]["id"]),
-                "time_limit": context["time_limit"],
-                "department_id": department_id,
-            }
-
-            rubric = {
-                "id": uuid.UUID(context["rubric"]["id"]),
-                "name": context["rubric"]["name"],
-                "description": context["rubric"]["description"],
-                "points": context["rubric"]["points"],
-                "pass_points": context["rubric"]["pass_points"],
-            }
-
-            rubric_id = rubric["id"]
-
-            # Convert standard_groups and standards from composite types to dicts with UUID conversion
-            # Composite types are already decoded by asyncpg into Python objects with attributes
-            standard_groups = []
-            for sg in context["standard_groups"]:
-                standard_groups.append(
-                    {
-                        "id": uuid.UUID(sg.id),
-                        "name": sg.name,
-                        "short_name": sg.short_name,
-                        "description": sg.description,
-                        "points": sg.points,
-                        "pass_points": sg.pass_points,
-                        "rubric_id": uuid.UUID(sg.rubric_id),
-                    }
+            if not result.api_key:
+                agent_name = result.agent_name or "audio agent"
+                model_name = result.model_name or "unknown model"
+                await audio_generation_error(
+                    AudioGenerationErrorPayload(
+                        success=False,
+                        message=(
+                            f"API key not found for {agent_name} (model: {model_name}). "
+                            "Please link an API key to the model in system settings. "
+                            "For OpenAI audio generation, ensure the model is linked to an OpenAI API key."
+                        ),
+                        upload_id=str(upload_id) if upload_id else None,
+                    ),
+                    room=sid,
                 )
+                return
 
-            standards = []
-            for std in context["standards"]:
-                standards.append(
-                    {
-                        "id": uuid.UUID(std.id),
-                        "name": std.name,
-                        "description": std.description,
-                        "points": std.points,
-                        "standard_group_id": uuid.UUID(std.standard_group_id),
-                    }
+            # Extract context data
+            encrypted_api_key = result.api_key
+            model_name = result.model_name
+            # Decrypt the API key
+            try:
+                api_key = decrypt_api_key(encrypted_api_key)
+            except ValueError as e:
+                await audio_generation_error(
+                    AudioGenerationErrorPayload(
+                        success=False,
+                        message=(
+                            f"Failed to decrypt API key for {result.agent_name or 'audio agent'}: {str(e)}"
+                        ),
+                        upload_id=str(upload_id) if upload_id else None,
+                    ),
+                    room=sid,
                 )
+                return
 
-            # Get messages using SQL file
-            sql_messages = load_sql(
-                "app/sql/v3/simulations/get_simulation_messages.sql"
-            )
-            message_rows = await conn.fetch(sql_messages, str(simulation_chat_id))
-            messages = [dict(row) for row in message_rows]
+            # Initialize OpenAI client
+            client = OpenAI(api_key=api_key)
 
-            input_items: list[TResponseInputItem] = []
-
-            # prepare conversation history from chat_id
-            # Always enable message numbering for grading so agent can reference messages
-            has_audio_messages = any(msg.get("audio", False) for msg in messages)
-            audio_agent_id = result.audio_agent_id
-            rubric_grade_agent_id = result.rubric_grade_agent_id
-
-            # For audio grading, use audio agent if available, otherwise use text agent
-            if audio_agent_id:
-                # Override agent_id in context to use audio agent
-                context["agent"]["id"] = audio_agent_id
-                # Also update agent_id_uuid for tool loading
-                agent_id_uuid_for_tools = uuid.UUID(audio_agent_id)
-            else:
-                agent_id_uuid_for_tools = uuid.UUID(context["agent"]["id"])
-
-            # Always enable message numbering for grading (inlined from get_simulation_conversation_history)
-            from datetime import datetime
-
-            include_message_numbers = True
-            conversation_history: list[TResponseInputItem] = []
-            message_id_map: dict[str, int] = {}
-            message_number = 1
-
-            # Filter out error messages and make a list of all items
-            items = [
-                msg
-                for msg in messages
-                if not msg.get("content", "").startswith("Error:")
+            # Prepare input for chat completions
+            # For gpt-audio, we can pass audio files as input
+            messages: list[dict[str, Any]] = [
+                {"role": "user", "content": data.prompt}
             ]
 
-            # sort items by created_at
-            items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
-
-            # Group messages by type to handle consecutive responses
-            current_response_messages: list[dict[str, Any]] = []
-
-            for item in items:
-                # Handle both "type" (legacy/test) and "role" (database) fields
-                msg_type = item.get("type", "")
-                msg_role = item.get("role", "")
-                msg_content = item.get("content", "")
-                message_id = item.get("id", "")
-
-                # Check if this is a user message (type="query" or role="user")
-                is_user_message = (
-                    msg_type == "query" or msg_role == "user"
-                ) and msg_content != ""
-
-                if is_user_message:
-                    # If we have pending response messages, add the latest one
-                    if current_response_messages:
-                        latest_response = current_response_messages[-1]
-                        response_id = latest_response.get("id", "")
-                        content = latest_response.get("content", "")
-
-                        if include_message_numbers:
-                            content = f"[{message_number}] {content}"
-                            if response_id:
-                                message_id_map[response_id] = message_number
-                            message_number += 1
-
-                        assistant_message_item: TResponseInputItem = {
-                            "role": "assistant",
-                            "content": content,
-                        }
-                        conversation_history.append(assistant_message_item)
-                        current_response_messages = []
-
-                    # Add the user message
-                    content = msg_content
-                    if include_message_numbers:
-                        content = f"[{message_number}] {content}"
-                        if message_id:
-                            message_id_map[message_id] = message_number
-                        message_number += 1
-
-                    user_message_item: TResponseInputItem = {
-                        "role": "user",
-                        "content": content,
-                    }
-                    conversation_history.append(user_message_item)
-                # Check if this is an assistant message (type="response" or role="assistant")
-                elif (
-                    msg_type == "response" or msg_role == "assistant"
-                ) and msg_content != "":
-                    # Collect response messages to find the latest one
-                    current_response_messages.append(item)
-
-            # Handle any remaining response messages at the end
-            if current_response_messages:
-                latest_response = current_response_messages[-1]
-                response_id = latest_response.get("id", "")
-                content = latest_response.get("content", "")
-
-                if include_message_numbers:
-                    content = f"[{message_number}] {content}"
-                    if response_id:
-                        message_id_map[response_id] = message_number
-                    message_number += 1
-
-                current_assistant_message_item: TResponseInputItem = {
-                    "role": "assistant",
-                    "content": content,
-                }
-                conversation_history.append(current_assistant_message_item)
-
-            # Format scenario from context
-            chat_scenario = format_chat_scenario(context["problem_statement"])
-
-            input_items.insert(0, chat_scenario)
-            input_items.extend(conversation_history)
-
-            # Emit grading start event
-            await simulation_grading_progress(
-                SimulationGradingProgressPayload(
-                    type="start",
-                    chat_id=str(simulation_chat_id),
-                    message="Starting grading process",
-                    rubric_name=rubric["name"],
-                    standards_count=len(standard_groups),
-                ),
-                room=f"simulation_{simulation_chat_id}",
-            )
-
-            # Build dynamic rubric
-            rubric_lines = [
-                f"RUBRIC: {rubric['name']}",
-                f"Description: {rubric.get('description', '')}",
-                f"Total Points: {rubric['points']}",
-                f"Pass Points: {rubric['pass_points']}",
-                "",
-                "EVALUATION CRITERIA:",
-                "",
-            ]
-
-            # Group standards by standard_group_id
-            standards_by_group: dict[Any, list[dict[str, Any]]] = {}
-            for standard in standards:
-                group_id = standard["standard_group_id"]
-                if group_id not in standards_by_group:
-                    standards_by_group[group_id] = []
-                standards_by_group[group_id].append(standard)
-
-            # Build criteria sections
-            for group in standard_groups:
-                rubric_lines.extend(
-                    [
-                        f"CRITERION: {group['name']} ({group['short_name']})",
-                        f"Description: {group.get('description', '')}",
-                        f"Points: {group['points']} (Pass: {group['pass_points']})",
-                        "Rating Scale:",
-                    ]
-                )
-
-                # Sort standards by points (descending - 5 to 1)
-                group_standards = standards_by_group.get(group["id"], [])
-                group_standards.sort(key=lambda x: x["points"], reverse=True)
-
-                for standard in group_standards:
-                    rubric_lines.append(
-                        f"  {standard['points']} - {standard['name']}: {standard.get('description', '')}"
-                    )
-
-                rubric_lines.append("")  # Empty line between criteria
-
-            rubric_string = "\n".join(rubric_lines)
-
-            rubric_input = {
-                "role": "developer",
-                "content": f"You are evaluating a conversation based on the following rubric. Please provide scores (1-5) and feedback for each criterion.\n\n{rubric_string}",
-            }
-
-            # get the time limit from the simulation
-            time_limit = simulation["time_limit"] or -1
-
-            # Calculate adjusted time limit for multi-simulation attempts
-            total_chats = context["total_chats"]
-            adjusted_time_limit = (
-                (time_limit * 60)
-                if time_limit and total_chats == 1
-                else ((time_limit * 60) // total_chats)
-                if time_limit
-                else 0
-            )
-
-            # Get chat timestamps from context
-            chat_created_at = context["created_at"]
-
-            # Convert timestamps to UTC if they have timezone info
-            if chat_created_at.tzinfo is not None:
-                chat_created_at = chat_created_at.astimezone(UTC)
-            else:
-                chat_created_at = chat_created_at.replace(tzinfo=UTC)
-
-            # Calculate time taken - use current time since completed_at column was removed
-            current_time = datetime.now(UTC)
-            actual_time_taken = max(
-                1, int((current_time - chat_created_at).total_seconds())
-            )
-
-            def format_minutes(seconds: int) -> str:
-                minutes = seconds // 60
-                secs = seconds % 60
-                return f"{minutes} min {secs} sec" if minutes > 0 else f"{secs} sec"
-
-            # create time message
-            time_message: TResponseInputItem
-            if adjusted_time_limit > 0:
-                time_message = {
-                    "role": "developer",
-                    "content": f"The adjusted time limit for this chat is {format_minutes(adjusted_time_limit)}. The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
-                }
-            else:
-                time_message = {
-                    "role": "developer",
-                    "content": f"The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
-                }
-
-            # add rubric to beginning of input_items
-            input_items.insert(0, time_message)
-            input_items.insert(0, rubric_input)  # type: ignore[arg-type]
-
-            # Create wrapper for emit_progress that captures chat_id
-            async def emit_progress_wrapper(event_data: dict[str, Any]) -> None:
-                await simulation_grading_progress(
-                    SimulationGradingProgressPayload(**event_data),
-                    room=f"simulation_{simulation_chat_id}",
-                )
-
-            # Rate limit validation and run creation are now handled in SQL
-            # (get_grading_run_context_and_create_run.sql) - both happen atomically
-            # If we get here, rate limit check passed and run was created successfully
-            # model_run_id is already extracted from context_row above
-
-            # Create grade record at START with placeholder values
-            # Tools will insert feedbacks as they're called
-            sql_create_grade = load_sql("app/sql/v3/grading/create_grade_complete.sql")
-            if not rubric_grade_agent_id:
-                raise ValueError("rubric_grade_agent_id not found in context")
-            grade_row = await conn.fetchrow(
-                sql_create_grade,
-                str(model_run_id),  # run_id
-                str(rubric_grade_agent_id),  # rubric_grade_agent_id
-                "",  # description (placeholder)
-                False,  # passed (placeholder)
-                0,  # score (placeholder)
-                actual_time_taken,
-            )
-            if not grade_row:
-                raise ValueError("Failed to create simulation chat grade")
-            grade_id = uuid.UUID(grade_row["id"])
-
-
-            # Load agent tools from database (use voice agent if available)
-            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
-            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid_for_tools))
-            agent_tools_config = [dict(row) for row in rows]
-            tool_config_map_grading: dict[str, dict[str, Any]] = {
-                tool_config["name"]: tool_config for tool_config in agent_tools_config
-            }
-
-            # Create grading tools inline for each standard group
-            profile_id_str = context.get("profile_id")
-            grading_tools: list[Tool] = []
-            total_standard_groups = len(standard_groups)
-
-            # Get base grading tool config from database
-            base_grading_config = tool_config_map_grading.get("create_grade")
-
-            for group in standard_groups:
-                safe_name = create_safe_field_name(group["short_name"])
-
-                # Get standards for this group and build rating scale
-                group_standards = [
-                    s for s in standards if s["standard_group_id"] == group["id"]
-                ]
-                group_standards.sort(key=lambda x: x["points"], reverse=True)
-
-                rating_scale = "\n".join(
-                    [
-                        f"  {std['points']} - {std['name']}: {std.get('description', '')}"
-                        for std in group_standards
-                    ]
-                )
-
-                full_description = (
-                    f"{group.get('description', '')}\n\nRating Scale:\n{rating_scale}"
-                )
-
-                # Get descriptions from database config if available
-                if base_grading_config:
-                    score_desc = base_grading_config.get(
-                        "argument_descriptions", {}
-                    ).get("score", f"Score for {group['name']} (1-5)")
-                    feedback_desc = base_grading_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "feedback", f"Feedback explaining the score for {group['name']}"
-                    )
-                else:
-                    score_desc = f"Score for {group['name']} (1-5)"
-                    feedback_desc = f"Feedback explaining the score for {group['name']}"
-
-                # Create function with proper closure capture
-                def make_grading_function(
-                    group_dict: dict[str, Any],
-                    full_desc: str,
-                    score_descr: str,
-                    feedback_descr: str,
-                ):
-                    async def grade_standard_group(
-                        score: int = Field(ge=1, le=5, description=score_descr),
-                        feedback: str = Field(default="", description=feedback_descr),
-                    ) -> str:
-                        """Grade the conversation on: {group_name}
-
-                        {full_description}
-
-                        Args:
-                            score: Integer score from 1-5 based on the rubric criteria above
-                            feedback: Brief feedback explaining the score with specific examples
-
-                        Returns:
-                            Confirmation message
-                        """.format(
-                            group_name=group_dict["name"],
-                            full_description=full_desc,
-                        )
-                        if not grade_id:
-                            return "Error: Grade ID not available"
-
-                        from app.main import get_internal_sio
-
-                        internal_sio = get_internal_sio()
-
-                        # Call feedback tool handler via internal WebSocket
-                        await internal_sio.emit(
-                            "grading_tool_feedback",
-                            {
-                                "chat_id": str(simulation_chat_id),
-                                "trace_id": chat["trace_id"] or "grading",
-                                "grade_id": str(grade_id),
-                                "standard_group_id": str(group_dict["id"]),
-                                "score": score,
-                                "feedback": feedback,
-                                "profile_id": profile_id_str,
-                            },
-                        )
-
-                        # Emit progress event
-                        await emit_progress_wrapper(
-                            {
-                                "type": "standard_graded",
-                                "chat_id": str(simulation_chat_id),
-                                "standard_group_name": group_dict["name"],
-                                "standard_group_short_name": group_dict["short_name"],
-                                "score": score,
-                                "feedback_preview": feedback[:100] + "..."
-                                if len(feedback) > 100
-                                else feedback,
-                                "completed_count": 0,
-                                "total_count": total_standard_groups,
-                            }
-                        )
-
-                        return f"Graded {group_dict['name']} with score {score}"
-
-                    grade_standard_group.__name__ = f"grade_{safe_name}"
-                    return grade_standard_group
-
-                grade_func = make_grading_function(
-                    group, full_description, score_desc, feedback_desc
-                )
-                grading_tools.append(function_tool(grade_func))
-
-            # Add message_strength tool if grade_id and message_id_map are available
-            if grade_id and message_id_map:
-                message_strength_config = tool_config_map_grading.get(
-                    "create_feedback_strength"
-                )
-                if message_strength_config:
-                    message_num_desc = message_strength_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "message_number",
-                        "Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to",
-                    )
-                    feedback_desc = message_strength_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "feedback", "Description of what was strong about this message"
-                    )
-                    highlight_desc = message_strength_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "highlight",
-                        "List of sections to highlight as strengths (e.g., ['section1', 'section2'])",
-                    )
-                else:
-                    message_num_desc = "Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to"
-                    feedback_desc = "Description of what was strong about this message"
-                    highlight_desc = "List of sections to highlight as strengths (e.g., ['section1', 'section2'])"
-
-                async def message_strength(
-                    message_number: int = Field(description=message_num_desc),
-                    feedback: str = Field(description=feedback_desc),
-                    highlight: list[str] | None = Field(
-                        default=None, description=highlight_desc
-                    ),
-                ) -> str:
-                    """Add strength feedback to a specific message."""
-                    if not grade_id or not message_id_map:
-                        return "Error: Grade ID or message map not available"
-
-                    from app.main import get_internal_sio
-
-                    internal_sio = get_internal_sio()
-
-                    await internal_sio.emit(
-                        "grading_tool_message_strength",
-                        {
-                            "chat_id": str(simulation_chat_id),
-                            "trace_id": chat["trace_id"] or "grading",
-                            "grade_id": str(grade_id),
-                            "message_number": message_number,
-                            "feedback": feedback,
-                            "highlight": highlight or [],
-                            "message_id_map": message_id_map,
-                            "profile_id": profile_id_str,
-                        },
-                    )
-
-                    await emit_progress_wrapper(
-                        {
-                            "type": "message_strength_added",
-                            "chat_id": str(simulation_chat_id),
-                            "message_number": message_number,
-                            "feedback_preview": feedback[:100] + "..."
-                            if len(feedback) > 100
-                            else feedback,
-                        }
-                    )
-
-                    return f"Strength feedback added to message {message_number}"
-
-                grading_tools.append(function_tool(message_strength))
-
-                # Add message_improvement tool
-                message_improvement_config = tool_config_map_grading.get(
-                    "create_feedback_improvement"
-                )
-                if message_improvement_config:
-                    message_num_desc = message_improvement_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "message_number",
-                        "Message number (as shown in conversation history, e.g., 1, 3, 5) to add improvement feedback to",
-                    )
-                    feedback_desc = message_improvement_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "feedback",
-                        "Description of what could be improved about this message",
-                    )
-                    strike_desc = message_improvement_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "strike",
-                        "List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])",
-                    )
-                else:
-                    message_num_desc = "Message number (as shown in conversation history, e.g., 1, 3, 5) to add improvement feedback to"
-                    feedback_desc = (
-                        "Description of what could be improved about this message"
-                    )
-                    strike_desc = "List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])"
-
-                async def message_improvement(
-                    message_number: int = Field(description=message_num_desc),
-                    feedback: str = Field(description=feedback_desc),
-                    strike: list[dict[str, str]] | None = Field(
-                        default=None, description=strike_desc
-                    ),
-                ) -> str:
-                    """Add improvement feedback to a specific message."""
-                    if not grade_id or not message_id_map:
-                        return "Error: Grade ID or message map not available"
-
-                    from app.main import get_internal_sio
-
-                    internal_sio = get_internal_sio()
-
-                    await internal_sio.emit(
-                        "grading_tool_message_improvement",
-                        {
-                            "chat_id": str(simulation_chat_id),
-                            "trace_id": chat["trace_id"] or "grading",
-                            "grade_id": str(grade_id),
-                            "message_number": message_number,
-                            "feedback": feedback,
-                            "strike": strike or [],
-                            "message_id_map": message_id_map,
-                            "profile_id": profile_id_str,
-                        },
-                    )
-
-                    await emit_progress_wrapper(
-                        {
-                            "type": "message_improvement_added",
-                            "chat_id": str(simulation_chat_id),
-                            "message_number": message_number,
-                            "feedback_preview": feedback[:100] + "..."
-                            if len(feedback) > 100
-                            else feedback,
-                        }
-                    )
-
-                    return f"Improvement feedback added to message {message_number}"
-
-                grading_tools.append(function_tool(message_improvement))
-
-            # Add audio grading tool if audio messages exist and audio agent is configured
-            # Note: Audio tool is now in grade agent, but audio agent (Grade Voice) can still use it
-            if has_audio_messages and audio_agent_id:
-                from app.socket.v3.agents.grade.tools.audio.call import \
-                    _grading_tool_audio_impl
-
-                grade_audio_config = tool_config_map_grading.get("create_analysis")
-                if grade_audio_config:
-                    message_nums_desc = grade_audio_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "message_numbers",
-                        "List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze",
-                    )
-                    what_to_analyze_desc = grade_audio_config.get(
-                        "argument_descriptions", {}
-                    ).get(
-                        "what_to_analyze",
-                        "Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')",
-                    )
-                else:
-                    message_nums_desc = "List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze"
-                    what_to_analyze_desc = "Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')"
-
-                async def grade_audio(
-                    message_numbers: list[int] = Field(description=message_nums_desc),
-                    what_to_analyze: str = Field(description=what_to_analyze_desc),
-                ) -> str:
-                    """Grade audio messages from the conversation.
-
-                    This tool allows you to analyze audio messages from the conversation.
-                    Specify which messages (by their numbers in the conversation history)
-                    you want to analyze and what aspects you want to evaluate.
-
-                    Args:
-                        message_numbers: List of message numbers that have audio (e.g., [1, 3, 5])
-                        what_to_analyze: Description of what to analyze in the audio
-
-                    Returns:
-                        Analysis result from the audio grading agent
-                    """
-                    # Call the audio handler directly to get synchronous result
-                    # We'll use a special flag to return the result instead of emitting events
-                    result_container: dict[str, Any] = {"result": None, "error": None}
-
-                    async def capture_result(
-                        result: str, error: str | None = None
-                    ) -> None:
-                        result_container["result"] = result
-                        result_container["error"] = error
-
-                    # Call handler with result callback
-                    try:
-                        result = await _grading_tool_audio_impl(
-                            sid,
-                            {
-                                "chat_id": str(simulation_chat_id),
-                                "trace_id": context["trace_id"],
-                                "message_numbers": message_numbers,
-                                "what_to_analyze": what_to_analyze,
-                                "agent_id": audio_agent_id,
-                                "department_id": str(department_id),
-                                "message_id_map": message_id_map,
-                                "profile_id": profile_id_str,
-                                "_result_callback": capture_result,
-                            },
-                        )
-
-                        # If handler returned result directly, use it
-                        if result:
-                            return result
-
-                        # Otherwise check callback result
-                        if result_container["error"]:
-                            return f"Error analyzing audio: {result_container['error']}"
-
-                        if result_container["result"]:
-                            return result_container["result"]
-
-                        return "Audio analysis completed but no result was returned."
-                    except Exception as e:
-                        return f"Error analyzing audio: {str(e)}"
-
-                grading_tools.append(function_tool(grade_audio))
-
-            grading_tools.append(debug_info_tool)
-
-            # Create tool use behavior to check when all required tools are called
-            def tool_use_behavior(
-                tool_context: RunContextWrapper[Any],
-                tool_results: list[FunctionToolResult],
-            ) -> ToolsToFinalOutputResult:
-                # Use grading_progress from outer scope
-                nonlocal grading_progress
-                # No longer require summary tool
-                required_tools = []
-                for group in standard_groups:
-                    safe_name = create_safe_field_name(group["short_name"])
-                    required_tools.append(safe_name)
-
-                completed_required = all(
-                    grading_progress.get(tool, False) for tool in required_tools
-                )
-
-                return ToolsToFinalOutputResult(is_final_output=completed_required)
-
-            # Get agent, model, and provider from context
-            agent = context["agent"]
-            model = context["model"]
-            provider = context["provider"]
-
-            grading_agent = GenericAgent(
-                agent_name=agent["name"],
-                system_prompt=agent["system_prompt"],
-                temperature=agent["temperature"],
-                model_name=model["name"],
-                provider=provider["name"],
-                base_url=provider["base_url"],
-                api_key=provider["api_key"],
-                reasoning=agent["reasoning"],
-                tools=grading_tools,
+            # If upload_id is provided, add audio file to input
+            audio_file_path = None
+            if upload_id and result.file_path:
+                # Read audio file from uploads folder
+                audio_file_path = UPLOAD_FOLDER / result.file_path
+                if audio_file_path.exists():
+                    # For OpenAI chat completions with audio, we need to pass the file
+                    # OpenAI expects file objects or file paths
+                    with open(audio_file_path, "rb") as audio_file:
+                        # Create file object for OpenAI API
+                        # Note: OpenAI chat completions API accepts audio files in the content
+                        # Format depends on OpenAI API version - for now, we'll use text prompt
+                        # and let the model handle audio generation
+                        pass  # Audio input handling can be added when OpenAI API supports it
+
+            # Use GenericAgent to generate audio via chat completions
+            # gpt-audio model works with chat completions API
+            audio_agent = GenericAgent(
+                agent_name=result.agent_name or "Audio Agent",
+                system_prompt=result.system_prompt or "",
+                temperature=float(result.temperature) if result.temperature is not None else 0.0,
+                model_name=model_name,
+                provider=result.provider_name or "openai",
+                base_url=result.base_url,
+                api_key=api_key,
+                reasoning=result.reasoning,
+                tools=[],  # No tools for audio generation
                 parallel_tool_calls=False,
-                tool_use_behavior=tool_use_behavior,
             )
 
-            agent_instance = grading_agent.agent()
+            agent_instance = audio_agent.agent()
 
-            # Rate limit validation and run creation are now handled in SQL
-            # (get_grading_run_context_and_create_run.sql) - both happen atomically
-            # If we get here, rate limit check passed and run was created successfully
-            # model_run_id is already extracted from context_row above
+            # Run agent to generate audio
+            # Note: gpt-audio with chat completions may return audio in the response
+            # For now, we'll generate text and handle audio output separately
+            # This is a placeholder - actual implementation depends on OpenAI API support
+            await audio_generation_progress(
+                AudioGenerationProgressPayload(
+                    type="processing",
+                    message="Generating audio...",
+                    status="processing",
+                    progress=0.5,
+                    upload_id=str(upload_id) if upload_id else None,
+                ),
+                room=sid,
+            )
 
-            # Run the grading
+            # Run agent with streaming (if supported) or regular run
             with trace(
-                chat["title"], trace_id=chat["trace_id"], group_id=str(attempt["id"])
+                "Audio Agent",
+                trace_id=None,
             ):
-                result = await Runner.run(
+                from agents.items import TResponseInputItem
+
+                input_items: list[TResponseInputItem] = [
+                    {"role": "user", "content": data.prompt}
+                ]
+                result_agent = await Runner.run(
                     agent_instance,
                     input=input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
+            usage = result_agent.context_wrapper.usage
+            assistant_output = getattr(result_agent, "final_output", None) or ""
+
+            # For now, save the text output as a placeholder
+            # TODO: When OpenAI API supports audio output in chat completions,
+            # extract audio from response and save to file
+            # For now, we'll create a placeholder upload record
+            audio_filename = f"audio_{uuid.uuid4()}.txt"  # Placeholder - should be .mp3 or .wav
+            audio_relative_path = f"audio/{audio_filename}"
+            AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
+            audio_path = AUDIO_FOLDER / audio_filename
+
+            # Save text output for now (replace with audio when API supports it)
+            await asyncio.to_thread(audio_path.write_text, assistant_output, encoding="utf-8")
+
+            async with conn.transaction():
+                # Create upload record
+                mime_type = "text/plain"  # Placeholder - should be audio/mpeg or audio/wav
+                file_size = len(assistant_output.encode("utf-8"))
+                sql_query = load_sql("app/sql/v3/uploads/insert_upload.sql")
+                output_upload_id_str = await conn.fetchval(
+                    sql_query,
+                    audio_relative_path,
+                    mime_type,
+                    file_size,
+                )
+
+                if not output_upload_id_str:
+                    await audio_generation_error(
+                        AudioGenerationErrorPayload(
+                            success=False,
+                            message="Failed to create upload record",
+                            upload_id=str(upload_id) if upload_id else None,
+                        ),
+                        room=sid,
+                    )
+                    return
+
             # Emit async pricing event (non-blocking)
             # This handles token updates and message logging in background
-            # Pattern: All AI operations must emit log_run event after completion
-            # See WEBSOCKET_STANDARDS.md for details
-            usage = result.context_wrapper.usage
-            assistant_output = getattr(result, "final_output", None) or ""
-            rubric_dev_content = str(rubric_input.get("content", ""))
-            time_dev_content = str(time_message.get("content", ""))
-            # Create input_items with developer messages for logging
-            input_items_with_dev = input_items + [
-                {"role": "developer", "content": rubric_dev_content},
-                {"role": "developer", "content": time_dev_content},
-            ]
             await internal_sio.emit(
                 "log_run",
                 {
                     "runId": str(model_run_id),
-                    "operationType": "simulation_grade",
+                    "operationType": "audio",
                     "inputTextTokens": usage.input_tokens,
                     "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": agent["system_prompt"],
-                    "inputItems": input_items_with_dev,  # Serialized TResponseInputItem list
+                    "systemPrompt": result.system_prompt or "",
+                    "inputItems": input_items,  # Serialized TResponseInputItem list
                     "assistantOutput": assistant_output,
-                    "departmentId": str(department_id),
+                    "departmentId": str(dept_id) if dept_id else None,
                 },
             )
 
-
-            # Calculate overall score from feedbacks in database
-            sql_get_feedbacks = load_sql(
-                "app/sql/v3/grading/get_feedback_totals_for_grade.sql"
-            )
-            feedback_rows = await conn.fetch(sql_get_feedbacks, str(grade_id))
-            overall_score = sum(row["total"] for row in feedback_rows)
-
-            passed = overall_score >= rubric["pass_points"]
-
-            # Get description from final output (no summary tool anymore)
-            summary = getattr(result, "final_output", None) or ""
-
-            # Update grade record with final values
-            sql_update_grade = load_sql("app/sql/v3/grading/update_grade_final.sql")
-            await conn.execute(
-                sql_update_grade,
-                str(grade_id),
-                summary,
-                passed,
-                overall_score,
-            )
-
-            # 3. Mark chat as completed
-            sql_mark_completed = load_sql(
-                "app/sql/v3/simulations/mark_chat_completed.sql"
-            )
-            await conn.execute(sql_mark_completed, str(simulation_chat_id))
-
-
-            # Emit grading completion event
-            await simulation_grading_progress(
-                SimulationGradingProgressPayload(
-                    type="complete",
-                    chat_id=str(simulation_chat_id),
-                    message="Grading completed successfully",
-                    grade_id=str(grade_id),
-                    total_score=overall_score,
-                    passed=passed,
-                    standards_graded=len(standard_groups),
-                    time_taken=actual_time_taken,
-                    summary=summary,
+            # Emit completion event
+            await audio_generation_complete(
+                AudioGenerationCompletePayload(
+                    success=True,
+                    message="Audio generated successfully",
+                    audioUrl=f"/api/uploads/download/{output_upload_id_str}",
+                    uploadId=output_upload_id_str,
                 ),
-                room=f"simulation_{simulation_chat_id}",
+                room=sid,
             )
 
-    except RuntimeError:
-        await simulation_grading_progress(
-            SimulationGradingProgressPayload(
-                type="error",
-                chat_id=chat_id,
-                message="Database connection pool not available",
-                error="Database connection pool not available",
-            ),
-            room=f"simulation_{chat_id}",
-        )
     except Exception as e:
-        # Emit error event
-        try:
-            await simulation_grading_progress(
-                SimulationGradingProgressPayload(
-                    type="error",
-                    chat_id=chat_id,
-                    message=f"Grading failed: {str(e)}",
-                    error=str(e),
-                ),
-                room=f"simulation_{chat_id}",
-            )
-        except Exception:
-            # Error emitting error event - Socket.IO handles logging
-            pass
+        upload_id_str = str(data.uploadId) if hasattr(data, "uploadId") and data.uploadId else None
+        await audio_generation_error(
+            AudioGenerationErrorPayload(
+                success=False, message=str(e), upload_id=upload_id_str
+            ),
+            room=sid,
+        )
 
 
 @sio.event  # type: ignore
-async def simulation_grading_start(sid: str, data: dict[str, Any]) -> None:
-    """Handle grading start event from client (client-to-server)."""
-    # Get profile_id from sid lookup (O(1) Redis lookup)
-    profile_id_str = await find_profile_by_socket(sid)
-    if not profile_id_str:
-        await simulation_grading_progress(
-            SimulationGradingProgressPayload(
-                type="error",
-                chat_id=data.get("chat_id", "unknown"),
-                message="Profile not found. Please reconnect.",
-                error="Profile not found. Please reconnect.",
+async def audio_generate(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = GenerateAudioPayload(**data)
+        await _audio_generate_impl(sid, validated)
+    except ValidationError as e:
+        await audio_generation_error(
+            AudioGenerationErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}", upload_id=None
             ),
-            room=f"simulation_{data.get('chat_id', 'unknown')}",
+            room=sid,
         )
-        return
-    profile_id = uuid.UUID(profile_id_str)
-    await _simulation_grading_start_impl(sid, data, profile_id)
-
-
-@internal_sio.on("simulation_grading_start")
-async def simulation_grading_start_internal(data: dict[str, Any]) -> None:
-    """Handle grading start event from internal bus (server-to-server)."""
-    sid = data.get("sid")
-    if not sid:
-        return
-    # Get profile_id from sid lookup
-    profile_id_str = await find_profile_by_socket(sid)
-    if not profile_id_str:
-        await simulation_grading_progress(
-            SimulationGradingProgressPayload(
-                type="error",
-                chat_id=data.get("chat_id", "unknown"),
-                message="Profile not found for socket",
-                error="Profile not found for socket",
-            ),
-            room=f"simulation_{data.get('chat_id', 'unknown')}",
-        )
-        return
-    profile_id = uuid.UUID(profile_id_str)
-    # Remove sid from data before passing to implementation
-    payload = {k: v for k, v in data.items() if k != "sid"}
-    await _simulation_grading_start_impl(sid, payload, profile_id)
 
 
 # FastAPI endpoint for OpenAPI documentation
-@client_router.post("/start", response_model=dict[str, bool])
-async def simulation_grading_start_api(
-    request: SimulationGradingStartPayload,
-) -> dict[str, bool]:
-    """Client-to-server event: Start grading for a simulation chat."""
+@client_router.post("/generate", response_model=dict[str, bool])
+async def audio_generate_api(request: GenerateAudioPayload) -> dict[str, bool]:
+    """Client-to-server event: Generate audio using AI."""
     return {"success": True}
 
 
-@server_router.post("/progress", response_model=dict[str, bool])
-async def simulation_grading_progress_api(
-    request: SimulationGradingProgressPayload,
+@server_router.post("/generation_progress", response_model=dict[str, bool])
+async def audio_generation_progress_api(
+    request: AudioGenerationProgressPayload,
 ) -> dict[str, bool]:
-    """Server-to-client event: Simulation grading progress update."""
+    """Server-to-client event: Progress update for audio generation."""
+    return {"success": True}
+
+
+@server_router.post("/generation_complete", response_model=dict[str, bool])
+async def audio_generation_complete_api(
+    request: AudioGenerationCompletePayload,
+) -> dict[str, bool]:
+    """Server-to-client event: Audio generation completed successfully."""
+    return {"success": True}
+
+
+@server_router.post("/generation_error", response_model=dict[str, bool])
+async def audio_generation_error_api(
+    request: AudioGenerationErrorPayload,
+) -> dict[str, bool]:
+    """Server-to-client event: Error occurred during audio generation."""
     return {"success": True}

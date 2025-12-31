@@ -1,4 +1,4 @@
--- Get all data needed to run document agent AND create run in single atomic transaction
+-- Get all data needed to run audio agent AND create run in single atomic transaction
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
@@ -13,48 +13,19 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'socket_get_document_run_context_and_create_run_v3'
+        WHERE proname = 'socket_get_audio_run_context_and_create_run_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_document_run_context_and_create_run_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_audio_run_context_and_create_run_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
--- Drop all types matching prefix pattern to handle type additions/removals
--- If any other object depends on them, this will ERROR and stop the migration (good)
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
-        WHERE typname LIKE 'i_get_document_run_context_and_create_run_v3_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
-    END LOOP;
-END $$;
-
--- 3) Recreate types for pass-through parameters (not used in SQL, but needed in ApiRequest)
-CREATE TYPE types.i_get_document_run_context_and_create_run_v3_pass_through AS (
-    document_id uuid,
-    document_name text,
-    document_description text,
-    field_ids uuid[]
-);
-
--- 4) Recreate function
--- Note: document_id, document_name, document_description, field_ids are pass-through parameters (not used in SQL)
--- They are included so they appear in the auto-generated ApiRequest type
-CREATE OR REPLACE FUNCTION socket_get_document_run_context_and_create_run_v3(
-    department_id uuid,
-    profile_id uuid,
-    document_id uuid DEFAULT NULL,
-    document_name text DEFAULT NULL,
-    document_description text DEFAULT NULL,
-    field_ids uuid[] DEFAULT NULL
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION socket_get_audio_run_context_and_create_run_v3(
+    upload_id uuid,
+    agent_id uuid,
+    profile_id uuid DEFAULT NULL,
+    department_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     agent_id text,
@@ -67,75 +38,81 @@ RETURNS TABLE (
     provider text,
     base_url text,
     api_key text,
+    custom_model text,
+    provider_id text,
+    provider_name text,
     profile_id text,
     req_per_day integer,
     runs_today_count bigint,
     earliest_run_created_at timestamptz,
-    run_id text,
-    group_id uuid,
-    trace_id text
+    department_id uuid,
+    upload_id uuid,
+    file_path text,
+    mime_type text,
+    run_id text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
-    SELECT 
-        department_id AS department_id, 
-        profile_id AS profile_id,
-        document_id AS document_id,
-        document_name AS document_name,
-        document_description AS document_description,
-        field_ids AS field_ids
+    -- Explicitly cast parameters for asyncpg type inference
+    SELECT upload_id::uuid as upload_id, agent_id::uuid as agent_id, profile_id::uuid as profile_id, department_id::uuid as department_id
 ),
-create_group_if_needed AS (
-    -- Create new group if group_id is NULL (always NULL for first generation)
-    INSERT INTO groups (created_at, updated_at)
-    SELECT NOW(), NOW()
+upload_info AS (
+    -- Get upload information
+    SELECT 
+        u.id as upload_id,
+        u.file_path,
+        u.mime_type
     FROM params p
-    WHERE p.department_id IS NOT NULL  -- Always create group for document generation
-    RETURNING id as group_id, trace_id
+    JOIN uploads u ON u.id = p.upload_id
 ),
-group_data AS (
-    -- Use newly created group
+audio_department AS (
+    -- Get department_id from params
     SELECT 
-        cg.group_id,
-        cg.trace_id
-    FROM create_group_if_needed cg
+        p.department_id as department_id
+    FROM params p
 ),
 best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN audio_department ad_dept
     CROSS JOIN params p
-    WHERE a.role = 'document'
+    WHERE a.id = p.agent_id
+    AND a.role = 'audio'::agent_role
     AND a.active = true
     AND (
-        -- Include if agent is linked to the specified department
-        ad.department_id = p.department_id
+        -- Include if agent is linked to the department
+        (ad_dept.department_id IS NOT NULL AND ad.department_id = ad_dept.department_id)
         -- OR agent has no department links (cross-department)
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+        -- OR no department specified
+        OR ad_dept.department_id IS NULL
     )
     ORDER BY 
         -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = p.department_id THEN 0 ELSE 1 END
+        CASE WHEN ad_dept.department_id IS NOT NULL AND ad.department_id = ad_dept.department_id THEN 0 ELSE 1 END
     LIMIT 1
 ),
 profile_rate_limit AS (
-    -- Get rate limit for the profile
+    -- Get rate limit for the profile (or NULL if profile_id is NULL)
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles prof
+    FROM params p
+    LEFT JOIN profiles prof ON prof.id = p.profile_id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    WHERE prof.id = (SELECT profile_id FROM params)
+    WHERE p.profile_id IS NOT NULL
 ),
 runs_today AS (
-    -- Count model runs for the profile since start of day
+    -- Count model runs for the profile since start of day (or 0 if profile_id is NULL)
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT profile_id FROM params)
+    FROM params p
+    LEFT JOIN runs mr ON TRUE
+    LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.profile_id = p.profile_id
+    WHERE p.profile_id IS NOT NULL
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -225,19 +202,31 @@ context_data AS (
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
         
+        -- Custom model (if any) - indicated by presence of base_url in model_endpoints
+        CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
+        
+        -- Provider data (provider enum is now on models table, no separate providers table)
+        NULL::text as provider_id,
+        COALESCE(prov.value::text, '') as provider_name,
+        
         -- Profile data
         p.profile_id::text as profile_id,
         
-        -- Rate limit data (for profile)
-        prl.req_per_day,
+        -- Rate limit data (for profile) - use COALESCE to handle NULL profile_id
+        COALESCE(prl.req_per_day, 0) as req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
-        rt.earliest_run_created_at
+        rt.earliest_run_created_at,
+        
+        -- Department ID (from audio_department, for agent selection)
+        ad_dept.department_id
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
     CROSS JOIN params p
+    CROSS JOIN audio_department ad_dept
+    CROSS JOIN upload_info ui
     -- Try department-specific prompt first, fall back to default prompt
-    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
+    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = ad_dept.department_id AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
@@ -259,10 +248,11 @@ context_data AS (
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    CROSS JOIN profile_rate_limit prl
-    CROSS JOIN runs_today rt
+    LEFT JOIN profile_rate_limit prl ON TRUE
+    LEFT JOIN runs_today rt ON TRUE
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
-    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
+    -- Only validate if profile_id is not NULL
+    WHERE (p.profile_id IS NULL OR validate_rate_limit(COALESCE(prl.req_per_day, 0), COALESCE(rt.runs_today_count, 0)) = TRUE)
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
@@ -280,19 +270,12 @@ link_model AS (
     RETURNING run_id
 ),
 link_profile AS (
-    -- Link profile to run
+    -- Link profile to run (only if profile_id is not NULL)
     INSERT INTO run_profiles (run_id, profile_id, active)
     SELECT lm.run_id, cd.profile_id::uuid, true
     FROM link_model lm
     CROSS JOIN context_data cd
-    RETURNING run_id
-),
-link_group AS (
-    -- Link group to run
-    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT gd.group_id, lp.run_id, 0, NOW(), NOW()
-    FROM link_profile lp
-    CROSS JOIN group_data gd
+    WHERE cd.profile_id IS NOT NULL
     RETURNING run_id
 )
 SELECT 
@@ -307,18 +290,23 @@ SELECT
     cd.provider,
     cd.base_url,
     cd.api_key,
+    cd.custom_model,
+    cd.provider_id,
+    cd.provider_name,
     cd.profile_id,
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
+    cd.department_id,
+    -- Upload info (input audio file)
+    ui.upload_id,
+    ui.file_path,
+    ui.mime_type,
     -- Run ID (created in same transaction)
-    cr.id::text as run_id,
-    -- Group ID and trace_id (from groups table)
-    gd.group_id,
-    gd.trace_id::text as trace_id
+    cr.id::text as run_id
 FROM context_data cd
 CROSS JOIN create_run cr
-CROSS JOIN group_data gd
+CROSS JOIN upload_info ui
 $$;
 
 COMMIT;

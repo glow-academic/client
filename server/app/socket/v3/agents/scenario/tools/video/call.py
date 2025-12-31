@@ -106,8 +106,7 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                     # Fall through to video generation below
                 else:
                     # If image tool indicates readiness, proceed immediately
-                    if validated.images_ready:
-                    else:
+                    if not validated.images_ready:
                         # Store pending video generation - image tool will trigger when ready
                         image_tool_module._pending_video_generations[pending_key] = {
                             "expected_image_ids": set(validated.image_ids),

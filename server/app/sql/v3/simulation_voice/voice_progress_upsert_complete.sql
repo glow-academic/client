@@ -120,12 +120,11 @@ link_tool_call_to_run AS (
 ),
 -- Update tool call arguments
 update_tool_call_arguments AS (
-    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at, updated_at)
+    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
     SELECT 
         stc.tool_call_id,
         COALESCE(safe_jsonb_parse(p.arguments_raw), '{}'::jsonb),
         p.arguments_raw,
-        NOW(),
         NOW()
     FROM params p
     CROSS JOIN selected_tool_call stc
@@ -133,9 +132,8 @@ update_tool_call_arguments AS (
       AND p.arguments_raw IS NOT NULL
     ON CONFLICT (tool_call_id) 
     DO UPDATE SET 
-        arguments_json = COALESCE(safe_jsonb_parse(p.arguments_raw), tool_call_arguments.arguments_json),
-        arguments_raw = p.arguments_raw,
-        updated_at = NOW()
+        arguments_json = COALESCE(safe_jsonb_parse(EXCLUDED.arguments_raw), tool_call_arguments.arguments_json),
+        arguments_raw = EXCLUDED.arguments_raw
     RETURNING tool_call_id
 ),
 -- Finalize tool call if is_complete
@@ -184,48 +182,47 @@ insert_message_content_if_needed AS (
       )
 ),
 update_message_content AS (
-    UPDATE message_content
+    UPDATE message_content mc
     SET content = p.message_content,
         updated_at = NOW()
     FROM params p
-    WHERE message_id = (SELECT message_id FROM selected_message LIMIT 1)
-      AND idx = 0
+    WHERE mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
+      AND mc.idx = 0
       AND p.message_content IS NOT NULL
 ),
 -- Mark message as completed if is_complete
 complete_message AS (
-    UPDATE messages
-    SET completed = p.is_complete,
+    UPDATE messages m
+    SET completed = p_params.is_complete,
         updated_at = NOW()
-    FROM params p
-    WHERE id = (SELECT message_id FROM selected_message LIMIT 1)
-      AND p.is_complete = true
-    RETURNING id as message_id
+    FROM params p_params
+    WHERE m.id = (SELECT message_id FROM selected_message LIMIT 1)
+      AND p_params.is_complete = true
+    RETURNING m.id as message_id
 ),
 -- Link message to run
 link_message_to_run AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT sm.message_id, p.run_id, NOW(), NOW()
-    FROM params p
+    SELECT sm.message_id, p_params.run_id, NOW(), NOW()
+    FROM params p_params
     CROSS JOIN selected_message sm
     WHERE NOT EXISTS (
         SELECT 1 FROM message_runs mr 
         WHERE mr.message_id = sm.message_id 
-        AND mr.run_id = p.run_id
+        AND mr.run_id = p_params.run_id
     )
 ),
 -- Link message to persona
 link_message_to_persona AS (
-    INSERT INTO message_personas (message_id, persona_id, active, created_at, updated_at)
-    SELECT sm.message_id, p.persona_id, true, NOW(), NOW()
+    INSERT INTO message_personas (message_id, persona_id, created_at, updated_at)
+    SELECT sm.message_id, p.persona_id, NOW(), NOW()
     FROM params p
     CROSS JOIN selected_message sm
     WHERE p.persona_id IS NOT NULL
       AND NOT EXISTS (
           SELECT 1 FROM message_personas mp 
           WHERE mp.message_id = sm.message_id 
-          AND mp.persona_id = p.persona_id 
-          AND mp.active = true
+          AND mp.persona_id = p.persona_id
       )
 ),
 -- Create message branch

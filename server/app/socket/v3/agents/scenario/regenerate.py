@@ -130,10 +130,10 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
         try:
             async with get_db_connection() as conn:
-            # Clear previous results (now handled by storage with keys)
+                # Clear previous results (now handled by storage with keys)
 
-            # Emit start event
-            await scenario_regeneration_progress(
+                # Emit start event
+                await scenario_regeneration_progress(
                 ScenarioRegenerationProgressPayload(
                     type="start",
                     message="Starting scenario regeneration",
