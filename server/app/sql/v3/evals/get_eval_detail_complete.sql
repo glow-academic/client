@@ -342,7 +342,7 @@ valid_eval_agents_list AS (
         COALESCE(a.description, '') as description,
         ARRAY[a.role::text] as roles
     FROM params x
-    JOIN agents a ON a.active = true AND a.role = 'eval'::agent_role
+    JOIN agents a ON a.active = true AND a.role = 'grade'::agent_role
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     GROUP BY a.id, a.name, a.description, a.role
     HAVING 

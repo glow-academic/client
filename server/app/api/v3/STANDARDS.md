@@ -150,7 +150,7 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 1. **Preferred: Explicit cast syntax**
    ```sql
    -- ✅ Good: Strong comparison using explicit cast (preferred)
-   WHERE a.role = 'eval'::agent_role
+   WHERE a.role = 'grade'::agent_role
    WHERE p.role = 'superadmin'::profile_role
    WHERE m.role = 'user'::message_role
    ```
@@ -158,7 +158,7 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 2. **Alternative: Shorthand syntax**
    ```sql
    -- ✅ Good: Strong comparison using shorthand (alternative)
-   WHERE a.role = agent_role 'eval'
+   WHERE a.role = agent_role 'grade'
    WHERE p.role = profile_role 'superadmin'
    WHERE m.role = message_role 'user'
    ```
@@ -166,7 +166,7 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 3. **Never compare enums to raw strings**
    ```sql
    -- ❌ Bad: Weak comparison (runtime error if invalid)
-   WHERE a.role = 'eval'
+   WHERE a.role = 'grade'
    WHERE p.role = 'superadmin'
    WHERE m.role = 'user'
    ```

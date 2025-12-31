@@ -1,4 +1,4 @@
-"""Standard description tool event handlers."""
+"""Rubric tool event handlers."""
 
 from fastapi import APIRouter
 

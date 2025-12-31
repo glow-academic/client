@@ -1,4 +1,4 @@
-"""Handler for grading_tool_audio WebSocket event."""
+"""Handler for audio tool WebSocket event."""
 
 import uuid
 from typing import Any
@@ -327,7 +327,7 @@ Please provide a detailed analysis based on this request. Consider aspects such 
                 "log_run",
                 {
                     "runId": str(model_run_id),
-                    "operationType": "simulation_grade_audio",
+                    "operationType": "simulation_audio",
                     "inputTextTokens": usage.input_tokens,
                     "outputTextTokens": usage.output_tokens,
                     "systemPrompt": audio_context_row.get("system_prompt", ""),

@@ -210,7 +210,7 @@ user_departments_for_agents AS (
     WHERE pd.active = true
 ),
 valid_agents AS (
-    -- Get agents with role 'eval'
+    -- Get agents with role 'grade'
     -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
         COALESCE(
@@ -228,7 +228,7 @@ valid_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true 
-    AND a.role = 'eval'
+    AND a.role = 'grade'
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0

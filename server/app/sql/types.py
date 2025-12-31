@@ -4094,6 +4094,53 @@ class AddEvalGroupsApiResponse(BaseModel):
 
 
 
+# Generated from: add_eval_runs
+
+class IAddEvalRunsV3RubricGradeAgent(BaseModel):
+
+    rubric_id: UUID | None
+    grade_text_agent_id: UUID | None
+
+class IAddEvalRunsV3Run(BaseModel):
+
+    run_id: UUID | None
+    rubric_grade_agents: list[IAddEvalRunsV3RubricGradeAgent] | None
+
+class AddEvalRunsSqlParams(BaseModel):
+
+    eval_id: UUID
+    runs: list[IAddEvalRunsV3Run]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert runs composite array to tuples for asyncpg
+        runs_tuples = [
+            (conn.run_id, conn.rubric_grade_agents)
+            for conn in self.runs
+        ]
+        return (
+            self.eval_id,
+            runs_tuples,
+            self.profile_id,
+        )
+
+class AddEvalRunsSqlRow(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+class AddEvalRunsApiRequest(BaseModel):
+
+    eval_id: UUID
+    runs: list[IAddEvalRunsV3Run]
+
+class AddEvalRunsApiResponse(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_eval
 
 class CreateEvalSqlParams(BaseModel):
@@ -14751,6 +14798,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "AddEvalGroupsApiRequest",
         "AddEvalGroupsApiResponse",
     ),
+    "app/sql/v3/evals/add_eval_runs_complete.sql": (
+        "AddEvalRunsSqlParams",
+        "AddEvalRunsSqlRow",
+        "AddEvalRunsApiRequest",
+        "AddEvalRunsApiResponse",
+    ),
     "app/sql/v3/evals/create_eval_complete.sql": (
         "CreateEvalSqlParams",
         "CreateEvalSqlRow",
@@ -15776,6 +15829,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/evals/add_eval_groups_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/add_eval_runs_complete.sql"]
     ) -> SqlString: ...
 
     @overload

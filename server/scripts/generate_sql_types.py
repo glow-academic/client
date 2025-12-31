@@ -974,13 +974,14 @@ async def main() -> int:
 
     # Custom sorting function to prioritize analytics routes
     def _sort_sql_files(sql_file: Path) -> tuple[int, str]:
-        """Sort SQL files with analytics routes first.
+        """Sort SQL files with analytics routes first, and handle type dependencies.
 
         Returns:
             Tuple of (priority, path) where:
             - Priority 0: Analytics view creation file (must be first)
             - Priority 1: Other analytics routes
-            - Priority 2: All other routes (sorted alphabetically)
+            - Priority 2: Settings detail (must come before active settings)
+            - Priority 3: All other routes (sorted alphabetically)
         """
         sql_path = str(sql_file.relative_to(server_root))
 
@@ -992,8 +993,15 @@ async def main() -> int:
         if sql_path.startswith("app/sql/v3/analytics/"):
             return (1, sql_path)
 
+        # Settings detail must come before active settings (type dependency)
+        if sql_path == "app/sql/v3/settings/get_settings_detail_complete.sql":
+            return (2, "a_" + sql_path)  # 'a_' prefix ensures it sorts before 'get_active_'
+        
+        if sql_path == "app/sql/v3/settings/get_active_settings_complete.sql":
+            return (2, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
+
         # All other routes sorted alphabetically
-        return (2, sql_path)
+        return (3, sql_path)
 
     # Sort SQL files with analytics routes first
     sorted_sql_files = sorted(sql_files, key=_sort_sql_files)

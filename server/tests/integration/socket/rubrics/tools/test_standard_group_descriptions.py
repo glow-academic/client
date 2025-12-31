@@ -4,7 +4,7 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.tools.standard_description.call import (
+from app.socket.v3.tools.rubric.call import (
     rubric_tool_standard_description_internal,
 )
 

@@ -435,7 +435,7 @@ async def transaction(
 from app.socket.v3.agents.hint.generate import (
     simulation_hints_generate_internal,  # noqa: F401
 )
-from app.socket.v3.agents.image.complete import image_generation_complete  # noqa: F401
+from app.socket.v3.agents.image.complete import image_generation_complete_internal  # noqa: F401
 
 # Import image modules to register internal_sio handlers
 from app.socket.v3.agents.image.generate import generate_image  # noqa: F401

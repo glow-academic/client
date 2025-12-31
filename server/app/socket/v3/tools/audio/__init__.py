@@ -1,4 +1,4 @@
-"""Title description tool."""
+"""Audio tool event handlers."""
 
 from fastapi import APIRouter
 

@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-from .analysis import client_router as analysis_client_router
-from .analysis import server_router as analysis_server_router
+from .audio import client_router as audio_client_router
+from .audio import server_router as audio_server_router
 from .classification import client_router as classification_client_router
 from .classification import server_router as classification_server_router
 from .debug import server_router as debug_server_router
@@ -39,7 +39,7 @@ from .question import client_router as question_client_router
 from .question import server_router as question_server_router
 from .speak import client_router as speak_client_router
 from .speak import server_router as speak_server_router
-from .standard_description import server_router as standard_description_server_router
+from .rubric import server_router as rubric_server_router
 from .statement import client_router as statement_client_router
 from .statement import server_router as statement_server_router
 from .title import client_router as title_client_router
@@ -57,7 +57,7 @@ client_router.include_router(objective_client_router)
 client_router.include_router(image_client_router)
 client_router.include_router(video_client_router)
 client_router.include_router(question_client_router)
-client_router.include_router(analysis_client_router)
+client_router.include_router(audio_client_router)
 client_router.include_router(grade_client_router)
 client_router.include_router(strength_client_router)
 client_router.include_router(improvement_client_router)
@@ -73,9 +73,9 @@ server_router.include_router(objective_server_router)
 server_router.include_router(image_server_router)
 server_router.include_router(video_server_router)
 server_router.include_router(question_server_router)
-server_router.include_router(standard_description_server_router)
+server_router.include_router(rubric_server_router)
 server_router.include_router(debug_server_router)
-server_router.include_router(analysis_server_router)
+server_router.include_router(audio_server_router)
 server_router.include_router(grade_server_router)
 server_router.include_router(strength_server_router)
 server_router.include_router(improvement_server_router)

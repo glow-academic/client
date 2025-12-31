@@ -109,7 +109,7 @@ runs_filtered AS (
             OR $9::boolean = false
             OR (
                 $9::boolean = true
-                AND agent_role IN ('grade'::agent_role, 'audio'::agent_role, 'simulation'::agent_role, 'voice'::agent_role, 'eval'::agent_role)
+                AND agent_role IN ('grade'::agent_role, 'audio'::agent_role, 'simulation'::agent_role, 'voice'::agent_role)
             )
         )
     )
