@@ -8,9 +8,11 @@ from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.infra.v3.websocket.handler_wrapper import handle_client_event, handle_internal_event
+from app.infra.v3.websocket.handler_wrapper import (
+    handle_client_event,
+    handle_internal_event,
+)
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
-from app.infra.v3.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)

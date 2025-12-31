@@ -6,7 +6,6 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.main import get_internal_sio, get_pool, sio
@@ -48,9 +47,7 @@ class BenchmarkAdvancePayload(BaseModel):
 
 
 # Emit helper functions
-async def benchmark_advanced(
-    payload: BenchmarkAdvancedPayload, room: str
-) -> None:
+async def benchmark_advanced(payload: BenchmarkAdvancedPayload, room: str) -> None:
     await sio.emit("benchmarks_advanced", payload.model_dump(), room=room)
 
 
@@ -66,9 +63,7 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
     Updates client with test/run/group status.
     """
     try:
-        logger.info(
-            f"Received benchmark_advance request from {sid} with data: {data}"
-        )
+        logger.info(f"Received benchmark_advance request from {sid} with data: {data}")
 
         test_id = data.test_id
         attempt_id = data.attempt_id
@@ -155,9 +150,7 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging benchmark advance activity: {log_error}"
-                )
+                logger.warning(f"Error logging benchmark advance activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error in benchmark_advance for {sid}: {str(e)}", exc_info=True)
@@ -220,4 +213,3 @@ async def benchmark_advanced_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Benchmark advanced successfully."""
     return {"success": True}
-

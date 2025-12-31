@@ -10,7 +10,7 @@ from agents import Runner, function_tool, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
@@ -128,9 +128,7 @@ def get_simulation_conversation_history(
     message_id_map: dict[str, int] = {}
     message_number = 1
 
-    items = [
-        msg for msg in messages if not msg.get("content", "").startswith("Error:")
-    ]
+    items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
 
     items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
 
@@ -177,9 +175,7 @@ def get_simulation_conversation_history(
                 "content": content,
             }
             conversation_history.append(user_message_item)
-        elif (
-            msg_type == "response" or msg_role == "assistant"
-        ) and msg_content != "":
+        elif (msg_type == "response" or msg_role == "assistant") and msg_content != "":
             current_response_messages.append(item)
 
     if current_response_messages:
@@ -249,9 +245,7 @@ async def _simulation_text_generate_impl(
             )
 
             if not context_row:
-                raise ValueError(
-                    f"Chat {chat_id_uuid} or run {run_id_uuid} not found"
-                )
+                raise ValueError(f"Chat {chat_id_uuid} or run {run_id_uuid} not found")
 
             # Parse JSON array for documents
             documents = (
@@ -367,9 +361,7 @@ async def _simulation_text_generate_impl(
             sql_latest_user = load_sql(
                 "app/sql/v3/simulations/get_latest_user_message.sql"
             )
-            latest_user_row = await conn.fetchrow(
-                sql_latest_user, str(chat_id_uuid)
-            )
+            latest_user_row = await conn.fetchrow(sql_latest_user, str(chat_id_uuid))
             parent_message_id_for_branching: uuid.UUID | None = None
             if latest_user_row:
                 parent_message_id_for_branching = latest_user_row["id"]
@@ -382,9 +374,7 @@ async def _simulation_text_generate_impl(
             if personas:
                 # Load agent tools from database
                 simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
-                sql_get_agent_tools = load_sql(
-                    "app/sql/v3/agents/get_agent_tools.sql"
-                )
+                sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
                 rows = await conn.fetch(
                     sql_get_agent_tools, str(simulation_agent_id_uuid)
                 )
@@ -397,9 +387,9 @@ async def _simulation_text_generate_impl(
                 # Build speak tool inline
                 speak_config = tool_config_map_persona.get("speak")
                 if speak_config:
-                    persona_desc = speak_config.get(
-                        "argument_descriptions", {}
-                    ).get("persona", "The name of the persona that should speak")
+                    persona_desc = speak_config.get("argument_descriptions", {}).get(
+                        "persona", "The name of the persona that should speak"
+                    )
                     message_desc = speak_config.get("argument_descriptions", {}).get(
                         "message",
                         "The message content that the persona should say",
@@ -471,16 +461,13 @@ async def _simulation_text_generate_impl(
                         persona_instructions_map[persona_name] = instructions or ""
 
                 persona_names = [
-                    p.get("persona_name") or p.get("name", "Unknown")
-                    for p in personas
+                    p.get("persona_name") or p.get("name", "Unknown") for p in personas
                 ]
                 persona_descriptions = []
                 for persona_name in persona_names:
                     instructions = persona_instructions_map.get(persona_name, "")
                     if instructions:
-                        persona_descriptions.append(
-                            f"- {persona_name}: {instructions}"
-                        )
+                        persona_descriptions.append(f"- {persona_name}: {instructions}")
                     else:
                         persona_descriptions.append(f"- {persona_name}")
 
@@ -553,10 +540,7 @@ Tool Usage Instructions:
                     event_count += 1
 
                     # Check for run_item_stream_event to get tool name
-                    if (
-                        hasattr(event, "type")
-                        and event.type == "run_item_stream_event"
-                    ):
+                    if hasattr(event, "type") and event.type == "run_item_stream_event":
                         item = getattr(event, "item", None)
                         if item:
                             item_type = (
@@ -587,10 +571,7 @@ Tool Usage Instructions:
                                         ] = tool_name
 
                     # Check for raw_response_event and inspect data for tool call deltas
-                    if (
-                        hasattr(event, "type")
-                        and event.type == "raw_response_event"
-                    ):
+                    if hasattr(event, "type") and event.type == "raw_response_event":
                         event_data = getattr(event, "data", None)
                         if not event_data:
                             continue
@@ -637,16 +618,10 @@ Tool Usage Instructions:
                                                 real_item_id
                                             )
 
-                                        if (
-                                            real_item_id
-                                            in tool_calls_dict[chat_id_str]
-                                        ):
+                                        if real_item_id in tool_calls_dict[chat_id_str]:
                                             continue
 
-                                        if (
-                                            real_item_id
-                                            in tool_calls_dict[chat_id_str]
-                                        ):
+                                        if real_item_id in tool_calls_dict[chat_id_str]:
                                             existing_state = tool_calls_dict[
                                                 chat_id_str
                                             ][real_item_id]
@@ -681,9 +656,9 @@ Tool Usage Instructions:
                                                     in_message
                                                 )
                                                 if new_message_chars:
-                                                    existing_state[
-                                                        "message_so_far"
-                                                    ] = new_message_chars
+                                                    existing_state["message_so_far"] = (
+                                                        new_message_chars
+                                                    )
                                         else:
                                             tool_calls_dict[chat_id_str][
                                                 real_item_id
@@ -717,10 +692,7 @@ Tool Usage Instructions:
                                             )
 
                         # Handle response.function_call_arguments.delta
-                        if (
-                            event_data_type
-                            == "response.function_call_arguments.delta"
-                        ):
+                        if event_data_type == "response.function_call_arguments.delta":
                             fake_item_id = getattr(event_data, "item_id", None)
                             arguments_delta = getattr(event_data, "delta", None)
                             call_id = getattr(event_data, "call_id", None)
@@ -766,9 +738,7 @@ Tool Usage Instructions:
                                     "completed": False,
                                 }
 
-                            tool_call_state = tool_calls_dict[chat_id_str][
-                                tool_call_id
-                            ]
+                            tool_call_state = tool_calls_dict[chat_id_str][tool_call_id]
 
                             if tool_call_state["name"] is None:
                                 tool_call_state["arguments_raw"] += arguments_delta
@@ -801,9 +771,7 @@ Tool Usage Instructions:
                             tool_call_state["in_message"] = in_message
 
                             if new_message_chars:
-                                tool_call_state["message_so_far"] += (
-                                    new_message_chars
-                                )
+                                tool_call_state["message_so_far"] += new_message_chars
 
                                 # Emit token to progress (will handle DB update and client emission)
                                 await internal_sio.emit(
@@ -833,10 +801,7 @@ Tool Usage Instructions:
                                 )
 
                     # Check for tool call completion
-                    if (
-                        hasattr(event, "type")
-                        and event.type == "raw_response_event"
-                    ):
+                    if hasattr(event, "type") and event.type == "raw_response_event":
                         event_data = getattr(event, "data", None)
                         if event_data:
                             event_data_type = (
@@ -845,17 +810,13 @@ Tool Usage Instructions:
                                 else None
                             )
                             if event_data_type == "response.output_item.done":
-                                fake_item_id = getattr(
-                                    event_data, "item_id", None
-                                )
+                                fake_item_id = getattr(event_data, "item_id", None)
                                 item = getattr(event_data, "item", None)
                                 call_id = None
                                 if item:
                                     call_id = getattr(item, "call_id", None)
                                 if not call_id:
-                                    call_id = getattr(
-                                        event_data, "call_id", None
-                                    )
+                                    call_id = getattr(event_data, "call_id", None)
 
                                 if call_id:
                                     done_real_item_id = call_id
@@ -944,9 +905,7 @@ Tool Usage Instructions:
                                             }
                                         )
 
-                                        del tool_calls_dict[chat_id_str][
-                                            tool_call_id
-                                        ]
+                                        del tool_calls_dict[chat_id_str][tool_call_id]
 
                                     except json.JSONDecodeError as e:
                                         logger.error(
@@ -974,9 +933,7 @@ Tool Usage Instructions:
                                                 ],
                                             },
                                         )
-                                        del tool_calls_dict[chat_id_str][
-                                            tool_call_id
-                                        ]
+                                        del tool_calls_dict[chat_id_str][tool_call_id]
 
             except BaseException as stream_error:
                 if isinstance(
@@ -984,21 +941,14 @@ Tool Usage Instructions:
                     (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
                 ):
                     raise
-                logger.error(
-                    f"Error processing stream: {stream_error}", exc_info=True
-                )
+                logger.error(f"Error processing stream: {stream_error}", exc_info=True)
                 raise
             except Exception as stream_error:
-                logger.error(
-                    f"Error processing stream: {stream_error}", exc_info=True
-                )
+                logger.error(f"Error processing stream: {stream_error}", exc_info=True)
                 raise
             finally:
                 # Complete any remaining tool calls
-                if (
-                    chat_id_str in tool_calls_dict
-                    and tool_calls_dict[chat_id_str]
-                ):
+                if chat_id_str in tool_calls_dict and tool_calls_dict[chat_id_str]:
                     pool = get_pool()
                     if pool:
                         try:
@@ -1010,24 +960,17 @@ Tool Usage Instructions:
                                         db_message_id = tool_call_state.get(
                                             "db_message_id"
                                         )
-                                        if (
-                                            db_message_id
-                                            and tool_call_state.get(
-                                                "message_so_far"
-                                            )
+                                        if db_message_id and tool_call_state.get(
+                                            "message_so_far"
                                         ):
                                             final_message = tool_call_state[
                                                 "message_so_far"
                                             ]
 
                                             try:
-                                                if tool_call_state.get(
-                                                    "arguments_raw"
-                                                ):
+                                                if tool_call_state.get("arguments_raw"):
                                                     final_args = json.loads(
-                                                        tool_call_state[
-                                                            "arguments_raw"
-                                                        ]
+                                                        tool_call_state["arguments_raw"]
                                                     )
                                                     final_message = final_args.get(
                                                         "message", final_message
@@ -1071,6 +1014,11 @@ Tool Usage Instructions:
                                             f"Error completing tool call {tool_call_id}: {e}",
                                             exc_info=True,
                                         )
+                        except Exception as e:
+                            logger.error(
+                                f"Error in cleanup for chat {chat_id_str}: {e}",
+                                exc_info=True,
+                            )
 
                 # Clean up tool call states
                 if chat_id_str in tool_calls_dict:
@@ -1083,116 +1031,106 @@ Tool Usage Instructions:
 
                 await remove_active_run(chat_id_str)
 
-            # Emit async pricing event
-            usage = result.context_wrapper.usage
-            await internal_sio.emit(
-                "log_run",
-                {
-                    "runId": str(run_id_uuid),
-                    "operationType": "simulation",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": context["system_prompt"],
-                    "inputItems": input_items,
-                    "assistantOutput": None,
-                    "departmentId": str(context.get("department_id")),
-                },
+        # Emit async pricing event
+        usage = result.context_wrapper.usage
+        await internal_sio.emit(
+            "log_run",
+            {
+                "runId": str(run_id_uuid),
+                "operationType": "simulation",
+                "inputTextTokens": usage.input_tokens,
+                "outputTextTokens": usage.output_tokens,
+                "systemPrompt": context["system_prompt"],
+                "inputItems": input_items,
+                "assistantOutput": None,
+                "departmentId": str(context.get("department_id")),
+            },
+        )
+
+        # Emit run complete event
+        await internal_sio.emit(
+            "simulation_text_complete",
+            {
+                "sid": sid,
+                "type": "run_complete",
+                "chat_id": chat_id_str,
+                "run_id": str(run_id_uuid),
+            },
+        )
+
+        # Trigger hint generation for practice simulations
+        if completed_tool_messages:
+            last_tool_message = completed_tool_messages[-1]
+
+            sql = load_sql(
+                "app/sql/v3/simulations/get_simulation_metadata_for_chat.sql"
             )
-
-            # Emit run complete event
-            await internal_sio.emit(
-                "simulation_text_complete",
-                {
-                    "sid": sid,
-                    "type": "run_complete",
-                    "chat_id": chat_id_str,
-                    "run_id": str(run_id_uuid),
-                },
-            )
-
-            # Trigger hint generation for practice simulations
-            if completed_tool_messages:
-                last_tool_message = completed_tool_messages[-1]
-
-                sql = load_sql(
-                    "app/sql/v3/simulations/get_simulation_metadata_for_chat.sql"
+            sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
+            if not sim_metadata_row:
+                logger.warning(
+                    f"Failed to get simulation metadata for chat {chat_id_uuid}"
                 )
-                sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
-                if not sim_metadata_row:
-                    logger.warning(
-                        f"Failed to get simulation metadata for chat {chat_id_uuid}"
-                    )
-                    sim_metadata = {"practice_simulation": False}
-                else:
-                    sim_metadata = {
-                        "simulation_id": sim_metadata_row["simulation_id"],
-                        "attempt_id": sim_metadata_row["attempt_id"],
-                        "practice_simulation": sim_metadata_row[
-                            "practice_simulation"
-                        ],
-                    }
+                sim_metadata = {"practice_simulation": False}
+            else:
+                sim_metadata = {
+                    "simulation_id": sim_metadata_row["simulation_id"],
+                    "attempt_id": sim_metadata_row["attempt_id"],
+                    "practice_simulation": sim_metadata_row["practice_simulation"],
+                }
 
-                if sim_metadata["practice_simulation"]:
-                    logger.info(
-                        f"Triggering hint generation for practice message {last_tool_message.get('id')}"
+            if sim_metadata["practice_simulation"]:
+                logger.info(
+                    f"Triggering hint generation for practice message {last_tool_message.get('id')}"
+                )
+                sql = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
+                run_context_for_hints = await conn.fetchrow(sql, str(chat_id_uuid))
+                hint_dept_id = (
+                    run_context_for_hints.get("department_id")
+                    if run_context_for_hints
+                    else None
+                )
+                if hint_dept_id:
+                    await internal_sio.emit(
+                        "simulation_hints_generate",
+                        {
+                            "chat_id": str(chat_id_uuid),
+                            "message_id": str(last_tool_message.get("id")),
+                            "department_id": hint_dept_id,
+                        },
                     )
-                    sql = load_sql(
-                        "app/sql/v3/simulations/get_simulation_run_context.sql"
-                    )
-                    run_context_for_hints = await conn.fetchrow(
-                        sql, str(chat_id_uuid)
-                    )
-                    hint_dept_id = (
-                        run_context_for_hints.get("department_id")
-                        if run_context_for_hints
-                        else None
-                    )
-                    if hint_dept_id:
-                        await internal_sio.emit(
-                            "simulation_hints_generate",
-                            {
-                                "chat_id": str(chat_id_uuid),
-                                "message_id": str(last_tool_message.get("id")),
-                                "department_id": hint_dept_id,
-                            },
-                        )
 
-        except OutputGuardrailTripwireTriggered as e:
+    except OutputGuardrailTripwireTriggered as e:
+        reason = ""
+        try:
+            reason = (
+                getattr(e, "guardrail_result", None)
+                and getattr(e.guardrail_result, "output", None)
+                and getattr(e.guardrail_result.output, "output_info", None)
+                and getattr(e.guardrail_result.output.output_info, "reason", "")
+            ) or ""
+        except Exception:
             reason = ""
-            try:
-                reason = (
-                    getattr(e, "guardrail_result", None)
-                    and getattr(e.guardrail_result, "output", None)
-                    and getattr(
-                        e.guardrail_result.output, "output_info", None
-                    )
-                    and getattr(
-                        e.guardrail_result.output.output_info, "reason", ""
-                    )
-                ) or ""
-            except Exception:
-                reason = ""
 
-            error_text = f"Error: {reason or 'Guardrail tripwire triggered'}"
+        error_text = f"Error: {reason or 'Guardrail tripwire triggered'}"
 
-            await internal_sio.emit(
-                "simulation_text_error",
-                {
-                    "sid": sid,
-                    "success": False,
-                    "message": error_text,
-                },
-            )
+        await internal_sio.emit(
+            "simulation_text_error",
+            {
+                "sid": sid,
+                "success": False,
+                "message": error_text,
+            },
+        )
 
-            await internal_sio.emit(
-                "simulation_text_complete",
-                {
-                    "sid": sid,
-                    "type": "run_complete",
-                    "chat_id": data.chat_id,
-                    "run_id": data.run_id,
-                },
-            )
+        await internal_sio.emit(
+            "simulation_text_complete",
+            {
+                "sid": sid,
+                "type": "run_complete",
+                "chat_id": data.chat_id,
+                "run_id": data.run_id,
+            },
+        )
 
     except Exception as e:
         logger.error(
@@ -1222,4 +1160,3 @@ async def simulation_text_generate_internal(
         error_event_name="simulation_text_error",
         error_response_type=SimulationTextGenerateErrorPayload,
     )
-

@@ -240,7 +240,9 @@ async def _rubric_generate_impl(
                     group_id=str(group_id),
                 )
 
-                return f"Generated {len(descriptions)} standard descriptions successfully"
+                return (
+                    f"Generated {len(descriptions)} standard descriptions successfully"
+                )
 
             # Create title tool
             title_config = tool_config_map_rubric.get("create_title")

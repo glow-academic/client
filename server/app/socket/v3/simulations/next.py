@@ -37,9 +37,7 @@ class SimulationNextPayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_next_error(
-    payload: SimulationNextErrorPayload, room: str
-) -> None:
+async def simulation_next_error(payload: SimulationNextErrorPayload, room: str) -> None:
     await sio.emit("simulations_next_error", payload.model_dump(), room=room)
 
 
@@ -49,9 +47,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
     Creates fresh scenario variant and delegates to generate.py for randomization and AI generation.
     """
     try:
-        logger.info(
-            f"Received simulation_next request from {sid} with data: {data}"
-        )
+        logger.info(f"Received simulation_next request from {sid} with data: {data}")
 
         attempt_id = data.attempt_id
         parent_scenario_id = data.scenario_id
@@ -98,7 +94,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             # Create child scenario variant (no links yet - generate.py will handle randomization and linking)
             parent_scenario_dict = dict(parent_scenario)
             scenario_title = parent_scenario_dict.get("name", "")
-            
+
             sql = load_sql("app/sql/v3/scenario/insert_scenario_variant.sql")
             new_scenario_row = await conn.fetchrow(
                 sql,
@@ -136,30 +132,26 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
 
             sql = load_sql("app/sql/v3/scenario/get_scenario_objectives.sql")
             objectives_rows = await conn.fetch(sql, child_scenario_id)
-            needs_objectives = (
-                parent_scenario_dict.get("objectives_enabled", True)
-                and (not objectives_rows or len(objectives_rows) == 0)
-            )
+            needs_objectives = parent_scenario_dict.get(
+                "objectives_enabled", True
+            ) and (not objectives_rows or len(objectives_rows) == 0)
 
             sql = load_sql("app/sql/v3/scenario/get_scenario_videos.sql")
             videos_rows = await conn.fetch(sql, child_scenario_id)
-            needs_video = (
-                parent_scenario_dict.get("video_enabled", False)
-                and (not videos_rows or len(videos_rows) == 0)
+            needs_video = parent_scenario_dict.get("video_enabled", False) and (
+                not videos_rows or len(videos_rows) == 0
             )
 
             sql = load_sql("app/sql/v3/scenario/get_scenario_images.sql")
             images_rows = await conn.fetch(sql, child_scenario_id)
-            needs_images = (
-                parent_scenario_dict.get("images_enabled", True)
-                and (not images_rows or len(images_rows) == 0)
+            needs_images = parent_scenario_dict.get("images_enabled", True) and (
+                not images_rows or len(images_rows) == 0
             )
 
             sql = load_sql("app/sql/v3/scenario/get_scenario_questions.sql")
             questions_rows = await conn.fetch(sql, child_scenario_id)
-            needs_questions = (
-                parent_scenario_dict.get("questions_enabled", False)
-                and (not questions_rows or len(questions_rows) == 0)
+            needs_questions = parent_scenario_dict.get("questions_enabled", False) and (
+                not questions_rows or len(questions_rows) == 0
             )
 
             # Get department_id for scenario generation (fallback logic)
@@ -168,7 +160,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             scenario_dept_rows = await conn.fetch(sql, parent_scenario_id_uuid)
             if scenario_dept_rows and len(scenario_dept_rows) > 0:
                 department_id = uuid.UUID(str(scenario_dept_rows[0]["department_id"]))
-            
+
             if not department_id and profile_id_uuid:
                 sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
                 profile_dept_rows = await conn.fetch(sql, str(profile_id_uuid))
@@ -184,7 +176,8 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             if not department_id:
                 await simulation_next_error(
                     SimulationNextErrorPayload(
-                        success=False, message="No department found for scenario generation"
+                        success=False,
+                        message="No department found for scenario generation",
                     ),
                     room=sid,
                 )
@@ -197,7 +190,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 simulation_row = await conn.fetchrow(sql, uuid.UUID(simulation_id))
                 if simulation_row:
                     scenario_agent_id = simulation_row.get("simulation_text_agent_id")
-            
+
             if not scenario_agent_id:
                 await simulation_next_error(
                     SimulationNextErrorPayload(
@@ -209,7 +202,13 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
 
             # If any AI fields needed, emit to scenario generate
             # generate.py will handle randomization and linking, then generate AI content
-            if needs_statement or needs_objectives or needs_video or needs_images or needs_questions:
+            if (
+                needs_statement
+                or needs_objectives
+                or needs_video
+                or needs_images
+                or needs_questions
+            ):
                 logger.info(
                     f"Child scenario {child_scenario_id} needs AI generation, emitting to scenario generate"
                 )
@@ -266,9 +265,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging simulation next activity: {log_error}"
-                )
+                logger.warning(f"Error logging simulation next activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error in simulation_next for {sid}: {str(e)}", exc_info=True)
@@ -287,9 +284,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation next error activity: {log_error}"
-            )
+            logger.warning(f"Error logging simulation next error activity: {log_error}")
 
 
 @internal_sio.on("simulation_next")  # type: ignore
@@ -323,4 +318,3 @@ async def simulation_next_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred in simulation next."""
     return {"success": True}
-

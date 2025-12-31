@@ -995,8 +995,11 @@ async def main() -> int:
 
         # Settings detail must come before active settings (type dependency)
         if sql_path == "app/sql/v3/settings/get_settings_detail_complete.sql":
-            return (2, "a_" + sql_path)  # 'a_' prefix ensures it sorts before 'get_active_'
-        
+            return (
+                2,
+                "a_" + sql_path,
+            )  # 'a_' prefix ensures it sorts before 'get_active_'
+
         if sql_path == "app/sql/v3/settings/get_active_settings_complete.sql":
             return (2, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
 

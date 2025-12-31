@@ -47,9 +47,7 @@ class SimulationAdvancePayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_advanced(
-    payload: SimulationAdvancedPayload, room: str
-) -> None:
+async def simulation_advanced(payload: SimulationAdvancedPayload, room: str) -> None:
     await sio.emit("simulations_advanced", payload.model_dump(), room=room)
 
 
@@ -65,9 +63,7 @@ async def _simulation_advance_impl(sid: str, data: SimulationAdvancePayload) -> 
     Attaches scenario to simulation by creating chat and linking to attempt.
     """
     try:
-        logger.info(
-            f"Received simulation_advance request from {sid} with data: {data}"
-        )
+        logger.info(f"Received simulation_advance request from {sid} with data: {data}")
 
         scenario_id = data.scenario_id
         attempt_id = data.attempt_id
@@ -119,7 +115,8 @@ async def _simulation_advance_impl(sid: str, data: SimulationAdvancePayload) -> 
             trace_id = gen_trace_id()
 
             # Create chat
-            from datetime import datetime, UTC
+            from datetime import UTC, datetime
+
             created_at = datetime.now(UTC)
             sql = load_sql("app/sql/v3/simulations/create_simulation_chat.sql")
             chat_row = await conn.fetchrow(
@@ -248,4 +245,3 @@ async def simulation_advanced_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Simulation advanced successfully."""
     return {"success": True}
-

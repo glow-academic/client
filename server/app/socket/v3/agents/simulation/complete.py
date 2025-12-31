@@ -4,13 +4,12 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
-from app.infra.v3.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
@@ -121,7 +120,9 @@ async def _simulation_text_complete_impl(
                 # Resolve persona_id if final_persona provided
                 persona_id_uuid = None
                 if data.final_persona:
-                    sql_get_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
+                    sql_get_personas = load_sql(
+                        "app/sql/v3/voice/get_chat_personas.sql"
+                    )
                     persona_rows = await conn.fetch(sql_get_personas, chat_id_str)
                     personas = [dict(row) for row in persona_rows]
 
@@ -133,10 +134,14 @@ async def _simulation_text_complete_impl(
                             p_name = (
                                 persona.get("persona_name") or persona.get("name", "")
                             ).lower()
-                            if persona_name_lower in p_name or p_name in persona_name_lower:
+                            if (
+                                persona_name_lower in p_name
+                                or p_name in persona_name_lower
+                            ):
                                 return (
                                     uuid.UUID(persona["persona_id"]),
-                                    persona.get("persona_name") or persona.get("name", ""),
+                                    persona.get("persona_name")
+                                    or persona.get("name", ""),
                                 )
                         return None
 
@@ -165,9 +170,7 @@ async def _simulation_text_complete_impl(
                     sql_get_tool_call = load_sql(
                         "app/sql/v3/tool_calls/get_tool_call_by_call_id.sql"
                     )
-                    tool_call_row = await conn.fetchrow(
-                        sql_get_tool_call, data.call_id
-                    )
+                    tool_call_row = await conn.fetchrow(sql_get_tool_call, data.call_id)
                     if tool_call_row:
                         sql_get_message = load_sql(
                             "app/sql/v3/simulations/get_message_id_from_tool_call.sql"
@@ -239,7 +242,9 @@ async def _simulation_text_complete_impl(
                             content=final_content,
                             completed=completed,
                             created_at=created_at,
-                            persona_id=str(persona_id_uuid) if persona_id_uuid else None,
+                            persona_id=str(persona_id_uuid)
+                            if persona_id_uuid
+                            else None,
                         ),
                         room=room,
                     )

@@ -75,4 +75,3 @@ register_server_endpoint(
     ImageGenerationProgressSqlRow,
     "Progress update for image generation",
 )
-

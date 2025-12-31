@@ -42,7 +42,9 @@ class BenchmarkEnterPayload(BaseModel):
 
 
 # Emit helper functions
-async def benchmark_enter_response(payload: BenchmarkEnterResponsePayload, room: str) -> None:
+async def benchmark_enter_response(
+    payload: BenchmarkEnterResponsePayload, room: str
+) -> None:
     await sio.emit("benchmarks_enter_response", payload.model_dump(), room=room)
 
 
@@ -94,7 +96,9 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
 
         async with pool.acquire() as conn:
             # Update test created_at timestamp
-            sql_update_test = load_sql("app/sql/v3/benchmark/update_test_created_at.sql")
+            sql_update_test = load_sql(
+                "app/sql/v3/benchmark/update_test_created_at.sql"
+            )
             result = await conn.fetchrow(sql_update_test, created_at_dt, test_id)
 
             if result and result.get("test_id"):
@@ -120,7 +124,9 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(f"Error logging benchmark enter activity: {log_error}")
+                    logger.warning(
+                        f"Error logging benchmark enter activity: {log_error}"
+                    )
             else:
                 await benchmark_enter_error(
                     BenchmarkEnterErrorPayload(
@@ -150,7 +156,9 @@ async def benchmark_enter(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in benchmark_enter for {sid}: {e}")
         await benchmark_enter_error(
-            BenchmarkEnterErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
+            BenchmarkEnterErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
             room=sid,
         )
 
@@ -171,6 +179,8 @@ async def benchmark_enter_response_api(
 
 
 @server_router.post("/enter_error", response_model=dict[str, bool])
-async def benchmark_enter_error_api(request: BenchmarkEnterErrorPayload) -> dict[str, bool]:
+async def benchmark_enter_error_api(
+    request: BenchmarkEnterErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while updating test created_at timestamp."""
     return {"success": True}

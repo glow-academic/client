@@ -2,6 +2,12 @@
 
 from fastapi import APIRouter
 
+from .advance import (
+    client_router as advance_client_router,
+)
+from .advance import (
+    server_router as advance_server_router,
+)
 from .end import (
     client_router as end_client_router,
 )
@@ -31,12 +37,6 @@ from .next import (
 )
 from .next import (
     server_router as next_server_router,
-)
-from .advance import (
-    client_router as advance_client_router,
-)
-from .advance import (
-    server_router as advance_server_router,
 )
 from .start import (
     client_router as start_client_router,

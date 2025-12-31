@@ -259,7 +259,9 @@ async def _document_generate_impl(
                         "sid": sid,
                         "trace_id": trace_id,
                         "title": title,
-                        "document_id": data.documentId if hasattr(data, "documentId") else None,
+                        "document_id": data.documentId
+                        if hasattr(data, "documentId")
+                        else None,
                     },
                 )
                 return "Created title successfully"
@@ -472,7 +474,9 @@ async def _document_generate_impl(
 
             # Create template directly in database
             import os
+
             from utils.cache.invalidate_tags import invalidate_tags
+
             from app.main import UPLOAD_FOLDER
 
             try:
@@ -504,7 +508,9 @@ async def _document_generate_impl(
                     # If documentId is provided, create template and link to document and run
                     if data.documentId:
                         template_schema_jsonb = json.dumps(template_schema)
-                        template_name = f"Template for {data.documentName or 'Document'}"
+                        template_name = (
+                            f"Template for {data.documentName or 'Document'}"
+                        )
 
                         # Create template and link to document and run
                         sql_create_template = load_sql(

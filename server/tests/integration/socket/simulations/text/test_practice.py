@@ -49,7 +49,7 @@ async def test_simulation_text_practice_success(
     scenario_id = await db.fetchval(
         "INSERT INTO scenarios(name, active) VALUES ('Test Scenario', true) RETURNING id"
     )
-    
+
     await db.execute(
         "INSERT INTO scenario_personas(scenario_id, persona_id, active) "
         "VALUES ($1, $2, true)",

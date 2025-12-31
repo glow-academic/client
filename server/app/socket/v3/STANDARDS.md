@@ -104,15 +104,23 @@ For main operations (generate, regenerate), **ALL** of the following event files
    - SQL function: `socket_rubric_generation_error_v3(...)` (can be no-op)
    - Receives internal event, emits error events to client with typed payload
 
-### 7. Tool Event Structure - Tool Name as Folder
+### 7. Tool Event Structure - Tools Under Agents
 
-For tools, use the **tool name as the folder name** (not a generic "tools/" folder). Each tool folder contains **ALL REQUIRED** event files:
+For tools, use the **agent/tools/tool_name folder structure**. Each tool folder contains **ALL REQUIRED** event files:
 
-- `server/app/socket/v3/rubrics/standard_group_descriptions/` - Tool folder (tool name as folder)
-- `call.py` - One event: `rubric_tool_standard_group_descriptions` (server-to-server, `@internal_sio.on`) - **REQUIRED**
-- `complete.py` - One event: `standard_group_descriptions_complete` (server-to-server, `@internal_sio.on`) - **REQUIRED**
-- `error.py` - One event: `standard_group_descriptions_error` (server-to-server, `@internal_sio.on`) - **REQUIRED**
-- `progress.py` - One event: `standard_group_descriptions_progress` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `server/app/socket/v3/agents/[agent_name]/tools/[tool_name]/` - Tool folder under agent
+- `call.py` - One event: `[agent_name]_tool_[tool_name]` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `complete.py` - One event: `[agent_name]_tool_[tool_name]_complete` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `error.py` - One event: `[agent_name]_tool_[tool_name]_error` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `progress.py` - One event: `[agent_name]_tool_[tool_name]_progress` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+- `eval.py` - One event: `[agent_name]_tool_[tool_name]_eval_start` (server-to-server, `@internal_sio.on`) - **REQUIRED**
+
+**Examples:**
+- `server/app/socket/v3/agents/scenario/tools/title/` - Scenario agent's title tool
+- `server/app/socket/v3/agents/document/tools/title/` - Document agent's title tool
+- `server/app/socket/v3/agents/rubric/tools/title/` - Rubric agent's title tool
+
+**Note:** Tools can be shared across multiple agents. Each agent gets its own copy of shared tools with agent-specific event names (e.g., `scenario_tool_title`, `document_tool_title`, `rubric_tool_title`).
 
 ### 8. No JSONB - Use Composite Types
 

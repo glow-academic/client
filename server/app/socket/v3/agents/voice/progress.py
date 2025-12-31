@@ -190,9 +190,7 @@ class VoiceProgressErrorPayload(BaseModel):
 
 
 # Client emission functions
-async def voice_tool_call_error(
-    payload: VoiceProgressErrorPayload, room: str
-) -> None:
+async def voice_tool_call_error(payload: VoiceProgressErrorPayload, room: str) -> None:
     await sio.emit(
         "simulations_voice_assistant_tool_call_error", payload.model_dump(), room=room
     )
@@ -246,9 +244,7 @@ async def simulation_voice_assistant_done(sid: str, data: dict[str, Any]) -> Non
 
 
 @sio.event  # type: ignore
-async def simulation_voice_assistant_audio_link(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def simulation_voice_assistant_audio_link(sid: str, data: dict[str, Any]) -> None:
     """Handle linking audio upload to assistant message."""
     try:
         validated = VoiceAssistantAudioLinkPayload(**data)
@@ -331,7 +327,9 @@ async def _simulation_voice_assistant_delta_impl(
                     # Get personas
                     sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
                     persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
-                    personas = [dict(row) for row in persona_rows] if persona_rows else []
+                    personas = (
+                        [dict(row) for row in persona_rows] if persona_rows else []
+                    )
 
                     # Get latest message for parent
                     sql_get_latest_message = load_sql(
@@ -411,7 +409,9 @@ async def _simulation_voice_assistant_delta_impl(
                 result_row = await conn.fetchrow(
                     sql_upsert,
                     str(chat_id_uuid),
-                    str(tool_call_state["run_id"]) if tool_call_state.get("run_id") else None,
+                    str(tool_call_state["run_id"])
+                    if tool_call_state.get("run_id")
+                    else None,
                     call_id,
                     "speak",
                     new_raw,
@@ -553,7 +553,9 @@ async def _simulation_voice_assistant_done_impl(
 
                     sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
                     persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
-                    personas = [dict(row) for row in persona_rows] if persona_rows else []
+                    personas = (
+                        [dict(row) for row in persona_rows] if persona_rows else []
+                    )
 
                     persona_match = find_persona_by_name_inline(
                         persona_name.strip(), personas
@@ -594,9 +596,9 @@ async def _simulation_voice_assistant_done_impl(
                         # Emit completion to client
                         from app.socket.v3.agents.simulation_text.complete import (
                             SimulationMessageCompletePayload,
+                            SimulationNewMessagePayload,
                             simulation_message_complete,
                             simulation_new_message,
-                            SimulationNewMessagePayload,
                         )
 
                         await simulation_message_complete(
@@ -698,9 +700,9 @@ async def _simulation_voice_assistant_done_impl(
                     # Emit completion to client
                     from app.socket.v3.agents.simulation_text.complete import (
                         SimulationMessageCompletePayload,
+                        SimulationNewMessagePayload,
                         simulation_message_complete,
                         simulation_new_message,
-                        SimulationNewMessagePayload,
                     )
 
                     await simulation_message_complete(
@@ -837,9 +839,7 @@ async def _simulation_voice_assistant_audio_link_impl(
             sql_get_latest_run = load_sql(
                 "app/sql/v3/simulations/get_latest_run_for_chat.sql"
             )
-            latest_run_row = await conn.fetchrow(
-                sql_get_latest_run, str(chat_id_uuid)
-            )
+            latest_run_row = await conn.fetchrow(sql_get_latest_run, str(chat_id_uuid))
             run_id = latest_run_row["run_id"] if latest_run_row else None
 
             # Upsert via SQL (with upload_id for audio linking)

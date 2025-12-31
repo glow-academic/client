@@ -6,7 +6,6 @@ import uuid
 from typing import Any
 
 import asyncpg
-
 from agents import (
     FunctionToolResult,
     RunContextWrapper,
@@ -143,8 +142,12 @@ class GenerateScenarioAIPayload(BaseModel):
     fieldIds: list[str] | None = None
     profileId: str | None = None
     scenarioId: str | None = None  # Optional scenario ID to link generated resources
-    simulationId: str | None = None  # Optional simulation ID - if present, will emit advance after generation
-    attemptId: str | None = None  # Optional attempt ID - used with simulationId for advance
+    simulationId: str | None = (
+        None  # Optional simulation ID - if present, will emit advance after generation
+    )
+    attemptId: str | None = (
+        None  # Optional attempt ID - used with simulationId for advance
+    )
     objectivesMin: int | None = None
     objectivesMax: int | None = None
     imagesEnabled: bool = False  # Flag to enable image generation
@@ -154,7 +157,9 @@ class GenerateScenarioAIPayload(BaseModel):
     videoLength: int | None = None  # Optional: Video length in seconds (4, 8, or 12)
     # Randomization support
     skipGeneration: bool = False  # If True, only randomize, don't generate
-    randomizeType: str | None = None  # "all", "persona", "document", "parameters", "parameter_{paramId}"
+    randomizeType: str | None = (
+        None  # "all", "persona", "document", "parameters", "parameter_{paramId}"
+    )
 
 
 # Emit helper functions
@@ -361,15 +366,17 @@ async def _randomize_missing_scenario_values(
     existing_persona_ids: list[uuid.UUID] | None = None,
     existing_document_ids: list[uuid.UUID] | None = None,
     existing_field_ids: list[uuid.UUID] | None = None,
-    randomize_type: str | None = None,  # "all", "persona", "document", "parameters", "parameter_{paramId}"
-    parameter_id_to_randomize: uuid.UUID | None = None,  # For "parameter_{paramId}" case
+    randomize_type: str
+    | None = None,  # "all", "persona", "document", "parameters", "parameter_{paramId}"
+    parameter_id_to_randomize: uuid.UUID
+    | None = None,  # For "parameter_{paramId}" case
 ) -> dict[str, Any]:
     """
     Randomize missing scenario values (persona, documents, parameters).
-    
+
     This is the centralized randomization logic used by both frontend and simulation flow.
     Only randomizes values that are missing (None or empty), or based on randomize_type.
-    
+
     Args:
         conn: Database connection
         scenario_id: Parent scenario ID (for getting ranges and existing links)
@@ -381,7 +388,7 @@ async def _randomize_missing_scenario_values(
         randomize_type: If provided, only randomize this type ("persona", "document", "parameters", "parameter_{paramId}")
                        If None, randomize all missing values
         parameter_id_to_randomize: If randomize_type is "parameter_{paramId}", this is the param ID
-    
+
     Returns:
         Dict with randomized selections:
         - persona_ids: list[uuid.UUID] | None
@@ -390,7 +397,7 @@ async def _randomize_missing_scenario_values(
         - department_id: uuid.UUID | None
     """
     import random
-    
+
     def parse_jsonb(data: Any) -> list[dict[str, Any]]:
         """Parse JSONB data with type safety."""
         if isinstance(data, str):
@@ -401,10 +408,10 @@ async def _randomize_missing_scenario_values(
         if not isinstance(data, list):
             return []
         return [dict(item) for item in data]
-    
+
     # Step 1: Department selection with fallback logic
     selected_department_id: uuid.UUID | None = department_id
-    
+
     if not selected_department_id and scenario_id:
         # Get department_ids from scenario_departments
         sql = load_sql("app/sql/v3/scenario/get_scenario_departments.sql")
@@ -414,11 +421,11 @@ async def _randomize_missing_scenario_values(
             if scenario_dept_rows
             else None
         )
-        
+
         if scenario_dept_ids and len(scenario_dept_ids) > 0:
             selected_department_id = random.choice(scenario_dept_ids)
             logger.info(f"Using department_id from scenario: {selected_department_id}")
-    
+
     if not selected_department_id and profile_id:
         sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
         profile_dept_rows = await conn.fetch(sql, str(profile_id))
@@ -426,12 +433,12 @@ async def _randomize_missing_scenario_values(
             profile_dept_ids = [uuid.UUID(str(row["id"])) for row in profile_dept_rows]
             selected_department_id = random.choice(profile_dept_ids)
             logger.info(f"Using department_id from profile: {selected_department_id}")
-    
+
     if not selected_department_id:
         logger.info(
             "No department_id available - will select general/cross-department items"
         )
-    
+
     # Step 2: Get randomization ranges
     scenario_id_uuid = scenario_id
     if scenario_id_uuid:
@@ -471,17 +478,17 @@ async def _randomize_missing_scenario_values(
         parameter_min = 0
         parameter_max = 3
         field_ranges_json = {}
-    
+
     # Step 3: Load randomization data
     dept_uuids: list[uuid.UUID] = (
         [] if not selected_department_id else [selected_department_id]
     )
     sql = load_sql("app/sql/v3/scenario/get_randomization_data_complete.sql")
     result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
-    
+
     if not result:
         raise ValueError("Failed to fetch randomization data")
-    
+
     # Parse JSONB aggregations
     personas_data = parse_jsonb(result.get("personas", []))
     documents_data = parse_jsonb(result.get("documents", []))
@@ -490,12 +497,12 @@ async def _randomize_missing_scenario_values(
     document_parameter_items_data = parse_jsonb(
         result.get("document_parameter_items", [])
     )
-    
+
     # Get existing scenario links if scenario_id provided
     existing_scenario_persona_ids = result.get("persona_ids", []) or []
     existing_scenario_document_ids = result.get("document_ids", []) or []
     existing_scenario_parameter_item_ids = result.get("parameter_item_ids", []) or []
-    
+
     # Build lookup maps
     active_personas = []
     for p in personas_data:
@@ -507,7 +514,7 @@ async def _randomize_missing_scenario_values(
                 "id": uuid.UUID(str(p["id"])),
             }
         )
-    
+
     active_documents = []
     for d in documents_data:
         if "id" not in d:
@@ -518,7 +525,7 @@ async def _randomize_missing_scenario_values(
                 "id": uuid.UUID(str(d["id"])),
             }
         )
-    
+
     active_parameters = []
     for p in parameters_data:
         if "id" not in p:
@@ -531,7 +538,7 @@ async def _randomize_missing_scenario_values(
                 "persona_parameter": p.get("persona_parameter", False),
             }
         )
-    
+
     all_parameter_items = []
     for pi in parameter_items_data:
         if "id" not in pi or "parameter_id" not in pi:
@@ -543,7 +550,7 @@ async def _randomize_missing_scenario_values(
                 "parameter_id": uuid.UUID(str(pi["parameter_id"])),
             }
         )
-    
+
     document_parameter_items_junction = []
     for j in document_parameter_items_data:
         if "document_id" not in j or "parameter_item_id" not in j:
@@ -554,27 +561,25 @@ async def _randomize_missing_scenario_values(
                 "parameter_item_id": uuid.UUID(str(j["parameter_item_id"])),
             }
         )
-    
+
     parameter_items_by_id: dict[uuid.UUID, dict[str, Any]] = {}
     for pi in all_parameter_items:
         parameter_items_by_id[pi["id"]] = pi
-    
+
     parameter_items_by_param_id: dict[uuid.UUID, list[dict[str, Any]]] = {}
     for pi in all_parameter_items:
         param_id = pi["parameter_id"]
         if param_id not in parameter_items_by_param_id:
             parameter_items_by_param_id[param_id] = []
         parameter_items_by_param_id[param_id].append(pi)
-    
+
     documents_by_id: dict[uuid.UUID, dict[str, Any]] = {}
     for d in active_documents:
         documents_by_id[d["id"]] = d
-    
+
     # Determine what to randomize based on randomize_type
     should_randomize_persona = (
-        randomize_type is None
-        or randomize_type == "all"
-        or randomize_type == "persona"
+        randomize_type is None or randomize_type == "all" or randomize_type == "persona"
     )
     should_randomize_documents = (
         randomize_type is None
@@ -587,7 +592,7 @@ async def _randomize_missing_scenario_values(
         or randomize_type == "parameters"
         or (randomize_type and randomize_type.startswith("parameter_"))
     )
-    
+
     # Step 4: Persona selection (only if missing or randomize_type forces it)
     scenario_persona_ids: list[uuid.UUID] = []
     if should_randomize_persona:
@@ -623,7 +628,7 @@ async def _randomize_missing_scenario_values(
             scenario_persona_ids = existing_persona_ids
         elif scenario_id_uuid and existing_scenario_persona_ids:
             scenario_persona_ids = [uuid.UUID(p) for p in existing_scenario_persona_ids]
-    
+
     # Step 5: Persona parameter selection (only if randomizing parameters)
     persona_param_ids: list[uuid.UUID] = []
     if should_randomize_parameters:
@@ -646,46 +651,48 @@ async def _randomize_missing_scenario_values(
                         if isinstance(param_range, dict)
                         else 3
                     )
-                    
+
                     available_count = len(param_items)
                     capped_max = min(param_max, available_count)
                     effective_min = min(param_min, available_count)
-                    
+
                     if effective_min <= capped_max:
                         count = random.randint(effective_min, capped_max)
                         shuffled = param_items.copy()
                         random.shuffle(shuffled)
                         selected_items = shuffled[:count]
-                        persona_param_ids.extend([item["id"] for item in selected_items])
+                        persona_param_ids.extend(
+                            [item["id"] for item in selected_items]
+                        )
                     else:
                         selected_item = random.choice(param_items)
                         persona_param_ids.append(selected_item["id"])
-    
+
     # Step 6: Parameter item selection (only if missing or randomize_type forces it)
     param_ids: list[uuid.UUID] = []
     if should_randomize_parameters:
         # Handle selective parameter randomization
-        if randomize_type and randomize_type.startswith("parameter_") and parameter_id_to_randomize:
+        if (
+            randomize_type
+            and randomize_type.startswith("parameter_")
+            and parameter_id_to_randomize
+        ):
             # Only randomize items for this specific parameter
             param_items = parameter_items_by_param_id.get(parameter_id_to_randomize, [])
             if param_items:
                 param_id_str = str(parameter_id_to_randomize)
                 param_range = field_ranges_json.get(param_id_str, {})
                 param_min = (
-                    param_range.get("min", 1)
-                    if isinstance(param_range, dict)
-                    else 1
+                    param_range.get("min", 1) if isinstance(param_range, dict) else 1
                 )
                 param_max = (
-                    param_range.get("max", 3)
-                    if isinstance(param_range, dict)
-                    else 3
+                    param_range.get("max", 3) if isinstance(param_range, dict) else 3
                 )
-                
+
                 available_count = len(param_items)
                 capped_max = min(param_max, available_count)
                 effective_min = min(param_min, available_count)
-                
+
                 if effective_min <= capped_max:
                     count = random.randint(effective_min, capped_max)
                     shuffled = param_items.copy()
@@ -701,8 +708,7 @@ async def _randomize_missing_scenario_values(
             # Keep existing field_ids for other parameters
             if existing_field_ids:
                 other_param_ids = [
-                    fid for fid in existing_field_ids
-                    if fid not in param_ids
+                    fid for fid in existing_field_ids if fid not in param_ids
                 ]
                 param_ids.extend(other_param_ids)
         elif existing_field_ids:
@@ -730,7 +736,7 @@ async def _randomize_missing_scenario_values(
                     selected_parameters = shuffled[:count]
                 else:
                     selected_parameters = [random.choice(general_parameters)]
-                
+
                 for param in selected_parameters:
                     param_items = parameter_items_by_param_id.get(param["id"], [])
                     if param_items:
@@ -746,11 +752,11 @@ async def _randomize_missing_scenario_values(
                             if isinstance(param_range, dict)
                             else 3
                         )
-                        
+
                         available_count = len(param_items)
                         capped_max = min(param_max, available_count)
                         effective_min = min(param_min, available_count)
-                        
+
                         if effective_min <= capped_max:
                             count = random.randint(effective_min, capped_max)
                             shuffled = param_items.copy()
@@ -771,10 +777,10 @@ async def _randomize_missing_scenario_values(
             param_ids = existing_field_ids
         elif scenario_id_uuid and existing_scenario_parameter_item_ids:
             param_ids = [uuid.UUID(p) for p in existing_scenario_parameter_item_ids]
-    
+
     # Combine persona params with general params
     all_param_ids = list(set(persona_param_ids + param_ids))
-    
+
     # Step 7: Document selection (only if missing or randomize_type forces it)
     doc_ids: list[uuid.UUID] = []
     if should_randomize_documents:
@@ -787,14 +793,14 @@ async def _randomize_missing_scenario_values(
         elif active_documents:
             # Randomize documents (prefer documents matching parameter items)
             doc_matching_param_item_ids = all_param_ids.copy() if all_param_ids else []
-            
+
             if not doc_matching_param_item_ids and active_parameters:
                 for param in active_parameters:
                     param_items = parameter_items_by_param_id.get(param["id"], [])
                     if param_items:
                         selected_item = random.choice(param_items)
                         doc_matching_param_item_ids.append(selected_item["id"])
-            
+
             matching_documents = []
             if doc_matching_param_item_ids:
                 matching_documents = [
@@ -803,7 +809,7 @@ async def _randomize_missing_scenario_values(
                     if j["parameter_item_id"] in doc_matching_param_item_ids
                     and j["document_id"] in documents_by_id
                 ]
-            
+
             available_documents = (
                 matching_documents if matching_documents else active_documents
             )
@@ -832,7 +838,7 @@ async def _randomize_missing_scenario_values(
             doc_ids = existing_document_ids
         elif scenario_id_uuid and existing_scenario_document_ids:
             doc_ids = [uuid.UUID(d) for d in existing_scenario_document_ids]
-    
+
     # Step 8: Document parameter extraction
     document_param_ids: list[uuid.UUID] = []
     if doc_ids:
@@ -852,10 +858,10 @@ async def _randomize_missing_scenario_values(
                     if param_dict and param_dict.get("document_parameter", False):
                         if param_item_id not in document_param_ids:
                             document_param_ids.append(param_item_id)
-    
+
     # Combine all parameter item IDs
     final_field_ids = list(set(all_param_ids + document_param_ids))
-    
+
     return {
         "persona_ids": scenario_persona_ids if scenario_persona_ids else None,
         "document_ids": doc_ids if doc_ids else None,
@@ -925,7 +931,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             # Step 1: Randomize missing values first
             scenario_id_uuid = uuid.UUID(data.scenarioId) if data.scenarioId else None
-            
+
             # Determine which values need randomization based on randomizeType
             if data.randomizeType:
                 # Selective randomization mode
@@ -946,7 +952,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     param_id_str = data.randomizeType.replace("parameter_", "")
                     parameter_id_to_randomize = None
                     try:
-                        parameter_id_to_randomize = uuid.UUID(param_id_str) if param_id_str else None
+                        parameter_id_to_randomize = (
+                            uuid.UUID(param_id_str) if param_id_str else None
+                        )
                     except (ValueError, TypeError):
                         parameter_id_to_randomize = None
                     needs_persona = False
@@ -963,7 +971,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 needs_documents = not document_ids or len(document_ids) == 0
                 needs_fields = not field_ids or len(field_ids) == 0
                 parameter_id_to_randomize = None
-            
+
             randomized_selections = None
             if needs_persona or needs_documents or needs_fields:
                 logger.info(
@@ -971,17 +979,19 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     f"documents={needs_documents}, fields={needs_fields}, "
                     f"randomizeType={data.randomizeType}"
                 )
-                
+
                 # Extract parameter_id if needed for selective parameter randomization
                 if data.randomizeType and data.randomizeType.startswith("parameter_"):
                     param_id_str = data.randomizeType.replace("parameter_", "")
                     try:
-                        parameter_id_to_randomize = uuid.UUID(param_id_str) if param_id_str else None
+                        parameter_id_to_randomize = (
+                            uuid.UUID(param_id_str) if param_id_str else None
+                        )
                     except (ValueError, TypeError):
                         parameter_id_to_randomize = None
                 else:
                     parameter_id_to_randomize = None
-                
+
                 randomized_selections = await _randomize_missing_scenario_values(
                     conn=conn,
                     scenario_id=scenario_id_uuid,
@@ -993,54 +1003,77 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     randomize_type=data.randomizeType,
                     parameter_id_to_randomize=parameter_id_to_randomize,
                 )
-                
+
                 # Update values with randomized selections
                 if randomized_selections.get("persona_ids") and needs_persona:
                     persona_ids = randomized_selections["persona_ids"]
                     persona_id = persona_ids[0] if persona_ids else None
                     logger.info(f"Randomized persona_ids: {persona_ids}")
-                
+
                 if randomized_selections.get("document_ids") and needs_documents:
                     document_ids = randomized_selections["document_ids"]
                     logger.info(f"Randomized document_ids: {document_ids}")
-                
+
                 if randomized_selections.get("field_ids") and needs_fields:
                     field_ids = randomized_selections["field_ids"]
                     logger.info(f"Randomized field_ids: {field_ids}")
-                
+
                 # Update department_id if it was randomized
                 if randomized_selections.get("department_id"):
                     department_id = randomized_selections["department_id"]
-                
+
                 # Link randomized selections to scenario if scenarioId is provided
                 if scenario_id_uuid:
                     # Link persona
                     if randomized_selections.get("persona_ids"):
-                        sql = load_sql("app/sql/v3/scenario/insert_scenario_persona_link.sql")
+                        sql = load_sql(
+                            "app/sql/v3/scenario/insert_scenario_persona_link.sql"
+                        )
                         for persona_id_val in randomized_selections["persona_ids"]:
-                            await conn.execute(sql, scenario_id_uuid, persona_id_val, True)
-                        logger.info(f"Linked {len(randomized_selections['persona_ids'])} persona(s) to scenario")
-                    
+                            await conn.execute(
+                                sql, scenario_id_uuid, persona_id_val, True
+                            )
+                        logger.info(
+                            f"Linked {len(randomized_selections['persona_ids'])} persona(s) to scenario"
+                        )
+
                     # Link documents
                     if randomized_selections.get("document_ids"):
-                        sql = load_sql("app/sql/v3/scenario/insert_scenario_document_link.sql")
+                        sql = load_sql(
+                            "app/sql/v3/scenario/insert_scenario_document_link.sql"
+                        )
                         for doc_id_val in randomized_selections["document_ids"]:
                             await conn.execute(sql, scenario_id_uuid, doc_id_val, True)
-                        logger.info(f"Linked {len(randomized_selections['document_ids'])} document(s) to scenario")
-                    
+                        logger.info(
+                            f"Linked {len(randomized_selections['document_ids'])} document(s) to scenario"
+                        )
+
                     # Link parameters (field_ids are parameter_item_ids)
                     if randomized_selections.get("field_ids"):
-                        sql = load_sql("app/sql/v3/scenario/insert_scenario_parameter_link.sql")
+                        sql = load_sql(
+                            "app/sql/v3/scenario/insert_scenario_parameter_link.sql"
+                        )
                         for field_id_val in randomized_selections["field_ids"]:
-                            await conn.execute(sql, scenario_id_uuid, field_id_val, True)
-                        logger.info(f"Linked {len(randomized_selections['field_ids'])} parameter item(s) to scenario")
-                    
+                            await conn.execute(
+                                sql, scenario_id_uuid, field_id_val, True
+                            )
+                        logger.info(
+                            f"Linked {len(randomized_selections['field_ids'])} parameter item(s) to scenario"
+                        )
+
                     # Link department
                     if randomized_selections.get("department_id"):
-                        sql = load_sql("app/sql/v3/scenario/insert_scenario_department_link.sql")
-                        await conn.execute(sql, scenario_id_uuid, randomized_selections["department_id"], True)
-                        logger.info(f"Linked department to scenario")
-                
+                        sql = load_sql(
+                            "app/sql/v3/scenario/insert_scenario_department_link.sql"
+                        )
+                        await conn.execute(
+                            sql,
+                            scenario_id_uuid,
+                            randomized_selections["department_id"],
+                            True,
+                        )
+                        logger.info("Linked department to scenario")
+
                 # Emit randomization complete event
                 await sio.emit(
                     "scenario_randomize_complete",

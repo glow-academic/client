@@ -13,7 +13,7 @@ See `AGENTS.md` for overall architecture principles.
 
 from fastapi import APIRouter
 
-from . import agents, benchmark, connect, disconnect, log, simulations, tools
+from . import agents, benchmark, connect, disconnect, log, simulations
 
 # Create main router
 router = APIRouter(prefix="/socket/v3", tags=["socket"])
@@ -29,13 +29,9 @@ client_router.include_router(log.client_router)
 
 server_router.include_router(connect.server_router)
 
-# Include agent routers
+# Include agent routers (tools are now included via agent routers)
 client_router.include_router(agents.client_router)
 server_router.include_router(agents.server_router)
-
-# Include tool routers
-client_router.include_router(tools.client_router)
-server_router.include_router(tools.server_router)
 
 # Include simulation operation routers
 client_router.include_router(simulations.client_router)

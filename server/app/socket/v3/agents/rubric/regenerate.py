@@ -237,7 +237,9 @@ async def _rubric_regenerate_impl(
                     group_id=str(group_id),
                 )
 
-                return f"Generated {len(descriptions)} standard descriptions successfully"
+                return (
+                    f"Generated {len(descriptions)} standard descriptions successfully"
+                )
 
             rubric_tools = [function_tool(standard_description)]
 

@@ -1,6 +1,5 @@
 """Handler for benchmark_start WebSocket event."""
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter
@@ -9,8 +8,6 @@ from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.websocket.get_db_connection import get_db_connection
-from app.infra.v3.websocket.handler_wrapper import handle_client_event
 from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
@@ -50,9 +47,7 @@ class BenchmarkStartPayload(BaseModel):
 
 
 # Emit helper functions
-async def benchmark_start_error(
-    payload: BenchmarkStartErrorPayload, room: str
-) -> None:
+async def benchmark_start_error(payload: BenchmarkStartErrorPayload, room: str) -> None:
     await sio.emit("benchmarks_start_error", payload.model_dump(), room=room)
 
 
@@ -65,13 +60,11 @@ async def _benchmark_start_impl(
     data: BenchmarkStartPayload,
 ) -> None:
     """Handle benchmark start requests via WebSocket.
-    
+
     Creates attempt and checks for next pending run/group, then emits to next.py if found.
     """
     try:
-        logger.info(
-            f"Received benchmark_start request from {sid} with data: {data}"
-        )
+        logger.info(f"Received benchmark_start request from {sid} with data: {data}")
 
         eval_id = data.eval_id
         infinite_mode = data.infinite_mode
@@ -172,14 +165,10 @@ async def _benchmark_start_impl(
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging benchmark start activity: {log_error}"
-                )
+                logger.warning(f"Error logging benchmark start activity: {log_error}")
 
     except Exception as e:
-        logger.error(
-            f"Error starting benchmark attempt for {sid}: {e}", exc_info=True
-        )
+        logger.error(f"Error starting benchmark attempt for {sid}: {e}", exc_info=True)
         await benchmark_start_error(
             BenchmarkStartErrorPayload(
                 success=False, message=f"Failed to start benchmark: {str(e)}"
@@ -210,4 +199,3 @@ register_client_endpoint(
     BenchmarkStartPayload,
     "Start a benchmark attempt",
 )
-

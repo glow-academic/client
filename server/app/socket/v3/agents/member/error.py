@@ -56,4 +56,3 @@ register_server_endpoint(
     MemberErrorPayload,
     "Error occurred in member agent operation",
 )
-

@@ -321,7 +321,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             has_audio_messages = any(msg.get("audio", False) for msg in messages)
             audio_agent_id = context_row.get("audio_agent_id")
             rubric_grade_agent_id = context_row.get("rubric_grade_agent_id")
-            
+
             # For audio grading, use audio agent if available, otherwise use text agent
             if audio_agent_id:
                 # Override agent_id in context to use audio agent
@@ -862,8 +862,11 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 logger.info("Created message_improvement tool")
 
             # Add audio grading tool if audio messages exist and audio agent is configured
+            # Note: Audio tool is now in grade agent, but audio agent (Grade Voice) can still use it
             if has_audio_messages and audio_agent_id:
-                from app.socket.v3.tools.audio.call import _grading_tool_audio_impl
+                from app.socket.v3.agents.grade.tools.audio.call import (
+                    _grading_tool_audio_impl,
+                )
 
                 grade_audio_config = tool_config_map_grading.get("create_analysis")
                 if grade_audio_config:

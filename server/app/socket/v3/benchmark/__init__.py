@@ -2,6 +2,18 @@
 
 from fastapi import APIRouter
 
+from .advance import (
+    client_router as advance_client_router,
+)
+from .advance import (
+    server_router as advance_server_router,
+)
+from .end import (
+    client_router as end_client_router,
+)
+from .end import (
+    server_router as end_server_router,
+)
 from .enter import (
     client_router as enter_client_router,
 )
@@ -20,35 +32,23 @@ from .leave import (
 from .leave import (
     server_router as leave_server_router,
 )
-from .start import (
-    client_router as start_client_router,
-)
-from .start import (
-    server_router as start_server_router,
-)
-from .advance import (
-    client_router as advance_client_router,
-)
-from .advance import (
-    server_router as advance_server_router,
-)
-from .stop import (
-    client_router as stop_client_router,
-)
-from .stop import (
-    server_router as stop_server_router,
-)
 from .next import (
     client_router as next_client_router,
 )
 from .next import (
     server_router as next_server_router,
 )
-from .end import (
-    client_router as end_client_router,
+from .start import (
+    client_router as start_client_router,
 )
-from .end import (
-    server_router as end_server_router,
+from .start import (
+    server_router as start_server_router,
+)
+from .stop import (
+    client_router as stop_client_router,
+)
+from .stop import (
+    server_router as stop_server_router,
 )
 
 client_router = APIRouter(prefix="/benchmark", tags=["socket-client"])

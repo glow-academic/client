@@ -111,8 +111,30 @@ scenario/
 ├── randomize.py         # Randomization handler
 ├── progress.py          # Progress updates
 ├── complete.py          # Completion handler
-└── error.py            # Error handling
+├── error.py            # Error handling
+└── tools/              # Scenario agent tools
+    ├── title/           # Title tool (create_title)
+    ├── document/        # Document tool (create_document)
+    ├── image/           # Image tool (create_image)
+    ├── video/           # Video tool (create_video)
+    ├── objective/       # Objective tool (create_objective)
+    ├── question/        # Question tool (create_question)
+    ├── statement/       # Statement tool (create_statement)
+    └── debug/           # Debug tool (debug_info)
 ```
+
+## Tools
+
+The scenario agent uses the following tools (located in `tools/` subfolder):
+
+- **title**: Creates/updates scenario titles (`scenario_tool_title`)
+- **document**: Creates documents from scenario generation (`scenario_tool_document`)
+- **image**: Creates images for scenarios (`scenario_tool_image`)
+- **video**: Creates videos for scenarios (`scenario_tool_video`)
+- **objective**: Creates objectives for scenarios (`scenario_tool_objective`)
+- **question**: Creates questions for scenarios (`scenario_tool_question`)
+- **statement**: Creates problem statements for scenarios (`scenario_tool_statement`)
+- **debug**: Debug information tool (`scenario_tool_debug`)
 
 ## Client Events
 

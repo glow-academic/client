@@ -444,8 +444,12 @@ async def _generate_hints_impl(
             if non_empty_hints:
                 try:
                     # Create hints in single transaction
-                    sql_create_hints = load_sql("app/sql/v3/simulations/create_hints_complete.sql")
-                    result_row = await conn.fetchrow(sql_create_hints, str(message_id), non_empty_hints)
+                    sql_create_hints = load_sql(
+                        "app/sql/v3/simulations/create_hints_complete.sql"
+                    )
+                    result_row = await conn.fetchrow(
+                        sql_create_hints, str(message_id), non_empty_hints
+                    )
 
                     if result_row and result_row.get("hint_ids"):
                         hint_ids = result_row["hint_ids"]
@@ -460,7 +464,8 @@ async def _generate_hints_impl(
 
                         # Emit completion event
                         hints_for_event = [
-                            HintItem(idx=h["idx"], hint=h.get("hint", "")) for h in hint_ids
+                            HintItem(idx=h["idx"], hint=h.get("hint", ""))
+                            for h in hint_ids
                         ]
 
                         await hint_generation_progress(
@@ -470,7 +475,8 @@ async def _generate_hints_impl(
                                 chat_id=str(chat_id),
                                 message_id=str(message_id),
                                 hint_ids=[
-                                    f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids
+                                    f"{h['simulation_message_id']}_{h['idx']}"
+                                    for h in hint_ids
                                 ],
                                 hints_count=len(hint_ids),
                                 hints=hints_for_event,

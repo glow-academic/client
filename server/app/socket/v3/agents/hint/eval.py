@@ -6,7 +6,6 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool
@@ -48,24 +47,24 @@ async def _hint_eval_impl(sid: str, data: HintEvalStartPayload) -> None:
         eval_id = data.eval_id
         run_id = data.run_id
         current_cycle = data.current_cycle
-        
+
         pool = get_pool()
         if not pool:
             logger.error("Database connection pool not available")
             return
-        
+
         async with pool.acquire() as conn:
             test_id_uuid = uuid.UUID(test_id)
             agent_id_uuid = uuid.UUID(agent_id)
             eval_id_uuid = uuid.UUID(eval_id)
-            
+
             # Get eval dynamic flag and rubric_grade_agent info
             eval_row = await conn.fetchrow(
                 "SELECT dynamic FROM evals WHERE id = $1::uuid",
                 eval_id_uuid,
             )
             dynamic = eval_row.get("dynamic", False) if eval_row else False
-            
+
             # Get rubric_grade_agent to find agent being evaluated
             if dynamic and run_id:
                 rga_row = await conn.fetchrow(
@@ -83,23 +82,33 @@ async def _hint_eval_impl(sid: str, data: HintEvalStartPayload) -> None:
                     agent_being_evaluated_id = rga_row["agent_id"]
                     # TODO: Get messages exclude last assistant, re-run agent, use output for grading
                     # For now, placeholder
-            
+
             # Non-dynamic mode: Simply emit to agents/grade/generate.py
             # TODO: Implement actual grading agent call
             # For now, placeholder
-            
+
             # Note: Cycle tracking removed - agents execute sequentially
-            
+
             await emit_to_internal(
                 "hint_eval_complete",
-                HintEvalCompletePayload(test_id=test_id, agent_id=agent_id, success=True, message="Hint eval completed"),
+                HintEvalCompletePayload(
+                    test_id=test_id,
+                    agent_id=agent_id,
+                    success=True,
+                    message="Hint eval completed",
+                ),
                 sid=sid,
             )
     except Exception as e:
         logger.error(f"Error in hint_eval for {sid}: {str(e)}", exc_info=True)
         await emit_to_internal(
             "hint_eval_complete",
-            HintEvalCompletePayload(test_id=data.test_id, agent_id=data.agent_id, success=False, message=str(e)),
+            HintEvalCompletePayload(
+                test_id=data.test_id,
+                agent_id=data.agent_id,
+                success=False,
+                message=str(e),
+            ),
             sid=sid,
         )
 

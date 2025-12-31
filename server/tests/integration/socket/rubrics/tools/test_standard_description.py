@@ -4,9 +4,7 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.tools.rubric.call import (
-    rubric_tool_standard_description_internal,
-)
+from app.socket.v3.tools.rubric.call import rubric_tool_standard_description_internal
 
 pytestmark = pytest.mark.asyncio
 
@@ -145,8 +143,6 @@ async def test_rubric_tool_standard_description_missing_trace_id(
     await rubric_tool_standard_description_internal(data_with_sid)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events(
-        "rubrics_tools_standard_description_error"
-    )
+    error_events = mock_sio.get_events("rubrics_tools_standard_description_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False

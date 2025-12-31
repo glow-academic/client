@@ -66,4 +66,3 @@ register_server_endpoint(
     ImageGenerationErrorSqlRow,
     "Error occurred during image generation",
 )
-

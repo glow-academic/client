@@ -9,13 +9,14 @@ from typing import Any, get_type_hints
 
 import httpx
 from agents import function_tool
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.agents.utils.build_voice_agent import build_voice_agent
-from app.main import _voice_sessions, get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
+
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.utils.build_voice_agent import build_voice_agent
+from app.main import _voice_sessions, get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -110,6 +111,8 @@ async def simulation_voice_start_error(
 ) -> None:
     """Emit voice start error to client."""
     await sio.emit("simulations_voice_start_error", payload.model_dump(), room=room)
+
+
 async def simulation_voice_start_response(
     payload: StartVoiceResponsePayload, room: str
 ) -> None:
@@ -151,7 +154,7 @@ async def _simulation_voice_generate_impl(
     emit_error_callback: Any | None = None,
 ) -> None:
     """Handle simulation_voice_generate internal event - generates ephemeral key and returns configuration.
-    
+
     Args:
         sid: Socket session ID
         data: Generate payload with chat_id and run_id
@@ -160,6 +163,7 @@ async def _simulation_voice_generate_impl(
         emit_error_callback: Optional callback for emitting errors (for client events).
                             If None, emits internal errors via internal_sio.
     """
+
     # Default error emitter (for internal events)
     async def default_emit_error(message: str) -> None:
         await internal_sio.emit(
@@ -312,9 +316,7 @@ async def _simulation_voice_generate_impl(
                 message_desc = "The message content that the persona should say"
 
             def sanitize_persona_name(name: str) -> str:
-                sanitized = "".join(
-                    c if c.isalnum() or c == " " else "" for c in name
-                )
+                sanitized = "".join(c if c.isalnum() or c == " " else "" for c in name)
                 sanitized = sanitized.replace(" ", "_").lower()
                 return sanitized or "persona"
 
@@ -724,7 +726,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                         message=f"Chat {chat_id} not found or no scenario configured",
                     ),
                     room=sid,
-                    )
+                )
                 return
 
             # Get all personas for this scenario
@@ -866,8 +868,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Now call the generate implementation with the run_id
             # We need to get profile_id from socket for the generate impl
-            from app.infra.v3.websocket.find_profile_by_socket import \
-                find_profile_by_socket
+            from app.infra.v3.websocket.find_profile_by_socket import (
+                find_profile_by_socket,
+            )
 
             profile_id = await find_profile_by_socket(sid)
             if not profile_id:
@@ -988,4 +991,3 @@ async def simulation_voice_start_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while starting voice simulation."""
     return {"success": True}
-

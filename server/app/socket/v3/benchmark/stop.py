@@ -6,7 +6,6 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.cancel_active_run import cancel_active_run
@@ -42,9 +41,7 @@ class BenchmarkStopPayload(BaseModel):
 
 
 # Emit helper functions
-async def benchmark_stop_error(
-    payload: BenchmarkStopErrorPayload, room: str
-) -> None:
+async def benchmark_stop_error(payload: BenchmarkStopErrorPayload, room: str) -> None:
     await sio.emit("benchmarks_stop_error", payload.model_dump(), room=room)
 
 
@@ -62,9 +59,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
 
         if not attempt_id:
             await benchmark_stop_error(
-                BenchmarkStopErrorPayload(
-                    success=False, message="Missing attempt_id"
-                ),
+                BenchmarkStopErrorPayload(success=False, message="Missing attempt_id"),
                 room=sid,
             )
             return
@@ -136,9 +131,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging benchmark stop activity: {log_error}"
-                )
+                logger.warning(f"Error logging benchmark stop activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error stopping benchmark for {sid}: {str(e)}", exc_info=True)
@@ -159,9 +152,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging benchmark stop error activity: {log_error}"
-            )
+            logger.warning(f"Error logging benchmark stop error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -199,4 +190,3 @@ async def benchmark_stop_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while stopping benchmark."""
     return {"success": True}
-

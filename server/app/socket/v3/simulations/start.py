@@ -1,33 +1,19 @@
 """Handler for simulation_start WebSocket event."""
 
-import json
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import asyncpg  # type: ignore
 from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
     gen_trace_id,
-    trace,
 )
-from agents.items import TResponseInputItem
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.infra.v3.agents.generic_agent import GenericAgent
-from app.infra.v3.debug.debug_info import DebugContext
-from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
-from app.infra.v3.documents.format_document_info import format_document_info
 from app.main import get_internal_sio, get_pool, sio
 
 logger = get_logger(__name__)
@@ -89,10 +75,10 @@ async def _create_chat_with_randomization(
 ) -> dict[str, Any] | None:
     """
     Create a chat for a scenario.
-    
+
     For skipped chats (mark_completed=True): Creates a child scenario variant that copies
     the parent's links (no randomization), then creates the chat.
-    
+
     Note: For active chats, randomization is handled by generate.py via next.py.
     This function is only used for skipped chats in end.py.
     """
@@ -105,11 +91,11 @@ async def _create_chat_with_randomization(
     # Convert asyncpg UUID to Python UUID
     parent_scenario_id_uuid = uuid.UUID(str(parent_scenario["id"]))
     parent_scenario_dict = dict(parent_scenario)
-    
+
     # For skipped chats, create a child scenario variant that copies parent's links (no randomization)
     # Randomization is handled by generate.py via next.py for active chats
     scenario_title = parent_scenario_dict.get("name", "")
-    
+
     sql = load_sql("app/sql/v3/scenario/insert_scenario_variant.sql")
     new_scenario_row = await conn.fetchrow(
         sql,
@@ -122,7 +108,7 @@ async def _create_chat_with_randomization(
         parent_scenario_dict.get("image_agent_id"),
     )
     child_scenario_id = new_scenario_row["id"]
-    
+
     # Link scenario tree edge
     sql = load_sql("app/sql/v3/scenario/insert_scenario_tree_edge.sql")
     await conn.execute(
@@ -131,7 +117,7 @@ async def _create_chat_with_randomization(
         child_scenario_id,
         True,
     )
-    
+
     # Copy parent's links (personas, documents, parameters, departments)
     # Get parent's personas
     sql = load_sql("app/sql/v3/scenario/get_scenario_personas.sql")
@@ -139,38 +125,38 @@ async def _create_chat_with_randomization(
     for persona_row in parent_personas:
         sql = load_sql("app/sql/v3/scenario/insert_scenario_persona_link.sql")
         await conn.execute(sql, child_scenario_id, persona_row["persona_id"], True)
-    
+
     # Get parent's documents
     sql = load_sql("app/sql/v3/scenario/get_scenario_documents.sql")
     parent_documents = await conn.fetch(sql, parent_scenario_id_uuid)
     for doc_row in parent_documents:
         sql = load_sql("app/sql/v3/scenario/insert_scenario_document_link.sql")
         await conn.execute(sql, child_scenario_id, doc_row["document_id"], True)
-    
+
     # Get parent's parameter items
     sql = load_sql("app/sql/v3/scenario/get_scenario_parameter_items.sql")
     parent_parameter_items = await conn.fetch(sql, parent_scenario_id_uuid)
     for param_row in parent_parameter_items:
         sql = load_sql("app/sql/v3/scenario/insert_scenario_parameter_link.sql")
         await conn.execute(sql, child_scenario_id, param_row["parameter_item_id"], True)
-    
+
     # Get parent's departments
     sql = load_sql("app/sql/v3/scenario/get_scenario_departments.sql")
     parent_departments = await conn.fetch(sql, parent_scenario_id_uuid)
     for dept_row in parent_departments:
         sql = load_sql("app/sql/v3/scenario/insert_scenario_department_link.sql")
         await conn.execute(sql, child_scenario_id, dept_row["department_id"], True)
-    
+
     logger.info(
         f"Created child scenario {child_scenario_id} for parent {parent_scenario_id_uuid} "
         f"(copied {len(parent_personas)} persona(s), {len(parent_documents)} document(s), "
         f"{len(parent_parameter_items)} parameter item(s), {len(parent_departments)} department(s))"
     )
-    
+
     # Create chat using child scenario ID
     chat_title = parent_scenario_dict.get("name", "")
     trace_id = gen_trace_id()
-    
+
     sql = load_sql("app/sql/v3/simulations/create_simulation_chat.sql")
     chat = await conn.fetchrow(
         sql,
@@ -181,7 +167,7 @@ async def _create_chat_with_randomization(
         mark_completed,
         trace_id,
     )
-    
+
     return dict(chat) if chat else None
 
 
@@ -276,9 +262,7 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
     Creates attempt and checks for next incomplete scenario, then emits to next.py if found.
     """
     try:
-        logger.info(
-            f"Received simulation_start request from {sid} with data: {data}"
-        )
+        logger.info(f"Received simulation_start request from {sid} with data: {data}")
 
         simulation_id = data.simulation_id
         profile_id = data.profile_id
@@ -333,7 +317,8 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                 if not data.practice_persona_id:
                     await simulation_start_error(
                         StartSimulationErrorPayload(
-                            success=False, message="Missing persona_id for practice mode"
+                            success=False,
+                            message="Missing persona_id for practice mode",
                         ),
                         room=sid,
                     )
@@ -346,7 +331,9 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                 sql = load_sql(
                     "app/sql/v3/practice/find_practice_simulation_with_persona.sql"
                 )
-                result = await conn.fetchrow(sql, data.practice_persona_id, department_ids)
+                result = await conn.fetchrow(
+                    sql, data.practice_persona_id, department_ids
+                )
 
                 if not result:
                     await simulation_start_error(
@@ -390,7 +377,9 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                     if scenario_dept_rows and len(scenario_dept_rows) > 0:
                         selected_dept_id = scenario_dept_rows[0]["department_id"]
                     elif profile_id:
-                        sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
+                        sql = load_sql(
+                            "app/sql/v3/profile/get_departments_for_profile.sql"
+                        )
                         profile_dept_rows = await conn.fetch(sql, profile_id)
                         if profile_dept_rows and len(profile_dept_rows) > 0:
                             selected_dept_id = profile_dept_rows[0]["id"]
@@ -444,7 +433,9 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                         sql = load_sql(
                             "app/sql/v3/scenario/insert_scenario_persona_link.sql"
                         )
-                        await conn.execute(sql, new_scenario_id, persona_id_to_link, True)
+                        await conn.execute(
+                            sql, new_scenario_id, persona_id_to_link, True
+                        )
                         logger.info(
                             f"Linked persona {persona_id_to_link} to child scenario"
                         )
@@ -513,9 +504,7 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
             attempt_id = row["attempt_id"]
 
             # Check if there's a next incomplete scenario
-            sql = load_sql(
-                "app/sql/v3/simulations/check_next_incomplete_scenario.sql"
-            )
+            sql = load_sql("app/sql/v3/simulations/check_next_incomplete_scenario.sql")
             next_scenario_row = await conn.fetchrow(sql, attempt_id)
 
             if not next_scenario_row:
@@ -570,9 +559,7 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging simulation start activity: {log_error}"
-                )
+                logger.warning(f"Error logging simulation start activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error starting simulation for {sid}: {str(e)}", exc_info=True)
@@ -650,4 +637,3 @@ async def simulation_started_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Simulation started successfully."""
     return {"success": True}
-

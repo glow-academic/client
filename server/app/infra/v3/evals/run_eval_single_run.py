@@ -357,17 +357,19 @@ async def run_eval_single_run(
         )
         if not rga_row:
             raise ValueError(f"Rubric grade agent not found: {rubric_grade_agent_id}")
-        
+
         rubric_id = rga_row["rubric_id"]
         eval_agent_id = rga_row["eval_agent_id"]
-        
+
         # 4. Get eval_agent context (using eval_id and run_id to query from junction table)
         sql_get_context = load_sql("app/sql/v3/evals/get_eval_agent_context.sql")
         context_row = await conn.fetchrow(
             sql_get_context, eval_id, run_id, None, department_id, profile_id
         )
         if not context_row:
-            raise ValueError(f"Eval agent context not found for eval {eval_id}, run {run_id}")
+            raise ValueError(
+                f"Eval agent context not found for eval {eval_id}, run {run_id}"
+            )
 
         context = dict(context_row)
 

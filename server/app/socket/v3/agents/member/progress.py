@@ -4,7 +4,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
@@ -47,9 +47,7 @@ class MessageSentPayload(BaseModel):
 
 
 # Emit helper functions
-async def member_progress_error(
-    payload: MemberProgressErrorPayload, room: str
-) -> None:
+async def member_progress_error(payload: MemberProgressErrorPayload, room: str) -> None:
     await sio.emit("member_progress_error", payload.model_dump(), room=room)
 
 
@@ -65,9 +63,7 @@ async def _member_progress_impl(
         chat_id = data.chat_id
         if not chat_id:
             await member_progress_error(
-                MemberProgressErrorPayload(
-                    success=False, message="Missing chat_id"
-                ),
+                MemberProgressErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
             return
@@ -101,13 +97,13 @@ async def _member_progress_impl(
                 "app/sql/v3/member/member_progress_upsert_complete.sql"
             )
             try:
-            result_row = await conn.fetchrow(
-                sql_upsert,
-                str(chat_id_uuid),
-                message_str,
-                data.voice_mode,  # Maps to audio column in DB
-                str(uuid.UUID(data.upload_id)) if data.upload_id else None,
-            )
+                result_row = await conn.fetchrow(
+                    sql_upsert,
+                    str(chat_id_uuid),
+                    message_str,
+                    data.voice_mode,  # Maps to audio column in DB
+                    str(uuid.UUID(data.upload_id)) if data.upload_id else None,
+                )
             except Exception as e:
                 import asyncpg  # type: ignore
 
@@ -188,9 +184,7 @@ async def _member_progress_impl(
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging member progress activity: {log_error}"
-                )
+                logger.warning(f"Error logging member progress activity: {log_error}")
 
             # Trigger appropriate generate event based on audio flag (voice_mode)
             if audio:
@@ -227,9 +221,7 @@ async def _member_progress_impl(
             )
 
     except ValueError as e:
-        logger.error(
-            f"Invalid UUID format in member_progress for {sid}: {e}"
-        )
+        logger.error(f"Invalid UUID format in member_progress for {sid}: {e}")
         await member_progress_error(
             MemberProgressErrorPayload(
                 success=False, message=f"Invalid UUID format: {str(e)}"
@@ -237,9 +229,7 @@ async def _member_progress_impl(
             room=sid,
         )
     except Exception as e:
-        logger.error(
-            f"Error handling member_progress: {e}", exc_info=True
-        )
+        logger.error(f"Error handling member_progress: {e}", exc_info=True)
         await member_progress_error(
             MemberProgressErrorPayload(success=False, message=str(e)),
             room=sid,
@@ -280,4 +270,3 @@ register_server_endpoint(
     MemberProgressPayload,
     "Upsert user message and run, trigger appropriate generate event",
 )
-

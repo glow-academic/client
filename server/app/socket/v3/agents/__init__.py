@@ -2,18 +2,20 @@
 
 from fastapi import APIRouter
 
+from .audio import client_router as audio_client_router
+from .audio import server_router as audio_server_router
 from .classify import client_router as classify_client_router
 from .classify import server_router as classify_server_router
 from .document import client_router as document_client_router
 from .document import server_router as document_server_router
 from .grade import client_router as grade_client_router
 from .grade import server_router as grade_server_router
-from .audio import client_router as audio_client_router
-from .audio import server_router as audio_server_router
 from .hint import client_router as hint_client_router
 from .hint import server_router as hint_server_router
 from .image import client_router as image_client_router
 from .image import server_router as image_server_router
+from .member import client_router as member_client_router
+from .member import server_router as member_server_router
 from .rubric import client_router as rubric_client_router
 from .rubric import server_router as rubric_server_router
 from .scenario import client_router as scenario_client_router
@@ -24,14 +26,14 @@ from .simulation import (
 from .simulation import (
     server_router as simulation_server_router,
 )
+from .video import client_router as video_client_router
+from .video import server_router as video_server_router
 from .voice import (
     client_router as voice_client_router,
 )
 from .voice import (
     server_router as voice_server_router,
 )
-from .video import client_router as video_client_router
-from .video import server_router as video_server_router
 
 client_router = APIRouter(prefix="/agents", tags=["socket-client"])
 server_router = APIRouter(prefix="/agents", tags=["socket-server"])
@@ -47,6 +49,7 @@ client_router.include_router(classify_client_router)
 client_router.include_router(hint_client_router)
 client_router.include_router(grade_client_router)
 client_router.include_router(audio_client_router)
+client_router.include_router(member_client_router)
 
 server_router.include_router(simulation_server_router)
 server_router.include_router(voice_server_router)
@@ -59,3 +62,4 @@ server_router.include_router(classify_server_router)
 server_router.include_router(hint_server_router)
 server_router.include_router(grade_server_router)
 server_router.include_router(audio_server_router)
+server_router.include_router(member_server_router)

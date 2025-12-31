@@ -49,15 +49,11 @@ class BenchmarkEndPayload(BaseModel):
 
 
 # Emit helper functions
-async def benchmark_completed(
-    payload: BenchmarkCompletedPayload, room: str
-) -> None:
+async def benchmark_completed(payload: BenchmarkCompletedPayload, room: str) -> None:
     await sio.emit("benchmarks_completed", payload.model_dump(), room=room)
 
 
-async def benchmark_end_error(
-    payload: BenchmarkEndErrorPayload, room: str
-) -> None:
+async def benchmark_end_error(payload: BenchmarkEndErrorPayload, room: str) -> None:
     await sio.emit("benchmarks_end_error", payload.model_dump(), room=room)
 
 
@@ -67,9 +63,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
     Runs rubric_grade_agent, creates grade record, marks test completed.
     """
     try:
-        logger.info(
-            f"Received benchmark_end request from {sid} with data: {data}"
-        )
+        logger.info(f"Received benchmark_end request from {sid} with data: {data}")
 
         test_id = data.test_id
         attempt_id = data.attempt_id
@@ -224,9 +218,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     uuid.UUID(run_id),
                 )
 
-            logger.info(
-                f"Completed benchmark test {test_id}, created grade {grade_id}"
-            )
+            logger.info(f"Completed benchmark test {test_id}, created grade {grade_id}")
 
             # Check if more runs/groups exist
             sql = load_sql(
@@ -287,9 +279,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging benchmark end activity: {log_error}"
-                )
+                logger.warning(f"Error logging benchmark end activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error in benchmark_end for {sid}: {str(e)}", exc_info=True)
@@ -337,4 +327,3 @@ async def benchmark_end_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred in benchmark end."""
     return {"success": True}
-

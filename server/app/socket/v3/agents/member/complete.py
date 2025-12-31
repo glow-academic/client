@@ -63,4 +63,3 @@ register_server_endpoint(
     MemberCompletePayload,
     "Member agent operation completed successfully",
 )
-

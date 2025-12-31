@@ -86,7 +86,9 @@ async def benchmark_join(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in benchmark_join for {sid}: {e}")
         await benchmark_join_error(
-            BenchmarkJoinErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
+            BenchmarkJoinErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
             room=sid,
         )
 
@@ -105,6 +107,8 @@ async def benchmark_joined_api(request: BenchmarkJoinedPayload) -> dict[str, boo
 
 
 @server_router.post("/join_error", response_model=dict[str, bool])
-async def benchmark_join_error_api(request: BenchmarkJoinErrorPayload) -> dict[str, bool]:
+async def benchmark_join_error_api(
+    request: BenchmarkJoinErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while joining benchmark room."""
     return {"success": True}

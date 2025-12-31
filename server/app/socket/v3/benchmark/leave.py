@@ -73,7 +73,9 @@ async def benchmark_leave(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in benchmark_leave for {sid}: {e}")
         await benchmark_leave_error(
-            BenchmarkLeaveErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
+            BenchmarkLeaveErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
             room=sid,
         )
 
@@ -86,6 +88,8 @@ async def benchmark_leave_api(request: BenchmarkLeavePayload) -> dict[str, bool]
 
 
 @server_router.post("/leave_error", response_model=dict[str, bool])
-async def benchmark_leave_error_api(request: BenchmarkLeaveErrorPayload) -> dict[str, bool]:
+async def benchmark_leave_error_api(
+    request: BenchmarkLeaveErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while leaving benchmark room."""
     return {"success": True}

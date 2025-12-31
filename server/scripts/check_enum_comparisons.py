@@ -209,7 +209,11 @@ def is_strong_comparison(value_str: str) -> bool:
     if re.search(r"::\w+", value_str):
         return True
     # Check for shorthand enum_type 'value'
-    if re.search(r"\b(agent_role|profile_role|message_role|pricing_type|modality_type|feedback_type|message_feedback_type|option_type|quality|reasoning_effort|tool_type|unit_category|voice)\s+['\"][^'\"]+['\"]", value_str, re.IGNORECASE):
+    if re.search(
+        r"\b(agent_role|profile_role|message_role|pricing_type|modality_type|feedback_type|message_feedback_type|option_type|quality|reasoning_effort|tool_type|unit_category|voice)\s+['\"][^'\"]+['\"]",
+        value_str,
+        re.IGNORECASE,
+    ):
         return True
     return False
 
@@ -220,7 +224,7 @@ def is_invalid_enum_syntax(value_str: str) -> bool:
     # This is invalid PostgreSQL syntax (PostgreSQL interprets it as table.column)
     invalid_pattern = re.compile(
         r"\b(agent_role|profile_role|message_role|pricing_type|modality_type|feedback_type|message_feedback_type|option_type|quality|reasoning_effort|tool_type|unit_category|voice)\.\w+",
-        re.IGNORECASE
+        re.IGNORECASE,
     )
     return bool(invalid_pattern.search(value_str))
 
@@ -242,9 +246,7 @@ def check_file(file_path: Path) -> list[Violation]:
     )
 
     # Pattern 2: IN clause - column IN ('value1', 'value2')
-    in_pattern = re.compile(
-        r"(\w+(?:\.\w+)?)\s+IN\s*\(([^)]+)\)", re.IGNORECASE
-    )
+    in_pattern = re.compile(r"(\w+(?:\.\w+)?)\s+IN\s*\(([^)]+)\)", re.IGNORECASE)
 
     # Pattern 3: ANY clause - column = ANY(text_array) or 'value' = ANY(text_array)
     any_pattern = re.compile(
@@ -259,7 +261,7 @@ def check_file(file_path: Path) -> list[Violation]:
     # Pattern 5: Invalid enum syntax - enum_type.value (e.g., agent_role.rubric, message_role.system)
     invalid_enum_pattern = re.compile(
         r"(\w+(?:\.\w+)?)\s*(?:=|IN)\s*.*?\b(agent_role|profile_role|message_role|pricing_type|modality_type|feedback_type|message_feedback_type|option_type|quality|reasoning_effort|tool_type|unit_category|voice)\.(\w+)",
-        re.IGNORECASE
+        re.IGNORECASE,
     )
 
     for line_no, line in enumerate(lines, start=1):
@@ -273,7 +275,7 @@ def check_file(file_path: Path) -> list[Violation]:
             column = invalid_match.group(1)
             enum_type_name = invalid_match.group(2).lower()
             enum_value = invalid_match.group(3)
-            
+
             if column.lower() in ENUM_COLUMNS:
                 enum_type = ENUM_COLUMNS[column.lower()]
                 violations.append(
@@ -365,7 +367,10 @@ def check_file(file_path: Path) -> list[Violation]:
                         and val in ENUM_TYPES[enum_type]["current_values"]
                     ):
                         # Check if the value is cast (look for ::enum_type in the original string)
-                        if f"::{enum_type}" not in values_str and f".{val}" not in values_str:
+                        if (
+                            f"::{enum_type}" not in values_str
+                            and f".{val}" not in values_str
+                        ):
                             has_weak = True
 
                 if old_values_found:
@@ -549,4 +554,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

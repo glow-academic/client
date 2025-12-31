@@ -8,7 +8,6 @@ from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 
@@ -40,9 +39,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
     Orchestrates section-by-section execution: tools first, then agents.
     """
     try:
-        logger.info(
-            f"Received benchmark_next request from {sid} with data: {data}"
-        )
+        logger.info(f"Received benchmark_next request from {sid} with data: {data}")
 
         attempt_id = data.attempt_id
         eval_id = data.eval_id
@@ -51,7 +48,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
         use_groups = data.use_groups
 
         if not attempt_id or not eval_id:
-            logger.error(f"Missing attempt_id or eval_id in benchmark_next")
+            logger.error("Missing attempt_id or eval_id in benchmark_next")
             return
 
         # Get connection pool
@@ -128,7 +125,10 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 sql = load_sql("app/sql/v3/benchmark/get_group_stop_tools.sql")
                 group_stop_rows = await conn.fetch(sql, group_id_uuid)
                 group_stop_tools = [
-                    {"tool_id": str(row["tool_id"]), "position_idx": row["position_idx"]}
+                    {
+                        "tool_id": str(row["tool_id"]),
+                        "position_idx": row["position_idx"],
+                    }
                     for row in group_stop_rows
                 ]
 
@@ -136,7 +136,10 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 sql = load_sql("app/sql/v3/benchmark/get_group_order_agents.sql")
                 group_order_rows = await conn.fetch(sql, group_id_uuid)
                 group_order_agents = [
-                    {"agent_id": str(row["agent_id"]), "position_idx": row["position_idx"]}
+                    {
+                        "agent_id": str(row["agent_id"]),
+                        "position_idx": row["position_idx"],
+                    }
                     for row in group_order_rows
                 ]
 
@@ -144,7 +147,9 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             # Note: Sequential execution - each tool completes before next starts
             # Completion events are handled by listeners that track pending completions
             if group_stop_tools:
-                for tool_info in sorted(group_stop_tools, key=lambda x: x["position_idx"]):
+                for tool_info in sorted(
+                    group_stop_tools, key=lambda x: x["position_idx"]
+                ):
                     tool_id = tool_info["tool_id"]
                     # Get tool name from tool_id to determine which eval handler to call
                     tool_row = await conn.fetchrow(
@@ -153,7 +158,9 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                     )
                     if tool_row:
                         # Convert tool name to event name format (lowercase, underscores)
-                        tool_name = tool_row["name"].lower().replace(" ", "_").replace("-", "_")
+                        tool_name = (
+                            tool_row["name"].lower().replace(" ", "_").replace("-", "_")
+                        )
                         # Emit to specific tool eval handler (e.g., classification_eval_start, hint_eval_start)
                         await emit_to_internal(
                             f"{tool_name}_eval_start",
@@ -178,7 +185,9 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             # Execute agents (if not stopped)
             # Note: Sequential execution - each agent completes before next starts
             if group_order_agents:
-                for agent_info in sorted(group_order_agents, key=lambda x: x["position_idx"]):
+                for agent_info in sorted(
+                    group_order_agents, key=lambda x: x["position_idx"]
+                ):
                     agent_id = agent_info["agent_id"]
                     # Get agent name from agent_id to determine which eval handler to call
                     agent_row = await conn.fetchrow(
@@ -187,7 +196,12 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                     )
                     if agent_row:
                         # Convert agent name to event name format (lowercase, underscores)
-                        agent_name = agent_row["name"].lower().replace(" ", "_").replace("-", "_")
+                        agent_name = (
+                            agent_row["name"]
+                            .lower()
+                            .replace(" ", "_")
+                            .replace("-", "_")
+                        )
                         # Emit to specific agent eval handler (e.g., simulation_eval_start, voice_eval_start)
                         await emit_to_internal(
                             f"{agent_name}_eval_start",
@@ -254,4 +268,3 @@ async def benchmark_next_internal(data: dict[str, Any]) -> None:
 async def benchmark_next_api(request: BenchmarkNextPayload) -> dict[str, bool]:
     """Internal event: Process next run/group for benchmark attempt."""
     return {"success": True}
-

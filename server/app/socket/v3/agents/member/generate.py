@@ -1,6 +1,5 @@
 """Handler for member_generate WebSocket event - BUILT BUT UNUSED IN THIS MIGRATION."""
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter
@@ -34,9 +33,7 @@ class MemberGenerateErrorPayload(BaseModel):
 
 
 # Emit helper functions
-async def member_generate_error(
-    payload: MemberGenerateErrorPayload, room: str
-) -> None:
+async def member_generate_error(payload: MemberGenerateErrorPayload, room: str) -> None:
     await sio.emit("member_generate_error", payload.model_dump(), room=room)
 
 
@@ -81,4 +78,3 @@ register_server_endpoint(
     MemberGeneratePayload,
     "Generate member agent response (unused in this migration)",
 )
-
