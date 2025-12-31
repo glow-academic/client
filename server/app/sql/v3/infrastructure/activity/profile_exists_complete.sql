@@ -1,3 +1,28 @@
 -- Check if profile exists
-SELECT EXISTS(SELECT 1 FROM profiles WHERE id = $1::uuid)
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+
+BEGIN;
+
+-- Drop function if exists (handle signature changes)
+DO $$ 
+BEGIN
+    DROP FUNCTION IF EXISTS infra_profile_exists_v3(uuid);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- Create function
+CREATE OR REPLACE FUNCTION infra_profile_exists_v3(
+    profile_id uuid
+)
+RETURNS TABLE (
+    profile_exists boolean
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT EXISTS(SELECT 1 FROM profiles WHERE id = profile_id) as profile_exists;
+$$;
+
+COMMIT;
 

@@ -52,9 +52,18 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         Route name or None if pattern doesn't match
     """
     # Pattern: app/sql/v3/[resource]/[operation]_complete.sql
+    # Pattern: app/sql/v3/infrastructure/[category]/[operation]_complete.sql -> infra_[category]_[operation]
     if sql_path.startswith("app/sql/v3/"):
         relative = sql_path[len("app/sql/v3/") :]
         parts = relative.split("/")
+        # Handle infrastructure paths: infrastructure/[category]/[operation]_complete.sql
+        if len(parts) == 3 and parts[0] == "infrastructure":
+            category, filename = parts[1], parts[2]
+            if not filename.endswith("_complete.sql"):
+                return None
+            operation = filename[: -len("_complete.sql")]
+            return f"infra_{category}_{operation}".replace("-", "_")
+        # Handle standard paths: [resource]/[operation]_complete.sql
         if len(parts) != 2:
             return None
         resource, filename = parts
