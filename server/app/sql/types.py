@@ -36,7 +36,7 @@ class GetActivityBundleSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetActivityBundleV3ChartDataPoint(BaseModel):
+class QGetActivityBundleV4ChartDataPoint(BaseModel):
 
     date: str | None
     active_profiles: int | None
@@ -51,7 +51,7 @@ class GetActivityBundleSqlRow(BaseModel):
     total_feedback_count: int | None = None
     total_activity_entries: int | None = None
     total_errors_count: int | None = None
-    chart_data: list[QGetActivityBundleV3ChartDataPoint] | None = None
+    chart_data: list[QGetActivityBundleV4ChartDataPoint] | None = None
 
 class GetActivityBundleApiRequest(BaseModel):
 
@@ -64,7 +64,7 @@ class GetActivityBundleApiResponse(BaseModel):
     total_feedback_count: int | None = None
     total_activity_entries: int | None = None
     total_errors_count: int | None = None
-    chart_data: list[QGetActivityBundleV3ChartDataPoint] | None = None
+    chart_data: list[QGetActivityBundleV4ChartDataPoint] | None = None
 
 
 
@@ -85,7 +85,7 @@ class GetActivityListSqlParams(BaseModel):
             self.search,
         )
 
-class QGetActivityListV3Activity(BaseModel):
+class QGetActivityListV4Activity(BaseModel):
 
     activity_id: UUID | None
     created_at: str | None
@@ -97,7 +97,7 @@ class QGetActivityListV3Activity(BaseModel):
 class GetActivityListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    activities: list[QGetActivityListV3Activity] | None = None
+    activities: list[QGetActivityListV4Activity] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -112,7 +112,7 @@ class GetActivityListApiRequest(BaseModel):
 class GetActivityListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    activities: list[QGetActivityListV3Activity] | None = None
+    activities: list[QGetActivityListV4Activity] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -2888,7 +2888,7 @@ class GetAgentDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetAgentDetailV3AvailableVoice(BaseModel):
+class QGetAgentDetailV4AvailableVoice(BaseModel):
 
     id: str | None
     voice: str | None
@@ -2896,7 +2896,7 @@ class QGetAgentDetailV3AvailableVoice(BaseModel):
 
 
 
-class QGetAgentDetailV3DebugInfo(BaseModel):
+class QGetAgentDetailV4DebugInfo(BaseModel):
 
     created_at: str | None
     model_id: str | None
@@ -2905,7 +2905,7 @@ class QGetAgentDetailV3DebugInfo(BaseModel):
 
 
 
-class QGetAgentDetailV3Department(BaseModel):
+class QGetAgentDetailV4Department(BaseModel):
 
     department_id: str | None
     name: str | None
@@ -2914,7 +2914,7 @@ class QGetAgentDetailV3Department(BaseModel):
 
 
 
-class QGetAgentDetailV3DepartmentPromptLink(BaseModel):
+class QGetAgentDetailV4DepartmentPromptLink(BaseModel):
 
     department_id: str | None
     prompt_id: str | None
@@ -2922,7 +2922,7 @@ class QGetAgentDetailV3DepartmentPromptLink(BaseModel):
 
 
 
-class QGetAgentDetailV3Model(BaseModel):
+class QGetAgentDetailV4Model(BaseModel):
 
     model_id: str | None
     name: str | None
@@ -2938,7 +2938,7 @@ class QGetAgentDetailV3Model(BaseModel):
 
 
 
-class QGetAgentDetailV3Prompt(BaseModel):
+class QGetAgentDetailV4Prompt(BaseModel):
 
     prompt_id: str | None
     system_prompt: str | None
@@ -2952,7 +2952,7 @@ class QGetAgentDetailV3Prompt(BaseModel):
 
 
 
-class QGetAgentDetailV3ReasoningOption(BaseModel):
+class QGetAgentDetailV4ReasoningOption(BaseModel):
 
     id: str | None
     reasoning_level: str | None
@@ -2960,7 +2960,7 @@ class QGetAgentDetailV3ReasoningOption(BaseModel):
 
 
 
-class QGetAgentDetailV3TemperatureLevel(BaseModel):
+class QGetAgentDetailV4TemperatureLevel(BaseModel):
 
     id: str | None
     temperature: str | None
@@ -2990,14 +2990,14 @@ class GetAgentDetailSqlRow(BaseModel):
     temperature_upper: float | None = None
     valid_model_ids: list[str] | None = None
     actor_name: str | None = None
-    departments: list[QGetAgentDetailV3Department] | None = None
-    prompts: list[QGetAgentDetailV3Prompt] | None = None
-    department_prompt_links: list[QGetAgentDetailV3DepartmentPromptLink] | None = None
-    debug_info: list[QGetAgentDetailV3DebugInfo] | None = None
-    models: list[QGetAgentDetailV3Model] | None = None
-    reasoning_options: list[QGetAgentDetailV3ReasoningOption] | None = None
-    temperature_levels: list[QGetAgentDetailV3TemperatureLevel] | None = None
-    available_voices: list[QGetAgentDetailV3AvailableVoice] | None = None
+    departments: list[QGetAgentDetailV4Department] | None = None
+    prompts: list[QGetAgentDetailV4Prompt] | None = None
+    department_prompt_links: list[QGetAgentDetailV4DepartmentPromptLink] | None = None
+    debug_info: list[QGetAgentDetailV4DebugInfo] | None = None
+    models: list[QGetAgentDetailV4Model] | None = None
+    reasoning_options: list[QGetAgentDetailV4ReasoningOption] | None = None
+    temperature_levels: list[QGetAgentDetailV4TemperatureLevel] | None = None
+    available_voices: list[QGetAgentDetailV4AvailableVoice] | None = None
 
 class GetAgentDetailApiRequest(BaseModel):
 
@@ -3027,14 +3027,14 @@ class GetAgentDetailApiResponse(BaseModel):
     temperature_upper: float | None = None
     valid_model_ids: list[str] | None = None
     actor_name: str | None = None
-    departments: list[QGetAgentDetailV3Department] | None = None
-    prompts: list[QGetAgentDetailV3Prompt] | None = None
-    department_prompt_links: list[QGetAgentDetailV3DepartmentPromptLink] | None = None
-    debug_info: list[QGetAgentDetailV3DebugInfo] | None = None
-    models: list[QGetAgentDetailV3Model] | None = None
-    reasoning_options: list[QGetAgentDetailV3ReasoningOption] | None = None
-    temperature_levels: list[QGetAgentDetailV3TemperatureLevel] | None = None
-    available_voices: list[QGetAgentDetailV3AvailableVoice] | None = None
+    departments: list[QGetAgentDetailV4Department] | None = None
+    prompts: list[QGetAgentDetailV4Prompt] | None = None
+    department_prompt_links: list[QGetAgentDetailV4DepartmentPromptLink] | None = None
+    debug_info: list[QGetAgentDetailV4DebugInfo] | None = None
+    models: list[QGetAgentDetailV4Model] | None = None
+    reasoning_options: list[QGetAgentDetailV4ReasoningOption] | None = None
+    temperature_levels: list[QGetAgentDetailV4TemperatureLevel] | None = None
+    available_voices: list[QGetAgentDetailV4AvailableVoice] | None = None
 
 
 
@@ -3049,7 +3049,7 @@ class GetAgentNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetAgentNewV3Department(BaseModel):
+class QGetAgentNewV4Department(BaseModel):
 
     department_id: str | None
     name: str | None
@@ -3058,7 +3058,7 @@ class QGetAgentNewV3Department(BaseModel):
 
 
 
-class QGetAgentNewV3Model(BaseModel):
+class QGetAgentNewV4Model(BaseModel):
 
     model_id: str | None
     name: str | None
@@ -3079,8 +3079,8 @@ class GetAgentNewSqlRow(BaseModel):
     primary_department_id: str | None = None
     valid_model_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
-    models: list[QGetAgentNewV3Model] | None = None
-    departments: list[QGetAgentNewV3Department] | None = None
+    models: list[QGetAgentNewV4Model] | None = None
+    departments: list[QGetAgentNewV4Department] | None = None
 
 class GetAgentNewApiRequest(BaseModel):
 
@@ -3093,8 +3093,8 @@ class GetAgentNewApiResponse(BaseModel):
     primary_department_id: str | None = None
     valid_model_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
-    models: list[QGetAgentNewV3Model] | None = None
-    departments: list[QGetAgentNewV3Department] | None = None
+    models: list[QGetAgentNewV4Model] | None = None
+    departments: list[QGetAgentNewV4Department] | None = None
 
 
 
@@ -3150,7 +3150,7 @@ class GetAgentsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListAgentsV3Agent(BaseModel):
+class QListAgentsV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -3171,7 +3171,7 @@ class QListAgentsV3Agent(BaseModel):
 class GetAgentsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    agents: list[QListAgentsV3Agent] | None = None
+    agents: list[QListAgentsV4Agent] | None = None
 
 class GetAgentsListApiRequest(BaseModel):
 
@@ -3180,7 +3180,7 @@ class GetAgentsListApiRequest(BaseModel):
 class GetAgentsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    agents: list[QListAgentsV3Agent] | None = None
+    agents: list[QListAgentsV4Agent] | None = None
 
 
 
@@ -3391,7 +3391,7 @@ class GetEvalAttemptSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetEvalAttemptV3Attempt(BaseModel):
+class QGetEvalAttemptV4Attempt(BaseModel):
 
     id: UUID | None
     created_at: str | None
@@ -3402,7 +3402,7 @@ class QGetEvalAttemptV3Attempt(BaseModel):
 
 
 
-class QGetEvalAttemptV3Eval(BaseModel):
+class QGetEvalAttemptV4Eval(BaseModel):
 
     eval_id: UUID | None
     name: str | None
@@ -3418,7 +3418,7 @@ class QGetEvalAttemptV3Eval(BaseModel):
 
 
 
-class QGetEvalAttemptV3Run(BaseModel):
+class QGetEvalAttemptV4Run(BaseModel):
 
     run_id: UUID | None
     status: str | None
@@ -3442,7 +3442,7 @@ class QGetEvalAttemptV3Run(BaseModel):
 
 
 
-class QGetEvalAttemptV3StatusSummary(BaseModel):
+class QGetEvalAttemptV4StatusSummary(BaseModel):
 
     not_started: int | None
     in_progress: int | None
@@ -3453,10 +3453,10 @@ class GetEvalAttemptSqlRow(BaseModel):
 
     attempt_exists: bool | None = None
     actor_name: str | None = None
-    attempt: QGetEvalAttemptV3Attempt | None = None
-    eval: QGetEvalAttemptV3Eval | None = None
-    runs: list[QGetEvalAttemptV3Run] | None = None
-    status_summary: QGetEvalAttemptV3StatusSummary | None = None
+    attempt: QGetEvalAttemptV4Attempt | None = None
+    eval: QGetEvalAttemptV4Eval | None = None
+    runs: list[QGetEvalAttemptV4Run] | None = None
+    status_summary: QGetEvalAttemptV4StatusSummary | None = None
 
 class GetEvalAttemptApiRequest(BaseModel):
 
@@ -3466,10 +3466,10 @@ class GetEvalAttemptApiResponse(BaseModel):
 
     attempt_exists: bool | None = None
     actor_name: str | None = None
-    attempt: QGetEvalAttemptV3Attempt | None = None
-    eval: QGetEvalAttemptV3Eval | None = None
-    runs: list[QGetEvalAttemptV3Run] | None = None
-    status_summary: QGetEvalAttemptV3StatusSummary | None = None
+    attempt: QGetEvalAttemptV4Attempt | None = None
+    eval: QGetEvalAttemptV4Eval | None = None
+    runs: list[QGetEvalAttemptV4Run] | None = None
+    status_summary: QGetEvalAttemptV4StatusSummary | None = None
 
 
 
@@ -3486,7 +3486,7 @@ class GetSimulationAttemptSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetSimulationAttemptV3AggregatedResults(BaseModel):
+class QGetSimulationAttemptV4AggregatedResults(BaseModel):
 
     total_score: float | None
     total_possible_points: float | None
@@ -3498,7 +3498,7 @@ class QGetSimulationAttemptV3AggregatedResults(BaseModel):
 
 
 
-class QGetSimulationAttemptV3PreviousChat(BaseModel):
+class QGetSimulationAttemptV4PreviousChat(BaseModel):
 
     chat_id: UUID | None
     attempt_id: UUID | None
@@ -3510,7 +3510,7 @@ class QGetSimulationAttemptV3PreviousChat(BaseModel):
     total_possible_points: float | None
     percentage: float | None
 
-class QGetSimulationAttemptV3AllSimulationScenario(BaseModel):
+class QGetSimulationAttemptV4AllSimulationScenario(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -3533,12 +3533,12 @@ class QGetSimulationAttemptV3AllSimulationScenario(BaseModel):
     show_images: bool | None
     background_image: UUID | None
     objectives: list[str] | None
-    previous_chats: list[QGetSimulationAttemptV3PreviousChat] | None
+    previous_chats: list[QGetSimulationAttemptV4PreviousChat] | None
 
 
 
 
-class QGetSimulationAttemptV3Attempt(BaseModel):
+class QGetSimulationAttemptV4Attempt(BaseModel):
 
     id: UUID | None
     created_at: str | None
@@ -3550,7 +3550,7 @@ class QGetSimulationAttemptV3Attempt(BaseModel):
 
 
 
-class QGetSimulationAttemptV3AttemptProfile(BaseModel):
+class QGetSimulationAttemptV4AttemptProfile(BaseModel):
 
     profile_id: UUID | None
     attempt_id: UUID | None
@@ -3559,7 +3559,7 @@ class QGetSimulationAttemptV3AttemptProfile(BaseModel):
 
 
 
-class QGetSimulationAttemptV3ContinuationOption(BaseModel):
+class QGetSimulationAttemptV4ContinuationOption(BaseModel):
 
     scenario_id: UUID | None
     position: int | None
@@ -3570,15 +3570,15 @@ class QGetSimulationAttemptV3ContinuationOption(BaseModel):
     percentage: float | None
     time_taken: float | None
 
-class QGetSimulationAttemptV3AvailableContinuationOptions(BaseModel):
+class QGetSimulationAttemptV4AvailableContinuationOptions(BaseModel):
 
-    next_sequential_options: list[QGetSimulationAttemptV3ContinuationOption] | None
+    next_sequential_options: list[QGetSimulationAttemptV4ContinuationOption] | None
     has_options: bool | None
 
 
 
 
-class QGetSimulationAttemptV3Chat(BaseModel):
+class QGetSimulationAttemptV4Chat(BaseModel):
 
     id: UUID | None
     created_at: str | None
@@ -3595,7 +3595,7 @@ class QGetSimulationAttemptV3Chat(BaseModel):
 
 
 
-class QGetSimulationAttemptV3SkillFeedback(BaseModel):
+class QGetSimulationAttemptV4SkillFeedback(BaseModel):
 
     skill_name: str | None
     feedback: str | None
@@ -3603,25 +3603,25 @@ class QGetSimulationAttemptV3SkillFeedback(BaseModel):
 
 
 
-class QGetSimulationAttemptV3SkillScore(BaseModel):
+class QGetSimulationAttemptV4SkillScore(BaseModel):
 
     skill_name: str | None
     score: float | None
 
-class QGetSimulationAttemptV3DynamicRubric(BaseModel):
+class QGetSimulationAttemptV4DynamicRubric(BaseModel):
 
     chat_id: UUID | None
     score: float | None
     passed: bool | None
     time_taken: float | None
-    skill_scores: list[QGetSimulationAttemptV3SkillScore] | None
-    skill_feedbacks: list[QGetSimulationAttemptV3SkillFeedback] | None
+    skill_scores: list[QGetSimulationAttemptV4SkillScore] | None
+    skill_feedbacks: list[QGetSimulationAttemptV4SkillFeedback] | None
     total_possible_points: float | None
 
 
 
 
-class QGetSimulationAttemptV3Grade(BaseModel):
+class QGetSimulationAttemptV4Grade(BaseModel):
 
     id: UUID | None
     created_at: str | None
@@ -3635,7 +3635,7 @@ class QGetSimulationAttemptV3Grade(BaseModel):
 
 
 
-class QGetSimulationAttemptV3StandardAchievement(BaseModel):
+class QGetSimulationAttemptV4StandardAchievement(BaseModel):
 
     standard_id: UUID | None
     achieved: bool | None
@@ -3643,7 +3643,7 @@ class QGetSimulationAttemptV3StandardAchievement(BaseModel):
 
 
 
-class QGetSimulationAttemptV3StandardFeedback(BaseModel):
+class QGetSimulationAttemptV4StandardFeedback(BaseModel):
 
     standard_id: UUID | None
     feedback: str | None
@@ -3651,58 +3651,58 @@ class QGetSimulationAttemptV3StandardFeedback(BaseModel):
 
 
 
-class QGetSimulationAttemptV3StandardPass(BaseModel):
+class QGetSimulationAttemptV4StandardPass(BaseModel):
 
     standard_id: UUID | None
     passed: bool | None
 
-class QGetSimulationAttemptV3GradingState(BaseModel):
+class QGetSimulationAttemptV4GradingState(BaseModel):
 
-    achieved_standards: list[QGetSimulationAttemptV3StandardAchievement] | None
-    passed_standards: list[QGetSimulationAttemptV3StandardPass] | None
+    achieved_standards: list[QGetSimulationAttemptV4StandardAchievement] | None
+    passed_standards: list[QGetSimulationAttemptV4StandardPass] | None
     grade_description: str | None
-    feedback_by_standard_id: list[QGetSimulationAttemptV3StandardFeedback] | None
+    feedback_by_standard_id: list[QGetSimulationAttemptV4StandardFeedback] | None
 
 
 
 
-class QGetSimulationAttemptV3Hint(BaseModel):
+class QGetSimulationAttemptV4Hint(BaseModel):
 
     simulation_message_id: UUID | None
     hint: str | None
     idx: int | None
     created_at: str | None
 
-class QGetSimulationAttemptV3HintsByMessage(BaseModel):
+class QGetSimulationAttemptV4HintsByMessage(BaseModel):
 
     message_id: UUID | None
-    hints: list[QGetSimulationAttemptV3Hint] | None
+    hints: list[QGetSimulationAttemptV4Hint] | None
 
 
 
 
-class QGetSimulationAttemptV3MessageFeedbackHighlight(BaseModel):
+class QGetSimulationAttemptV4MessageFeedbackHighlight(BaseModel):
 
     section: str | None
 
 
 
 
-class QGetSimulationAttemptV3MessageFeedbackReplace(BaseModel):
+class QGetSimulationAttemptV4MessageFeedbackReplace(BaseModel):
 
     section: str | None
     replace: str | None
 
-class QGetSimulationAttemptV3MessageFeedback(BaseModel):
+class QGetSimulationAttemptV4MessageFeedback(BaseModel):
 
     id: UUID | None
     name: str | None
     description: str | None
     type: str | None
-    replaces: list[QGetSimulationAttemptV3MessageFeedbackReplace] | None
-    highlights: list[QGetSimulationAttemptV3MessageFeedbackHighlight] | None
+    replaces: list[QGetSimulationAttemptV4MessageFeedbackReplace] | None
+    highlights: list[QGetSimulationAttemptV4MessageFeedbackHighlight] | None
 
-class QGetSimulationAttemptV3Message(BaseModel):
+class QGetSimulationAttemptV4Message(BaseModel):
 
     id: UUID | None
     created_at: str | None
@@ -3712,12 +3712,12 @@ class QGetSimulationAttemptV3Message(BaseModel):
     type: str | None
     completed: bool | None
     persona_id: UUID | None
-    feedbacks: list[QGetSimulationAttemptV3MessageFeedback] | None
+    feedbacks: list[QGetSimulationAttemptV4MessageFeedback] | None
 
 
 
 
-class QGetSimulationAttemptV3Persona(BaseModel):
+class QGetSimulationAttemptV4Persona(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -3727,23 +3727,23 @@ class QGetSimulationAttemptV3Persona(BaseModel):
 
 
 
-class QGetSimulationAttemptV3QuizResponse(BaseModel):
+class QGetSimulationAttemptV4QuizResponse(BaseModel):
 
     question_id: UUID | None
     option_id: UUID | None
     completed: bool | None
     created_at: str | None
 
-class QGetSimulationAttemptV3Quiz(BaseModel):
+class QGetSimulationAttemptV4Quiz(BaseModel):
 
     id: UUID | None
     completed: bool | None
-    responses: list[QGetSimulationAttemptV3QuizResponse] | None
+    responses: list[QGetSimulationAttemptV4QuizResponse] | None
 
 
 
 
-class QGetSimulationAttemptV3Scenario(BaseModel):
+class QGetSimulationAttemptV4Scenario(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -3770,26 +3770,26 @@ class QGetSimulationAttemptV3Scenario(BaseModel):
 
 
 
-class QGetSimulationAttemptV3Option(BaseModel):
+class QGetSimulationAttemptV4Option(BaseModel):
 
     id: UUID | None
     option_text: str | None
     type: str | None
     is_correct: bool | None
 
-class QGetSimulationAttemptV3Question(BaseModel):
+class QGetSimulationAttemptV4Question(BaseModel):
 
     id: UUID | None
     question_text: str | None
     type: str | None
     allow_multiple: bool | None
     times: list[int] | None
-    options: list[QGetSimulationAttemptV3Option] | None
+    options: list[QGetSimulationAttemptV4Option] | None
 
 
 
 
-class QGetSimulationAttemptV3VideoDocument(BaseModel):
+class QGetSimulationAttemptV4VideoDocument(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -3799,35 +3799,35 @@ class QGetSimulationAttemptV3VideoDocument(BaseModel):
     mime_type: str | None
     upload_id: UUID | None
 
-class QGetSimulationAttemptV3Video(BaseModel):
+class QGetSimulationAttemptV4Video(BaseModel):
 
     id: UUID | None
     title: str | None
     length_seconds: int | None
     upload_id: UUID | None
-    video_documents: list[QGetSimulationAttemptV3VideoDocument] | None
-    questions: list[QGetSimulationAttemptV3Question] | None
+    video_documents: list[QGetSimulationAttemptV4VideoDocument] | None
+    questions: list[QGetSimulationAttemptV4Question] | None
     show_image: bool | None
 
-class QGetSimulationAttemptV3ChatData(BaseModel):
+class QGetSimulationAttemptV4ChatData(BaseModel):
 
-    chat: QGetSimulationAttemptV3Chat | None
-    scenario: QGetSimulationAttemptV3Scenario | None
-    messages: list[QGetSimulationAttemptV3Message] | None
-    hints: list[QGetSimulationAttemptV3HintsByMessage] | None
-    grade: QGetSimulationAttemptV3Grade | None
-    grading_state: QGetSimulationAttemptV3GradingState | None
-    dynamic_rubric: QGetSimulationAttemptV3DynamicRubric | None
-    previous_chats: list[QGetSimulationAttemptV3PreviousChat] | None
-    personas: list[QGetSimulationAttemptV3Persona] | None
+    chat: QGetSimulationAttemptV4Chat | None
+    scenario: QGetSimulationAttemptV4Scenario | None
+    messages: list[QGetSimulationAttemptV4Message] | None
+    hints: list[QGetSimulationAttemptV4HintsByMessage] | None
+    grade: QGetSimulationAttemptV4Grade | None
+    grading_state: QGetSimulationAttemptV4GradingState | None
+    dynamic_rubric: QGetSimulationAttemptV4DynamicRubric | None
+    previous_chats: list[QGetSimulationAttemptV4PreviousChat] | None
+    personas: list[QGetSimulationAttemptV4Persona] | None
     content_type: str | None
-    video: QGetSimulationAttemptV3Video | None
-    quiz: QGetSimulationAttemptV3Quiz | None
+    video: QGetSimulationAttemptV4Video | None
+    quiz: QGetSimulationAttemptV4Quiz | None
 
 
 
 
-class QGetSimulationAttemptV3StandardGroupMapping(BaseModel):
+class QGetSimulationAttemptV4StandardGroupMapping(BaseModel):
 
     standard_group_id: UUID | None
     name: str | None
@@ -3838,7 +3838,7 @@ class QGetSimulationAttemptV3StandardGroupMapping(BaseModel):
 
 
 
-class QGetSimulationAttemptV3StandardGroupStandards(BaseModel):
+class QGetSimulationAttemptV4StandardGroupStandards(BaseModel):
 
     standard_group_id: UUID | None
     standard_ids: list[str] | None
@@ -3846,23 +3846,23 @@ class QGetSimulationAttemptV3StandardGroupStandards(BaseModel):
 
 
 
-class QGetSimulationAttemptV3StandardMapping(BaseModel):
+class QGetSimulationAttemptV4StandardMapping(BaseModel):
 
     standard_id: UUID | None
     name: str | None
     description: str | None
     points: float | None
 
-class QGetSimulationAttemptV3RubricStructure(BaseModel):
+class QGetSimulationAttemptV4RubricStructure(BaseModel):
 
-    standard_groups: list[QGetSimulationAttemptV3StandardGroupStandards] | None
-    standard_groups_mapping: list[QGetSimulationAttemptV3StandardGroupMapping] | None
-    standards_mapping: list[QGetSimulationAttemptV3StandardMapping] | None
-
-
+    standard_groups: list[QGetSimulationAttemptV4StandardGroupStandards] | None
+    standard_groups_mapping: list[QGetSimulationAttemptV4StandardGroupMapping] | None
+    standards_mapping: list[QGetSimulationAttemptV4StandardMapping] | None
 
 
-class QGetSimulationAttemptV3ScenarioDocument(BaseModel):
+
+
+class QGetSimulationAttemptV4ScenarioDocument(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -3882,7 +3882,7 @@ class QGetSimulationAttemptV3ScenarioDocument(BaseModel):
 
 
 
-class QGetSimulationAttemptV3Simulation(BaseModel):
+class QGetSimulationAttemptV4Simulation(BaseModel):
 
     id: UUID | None
     title: str | None
@@ -3905,7 +3905,7 @@ class QGetSimulationAttemptV3Simulation(BaseModel):
 
 
 
-class QGetSimulationAttemptV3Timer(BaseModel):
+class QGetSimulationAttemptV4Timer(BaseModel):
 
     elapsed: int | None
     limit: int | None
@@ -3917,13 +3917,13 @@ class GetSimulationAttemptSqlRow(BaseModel):
     attempt_exists: bool | None = None
     actor_name: str | None = None
     access_denied: bool | None = None
-    attempt: QGetSimulationAttemptV3Attempt | None = None
-    simulation: QGetSimulationAttemptV3Simulation | None = None
-    attempt_profiles: list[QGetSimulationAttemptV3AttemptProfile] | None = None
-    chats: list[QGetSimulationAttemptV3ChatData] | None = None
-    scenario_documents: list[QGetSimulationAttemptV3ScenarioDocument] | None = None
-    aggregated_results: QGetSimulationAttemptV3AggregatedResults | None = None
-    timer: QGetSimulationAttemptV3Timer | None = None
+    attempt: QGetSimulationAttemptV4Attempt | None = None
+    simulation: QGetSimulationAttemptV4Simulation | None = None
+    attempt_profiles: list[QGetSimulationAttemptV4AttemptProfile] | None = None
+    chats: list[QGetSimulationAttemptV4ChatData] | None = None
+    scenario_documents: list[QGetSimulationAttemptV4ScenarioDocument] | None = None
+    aggregated_results: QGetSimulationAttemptV4AggregatedResults | None = None
+    timer: QGetSimulationAttemptV4Timer | None = None
     current_chat_index: int | None = None
     expected_chat_count: int | None = None
     is_single_chat_attempt: bool | None = None
@@ -3934,9 +3934,9 @@ class GetSimulationAttemptSqlRow(BaseModel):
     is_last_remaining_scenario: bool | None = None
     can_pick_multiple_alternatives: bool | None = None
     is_active: bool | None = None
-    rubric_structure: QGetSimulationAttemptV3RubricStructure | None = None
-    all_simulation_scenarios: list[QGetSimulationAttemptV3AllSimulationScenario] | None = None
-    available_continuation_options: QGetSimulationAttemptV3AvailableContinuationOptions | None = None
+    rubric_structure: QGetSimulationAttemptV4RubricStructure | None = None
+    all_simulation_scenarios: list[QGetSimulationAttemptV4AllSimulationScenario] | None = None
+    available_continuation_options: QGetSimulationAttemptV4AvailableContinuationOptions | None = None
 
 class GetSimulationAttemptApiRequest(BaseModel):
 
@@ -3947,13 +3947,13 @@ class GetSimulationAttemptApiResponse(BaseModel):
     attempt_exists: bool | None = None
     actor_name: str | None = None
     access_denied: bool | None = None
-    attempt: QGetSimulationAttemptV3Attempt | None = None
-    simulation: QGetSimulationAttemptV3Simulation | None = None
-    attempt_profiles: list[QGetSimulationAttemptV3AttemptProfile] | None = None
-    chats: list[QGetSimulationAttemptV3ChatData] | None = None
-    scenario_documents: list[QGetSimulationAttemptV3ScenarioDocument] | None = None
-    aggregated_results: QGetSimulationAttemptV3AggregatedResults | None = None
-    timer: QGetSimulationAttemptV3Timer | None = None
+    attempt: QGetSimulationAttemptV4Attempt | None = None
+    simulation: QGetSimulationAttemptV4Simulation | None = None
+    attempt_profiles: list[QGetSimulationAttemptV4AttemptProfile] | None = None
+    chats: list[QGetSimulationAttemptV4ChatData] | None = None
+    scenario_documents: list[QGetSimulationAttemptV4ScenarioDocument] | None = None
+    aggregated_results: QGetSimulationAttemptV4AggregatedResults | None = None
+    timer: QGetSimulationAttemptV4Timer | None = None
     current_chat_index: int | None = None
     expected_chat_count: int | None = None
     is_single_chat_attempt: bool | None = None
@@ -3964,9 +3964,9 @@ class GetSimulationAttemptApiResponse(BaseModel):
     is_last_remaining_scenario: bool | None = None
     can_pick_multiple_alternatives: bool | None = None
     is_active: bool | None = None
-    rubric_structure: QGetSimulationAttemptV3RubricStructure | None = None
-    all_simulation_scenarios: list[QGetSimulationAttemptV3AllSimulationScenario] | None = None
-    available_continuation_options: QGetSimulationAttemptV3AvailableContinuationOptions | None = None
+    rubric_structure: QGetSimulationAttemptV4RubricStructure | None = None
+    all_simulation_scenarios: list[QGetSimulationAttemptV4AllSimulationScenario] | None = None
+    available_continuation_options: QGetSimulationAttemptV4AvailableContinuationOptions | None = None
 
 
 
@@ -3991,7 +3991,7 @@ class GetAudioRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IAudioRegenRunContextCreateRunV3Msg(BaseModel):
+class IAudioRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -4021,7 +4021,7 @@ class GetAudioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     mime_type: str | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IAudioRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IAudioRegenRunContextCreateRunV4Msg] | None = None
 
 class GetAudioRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -4056,7 +4056,7 @@ class GetAudioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     mime_type: str | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IAudioRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IAudioRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -4137,7 +4137,7 @@ class GetAudioRunContextAndCreateRunApiResponse(BaseModel):
 
 # Generated from: create_auth
 
-class ICreateAuthV3AuthItem(BaseModel):
+class ICreateAuthV4AuthItem(BaseModel):
 
     name: str | None
     description: str | None
@@ -4154,7 +4154,7 @@ class CreateAuthSqlParams(BaseModel):
     auth_type: str
     slug: str
     profile_id: UUID
-    auth_items: list[ICreateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_items: list[ICreateAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert auth_items composite array to tuples for asyncpg
@@ -4187,7 +4187,7 @@ class CreateAuthApiRequest(BaseModel):
     active: bool
     auth_type: str
     slug: str
-    auth_items: list[ICreateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_items: list[ICreateAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class CreateAuthApiResponse(BaseModel):
 
@@ -4284,7 +4284,7 @@ class GetAuthDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetAuthDetailV3AuthItem(BaseModel):
+class QGetAuthDetailV4AuthItem(BaseModel):
 
     auth_item_id: UUID | None
     name: str | None
@@ -4302,7 +4302,7 @@ class GetAuthDetailSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    auth_items: list[QGetAuthDetailV3AuthItem] | None = None
+    auth_items: list[QGetAuthDetailV4AuthItem] | None = None
     actor_name: str | None = None
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -4316,7 +4316,7 @@ class GetAuthDetailApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    auth_items: list[QGetAuthDetailV3AuthItem] | None = None
+    auth_items: list[QGetAuthDetailV4AuthItem] | None = None
     actor_name: str | None = None
 
 
@@ -4332,13 +4332,13 @@ class GetAuthListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetAuthListV3AuthItem(BaseModel):
+class QGetAuthListV4AuthItem(BaseModel):
 
     auth_item_id: UUID | None
     name: str | None
     description: str | None
 
-class QGetAuthListV3Auth(BaseModel):
+class QGetAuthListV4Auth(BaseModel):
 
     auth_id: UUID | None
     name: str | None
@@ -4346,7 +4346,7 @@ class QGetAuthListV3Auth(BaseModel):
     active: bool | None
     updated_at: str | None
     num_items: int | None
-    sample_items: list[QGetAuthListV3AuthItem] | None
+    sample_items: list[QGetAuthListV4AuthItem] | None
     can_edit: bool | None
     can_delete: bool | None
     can_duplicate: bool | None
@@ -4354,7 +4354,7 @@ class QGetAuthListV3Auth(BaseModel):
 class GetAuthListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    auths: list[QGetAuthListV3Auth] | None = None
+    auths: list[QGetAuthListV4Auth] | None = None
 
 class GetAuthListApiRequest(BaseModel):
 
@@ -4363,7 +4363,7 @@ class GetAuthListApiRequest(BaseModel):
 class GetAuthListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    auths: list[QGetAuthListV3Auth] | None = None
+    auths: list[QGetAuthListV4Auth] | None = None
 
 
 
@@ -4378,7 +4378,7 @@ class GetAuthNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetAuthNewV3AuthItem(BaseModel):
+class QGetAuthNewV4AuthItem(BaseModel):
 
     auth_item_id: UUID | None
     name: str | None
@@ -4395,7 +4395,7 @@ class GetAuthNewSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    auth_items: list[QGetAuthNewV3AuthItem] | None = None
+    auth_items: list[QGetAuthNewV4AuthItem] | None = None
     actor_name: str | None = None
 
 class GetAuthNewApiRequest(BaseModel):
@@ -4408,7 +4408,7 @@ class GetAuthNewApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    auth_items: list[QGetAuthNewV3AuthItem] | None = None
+    auth_items: list[QGetAuthNewV4AuthItem] | None = None
     actor_name: str | None = None
 
 
@@ -4424,7 +4424,7 @@ class GetLoginDataSqlParams(BaseModel):
             self.department_id,
         )
 
-class QGetLoginDataV3Department(BaseModel):
+class QGetLoginDataV4Department(BaseModel):
 
     id: str | None
     title: str | None
@@ -4433,7 +4433,7 @@ class QGetLoginDataV3Department(BaseModel):
 
 
 
-class QGetLoginDataV3Provider(BaseModel):
+class QGetLoginDataV4Provider(BaseModel):
 
     id: str | None
     name: str | None
@@ -4442,8 +4442,8 @@ class QGetLoginDataV3Provider(BaseModel):
 
 class GetLoginDataSqlRow(BaseModel):
 
-    providers: list[QGetLoginDataV3Provider] | None = None
-    departments: list[QGetLoginDataV3Department] | None = None
+    providers: list[QGetLoginDataV4Provider] | None = None
+    departments: list[QGetLoginDataV4Department] | None = None
     guest_login_enabled: bool | None = None
     show_default_account: bool | None = None
     default_department_id: str | None = None
@@ -4455,8 +4455,8 @@ class GetLoginDataApiRequest(BaseModel):
 
 class GetLoginDataApiResponse(BaseModel):
 
-    providers: list[QGetLoginDataV3Provider] | None = None
-    departments: list[QGetLoginDataV3Department] | None = None
+    providers: list[QGetLoginDataV4Provider] | None = None
+    departments: list[QGetLoginDataV4Department] | None = None
     guest_login_enabled: bool | None = None
     show_default_account: bool | None = None
     default_department_id: str | None = None
@@ -4466,7 +4466,7 @@ class GetLoginDataApiResponse(BaseModel):
 
 # Generated from: update_auth
 
-class IUpdateAuthV3AuthItem(BaseModel):
+class IUpdateAuthV4AuthItem(BaseModel):
 
     name: str | None
     description: str | None
@@ -4484,7 +4484,7 @@ class UpdateAuthSqlParams(BaseModel):
     auth_type: str
     slug: str
     profile_id: UUID
-    auth_items: list[IUpdateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_items: list[IUpdateAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert auth_items composite array to tuples for asyncpg
@@ -4519,7 +4519,7 @@ class UpdateAuthApiRequest(BaseModel):
     active: bool
     auth_type: str
     slug: str
-    auth_items: list[IUpdateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_items: list[IUpdateAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class UpdateAuthApiResponse(BaseModel):
 
@@ -4533,20 +4533,20 @@ class UpdateAuthApiResponse(BaseModel):
 
 # Generated from: add_eval_groups
 
-class IAddEvalGroupsV3RubricGradeAgent(BaseModel):
+class IAddEvalGroupsV4RubricGradeAgent(BaseModel):
 
     rubric_id: UUID | None
     grade_agent_id: UUID | None
 
-class IAddEvalGroupsV3Group(BaseModel):
+class IAddEvalGroupsV4Group(BaseModel):
 
     group_id: UUID | None
-    rubric_grade_agents: list[IAddEvalGroupsV3RubricGradeAgent] | None
+    rubric_grade_agents: list[IAddEvalGroupsV4RubricGradeAgent] | None
 
 class AddEvalGroupsSqlParams(BaseModel):
 
     eval_id: UUID
-    groups: list[IAddEvalGroupsV3Group]
+    groups: list[IAddEvalGroupsV4Group]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4569,7 +4569,7 @@ class AddEvalGroupsSqlRow(BaseModel):
 class AddEvalGroupsApiRequest(BaseModel):
 
     eval_id: UUID
-    groups: list[IAddEvalGroupsV3Group]
+    groups: list[IAddEvalGroupsV4Group]
 
 class AddEvalGroupsApiResponse(BaseModel):
 
@@ -4580,20 +4580,20 @@ class AddEvalGroupsApiResponse(BaseModel):
 
 # Generated from: add_eval_runs
 
-class IAddEvalRunsV3RubricGradeAgent(BaseModel):
+class IAddEvalRunsV4RubricGradeAgent(BaseModel):
 
     rubric_id: UUID | None
     grade_agent_id: UUID | None
 
-class IAddEvalRunsV3Run(BaseModel):
+class IAddEvalRunsV4Run(BaseModel):
 
     run_id: UUID | None
-    rubric_grade_agents: list[IAddEvalRunsV3RubricGradeAgent] | None
+    rubric_grade_agents: list[IAddEvalRunsV4RubricGradeAgent] | None
 
 class AddEvalRunsSqlParams(BaseModel):
 
     eval_id: UUID
-    runs: list[IAddEvalRunsV3Run]
+    runs: list[IAddEvalRunsV4Run]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4616,7 +4616,7 @@ class AddEvalRunsSqlRow(BaseModel):
 class AddEvalRunsApiRequest(BaseModel):
 
     eval_id: UUID
-    runs: list[IAddEvalRunsV3Run]
+    runs: list[IAddEvalRunsV4Run]
 
 class AddEvalRunsApiResponse(BaseModel):
 
@@ -4850,7 +4850,7 @@ class GetBenchmarkBundleSqlParams(BaseModel):
             self.page_size,
         )
 
-class QGetBenchmarkBundleV3Agent(BaseModel):
+class QGetBenchmarkBundleV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -4859,7 +4859,7 @@ class QGetBenchmarkBundleV3Agent(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3AgentOption(BaseModel):
+class QGetBenchmarkBundleV4AgentOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -4867,7 +4867,7 @@ class QGetBenchmarkBundleV3AgentOption(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3Department(BaseModel):
+class QGetBenchmarkBundleV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -4876,7 +4876,7 @@ class QGetBenchmarkBundleV3Department(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3DepartmentOption(BaseModel):
+class QGetBenchmarkBundleV4DepartmentOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -4884,7 +4884,7 @@ class QGetBenchmarkBundleV3DepartmentOption(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3Eval(BaseModel):
+class QGetBenchmarkBundleV4Eval(BaseModel):
 
     eval_id: UUID | None
     name: str | None
@@ -4907,7 +4907,7 @@ class QGetBenchmarkBundleV3Eval(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3EvalAttempt(BaseModel):
+class QGetBenchmarkBundleV4EvalAttempt(BaseModel):
 
     attempt_id: UUID | None
     eval_id: UUID | None
@@ -4925,7 +4925,7 @@ class QGetBenchmarkBundleV3EvalAttempt(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3Rubric(BaseModel):
+class QGetBenchmarkBundleV4Rubric(BaseModel):
 
     rubric_id: UUID | None
     name: str | None
@@ -4936,7 +4936,7 @@ class QGetBenchmarkBundleV3Rubric(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3RubricOption(BaseModel):
+class QGetBenchmarkBundleV4RubricOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -4944,7 +4944,7 @@ class QGetBenchmarkBundleV3RubricOption(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3RubricStandardGroup(BaseModel):
+class QGetBenchmarkBundleV4RubricStandardGroup(BaseModel):
 
     rubric_id: UUID | None
     standard_group_id: UUID | None
@@ -4953,7 +4953,7 @@ class QGetBenchmarkBundleV3RubricStandardGroup(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3Standard(BaseModel):
+class QGetBenchmarkBundleV4Standard(BaseModel):
 
     standard_id: UUID | None
     name: str | None
@@ -4963,7 +4963,7 @@ class QGetBenchmarkBundleV3Standard(BaseModel):
 
 
 
-class QGetBenchmarkBundleV3StandardGroup(BaseModel):
+class QGetBenchmarkBundleV4StandardGroup(BaseModel):
 
     standard_group_id: UUID | None
     name: str | None
@@ -4974,17 +4974,17 @@ class QGetBenchmarkBundleV3StandardGroup(BaseModel):
 class GetBenchmarkBundleSqlRow(BaseModel):
 
     actor_name: str | None = None
-    evals: list[QGetBenchmarkBundleV3Eval] | None = None
-    attempts: list[QGetBenchmarkBundleV3EvalAttempt] | None = None
-    rubrics: list[QGetBenchmarkBundleV3Rubric] | None = None
-    departments: list[QGetBenchmarkBundleV3Department] | None = None
-    agents: list[QGetBenchmarkBundleV3Agent] | None = None
-    standard_groups: list[QGetBenchmarkBundleV3StandardGroup] | None = None
-    standards: list[QGetBenchmarkBundleV3Standard] | None = None
-    rubric_standard_groups: list[QGetBenchmarkBundleV3RubricStandardGroup] | None = None
-    rubric_options: list[QGetBenchmarkBundleV3RubricOption] | None = None
-    department_options: list[QGetBenchmarkBundleV3DepartmentOption] | None = None
-    agent_options: list[QGetBenchmarkBundleV3AgentOption] | None = None
+    evals: list[QGetBenchmarkBundleV4Eval] | None = None
+    attempts: list[QGetBenchmarkBundleV4EvalAttempt] | None = None
+    rubrics: list[QGetBenchmarkBundleV4Rubric] | None = None
+    departments: list[QGetBenchmarkBundleV4Department] | None = None
+    agents: list[QGetBenchmarkBundleV4Agent] | None = None
+    standard_groups: list[QGetBenchmarkBundleV4StandardGroup] | None = None
+    standards: list[QGetBenchmarkBundleV4Standard] | None = None
+    rubric_standard_groups: list[QGetBenchmarkBundleV4RubricStandardGroup] | None = None
+    rubric_options: list[QGetBenchmarkBundleV4RubricOption] | None = None
+    department_options: list[QGetBenchmarkBundleV4DepartmentOption] | None = None
+    agent_options: list[QGetBenchmarkBundleV4AgentOption] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -5002,17 +5002,17 @@ class GetBenchmarkBundleApiRequest(BaseModel):
 class GetBenchmarkBundleApiResponse(BaseModel):
 
     actor_name: str | None = None
-    evals: list[QGetBenchmarkBundleV3Eval] | None = None
-    attempts: list[QGetBenchmarkBundleV3EvalAttempt] | None = None
-    rubrics: list[QGetBenchmarkBundleV3Rubric] | None = None
-    departments: list[QGetBenchmarkBundleV3Department] | None = None
-    agents: list[QGetBenchmarkBundleV3Agent] | None = None
-    standard_groups: list[QGetBenchmarkBundleV3StandardGroup] | None = None
-    standards: list[QGetBenchmarkBundleV3Standard] | None = None
-    rubric_standard_groups: list[QGetBenchmarkBundleV3RubricStandardGroup] | None = None
-    rubric_options: list[QGetBenchmarkBundleV3RubricOption] | None = None
-    department_options: list[QGetBenchmarkBundleV3DepartmentOption] | None = None
-    agent_options: list[QGetBenchmarkBundleV3AgentOption] | None = None
+    evals: list[QGetBenchmarkBundleV4Eval] | None = None
+    attempts: list[QGetBenchmarkBundleV4EvalAttempt] | None = None
+    rubrics: list[QGetBenchmarkBundleV4Rubric] | None = None
+    departments: list[QGetBenchmarkBundleV4Department] | None = None
+    agents: list[QGetBenchmarkBundleV4Agent] | None = None
+    standard_groups: list[QGetBenchmarkBundleV4StandardGroup] | None = None
+    standards: list[QGetBenchmarkBundleV4Standard] | None = None
+    rubric_standard_groups: list[QGetBenchmarkBundleV4RubricStandardGroup] | None = None
+    rubric_options: list[QGetBenchmarkBundleV4RubricOption] | None = None
+    department_options: list[QGetBenchmarkBundleV4DepartmentOption] | None = None
+    agent_options: list[QGetBenchmarkBundleV4AgentOption] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -5041,7 +5041,7 @@ class GetEvalDetailSqlParams(BaseModel):
             self.available_model_runs_page_size,
         )
 
-class QGetEvalDetailV3Agent(BaseModel):
+class QGetEvalDetailV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -5051,7 +5051,7 @@ class QGetEvalDetailV3Agent(BaseModel):
 
 
 
-class QGetEvalDetailV3AvailableModelRun(BaseModel):
+class QGetEvalDetailV4AvailableModelRun(BaseModel):
 
     model_run_id: UUID | None
     created_at: str | None
@@ -5068,7 +5068,7 @@ class QGetEvalDetailV3AvailableModelRun(BaseModel):
 
 
 
-class QGetEvalDetailV3Department(BaseModel):
+class QGetEvalDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -5077,7 +5077,7 @@ class QGetEvalDetailV3Department(BaseModel):
 
 
 
-class QGetEvalDetailV3RubricGradeAgent(BaseModel):
+class QGetEvalDetailV4RubricGradeAgent(BaseModel):
 
     rubric_grade_agent_id: UUID | None
     rubric_id: UUID | None
@@ -5085,7 +5085,7 @@ class QGetEvalDetailV3RubricGradeAgent(BaseModel):
     agent_id: UUID | None
     agent_name: str | None
 
-class QGetEvalDetailV3ModelRun(BaseModel):
+class QGetEvalDetailV4ModelRun(BaseModel):
 
     model_run_id: UUID | None
     completed: bool | None
@@ -5104,12 +5104,12 @@ class QGetEvalDetailV3ModelRun(BaseModel):
     grade_score: int | None
     grade_passed: bool | None
     grade_created_at: str | None
-    rubric_grade_agents: list[QGetEvalDetailV3RubricGradeAgent] | None
+    rubric_grade_agents: list[QGetEvalDetailV4RubricGradeAgent] | None
 
 
 
 
-class QGetEvalDetailV3Rubric(BaseModel):
+class QGetEvalDetailV4Rubric(BaseModel):
 
     rubric_id: UUID | None
     name: str | None
@@ -5132,18 +5132,18 @@ class GetEvalDetailSqlRow(BaseModel):
     completed_runs: int | None = None
     pending_runs: int | None = None
     status: str | None = None
-    model_runs: list[QGetEvalDetailV3ModelRun] | None = None
-    departments: list[QGetEvalDetailV3Department] | None = None
+    model_runs: list[QGetEvalDetailV4ModelRun] | None = None
+    departments: list[QGetEvalDetailV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    eval_agents: list[QGetEvalDetailV4Agent] | None = None
     valid_eval_agent_ids: list[str] | None = None
-    agents: list[QGetEvalDetailV3Agent] | None = None
+    agents: list[QGetEvalDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
-    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    rubrics: list[QGetEvalDetailV4Rubric] | None = None
     valid_rubric_ids: list[str] | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
-    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs: list[QGetEvalDetailV4AvailableModelRun] | None = None
     available_model_runs_total_count: int | None = None
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
@@ -5174,18 +5174,18 @@ class GetEvalDetailApiResponse(BaseModel):
     completed_runs: int | None = None
     pending_runs: int | None = None
     status: str | None = None
-    model_runs: list[QGetEvalDetailV3ModelRun] | None = None
-    departments: list[QGetEvalDetailV3Department] | None = None
+    model_runs: list[QGetEvalDetailV4ModelRun] | None = None
+    departments: list[QGetEvalDetailV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    eval_agents: list[QGetEvalDetailV4Agent] | None = None
     valid_eval_agent_ids: list[str] | None = None
-    agents: list[QGetEvalDetailV3Agent] | None = None
+    agents: list[QGetEvalDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
-    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    rubrics: list[QGetEvalDetailV4Rubric] | None = None
     valid_rubric_ids: list[str] | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
-    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs: list[QGetEvalDetailV4AvailableModelRun] | None = None
     available_model_runs_total_count: int | None = None
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
@@ -5224,17 +5224,17 @@ class GetEvalNewSqlRow(BaseModel):
     dynamic: bool | None = None
     department_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
-    departments: list[QGetEvalDetailV3Department] | None = None
-    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    departments: list[QGetEvalDetailV4Department] | None = None
+    eval_agents: list[QGetEvalDetailV4Agent] | None = None
     valid_eval_agent_ids: list[str] | None = None
-    agents: list[QGetEvalDetailV3Agent] | None = None
+    agents: list[QGetEvalDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
-    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    rubrics: list[QGetEvalDetailV4Rubric] | None = None
     valid_rubric_ids: list[str] | None = None
     use_groups: bool | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
-    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs: list[QGetEvalDetailV4AvailableModelRun] | None = None
     available_model_runs_total_count: int | None = None
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
@@ -5259,17 +5259,17 @@ class GetEvalNewApiResponse(BaseModel):
     dynamic: bool | None = None
     department_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
-    departments: list[QGetEvalDetailV3Department] | None = None
-    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    departments: list[QGetEvalDetailV4Department] | None = None
+    eval_agents: list[QGetEvalDetailV4Agent] | None = None
     valid_eval_agent_ids: list[str] | None = None
-    agents: list[QGetEvalDetailV3Agent] | None = None
+    agents: list[QGetEvalDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
-    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    rubrics: list[QGetEvalDetailV4Rubric] | None = None
     valid_rubric_ids: list[str] | None = None
     use_groups: bool | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
-    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs: list[QGetEvalDetailV4AvailableModelRun] | None = None
     available_model_runs_total_count: int | None = None
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
@@ -5288,7 +5288,7 @@ class GetEvalsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListEvalsV3Agent(BaseModel):
+class QListEvalsV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -5297,7 +5297,7 @@ class QListEvalsV3Agent(BaseModel):
 
 
 
-class QListEvalsV3Department(BaseModel):
+class QListEvalsV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -5306,7 +5306,7 @@ class QListEvalsV3Department(BaseModel):
 
 
 
-class QListEvalsV3Eval(BaseModel):
+class QListEvalsV4Eval(BaseModel):
 
     eval_id: UUID | None
     name: str | None
@@ -5329,7 +5329,7 @@ class QListEvalsV3Eval(BaseModel):
 
 
 
-class QListEvalsV3Option(BaseModel):
+class QListEvalsV4Option(BaseModel):
 
     value: str | None
     label: str | None
@@ -5337,7 +5337,7 @@ class QListEvalsV3Option(BaseModel):
 
 
 
-class QListEvalsV3Rubric(BaseModel):
+class QListEvalsV4Rubric(BaseModel):
 
     rubric_id: UUID | None
     name: str | None
@@ -5348,7 +5348,7 @@ class QListEvalsV3Rubric(BaseModel):
 
 
 
-class QListEvalsV3RubricStandardGroup(BaseModel):
+class QListEvalsV4RubricStandardGroup(BaseModel):
 
     rubric_id: UUID | None
     standard_group_id: UUID | None
@@ -5357,7 +5357,7 @@ class QListEvalsV3RubricStandardGroup(BaseModel):
 
 
 
-class QListEvalsV3Standard(BaseModel):
+class QListEvalsV4Standard(BaseModel):
 
     standard_id: UUID | None
     name: str | None
@@ -5367,7 +5367,7 @@ class QListEvalsV3Standard(BaseModel):
 
 
 
-class QListEvalsV3StandardGroup(BaseModel):
+class QListEvalsV4StandardGroup(BaseModel):
 
     standard_group_id: UUID | None
     name: str | None
@@ -5378,16 +5378,16 @@ class QListEvalsV3StandardGroup(BaseModel):
 class GetEvalsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    evals: list[QListEvalsV3Eval] | None = None
-    rubrics: list[QListEvalsV3Rubric] | None = None
-    departments: list[QListEvalsV3Department] | None = None
-    agents: list[QListEvalsV3Agent] | None = None
-    standard_groups: list[QListEvalsV3StandardGroup] | None = None
-    standards: list[QListEvalsV3Standard] | None = None
-    rubric_standard_groups: list[QListEvalsV3RubricStandardGroup] | None = None
-    rubric_options: list[QListEvalsV3Option] | None = None
-    department_options: list[QListEvalsV3Option] | None = None
-    agent_options: list[QListEvalsV3Option] | None = None
+    evals: list[QListEvalsV4Eval] | None = None
+    rubrics: list[QListEvalsV4Rubric] | None = None
+    departments: list[QListEvalsV4Department] | None = None
+    agents: list[QListEvalsV4Agent] | None = None
+    standard_groups: list[QListEvalsV4StandardGroup] | None = None
+    standards: list[QListEvalsV4Standard] | None = None
+    rubric_standard_groups: list[QListEvalsV4RubricStandardGroup] | None = None
+    rubric_options: list[QListEvalsV4Option] | None = None
+    department_options: list[QListEvalsV4Option] | None = None
+    agent_options: list[QListEvalsV4Option] | None = None
 
 class GetEvalsListApiRequest(BaseModel):
 
@@ -5396,16 +5396,16 @@ class GetEvalsListApiRequest(BaseModel):
 class GetEvalsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    evals: list[QListEvalsV3Eval] | None = None
-    rubrics: list[QListEvalsV3Rubric] | None = None
-    departments: list[QListEvalsV3Department] | None = None
-    agents: list[QListEvalsV3Agent] | None = None
-    standard_groups: list[QListEvalsV3StandardGroup] | None = None
-    standards: list[QListEvalsV3Standard] | None = None
-    rubric_standard_groups: list[QListEvalsV3RubricStandardGroup] | None = None
-    rubric_options: list[QListEvalsV3Option] | None = None
-    department_options: list[QListEvalsV3Option] | None = None
-    agent_options: list[QListEvalsV3Option] | None = None
+    evals: list[QListEvalsV4Eval] | None = None
+    rubrics: list[QListEvalsV4Rubric] | None = None
+    departments: list[QListEvalsV4Department] | None = None
+    agents: list[QListEvalsV4Agent] | None = None
+    standard_groups: list[QListEvalsV4StandardGroup] | None = None
+    standards: list[QListEvalsV4Standard] | None = None
+    rubric_standard_groups: list[QListEvalsV4RubricStandardGroup] | None = None
+    rubric_options: list[QListEvalsV4Option] | None = None
+    department_options: list[QListEvalsV4Option] | None = None
+    agent_options: list[QListEvalsV4Option] | None = None
 
 
 
@@ -5587,7 +5587,7 @@ class GetCohortDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetCohortDetailV3Department(BaseModel):
+class QGetCohortDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -5597,7 +5597,7 @@ class QGetCohortDetailV3Department(BaseModel):
 
 
 
-class QGetCohortDetailV3Simulation(BaseModel):
+class QGetCohortDetailV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -5613,7 +5613,7 @@ class QGetCohortDetailV3Simulation(BaseModel):
 
 
 
-class QGetCohortDetailV3SimulationForPicker(BaseModel):
+class QGetCohortDetailV4SimulationForPicker(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -5634,9 +5634,9 @@ class GetCohortDetailSqlRow(BaseModel):
     simulation_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
     valid_simulation_ids: list[str] | None = None
-    simulations: list[QGetCohortDetailV3Simulation] | None = None
-    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
-    departments: list[QGetCohortDetailV3Department] | None = None
+    simulations: list[QGetCohortDetailV4Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV4SimulationForPicker] | None = None
+    departments: list[QGetCohortDetailV4Department] | None = None
     actor_name: str | None = None
 
 class GetCohortDetailApiRequest(BaseModel):
@@ -5656,9 +5656,9 @@ class GetCohortDetailApiResponse(BaseModel):
     simulation_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
     valid_simulation_ids: list[str] | None = None
-    simulations: list[QGetCohortDetailV3Simulation] | None = None
-    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
-    departments: list[QGetCohortDetailV3Department] | None = None
+    simulations: list[QGetCohortDetailV4Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV4SimulationForPicker] | None = None
+    departments: list[QGetCohortDetailV4Department] | None = None
     actor_name: str | None = None
 
 
@@ -5674,7 +5674,7 @@ class GetCohortNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetCohortNewV3Cohort(BaseModel):
+class QGetCohortNewV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -5683,7 +5683,7 @@ class QGetCohortNewV3Cohort(BaseModel):
 
 
 
-class QGetCohortNewV3Department(BaseModel):
+class QGetCohortNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -5694,7 +5694,7 @@ class QGetCohortNewV3Department(BaseModel):
 
 
 
-class QGetCohortNewV3DepartmentForStaff(BaseModel):
+class QGetCohortNewV4DepartmentForStaff(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -5703,7 +5703,7 @@ class QGetCohortNewV3DepartmentForStaff(BaseModel):
 
 
 
-class QGetCohortNewV3Profile(BaseModel):
+class QGetCohortNewV4Profile(BaseModel):
 
     profile_id: UUID | None
     name: str | None
@@ -5712,7 +5712,7 @@ class QGetCohortNewV3Profile(BaseModel):
 
 
 
-class QGetCohortNewV3StaffItem(BaseModel):
+class QGetCohortNewV4StaffItem(BaseModel):
 
     profile_id: UUID | None
     first_name: str | None
@@ -5746,13 +5746,13 @@ class GetCohortNewSqlRow(BaseModel):
     valid_department_ids: list[str] | None = None
     valid_simulation_ids: list[str] | None = None
     valid_profile_ids: list[str] | None = None
-    simulations: list[QGetCohortDetailV3Simulation] | None = None
-    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
-    profiles: list[QGetCohortNewV3Profile] | None = None
-    staff: list[QGetCohortNewV3StaffItem] | None = None
-    cohorts: list[QGetCohortNewV3Cohort] | None = None
-    departments_for_staff: list[QGetCohortNewV3DepartmentForStaff] | None = None
-    departments: list[QGetCohortNewV3Department] | None = None
+    simulations: list[QGetCohortDetailV4Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV4SimulationForPicker] | None = None
+    profiles: list[QGetCohortNewV4Profile] | None = None
+    staff: list[QGetCohortNewV4StaffItem] | None = None
+    cohorts: list[QGetCohortNewV4Cohort] | None = None
+    departments_for_staff: list[QGetCohortNewV4DepartmentForStaff] | None = None
+    departments: list[QGetCohortNewV4Department] | None = None
     primary_department_id: str | None = None
     actor_name: str | None = None
 
@@ -5772,13 +5772,13 @@ class GetCohortNewApiResponse(BaseModel):
     valid_department_ids: list[str] | None = None
     valid_simulation_ids: list[str] | None = None
     valid_profile_ids: list[str] | None = None
-    simulations: list[QGetCohortDetailV3Simulation] | None = None
-    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
-    profiles: list[QGetCohortNewV3Profile] | None = None
-    staff: list[QGetCohortNewV3StaffItem] | None = None
-    cohorts: list[QGetCohortNewV3Cohort] | None = None
-    departments_for_staff: list[QGetCohortNewV3DepartmentForStaff] | None = None
-    departments: list[QGetCohortNewV3Department] | None = None
+    simulations: list[QGetCohortDetailV4Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV4SimulationForPicker] | None = None
+    profiles: list[QGetCohortNewV4Profile] | None = None
+    staff: list[QGetCohortNewV4StaffItem] | None = None
+    cohorts: list[QGetCohortNewV4Cohort] | None = None
+    departments_for_staff: list[QGetCohortNewV4DepartmentForStaff] | None = None
+    departments: list[QGetCohortNewV4Department] | None = None
     primary_department_id: str | None = None
     actor_name: str | None = None
 
@@ -5803,7 +5803,7 @@ class GetCohortSearchSqlParams(BaseModel):
             self.p_limit_count,
         )
 
-class QGetCohortSearchV3Cohort(BaseModel):
+class QGetCohortSearchV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -5812,7 +5812,7 @@ class QGetCohortSearchV3Cohort(BaseModel):
 
 
 
-class QGetCohortSearchV3Department(BaseModel):
+class QGetCohortSearchV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -5820,9 +5820,9 @@ class QGetCohortSearchV3Department(BaseModel):
 
 class GetCohortSearchSqlRow(BaseModel):
 
-    staff: list[QGetCohortNewV3StaffItem] | None = None
-    cohorts: list[QGetCohortSearchV3Cohort] | None = None
-    departments: list[QGetCohortSearchV3Department] | None = None
+    staff: list[QGetCohortNewV4StaffItem] | None = None
+    cohorts: list[QGetCohortSearchV4Cohort] | None = None
+    departments: list[QGetCohortSearchV4Department] | None = None
     actor_name: str | None = None
 
 class GetCohortSearchApiRequest(BaseModel):
@@ -5835,9 +5835,9 @@ class GetCohortSearchApiRequest(BaseModel):
 
 class GetCohortSearchApiResponse(BaseModel):
 
-    staff: list[QGetCohortNewV3StaffItem] | None = None
-    cohorts: list[QGetCohortSearchV3Cohort] | None = None
-    departments: list[QGetCohortSearchV3Department] | None = None
+    staff: list[QGetCohortNewV4StaffItem] | None = None
+    cohorts: list[QGetCohortSearchV4Cohort] | None = None
+    departments: list[QGetCohortSearchV4Department] | None = None
     actor_name: str | None = None
 
 
@@ -5853,7 +5853,7 @@ class GetCohortsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListCohortsV3Cohort(BaseModel):
+class QListCohortsV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -5873,7 +5873,7 @@ class QListCohortsV3Cohort(BaseModel):
 
 
 
-class QListCohortsV3Department(BaseModel):
+class QListCohortsV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -5882,7 +5882,7 @@ class QListCohortsV3Department(BaseModel):
 
 
 
-class QListCohortsV3Profile(BaseModel):
+class QListCohortsV4Profile(BaseModel):
 
     profile_id: UUID | None
     name: str | None
@@ -5891,7 +5891,7 @@ class QListCohortsV3Profile(BaseModel):
 
 
 
-class QListCohortsV3Scenario(BaseModel):
+class QListCohortsV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
@@ -5903,7 +5903,7 @@ class QListCohortsV3Scenario(BaseModel):
 
 
 
-class QListCohortsV3Simulation(BaseModel):
+class QListCohortsV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -5915,12 +5915,12 @@ class QListCohortsV3Simulation(BaseModel):
 class GetCohortsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    cohorts: list[QListCohortsV3Cohort] | None = None
-    profiles: list[QListCohortsV3Profile] | None = None
-    simulations: list[QListCohortsV3Simulation] | None = None
-    scenarios: list[QListCohortsV3Scenario] | None = None
+    cohorts: list[QListCohortsV4Cohort] | None = None
+    profiles: list[QListCohortsV4Profile] | None = None
+    simulations: list[QListCohortsV4Simulation] | None = None
+    scenarios: list[QListCohortsV4Scenario] | None = None
     simulation_scenario_mapping: dict[str, Any] | None = None
-    departments: list[QListCohortsV3Department] | None = None
+    departments: list[QListCohortsV4Department] | None = None
 
 class GetCohortsListApiRequest(BaseModel):
 
@@ -5929,12 +5929,12 @@ class GetCohortsListApiRequest(BaseModel):
 class GetCohortsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    cohorts: list[QListCohortsV3Cohort] | None = None
-    profiles: list[QListCohortsV3Profile] | None = None
-    simulations: list[QListCohortsV3Simulation] | None = None
-    scenarios: list[QListCohortsV3Scenario] | None = None
+    cohorts: list[QListCohortsV4Cohort] | None = None
+    profiles: list[QListCohortsV4Profile] | None = None
+    simulations: list[QListCohortsV4Simulation] | None = None
+    scenarios: list[QListCohortsV4Scenario] | None = None
     simulation_scenario_mapping: dict[str, Any] | None = None
-    departments: list[QListCohortsV3Department] | None = None
+    departments: list[QListCohortsV4Department] | None = None
 
 
 
@@ -6039,7 +6039,7 @@ class GetDashboardBundleSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetDashboardBundleV3AttemptHistoryRow(BaseModel):
+class QGetDashboardBundleV4AttemptHistoryRow(BaseModel):
 
     attempt_id: UUID | None
     date: str | None
@@ -6069,7 +6069,7 @@ class QGetDashboardBundleV3AttemptHistoryRow(BaseModel):
 
 
 
-class QGetDashboardBundleV3Field(BaseModel):
+class QGetDashboardBundleV4Field(BaseModel):
 
     field_id: str | None
     name: str | None
@@ -6080,7 +6080,7 @@ class QGetDashboardBundleV3Field(BaseModel):
 
 
 
-class QGetDashboardBundleV3ScenarioAttributeAttemptFact(BaseModel):
+class QGetDashboardBundleV4ScenarioAttributeAttemptFact(BaseModel):
 
     parameter_id: str | None
     parameter_item_id: str | None
@@ -6093,23 +6093,23 @@ class QGetDashboardBundleV3ScenarioAttributeAttemptFact(BaseModel):
 
 
 
-class QGetDashboardBundleV3ScenarioAttributeScenarioFact(BaseModel):
+class QGetDashboardBundleV4ScenarioAttributeScenarioFact(BaseModel):
 
     parameter_id: str | None
     parameter_item_id: str | None
     scenario_id: str | None
 
-class QGetDashboardBundleV3ScenarioPerformanceResponse(BaseModel):
+class QGetDashboardBundleV4ScenarioPerformanceResponse(BaseModel):
 
     valid_parameter_ids: list[str] | None
-    attribute_attempt_facts: list[QGetDashboardBundleV3ScenarioAttributeAttemptFact] | None
-    attribute_scenario_facts: list[QGetDashboardBundleV3ScenarioAttributeScenarioFact] | None
+    attribute_attempt_facts: list[QGetDashboardBundleV4ScenarioAttributeAttemptFact] | None
+    attribute_scenario_facts: list[QGetDashboardBundleV4ScenarioAttributeScenarioFact] | None
     status: str | None
 
 
 
 
-class QGetDashboardBundleV3NumericAttemptFact(BaseModel):
+class QGetDashboardBundleV4NumericAttemptFact(BaseModel):
 
     parameter_id: str | None
     level_label: str | None
@@ -6120,24 +6120,24 @@ class QGetDashboardBundleV3NumericAttemptFact(BaseModel):
 
 
 
-class QGetDashboardBundleV3NumericScenarioFact(BaseModel):
+class QGetDashboardBundleV4NumericScenarioFact(BaseModel):
 
     parameter_id: str | None
     scenario_id: str | None
     level_label: str | None
     level_value: float | None
 
-class QGetDashboardBundleV3ScenarioStatsResponse(BaseModel):
+class QGetDashboardBundleV4ScenarioStatsResponse(BaseModel):
 
     valid_numeric_parameter_ids: list[str] | None
-    numeric_attempt_facts: list[QGetDashboardBundleV3NumericAttemptFact] | None
-    numeric_scenario_facts: list[QGetDashboardBundleV3NumericScenarioFact] | None
+    numeric_attempt_facts: list[QGetDashboardBundleV4NumericAttemptFact] | None
+    numeric_scenario_facts: list[QGetDashboardBundleV4NumericScenarioFact] | None
     status: str | None
 
 
 
 
-class QGetDashboardBundleV3SimulationFact(BaseModel):
+class QGetDashboardBundleV4SimulationFact(BaseModel):
 
     simulation_id: str | None
     title: str | None
@@ -6149,7 +6149,7 @@ class QGetDashboardBundleV3SimulationFact(BaseModel):
 
 
 
-class QGetDashboardBundleV3SimulationParameterFactCategorical(BaseModel):
+class QGetDashboardBundleV4SimulationParameterFactCategorical(BaseModel):
 
     simulation_id: str | None
     parameter_id: str | None
@@ -6159,7 +6159,7 @@ class QGetDashboardBundleV3SimulationParameterFactCategorical(BaseModel):
 
 
 
-class QGetDashboardBundleV3SimulationParameterFactNumeric(BaseModel):
+class QGetDashboardBundleV4SimulationParameterFactNumeric(BaseModel):
 
     simulation_id: str | None
     parameter_id: str | None
@@ -6167,19 +6167,19 @@ class QGetDashboardBundleV3SimulationParameterFactNumeric(BaseModel):
     level_label: str | None
     scenario_count: int | None
 
-class QGetDashboardBundleV3SimulationCompositionResponse(BaseModel):
+class QGetDashboardBundleV4SimulationCompositionResponse(BaseModel):
 
     valid_simulation_ids: list[str] | None
-    simulation_facts: list[QGetDashboardBundleV3SimulationFact] | None
-    simulation_parameter_facts_categorical: list[QGetDashboardBundleV3SimulationParameterFactCategorical] | None
-    simulation_parameter_facts_numeric: list[QGetDashboardBundleV3SimulationParameterFactNumeric] | None
+    simulation_facts: list[QGetDashboardBundleV4SimulationFact] | None
+    simulation_parameter_facts_categorical: list[QGetDashboardBundleV4SimulationParameterFactCategorical] | None
+    simulation_parameter_facts_numeric: list[QGetDashboardBundleV4SimulationParameterFactNumeric] | None
     has_data: bool | None
     status: str | None
 
 
 
 
-class QGetDashboardBundleV3ScenarioFact(BaseModel):
+class QGetDashboardBundleV4ScenarioFact(BaseModel):
 
     simulation_id: str | None
     scenario_id: str | None
@@ -6189,23 +6189,23 @@ class QGetDashboardBundleV3ScenarioFact(BaseModel):
     total_attempts: int | None
     completed_attempts: int | None
 
-class QGetDashboardBundleV3SimulationPerformanceResponse(BaseModel):
+class QGetDashboardBundleV4SimulationPerformanceResponse(BaseModel):
 
     valid_simulation_ids: list[str] | None
-    scenario_facts: list[QGetDashboardBundleV3ScenarioFact] | None
+    scenario_facts: list[QGetDashboardBundleV4ScenarioFact] | None
     status: str | None
 
-class QGetDashboardBundleV3FooterMetrics(BaseModel):
+class QGetDashboardBundleV4FooterMetrics(BaseModel):
 
-    scenario_performance: QGetDashboardBundleV3ScenarioPerformanceResponse | None
-    scenario_stats: QGetDashboardBundleV3ScenarioStatsResponse | None
-    simulation_performance: QGetDashboardBundleV3SimulationPerformanceResponse | None
-    simulation_composition: QGetDashboardBundleV3SimulationCompositionResponse | None
-
-
+    scenario_performance: QGetDashboardBundleV4ScenarioPerformanceResponse | None
+    scenario_stats: QGetDashboardBundleV4ScenarioStatsResponse | None
+    simulation_performance: QGetDashboardBundleV4SimulationPerformanceResponse | None
+    simulation_composition: QGetDashboardBundleV4SimulationCompositionResponse | None
 
 
-class QGetDashboardBundleV3DataPoint(BaseModel):
+
+
+class QGetDashboardBundleV4DataPoint(BaseModel):
 
     profile_id: str | None
     date: str | None
@@ -6218,13 +6218,13 @@ class QGetDashboardBundleV3DataPoint(BaseModel):
 
 
 
-class QGetDashboardBundleV3TrendData(BaseModel):
+class QGetDashboardBundleV4TrendData(BaseModel):
 
     date: str | None
     value: float | None
     count: int | None
 
-class QGetDashboardBundleV3MetricResponse(BaseModel):
+class QGetDashboardBundleV4MetricResponse(BaseModel):
 
     has_data: bool | None
     method: str | None
@@ -6233,26 +6233,26 @@ class QGetDashboardBundleV3MetricResponse(BaseModel):
     trend_analysis: str | None
     value_field: str | None
     key_field: str | None
-    trend_data: list[QGetDashboardBundleV3TrendData] | None
-    data_points: list[QGetDashboardBundleV3DataPoint] | None
+    trend_data: list[QGetDashboardBundleV4TrendData] | None
+    data_points: list[QGetDashboardBundleV4DataPoint] | None
 
-class QGetDashboardBundleV3HeaderMetrics(BaseModel):
+class QGetDashboardBundleV4HeaderMetrics(BaseModel):
 
-    average_score: QGetDashboardBundleV3MetricResponse | None
-    completion_percentage: QGetDashboardBundleV3MetricResponse | None
-    first_attempt_pass_rate: QGetDashboardBundleV3MetricResponse | None
-    highest_score: QGetDashboardBundleV3MetricResponse | None
-    messages_per_session: QGetDashboardBundleV3MetricResponse | None
-    persona_response_times: QGetDashboardBundleV3MetricResponse | None
-    session_efficiency: QGetDashboardBundleV3MetricResponse | None
-    stagnation_rate: QGetDashboardBundleV3MetricResponse | None
-    time_spent: QGetDashboardBundleV3MetricResponse | None
-    total_attempts: QGetDashboardBundleV3MetricResponse | None
-
-
+    average_score: QGetDashboardBundleV4MetricResponse | None
+    completion_percentage: QGetDashboardBundleV4MetricResponse | None
+    first_attempt_pass_rate: QGetDashboardBundleV4MetricResponse | None
+    highest_score: QGetDashboardBundleV4MetricResponse | None
+    messages_per_session: QGetDashboardBundleV4MetricResponse | None
+    persona_response_times: QGetDashboardBundleV4MetricResponse | None
+    session_efficiency: QGetDashboardBundleV4MetricResponse | None
+    stagnation_rate: QGetDashboardBundleV4MetricResponse | None
+    time_spent: QGetDashboardBundleV4MetricResponse | None
+    total_attempts: QGetDashboardBundleV4MetricResponse | None
 
 
-class QGetDashboardBundleV3CohortInsight(BaseModel):
+
+
+class QGetDashboardBundleV4CohortInsight(BaseModel):
 
     cohort_id: str | None
     insight: str | None
@@ -6260,18 +6260,18 @@ class QGetDashboardBundleV3CohortInsight(BaseModel):
 
 
 
-class QGetDashboardBundleV3PersonaInsight(BaseModel):
+class QGetDashboardBundleV4PersonaInsight(BaseModel):
 
     persona_name: str | None
     insight: str | None
 
-class QGetDashboardBundleV3Insights(BaseModel):
+class QGetDashboardBundleV4Insights(BaseModel):
 
     growth: str | None
-    persona: list[QGetDashboardBundleV3PersonaInsight] | None
+    persona: list[QGetDashboardBundleV4PersonaInsight] | None
     rubric_heatmap: str | None
     attempt_improvement: str | None
-    cohort: list[QGetDashboardBundleV3CohortInsight] | None
+    cohort: list[QGetDashboardBundleV4CohortInsight] | None
     skill_performance: str | None
     scenario_performance: str | None
     scenario_stats: str | None
@@ -6281,7 +6281,7 @@ class QGetDashboardBundleV3Insights(BaseModel):
 
 
 
-class QGetDashboardBundleV3Parameter(BaseModel):
+class QGetDashboardBundleV4Parameter(BaseModel):
 
     parameter_id: str | None
     name: str | None
@@ -6293,7 +6293,7 @@ class QGetDashboardBundleV3Parameter(BaseModel):
 
 
 
-class QGetDashboardBundleV3GrowthDataPoint(BaseModel):
+class QGetDashboardBundleV4GrowthDataPoint(BaseModel):
 
     date: str | None
     average_score: float | None
@@ -6305,7 +6305,7 @@ class QGetDashboardBundleV3GrowthDataPoint(BaseModel):
 
 
 
-class QGetDashboardBundleV3GrowthMetric(BaseModel):
+class QGetDashboardBundleV4GrowthMetric(BaseModel):
 
     id: str | None
     name: str | None
@@ -6317,27 +6317,27 @@ class QGetDashboardBundleV3GrowthMetric(BaseModel):
 
 
 
-class QGetDashboardBundleV3GrowthWindowAverage(BaseModel):
+class QGetDashboardBundleV4GrowthWindowAverage(BaseModel):
 
     n: int | None
     last: float | None
     prev: float | None
 
-class QGetDashboardBundleV3GrowthWindowAverages(BaseModel):
+class QGetDashboardBundleV4GrowthWindowAverages(BaseModel):
 
-    average_score: QGetDashboardBundleV3GrowthWindowAverage | None
+    average_score: QGetDashboardBundleV4GrowthWindowAverage | None
 
-class QGetDashboardBundleV3GrowthDataResponse(BaseModel):
+class QGetDashboardBundleV4GrowthDataResponse(BaseModel):
 
-    chart_data: list[QGetDashboardBundleV3GrowthDataPoint] | None
-    available_metrics: list[QGetDashboardBundleV3GrowthMetric] | None
-    window_averages: QGetDashboardBundleV3GrowthWindowAverages | None
+    chart_data: list[QGetDashboardBundleV4GrowthDataPoint] | None
+    available_metrics: list[QGetDashboardBundleV4GrowthMetric] | None
+    window_averages: QGetDashboardBundleV4GrowthWindowAverages | None
     status: str | None
 
 
 
 
-class QGetDashboardBundleV3PersonaColor(BaseModel):
+class QGetDashboardBundleV4PersonaColor(BaseModel):
 
     persona_name: str | None
     color: str | None
@@ -6345,33 +6345,33 @@ class QGetDashboardBundleV3PersonaColor(BaseModel):
 
 
 
-class QGetDashboardBundleV3PersonaTrendData(BaseModel):
+class QGetDashboardBundleV4PersonaTrendData(BaseModel):
 
     date: str | None
     score: float | None
     timestamp: int | None
     simulation_id: str | None
 
-class QGetDashboardBundleV3PersonaPerformanceData(BaseModel):
+class QGetDashboardBundleV4PersonaPerformanceData(BaseModel):
 
     name: str | None
     score: float | None
     sessions: int | None
     color: str | None
     simulation_ids: list[str] | None
-    trend_data: list[QGetDashboardBundleV3PersonaTrendData] | None
+    trend_data: list[QGetDashboardBundleV4PersonaTrendData] | None
     status: str | None
 
-class QGetDashboardBundleV3PersonaPerformanceResponse(BaseModel):
+class QGetDashboardBundleV4PersonaPerformanceResponse(BaseModel):
 
-    chart_data: list[QGetDashboardBundleV3PersonaPerformanceData] | None
+    chart_data: list[QGetDashboardBundleV4PersonaPerformanceData] | None
     valid_simulation_ids: list[str] | None
-    persona_colors: list[QGetDashboardBundleV3PersonaColor] | None
+    persona_colors: list[QGetDashboardBundleV4PersonaColor] | None
 
 
 
 
-class QGetDashboardBundleV3RubricHeatmapCell(BaseModel):
+class QGetDashboardBundleV4RubricHeatmapCell(BaseModel):
 
     rubric_id: str | None
     correlation: float | None
@@ -6383,37 +6383,37 @@ class QGetDashboardBundleV3RubricHeatmapCell(BaseModel):
 
 
 
-class QGetDashboardBundleV3StandardGroup(BaseModel):
+class QGetDashboardBundleV4StandardGroup(BaseModel):
 
     id: str | None
     name: str | None
     short_name: str | None
     rubric_id: str | None
 
-class QGetDashboardBundleV3RubricMatrixPackage(BaseModel):
+class QGetDashboardBundleV4RubricMatrixPackage(BaseModel):
 
     rubric_id: str | None
-    standard_groups: list[QGetDashboardBundleV3StandardGroup] | None
-    matrix: list[QGetDashboardBundleV3RubricHeatmapCell] | None
+    standard_groups: list[QGetDashboardBundleV4StandardGroup] | None
+    matrix: list[QGetDashboardBundleV4RubricHeatmapCell] | None
     insights: str | None
     has_data: bool | None
 
-class QGetDashboardBundleV3RubricHeatmapResponse(BaseModel):
+class QGetDashboardBundleV4RubricHeatmapResponse(BaseModel):
 
-    matrices: list[QGetDashboardBundleV3RubricMatrixPackage] | None
+    matrices: list[QGetDashboardBundleV4RubricMatrixPackage] | None
     valid_rubric_ids: list[str] | None
     status: str | None
 
-class QGetDashboardBundleV3PrimaryMetrics(BaseModel):
+class QGetDashboardBundleV4PrimaryMetrics(BaseModel):
 
-    growth_data: QGetDashboardBundleV3GrowthDataResponse | None
-    persona_performance: QGetDashboardBundleV3PersonaPerformanceResponse | None
-    rubric_heatmap: QGetDashboardBundleV3RubricHeatmapResponse | None
-
-
+    growth_data: QGetDashboardBundleV4GrowthDataResponse | None
+    persona_performance: QGetDashboardBundleV4PersonaPerformanceResponse | None
+    rubric_heatmap: QGetDashboardBundleV4RubricHeatmapResponse | None
 
 
-class QGetDashboardBundleV3Rubric(BaseModel):
+
+
+class QGetDashboardBundleV4Rubric(BaseModel):
 
     rubric_id: str | None
     name: str | None
@@ -6422,7 +6422,7 @@ class QGetDashboardBundleV3Rubric(BaseModel):
 
 
 
-class QGetDashboardBundleV3AttemptImprovementData(BaseModel):
+class QGetDashboardBundleV4AttemptImprovementData(BaseModel):
 
     attempt: str | None
     average_score: float | None
@@ -6432,7 +6432,7 @@ class QGetDashboardBundleV3AttemptImprovementData(BaseModel):
 
 
 
-class QGetDashboardBundleV3AttemptImprovementFact(BaseModel):
+class QGetDashboardBundleV4AttemptImprovementFact(BaseModel):
 
     simulation_id: str | None
     attempt_no: int | None
@@ -6440,17 +6440,17 @@ class QGetDashboardBundleV3AttemptImprovementFact(BaseModel):
     avg_minutes: float | None
     pass_rate: float | None
 
-class QGetDashboardBundleV3AttemptImprovementResponse(BaseModel):
+class QGetDashboardBundleV4AttemptImprovementResponse(BaseModel):
 
-    chart_data: list[QGetDashboardBundleV3AttemptImprovementData] | None
-    facts: list[QGetDashboardBundleV3AttemptImprovementFact] | None
+    chart_data: list[QGetDashboardBundleV4AttemptImprovementData] | None
+    facts: list[QGetDashboardBundleV4AttemptImprovementFact] | None
     valid_simulation_ids: list[str] | None
     status: str | None
 
 
 
 
-class QGetDashboardBundleV3CohortDailyFact(BaseModel):
+class QGetDashboardBundleV4CohortDailyFact(BaseModel):
 
     date: str | None
     simulation_id: str | None
@@ -6459,7 +6459,7 @@ class QGetDashboardBundleV3CohortDailyFact(BaseModel):
 
 
 
-class QGetDashboardBundleV3CohortData(BaseModel):
+class QGetDashboardBundleV4CohortData(BaseModel):
 
     id: str | None
     name: str | None
@@ -6476,7 +6476,7 @@ class QGetDashboardBundleV3CohortData(BaseModel):
 
 
 
-class QGetDashboardBundleV3CohortFact(BaseModel):
+class QGetDashboardBundleV4CohortFact(BaseModel):
 
     cohort_id: str | None
     simulation_id: str | None
@@ -6487,25 +6487,25 @@ class QGetDashboardBundleV3CohortFact(BaseModel):
 
 
 
-class QGetDashboardBundleV3DailyData(BaseModel):
+class QGetDashboardBundleV4DailyData(BaseModel):
 
     date: str | None
     avg_score: float | None
     cohort_id: str | None
 
-class QGetDashboardBundleV3CohortPerformanceResponse(BaseModel):
+class QGetDashboardBundleV4CohortPerformanceResponse(BaseModel):
 
-    cohort_data: list[QGetDashboardBundleV3CohortData] | None
-    daily_data: list[QGetDashboardBundleV3DailyData] | None
-    cohort_facts: list[QGetDashboardBundleV3CohortFact] | None
-    daily_facts: list[QGetDashboardBundleV3CohortDailyFact] | None
+    cohort_data: list[QGetDashboardBundleV4CohortData] | None
+    daily_data: list[QGetDashboardBundleV4DailyData] | None
+    cohort_facts: list[QGetDashboardBundleV4CohortFact] | None
+    daily_facts: list[QGetDashboardBundleV4CohortDailyFact] | None
     valid_simulation_ids: list[str] | None
     status: str | None
 
 
 
 
-class QGetDashboardBundleV3SkillRadarData(BaseModel):
+class QGetDashboardBundleV4SkillRadarData(BaseModel):
 
     metric: str | None
     description: str | None
@@ -6515,7 +6515,7 @@ class QGetDashboardBundleV3SkillRadarData(BaseModel):
 
 
 
-class QGetDashboardBundleV3SkillStandardFact(BaseModel):
+class QGetDashboardBundleV4SkillStandardFact(BaseModel):
 
     group_id: str | None
     group_name: str | None
@@ -6525,28 +6525,28 @@ class QGetDashboardBundleV3SkillStandardFact(BaseModel):
     points: float | None
     avg_pct: float | None
 
-class QGetDashboardBundleV3SkillPackage(BaseModel):
+class QGetDashboardBundleV4SkillPackage(BaseModel):
 
     rubric_id: str | None
-    radar_data: list[QGetDashboardBundleV3SkillRadarData] | None
-    group_facts: list[QGetDashboardBundleV3SkillStandardFact] | None
+    radar_data: list[QGetDashboardBundleV4SkillRadarData] | None
+    group_facts: list[QGetDashboardBundleV4SkillStandardFact] | None
 
-class QGetDashboardBundleV3SkillPerformanceResponse(BaseModel):
+class QGetDashboardBundleV4SkillPerformanceResponse(BaseModel):
 
-    packages: list[QGetDashboardBundleV3SkillPackage] | None
+    packages: list[QGetDashboardBundleV4SkillPackage] | None
     valid_rubric_ids: list[str] | None
     status: str | None
 
-class QGetDashboardBundleV3SecondaryMetrics(BaseModel):
+class QGetDashboardBundleV4SecondaryMetrics(BaseModel):
 
-    attempt_improvement: QGetDashboardBundleV3AttemptImprovementResponse | None
-    cohort_performance: QGetDashboardBundleV3CohortPerformanceResponse | None
-    skill_performance: QGetDashboardBundleV3SkillPerformanceResponse | None
-
-
+    attempt_improvement: QGetDashboardBundleV4AttemptImprovementResponse | None
+    cohort_performance: QGetDashboardBundleV4CohortPerformanceResponse | None
+    skill_performance: QGetDashboardBundleV4SkillPerformanceResponse | None
 
 
-class QGetDashboardBundleV3Simulation(BaseModel):
+
+
+class QGetDashboardBundleV4Simulation(BaseModel):
 
     simulation_id: str | None
     name: str | None
@@ -6557,7 +6557,7 @@ class QGetDashboardBundleV3Simulation(BaseModel):
 
 
 
-class QGetDashboardBundleV3Thresholds(BaseModel):
+class QGetDashboardBundleV4Thresholds(BaseModel):
 
     success: int | None
     warning: int | None
@@ -6566,17 +6566,17 @@ class QGetDashboardBundleV3Thresholds(BaseModel):
 class GetDashboardBundleSqlRow(BaseModel):
 
     actor_name: str | None = None
-    header_metrics: QGetDashboardBundleV3HeaderMetrics | None = None
-    primary_metrics: QGetDashboardBundleV3PrimaryMetrics | None = None
-    secondary_metrics: QGetDashboardBundleV3SecondaryMetrics | None = None
-    footer_metrics: QGetDashboardBundleV3FooterMetrics | None = None
-    history: list[QGetDashboardBundleV3AttemptHistoryRow] | None = None
-    insights: QGetDashboardBundleV3Insights | None = None
-    thresholds: QGetDashboardBundleV3Thresholds | None = None
-    simulations: list[QGetDashboardBundleV3Simulation] | None = None
-    rubrics: list[QGetDashboardBundleV3Rubric] | None = None
-    parameters: list[QGetDashboardBundleV3Parameter] | None = None
-    fields: list[QGetDashboardBundleV3Field] | None = None
+    header_metrics: QGetDashboardBundleV4HeaderMetrics | None = None
+    primary_metrics: QGetDashboardBundleV4PrimaryMetrics | None = None
+    secondary_metrics: QGetDashboardBundleV4SecondaryMetrics | None = None
+    footer_metrics: QGetDashboardBundleV4FooterMetrics | None = None
+    history: list[QGetDashboardBundleV4AttemptHistoryRow] | None = None
+    insights: QGetDashboardBundleV4Insights | None = None
+    thresholds: QGetDashboardBundleV4Thresholds | None = None
+    simulations: list[QGetDashboardBundleV4Simulation] | None = None
+    rubrics: list[QGetDashboardBundleV4Rubric] | None = None
+    parameters: list[QGetDashboardBundleV4Parameter] | None = None
+    fields: list[QGetDashboardBundleV4Field] | None = None
 
 class GetDashboardBundleApiRequest(BaseModel):
 
@@ -6590,17 +6590,17 @@ class GetDashboardBundleApiRequest(BaseModel):
 class GetDashboardBundleApiResponse(BaseModel):
 
     actor_name: str | None = None
-    header_metrics: QGetDashboardBundleV3HeaderMetrics | None = None
-    primary_metrics: QGetDashboardBundleV3PrimaryMetrics | None = None
-    secondary_metrics: QGetDashboardBundleV3SecondaryMetrics | None = None
-    footer_metrics: QGetDashboardBundleV3FooterMetrics | None = None
-    history: list[QGetDashboardBundleV3AttemptHistoryRow] | None = None
-    insights: QGetDashboardBundleV3Insights | None = None
-    thresholds: QGetDashboardBundleV3Thresholds | None = None
-    simulations: list[QGetDashboardBundleV3Simulation] | None = None
-    rubrics: list[QGetDashboardBundleV3Rubric] | None = None
-    parameters: list[QGetDashboardBundleV3Parameter] | None = None
-    fields: list[QGetDashboardBundleV3Field] | None = None
+    header_metrics: QGetDashboardBundleV4HeaderMetrics | None = None
+    primary_metrics: QGetDashboardBundleV4PrimaryMetrics | None = None
+    secondary_metrics: QGetDashboardBundleV4SecondaryMetrics | None = None
+    footer_metrics: QGetDashboardBundleV4FooterMetrics | None = None
+    history: list[QGetDashboardBundleV4AttemptHistoryRow] | None = None
+    insights: QGetDashboardBundleV4Insights | None = None
+    thresholds: QGetDashboardBundleV4Thresholds | None = None
+    simulations: list[QGetDashboardBundleV4Simulation] | None = None
+    rubrics: list[QGetDashboardBundleV4Rubric] | None = None
+    parameters: list[QGetDashboardBundleV4Parameter] | None = None
+    fields: list[QGetDashboardBundleV4Field] | None = None
 
 
 
@@ -6645,7 +6645,7 @@ class GetDashboardHistorySqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetDashboardHistoryV3AttemptHistoryRow(BaseModel):
+class QGetDashboardHistoryV4AttemptHistoryRow(BaseModel):
 
     attempt_id: UUID | None
     date: str | None
@@ -6675,7 +6675,7 @@ class QGetDashboardHistoryV3AttemptHistoryRow(BaseModel):
 
 
 
-class QGetDashboardHistoryV3ProfileOption(BaseModel):
+class QGetDashboardHistoryV4ProfileOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -6684,7 +6684,7 @@ class QGetDashboardHistoryV3ProfileOption(BaseModel):
 
 
 
-class QGetDashboardHistoryV3ScenarioOption(BaseModel):
+class QGetDashboardHistoryV4ScenarioOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -6693,7 +6693,7 @@ class QGetDashboardHistoryV3ScenarioOption(BaseModel):
 
 
 
-class QGetDashboardHistoryV3SimulationOption(BaseModel):
+class QGetDashboardHistoryV4SimulationOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -6701,13 +6701,13 @@ class QGetDashboardHistoryV3SimulationOption(BaseModel):
 
 class GetDashboardHistorySqlRow(BaseModel):
 
-    data: list[QGetDashboardHistoryV3AttemptHistoryRow] | None = None
+    data: list[QGetDashboardHistoryV4AttemptHistoryRow] | None = None
     total_count: int | None = None
     archived_count: int | None = None
     unarchived_count: int | None = None
-    profile_options: list[QGetDashboardHistoryV3ProfileOption] | None = None
-    simulation_options: list[QGetDashboardHistoryV3SimulationOption] | None = None
-    scenario_options: list[QGetDashboardHistoryV3ScenarioOption] | None = None
+    profile_options: list[QGetDashboardHistoryV4ProfileOption] | None = None
+    simulation_options: list[QGetDashboardHistoryV4SimulationOption] | None = None
+    scenario_options: list[QGetDashboardHistoryV4ScenarioOption] | None = None
 
 class GetDashboardHistoryApiRequest(BaseModel):
 
@@ -6729,13 +6729,13 @@ class GetDashboardHistoryApiRequest(BaseModel):
 
 class GetDashboardHistoryApiResponse(BaseModel):
 
-    data: list[QGetDashboardHistoryV3AttemptHistoryRow] | None = None
+    data: list[QGetDashboardHistoryV4AttemptHistoryRow] | None = None
     total_count: int | None = None
     archived_count: int | None = None
     unarchived_count: int | None = None
-    profile_options: list[QGetDashboardHistoryV3ProfileOption] | None = None
-    simulation_options: list[QGetDashboardHistoryV3SimulationOption] | None = None
-    scenario_options: list[QGetDashboardHistoryV3ScenarioOption] | None = None
+    profile_options: list[QGetDashboardHistoryV4ProfileOption] | None = None
+    simulation_options: list[QGetDashboardHistoryV4SimulationOption] | None = None
+    scenario_options: list[QGetDashboardHistoryV4ScenarioOption] | None = None
 
 
 
@@ -6856,7 +6856,7 @@ class GetDepartmentDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetDepartmentDetailV3Cohort(BaseModel):
+class QGetDepartmentDetailV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -6865,7 +6865,7 @@ class QGetDepartmentDetailV3Cohort(BaseModel):
 
 
 
-class QGetDepartmentDetailV3Department(BaseModel):
+class QGetDepartmentDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -6874,7 +6874,7 @@ class QGetDepartmentDetailV3Department(BaseModel):
 
 
 
-class QGetDepartmentDetailV3Key(BaseModel):
+class QGetDepartmentDetailV4Key(BaseModel):
 
     key_id: UUID | None
     name: str | None
@@ -6885,7 +6885,7 @@ class QGetDepartmentDetailV3Key(BaseModel):
 
 
 
-class QGetDepartmentDetailV3Model(BaseModel):
+class QGetDepartmentDetailV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -6894,7 +6894,7 @@ class QGetDepartmentDetailV3Model(BaseModel):
 
 
 
-class QGetDepartmentDetailV3ModelKey(BaseModel):
+class QGetDepartmentDetailV4ModelKey(BaseModel):
 
     model_id: UUID | None
     key_id: UUID | None
@@ -6902,7 +6902,7 @@ class QGetDepartmentDetailV3ModelKey(BaseModel):
 
 
 
-class QGetDepartmentDetailV3Setting(BaseModel):
+class QGetDepartmentDetailV4Setting(BaseModel):
 
     settings_id: UUID | None
     created_at: str | None
@@ -6927,12 +6927,12 @@ class GetDepartmentDetailSqlRow(BaseModel):
     valid_model_ids: list[UUID] | None = None
     valid_key_ids: list[UUID] | None = None
     actor_name: str | None = None
-    settings: list[QGetDepartmentDetailV3Setting] | None = None
-    cohorts: list[QGetDepartmentDetailV3Cohort] | None = None
-    departments: list[QGetDepartmentDetailV3Department] | None = None
-    models: list[QGetDepartmentDetailV3Model] | None = None
-    keys: list[QGetDepartmentDetailV3Key] | None = None
-    model_keys: list[QGetDepartmentDetailV3ModelKey] | None = None
+    settings: list[QGetDepartmentDetailV4Setting] | None = None
+    cohorts: list[QGetDepartmentDetailV4Cohort] | None = None
+    departments: list[QGetDepartmentDetailV4Department] | None = None
+    models: list[QGetDepartmentDetailV4Model] | None = None
+    keys: list[QGetDepartmentDetailV4Key] | None = None
+    model_keys: list[QGetDepartmentDetailV4ModelKey] | None = None
 
 class GetDepartmentDetailApiRequest(BaseModel):
 
@@ -6956,12 +6956,12 @@ class GetDepartmentDetailApiResponse(BaseModel):
     valid_model_ids: list[UUID] | None = None
     valid_key_ids: list[UUID] | None = None
     actor_name: str | None = None
-    settings: list[QGetDepartmentDetailV3Setting] | None = None
-    cohorts: list[QGetDepartmentDetailV3Cohort] | None = None
-    departments: list[QGetDepartmentDetailV3Department] | None = None
-    models: list[QGetDepartmentDetailV3Model] | None = None
-    keys: list[QGetDepartmentDetailV3Key] | None = None
-    model_keys: list[QGetDepartmentDetailV3ModelKey] | None = None
+    settings: list[QGetDepartmentDetailV4Setting] | None = None
+    cohorts: list[QGetDepartmentDetailV4Cohort] | None = None
+    departments: list[QGetDepartmentDetailV4Department] | None = None
+    models: list[QGetDepartmentDetailV4Model] | None = None
+    keys: list[QGetDepartmentDetailV4Key] | None = None
+    model_keys: list[QGetDepartmentDetailV4ModelKey] | None = None
 
 
 
@@ -6976,7 +6976,7 @@ class GetDepartmentNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetDepartmentNewV3Setting(BaseModel):
+class QGetDepartmentNewV4Setting(BaseModel):
 
     settings_id: UUID | None
     created_at: str | None
@@ -6987,7 +6987,7 @@ class GetDepartmentNewSqlRow(BaseModel):
 
     profile_role: str | None = None
     actor_name: str | None = None
-    settings: list[QGetDepartmentNewV3Setting] | None = None
+    settings: list[QGetDepartmentNewV4Setting] | None = None
 
 class GetDepartmentNewApiRequest(BaseModel):
 
@@ -6997,7 +6997,7 @@ class GetDepartmentNewApiResponse(BaseModel):
 
     profile_role: str | None = None
     actor_name: str | None = None
-    settings: list[QGetDepartmentNewV3Setting] | None = None
+    settings: list[QGetDepartmentNewV4Setting] | None = None
 
 
 
@@ -7012,7 +7012,7 @@ class GetDepartmentsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListDepartmentsV3Cohort(BaseModel):
+class QListDepartmentsV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -7021,7 +7021,7 @@ class QListDepartmentsV3Cohort(BaseModel):
 
 
 
-class QListDepartmentsV3Department(BaseModel):
+class QListDepartmentsV4Department(BaseModel):
 
     department_id: UUID | None
     title: str | None
@@ -7039,7 +7039,7 @@ class QListDepartmentsV3Department(BaseModel):
 
 
 
-class QListDepartmentsV3Profile(BaseModel):
+class QListDepartmentsV4Profile(BaseModel):
 
     profile_id: UUID | None
     name: str | None
@@ -7048,9 +7048,9 @@ class QListDepartmentsV3Profile(BaseModel):
 class GetDepartmentsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    departments: list[QListDepartmentsV3Department] | None = None
-    cohorts: list[QListDepartmentsV3Cohort] | None = None
-    profiles: list[QListDepartmentsV3Profile] | None = None
+    departments: list[QListDepartmentsV4Department] | None = None
+    cohorts: list[QListDepartmentsV4Cohort] | None = None
+    profiles: list[QListDepartmentsV4Profile] | None = None
 
 class GetDepartmentsListApiRequest(BaseModel):
 
@@ -7059,9 +7059,9 @@ class GetDepartmentsListApiRequest(BaseModel):
 class GetDepartmentsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    departments: list[QListDepartmentsV3Department] | None = None
-    cohorts: list[QListDepartmentsV3Cohort] | None = None
-    profiles: list[QListDepartmentsV3Profile] | None = None
+    departments: list[QListDepartmentsV4Department] | None = None
+    cohorts: list[QListDepartmentsV4Cohort] | None = None
+    profiles: list[QListDepartmentsV4Profile] | None = None
 
 
 
@@ -7245,23 +7245,23 @@ class GetCertificateDataSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetCertificateDataV3Simulation(BaseModel):
+class QGetCertificateDataV4Simulation(BaseModel):
 
     name: str | None
     score: int | None
     passed: bool | None
 
-class QGetCertificateDataV3Cohort(BaseModel):
+class QGetCertificateDataV4Cohort(BaseModel):
 
     name: str | None
     passed: bool | None
-    simulations: list[QGetCertificateDataV3Simulation] | None
+    simulations: list[QGetCertificateDataV4Simulation] | None
 
 class GetCertificateDataSqlRow(BaseModel):
 
     profile_name: str | None = None
     actor_name: str | None = None
-    cohorts: list[QGetCertificateDataV3Cohort] | None = None
+    cohorts: list[QGetCertificateDataV4Cohort] | None = None
 
 class GetCertificateDataApiRequest(BaseModel):
 
@@ -7271,7 +7271,7 @@ class GetCertificateDataApiResponse(BaseModel):
 
     profile_name: str | None = None
     actor_name: str | None = None
-    cohorts: list[QGetCertificateDataV3Cohort] | None = None
+    cohorts: list[QGetCertificateDataV4Cohort] | None = None
 
 
 
@@ -7288,7 +7288,7 @@ class GetDocumentDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetDocumentDetailV3Agent(BaseModel):
+class QGetDocumentDetailV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -7298,7 +7298,7 @@ class QGetDocumentDetailV3Agent(BaseModel):
 
 
 
-class QGetDocumentDetailV3Department(BaseModel):
+class QGetDocumentDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -7308,7 +7308,7 @@ class QGetDocumentDetailV3Department(BaseModel):
 
 
 
-class QGetDocumentDetailV3Field(BaseModel):
+class QGetDocumentDetailV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -7319,7 +7319,7 @@ class QGetDocumentDetailV3Field(BaseModel):
 
 
 
-class QGetDocumentDetailV3Parameter(BaseModel):
+class QGetDocumentDetailV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -7332,7 +7332,7 @@ class QGetDocumentDetailV3Parameter(BaseModel):
 
 
 
-class QGetDocumentDetailV3Template(BaseModel):
+class QGetDocumentDetailV4Template(BaseModel):
 
     template_id: UUID | None
     template_args: dict[str, Any] | None
@@ -7357,15 +7357,15 @@ class GetDocumentDetailSqlRow(BaseModel):
     document_type_options: list[str] | None = None
     department_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
-    departments: list[QGetDocumentDetailV3Department] | None = None
+    departments: list[QGetDocumentDetailV4Department] | None = None
     field_ids: list[UUID] | None = None
     valid_field_ids: list[str] | None = None
-    fields: list[QGetDocumentDetailV3Field] | None = None
+    fields: list[QGetDocumentDetailV4Field] | None = None
     linked_parameter_ids: list[str] | None = None
-    parameters: list[QGetDocumentDetailV3Parameter] | None = None
+    parameters: list[QGetDocumentDetailV4Parameter] | None = None
     classify_agent_id: UUID | None = None
     document_agent_id: UUID | None = None
-    agents: list[QGetDocumentDetailV3Agent] | None = None
+    agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
     template_id: UUID | None = None
@@ -7373,7 +7373,7 @@ class GetDocumentDetailSqlRow(BaseModel):
     template_upload_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
-    templates: list[QGetDocumentDetailV3Template] | None = None
+    templates: list[QGetDocumentDetailV4Template] | None = None
     actor_name: str | None = None
 
 class GetDocumentDetailApiRequest(BaseModel):
@@ -7397,15 +7397,15 @@ class GetDocumentDetailApiResponse(BaseModel):
     document_type_options: list[str] | None = None
     department_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
-    departments: list[QGetDocumentDetailV3Department] | None = None
+    departments: list[QGetDocumentDetailV4Department] | None = None
     field_ids: list[UUID] | None = None
     valid_field_ids: list[str] | None = None
-    fields: list[QGetDocumentDetailV3Field] | None = None
+    fields: list[QGetDocumentDetailV4Field] | None = None
     linked_parameter_ids: list[str] | None = None
-    parameters: list[QGetDocumentDetailV3Parameter] | None = None
+    parameters: list[QGetDocumentDetailV4Parameter] | None = None
     classify_agent_id: UUID | None = None
     document_agent_id: UUID | None = None
-    agents: list[QGetDocumentDetailV3Agent] | None = None
+    agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
     template_id: UUID | None = None
@@ -7413,7 +7413,7 @@ class GetDocumentDetailApiResponse(BaseModel):
     template_upload_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
-    templates: list[QGetDocumentDetailV3Template] | None = None
+    templates: list[QGetDocumentDetailV4Template] | None = None
     actor_name: str | None = None
 
 
@@ -7445,7 +7445,7 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IDocumentRegenRunContextCreateRunV3Msg(BaseModel):
+class IDocumentRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -7469,7 +7469,7 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    previous_messages: list[IDocumentRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IDocumentRegenRunContextCreateRunV4Msg] | None = None
 
 class GetDocumentRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -7501,7 +7501,7 @@ class GetDocumentRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    previous_messages: list[IDocumentRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IDocumentRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -7587,7 +7587,7 @@ class GetDocumentTemplateContextSqlParams(BaseModel):
             self.field_ids,
         )
 
-class QGetDocumentTemplateContextV3Field(BaseModel):
+class QGetDocumentTemplateContextV4Field(BaseModel):
 
     item_name: str | None
     item_description: str | None
@@ -7596,7 +7596,7 @@ class QGetDocumentTemplateContextV3Field(BaseModel):
 
 class GetDocumentTemplateContextSqlRow(BaseModel):
 
-    fields: list[QGetDocumentTemplateContextV3Field] | None = None
+    fields: list[QGetDocumentTemplateContextV4Field] | None = None
 
 class GetDocumentTemplateContextApiRequest(BaseModel):
 
@@ -7604,7 +7604,7 @@ class GetDocumentTemplateContextApiRequest(BaseModel):
 
 class GetDocumentTemplateContextApiResponse(BaseModel):
 
-    fields: list[QGetDocumentTemplateContextV3Field] | None = None
+    fields: list[QGetDocumentTemplateContextV4Field] | None = None
 
 
 
@@ -7619,7 +7619,7 @@ class GetDocumentsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListDocumentsV3Department(BaseModel):
+class QListDocumentsV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -7630,7 +7630,7 @@ class QListDocumentsV3Department(BaseModel):
 
 
 
-class QListDocumentsV3DepartmentOption(BaseModel):
+class QListDocumentsV4DepartmentOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -7638,7 +7638,7 @@ class QListDocumentsV3DepartmentOption(BaseModel):
 
 
 
-class QListDocumentsV3Document(BaseModel):
+class QListDocumentsV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -7658,7 +7658,7 @@ class QListDocumentsV3Document(BaseModel):
 
 
 
-class QListDocumentsV3Field(BaseModel):
+class QListDocumentsV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -7669,7 +7669,7 @@ class QListDocumentsV3Field(BaseModel):
 
 
 
-class QListDocumentsV3Parameter(BaseModel):
+class QListDocumentsV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -7682,7 +7682,7 @@ class QListDocumentsV3Parameter(BaseModel):
 
 
 
-class QListDocumentsV3Scenario(BaseModel):
+class QListDocumentsV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
@@ -7692,7 +7692,7 @@ class QListDocumentsV3Scenario(BaseModel):
 
 
 
-class QListDocumentsV3ScenarioOption(BaseModel):
+class QListDocumentsV4ScenarioOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -7700,13 +7700,13 @@ class QListDocumentsV3ScenarioOption(BaseModel):
 class GetDocumentsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    documents: list[QListDocumentsV3Document] | None = None
-    scenarios: list[QListDocumentsV3Scenario] | None = None
-    fields: list[QListDocumentsV3Field] | None = None
-    departments: list[QListDocumentsV3Department] | None = None
-    parameters: list[QListDocumentsV3Parameter] | None = None
-    scenario_options: list[QListDocumentsV3ScenarioOption] | None = None
-    department_options: list[QListDocumentsV3DepartmentOption] | None = None
+    documents: list[QListDocumentsV4Document] | None = None
+    scenarios: list[QListDocumentsV4Scenario] | None = None
+    fields: list[QListDocumentsV4Field] | None = None
+    departments: list[QListDocumentsV4Department] | None = None
+    parameters: list[QListDocumentsV4Parameter] | None = None
+    scenario_options: list[QListDocumentsV4ScenarioOption] | None = None
+    department_options: list[QListDocumentsV4DepartmentOption] | None = None
     valid_department_ids: list[str] | None = None
     document_type_options: list[str] | None = None
 
@@ -7717,13 +7717,13 @@ class GetDocumentsListApiRequest(BaseModel):
 class GetDocumentsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    documents: list[QListDocumentsV3Document] | None = None
-    scenarios: list[QListDocumentsV3Scenario] | None = None
-    fields: list[QListDocumentsV3Field] | None = None
-    departments: list[QListDocumentsV3Department] | None = None
-    parameters: list[QListDocumentsV3Parameter] | None = None
-    scenario_options: list[QListDocumentsV3ScenarioOption] | None = None
-    department_options: list[QListDocumentsV3DepartmentOption] | None = None
+    documents: list[QListDocumentsV4Document] | None = None
+    scenarios: list[QListDocumentsV4Scenario] | None = None
+    fields: list[QListDocumentsV4Field] | None = None
+    departments: list[QListDocumentsV4Department] | None = None
+    parameters: list[QListDocumentsV4Parameter] | None = None
+    scenario_options: list[QListDocumentsV4ScenarioOption] | None = None
+    department_options: list[QListDocumentsV4DepartmentOption] | None = None
     valid_department_ids: list[str] | None = None
     document_type_options: list[str] | None = None
 
@@ -8003,7 +8003,7 @@ class GetFieldDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetFieldDetailV3Department(BaseModel):
+class QGetFieldDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -8012,7 +8012,7 @@ class QGetFieldDetailV3Department(BaseModel):
 
 
 
-class QGetFieldDetailV3Parameter(BaseModel):
+class QGetFieldDetailV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -8028,9 +8028,9 @@ class GetFieldDetailSqlRow(BaseModel):
     department_ids: list[str] | None = None
     parameter_ids: list[str] | None = None
     conditional_parameter_ids: list[str] | None = None
-    departments: list[QGetFieldDetailV3Department] | None = None
+    departments: list[QGetFieldDetailV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    parameters: list[QGetFieldDetailV3Parameter] | None = None
+    parameters: list[QGetFieldDetailV4Parameter] | None = None
     valid_parameter_ids: list[str] | None = None
     can_edit: bool | None = None
     actor_name: str | None = None
@@ -8049,9 +8049,9 @@ class GetFieldDetailApiResponse(BaseModel):
     department_ids: list[str] | None = None
     parameter_ids: list[str] | None = None
     conditional_parameter_ids: list[str] | None = None
-    departments: list[QGetFieldDetailV3Department] | None = None
+    departments: list[QGetFieldDetailV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    parameters: list[QGetFieldDetailV3Parameter] | None = None
+    parameters: list[QGetFieldDetailV4Parameter] | None = None
     valid_parameter_ids: list[str] | None = None
     can_edit: bool | None = None
     actor_name: str | None = None
@@ -8069,7 +8069,7 @@ class GetFieldNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetFieldNewV3Department(BaseModel):
+class QGetFieldNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -8078,7 +8078,7 @@ class QGetFieldNewV3Department(BaseModel):
 
 
 
-class QGetFieldNewV3Parameter(BaseModel):
+class QGetFieldNewV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -8087,9 +8087,9 @@ class QGetFieldNewV3Parameter(BaseModel):
 class GetFieldNewSqlRow(BaseModel):
 
     valid_department_ids: list[str] | None = None
-    departments: list[QGetFieldNewV3Department] | None = None
+    departments: list[QGetFieldNewV4Department] | None = None
     valid_parameter_ids: list[str] | None = None
-    parameters: list[QGetFieldNewV3Parameter] | None = None
+    parameters: list[QGetFieldNewV4Parameter] | None = None
     user_role: str | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
@@ -8101,9 +8101,9 @@ class GetFieldNewApiRequest(BaseModel):
 class GetFieldNewApiResponse(BaseModel):
 
     valid_department_ids: list[str] | None = None
-    departments: list[QGetFieldNewV3Department] | None = None
+    departments: list[QGetFieldNewV4Department] | None = None
     valid_parameter_ids: list[str] | None = None
-    parameters: list[QGetFieldNewV3Parameter] | None = None
+    parameters: list[QGetFieldNewV4Parameter] | None = None
     user_role: str | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
@@ -8121,7 +8121,7 @@ class GetFieldsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListFieldsV3Department(BaseModel):
+class QListFieldsV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -8130,7 +8130,7 @@ class QListFieldsV3Department(BaseModel):
 
 
 
-class QListFieldsV3Field(BaseModel):
+class QListFieldsV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -8148,7 +8148,7 @@ class QListFieldsV3Field(BaseModel):
 
 
 
-class QListFieldsV3Option(BaseModel):
+class QListFieldsV4Option(BaseModel):
 
     value: str | None
     label: str | None
@@ -8156,7 +8156,7 @@ class QListFieldsV3Option(BaseModel):
 
 
 
-class QListFieldsV3Parameter(BaseModel):
+class QListFieldsV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -8165,11 +8165,11 @@ class QListFieldsV3Parameter(BaseModel):
 class GetFieldsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    fields: list[QListFieldsV3Field] | None = None
-    parameters: list[QListFieldsV3Parameter] | None = None
-    departments: list[QListFieldsV3Department] | None = None
-    parameter_options: list[QListFieldsV3Option] | None = None
-    department_options: list[QListFieldsV3Option] | None = None
+    fields: list[QListFieldsV4Field] | None = None
+    parameters: list[QListFieldsV4Parameter] | None = None
+    departments: list[QListFieldsV4Department] | None = None
+    parameter_options: list[QListFieldsV4Option] | None = None
+    department_options: list[QListFieldsV4Option] | None = None
 
 class GetFieldsListApiRequest(BaseModel):
 
@@ -8178,11 +8178,11 @@ class GetFieldsListApiRequest(BaseModel):
 class GetFieldsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    fields: list[QListFieldsV3Field] | None = None
-    parameters: list[QListFieldsV3Parameter] | None = None
-    departments: list[QListFieldsV3Department] | None = None
-    parameter_options: list[QListFieldsV3Option] | None = None
-    department_options: list[QListFieldsV3Option] | None = None
+    fields: list[QListFieldsV4Field] | None = None
+    parameters: list[QListFieldsV4Parameter] | None = None
+    departments: list[QListFieldsV4Department] | None = None
+    parameter_options: list[QListFieldsV4Option] | None = None
+    department_options: list[QListFieldsV4Option] | None = None
 
 
 
@@ -8307,14 +8307,14 @@ class CreateMessageFeedbackApiResponse(BaseModel):
 
 # Generated from: create_message_feedback_highlight
 
-class ICreateMessageFeedbackHighlightV3Highlight(BaseModel):
+class ICreateMessageFeedbackHighlightV4Highlight(BaseModel):
 
     section: str | None
 
 class CreateMessageFeedbackHighlightSqlParams(BaseModel):
 
     message_feedback_id: UUID
-    highlights: list[ICreateMessageFeedbackHighlightV3Highlight]
+    highlights: list[ICreateMessageFeedbackHighlightV4Highlight]
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert highlights composite array to tuples for asyncpg
@@ -8334,7 +8334,7 @@ class CreateMessageFeedbackHighlightSqlRow(BaseModel):
 class CreateMessageFeedbackHighlightApiRequest(BaseModel):
 
     message_feedback_id: UUID
-    highlights: list[ICreateMessageFeedbackHighlightV3Highlight]
+    highlights: list[ICreateMessageFeedbackHighlightV4Highlight]
 
 class CreateMessageFeedbackHighlightApiResponse(BaseModel):
 
@@ -8344,7 +8344,7 @@ class CreateMessageFeedbackHighlightApiResponse(BaseModel):
 
 # Generated from: create_message_feedback_replace
 
-class ICreateMessageFeedbackReplaceV3Replace(BaseModel):
+class ICreateMessageFeedbackReplaceV4Replace(BaseModel):
 
     section: str | None
     replace: str | None
@@ -8352,7 +8352,7 @@ class ICreateMessageFeedbackReplaceV3Replace(BaseModel):
 class CreateMessageFeedbackReplaceSqlParams(BaseModel):
 
     message_feedback_id: UUID
-    replaces: list[ICreateMessageFeedbackReplaceV3Replace]
+    replaces: list[ICreateMessageFeedbackReplaceV4Replace]
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert replaces composite array to tuples for asyncpg
@@ -8372,7 +8372,7 @@ class CreateMessageFeedbackReplaceSqlRow(BaseModel):
 class CreateMessageFeedbackReplaceApiRequest(BaseModel):
 
     message_feedback_id: UUID
-    replaces: list[ICreateMessageFeedbackReplaceV3Replace]
+    replaces: list[ICreateMessageFeedbackReplaceV4Replace]
 
 class CreateMessageFeedbackReplaceApiResponse(BaseModel):
 
@@ -8512,7 +8512,7 @@ class GetGradingRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class QGetGradingRegenRunContextCreateRunV3Msg(BaseModel):
+class QGetGradingRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -8520,7 +8520,7 @@ class QGetGradingRegenRunContextCreateRunV3Msg(BaseModel):
 
 
 
-class QGetGradingRegenRunContextCreateRunV3Standard(BaseModel):
+class QGetGradingRegenRunContextCreateRunV4Standard(BaseModel):
 
     id: str | None
     name: str | None
@@ -8531,7 +8531,7 @@ class QGetGradingRegenRunContextCreateRunV3Standard(BaseModel):
 
 
 
-class QGetGradingRegenRunContextCreateRunV3StandardGroup(BaseModel):
+class QGetGradingRegenRunContextCreateRunV4StandardGroup(BaseModel):
 
     id: str | None
     name: str | None
@@ -8566,9 +8566,9 @@ class GetGradingRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     rubric_description: str | None = None
     rubric_points: int | None = None
     rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRegenRunContextCreateRunV3StandardGroup] | None = None
-    standards: list[QGetGradingRegenRunContextCreateRunV3Standard] | None = None
-    previous_messages: list[QGetGradingRegenRunContextCreateRunV3Msg] | None = None
+    standard_groups: list[QGetGradingRegenRunContextCreateRunV4StandardGroup] | None = None
+    standards: list[QGetGradingRegenRunContextCreateRunV4Standard] | None = None
+    previous_messages: list[QGetGradingRegenRunContextCreateRunV4Msg] | None = None
     agent_id: str | None = None
     agent_name: str | None = None
     system_prompt: str | None = None
@@ -8617,9 +8617,9 @@ class GetGradingRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     rubric_description: str | None = None
     rubric_points: int | None = None
     rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRegenRunContextCreateRunV3StandardGroup] | None = None
-    standards: list[QGetGradingRegenRunContextCreateRunV3Standard] | None = None
-    previous_messages: list[QGetGradingRegenRunContextCreateRunV3Msg] | None = None
+    standard_groups: list[QGetGradingRegenRunContextCreateRunV4StandardGroup] | None = None
+    standards: list[QGetGradingRegenRunContextCreateRunV4Standard] | None = None
+    previous_messages: list[QGetGradingRegenRunContextCreateRunV4Msg] | None = None
     agent_id: str | None = None
     agent_name: str | None = None
     system_prompt: str | None = None
@@ -8653,7 +8653,7 @@ class GetGradingRunContextAndCreateRunSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetGradingRunContextAndCreateRunV3Standard(BaseModel):
+class QGetGradingRunContextAndCreateRunV4Standard(BaseModel):
 
     id: str | None
     name: str | None
@@ -8664,7 +8664,7 @@ class QGetGradingRunContextAndCreateRunV3Standard(BaseModel):
 
 
 
-class QGetGradingRunContextAndCreateRunV3StandardGroup(BaseModel):
+class QGetGradingRunContextAndCreateRunV4StandardGroup(BaseModel):
 
     id: str | None
     name: str | None
@@ -8699,8 +8699,8 @@ class GetGradingRunContextAndCreateRunSqlRow(BaseModel):
     rubric_description: str | None = None
     rubric_points: int | None = None
     rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRunContextAndCreateRunV3StandardGroup] | None = None
-    standards: list[QGetGradingRunContextAndCreateRunV3Standard] | None = None
+    standard_groups: list[QGetGradingRunContextAndCreateRunV4StandardGroup] | None = None
+    standards: list[QGetGradingRunContextAndCreateRunV4Standard] | None = None
     agent_id: str | None = None
     agent_name: str | None = None
     system_prompt: str | None = None
@@ -8747,8 +8747,8 @@ class GetGradingRunContextAndCreateRunApiResponse(BaseModel):
     rubric_description: str | None = None
     rubric_points: int | None = None
     rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRunContextAndCreateRunV3StandardGroup] | None = None
-    standards: list[QGetGradingRunContextAndCreateRunV3Standard] | None = None
+    standard_groups: list[QGetGradingRunContextAndCreateRunV4StandardGroup] | None = None
+    standards: list[QGetGradingRunContextAndCreateRunV4Standard] | None = None
     agent_id: str | None = None
     agent_name: str | None = None
     system_prompt: str | None = None
@@ -8812,32 +8812,32 @@ class GetHealthBundleSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetHealthBundleV3TrendData(BaseModel):
+class QGetHealthBundleV4TrendData(BaseModel):
 
     date: str | None
     value: float | None
     latency: float | None
     count: int | None
 
-class QGetHealthBundleV3HealthKpi(BaseModel):
+class QGetHealthBundleV4HealthKpi(BaseModel):
 
     ok: bool | None
     latency_ms: float | None
     error: str | None
-    trend: list[QGetHealthBundleV3TrendData] | None
+    trend: list[QGetHealthBundleV4TrendData] | None
 
-class QGetHealthBundleV3HealthKpis(BaseModel):
+class QGetHealthBundleV4HealthKpis(BaseModel):
 
-    websocket: QGetHealthBundleV3HealthKpi | None
-    redis: QGetHealthBundleV3HealthKpi | None
-    document: QGetHealthBundleV3HealthKpi | None
-    database: QGetHealthBundleV3HealthKpi | None
-    authentication: QGetHealthBundleV3HealthKpi | None
-
-
+    websocket: QGetHealthBundleV4HealthKpi | None
+    redis: QGetHealthBundleV4HealthKpi | None
+    document: QGetHealthBundleV4HealthKpi | None
+    database: QGetHealthBundleV4HealthKpi | None
+    authentication: QGetHealthBundleV4HealthKpi | None
 
 
-class QGetHealthBundleV3MetricsDataPoint(BaseModel):
+
+
+class QGetHealthBundleV4MetricsDataPoint(BaseModel):
 
     date: str | None
     cpu_percent: float | None
@@ -8850,8 +8850,8 @@ class QGetHealthBundleV3MetricsDataPoint(BaseModel):
 class GetHealthBundleSqlRow(BaseModel):
 
     actor_name: str | None = None
-    health_kpis: QGetHealthBundleV3HealthKpis | None = None
-    metrics: list[QGetHealthBundleV3MetricsDataPoint] | None = None
+    health_kpis: QGetHealthBundleV4HealthKpis | None = None
+    metrics: list[QGetHealthBundleV4MetricsDataPoint] | None = None
 
 class GetHealthBundleApiRequest(BaseModel):
 
@@ -8860,8 +8860,8 @@ class GetHealthBundleApiRequest(BaseModel):
 class GetHealthBundleApiResponse(BaseModel):
 
     actor_name: str | None = None
-    health_kpis: QGetHealthBundleV3HealthKpis | None = None
-    metrics: list[QGetHealthBundleV3MetricsDataPoint] | None = None
+    health_kpis: QGetHealthBundleV4HealthKpis | None = None
+    metrics: list[QGetHealthBundleV4MetricsDataPoint] | None = None
 
 
 
@@ -8906,7 +8906,7 @@ class GetHomeHistorySqlParams(BaseModel):
             self.page_size,
         )
 
-class QGetHomeHistoryV3AttemptHistoryRow(BaseModel):
+class QGetHomeHistoryV4AttemptHistoryRow(BaseModel):
 
     attempt_id: UUID | None
     date: str | None
@@ -8936,7 +8936,7 @@ class QGetHomeHistoryV3AttemptHistoryRow(BaseModel):
 
 
 
-class QGetHomeHistoryV3Option(BaseModel):
+class QGetHomeHistoryV4Option(BaseModel):
 
     value: str | None
     label: str | None
@@ -8945,14 +8945,14 @@ class QGetHomeHistoryV3Option(BaseModel):
 class GetHomeHistorySqlRow(BaseModel):
 
     actor_name: str | None = None
-    data: list[QGetHomeHistoryV3AttemptHistoryRow] | None = None
+    data: list[QGetHomeHistoryV4AttemptHistoryRow] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QGetHomeHistoryV3Option] | None = None
-    simulation_options: list[QGetHomeHistoryV3Option] | None = None
-    scenario_options: list[QGetHomeHistoryV3Option] | None = None
+    profile_options: list[QGetHomeHistoryV4Option] | None = None
+    simulation_options: list[QGetHomeHistoryV4Option] | None = None
+    scenario_options: list[QGetHomeHistoryV4Option] | None = None
 
 class GetHomeHistoryApiRequest(BaseModel):
 
@@ -8975,14 +8975,14 @@ class GetHomeHistoryApiRequest(BaseModel):
 class GetHomeHistoryApiResponse(BaseModel):
 
     actor_name: str | None = None
-    data: list[QGetHomeHistoryV3AttemptHistoryRow] | None = None
+    data: list[QGetHomeHistoryV4AttemptHistoryRow] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QGetHomeHistoryV3Option] | None = None
-    simulation_options: list[QGetHomeHistoryV3Option] | None = None
-    scenario_options: list[QGetHomeHistoryV3Option] | None = None
+    profile_options: list[QGetHomeHistoryV4Option] | None = None
+    simulation_options: list[QGetHomeHistoryV4Option] | None = None
+    scenario_options: list[QGetHomeHistoryV4Option] | None = None
 
 
 
@@ -9005,7 +9005,7 @@ class GetHomeOverviewSqlParams(BaseModel):
             self.department_ids,
         )
 
-class QGetHomeOverviewV3Simulation(BaseModel):
+class QGetHomeOverviewV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -9016,7 +9016,7 @@ class QGetHomeOverviewV3Simulation(BaseModel):
 
 
 
-class QGetHomeOverviewV3SimulationItem(BaseModel):
+class QGetHomeOverviewV4SimulationItem(BaseModel):
 
     view_mode: str | None
     simulation_id: UUID | None
@@ -9043,7 +9043,7 @@ class QGetHomeOverviewV3SimulationItem(BaseModel):
 
 
 
-class QGetHomeOverviewV3Standard(BaseModel):
+class QGetHomeOverviewV4Standard(BaseModel):
 
     standard_id: UUID | None
     standard_group_id: UUID | None
@@ -9054,7 +9054,7 @@ class QGetHomeOverviewV3Standard(BaseModel):
 
 
 
-class QGetHomeOverviewV3StandardGroup(BaseModel):
+class QGetHomeOverviewV4StandardGroup(BaseModel):
 
     standard_group_id: UUID | None
     name: str | None
@@ -9067,10 +9067,10 @@ class GetHomeOverviewSqlRow(BaseModel):
     actor_name: str | None = None
     mode: str | None = None
     has_data: bool | None = None
-    items: list[QGetHomeOverviewV3SimulationItem] | None = None
-    standard_groups: list[QGetHomeOverviewV3StandardGroup] | None = None
-    standards: list[QGetHomeOverviewV3Standard] | None = None
-    simulations: list[QGetHomeOverviewV3Simulation] | None = None
+    items: list[QGetHomeOverviewV4SimulationItem] | None = None
+    standard_groups: list[QGetHomeOverviewV4StandardGroup] | None = None
+    standards: list[QGetHomeOverviewV4Standard] | None = None
+    simulations: list[QGetHomeOverviewV4Simulation] | None = None
 
 class GetHomeOverviewApiRequest(BaseModel):
 
@@ -9084,10 +9084,10 @@ class GetHomeOverviewApiResponse(BaseModel):
     actor_name: str | None = None
     mode: str | None = None
     has_data: bool | None = None
-    items: list[QGetHomeOverviewV3SimulationItem] | None = None
-    standard_groups: list[QGetHomeOverviewV3StandardGroup] | None = None
-    standards: list[QGetHomeOverviewV3Standard] | None = None
-    simulations: list[QGetHomeOverviewV3Simulation] | None = None
+    items: list[QGetHomeOverviewV4SimulationItem] | None = None
+    standard_groups: list[QGetHomeOverviewV4StandardGroup] | None = None
+    standards: list[QGetHomeOverviewV4Standard] | None = None
+    simulations: list[QGetHomeOverviewV4Simulation] | None = None
 
 
 
@@ -9209,7 +9209,7 @@ class GetImageRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IImageRegenRunContextCreateRunV3Msg(BaseModel):
+class IImageRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -9233,7 +9233,7 @@ class GetImageRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     department_id: UUID | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IImageRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IImageRegenRunContextCreateRunV4Msg] | None = None
 
 class GetImageRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -9262,7 +9262,7 @@ class GetImageRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     department_id: UUID | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IImageRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IImageRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -9579,7 +9579,7 @@ class GetKeyDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetKeyDetailV3Department(BaseModel):
+class QGetKeyDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -9588,7 +9588,7 @@ class QGetKeyDetailV3Department(BaseModel):
 
 
 
-class QGetKeyDetailV3Model(BaseModel):
+class QGetKeyDetailV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -9611,8 +9611,8 @@ class GetKeyDetailSqlRow(BaseModel):
     model_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
     can_edit: bool | None = None
-    departments: list[QGetKeyDetailV3Department] | None = None
-    models: list[QGetKeyDetailV3Model] | None = None
+    departments: list[QGetKeyDetailV4Department] | None = None
+    models: list[QGetKeyDetailV4Model] | None = None
     actor_name: str | None = None
 
 class GetKeyDetailApiRequest(BaseModel):
@@ -9634,8 +9634,8 @@ class GetKeyDetailApiResponse(BaseModel):
     model_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
     can_edit: bool | None = None
-    departments: list[QGetKeyDetailV3Department] | None = None
-    models: list[QGetKeyDetailV3Model] | None = None
+    departments: list[QGetKeyDetailV4Department] | None = None
+    models: list[QGetKeyDetailV4Model] | None = None
     actor_name: str | None = None
 
 
@@ -9682,7 +9682,7 @@ class GetKeyNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetKeyNewV3Department(BaseModel):
+class QGetKeyNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -9691,7 +9691,7 @@ class QGetKeyNewV3Department(BaseModel):
 
 
 
-class QGetKeyNewV3Model(BaseModel):
+class QGetKeyNewV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -9712,8 +9712,8 @@ class GetKeyNewSqlRow(BaseModel):
     model_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
     can_edit: bool | None = None
-    departments: list[QGetKeyNewV3Department] | None = None
-    models: list[QGetKeyNewV3Model] | None = None
+    departments: list[QGetKeyNewV4Department] | None = None
+    models: list[QGetKeyNewV4Model] | None = None
     actor_name: str | None = None
 
 class GetKeyNewApiRequest(BaseModel):
@@ -9733,8 +9733,8 @@ class GetKeyNewApiResponse(BaseModel):
     model_ids: list[str] | None = None
     valid_department_ids: list[str] | None = None
     can_edit: bool | None = None
-    departments: list[QGetKeyNewV3Department] | None = None
-    models: list[QGetKeyNewV3Model] | None = None
+    departments: list[QGetKeyNewV4Department] | None = None
+    models: list[QGetKeyNewV4Model] | None = None
     actor_name: str | None = None
 
 
@@ -9750,7 +9750,7 @@ class GetKeysListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetKeysListV3Department(BaseModel):
+class QGetKeysListV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -9759,7 +9759,7 @@ class QGetKeysListV3Department(BaseModel):
 
 
 
-class QGetKeysListV3DepartmentOption(BaseModel):
+class QGetKeysListV4DepartmentOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -9767,7 +9767,7 @@ class QGetKeysListV3DepartmentOption(BaseModel):
 
 
 
-class QGetKeysListV3Key(BaseModel):
+class QGetKeysListV4Key(BaseModel):
 
     key_id: UUID | None
     name: str | None
@@ -9785,7 +9785,7 @@ class QGetKeysListV3Key(BaseModel):
 
 
 
-class QGetKeysListV3Model(BaseModel):
+class QGetKeysListV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -9796,7 +9796,7 @@ class QGetKeysListV3Model(BaseModel):
 
 
 
-class QGetKeysListV3ModelOption(BaseModel):
+class QGetKeysListV4ModelOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -9804,11 +9804,11 @@ class QGetKeysListV3ModelOption(BaseModel):
 class GetKeysListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    keys: list[QGetKeysListV3Key] | None = None
-    departments: list[QGetKeysListV3Department] | None = None
-    models: list[QGetKeysListV3Model] | None = None
-    department_options: list[QGetKeysListV3DepartmentOption] | None = None
-    model_options: list[QGetKeysListV3ModelOption] | None = None
+    keys: list[QGetKeysListV4Key] | None = None
+    departments: list[QGetKeysListV4Department] | None = None
+    models: list[QGetKeysListV4Model] | None = None
+    department_options: list[QGetKeysListV4DepartmentOption] | None = None
+    model_options: list[QGetKeysListV4ModelOption] | None = None
 
 class GetKeysListApiRequest(BaseModel):
 
@@ -9817,11 +9817,11 @@ class GetKeysListApiRequest(BaseModel):
 class GetKeysListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    keys: list[QGetKeysListV3Key] | None = None
-    departments: list[QGetKeysListV3Department] | None = None
-    models: list[QGetKeysListV3Model] | None = None
-    department_options: list[QGetKeysListV3DepartmentOption] | None = None
-    model_options: list[QGetKeysListV3ModelOption] | None = None
+    keys: list[QGetKeysListV4Key] | None = None
+    departments: list[QGetKeysListV4Department] | None = None
+    models: list[QGetKeysListV4Model] | None = None
+    department_options: list[QGetKeysListV4DepartmentOption] | None = None
+    model_options: list[QGetKeysListV4ModelOption] | None = None
 
 
 
@@ -9896,7 +9896,7 @@ class GetLeaderboardBundleSqlParams(BaseModel):
             self.department_ids,
         )
 
-class QGetLeaderboardBundleV3Metric(BaseModel):
+class QGetLeaderboardBundleV4Metric(BaseModel):
 
     has_data: bool | None
     method: str | None
@@ -9906,30 +9906,30 @@ class QGetLeaderboardBundleV3Metric(BaseModel):
     data_points: list[str] | None
     hover: str | None
 
-class QGetLeaderboardBundleV3Metrics(BaseModel):
+class QGetLeaderboardBundleV4Metrics(BaseModel):
 
-    total_attempts: QGetLeaderboardBundleV3Metric | None
-    highest_score_avg: QGetLeaderboardBundleV3Metric | None
-    messages_per_session: QGetLeaderboardBundleV3Metric | None
-    persona_response_seconds: QGetLeaderboardBundleV3Metric | None
-    time_spent_minutes: QGetLeaderboardBundleV3Metric | None
-    improvement_rate_per_day: QGetLeaderboardBundleV3Metric | None
-    perfect_score_count: QGetLeaderboardBundleV3Metric | None
-    quickest_pass_minutes: QGetLeaderboardBundleV3Metric | None
+    total_attempts: QGetLeaderboardBundleV4Metric | None
+    highest_score_avg: QGetLeaderboardBundleV4Metric | None
+    messages_per_session: QGetLeaderboardBundleV4Metric | None
+    persona_response_seconds: QGetLeaderboardBundleV4Metric | None
+    time_spent_minutes: QGetLeaderboardBundleV4Metric | None
+    improvement_rate_per_day: QGetLeaderboardBundleV4Metric | None
+    perfect_score_count: QGetLeaderboardBundleV4Metric | None
+    quickest_pass_minutes: QGetLeaderboardBundleV4Metric | None
 
-class QGetLeaderboardBundleV3Row(BaseModel):
+class QGetLeaderboardBundleV4Row(BaseModel):
 
     profile_id: UUID | None
     first_name: str | None
     last_name: str | None
     simulation_ids: list[UUID] | None
     scenario_ids: list[UUID] | None
-    metrics: QGetLeaderboardBundleV3Metrics | None
+    metrics: QGetLeaderboardBundleV4Metrics | None
 
 
 
 
-class QGetLeaderboardBundleV3Scenario(BaseModel):
+class QGetLeaderboardBundleV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
@@ -9938,7 +9938,7 @@ class QGetLeaderboardBundleV3Scenario(BaseModel):
 
 
 
-class QGetLeaderboardBundleV3Simulation(BaseModel):
+class QGetLeaderboardBundleV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -9949,9 +9949,9 @@ class QGetLeaderboardBundleV3Simulation(BaseModel):
 class GetLeaderboardBundleSqlRow(BaseModel):
 
     actor_name: str | None = None
-    data: list[QGetLeaderboardBundleV3Row] | None = None
-    simulations: list[QGetLeaderboardBundleV3Simulation] | None = None
-    scenarios: list[QGetLeaderboardBundleV3Scenario] | None = None
+    data: list[QGetLeaderboardBundleV4Row] | None = None
+    simulations: list[QGetLeaderboardBundleV4Simulation] | None = None
+    scenarios: list[QGetLeaderboardBundleV4Scenario] | None = None
     primary_color: str | None = None
     accent_color: str | None = None
 
@@ -9967,9 +9967,9 @@ class GetLeaderboardBundleApiRequest(BaseModel):
 class GetLeaderboardBundleApiResponse(BaseModel):
 
     actor_name: str | None = None
-    data: list[QGetLeaderboardBundleV3Row] | None = None
-    simulations: list[QGetLeaderboardBundleV3Simulation] | None = None
-    scenarios: list[QGetLeaderboardBundleV3Scenario] | None = None
+    data: list[QGetLeaderboardBundleV4Row] | None = None
+    simulations: list[QGetLeaderboardBundleV4Simulation] | None = None
+    scenarios: list[QGetLeaderboardBundleV4Scenario] | None = None
     primary_color: str | None = None
     accent_color: str | None = None
 
@@ -9986,32 +9986,32 @@ class GetLogsBundleSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetLogsBundleV3TrendData(BaseModel):
+class QGetLogsBundleV4TrendData(BaseModel):
 
     date: str | None
     value: float | None
     latency: float | None
     count: int | None
 
-class QGetLogsBundleV3HealthKpi(BaseModel):
+class QGetLogsBundleV4HealthKpi(BaseModel):
 
     ok: bool | None
     latency_ms: float | None
     error: str | None
-    trend: list[QGetLogsBundleV3TrendData] | None
+    trend: list[QGetLogsBundleV4TrendData] | None
 
-class QGetLogsBundleV3HealthKpis(BaseModel):
+class QGetLogsBundleV4HealthKpis(BaseModel):
 
-    websocket: QGetLogsBundleV3HealthKpi | None
-    redis: QGetLogsBundleV3HealthKpi | None
-    document: QGetLogsBundleV3HealthKpi | None
-    database: QGetLogsBundleV3HealthKpi | None
-    authentication: QGetLogsBundleV3HealthKpi | None
-
-
+    websocket: QGetLogsBundleV4HealthKpi | None
+    redis: QGetLogsBundleV4HealthKpi | None
+    document: QGetLogsBundleV4HealthKpi | None
+    database: QGetLogsBundleV4HealthKpi | None
+    authentication: QGetLogsBundleV4HealthKpi | None
 
 
-class QGetLogsBundleV3MetricsDataPoint(BaseModel):
+
+
+class QGetLogsBundleV4MetricsDataPoint(BaseModel):
 
     date: str | None
     cpu_percent: float | None
@@ -10024,8 +10024,8 @@ class QGetLogsBundleV3MetricsDataPoint(BaseModel):
 class GetLogsBundleSqlRow(BaseModel):
 
     actor_name: str | None = None
-    health_kpis: QGetLogsBundleV3HealthKpis | None = None
-    metrics: list[QGetLogsBundleV3MetricsDataPoint] | None = None
+    health_kpis: QGetLogsBundleV4HealthKpis | None = None
+    metrics: list[QGetLogsBundleV4MetricsDataPoint] | None = None
 
 class GetLogsBundleApiRequest(BaseModel):
 
@@ -10034,8 +10034,8 @@ class GetLogsBundleApiRequest(BaseModel):
 class GetLogsBundleApiResponse(BaseModel):
 
     actor_name: str | None = None
-    health_kpis: QGetLogsBundleV3HealthKpis | None = None
-    metrics: list[QGetLogsBundleV3MetricsDataPoint] | None = None
+    health_kpis: QGetLogsBundleV4HealthKpis | None = None
+    metrics: list[QGetLogsBundleV4MetricsDataPoint] | None = None
 
 
 
@@ -10056,7 +10056,7 @@ class GetMemberRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IMemberRegenRunContextCreateRunV3Document(BaseModel):
+class IMemberRegenRunContextCreateRunV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -10066,7 +10066,7 @@ class IMemberRegenRunContextCreateRunV3Document(BaseModel):
 
 
 
-class IMemberRegenRunContextCreateRunV3Msg(BaseModel):
+class IMemberRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -10101,10 +10101,10 @@ class GetMemberRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[IMemberRegenRunContextCreateRunV3Document] | None = None
+    documents: list[IMemberRegenRunContextCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IMemberRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IMemberRegenRunContextCreateRunV4Msg] | None = None
 
 class GetMemberRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -10142,10 +10142,10 @@ class GetMemberRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[IMemberRegenRunContextCreateRunV3Document] | None = None
+    documents: list[IMemberRegenRunContextCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IMemberRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IMemberRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -10164,7 +10164,7 @@ class GetMemberRunContextAndCreateRunSqlParams(BaseModel):
             self.group_id,
         )
 
-class QGetMemberRunContextAndCreateRunV3Document(BaseModel):
+class QGetMemberRunContextAndCreateRunV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -10201,7 +10201,7 @@ class GetMemberRunContextAndCreateRunSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetMemberRunContextAndCreateRunV3Document] | None = None
+    documents: list[QGetMemberRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
 
@@ -10240,7 +10240,7 @@ class GetMemberRunContextAndCreateRunApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetMemberRunContextAndCreateRunV3Document] | None = None
+    documents: list[QGetMemberRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
 
@@ -10390,7 +10390,7 @@ class LinkSystemDeveloperMessagesToRunApiResponse(BaseModel):
 
 # Generated from: create_model
 
-class ICreateModelV3Pricing(BaseModel):
+class ICreateModelV4Pricing(BaseModel):
 
     pricing_type: str | None
     unit_id: UUID | None
@@ -10399,7 +10399,7 @@ class ICreateModelV3Pricing(BaseModel):
 
 
 
-class ICreateModelV3TemperatureBounds(BaseModel):
+class ICreateModelV4TemperatureBounds(BaseModel):
 
     bounds_type: str | None
     lower_bound: float | None
@@ -10416,8 +10416,8 @@ class CreateModelSqlParams(BaseModel):
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     base_url: str | None = None
-    temperature_bounds: ICreateModelV3TemperatureBounds | None = None
-    pricing: list[ICreateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    temperature_bounds: ICreateModelV4TemperatureBounds | None = None
+    pricing: list[ICreateModelV4Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
     input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -10462,8 +10462,8 @@ class CreateModelApiRequest(BaseModel):
     value: str
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     base_url: str | None = None
-    temperature_bounds: ICreateModelV3TemperatureBounds | None = None
-    pricing: list[ICreateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    temperature_bounds: ICreateModelV4TemperatureBounds | None = None
+    pricing: list[ICreateModelV4Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
     input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -10560,7 +10560,7 @@ class GetModelDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetModelDetailV3Department(BaseModel):
+class QGetModelDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -10569,7 +10569,7 @@ class QGetModelDetailV3Department(BaseModel):
 
 
 
-class QGetModelDetailV3Key(BaseModel):
+class QGetModelDetailV4Key(BaseModel):
 
     key_id: UUID | None
     name: str | None
@@ -10581,7 +10581,7 @@ class QGetModelDetailV3Key(BaseModel):
 
 
 
-class QGetModelDetailV3Modalities(BaseModel):
+class QGetModelDetailV4Modalities(BaseModel):
 
     input: list[str] | None
     output: list[str] | None
@@ -10589,7 +10589,7 @@ class QGetModelDetailV3Modalities(BaseModel):
 
 
 
-class QGetModelDetailV3Pricing(BaseModel):
+class QGetModelDetailV4Pricing(BaseModel):
 
     pricing_type: str | None
     unit_id: UUID | None
@@ -10600,7 +10600,7 @@ class QGetModelDetailV3Pricing(BaseModel):
 
 
 
-class QGetModelDetailV3Provider(BaseModel):
+class QGetModelDetailV4Provider(BaseModel):
 
     provider_id: UUID | None
     name: str | None
@@ -10609,7 +10609,7 @@ class QGetModelDetailV3Provider(BaseModel):
 
 
 
-class QGetModelDetailV3Unit(BaseModel):
+class QGetModelDetailV4Unit(BaseModel):
 
     unit_id: UUID | None
     name: str | None
@@ -10619,7 +10619,7 @@ class QGetModelDetailV3Unit(BaseModel):
 
 
 
-class QGetModelDetailV3Voice(BaseModel):
+class QGetModelDetailV4Voice(BaseModel):
 
     voice_id: UUID | None
     voice: str | None
@@ -10637,22 +10637,22 @@ class GetModelDetailSqlRow(BaseModel):
     value: str | None = None
     base_url: str | None = None
     valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelDetailV3Provider] | None = None
+    providers: list[QGetModelDetailV4Provider] | None = None
     valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelDetailV3Department] | None = None
+    departments: list[QGetModelDetailV4Department] | None = None
     department_ids: list[UUID] | None = None
     valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelDetailV3Key] | None = None
+    keys: list[QGetModelDetailV4Key] | None = None
     default_key_id: UUID | None = None
     temperature_lower: float | None = None
     temperature_upper: float | None = None
     temperature_values: list[str] | None = None
-    pricing: list[QGetModelDetailV3Pricing] | None = None
-    modalities: QGetModelDetailV3Modalities | None = None
+    pricing: list[QGetModelDetailV4Pricing] | None = None
+    modalities: QGetModelDetailV4Modalities | None = None
     reasoning_levels: list[str] | None = None
-    voices: list[QGetModelDetailV3Voice] | None = None
+    voices: list[QGetModelDetailV4Voice] | None = None
     qualities: list[str] | None = None
-    units: list[QGetModelDetailV3Unit] | None = None
+    units: list[QGetModelDetailV4Unit] | None = None
     actor_name: str | None = None
 
 class GetModelDetailApiRequest(BaseModel):
@@ -10672,22 +10672,22 @@ class GetModelDetailApiResponse(BaseModel):
     value: str | None = None
     base_url: str | None = None
     valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelDetailV3Provider] | None = None
+    providers: list[QGetModelDetailV4Provider] | None = None
     valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelDetailV3Department] | None = None
+    departments: list[QGetModelDetailV4Department] | None = None
     department_ids: list[UUID] | None = None
     valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelDetailV3Key] | None = None
+    keys: list[QGetModelDetailV4Key] | None = None
     default_key_id: UUID | None = None
     temperature_lower: float | None = None
     temperature_upper: float | None = None
     temperature_values: list[str] | None = None
-    pricing: list[QGetModelDetailV3Pricing] | None = None
-    modalities: QGetModelDetailV3Modalities | None = None
+    pricing: list[QGetModelDetailV4Pricing] | None = None
+    modalities: QGetModelDetailV4Modalities | None = None
     reasoning_levels: list[str] | None = None
-    voices: list[QGetModelDetailV3Voice] | None = None
+    voices: list[QGetModelDetailV4Voice] | None = None
     qualities: list[str] | None = None
-    units: list[QGetModelDetailV3Unit] | None = None
+    units: list[QGetModelDetailV4Unit] | None = None
     actor_name: str | None = None
 
 
@@ -10703,7 +10703,7 @@ class GetModelNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetModelNewV3Department(BaseModel):
+class QGetModelNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -10712,7 +10712,7 @@ class QGetModelNewV3Department(BaseModel):
 
 
 
-class QGetModelNewV3Key(BaseModel):
+class QGetModelNewV4Key(BaseModel):
 
     key_id: UUID | None
     name: str | None
@@ -10724,7 +10724,7 @@ class QGetModelNewV3Key(BaseModel):
 
 
 
-class QGetModelNewV3Model(BaseModel):
+class QGetModelNewV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -10733,7 +10733,7 @@ class QGetModelNewV3Model(BaseModel):
 
 
 
-class QGetModelNewV3Provider(BaseModel):
+class QGetModelNewV4Provider(BaseModel):
 
     provider_id: UUID | None
     name: str | None
@@ -10742,7 +10742,7 @@ class QGetModelNewV3Provider(BaseModel):
 
 
 
-class QGetModelNewV3Unit(BaseModel):
+class QGetModelNewV4Unit(BaseModel):
 
     unit_id: UUID | None
     name: str | None
@@ -10752,14 +10752,14 @@ class QGetModelNewV3Unit(BaseModel):
 class GetModelNewSqlRow(BaseModel):
 
     valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelNewV3Provider] | None = None
+    providers: list[QGetModelNewV4Provider] | None = None
     valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelNewV3Department] | None = None
+    departments: list[QGetModelNewV4Department] | None = None
     valid_model_ids: list[UUID] | None = None
-    models: list[QGetModelNewV3Model] | None = None
+    models: list[QGetModelNewV4Model] | None = None
     valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelNewV3Key] | None = None
-    units: list[QGetModelNewV3Unit] | None = None
+    keys: list[QGetModelNewV4Key] | None = None
+    units: list[QGetModelNewV4Unit] | None = None
     user_role: str | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
@@ -10771,14 +10771,14 @@ class GetModelNewApiRequest(BaseModel):
 class GetModelNewApiResponse(BaseModel):
 
     valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelNewV3Provider] | None = None
+    providers: list[QGetModelNewV4Provider] | None = None
     valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelNewV3Department] | None = None
+    departments: list[QGetModelNewV4Department] | None = None
     valid_model_ids: list[UUID] | None = None
-    models: list[QGetModelNewV3Model] | None = None
+    models: list[QGetModelNewV4Model] | None = None
     valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelNewV3Key] | None = None
-    units: list[QGetModelNewV3Unit] | None = None
+    keys: list[QGetModelNewV4Key] | None = None
+    units: list[QGetModelNewV4Unit] | None = None
     user_role: str | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
@@ -10796,7 +10796,7 @@ class ListModelsSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListModelsV3Model(BaseModel):
+class QListModelsV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -10814,7 +10814,7 @@ class QListModelsV3Model(BaseModel):
 
 
 
-class QListModelsV3ProviderOption(BaseModel):
+class QListModelsV4ProviderOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -10822,7 +10822,7 @@ class QListModelsV3ProviderOption(BaseModel):
 
 
 
-class QListModelsV3StatusOption(BaseModel):
+class QListModelsV4StatusOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -10830,9 +10830,9 @@ class QListModelsV3StatusOption(BaseModel):
 class ListModelsSqlRow(BaseModel):
 
     actor_name: str | None = None
-    models: list[QListModelsV3Model] | None = None
-    provider_options: list[QListModelsV3ProviderOption] | None = None
-    status_options: list[QListModelsV3StatusOption] | None = None
+    models: list[QListModelsV4Model] | None = None
+    provider_options: list[QListModelsV4ProviderOption] | None = None
+    status_options: list[QListModelsV4StatusOption] | None = None
 
 class ListModelsApiRequest(BaseModel):
 
@@ -10841,15 +10841,15 @@ class ListModelsApiRequest(BaseModel):
 class ListModelsApiResponse(BaseModel):
 
     actor_name: str | None = None
-    models: list[QListModelsV3Model] | None = None
-    provider_options: list[QListModelsV3ProviderOption] | None = None
-    status_options: list[QListModelsV3StatusOption] | None = None
+    models: list[QListModelsV4Model] | None = None
+    provider_options: list[QListModelsV4ProviderOption] | None = None
+    status_options: list[QListModelsV4StatusOption] | None = None
 
 
 
 # Generated from: update_model
 
-class IUpdateModelV3Pricing(BaseModel):
+class IUpdateModelV4Pricing(BaseModel):
 
     pricing_type: str | None
     unit_id: UUID | None
@@ -10858,7 +10858,7 @@ class IUpdateModelV3Pricing(BaseModel):
 
 
 
-class IUpdateModelV3TemperatureBounds(BaseModel):
+class IUpdateModelV4TemperatureBounds(BaseModel):
 
     bounds_type: str | None
     lower_bound: float | None
@@ -10876,8 +10876,8 @@ class UpdateModelSqlParams(BaseModel):
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     base_url: str | None = None
-    temperature_bounds: IUpdateModelV3TemperatureBounds | None = None
-    pricing: list[IUpdateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    temperature_bounds: IUpdateModelV4TemperatureBounds | None = None
+    pricing: list[IUpdateModelV4Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
     input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -10925,8 +10925,8 @@ class UpdateModelApiRequest(BaseModel):
     value: str
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     base_url: str | None = None
-    temperature_bounds: IUpdateModelV3TemperatureBounds | None = None
-    pricing: list[IUpdateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    temperature_bounds: IUpdateModelV4TemperatureBounds | None = None
+    pricing: list[IUpdateModelV4Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
     input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -10943,7 +10943,7 @@ class UpdateModelApiResponse(BaseModel):
 
 # Generated from: create_parameter
 
-class ICreateParameterV3FieldConnection(BaseModel):
+class ICreateParameterV4FieldConnection(BaseModel):
 
     field_id: UUID | None
     default: bool | None
@@ -10960,7 +10960,7 @@ class CreateParameterSqlParams(BaseModel):
     scenario_parameter: bool
     video_parameter: bool
     department_ids: list[str]
-    field_connections: list[ICreateParameterV3FieldConnection]
+    field_connections: list[ICreateParameterV4FieldConnection]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -10999,7 +10999,7 @@ class CreateParameterApiRequest(BaseModel):
     scenario_parameter: bool
     video_parameter: bool
     department_ids: list[str]
-    field_connections: list[ICreateParameterV3FieldConnection]
+    field_connections: list[ICreateParameterV4FieldConnection]
 
 class CreateParameterApiResponse(BaseModel):
 
@@ -11085,7 +11085,7 @@ class GetParameterDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetParameterDetailV3Department(BaseModel):
+class QGetParameterDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -11094,7 +11094,7 @@ class QGetParameterDetailV3Department(BaseModel):
 
 
 
-class QGetParameterDetailV3Document(BaseModel):
+class QGetParameterDetailV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -11103,7 +11103,7 @@ class QGetParameterDetailV3Document(BaseModel):
 
 
 
-class QGetParameterDetailV3Field(BaseModel):
+class QGetParameterDetailV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -11114,7 +11114,7 @@ class QGetParameterDetailV3Field(BaseModel):
 
 
 
-class QGetParameterDetailV3FieldConnection(BaseModel):
+class QGetParameterDetailV4FieldConnection(BaseModel):
 
     field_id: UUID | None
     default: bool | None
@@ -11123,7 +11123,7 @@ class QGetParameterDetailV3FieldConnection(BaseModel):
 
 
 
-class QGetParameterDetailV3Item(BaseModel):
+class QGetParameterDetailV4Item(BaseModel):
 
     parameter_item_id: UUID | None
     name: str | None
@@ -11135,7 +11135,7 @@ class QGetParameterDetailV3Item(BaseModel):
 
 
 
-class QGetParameterDetailV3Persona(BaseModel):
+class QGetParameterDetailV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -11155,15 +11155,15 @@ class GetParameterDetailSqlRow(BaseModel):
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
     document_ids: list[str] | None = None
-    parameter_items: list[QGetParameterDetailV3Item] | None = None
-    departments: list[QGetParameterDetailV3Department] | None = None
+    parameter_items: list[QGetParameterDetailV4Item] | None = None
+    departments: list[QGetParameterDetailV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    fields: list[QGetParameterDetailV3Field] | None = None
+    fields: list[QGetParameterDetailV4Field] | None = None
     valid_field_ids: list[str] | None = None
-    field_connections: list[QGetParameterDetailV3FieldConnection] | None = None
-    personas: list[QGetParameterDetailV3Persona] | None = None
+    field_connections: list[QGetParameterDetailV4FieldConnection] | None = None
+    personas: list[QGetParameterDetailV4Persona] | None = None
     valid_persona_ids: list[str] | None = None
-    documents: list[QGetParameterDetailV3Document] | None = None
+    documents: list[QGetParameterDetailV4Document] | None = None
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
     actor_name: str | None = None
@@ -11186,15 +11186,15 @@ class GetParameterDetailApiResponse(BaseModel):
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
     document_ids: list[str] | None = None
-    parameter_items: list[QGetParameterDetailV3Item] | None = None
-    departments: list[QGetParameterDetailV3Department] | None = None
+    parameter_items: list[QGetParameterDetailV4Item] | None = None
+    departments: list[QGetParameterDetailV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    fields: list[QGetParameterDetailV3Field] | None = None
+    fields: list[QGetParameterDetailV4Field] | None = None
     valid_field_ids: list[str] | None = None
-    field_connections: list[QGetParameterDetailV3FieldConnection] | None = None
-    personas: list[QGetParameterDetailV3Persona] | None = None
+    field_connections: list[QGetParameterDetailV4FieldConnection] | None = None
+    personas: list[QGetParameterDetailV4Persona] | None = None
     valid_persona_ids: list[str] | None = None
-    documents: list[QGetParameterDetailV3Document] | None = None
+    documents: list[QGetParameterDetailV4Document] | None = None
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
     actor_name: str | None = None
@@ -11212,7 +11212,7 @@ class GetParameterNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetParameterNewV3Department(BaseModel):
+class QGetParameterNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -11221,7 +11221,7 @@ class QGetParameterNewV3Department(BaseModel):
 
 
 
-class QGetParameterNewV3Document(BaseModel):
+class QGetParameterNewV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -11230,7 +11230,7 @@ class QGetParameterNewV3Document(BaseModel):
 
 
 
-class QGetParameterNewV3Field(BaseModel):
+class QGetParameterNewV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -11241,7 +11241,7 @@ class QGetParameterNewV3Field(BaseModel):
 
 
 
-class QGetParameterNewV3FieldConnection(BaseModel):
+class QGetParameterNewV4FieldConnection(BaseModel):
 
     field_id: UUID | None
     default: bool | None
@@ -11250,7 +11250,7 @@ class QGetParameterNewV3FieldConnection(BaseModel):
 
 
 
-class QGetParameterNewV3Item(BaseModel):
+class QGetParameterNewV4Item(BaseModel):
 
     parameter_item_id: UUID | None
     name: str | None
@@ -11262,7 +11262,7 @@ class QGetParameterNewV3Item(BaseModel):
 
 
 
-class QGetParameterNewV3Persona(BaseModel):
+class QGetParameterNewV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -11282,17 +11282,17 @@ class GetParameterNewSqlRow(BaseModel):
     scenario_parameter: bool | None = None
     video_parameter: bool | None = None
     department_ids: list[str] | None = None
-    parameter_items: list[QGetParameterNewV3Item] | None = None
-    departments: list[QGetParameterNewV3Department] | None = None
+    parameter_items: list[QGetParameterNewV4Item] | None = None
+    departments: list[QGetParameterNewV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    fields: list[QGetParameterNewV3Field] | None = None
+    fields: list[QGetParameterNewV4Field] | None = None
     valid_field_ids: list[str] | None = None
-    field_connections: list[QGetParameterNewV3FieldConnection] | None = None
+    field_connections: list[QGetParameterNewV4FieldConnection] | None = None
     persona_ids: list[str] | None = None
-    personas: list[QGetParameterNewV3Persona] | None = None
+    personas: list[QGetParameterNewV4Persona] | None = None
     valid_persona_ids: list[str] | None = None
     document_ids: list[str] | None = None
-    documents: list[QGetParameterNewV3Document] | None = None
+    documents: list[QGetParameterNewV4Document] | None = None
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
 
@@ -11314,17 +11314,17 @@ class GetParameterNewApiResponse(BaseModel):
     scenario_parameter: bool | None = None
     video_parameter: bool | None = None
     department_ids: list[str] | None = None
-    parameter_items: list[QGetParameterNewV3Item] | None = None
-    departments: list[QGetParameterNewV3Department] | None = None
+    parameter_items: list[QGetParameterNewV4Item] | None = None
+    departments: list[QGetParameterNewV4Department] | None = None
     valid_department_ids: list[str] | None = None
-    fields: list[QGetParameterNewV3Field] | None = None
+    fields: list[QGetParameterNewV4Field] | None = None
     valid_field_ids: list[str] | None = None
-    field_connections: list[QGetParameterNewV3FieldConnection] | None = None
+    field_connections: list[QGetParameterNewV4FieldConnection] | None = None
     persona_ids: list[str] | None = None
-    personas: list[QGetParameterNewV3Persona] | None = None
+    personas: list[QGetParameterNewV4Persona] | None = None
     valid_persona_ids: list[str] | None = None
     document_ids: list[str] | None = None
-    documents: list[QGetParameterNewV3Document] | None = None
+    documents: list[QGetParameterNewV4Document] | None = None
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
 
@@ -11341,7 +11341,7 @@ class GetParametersListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListParametersV3Department(BaseModel):
+class QListParametersV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -11350,7 +11350,7 @@ class QListParametersV3Department(BaseModel):
 
 
 
-class QListParametersV3Document(BaseModel):
+class QListParametersV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -11359,7 +11359,7 @@ class QListParametersV3Document(BaseModel):
 
 
 
-class QListParametersV3DocumentOption(BaseModel):
+class QListParametersV4DocumentOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -11367,13 +11367,13 @@ class QListParametersV3DocumentOption(BaseModel):
 
 
 
-class QListParametersV3SampleItem(BaseModel):
+class QListParametersV4SampleItem(BaseModel):
 
     parameter_item_id: UUID | None
     name: str | None
     description: str | None
 
-class QListParametersV3Parameter(BaseModel):
+class QListParametersV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -11384,7 +11384,7 @@ class QListParametersV3Parameter(BaseModel):
     scenario_ids: list[str] | None
     document_ids: list[str] | None
     num_items: int | None
-    sample_items: list[QListParametersV3SampleItem] | None
+    sample_items: list[QListParametersV4SampleItem] | None
     can_edit: bool | None
     can_delete: bool | None
     can_duplicate: bool | None
@@ -11392,7 +11392,7 @@ class QListParametersV3Parameter(BaseModel):
 
 
 
-class QListParametersV3Scenario(BaseModel):
+class QListParametersV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
@@ -11402,7 +11402,7 @@ class QListParametersV3Scenario(BaseModel):
 
 
 
-class QListParametersV3ScenarioOption(BaseModel):
+class QListParametersV4ScenarioOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -11410,12 +11410,12 @@ class QListParametersV3ScenarioOption(BaseModel):
 class GetParametersListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    parameters: list[QListParametersV3Parameter] | None = None
-    scenarios: list[QListParametersV3Scenario] | None = None
-    departments: list[QListParametersV3Department] | None = None
-    documents: list[QListParametersV3Document] | None = None
-    scenario_options: list[QListParametersV3ScenarioOption] | None = None
-    document_options: list[QListParametersV3DocumentOption] | None = None
+    parameters: list[QListParametersV4Parameter] | None = None
+    scenarios: list[QListParametersV4Scenario] | None = None
+    departments: list[QListParametersV4Department] | None = None
+    documents: list[QListParametersV4Document] | None = None
+    scenario_options: list[QListParametersV4ScenarioOption] | None = None
+    document_options: list[QListParametersV4DocumentOption] | None = None
 
 class GetParametersListApiRequest(BaseModel):
 
@@ -11424,18 +11424,18 @@ class GetParametersListApiRequest(BaseModel):
 class GetParametersListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    parameters: list[QListParametersV3Parameter] | None = None
-    scenarios: list[QListParametersV3Scenario] | None = None
-    departments: list[QListParametersV3Department] | None = None
-    documents: list[QListParametersV3Document] | None = None
-    scenario_options: list[QListParametersV3ScenarioOption] | None = None
-    document_options: list[QListParametersV3DocumentOption] | None = None
+    parameters: list[QListParametersV4Parameter] | None = None
+    scenarios: list[QListParametersV4Scenario] | None = None
+    departments: list[QListParametersV4Department] | None = None
+    documents: list[QListParametersV4Document] | None = None
+    scenario_options: list[QListParametersV4ScenarioOption] | None = None
+    document_options: list[QListParametersV4DocumentOption] | None = None
 
 
 
 # Generated from: update_parameter
 
-class IUpdateParameterV3FieldConnection(BaseModel):
+class IUpdateParameterV4FieldConnection(BaseModel):
 
     field_id: UUID | None
     default: bool | None
@@ -11453,7 +11453,7 @@ class UpdateParameterSqlParams(BaseModel):
     scenario_parameter: bool
     video_parameter: bool
     department_ids: list[str]
-    field_connections: list[IUpdateParameterV3FieldConnection]
+    field_connections: list[IUpdateParameterV4FieldConnection]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -11495,7 +11495,7 @@ class UpdateParameterApiRequest(BaseModel):
     scenario_parameter: bool
     video_parameter: bool
     department_ids: list[str]
-    field_connections: list[IUpdateParameterV3FieldConnection]
+    field_connections: list[IUpdateParameterV4FieldConnection]
 
 class UpdateParameterApiResponse(BaseModel):
 
@@ -11636,7 +11636,7 @@ class GetPersonaDetailSqlParams(BaseModel):
             self.icon_search,
         )
 
-class QGetPersonaDetailV3Agent(BaseModel):
+class QGetPersonaDetailV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -11646,7 +11646,7 @@ class QGetPersonaDetailV3Agent(BaseModel):
 
 
 
-class QGetPersonaDetailV3Department(BaseModel):
+class QGetPersonaDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -11655,7 +11655,7 @@ class QGetPersonaDetailV3Department(BaseModel):
 
 
 
-class QGetPersonaDetailV3Example(BaseModel):
+class QGetPersonaDetailV4Example(BaseModel):
 
     example_id: UUID | None
     name: str | None
@@ -11664,7 +11664,7 @@ class QGetPersonaDetailV3Example(BaseModel):
 
 
 
-class QGetPersonaDetailV3ExampleHistoryItem(BaseModel):
+class QGetPersonaDetailV4ExampleHistoryItem(BaseModel):
 
     example: str | None
     department_ids: list[str] | None
@@ -11672,7 +11672,7 @@ class QGetPersonaDetailV3ExampleHistoryItem(BaseModel):
 
 
 
-class QGetPersonaDetailV3Field(BaseModel):
+class QGetPersonaDetailV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -11683,7 +11683,7 @@ class QGetPersonaDetailV3Field(BaseModel):
 
 
 
-class QGetPersonaDetailV3Parameter(BaseModel):
+class QGetPersonaDetailV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -11717,12 +11717,12 @@ class GetPersonaDetailSqlRow(BaseModel):
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     actor_name: str | None = None
-    departments: list[QGetPersonaDetailV3Department] | None = None
-    agents: list[QGetPersonaDetailV3Agent] | None = None
-    parameters: list[QGetPersonaDetailV3Parameter] | None = None
-    fields: list[QGetPersonaDetailV3Field] | None = None
-    examples: list[QGetPersonaDetailV3Example] | None = None
-    examples_history: list[QGetPersonaDetailV3ExampleHistoryItem] | None = None
+    departments: list[QGetPersonaDetailV4Department] | None = None
+    agents: list[QGetPersonaDetailV4Agent] | None = None
+    parameters: list[QGetPersonaDetailV4Parameter] | None = None
+    fields: list[QGetPersonaDetailV4Field] | None = None
+    examples: list[QGetPersonaDetailV4Example] | None = None
+    examples_history: list[QGetPersonaDetailV4ExampleHistoryItem] | None = None
 
 class GetPersonaDetailApiRequest(BaseModel):
 
@@ -11753,12 +11753,12 @@ class GetPersonaDetailApiResponse(BaseModel):
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     actor_name: str | None = None
-    departments: list[QGetPersonaDetailV3Department] | None = None
-    agents: list[QGetPersonaDetailV3Agent] | None = None
-    parameters: list[QGetPersonaDetailV3Parameter] | None = None
-    fields: list[QGetPersonaDetailV3Field] | None = None
-    examples: list[QGetPersonaDetailV3Example] | None = None
-    examples_history: list[QGetPersonaDetailV3ExampleHistoryItem] | None = None
+    departments: list[QGetPersonaDetailV4Department] | None = None
+    agents: list[QGetPersonaDetailV4Agent] | None = None
+    parameters: list[QGetPersonaDetailV4Parameter] | None = None
+    fields: list[QGetPersonaDetailV4Field] | None = None
+    examples: list[QGetPersonaDetailV4Example] | None = None
+    examples_history: list[QGetPersonaDetailV4ExampleHistoryItem] | None = None
 
 
 
@@ -11777,7 +11777,7 @@ class GetPersonaNewSqlParams(BaseModel):
             self.icon_search,
         )
 
-class QGetPersonaNewV3Agent(BaseModel):
+class QGetPersonaNewV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -11787,7 +11787,7 @@ class QGetPersonaNewV3Agent(BaseModel):
 
 
 
-class QGetPersonaNewV3Department(BaseModel):
+class QGetPersonaNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -11796,7 +11796,7 @@ class QGetPersonaNewV3Department(BaseModel):
 
 
 
-class QGetPersonaNewV3Field(BaseModel):
+class QGetPersonaNewV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -11807,7 +11807,7 @@ class QGetPersonaNewV3Field(BaseModel):
 
 
 
-class QGetPersonaNewV3Parameter(BaseModel):
+class QGetPersonaNewV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -11827,10 +11827,10 @@ class GetPersonaNewSqlRow(BaseModel):
     valid_agent_ids: list[UUID] | None = None
     valid_parameter_ids: list[UUID] | None = None
     valid_parameter_item_ids: list[UUID] | None = None
-    departments: list[QGetPersonaNewV3Department] | None = None
-    agents: list[QGetPersonaNewV3Agent] | None = None
-    parameters: list[QGetPersonaNewV3Parameter] | None = None
-    fields: list[QGetPersonaNewV3Field] | None = None
+    departments: list[QGetPersonaNewV4Department] | None = None
+    agents: list[QGetPersonaNewV4Agent] | None = None
+    parameters: list[QGetPersonaNewV4Parameter] | None = None
+    fields: list[QGetPersonaNewV4Field] | None = None
 
 class GetPersonaNewApiRequest(BaseModel):
 
@@ -11846,10 +11846,10 @@ class GetPersonaNewApiResponse(BaseModel):
     valid_agent_ids: list[UUID] | None = None
     valid_parameter_ids: list[UUID] | None = None
     valid_parameter_item_ids: list[UUID] | None = None
-    departments: list[QGetPersonaNewV3Department] | None = None
-    agents: list[QGetPersonaNewV3Agent] | None = None
-    parameters: list[QGetPersonaNewV3Parameter] | None = None
-    fields: list[QGetPersonaNewV3Field] | None = None
+    departments: list[QGetPersonaNewV4Department] | None = None
+    agents: list[QGetPersonaNewV4Agent] | None = None
+    parameters: list[QGetPersonaNewV4Parameter] | None = None
+    fields: list[QGetPersonaNewV4Field] | None = None
 
 
 
@@ -11864,7 +11864,7 @@ class GetPersonasListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListPersonasV3Agent(BaseModel):
+class QListPersonasV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -11874,7 +11874,7 @@ class QListPersonasV3Agent(BaseModel):
 
 
 
-class QListPersonasV3Department(BaseModel):
+class QListPersonasV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -11883,7 +11883,7 @@ class QListPersonasV3Department(BaseModel):
 
 
 
-class QListPersonasV3Persona(BaseModel):
+class QListPersonasV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -11910,7 +11910,7 @@ class QListPersonasV3Persona(BaseModel):
 
 
 
-class QListPersonasV3Scenario(BaseModel):
+class QListPersonasV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
@@ -11923,10 +11923,10 @@ class QListPersonasV3Scenario(BaseModel):
 class GetPersonasListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    personas: list[QListPersonasV3Persona] | None = None
-    scenarios: list[QListPersonasV3Scenario] | None = None
-    agents: list[QListPersonasV3Agent] | None = None
-    departments: list[QListPersonasV3Department] | None = None
+    personas: list[QListPersonasV4Persona] | None = None
+    scenarios: list[QListPersonasV4Scenario] | None = None
+    agents: list[QListPersonasV4Agent] | None = None
+    departments: list[QListPersonasV4Department] | None = None
 
 class GetPersonasListApiRequest(BaseModel):
 
@@ -11935,10 +11935,10 @@ class GetPersonasListApiRequest(BaseModel):
 class GetPersonasListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    personas: list[QListPersonasV3Persona] | None = None
-    scenarios: list[QListPersonasV3Scenario] | None = None
-    agents: list[QListPersonasV3Agent] | None = None
-    departments: list[QListPersonasV3Department] | None = None
+    personas: list[QListPersonasV4Persona] | None = None
+    scenarios: list[QListPersonasV4Scenario] | None = None
+    agents: list[QListPersonasV4Agent] | None = None
+    departments: list[QListPersonasV4Department] | None = None
 
 
 
@@ -12026,7 +12026,7 @@ class GetPracticeHistorySqlParams(BaseModel):
             self.page_offset,
         )
 
-class QGetPracticeHistoryV3Attempt(BaseModel):
+class QGetPracticeHistoryV4Attempt(BaseModel):
 
     attempt_id: UUID | None
     date: str | None
@@ -12056,7 +12056,7 @@ class QGetPracticeHistoryV3Attempt(BaseModel):
 
 
 
-class QGetPracticeHistoryV3ProfileOption(BaseModel):
+class QGetPracticeHistoryV4ProfileOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -12065,7 +12065,7 @@ class QGetPracticeHistoryV3ProfileOption(BaseModel):
 
 
 
-class QGetPracticeHistoryV3ScenarioOption(BaseModel):
+class QGetPracticeHistoryV4ScenarioOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -12074,7 +12074,7 @@ class QGetPracticeHistoryV3ScenarioOption(BaseModel):
 
 
 
-class QGetPracticeHistoryV3SimulationOption(BaseModel):
+class QGetPracticeHistoryV4SimulationOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -12082,14 +12082,14 @@ class QGetPracticeHistoryV3SimulationOption(BaseModel):
 
 class GetPracticeHistorySqlRow(BaseModel):
 
-    data: list[QGetPracticeHistoryV3Attempt] | None = None
+    data: list[QGetPracticeHistoryV4Attempt] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QGetPracticeHistoryV3ProfileOption] | None = None
-    simulation_options: list[QGetPracticeHistoryV3SimulationOption] | None = None
-    scenario_options: list[QGetPracticeHistoryV3ScenarioOption] | None = None
+    profile_options: list[QGetPracticeHistoryV4ProfileOption] | None = None
+    simulation_options: list[QGetPracticeHistoryV4SimulationOption] | None = None
+    scenario_options: list[QGetPracticeHistoryV4ScenarioOption] | None = None
 
 class GetPracticeHistoryApiRequest(BaseModel):
 
@@ -12106,14 +12106,14 @@ class GetPracticeHistoryApiRequest(BaseModel):
 
 class GetPracticeHistoryApiResponse(BaseModel):
 
-    data: list[QGetPracticeHistoryV3Attempt] | None = None
+    data: list[QGetPracticeHistoryV4Attempt] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QGetPracticeHistoryV3ProfileOption] | None = None
-    simulation_options: list[QGetPracticeHistoryV3SimulationOption] | None = None
-    scenario_options: list[QGetPracticeHistoryV3ScenarioOption] | None = None
+    profile_options: list[QGetPracticeHistoryV4ProfileOption] | None = None
+    simulation_options: list[QGetPracticeHistoryV4SimulationOption] | None = None
+    scenario_options: list[QGetPracticeHistoryV4ScenarioOption] | None = None
 
 
 
@@ -12130,7 +12130,7 @@ class GetPracticeOverviewSqlParams(BaseModel):
             self.department_ids,
         )
 
-class QGetPracticeOverviewV3Department(BaseModel):
+class QGetPracticeOverviewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -12139,7 +12139,7 @@ class QGetPracticeOverviewV3Department(BaseModel):
 
 
 
-class QGetPracticeOverviewV3Field(BaseModel):
+class QGetPracticeOverviewV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -12150,7 +12150,7 @@ class QGetPracticeOverviewV3Field(BaseModel):
 
 
 
-class QGetPracticeOverviewV3Parameter(BaseModel):
+class QGetPracticeOverviewV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -12161,7 +12161,7 @@ class QGetPracticeOverviewV3Parameter(BaseModel):
 
 
 
-class QGetPracticeOverviewV3Persona(BaseModel):
+class QGetPracticeOverviewV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -12172,7 +12172,7 @@ class QGetPracticeOverviewV3Persona(BaseModel):
 
 
 
-class QGetPracticeOverviewV3PracticeSimulation(BaseModel):
+class QGetPracticeOverviewV4PracticeSimulation(BaseModel):
 
     view_mode: str | None
     simulation_id: UUID | None
@@ -12202,7 +12202,7 @@ class QGetPracticeOverviewV3PracticeSimulation(BaseModel):
 
 
 
-class QGetPracticeOverviewV3Scenario(BaseModel):
+class QGetPracticeOverviewV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
@@ -12212,7 +12212,7 @@ class QGetPracticeOverviewV3Scenario(BaseModel):
 
 
 
-class QGetPracticeOverviewV3Simulation(BaseModel):
+class QGetPracticeOverviewV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -12223,7 +12223,7 @@ class QGetPracticeOverviewV3Simulation(BaseModel):
 
 
 
-class QGetPracticeOverviewV3Standard(BaseModel):
+class QGetPracticeOverviewV4Standard(BaseModel):
 
     standard_id: UUID | None
     name: str | None
@@ -12233,7 +12233,7 @@ class QGetPracticeOverviewV3Standard(BaseModel):
 
 
 
-class QGetPracticeOverviewV3StandardGroup(BaseModel):
+class QGetPracticeOverviewV4StandardGroup(BaseModel):
 
     standard_group_id: UUID | None
     name: str | None
@@ -12246,15 +12246,15 @@ class GetPracticeOverviewSqlRow(BaseModel):
     actor_name: str | None = None
     mode: str | None = None
     has_data: bool | None = None
-    items: list[QGetPracticeOverviewV3PracticeSimulation] | None = None
-    standard_groups: list[QGetPracticeOverviewV3StandardGroup] | None = None
-    standards: list[QGetPracticeOverviewV3Standard] | None = None
-    simulations: list[QGetPracticeOverviewV3Simulation] | None = None
-    personas: list[QGetPracticeOverviewV3Persona] | None = None
-    scenarios: list[QGetPracticeOverviewV3Scenario] | None = None
-    parameters: list[QGetPracticeOverviewV3Parameter] | None = None
-    fields: list[QGetPracticeOverviewV3Field] | None = None
-    departments: list[QGetPracticeOverviewV3Department] | None = None
+    items: list[QGetPracticeOverviewV4PracticeSimulation] | None = None
+    standard_groups: list[QGetPracticeOverviewV4StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewV4Standard] | None = None
+    simulations: list[QGetPracticeOverviewV4Simulation] | None = None
+    personas: list[QGetPracticeOverviewV4Persona] | None = None
+    scenarios: list[QGetPracticeOverviewV4Scenario] | None = None
+    parameters: list[QGetPracticeOverviewV4Parameter] | None = None
+    fields: list[QGetPracticeOverviewV4Field] | None = None
+    departments: list[QGetPracticeOverviewV4Department] | None = None
     valid_department_ids: list[str] | None = None
 
 class GetPracticeOverviewApiRequest(BaseModel):
@@ -12266,15 +12266,15 @@ class GetPracticeOverviewApiResponse(BaseModel):
     actor_name: str | None = None
     mode: str | None = None
     has_data: bool | None = None
-    items: list[QGetPracticeOverviewV3PracticeSimulation] | None = None
-    standard_groups: list[QGetPracticeOverviewV3StandardGroup] | None = None
-    standards: list[QGetPracticeOverviewV3Standard] | None = None
-    simulations: list[QGetPracticeOverviewV3Simulation] | None = None
-    personas: list[QGetPracticeOverviewV3Persona] | None = None
-    scenarios: list[QGetPracticeOverviewV3Scenario] | None = None
-    parameters: list[QGetPracticeOverviewV3Parameter] | None = None
-    fields: list[QGetPracticeOverviewV3Field] | None = None
-    departments: list[QGetPracticeOverviewV3Department] | None = None
+    items: list[QGetPracticeOverviewV4PracticeSimulation] | None = None
+    standard_groups: list[QGetPracticeOverviewV4StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewV4Standard] | None = None
+    simulations: list[QGetPracticeOverviewV4Simulation] | None = None
+    personas: list[QGetPracticeOverviewV4Persona] | None = None
+    scenarios: list[QGetPracticeOverviewV4Scenario] | None = None
+    parameters: list[QGetPracticeOverviewV4Parameter] | None = None
+    fields: list[QGetPracticeOverviewV4Field] | None = None
+    departments: list[QGetPracticeOverviewV4Department] | None = None
     valid_department_ids: list[str] | None = None
 
 
@@ -12302,7 +12302,7 @@ class GetPricingAnalyticsSqlParams(BaseModel):
             self.simulation_filters,
         )
 
-class QGetPricingAnalyticsV3Agent(BaseModel):
+class QGetPricingAnalyticsV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -12310,7 +12310,7 @@ class QGetPricingAnalyticsV3Agent(BaseModel):
 
 
 
-class QGetPricingAnalyticsV3Model(BaseModel):
+class QGetPricingAnalyticsV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -12321,13 +12321,13 @@ class QGetPricingAnalyticsV3Model(BaseModel):
 
 
 
-class QGetPricingAnalyticsV3DebugInfo(BaseModel):
+class QGetPricingAnalyticsV4DebugInfo(BaseModel):
 
     id: UUID | None
     created_at: str | None
     content: str | None
 
-class QGetPricingAnalyticsV3ModelRun(BaseModel):
+class QGetPricingAnalyticsV4ModelRun(BaseModel):
 
     run_id: UUID | None
     created_at: str | None
@@ -12337,12 +12337,12 @@ class QGetPricingAnalyticsV3ModelRun(BaseModel):
     profile_id: UUID | None
     agent_id: UUID | None
     persona_id: UUID | None
-    debug_info: list[QGetPricingAnalyticsV3DebugInfo] | None
+    debug_info: list[QGetPricingAnalyticsV4DebugInfo] | None
 
 
 
 
-class QGetPricingAnalyticsV3Persona(BaseModel):
+class QGetPricingAnalyticsV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -12350,7 +12350,7 @@ class QGetPricingAnalyticsV3Persona(BaseModel):
 
 
 
-class QGetPricingAnalyticsV3Profile(BaseModel):
+class QGetPricingAnalyticsV4Profile(BaseModel):
 
     profile_id: UUID | None
     name: str | None
@@ -12358,11 +12358,11 @@ class QGetPricingAnalyticsV3Profile(BaseModel):
 class GetPricingAnalyticsSqlRow(BaseModel):
 
     actor_name: str | None = None
-    model_runs: list[QGetPricingAnalyticsV3ModelRun] | None = None
-    models: list[QGetPricingAnalyticsV3Model] | None = None
-    profiles: list[QGetPricingAnalyticsV3Profile] | None = None
-    agents: list[QGetPricingAnalyticsV3Agent] | None = None
-    personas: list[QGetPricingAnalyticsV3Persona] | None = None
+    model_runs: list[QGetPricingAnalyticsV4ModelRun] | None = None
+    models: list[QGetPricingAnalyticsV4Model] | None = None
+    profiles: list[QGetPricingAnalyticsV4Profile] | None = None
+    agents: list[QGetPricingAnalyticsV4Agent] | None = None
+    personas: list[QGetPricingAnalyticsV4Persona] | None = None
 
 class GetPricingAnalyticsApiRequest(BaseModel):
 
@@ -12376,11 +12376,11 @@ class GetPricingAnalyticsApiRequest(BaseModel):
 class GetPricingAnalyticsApiResponse(BaseModel):
 
     actor_name: str | None = None
-    model_runs: list[QGetPricingAnalyticsV3ModelRun] | None = None
-    models: list[QGetPricingAnalyticsV3Model] | None = None
-    profiles: list[QGetPricingAnalyticsV3Profile] | None = None
-    agents: list[QGetPricingAnalyticsV3Agent] | None = None
-    personas: list[QGetPricingAnalyticsV3Persona] | None = None
+    model_runs: list[QGetPricingAnalyticsV4ModelRun] | None = None
+    models: list[QGetPricingAnalyticsV4Model] | None = None
+    profiles: list[QGetPricingAnalyticsV4Profile] | None = None
+    agents: list[QGetPricingAnalyticsV4Agent] | None = None
+    personas: list[QGetPricingAnalyticsV4Persona] | None = None
 
 
 
@@ -12397,7 +12397,7 @@ class GetPricingGroupDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetPricingGroupDetailV3Agent(BaseModel):
+class QGetPricingGroupDetailV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -12405,7 +12405,7 @@ class QGetPricingGroupDetailV3Agent(BaseModel):
 
 
 
-class QGetPricingGroupDetailV3Model(BaseModel):
+class QGetPricingGroupDetailV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -12414,7 +12414,7 @@ class QGetPricingGroupDetailV3Model(BaseModel):
 
 
 
-class QGetPricingGroupDetailV3Profile(BaseModel):
+class QGetPricingGroupDetailV4Profile(BaseModel):
 
     profile_id: UUID | None
     name: str | None
@@ -12422,18 +12422,18 @@ class QGetPricingGroupDetailV3Profile(BaseModel):
 
 
 
-class QGetPricingGroupDetailV3Content(BaseModel):
+class QGetPricingGroupDetailV4Content(BaseModel):
 
     idx: int | None
     content: str | None
     created_at: str | None
     updated_at: str | None
 
-class QGetPricingGroupDetailV3Message(BaseModel):
+class QGetPricingGroupDetailV4Message(BaseModel):
 
     id: UUID | None
     role: str | None
-    contents: list[QGetPricingGroupDetailV3Content] | None
+    contents: list[QGetPricingGroupDetailV4Content] | None
     created_at: str | None
     updated_at: str | None
     completed: bool | None
@@ -12443,7 +12443,7 @@ class QGetPricingGroupDetailV3Message(BaseModel):
 
 
 
-class QGetPricingGroupDetailV3RunMetadata(BaseModel):
+class QGetPricingGroupDetailV4RunMetadata(BaseModel):
 
     id: UUID | None
     created_at: str | None
@@ -12456,10 +12456,10 @@ class QGetPricingGroupDetailV3RunMetadata(BaseModel):
     profile_id: UUID | None
     persona_id: UUID | None
 
-class QGetPricingGroupDetailV3RunWithMessages(BaseModel):
+class QGetPricingGroupDetailV4RunWithMessages(BaseModel):
 
-    run: QGetPricingGroupDetailV3RunMetadata | None
-    messages: list[QGetPricingGroupDetailV3Message] | None
+    run: QGetPricingGroupDetailV4RunMetadata | None
+    messages: list[QGetPricingGroupDetailV4Message] | None
     previous_context_start_index: int | None
 
 class GetPricingGroupDetailSqlRow(BaseModel):
@@ -12467,10 +12467,10 @@ class GetPricingGroupDetailSqlRow(BaseModel):
     group_exists: bool | None = None
     group_id: UUID | None = None
     actor_name: str | None = None
-    runs: list[QGetPricingGroupDetailV3RunWithMessages] | None = None
-    models: list[QGetPricingGroupDetailV3Model] | None = None
-    agents: list[QGetPricingGroupDetailV3Agent] | None = None
-    profiles: list[QGetPricingGroupDetailV3Profile] | None = None
+    runs: list[QGetPricingGroupDetailV4RunWithMessages] | None = None
+    models: list[QGetPricingGroupDetailV4Model] | None = None
+    agents: list[QGetPricingGroupDetailV4Agent] | None = None
+    profiles: list[QGetPricingGroupDetailV4Profile] | None = None
 
 class GetPricingGroupDetailApiRequest(BaseModel):
 
@@ -12481,10 +12481,10 @@ class GetPricingGroupDetailApiResponse(BaseModel):
     group_exists: bool | None = None
     group_id: UUID | None = None
     actor_name: str | None = None
-    runs: list[QGetPricingGroupDetailV3RunWithMessages] | None = None
-    models: list[QGetPricingGroupDetailV3Model] | None = None
-    agents: list[QGetPricingGroupDetailV3Agent] | None = None
-    profiles: list[QGetPricingGroupDetailV3Profile] | None = None
+    runs: list[QGetPricingGroupDetailV4RunWithMessages] | None = None
+    models: list[QGetPricingGroupDetailV4Model] | None = None
+    agents: list[QGetPricingGroupDetailV4Agent] | None = None
+    profiles: list[QGetPricingGroupDetailV4Profile] | None = None
 
 
 
@@ -12527,7 +12527,7 @@ class GetPricingRunsSqlParams(BaseModel):
             self.offset_count,
         )
 
-class QGetPricingRunsV3Agent(BaseModel):
+class QGetPricingRunsV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -12535,7 +12535,7 @@ class QGetPricingRunsV3Agent(BaseModel):
 
 
 
-class QGetPricingRunsV3FilterOption(BaseModel):
+class QGetPricingRunsV4FilterOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -12544,13 +12544,13 @@ class QGetPricingRunsV3FilterOption(BaseModel):
 
 
 
-class QGetPricingRunsV3DebugInfo(BaseModel):
+class QGetPricingRunsV4DebugInfo(BaseModel):
 
     id: UUID | None
     created_at: str | None
     content: str | None
 
-class QGetPricingRunsV3RunSummary(BaseModel):
+class QGetPricingRunsV4RunSummary(BaseModel):
 
     run_id: UUID | None
     created_at: str | None
@@ -12561,9 +12561,9 @@ class QGetPricingRunsV3RunSummary(BaseModel):
     profile_id: UUID | None
     agent_id: UUID | None
     persona_id: UUID | None
-    debug_info: list[QGetPricingRunsV3DebugInfo] | None
+    debug_info: list[QGetPricingRunsV4DebugInfo] | None
 
-class QGetPricingRunsV3GroupRun(BaseModel):
+class QGetPricingRunsV4GroupRun(BaseModel):
 
     group_id: UUID | None
     created_at: str | None
@@ -12571,12 +12571,12 @@ class QGetPricingRunsV3GroupRun(BaseModel):
     total_input_tokens: int | None
     total_output_tokens: int | None
     total_cost: float | None
-    runs: list[QGetPricingRunsV3RunSummary] | None
+    runs: list[QGetPricingRunsV4RunSummary] | None
 
 
 
 
-class QGetPricingRunsV3Model(BaseModel):
+class QGetPricingRunsV4Model(BaseModel):
 
     model_id: UUID | None
     name: str | None
@@ -12587,7 +12587,7 @@ class QGetPricingRunsV3Model(BaseModel):
 
 
 
-class QGetPricingRunsV3Persona(BaseModel):
+class QGetPricingRunsV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -12595,7 +12595,7 @@ class QGetPricingRunsV3Persona(BaseModel):
 
 
 
-class QGetPricingRunsV3Profile(BaseModel):
+class QGetPricingRunsV4Profile(BaseModel):
 
     profile_id: UUID | None
     name: str | None
@@ -12603,18 +12603,18 @@ class QGetPricingRunsV3Profile(BaseModel):
 class GetPricingRunsSqlRow(BaseModel):
 
     actor_name: str | None = None
-    group_runs: list[QGetPricingRunsV3GroupRun] | None = None
+    group_runs: list[QGetPricingRunsV4GroupRun] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    model_options: list[QGetPricingRunsV3FilterOption] | None = None
-    profile_options: list[QGetPricingRunsV3FilterOption] | None = None
-    actor_options: list[QGetPricingRunsV3FilterOption] | None = None
-    models: list[QGetPricingRunsV3Model] | None = None
-    profiles: list[QGetPricingRunsV3Profile] | None = None
-    agents: list[QGetPricingRunsV3Agent] | None = None
-    personas: list[QGetPricingRunsV3Persona] | None = None
+    model_options: list[QGetPricingRunsV4FilterOption] | None = None
+    profile_options: list[QGetPricingRunsV4FilterOption] | None = None
+    actor_options: list[QGetPricingRunsV4FilterOption] | None = None
+    models: list[QGetPricingRunsV4Model] | None = None
+    profiles: list[QGetPricingRunsV4Profile] | None = None
+    agents: list[QGetPricingRunsV4Agent] | None = None
+    personas: list[QGetPricingRunsV4Persona] | None = None
 
 class GetPricingRunsApiRequest(BaseModel):
 
@@ -12636,18 +12636,18 @@ class GetPricingRunsApiRequest(BaseModel):
 class GetPricingRunsApiResponse(BaseModel):
 
     actor_name: str | None = None
-    group_runs: list[QGetPricingRunsV3GroupRun] | None = None
+    group_runs: list[QGetPricingRunsV4GroupRun] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    model_options: list[QGetPricingRunsV3FilterOption] | None = None
-    profile_options: list[QGetPricingRunsV3FilterOption] | None = None
-    actor_options: list[QGetPricingRunsV3FilterOption] | None = None
-    models: list[QGetPricingRunsV3Model] | None = None
-    profiles: list[QGetPricingRunsV3Profile] | None = None
-    agents: list[QGetPricingRunsV3Agent] | None = None
-    personas: list[QGetPricingRunsV3Persona] | None = None
+    model_options: list[QGetPricingRunsV4FilterOption] | None = None
+    profile_options: list[QGetPricingRunsV4FilterOption] | None = None
+    actor_options: list[QGetPricingRunsV4FilterOption] | None = None
+    models: list[QGetPricingRunsV4Model] | None = None
+    profiles: list[QGetPricingRunsV4Profile] | None = None
+    agents: list[QGetPricingRunsV4Agent] | None = None
+    personas: list[QGetPricingRunsV4Persona] | None = None
 
 
 
@@ -12971,7 +12971,7 @@ class GetProfileContextSqlParams(BaseModel):
             self.auth_mode,
         )
 
-class QGetProfileContextV3Auth(BaseModel):
+class QGetProfileContextV4Auth(BaseModel):
 
     auth_id: UUID | None
     name: str | None
@@ -12981,7 +12981,7 @@ class QGetProfileContextV3Auth(BaseModel):
 
 
 
-class QGetProfileContextV3Cohort(BaseModel):
+class QGetProfileContextV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     title: str | None
@@ -12992,7 +12992,7 @@ class QGetProfileContextV3Cohort(BaseModel):
 
 
 
-class QGetProfileContextV3Department(BaseModel):
+class QGetProfileContextV4Department(BaseModel):
 
     department_id: UUID | None
     title: str | None
@@ -13003,7 +13003,7 @@ class QGetProfileContextV3Department(BaseModel):
 
 
 
-class QGetProfileContextV3Provider(BaseModel):
+class QGetProfileContextV4Provider(BaseModel):
 
     provider_id: UUID | None
     name: str | None
@@ -13013,7 +13013,7 @@ class QGetProfileContextV3Provider(BaseModel):
 
 
 
-class QGetProfileContextV3Simulation(BaseModel):
+class QGetProfileContextV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     title: str | None
@@ -13026,7 +13026,7 @@ class QGetProfileContextV3Simulation(BaseModel):
 
 
 
-class QGetProfileContextV3ThemeTokens(BaseModel):
+class QGetProfileContextV4ThemeTokens(BaseModel):
 
     background: str | None
     foreground: str | None
@@ -13101,9 +13101,9 @@ class GetProfileContextSqlRow(BaseModel):
     created_at: str | None = None
     updated_at: str | None = None
     primary_department_id: UUID | None = None
-    departments: list[QGetProfileContextV3Department] | None = None
-    cohorts: list[QGetProfileContextV3Cohort] | None = None
-    simulations: list[QGetProfileContextV3Simulation] | None = None
+    departments: list[QGetProfileContextV4Department] | None = None
+    cohorts: list[QGetProfileContextV4Cohort] | None = None
+    simulations: list[QGetProfileContextV4Simulation] | None = None
     earliest_attempt_date: str | None = None
     scoped_roles: list[str] | None = None
     settings_id: str | None = None
@@ -13130,9 +13130,9 @@ class GetProfileContextSqlRow(BaseModel):
     settings_warning_threshold: int | None = None
     settings_danger_threshold: int | None = None
     settings_auth_ids: list[str] | None = None
-    settings_auths: list[QGetProfileContextV3Auth] | None = None
+    settings_auths: list[QGetProfileContextV4Auth] | None = None
     settings_provider_ids: list[str] | None = None
-    settings_providers: list[QGetProfileContextV3Provider] | None = None
+    settings_providers: list[QGetProfileContextV4Provider] | None = None
     settings_default_guest_profile_id: str | None = None
     settings_default_account_profile_id: str | None = None
     available_sections: list[str] | None = None
@@ -13140,7 +13140,7 @@ class GetProfileContextSqlRow(BaseModel):
     department_ids: list[str] | None = None
     cohort_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
-    settings_tokens: QGetProfileContextV3ThemeTokens | None = None
+    settings_tokens: QGetProfileContextV4ThemeTokens | None = None
     actor_name: str | None = None
 
 class GetProfileContextApiRequest(BaseModel):
@@ -13185,9 +13185,9 @@ class GetProfileContextApiResponse(BaseModel):
     created_at: str | None = None
     updated_at: str | None = None
     primary_department_id: UUID | None = None
-    departments: list[QGetProfileContextV3Department] | None = None
-    cohorts: list[QGetProfileContextV3Cohort] | None = None
-    simulations: list[QGetProfileContextV3Simulation] | None = None
+    departments: list[QGetProfileContextV4Department] | None = None
+    cohorts: list[QGetProfileContextV4Cohort] | None = None
+    simulations: list[QGetProfileContextV4Simulation] | None = None
     earliest_attempt_date: str | None = None
     scoped_roles: list[str] | None = None
     settings_id: str | None = None
@@ -13214,9 +13214,9 @@ class GetProfileContextApiResponse(BaseModel):
     settings_warning_threshold: int | None = None
     settings_danger_threshold: int | None = None
     settings_auth_ids: list[str] | None = None
-    settings_auths: list[QGetProfileContextV3Auth] | None = None
+    settings_auths: list[QGetProfileContextV4Auth] | None = None
     settings_provider_ids: list[str] | None = None
-    settings_providers: list[QGetProfileContextV3Provider] | None = None
+    settings_providers: list[QGetProfileContextV4Provider] | None = None
     settings_default_guest_profile_id: str | None = None
     settings_default_account_profile_id: str | None = None
     available_sections: list[str] | None = None
@@ -13224,7 +13224,7 @@ class GetProfileContextApiResponse(BaseModel):
     department_ids: list[str] | None = None
     cohort_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
-    settings_tokens: QGetProfileContextV3ThemeTokens | None = None
+    settings_tokens: QGetProfileContextV4ThemeTokens | None = None
     actor_name: str | None = None
 
 
@@ -13242,7 +13242,7 @@ class GetProfileDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetProfileDetailV3Cohort(BaseModel):
+class QGetProfileDetailV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -13251,7 +13251,7 @@ class QGetProfileDetailV3Cohort(BaseModel):
 
 
 
-class QGetProfileDetailV3Department(BaseModel):
+class QGetProfileDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -13275,8 +13275,8 @@ class GetProfileDetailSqlRow(BaseModel):
     can_edit: bool | None = None
     valid_department_ids: list[UUID] | None = None
     valid_cohort_ids: list[UUID] | None = None
-    departments: list[QGetProfileDetailV3Department] | None = None
-    cohorts: list[QGetProfileDetailV3Cohort] | None = None
+    departments: list[QGetProfileDetailV4Department] | None = None
+    cohorts: list[QGetProfileDetailV4Cohort] | None = None
     actor_name: str | None = None
 
 class GetProfileDetailApiRequest(BaseModel):
@@ -13301,8 +13301,8 @@ class GetProfileDetailApiResponse(BaseModel):
     can_edit: bool | None = None
     valid_department_ids: list[UUID] | None = None
     valid_cohort_ids: list[UUID] | None = None
-    departments: list[QGetProfileDetailV3Department] | None = None
-    cohorts: list[QGetProfileDetailV3Cohort] | None = None
+    departments: list[QGetProfileDetailV4Department] | None = None
+    cohorts: list[QGetProfileDetailV4Cohort] | None = None
     actor_name: str | None = None
 
 
@@ -13318,7 +13318,7 @@ class GetProfileNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetProfileNewV3Cohort(BaseModel):
+class QGetProfileNewV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -13327,7 +13327,7 @@ class QGetProfileNewV3Cohort(BaseModel):
 
 
 
-class QGetProfileNewV3Department(BaseModel):
+class QGetProfileNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -13346,8 +13346,8 @@ class GetProfileNewSqlRow(BaseModel):
     valid_department_ids: list[UUID] | None = None
     valid_cohort_ids: list[UUID] | None = None
     role_options: list[str] | None = None
-    departments: list[QGetProfileNewV3Department] | None = None
-    cohorts: list[QGetProfileNewV3Cohort] | None = None
+    departments: list[QGetProfileNewV4Department] | None = None
+    cohorts: list[QGetProfileNewV4Cohort] | None = None
     actor_name: str | None = None
 
 class GetProfileNewApiRequest(BaseModel):
@@ -13367,15 +13367,15 @@ class GetProfileNewApiResponse(BaseModel):
     valid_department_ids: list[UUID] | None = None
     valid_cohort_ids: list[UUID] | None = None
     role_options: list[str] | None = None
-    departments: list[QGetProfileNewV3Department] | None = None
-    cohorts: list[QGetProfileNewV3Cohort] | None = None
+    departments: list[QGetProfileNewV4Department] | None = None
+    cohorts: list[QGetProfileNewV4Cohort] | None = None
     actor_name: str | None = None
 
 
 
 # Generated from: profile_staff_bulk_create_profile
 
-class IBulkCreateStaffV3Profile(BaseModel):
+class IBulkCreateStaffV4Profile(BaseModel):
 
     first_name: str | None
     last_name: str | None
@@ -13387,7 +13387,7 @@ class IBulkCreateStaffV3Profile(BaseModel):
 
 class ProfileStaffBulkCreateProfileSqlParams(BaseModel):
 
-    profiles: list[IBulkCreateStaffV3Profile]
+    profiles: list[IBulkCreateStaffV4Profile]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -13409,7 +13409,7 @@ class ProfileStaffBulkCreateProfileSqlRow(BaseModel):
 
 class ProfileStaffBulkCreateProfileApiRequest(BaseModel):
 
-    profiles: list[IBulkCreateStaffV3Profile]
+    profiles: list[IBulkCreateStaffV4Profile]
 
 class ProfileStaffBulkCreateProfileApiResponse(BaseModel):
 
@@ -13491,7 +13491,7 @@ class ProfileStaffBulkUpdateProfileApiResponse(BaseModel):
 
 # Generated from: profile_staff_create_or_update_staff
 
-class IUpsertStaffV3Profile(BaseModel):
+class IUpsertStaffV4Profile(BaseModel):
 
     first_name: str | None
     last_name: str | None
@@ -13504,7 +13504,7 @@ class IUpsertStaffV3Profile(BaseModel):
 
 class ProfileStaffCreateOrUpdateStaffSqlParams(BaseModel):
 
-    profiles: list[IUpsertStaffV3Profile]
+    profiles: list[IUpsertStaffV4Profile]
     current_profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -13527,7 +13527,7 @@ class ProfileStaffCreateOrUpdateStaffSqlRow(BaseModel):
 
 class ProfileStaffCreateOrUpdateStaffApiRequest(BaseModel):
 
-    profiles: list[IUpsertStaffV3Profile]
+    profiles: list[IUpsertStaffV4Profile]
     current_profile_id: UUID
 
 class ProfileStaffCreateOrUpdateStaffApiResponse(BaseModel):
@@ -13554,7 +13554,7 @@ class SearchSimulatableProfilesSqlParams(BaseModel):
             self.query,
         )
 
-class QSearchSimulatableProfilesV3Profile(BaseModel):
+class QSearchSimulatableProfilesV4Profile(BaseModel):
 
     profile_id: UUID | None
     first_name: str | None
@@ -13573,7 +13573,7 @@ class QSearchSimulatableProfilesV3Profile(BaseModel):
 class SearchSimulatableProfilesSqlRow(BaseModel):
 
     actor_name: str | None = None
-    profiles: list[QSearchSimulatableProfilesV3Profile] | None = None
+    profiles: list[QSearchSimulatableProfilesV4Profile] | None = None
 
 class SearchSimulatableProfilesApiRequest(BaseModel):
 
@@ -13583,7 +13583,7 @@ class SearchSimulatableProfilesApiRequest(BaseModel):
 class SearchSimulatableProfilesApiResponse(BaseModel):
 
     actor_name: str | None = None
-    profiles: list[QSearchSimulatableProfilesV3Profile] | None = None
+    profiles: list[QSearchSimulatableProfilesV4Profile] | None = None
 
 
 
@@ -13934,7 +13934,7 @@ class GetProvidersListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListProvidersV3Provider(BaseModel):
+class QListProvidersV4Provider(BaseModel):
 
     provider_id: UUID | None
     name: str | None
@@ -13951,7 +13951,7 @@ class QListProvidersV3Provider(BaseModel):
 
 
 
-class QListProvidersV3ProviderOption(BaseModel):
+class QListProvidersV4ProviderOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -13959,7 +13959,7 @@ class QListProvidersV3ProviderOption(BaseModel):
 
 
 
-class QListProvidersV3StatusOption(BaseModel):
+class QListProvidersV4StatusOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -13967,9 +13967,9 @@ class QListProvidersV3StatusOption(BaseModel):
 class GetProvidersListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    providers: list[QListProvidersV3Provider] | None = None
-    provider_options: list[QListProvidersV3ProviderOption] | None = None
-    status_options: list[QListProvidersV3StatusOption] | None = None
+    providers: list[QListProvidersV4Provider] | None = None
+    provider_options: list[QListProvidersV4ProviderOption] | None = None
+    status_options: list[QListProvidersV4StatusOption] | None = None
 
 class GetProvidersListApiRequest(BaseModel):
 
@@ -13978,9 +13978,9 @@ class GetProvidersListApiRequest(BaseModel):
 class GetProvidersListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    providers: list[QListProvidersV3Provider] | None = None
-    provider_options: list[QListProvidersV3ProviderOption] | None = None
-    status_options: list[QListProvidersV3StatusOption] | None = None
+    providers: list[QListProvidersV4Provider] | None = None
+    provider_options: list[QListProvidersV4ProviderOption] | None = None
+    status_options: list[QListProvidersV4StatusOption] | None = None
 
 
 
@@ -14059,7 +14059,7 @@ class GetPerSimulationMetricsSqlParams(BaseModel):
             self.scenario_ids,
         )
 
-class QPerSimulationMetricsV3Metric(BaseModel):
+class QPerSimulationMetricsV4Metric(BaseModel):
 
     profile_id: UUID | None
     simulation_id: UUID | None
@@ -14073,7 +14073,7 @@ class QPerSimulationMetricsV3Metric(BaseModel):
 
 class GetPerSimulationMetricsSqlRow(BaseModel):
 
-    metrics: list[QPerSimulationMetricsV3Metric] | None = None
+    metrics: list[QPerSimulationMetricsV4Metric] | None = None
 
 class GetPerSimulationMetricsApiRequest(BaseModel):
 
@@ -14089,7 +14089,7 @@ class GetPerSimulationMetricsApiRequest(BaseModel):
 
 class GetPerSimulationMetricsApiResponse(BaseModel):
 
-    metrics: list[QPerSimulationMetricsV3Metric] | None = None
+    metrics: list[QPerSimulationMetricsV4Metric] | None = None
 
 
 
@@ -14132,7 +14132,7 @@ class GetReportsBundleSqlParams(BaseModel):
             self.page_size,
         )
 
-class QReportsBundleV3FilterOption(BaseModel):
+class QReportsBundleV4FilterOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -14141,7 +14141,7 @@ class QReportsBundleV3FilterOption(BaseModel):
 
 
 
-class QReportsBundleV3DataPoint(BaseModel):
+class QReportsBundleV4DataPoint(BaseModel):
 
     profile_id: str | None
     date: str | None
@@ -14153,7 +14153,7 @@ class QReportsBundleV3DataPoint(BaseModel):
 
 
 
-class QReportsBundleV3Hover(BaseModel):
+class QReportsBundleV4Hover(BaseModel):
 
     mean: int | None
     median: int | None
@@ -14178,29 +14178,29 @@ class QReportsBundleV3Hover(BaseModel):
     unique_simulations: int | None
     per_simulation_mean: int | None
 
-class QReportsBundleV3Metric(BaseModel):
+class QReportsBundleV4Metric(BaseModel):
 
     has_data: bool | None
     method: str | None
     current_value: int | None
-    data_points: list[QReportsBundleV3DataPoint] | None
-    hover: QReportsBundleV3Hover | None
+    data_points: list[QReportsBundleV4DataPoint] | None
+    hover: QReportsBundleV4Hover | None
     status: str | None
 
-class QReportsBundleV3ProfileMetrics(BaseModel):
+class QReportsBundleV4ProfileMetrics(BaseModel):
 
-    average_score: QReportsBundleV3Metric | None
-    completion_percentage: QReportsBundleV3Metric | None
-    first_attempt_pass_rate: QReportsBundleV3Metric | None
-    highest_score: QReportsBundleV3Metric | None
-    messages_per_session: QReportsBundleV3Metric | None
-    persona_response_times: QReportsBundleV3Metric | None
-    session_efficiency: QReportsBundleV3Metric | None
-    stagnation_rate: QReportsBundleV3Metric | None
-    time_spent: QReportsBundleV3Metric | None
-    total_attempts: QReportsBundleV3Metric | None
+    average_score: QReportsBundleV4Metric | None
+    completion_percentage: QReportsBundleV4Metric | None
+    first_attempt_pass_rate: QReportsBundleV4Metric | None
+    highest_score: QReportsBundleV4Metric | None
+    messages_per_session: QReportsBundleV4Metric | None
+    persona_response_times: QReportsBundleV4Metric | None
+    session_efficiency: QReportsBundleV4Metric | None
+    stagnation_rate: QReportsBundleV4Metric | None
+    time_spent: QReportsBundleV4Metric | None
+    total_attempts: QReportsBundleV4Metric | None
 
-class QReportsBundleV3Profile(BaseModel):
+class QReportsBundleV4Profile(BaseModel):
 
     profile_id: UUID | None
     first_name: str | None
@@ -14210,12 +14210,12 @@ class QReportsBundleV3Profile(BaseModel):
     role: str | None
     simulation_ids: list[str] | None
     scenario_ids: list[str] | None
-    metrics: QReportsBundleV3ProfileMetrics | None
+    metrics: QReportsBundleV4ProfileMetrics | None
 
 
 
 
-class QReportsBundleV3Scenario(BaseModel):
+class QReportsBundleV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
@@ -14224,7 +14224,7 @@ class QReportsBundleV3Scenario(BaseModel):
 
 
 
-class QReportsBundleV3Simulation(BaseModel):
+class QReportsBundleV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -14236,16 +14236,16 @@ class QReportsBundleV3Simulation(BaseModel):
 class GetReportsBundleSqlRow(BaseModel):
 
     actor_name: str | None = None
-    data: list[QReportsBundleV3Profile] | None = None
+    data: list[QReportsBundleV4Profile] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QReportsBundleV3FilterOption] | None = None
-    simulation_options: list[QReportsBundleV3FilterOption] | None = None
-    scenario_options: list[QReportsBundleV3FilterOption] | None = None
-    scenarios: list[QReportsBundleV3Scenario] | None = None
-    simulations: list[QReportsBundleV3Simulation] | None = None
+    profile_options: list[QReportsBundleV4FilterOption] | None = None
+    simulation_options: list[QReportsBundleV4FilterOption] | None = None
+    scenario_options: list[QReportsBundleV4FilterOption] | None = None
+    scenarios: list[QReportsBundleV4Scenario] | None = None
+    simulations: list[QReportsBundleV4Simulation] | None = None
 
 class GetReportsBundleApiRequest(BaseModel):
 
@@ -14267,16 +14267,16 @@ class GetReportsBundleApiRequest(BaseModel):
 class GetReportsBundleApiResponse(BaseModel):
 
     actor_name: str | None = None
-    data: list[QReportsBundleV3Profile] | None = None
+    data: list[QReportsBundleV4Profile] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QReportsBundleV3FilterOption] | None = None
-    simulation_options: list[QReportsBundleV3FilterOption] | None = None
-    scenario_options: list[QReportsBundleV3FilterOption] | None = None
-    scenarios: list[QReportsBundleV3Scenario] | None = None
-    simulations: list[QReportsBundleV3Simulation] | None = None
+    profile_options: list[QReportsBundleV4FilterOption] | None = None
+    simulation_options: list[QReportsBundleV4FilterOption] | None = None
+    scenario_options: list[QReportsBundleV4FilterOption] | None = None
+    scenarios: list[QReportsBundleV4Scenario] | None = None
+    simulations: list[QReportsBundleV4Simulation] | None = None
 
 
 
@@ -14321,7 +14321,7 @@ class GetReportsHistorySqlParams(BaseModel):
             self.page_size,
         )
 
-class QReportsHistoryV3AttemptHistoryRow(BaseModel):
+class QReportsHistoryV4AttemptHistoryRow(BaseModel):
 
     attempt_id: UUID | None
     date: str | None
@@ -14351,7 +14351,7 @@ class QReportsHistoryV3AttemptHistoryRow(BaseModel):
 
 
 
-class QReportsHistoryV3FilterOption(BaseModel):
+class QReportsHistoryV4FilterOption(BaseModel):
 
     value: str | None
     label: str | None
@@ -14360,16 +14360,16 @@ class QReportsHistoryV3FilterOption(BaseModel):
 class GetReportsHistorySqlRow(BaseModel):
 
     actor_name: str | None = None
-    data: list[QReportsHistoryV3AttemptHistoryRow] | None = None
+    data: list[QReportsHistoryV4AttemptHistoryRow] | None = None
     total_count: int | None = None
     archived_count: int | None = None
     unarchived_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QReportsHistoryV3FilterOption] | None = None
-    simulation_options: list[QReportsHistoryV3FilterOption] | None = None
-    scenario_options: list[QReportsHistoryV3FilterOption] | None = None
+    profile_options: list[QReportsHistoryV4FilterOption] | None = None
+    simulation_options: list[QReportsHistoryV4FilterOption] | None = None
+    scenario_options: list[QReportsHistoryV4FilterOption] | None = None
 
 class GetReportsHistoryApiRequest(BaseModel):
 
@@ -14392,16 +14392,16 @@ class GetReportsHistoryApiRequest(BaseModel):
 class GetReportsHistoryApiResponse(BaseModel):
 
     actor_name: str | None = None
-    data: list[QReportsHistoryV3AttemptHistoryRow] | None = None
+    data: list[QReportsHistoryV4AttemptHistoryRow] | None = None
     total_count: int | None = None
     archived_count: int | None = None
     unarchived_count: int | None = None
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
-    profile_options: list[QReportsHistoryV3FilterOption] | None = None
-    simulation_options: list[QReportsHistoryV3FilterOption] | None = None
-    scenario_options: list[QReportsHistoryV3FilterOption] | None = None
+    profile_options: list[QReportsHistoryV4FilterOption] | None = None
+    simulation_options: list[QReportsHistoryV4FilterOption] | None = None
+    scenario_options: list[QReportsHistoryV4FilterOption] | None = None
 
 
 
@@ -14428,7 +14428,7 @@ class GetReportsOverviewSqlParams(BaseModel):
             self.department_ids,
         )
 
-class QReportsOverviewV3AttemptHistoryRow(BaseModel):
+class QReportsOverviewV4AttemptHistoryRow(BaseModel):
 
     attempt_id: UUID | None
     date: str | None
@@ -14458,7 +14458,7 @@ class QReportsOverviewV3AttemptHistoryRow(BaseModel):
 
 
 
-class QReportsOverviewV3Field(BaseModel):
+class QReportsOverviewV4Field(BaseModel):
 
     field_id: str | None
     name: str | None
@@ -14469,7 +14469,7 @@ class QReportsOverviewV3Field(BaseModel):
 
 
 
-class QReportsOverviewV3ScenarioAttributeAttemptFact(BaseModel):
+class QReportsOverviewV4ScenarioAttributeAttemptFact(BaseModel):
 
     parameter_id: str | None
     parameter_item_id: str | None
@@ -14482,23 +14482,23 @@ class QReportsOverviewV3ScenarioAttributeAttemptFact(BaseModel):
 
 
 
-class QReportsOverviewV3ScenarioAttributeScenarioFact(BaseModel):
+class QReportsOverviewV4ScenarioAttributeScenarioFact(BaseModel):
 
     parameter_id: str | None
     parameter_item_id: str | None
     scenario_id: str | None
 
-class QReportsOverviewV3ScenarioPerformanceResponse(BaseModel):
+class QReportsOverviewV4ScenarioPerformanceResponse(BaseModel):
 
     valid_parameter_ids: list[str] | None
-    attribute_attempt_facts: list[QReportsOverviewV3ScenarioAttributeAttemptFact] | None
-    attribute_scenario_facts: list[QReportsOverviewV3ScenarioAttributeScenarioFact] | None
+    attribute_attempt_facts: list[QReportsOverviewV4ScenarioAttributeAttemptFact] | None
+    attribute_scenario_facts: list[QReportsOverviewV4ScenarioAttributeScenarioFact] | None
     status: str | None
 
 
 
 
-class QReportsOverviewV3NumericAttemptFact(BaseModel):
+class QReportsOverviewV4NumericAttemptFact(BaseModel):
 
     parameter_id: str | None
     level_label: str | None
@@ -14509,24 +14509,24 @@ class QReportsOverviewV3NumericAttemptFact(BaseModel):
 
 
 
-class QReportsOverviewV3NumericScenarioFact(BaseModel):
+class QReportsOverviewV4NumericScenarioFact(BaseModel):
 
     parameter_id: str | None
     scenario_id: str | None
     level_label: str | None
     level_value: float | None
 
-class QReportsOverviewV3ScenarioStatsResponse(BaseModel):
+class QReportsOverviewV4ScenarioStatsResponse(BaseModel):
 
     valid_numeric_parameter_ids: list[str] | None
-    numeric_attempt_facts: list[QReportsOverviewV3NumericAttemptFact] | None
-    numeric_scenario_facts: list[QReportsOverviewV3NumericScenarioFact] | None
+    numeric_attempt_facts: list[QReportsOverviewV4NumericAttemptFact] | None
+    numeric_scenario_facts: list[QReportsOverviewV4NumericScenarioFact] | None
     status: str | None
 
 
 
 
-class QReportsOverviewV3SimulationFact(BaseModel):
+class QReportsOverviewV4SimulationFact(BaseModel):
 
     simulation_id: str | None
     title: str | None
@@ -14538,7 +14538,7 @@ class QReportsOverviewV3SimulationFact(BaseModel):
 
 
 
-class QReportsOverviewV3SimulationParameterFactCategorical(BaseModel):
+class QReportsOverviewV4SimulationParameterFactCategorical(BaseModel):
 
     simulation_id: str | None
     parameter_id: str | None
@@ -14548,7 +14548,7 @@ class QReportsOverviewV3SimulationParameterFactCategorical(BaseModel):
 
 
 
-class QReportsOverviewV3SimulationParameterFactNumeric(BaseModel):
+class QReportsOverviewV4SimulationParameterFactNumeric(BaseModel):
 
     simulation_id: str | None
     parameter_id: str | None
@@ -14556,19 +14556,19 @@ class QReportsOverviewV3SimulationParameterFactNumeric(BaseModel):
     level_label: str | None
     scenario_count: int | None
 
-class QReportsOverviewV3SimulationCompositionResponse(BaseModel):
+class QReportsOverviewV4SimulationCompositionResponse(BaseModel):
 
     valid_simulation_ids: list[str] | None
-    simulation_facts: list[QReportsOverviewV3SimulationFact] | None
-    simulation_parameter_facts_categorical: list[QReportsOverviewV3SimulationParameterFactCategorical] | None
-    simulation_parameter_facts_numeric: list[QReportsOverviewV3SimulationParameterFactNumeric] | None
+    simulation_facts: list[QReportsOverviewV4SimulationFact] | None
+    simulation_parameter_facts_categorical: list[QReportsOverviewV4SimulationParameterFactCategorical] | None
+    simulation_parameter_facts_numeric: list[QReportsOverviewV4SimulationParameterFactNumeric] | None
     has_data: bool | None
     status: str | None
 
 
 
 
-class QReportsOverviewV3ScenarioFact(BaseModel):
+class QReportsOverviewV4ScenarioFact(BaseModel):
 
     simulation_id: str | None
     scenario_id: str | None
@@ -14578,23 +14578,23 @@ class QReportsOverviewV3ScenarioFact(BaseModel):
     total_attempts: int | None
     completed_attempts: int | None
 
-class QReportsOverviewV3SimulationPerformanceResponse(BaseModel):
+class QReportsOverviewV4SimulationPerformanceResponse(BaseModel):
 
     valid_simulation_ids: list[str] | None
-    scenario_facts: list[QReportsOverviewV3ScenarioFact] | None
+    scenario_facts: list[QReportsOverviewV4ScenarioFact] | None
     status: str | None
 
-class QReportsOverviewV3FooterMetrics(BaseModel):
+class QReportsOverviewV4FooterMetrics(BaseModel):
 
-    scenario_performance: QReportsOverviewV3ScenarioPerformanceResponse | None
-    scenario_stats: QReportsOverviewV3ScenarioStatsResponse | None
-    simulation_performance: QReportsOverviewV3SimulationPerformanceResponse | None
-    simulation_composition: QReportsOverviewV3SimulationCompositionResponse | None
-
-
+    scenario_performance: QReportsOverviewV4ScenarioPerformanceResponse | None
+    scenario_stats: QReportsOverviewV4ScenarioStatsResponse | None
+    simulation_performance: QReportsOverviewV4SimulationPerformanceResponse | None
+    simulation_composition: QReportsOverviewV4SimulationCompositionResponse | None
 
 
-class QReportsOverviewV3DataPoint(BaseModel):
+
+
+class QReportsOverviewV4DataPoint(BaseModel):
 
     profile_id: str | None
     date: str | None
@@ -14607,13 +14607,13 @@ class QReportsOverviewV3DataPoint(BaseModel):
 
 
 
-class QReportsOverviewV3TrendData(BaseModel):
+class QReportsOverviewV4TrendData(BaseModel):
 
     date: str | None
     value: float | None
     count: int | None
 
-class QReportsOverviewV3MetricResponse(BaseModel):
+class QReportsOverviewV4MetricResponse(BaseModel):
 
     has_data: bool | None
     method: str | None
@@ -14622,26 +14622,26 @@ class QReportsOverviewV3MetricResponse(BaseModel):
     trend_analysis: str | None
     value_field: str | None
     key_field: str | None
-    trend_data: list[QReportsOverviewV3TrendData] | None
-    data_points: list[QReportsOverviewV3DataPoint] | None
+    trend_data: list[QReportsOverviewV4TrendData] | None
+    data_points: list[QReportsOverviewV4DataPoint] | None
 
-class QReportsOverviewV3HeaderMetrics(BaseModel):
+class QReportsOverviewV4HeaderMetrics(BaseModel):
 
-    average_score: QReportsOverviewV3MetricResponse | None
-    completion_percentage: QReportsOverviewV3MetricResponse | None
-    first_attempt_pass_rate: QReportsOverviewV3MetricResponse | None
-    highest_score: QReportsOverviewV3MetricResponse | None
-    messages_per_session: QReportsOverviewV3MetricResponse | None
-    persona_response_times: QReportsOverviewV3MetricResponse | None
-    session_efficiency: QReportsOverviewV3MetricResponse | None
-    stagnation_rate: QReportsOverviewV3MetricResponse | None
-    time_spent: QReportsOverviewV3MetricResponse | None
-    total_attempts: QReportsOverviewV3MetricResponse | None
-
-
+    average_score: QReportsOverviewV4MetricResponse | None
+    completion_percentage: QReportsOverviewV4MetricResponse | None
+    first_attempt_pass_rate: QReportsOverviewV4MetricResponse | None
+    highest_score: QReportsOverviewV4MetricResponse | None
+    messages_per_session: QReportsOverviewV4MetricResponse | None
+    persona_response_times: QReportsOverviewV4MetricResponse | None
+    session_efficiency: QReportsOverviewV4MetricResponse | None
+    stagnation_rate: QReportsOverviewV4MetricResponse | None
+    time_spent: QReportsOverviewV4MetricResponse | None
+    total_attempts: QReportsOverviewV4MetricResponse | None
 
 
-class QReportsOverviewV3CohortInsight(BaseModel):
+
+
+class QReportsOverviewV4CohortInsight(BaseModel):
 
     cohort_id: str | None
     insight: str | None
@@ -14649,18 +14649,18 @@ class QReportsOverviewV3CohortInsight(BaseModel):
 
 
 
-class QReportsOverviewV3PersonaInsight(BaseModel):
+class QReportsOverviewV4PersonaInsight(BaseModel):
 
     persona_name: str | None
     insight: str | None
 
-class QReportsOverviewV3Insights(BaseModel):
+class QReportsOverviewV4Insights(BaseModel):
 
     growth: str | None
-    persona: list[QReportsOverviewV3PersonaInsight] | None
+    persona: list[QReportsOverviewV4PersonaInsight] | None
     rubric_heatmap: str | None
     attempt_improvement: str | None
-    cohort: list[QReportsOverviewV3CohortInsight] | None
+    cohort: list[QReportsOverviewV4CohortInsight] | None
     skill_performance: str | None
     scenario_performance: str | None
     scenario_stats: str | None
@@ -14670,7 +14670,7 @@ class QReportsOverviewV3Insights(BaseModel):
 
 
 
-class QReportsOverviewV3Parameter(BaseModel):
+class QReportsOverviewV4Parameter(BaseModel):
 
     parameter_id: str | None
     name: str | None
@@ -14682,7 +14682,7 @@ class QReportsOverviewV3Parameter(BaseModel):
 
 
 
-class QReportsOverviewV3GrowthDataPoint(BaseModel):
+class QReportsOverviewV4GrowthDataPoint(BaseModel):
 
     date: str | None
     average_score: float | None
@@ -14694,7 +14694,7 @@ class QReportsOverviewV3GrowthDataPoint(BaseModel):
 
 
 
-class QReportsOverviewV3GrowthMetric(BaseModel):
+class QReportsOverviewV4GrowthMetric(BaseModel):
 
     id: str | None
     name: str | None
@@ -14706,27 +14706,27 @@ class QReportsOverviewV3GrowthMetric(BaseModel):
 
 
 
-class QReportsOverviewV3GrowthWindowAverage(BaseModel):
+class QReportsOverviewV4GrowthWindowAverage(BaseModel):
 
     n: int | None
     last: float | None
     prev: float | None
 
-class QReportsOverviewV3GrowthWindowAverages(BaseModel):
+class QReportsOverviewV4GrowthWindowAverages(BaseModel):
 
-    average_score: QReportsOverviewV3GrowthWindowAverage | None
+    average_score: QReportsOverviewV4GrowthWindowAverage | None
 
-class QReportsOverviewV3GrowthDataResponse(BaseModel):
+class QReportsOverviewV4GrowthDataResponse(BaseModel):
 
-    chart_data: list[QReportsOverviewV3GrowthDataPoint] | None
-    available_metrics: list[QReportsOverviewV3GrowthMetric] | None
-    window_averages: QReportsOverviewV3GrowthWindowAverages | None
+    chart_data: list[QReportsOverviewV4GrowthDataPoint] | None
+    available_metrics: list[QReportsOverviewV4GrowthMetric] | None
+    window_averages: QReportsOverviewV4GrowthWindowAverages | None
     status: str | None
 
 
 
 
-class QReportsOverviewV3PersonaColor(BaseModel):
+class QReportsOverviewV4PersonaColor(BaseModel):
 
     persona_name: str | None
     color: str | None
@@ -14734,33 +14734,33 @@ class QReportsOverviewV3PersonaColor(BaseModel):
 
 
 
-class QReportsOverviewV3PersonaTrendData(BaseModel):
+class QReportsOverviewV4PersonaTrendData(BaseModel):
 
     date: str | None
     score: float | None
     timestamp: int | None
     simulation_id: str | None
 
-class QReportsOverviewV3PersonaPerformanceData(BaseModel):
+class QReportsOverviewV4PersonaPerformanceData(BaseModel):
 
     name: str | None
     score: float | None
     sessions: int | None
     color: str | None
     simulation_ids: list[str] | None
-    trend_data: list[QReportsOverviewV3PersonaTrendData] | None
+    trend_data: list[QReportsOverviewV4PersonaTrendData] | None
     status: str | None
 
-class QReportsOverviewV3PersonaPerformanceResponse(BaseModel):
+class QReportsOverviewV4PersonaPerformanceResponse(BaseModel):
 
-    chart_data: list[QReportsOverviewV3PersonaPerformanceData] | None
+    chart_data: list[QReportsOverviewV4PersonaPerformanceData] | None
     valid_simulation_ids: list[str] | None
-    persona_colors: list[QReportsOverviewV3PersonaColor] | None
+    persona_colors: list[QReportsOverviewV4PersonaColor] | None
 
 
 
 
-class QReportsOverviewV3RubricHeatmapCell(BaseModel):
+class QReportsOverviewV4RubricHeatmapCell(BaseModel):
 
     rubric_id: str | None
     correlation: float | None
@@ -14772,37 +14772,37 @@ class QReportsOverviewV3RubricHeatmapCell(BaseModel):
 
 
 
-class QReportsOverviewV3StandardGroup(BaseModel):
+class QReportsOverviewV4StandardGroup(BaseModel):
 
     id: str | None
     name: str | None
     short_name: str | None
     rubric_id: str | None
 
-class QReportsOverviewV3RubricMatrixPackage(BaseModel):
+class QReportsOverviewV4RubricMatrixPackage(BaseModel):
 
     rubric_id: str | None
-    standard_groups: list[QReportsOverviewV3StandardGroup] | None
-    matrix: list[QReportsOverviewV3RubricHeatmapCell] | None
+    standard_groups: list[QReportsOverviewV4StandardGroup] | None
+    matrix: list[QReportsOverviewV4RubricHeatmapCell] | None
     insights: str | None
     has_data: bool | None
 
-class QReportsOverviewV3RubricHeatmapResponse(BaseModel):
+class QReportsOverviewV4RubricHeatmapResponse(BaseModel):
 
-    matrices: list[QReportsOverviewV3RubricMatrixPackage] | None
+    matrices: list[QReportsOverviewV4RubricMatrixPackage] | None
     valid_rubric_ids: list[str] | None
     status: str | None
 
-class QReportsOverviewV3PrimaryMetrics(BaseModel):
+class QReportsOverviewV4PrimaryMetrics(BaseModel):
 
-    growth_data: QReportsOverviewV3GrowthDataResponse | None
-    persona_performance: QReportsOverviewV3PersonaPerformanceResponse | None
-    rubric_heatmap: QReportsOverviewV3RubricHeatmapResponse | None
-
-
+    growth_data: QReportsOverviewV4GrowthDataResponse | None
+    persona_performance: QReportsOverviewV4PersonaPerformanceResponse | None
+    rubric_heatmap: QReportsOverviewV4RubricHeatmapResponse | None
 
 
-class QReportsOverviewV3Rubric(BaseModel):
+
+
+class QReportsOverviewV4Rubric(BaseModel):
 
     rubric_id: str | None
     name: str | None
@@ -14811,7 +14811,7 @@ class QReportsOverviewV3Rubric(BaseModel):
 
 
 
-class QReportsOverviewV3AttemptImprovementData(BaseModel):
+class QReportsOverviewV4AttemptImprovementData(BaseModel):
 
     attempt: str | None
     average_score: float | None
@@ -14821,7 +14821,7 @@ class QReportsOverviewV3AttemptImprovementData(BaseModel):
 
 
 
-class QReportsOverviewV3AttemptImprovementFact(BaseModel):
+class QReportsOverviewV4AttemptImprovementFact(BaseModel):
 
     simulation_id: str | None
     attempt_no: int | None
@@ -14829,17 +14829,17 @@ class QReportsOverviewV3AttemptImprovementFact(BaseModel):
     avg_minutes: float | None
     pass_rate: float | None
 
-class QReportsOverviewV3AttemptImprovementResponse(BaseModel):
+class QReportsOverviewV4AttemptImprovementResponse(BaseModel):
 
-    chart_data: list[QReportsOverviewV3AttemptImprovementData] | None
-    facts: list[QReportsOverviewV3AttemptImprovementFact] | None
+    chart_data: list[QReportsOverviewV4AttemptImprovementData] | None
+    facts: list[QReportsOverviewV4AttemptImprovementFact] | None
     valid_simulation_ids: list[str] | None
     status: str | None
 
 
 
 
-class QReportsOverviewV3CohortDailyFact(BaseModel):
+class QReportsOverviewV4CohortDailyFact(BaseModel):
 
     date: str | None
     simulation_id: str | None
@@ -14848,7 +14848,7 @@ class QReportsOverviewV3CohortDailyFact(BaseModel):
 
 
 
-class QReportsOverviewV3CohortData(BaseModel):
+class QReportsOverviewV4CohortData(BaseModel):
 
     id: str | None
     name: str | None
@@ -14865,7 +14865,7 @@ class QReportsOverviewV3CohortData(BaseModel):
 
 
 
-class QReportsOverviewV3CohortFact(BaseModel):
+class QReportsOverviewV4CohortFact(BaseModel):
 
     cohort_id: str | None
     simulation_id: str | None
@@ -14876,25 +14876,25 @@ class QReportsOverviewV3CohortFact(BaseModel):
 
 
 
-class QReportsOverviewV3DailyData(BaseModel):
+class QReportsOverviewV4DailyData(BaseModel):
 
     date: str | None
     avg_score: float | None
     cohort_id: str | None
 
-class QReportsOverviewV3CohortPerformanceResponse(BaseModel):
+class QReportsOverviewV4CohortPerformanceResponse(BaseModel):
 
-    cohort_data: list[QReportsOverviewV3CohortData] | None
-    daily_data: list[QReportsOverviewV3DailyData] | None
-    cohort_facts: list[QReportsOverviewV3CohortFact] | None
-    daily_facts: list[QReportsOverviewV3CohortDailyFact] | None
+    cohort_data: list[QReportsOverviewV4CohortData] | None
+    daily_data: list[QReportsOverviewV4DailyData] | None
+    cohort_facts: list[QReportsOverviewV4CohortFact] | None
+    daily_facts: list[QReportsOverviewV4CohortDailyFact] | None
     valid_simulation_ids: list[str] | None
     status: str | None
 
 
 
 
-class QReportsOverviewV3SkillRadarData(BaseModel):
+class QReportsOverviewV4SkillRadarData(BaseModel):
 
     metric: str | None
     description: str | None
@@ -14904,7 +14904,7 @@ class QReportsOverviewV3SkillRadarData(BaseModel):
 
 
 
-class QReportsOverviewV3SkillStandardFact(BaseModel):
+class QReportsOverviewV4SkillStandardFact(BaseModel):
 
     group_id: str | None
     group_name: str | None
@@ -14914,28 +14914,28 @@ class QReportsOverviewV3SkillStandardFact(BaseModel):
     points: float | None
     avg_pct: float | None
 
-class QReportsOverviewV3SkillPackage(BaseModel):
+class QReportsOverviewV4SkillPackage(BaseModel):
 
     rubric_id: str | None
-    radar_data: list[QReportsOverviewV3SkillRadarData] | None
-    group_facts: list[QReportsOverviewV3SkillStandardFact] | None
+    radar_data: list[QReportsOverviewV4SkillRadarData] | None
+    group_facts: list[QReportsOverviewV4SkillStandardFact] | None
 
-class QReportsOverviewV3SkillPerformanceResponse(BaseModel):
+class QReportsOverviewV4SkillPerformanceResponse(BaseModel):
 
-    packages: list[QReportsOverviewV3SkillPackage] | None
+    packages: list[QReportsOverviewV4SkillPackage] | None
     valid_rubric_ids: list[str] | None
     status: str | None
 
-class QReportsOverviewV3SecondaryMetrics(BaseModel):
+class QReportsOverviewV4SecondaryMetrics(BaseModel):
 
-    attempt_improvement: QReportsOverviewV3AttemptImprovementResponse | None
-    cohort_performance: QReportsOverviewV3CohortPerformanceResponse | None
-    skill_performance: QReportsOverviewV3SkillPerformanceResponse | None
-
-
+    attempt_improvement: QReportsOverviewV4AttemptImprovementResponse | None
+    cohort_performance: QReportsOverviewV4CohortPerformanceResponse | None
+    skill_performance: QReportsOverviewV4SkillPerformanceResponse | None
 
 
-class QReportsOverviewV3Simulation(BaseModel):
+
+
+class QReportsOverviewV4Simulation(BaseModel):
 
     simulation_id: str | None
     name: str | None
@@ -14946,7 +14946,7 @@ class QReportsOverviewV3Simulation(BaseModel):
 
 
 
-class QReportsOverviewV3Thresholds(BaseModel):
+class QReportsOverviewV4Thresholds(BaseModel):
 
     success: int | None
     warning: int | None
@@ -14955,17 +14955,17 @@ class QReportsOverviewV3Thresholds(BaseModel):
 class GetReportsOverviewSqlRow(BaseModel):
 
     actor_name: str | None = None
-    header_metrics: QReportsOverviewV3HeaderMetrics | None = None
-    primary_metrics: QReportsOverviewV3PrimaryMetrics | None = None
-    secondary_metrics: QReportsOverviewV3SecondaryMetrics | None = None
-    footer_metrics: QReportsOverviewV3FooterMetrics | None = None
-    history: list[QReportsOverviewV3AttemptHistoryRow] | None = None
-    insights: QReportsOverviewV3Insights | None = None
-    thresholds: QReportsOverviewV3Thresholds | None = None
-    simulations: list[QReportsOverviewV3Simulation] | None = None
-    rubrics: list[QReportsOverviewV3Rubric] | None = None
-    parameters: list[QReportsOverviewV3Parameter] | None = None
-    fields: list[QReportsOverviewV3Field] | None = None
+    header_metrics: QReportsOverviewV4HeaderMetrics | None = None
+    primary_metrics: QReportsOverviewV4PrimaryMetrics | None = None
+    secondary_metrics: QReportsOverviewV4SecondaryMetrics | None = None
+    footer_metrics: QReportsOverviewV4FooterMetrics | None = None
+    history: list[QReportsOverviewV4AttemptHistoryRow] | None = None
+    insights: QReportsOverviewV4Insights | None = None
+    thresholds: QReportsOverviewV4Thresholds | None = None
+    simulations: list[QReportsOverviewV4Simulation] | None = None
+    rubrics: list[QReportsOverviewV4Rubric] | None = None
+    parameters: list[QReportsOverviewV4Parameter] | None = None
+    fields: list[QReportsOverviewV4Field] | None = None
 
 class GetReportsOverviewApiRequest(BaseModel):
 
@@ -14979,29 +14979,29 @@ class GetReportsOverviewApiRequest(BaseModel):
 class GetReportsOverviewApiResponse(BaseModel):
 
     actor_name: str | None = None
-    header_metrics: QReportsOverviewV3HeaderMetrics | None = None
-    primary_metrics: QReportsOverviewV3PrimaryMetrics | None = None
-    secondary_metrics: QReportsOverviewV3SecondaryMetrics | None = None
-    footer_metrics: QReportsOverviewV3FooterMetrics | None = None
-    history: list[QReportsOverviewV3AttemptHistoryRow] | None = None
-    insights: QReportsOverviewV3Insights | None = None
-    thresholds: QReportsOverviewV3Thresholds | None = None
-    simulations: list[QReportsOverviewV3Simulation] | None = None
-    rubrics: list[QReportsOverviewV3Rubric] | None = None
-    parameters: list[QReportsOverviewV3Parameter] | None = None
-    fields: list[QReportsOverviewV3Field] | None = None
+    header_metrics: QReportsOverviewV4HeaderMetrics | None = None
+    primary_metrics: QReportsOverviewV4PrimaryMetrics | None = None
+    secondary_metrics: QReportsOverviewV4SecondaryMetrics | None = None
+    footer_metrics: QReportsOverviewV4FooterMetrics | None = None
+    history: list[QReportsOverviewV4AttemptHistoryRow] | None = None
+    insights: QReportsOverviewV4Insights | None = None
+    thresholds: QReportsOverviewV4Thresholds | None = None
+    simulations: list[QReportsOverviewV4Simulation] | None = None
+    rubrics: list[QReportsOverviewV4Rubric] | None = None
+    parameters: list[QReportsOverviewV4Parameter] | None = None
+    fields: list[QReportsOverviewV4Field] | None = None
 
 
 
 # Generated from: create_rubric
 
-class ICreateRubricV3Standard(BaseModel):
+class ICreateRubricV4Standard(BaseModel):
 
     name: str | None
     description: str | None
     points: int | None
 
-class ICreateRubricV3StandardGroup(BaseModel):
+class ICreateRubricV4StandardGroup(BaseModel):
 
     name: str | None
     short_name: str | None
@@ -15010,7 +15010,7 @@ class ICreateRubricV3StandardGroup(BaseModel):
     pass_points: int | None
     position: int | None
     active: bool | None
-    standards: list[ICreateRubricV3Standard] | None
+    standards: list[ICreateRubricV4Standard] | None
 
 class CreateRubricSqlParams(BaseModel):
 
@@ -15021,7 +15021,7 @@ class CreateRubricSqlParams(BaseModel):
     pass_points: int
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_groups: list[ICreateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[ICreateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
     rubric_agent_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -15055,7 +15055,7 @@ class CreateRubricApiRequest(BaseModel):
     points: int
     pass_points: int
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_groups: list[ICreateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[ICreateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
     rubric_agent_id: UUID | None = None
 
 class CreateRubricApiResponse(BaseModel):
@@ -15144,7 +15144,7 @@ class GetRubricDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetRubricDetailV3Agent(BaseModel):
+class QGetRubricDetailV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -15154,7 +15154,7 @@ class QGetRubricDetailV3Agent(BaseModel):
 
 
 
-class QGetRubricDetailV3Department(BaseModel):
+class QGetRubricDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -15163,7 +15163,7 @@ class QGetRubricDetailV3Department(BaseModel):
 
 
 
-class QGetRubricDetailV3Standard(BaseModel):
+class QGetRubricDetailV4Standard(BaseModel):
 
     standard_id: UUID | None
     name: str | None
@@ -15173,7 +15173,7 @@ class QGetRubricDetailV3Standard(BaseModel):
 
 
 
-class QGetRubricDetailV3StandardGroup(BaseModel):
+class QGetRubricDetailV4StandardGroup(BaseModel):
 
     standard_group_id: UUID | None
     name: str | None
@@ -15200,10 +15200,10 @@ class GetRubricDetailSqlRow(BaseModel):
     valid_agent_ids: list[str] | None = None
     actor_name: str | None = None
     standard_group_ids: list[UUID] | None = None
-    standard_groups: list[QGetRubricDetailV3StandardGroup] | None = None
-    standards: list[QGetRubricDetailV3Standard] | None = None
-    departments: list[QGetRubricDetailV3Department] | None = None
-    agents: list[QGetRubricDetailV3Agent] | None = None
+    standard_groups: list[QGetRubricDetailV4StandardGroup] | None = None
+    standards: list[QGetRubricDetailV4Standard] | None = None
+    departments: list[QGetRubricDetailV4Department] | None = None
+    agents: list[QGetRubricDetailV4Agent] | None = None
 
 class GetRubricDetailApiRequest(BaseModel):
 
@@ -15225,10 +15225,10 @@ class GetRubricDetailApiResponse(BaseModel):
     valid_agent_ids: list[str] | None = None
     actor_name: str | None = None
     standard_group_ids: list[UUID] | None = None
-    standard_groups: list[QGetRubricDetailV3StandardGroup] | None = None
-    standards: list[QGetRubricDetailV3Standard] | None = None
-    departments: list[QGetRubricDetailV3Department] | None = None
-    agents: list[QGetRubricDetailV3Agent] | None = None
+    standard_groups: list[QGetRubricDetailV4StandardGroup] | None = None
+    standards: list[QGetRubricDetailV4Standard] | None = None
+    departments: list[QGetRubricDetailV4Department] | None = None
+    agents: list[QGetRubricDetailV4Agent] | None = None
 
 
 
@@ -15243,7 +15243,7 @@ class GetRubricNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetRubricNewV3Agent(BaseModel):
+class QGetRubricNewV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -15253,7 +15253,7 @@ class QGetRubricNewV3Agent(BaseModel):
 
 
 
-class QGetRubricNewV3Department(BaseModel):
+class QGetRubricNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -15262,7 +15262,7 @@ class QGetRubricNewV3Department(BaseModel):
 
 
 
-class QGetRubricNewV3Standard(BaseModel):
+class QGetRubricNewV4Standard(BaseModel):
 
     standard_id: UUID | None
     name: str | None
@@ -15272,7 +15272,7 @@ class QGetRubricNewV3Standard(BaseModel):
 
 
 
-class QGetRubricNewV3StandardGroup(BaseModel):
+class QGetRubricNewV4StandardGroup(BaseModel):
 
     standard_group_id: UUID | None
     name: str | None
@@ -15299,10 +15299,10 @@ class GetRubricNewSqlRow(BaseModel):
     user_role: str | None = None
     primary_department_id: UUID | None = None
     standard_group_ids: list[UUID] | None = None
-    standard_groups: list[QGetRubricNewV3StandardGroup] | None = None
-    standards: list[QGetRubricNewV3Standard] | None = None
-    departments: list[QGetRubricNewV3Department] | None = None
-    agents: list[QGetRubricNewV3Agent] | None = None
+    standard_groups: list[QGetRubricNewV4StandardGroup] | None = None
+    standards: list[QGetRubricNewV4Standard] | None = None
+    departments: list[QGetRubricNewV4Department] | None = None
+    agents: list[QGetRubricNewV4Agent] | None = None
 
 class GetRubricNewApiRequest(BaseModel):
 
@@ -15324,10 +15324,10 @@ class GetRubricNewApiResponse(BaseModel):
     user_role: str | None = None
     primary_department_id: UUID | None = None
     standard_group_ids: list[UUID] | None = None
-    standard_groups: list[QGetRubricNewV3StandardGroup] | None = None
-    standards: list[QGetRubricNewV3Standard] | None = None
-    departments: list[QGetRubricNewV3Department] | None = None
-    agents: list[QGetRubricNewV3Agent] | None = None
+    standard_groups: list[QGetRubricNewV4StandardGroup] | None = None
+    standards: list[QGetRubricNewV4Standard] | None = None
+    departments: list[QGetRubricNewV4Department] | None = None
+    agents: list[QGetRubricNewV4Agent] | None = None
 
 
 
@@ -15352,7 +15352,7 @@ class GetRubricRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IRubricRegenRunContextCreateRunV3Msg(BaseModel):
+class IRubricRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -15360,7 +15360,7 @@ class IRubricRegenRunContextCreateRunV3Msg(BaseModel):
 
 
 
-class IRubricRegenRunContextCreateRunV3Sg(BaseModel):
+class IRubricRegenRunContextCreateRunV4Sg(BaseModel):
 
     id: str | None
     name: str | None
@@ -15371,7 +15371,7 @@ class IRubricRegenRunContextCreateRunV3Sg(BaseModel):
 
 
 
-class IRubricRegenRunContextCreateRunV3Std(BaseModel):
+class IRubricRegenRunContextCreateRunV4Std(BaseModel):
 
     id: str | None
     name: str | None
@@ -15397,9 +15397,9 @@ class GetRubricRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    standard_groups: list[IRubricRegenRunContextCreateRunV3Sg] | None = None
-    standards: list[IRubricRegenRunContextCreateRunV3Std] | None = None
-    previous_messages: list[IRubricRegenRunContextCreateRunV3Msg] | None = None
+    standard_groups: list[IRubricRegenRunContextCreateRunV4Sg] | None = None
+    standards: list[IRubricRegenRunContextCreateRunV4Std] | None = None
+    previous_messages: list[IRubricRegenRunContextCreateRunV4Msg] | None = None
 
 class GetRubricRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -15428,15 +15428,15 @@ class GetRubricRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    standard_groups: list[IRubricRegenRunContextCreateRunV3Sg] | None = None
-    standards: list[IRubricRegenRunContextCreateRunV3Std] | None = None
-    previous_messages: list[IRubricRegenRunContextCreateRunV3Msg] | None = None
+    standard_groups: list[IRubricRegenRunContextCreateRunV4Sg] | None = None
+    standards: list[IRubricRegenRunContextCreateRunV4Std] | None = None
+    previous_messages: list[IRubricRegenRunContextCreateRunV4Msg] | None = None
 
 
 
 # Generated from: get_rubric_run_context_and_create_run
 
-class IGetRubricRunContextAndCreateRunV3Standard(BaseModel):
+class IGetRubricRunContextAndCreateRunV4Standard(BaseModel):
 
     id: str | None
     name: str | None
@@ -15446,7 +15446,7 @@ class IGetRubricRunContextAndCreateRunV3Standard(BaseModel):
 
 
 
-class IGetRubricRunContextAndCreateRunV3StandardGroup(BaseModel):
+class IGetRubricRunContextAndCreateRunV4StandardGroup(BaseModel):
 
     id: str | None
     name: str | None
@@ -15461,8 +15461,8 @@ class GetRubricRunContextAndCreateRunSqlParams(BaseModel):
     rubric_agent_id: UUID
     group_id: UUID | None = None
     rubric_id: UUID | None = None
-    standard_groups: list[IGetRubricRunContextAndCreateRunV3StandardGroup] | None = None
-    standards: list[IGetRubricRunContextAndCreateRunV3Standard] | None = None
+    standard_groups: list[IGetRubricRunContextAndCreateRunV4StandardGroup] | None = None
+    standards: list[IGetRubricRunContextAndCreateRunV4Standard] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert standard_groups composite array to tuples for asyncpg
@@ -15511,8 +15511,8 @@ class GetRubricRunContextAndCreateRunApiRequest(BaseModel):
     rubric_agent_id: UUID
     group_id: UUID | None = None
     rubric_id: UUID | None = None
-    standard_groups: list[IGetRubricRunContextAndCreateRunV3StandardGroup] | None = None
-    standards: list[IGetRubricRunContextAndCreateRunV3Standard] | None = None
+    standard_groups: list[IGetRubricRunContextAndCreateRunV4StandardGroup] | None = None
+    standards: list[IGetRubricRunContextAndCreateRunV4Standard] | None = None
 
 class GetRubricRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -15547,7 +15547,7 @@ class GetRubricsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetRubricsListV3Department(BaseModel):
+class QGetRubricsListV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -15556,7 +15556,7 @@ class QGetRubricsListV3Department(BaseModel):
 
 
 
-class QGetRubricsListV3Rubric(BaseModel):
+class QGetRubricsListV4Rubric(BaseModel):
 
     rubric_id: UUID | None
     name: str | None
@@ -15576,7 +15576,7 @@ class QGetRubricsListV3Rubric(BaseModel):
 
 
 
-class QGetRubricsListV3Simulation(BaseModel):
+class QGetRubricsListV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -15586,7 +15586,7 @@ class QGetRubricsListV3Simulation(BaseModel):
 
 
 
-class QGetRubricsListV3Standard(BaseModel):
+class QGetRubricsListV4Standard(BaseModel):
 
     standard_id: UUID | None
     standard_group_id: UUID | None
@@ -15597,7 +15597,7 @@ class QGetRubricsListV3Standard(BaseModel):
 
 
 
-class QGetRubricsListV3StandardGroup(BaseModel):
+class QGetRubricsListV4StandardGroup(BaseModel):
 
     standard_group_id: UUID | None
     rubric_id: UUID | None
@@ -15609,12 +15609,12 @@ class QGetRubricsListV3StandardGroup(BaseModel):
 class GetRubricsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    rubrics: list[QGetRubricsListV3Rubric] | None = None
-    standard_groups: list[QGetRubricsListV3StandardGroup] | None = None
-    standards: list[QGetRubricsListV3Standard] | None = None
-    departments: list[QGetRubricsListV3Department] | None = None
-    simulations: list[QGetRubricsListV3Simulation] | None = None
-    simulation_options: list[QGetRubricsListV3Simulation] | None = None
+    rubrics: list[QGetRubricsListV4Rubric] | None = None
+    standard_groups: list[QGetRubricsListV4StandardGroup] | None = None
+    standards: list[QGetRubricsListV4Standard] | None = None
+    departments: list[QGetRubricsListV4Department] | None = None
+    simulations: list[QGetRubricsListV4Simulation] | None = None
+    simulation_options: list[QGetRubricsListV4Simulation] | None = None
 
 class GetRubricsListApiRequest(BaseModel):
 
@@ -15623,12 +15623,12 @@ class GetRubricsListApiRequest(BaseModel):
 class GetRubricsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    rubrics: list[QGetRubricsListV3Rubric] | None = None
-    standard_groups: list[QGetRubricsListV3StandardGroup] | None = None
-    standards: list[QGetRubricsListV3Standard] | None = None
-    departments: list[QGetRubricsListV3Department] | None = None
-    simulations: list[QGetRubricsListV3Simulation] | None = None
-    simulation_options: list[QGetRubricsListV3Simulation] | None = None
+    rubrics: list[QGetRubricsListV4Rubric] | None = None
+    standard_groups: list[QGetRubricsListV4StandardGroup] | None = None
+    standards: list[QGetRubricsListV4Standard] | None = None
+    departments: list[QGetRubricsListV4Department] | None = None
+    simulations: list[QGetRubricsListV4Simulation] | None = None
+    simulation_options: list[QGetRubricsListV4Simulation] | None = None
 
 
 
@@ -15753,13 +15753,13 @@ class RubricGenerationProgressApiResponse(BaseModel):
 
 # Generated from: update_rubric
 
-class IUpdateRubricV3Standard(BaseModel):
+class IUpdateRubricV4Standard(BaseModel):
 
     name: str | None
     description: str | None
     points: int | None
 
-class IUpdateRubricV3StandardGroup(BaseModel):
+class IUpdateRubricV4StandardGroup(BaseModel):
 
     name: str | None
     short_name: str | None
@@ -15768,7 +15768,7 @@ class IUpdateRubricV3StandardGroup(BaseModel):
     pass_points: int | None
     position: int | None
     active: bool | None
-    standards: list[IUpdateRubricV3Standard] | None
+    standards: list[IUpdateRubricV4Standard] | None
 
 class UpdateRubricSqlParams(BaseModel):
 
@@ -15780,7 +15780,7 @@ class UpdateRubricSqlParams(BaseModel):
     pass_points: int
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_groups: list[IUpdateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[IUpdateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
     rubric_agent_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -15817,7 +15817,7 @@ class UpdateRubricApiRequest(BaseModel):
     points: int
     pass_points: int
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_groups: list[IUpdateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[IUpdateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
     rubric_agent_id: UUID | None = None
 
 class UpdateRubricApiResponse(BaseModel):
@@ -15862,7 +15862,7 @@ class UpdateRubricNameApiResponse(BaseModel):
 
 # Generated from: standard_group_descriptions_complete
 
-class QStandardGroupDescriptionsCompleteV3Description(BaseModel):
+class QStandardGroupDescriptionsCompleteV4Description(BaseModel):
 
     standard_group_id: UUID | None
     standard_id: UUID | None
@@ -15874,7 +15874,7 @@ class StandardGroupDescriptionsCompleteSqlParams(BaseModel):
     rubric_id: UUID
     updated_count: int
     message: str
-    descriptions: list[QStandardGroupDescriptionsCompleteV3Description]
+    descriptions: list[QStandardGroupDescriptionsCompleteV4Description]
     profile_id: UUID
     group_id: UUID | None = None
 
@@ -15901,7 +15901,7 @@ class StandardGroupDescriptionsCompleteSqlRow(BaseModel):
     updated_count: int | None = None
     trace_id: str | None = None
     message: str | None = None
-    descriptions: list[QStandardGroupDescriptionsCompleteV3Description] | None = None
+    descriptions: list[QStandardGroupDescriptionsCompleteV4Description] | None = None
 
 class StandardGroupDescriptionsCompleteApiRequest(BaseModel):
 
@@ -15909,7 +15909,7 @@ class StandardGroupDescriptionsCompleteApiRequest(BaseModel):
     rubric_id: UUID
     updated_count: int
     message: str
-    descriptions: list[QStandardGroupDescriptionsCompleteV3Description]
+    descriptions: list[QStandardGroupDescriptionsCompleteV4Description]
     group_id: UUID | None = None
 
 class StandardGroupDescriptionsCompleteApiResponse(BaseModel):
@@ -15919,7 +15919,7 @@ class StandardGroupDescriptionsCompleteApiResponse(BaseModel):
     updated_count: int | None = None
     trace_id: str | None = None
     message: str | None = None
-    descriptions: list[QStandardGroupDescriptionsCompleteV3Description] | None = None
+    descriptions: list[QStandardGroupDescriptionsCompleteV4Description] | None = None
 
 
 
@@ -16004,7 +16004,7 @@ class StandardGroupDescriptionsProgressApiResponse(BaseModel):
 
 # Generated from: update_standard_descriptions
 
-class IUpdateStandardDescriptionsV3Description(BaseModel):
+class IUpdateStandardDescriptionsV4Description(BaseModel):
 
     standard_group_id: UUID | None
     standard_id: UUID | None
@@ -16013,7 +16013,7 @@ class IUpdateStandardDescriptionsV3Description(BaseModel):
 class UpdateStandardDescriptionsSqlParams(BaseModel):
 
     rubric_id: UUID
-    descriptions: list[IUpdateStandardDescriptionsV3Description]
+    descriptions: list[IUpdateStandardDescriptionsV4Description]
     profile_id: UUID
     group_id: UUID | None = None
 
@@ -16030,7 +16030,7 @@ class UpdateStandardDescriptionsSqlParams(BaseModel):
             self.group_id,
         )
 
-class QUpdateStandardDescriptionsV3Description(BaseModel):
+class QUpdateStandardDescriptionsV4Description(BaseModel):
 
     standard_group_id: UUID | None
     standard_id: UUID | None
@@ -16041,12 +16041,12 @@ class UpdateStandardDescriptionsSqlRow(BaseModel):
     updated_count: int | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    descriptions: list[QUpdateStandardDescriptionsV3Description] | None = None
+    descriptions: list[QUpdateStandardDescriptionsV4Description] | None = None
 
 class UpdateStandardDescriptionsApiRequest(BaseModel):
 
     rubric_id: UUID
-    descriptions: list[IUpdateStandardDescriptionsV3Description]
+    descriptions: list[IUpdateStandardDescriptionsV4Description]
     group_id: UUID | None = None
 
 class UpdateStandardDescriptionsApiResponse(BaseModel):
@@ -16054,13 +16054,13 @@ class UpdateStandardDescriptionsApiResponse(BaseModel):
     updated_count: int | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    descriptions: list[QUpdateStandardDescriptionsV3Description] | None = None
+    descriptions: list[QUpdateStandardDescriptionsV4Description] | None = None
 
 
 
 # Generated from: create_scenario
 
-class QCreateScenarioV3Parameter(BaseModel):
+class QCreateScenarioV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     field_ids: list[UUID] | None
@@ -16068,7 +16068,7 @@ class QCreateScenarioV3Parameter(BaseModel):
 
 
 
-class QCreateScenarioV3QuestionTimestamp(BaseModel):
+class QCreateScenarioV4QuestionTimestamp(BaseModel):
 
     question_id: UUID | None
     video_id: UUID | None
@@ -16086,7 +16086,7 @@ class CreateScenarioSqlParams(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameters: list[QCreateScenarioV3Parameter]
+    parameters: list[QCreateScenarioV4Parameter]
     profile_id: UUID
     description: str | None = None
     video_agent_id: UUID | None = None
@@ -16100,7 +16100,7 @@ class CreateScenarioSqlParams(BaseModel):
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: list[QCreateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    question_timestamps: list[QCreateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
     run_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16160,7 +16160,7 @@ class CreateScenarioApiRequest(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameters: list[QCreateScenarioV3Parameter]
+    parameters: list[QCreateScenarioV4Parameter]
     description: str | None = None
     video_agent_id: UUID | None = None
     problem_statement_name: str | None = None
@@ -16173,7 +16173,7 @@ class CreateScenarioApiRequest(BaseModel):
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: list[QCreateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    question_timestamps: list[QCreateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
     run_id: UUID | None = None
 
 class CreateScenarioApiResponse(BaseModel):
@@ -16253,7 +16253,7 @@ class DuplicateScenarioApiResponse(BaseModel):
 
 # Generated from: get_scenario_detail
 
-class QGetScenarioDetailV3FieldParamFilter(BaseModel):
+class QGetScenarioDetailV4FieldParamFilter(BaseModel):
 
     parameter_id: UUID | None
     show_selected: bool | None
@@ -16279,7 +16279,7 @@ class GetScenarioDetailSqlParams(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioDetailV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field_show_selected_by_param: list[QGetScenarioDetailV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert field_show_selected_by_param composite array to tuples for asyncpg
@@ -16310,7 +16310,7 @@ class GetScenarioDetailSqlParams(BaseModel):
             field_show_selected_by_param_tuples,
         )
 
-class QGetScenarioDetailV3Agent(BaseModel):
+class QGetScenarioDetailV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -16320,7 +16320,7 @@ class QGetScenarioDetailV3Agent(BaseModel):
 
 
 
-class QGetScenarioDetailV3Department(BaseModel):
+class QGetScenarioDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -16333,7 +16333,7 @@ class QGetScenarioDetailV3Department(BaseModel):
 
 
 
-class QGetScenarioDetailV3Document(BaseModel):
+class QGetScenarioDetailV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -16347,7 +16347,7 @@ class QGetScenarioDetailV3Document(BaseModel):
 
 
 
-class QGetScenarioDetailV3DocumentDetail(BaseModel):
+class QGetScenarioDetailV4DocumentDetail(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -16368,7 +16368,7 @@ class QGetScenarioDetailV3DocumentDetail(BaseModel):
 
 
 
-class QGetScenarioDetailV3Field(BaseModel):
+class QGetScenarioDetailV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -16380,7 +16380,7 @@ class QGetScenarioDetailV3Field(BaseModel):
 
 
 
-class QGetScenarioDetailV3FieldRange(BaseModel):
+class QGetScenarioDetailV4FieldRange(BaseModel):
 
     parameter_id: UUID | None
     min_count: int | None
@@ -16389,7 +16389,7 @@ class QGetScenarioDetailV3FieldRange(BaseModel):
 
 
 
-class QGetScenarioDetailV3Objective(BaseModel):
+class QGetScenarioDetailV4Objective(BaseModel):
 
     objective_id: UUID | None
     name: str | None
@@ -16398,7 +16398,7 @@ class QGetScenarioDetailV3Objective(BaseModel):
 
 
 
-class QGetScenarioDetailV3ObjectiveWithDepartments(BaseModel):
+class QGetScenarioDetailV4ObjectiveWithDepartments(BaseModel):
 
     objective: str | None
     department_ids: list[UUID] | None
@@ -16406,7 +16406,7 @@ class QGetScenarioDetailV3ObjectiveWithDepartments(BaseModel):
 
 
 
-class QGetScenarioDetailV3Parameter(BaseModel):
+class QGetScenarioDetailV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -16419,7 +16419,7 @@ class QGetScenarioDetailV3Parameter(BaseModel):
 
 
 
-class QGetScenarioDetailV3ParameterDetail(BaseModel):
+class QGetScenarioDetailV4ParameterDetail(BaseModel):
 
     parameter_id: UUID | None
     field_ids: list[UUID] | None
@@ -16428,7 +16428,7 @@ class QGetScenarioDetailV3ParameterDetail(BaseModel):
 
 
 
-class QGetScenarioDetailV3Persona(BaseModel):
+class QGetScenarioDetailV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -16443,7 +16443,7 @@ class QGetScenarioDetailV3Persona(BaseModel):
 
 
 
-class QGetScenarioDetailV3ProblemStatement(BaseModel):
+class QGetScenarioDetailV4ProblemStatement(BaseModel):
 
     problem_statement_id: UUID | None
     name: str | None
@@ -16454,26 +16454,26 @@ class QGetScenarioDetailV3ProblemStatement(BaseModel):
 
 
 
-class QGetScenarioDetailV3QuestionOption(BaseModel):
+class QGetScenarioDetailV4QuestionOption(BaseModel):
 
     id: UUID | None
     option_text: str | None
     type: str | None
     is_correct: bool | None
 
-class QGetScenarioDetailV3Question(BaseModel):
+class QGetScenarioDetailV4Question(BaseModel):
 
     id: UUID | None
     question_text: str | None
     allow_multiple: bool | None
     active: bool | None
-    options: list[QGetScenarioDetailV3QuestionOption] | None
+    options: list[QGetScenarioDetailV4QuestionOption] | None
     times: list[int] | None
 
 
 
 
-class QGetScenarioDetailV3ScenarioImage(BaseModel):
+class QGetScenarioDetailV4ScenarioImage(BaseModel):
 
     upload_id: UUID | None
     name: str | None
@@ -16486,7 +16486,7 @@ class QGetScenarioDetailV3ScenarioImage(BaseModel):
 
 
 
-class QGetScenarioDetailV3ScenarioVideo(BaseModel):
+class QGetScenarioDetailV4ScenarioVideo(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -16501,7 +16501,7 @@ class QGetScenarioDetailV3ScenarioVideo(BaseModel):
 
 
 
-class QGetScenarioDetailV3Simulation(BaseModel):
+class QGetScenarioDetailV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -16554,22 +16554,22 @@ class GetScenarioDetailSqlRow(BaseModel):
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
-    field_ranges: list[QGetScenarioDetailV3FieldRange] | None = None
-    personas: list[QGetScenarioDetailV3Persona] | None = None
-    documents: list[QGetScenarioDetailV3Document] | None = None
-    parameters: list[QGetScenarioDetailV3Parameter] | None = None
-    fields: list[QGetScenarioDetailV3Field] | None = None
-    departments: list[QGetScenarioDetailV3Department] | None = None
-    agents: list[QGetScenarioDetailV3Agent] | None = None
-    simulations: list[QGetScenarioDetailV3Simulation] | None = None
-    objectives: list[QGetScenarioDetailV3Objective] | None = None
-    problem_statements: list[QGetScenarioDetailV3ProblemStatement] | None = None
-    scenario_images: list[QGetScenarioDetailV3ScenarioImage] | None = None
-    scenario_videos: list[QGetScenarioDetailV3ScenarioVideo] | None = None
-    questions: list[QGetScenarioDetailV3Question] | None = None
-    objectives_history: list[QGetScenarioDetailV3ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioDetailV3DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioDetailV3ParameterDetail] | None = None
+    field_ranges: list[QGetScenarioDetailV4FieldRange] | None = None
+    personas: list[QGetScenarioDetailV4Persona] | None = None
+    documents: list[QGetScenarioDetailV4Document] | None = None
+    parameters: list[QGetScenarioDetailV4Parameter] | None = None
+    fields: list[QGetScenarioDetailV4Field] | None = None
+    departments: list[QGetScenarioDetailV4Department] | None = None
+    agents: list[QGetScenarioDetailV4Agent] | None = None
+    simulations: list[QGetScenarioDetailV4Simulation] | None = None
+    objectives: list[QGetScenarioDetailV4Objective] | None = None
+    problem_statements: list[QGetScenarioDetailV4ProblemStatement] | None = None
+    scenario_images: list[QGetScenarioDetailV4ScenarioImage] | None = None
+    scenario_videos: list[QGetScenarioDetailV4ScenarioVideo] | None = None
+    questions: list[QGetScenarioDetailV4Question] | None = None
+    objectives_history: list[QGetScenarioDetailV4ObjectiveWithDepartments] | None = None
+    document_details: list[QGetScenarioDetailV4DocumentDetail] | None = None
+    parameters_detail: list[QGetScenarioDetailV4ParameterDetail] | None = None
 
 class GetScenarioDetailApiRequest(BaseModel):
 
@@ -16591,7 +16591,7 @@ class GetScenarioDetailApiRequest(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioDetailV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field_show_selected_by_param: list[QGetScenarioDetailV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioDetailApiResponse(BaseModel):
 
@@ -16638,28 +16638,28 @@ class GetScenarioDetailApiResponse(BaseModel):
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
-    field_ranges: list[QGetScenarioDetailV3FieldRange] | None = None
-    personas: list[QGetScenarioDetailV3Persona] | None = None
-    documents: list[QGetScenarioDetailV3Document] | None = None
-    parameters: list[QGetScenarioDetailV3Parameter] | None = None
-    fields: list[QGetScenarioDetailV3Field] | None = None
-    departments: list[QGetScenarioDetailV3Department] | None = None
-    agents: list[QGetScenarioDetailV3Agent] | None = None
-    simulations: list[QGetScenarioDetailV3Simulation] | None = None
-    objectives: list[QGetScenarioDetailV3Objective] | None = None
-    problem_statements: list[QGetScenarioDetailV3ProblemStatement] | None = None
-    scenario_images: list[QGetScenarioDetailV3ScenarioImage] | None = None
-    scenario_videos: list[QGetScenarioDetailV3ScenarioVideo] | None = None
-    questions: list[QGetScenarioDetailV3Question] | None = None
-    objectives_history: list[QGetScenarioDetailV3ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioDetailV3DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioDetailV3ParameterDetail] | None = None
+    field_ranges: list[QGetScenarioDetailV4FieldRange] | None = None
+    personas: list[QGetScenarioDetailV4Persona] | None = None
+    documents: list[QGetScenarioDetailV4Document] | None = None
+    parameters: list[QGetScenarioDetailV4Parameter] | None = None
+    fields: list[QGetScenarioDetailV4Field] | None = None
+    departments: list[QGetScenarioDetailV4Department] | None = None
+    agents: list[QGetScenarioDetailV4Agent] | None = None
+    simulations: list[QGetScenarioDetailV4Simulation] | None = None
+    objectives: list[QGetScenarioDetailV4Objective] | None = None
+    problem_statements: list[QGetScenarioDetailV4ProblemStatement] | None = None
+    scenario_images: list[QGetScenarioDetailV4ScenarioImage] | None = None
+    scenario_videos: list[QGetScenarioDetailV4ScenarioVideo] | None = None
+    questions: list[QGetScenarioDetailV4Question] | None = None
+    objectives_history: list[QGetScenarioDetailV4ObjectiveWithDepartments] | None = None
+    document_details: list[QGetScenarioDetailV4DocumentDetail] | None = None
+    parameters_detail: list[QGetScenarioDetailV4ParameterDetail] | None = None
 
 
 
 # Generated from: get_scenario_new
 
-class QGetScenarioNewV3FieldParamFilter(BaseModel):
+class QGetScenarioNewV4FieldParamFilter(BaseModel):
 
     parameter_id: UUID | None
     show_selected: bool | None
@@ -16686,7 +16686,7 @@ class GetScenarioNewSqlParams(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioNewV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field_show_selected_by_param: list[QGetScenarioNewV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert field_show_selected_by_param composite array to tuples for asyncpg
@@ -16718,7 +16718,7 @@ class GetScenarioNewSqlParams(BaseModel):
             field_show_selected_by_param_tuples,
         )
 
-class QGetScenarioNewV3Agent(BaseModel):
+class QGetScenarioNewV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -16728,7 +16728,7 @@ class QGetScenarioNewV3Agent(BaseModel):
 
 
 
-class QGetScenarioNewV3Department(BaseModel):
+class QGetScenarioNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -16741,7 +16741,7 @@ class QGetScenarioNewV3Department(BaseModel):
 
 
 
-class QGetScenarioNewV3Document(BaseModel):
+class QGetScenarioNewV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -16755,7 +16755,7 @@ class QGetScenarioNewV3Document(BaseModel):
 
 
 
-class QGetScenarioNewV3DocumentDetail(BaseModel):
+class QGetScenarioNewV4DocumentDetail(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -16776,7 +16776,7 @@ class QGetScenarioNewV3DocumentDetail(BaseModel):
 
 
 
-class QGetScenarioNewV3Field(BaseModel):
+class QGetScenarioNewV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -16788,7 +16788,7 @@ class QGetScenarioNewV3Field(BaseModel):
 
 
 
-class QGetScenarioNewV3Objective(BaseModel):
+class QGetScenarioNewV4Objective(BaseModel):
 
     objective_id: UUID | None
     name: str | None
@@ -16797,7 +16797,7 @@ class QGetScenarioNewV3Objective(BaseModel):
 
 
 
-class QGetScenarioNewV3ObjectiveWithDepartments(BaseModel):
+class QGetScenarioNewV4ObjectiveWithDepartments(BaseModel):
 
     objective: str | None
     department_ids: list[UUID] | None
@@ -16805,7 +16805,7 @@ class QGetScenarioNewV3ObjectiveWithDepartments(BaseModel):
 
 
 
-class QGetScenarioNewV3Parameter(BaseModel):
+class QGetScenarioNewV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -16819,7 +16819,7 @@ class QGetScenarioNewV3Parameter(BaseModel):
 
 
 
-class QGetScenarioNewV3ParameterDetail(BaseModel):
+class QGetScenarioNewV4ParameterDetail(BaseModel):
 
     param_id: UUID | None
     selected_items: list[UUID] | None
@@ -16828,7 +16828,7 @@ class QGetScenarioNewV3ParameterDetail(BaseModel):
 
 
 
-class QGetScenarioNewV3Persona(BaseModel):
+class QGetScenarioNewV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -16843,7 +16843,7 @@ class QGetScenarioNewV3Persona(BaseModel):
 
 
 
-class QGetScenarioNewV3ProblemStatement(BaseModel):
+class QGetScenarioNewV4ProblemStatement(BaseModel):
 
     problem_statement_id: UUID | None
     name: str | None
@@ -16854,26 +16854,26 @@ class QGetScenarioNewV3ProblemStatement(BaseModel):
 
 
 
-class QGetScenarioNewV3QuestionOption(BaseModel):
+class QGetScenarioNewV4QuestionOption(BaseModel):
 
     id: UUID | None
     option_text: str | None
     type: str | None
     is_correct: bool | None
 
-class QGetScenarioNewV3Question(BaseModel):
+class QGetScenarioNewV4Question(BaseModel):
 
     id: UUID | None
     question_text: str | None
     allow_multiple: bool | None
     active: bool | None
-    options: list[QGetScenarioNewV3QuestionOption] | None
+    options: list[QGetScenarioNewV4QuestionOption] | None
     times: list[int] | None
 
 
 
 
-class QGetScenarioNewV3ScenarioImage(BaseModel):
+class QGetScenarioNewV4ScenarioImage(BaseModel):
 
     upload_id: UUID | None
     name: str | None
@@ -16886,7 +16886,7 @@ class QGetScenarioNewV3ScenarioImage(BaseModel):
 
 
 
-class QGetScenarioNewV3ScenarioVideo(BaseModel):
+class QGetScenarioNewV4ScenarioVideo(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -16922,20 +16922,20 @@ class GetScenarioNewSqlRow(BaseModel):
     parameter_range_min: int | None = None
     parameter_range_max: int | None = None
     question_ids: list[str] | None = None
-    departments: list[QGetScenarioNewV3Department] | None = None
-    personas: list[QGetScenarioNewV3Persona] | None = None
-    documents: list[QGetScenarioNewV3Document] | None = None
-    parameters: list[QGetScenarioNewV3Parameter] | None = None
-    fields: list[QGetScenarioNewV3Field] | None = None
-    agents: list[QGetScenarioNewV3Agent] | None = None
-    objectives: list[QGetScenarioNewV3Objective] | None = None
-    problem_statements: list[QGetScenarioNewV3ProblemStatement] | None = None
-    scenario_images: list[QGetScenarioNewV3ScenarioImage] | None = None
-    scenario_videos: list[QGetScenarioNewV3ScenarioVideo] | None = None
-    questions: list[QGetScenarioNewV3Question] | None = None
-    objectives_history: list[QGetScenarioNewV3ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioNewV3DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioNewV3ParameterDetail] | None = None
+    departments: list[QGetScenarioNewV4Department] | None = None
+    personas: list[QGetScenarioNewV4Persona] | None = None
+    documents: list[QGetScenarioNewV4Document] | None = None
+    parameters: list[QGetScenarioNewV4Parameter] | None = None
+    fields: list[QGetScenarioNewV4Field] | None = None
+    agents: list[QGetScenarioNewV4Agent] | None = None
+    objectives: list[QGetScenarioNewV4Objective] | None = None
+    problem_statements: list[QGetScenarioNewV4ProblemStatement] | None = None
+    scenario_images: list[QGetScenarioNewV4ScenarioImage] | None = None
+    scenario_videos: list[QGetScenarioNewV4ScenarioVideo] | None = None
+    questions: list[QGetScenarioNewV4Question] | None = None
+    objectives_history: list[QGetScenarioNewV4ObjectiveWithDepartments] | None = None
+    document_details: list[QGetScenarioNewV4DocumentDetail] | None = None
+    parameters_detail: list[QGetScenarioNewV4ParameterDetail] | None = None
 
 class GetScenarioNewApiRequest(BaseModel):
 
@@ -16958,7 +16958,7 @@ class GetScenarioNewApiRequest(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioNewV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field_show_selected_by_param: list[QGetScenarioNewV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioNewApiResponse(BaseModel):
 
@@ -16984,20 +16984,20 @@ class GetScenarioNewApiResponse(BaseModel):
     parameter_range_min: int | None = None
     parameter_range_max: int | None = None
     question_ids: list[str] | None = None
-    departments: list[QGetScenarioNewV3Department] | None = None
-    personas: list[QGetScenarioNewV3Persona] | None = None
-    documents: list[QGetScenarioNewV3Document] | None = None
-    parameters: list[QGetScenarioNewV3Parameter] | None = None
-    fields: list[QGetScenarioNewV3Field] | None = None
-    agents: list[QGetScenarioNewV3Agent] | None = None
-    objectives: list[QGetScenarioNewV3Objective] | None = None
-    problem_statements: list[QGetScenarioNewV3ProblemStatement] | None = None
-    scenario_images: list[QGetScenarioNewV3ScenarioImage] | None = None
-    scenario_videos: list[QGetScenarioNewV3ScenarioVideo] | None = None
-    questions: list[QGetScenarioNewV3Question] | None = None
-    objectives_history: list[QGetScenarioNewV3ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioNewV3DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioNewV3ParameterDetail] | None = None
+    departments: list[QGetScenarioNewV4Department] | None = None
+    personas: list[QGetScenarioNewV4Persona] | None = None
+    documents: list[QGetScenarioNewV4Document] | None = None
+    parameters: list[QGetScenarioNewV4Parameter] | None = None
+    fields: list[QGetScenarioNewV4Field] | None = None
+    agents: list[QGetScenarioNewV4Agent] | None = None
+    objectives: list[QGetScenarioNewV4Objective] | None = None
+    problem_statements: list[QGetScenarioNewV4ProblemStatement] | None = None
+    scenario_images: list[QGetScenarioNewV4ScenarioImage] | None = None
+    scenario_videos: list[QGetScenarioNewV4ScenarioVideo] | None = None
+    questions: list[QGetScenarioNewV4Question] | None = None
+    objectives_history: list[QGetScenarioNewV4ObjectiveWithDepartments] | None = None
+    document_details: list[QGetScenarioNewV4DocumentDetail] | None = None
+    parameters_detail: list[QGetScenarioNewV4ParameterDetail] | None = None
 
 
 
@@ -17026,7 +17026,7 @@ class GetScenarioRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IGetScenarioRegenerationRunContextAndCreateRunV3Doc(BaseModel):
+class IGetScenarioRegenerationRunContextAndCreateRunV4Doc(BaseModel):
 
     id: str | None
     name: str | None
@@ -17038,7 +17038,7 @@ class IGetScenarioRegenerationRunContextAndCreateRunV3Doc(BaseModel):
 
 
 
-class IGetScenarioRegenerationRunContextAndCreateRunV3Docum(BaseModel):
+class IGetScenarioRegenerationRunContextAndCreateRunV4Docum(BaseModel):
 
     document_id: str | None
     document_name: str | None
@@ -17048,7 +17048,7 @@ class IGetScenarioRegenerationRunContextAndCreateRunV3Docum(BaseModel):
 
 
 
-class IGetScenarioRegenerationRunContextAndCreateRunV3Param(BaseModel):
+class IGetScenarioRegenerationRunContextAndCreateRunV4Param(BaseModel):
 
     item_name: str | None
     item_description: str | None
@@ -17058,7 +17058,7 @@ class IGetScenarioRegenerationRunContextAndCreateRunV3Param(BaseModel):
 
 
 
-class IScenarioRegenRunContextCreateRunV3Msg(BaseModel):
+class IScenarioRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -17082,9 +17082,9 @@ class GetScenarioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     persona_id: str | None = None
     persona_name: str | None = None
     persona_description: str | None = None
-    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV3Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV3Docum] | None = None
-    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV3Param] | None = None
+    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV4Doc] | None = None
+    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV4Docum] | None = None
+    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV4Param] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
@@ -17092,7 +17092,7 @@ class GetScenarioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    previous_messages: list[IScenarioRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IScenarioRegenRunContextCreateRunV4Msg] | None = None
 
 class GetScenarioRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -17123,9 +17123,9 @@ class GetScenarioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     persona_id: str | None = None
     persona_name: str | None = None
     persona_description: str | None = None
-    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV3Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV3Docum] | None = None
-    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV3Param] | None = None
+    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV4Doc] | None = None
+    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV4Docum] | None = None
+    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV4Param] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
@@ -17133,7 +17133,7 @@ class GetScenarioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    previous_messages: list[IScenarioRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IScenarioRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -17160,7 +17160,7 @@ class GetScenarioRunContextAndCreateRunSqlParams(BaseModel):
             self.parameter_item_ids,
         )
 
-class IGetScenarioRunContextAndCreateRunV3Document(BaseModel):
+class IGetScenarioRunContextAndCreateRunV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -17172,7 +17172,7 @@ class IGetScenarioRunContextAndCreateRunV3Document(BaseModel):
 
 
 
-class IGetScenarioRunContextAndCreateRunV3DocumentTemplate(BaseModel):
+class IGetScenarioRunContextAndCreateRunV4DocumentTemplate(BaseModel):
 
     document_id: str | None
     document_name: str | None
@@ -17186,7 +17186,7 @@ class IGetScenarioRunContextAndCreateRunV3DocumentTemplate(BaseModel):
 
 
 
-class IGetScenarioRunContextAndCreateRunV3ParameterItem(BaseModel):
+class IGetScenarioRunContextAndCreateRunV4ParameterItem(BaseModel):
 
     item_name: str | None
     item_description: str | None
@@ -17212,9 +17212,9 @@ class GetScenarioRunContextAndCreateRunSqlRow(BaseModel):
     persona_id: str | None = None
     persona_name: str | None = None
     persona_description: str | None = None
-    documents: list[IGetScenarioRunContextAndCreateRunV3Document] | None = None
-    document_templates: list[IGetScenarioRunContextAndCreateRunV3DocumentTemplate] | None = None
-    parameter_items: list[IGetScenarioRunContextAndCreateRunV3ParameterItem] | None = None
+    documents: list[IGetScenarioRunContextAndCreateRunV4Document] | None = None
+    document_templates: list[IGetScenarioRunContextAndCreateRunV4DocumentTemplate] | None = None
+    parameter_items: list[IGetScenarioRunContextAndCreateRunV4ParameterItem] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
@@ -17265,9 +17265,9 @@ class GetScenarioRunContextAndCreateRunApiResponse(BaseModel):
     persona_id: str | None = None
     persona_name: str | None = None
     persona_description: str | None = None
-    documents: list[IGetScenarioRunContextAndCreateRunV3Document] | None = None
-    document_templates: list[IGetScenarioRunContextAndCreateRunV3DocumentTemplate] | None = None
-    parameter_items: list[IGetScenarioRunContextAndCreateRunV3ParameterItem] | None = None
+    documents: list[IGetScenarioRunContextAndCreateRunV4Document] | None = None
+    document_templates: list[IGetScenarioRunContextAndCreateRunV4DocumentTemplate] | None = None
+    parameter_items: list[IGetScenarioRunContextAndCreateRunV4ParameterItem] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
@@ -17303,7 +17303,7 @@ class GetScenariosListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListScenariosV3Cohort(BaseModel):
+class QListScenariosV4Cohort(BaseModel):
 
     cohort_id: str | None
     name: str | None
@@ -17312,7 +17312,7 @@ class QListScenariosV3Cohort(BaseModel):
 
 
 
-class QListScenariosV3Department(BaseModel):
+class QListScenariosV4Department(BaseModel):
 
     department_id: str | None
     name: str | None
@@ -17321,7 +17321,7 @@ class QListScenariosV3Department(BaseModel):
 
 
 
-class QListScenariosV3Field(BaseModel):
+class QListScenariosV4Field(BaseModel):
 
     field_id: str | None
     name: str | None
@@ -17332,7 +17332,7 @@ class QListScenariosV3Field(BaseModel):
 
 
 
-class QListScenariosV3Objective(BaseModel):
+class QListScenariosV4Objective(BaseModel):
 
     objective_id: str | None
     name: str | None
@@ -17341,7 +17341,7 @@ class QListScenariosV3Objective(BaseModel):
 
 
 
-class QListScenariosV3Option(BaseModel):
+class QListScenariosV4Option(BaseModel):
 
     value: str | None
     label: str | None
@@ -17349,7 +17349,7 @@ class QListScenariosV3Option(BaseModel):
 
 
 
-class QListScenariosV3Persona(BaseModel):
+class QListScenariosV4Persona(BaseModel):
 
     persona_id: str | None
     name: str | None
@@ -17361,7 +17361,7 @@ class QListScenariosV3Persona(BaseModel):
 
 
 
-class QListScenariosV3Scenario(BaseModel):
+class QListScenariosV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     title: str | None
@@ -17384,7 +17384,7 @@ class QListScenariosV3Scenario(BaseModel):
 
 
 
-class QListScenariosV3Simulation(BaseModel):
+class QListScenariosV4Simulation(BaseModel):
 
     simulation_id: str | None
     name: str | None
@@ -17395,16 +17395,16 @@ class QListScenariosV3Simulation(BaseModel):
 class GetScenariosListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    scenarios: list[QListScenariosV3Scenario] | None = None
-    objectives: list[QListScenariosV3Objective] | None = None
-    fields: list[QListScenariosV3Field] | None = None
-    cohorts: list[QListScenariosV3Cohort] | None = None
-    personas: list[QListScenariosV3Persona] | None = None
-    simulations: list[QListScenariosV3Simulation] | None = None
-    departments: list[QListScenariosV3Department] | None = None
-    persona_options: list[QListScenariosV3Option] | None = None
-    simulation_options: list[QListScenariosV3Option] | None = None
-    department_options: list[QListScenariosV3Option] | None = None
+    scenarios: list[QListScenariosV4Scenario] | None = None
+    objectives: list[QListScenariosV4Objective] | None = None
+    fields: list[QListScenariosV4Field] | None = None
+    cohorts: list[QListScenariosV4Cohort] | None = None
+    personas: list[QListScenariosV4Persona] | None = None
+    simulations: list[QListScenariosV4Simulation] | None = None
+    departments: list[QListScenariosV4Department] | None = None
+    persona_options: list[QListScenariosV4Option] | None = None
+    simulation_options: list[QListScenariosV4Option] | None = None
+    department_options: list[QListScenariosV4Option] | None = None
 
 class GetScenariosListApiRequest(BaseModel):
 
@@ -17413,16 +17413,16 @@ class GetScenariosListApiRequest(BaseModel):
 class GetScenariosListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    scenarios: list[QListScenariosV3Scenario] | None = None
-    objectives: list[QListScenariosV3Objective] | None = None
-    fields: list[QListScenariosV3Field] | None = None
-    cohorts: list[QListScenariosV3Cohort] | None = None
-    personas: list[QListScenariosV3Persona] | None = None
-    simulations: list[QListScenariosV3Simulation] | None = None
-    departments: list[QListScenariosV3Department] | None = None
-    persona_options: list[QListScenariosV3Option] | None = None
-    simulation_options: list[QListScenariosV3Option] | None = None
-    department_options: list[QListScenariosV3Option] | None = None
+    scenarios: list[QListScenariosV4Scenario] | None = None
+    objectives: list[QListScenariosV4Objective] | None = None
+    fields: list[QListScenariosV4Field] | None = None
+    cohorts: list[QListScenariosV4Cohort] | None = None
+    personas: list[QListScenariosV4Persona] | None = None
+    simulations: list[QListScenariosV4Simulation] | None = None
+    departments: list[QListScenariosV4Department] | None = None
+    persona_options: list[QListScenariosV4Option] | None = None
+    simulation_options: list[QListScenariosV4Option] | None = None
+    department_options: list[QListScenariosV4Option] | None = None
 
 
 
@@ -17500,7 +17500,7 @@ class RandomizeScenarioApiResponse(BaseModel):
 
 # Generated from: update_scenario
 
-class QUpdateScenarioV3Parameter(BaseModel):
+class QUpdateScenarioV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     field_ids: list[UUID] | None
@@ -17508,7 +17508,7 @@ class QUpdateScenarioV3Parameter(BaseModel):
 
 
 
-class QUpdateScenarioV3QuestionTimestamp(BaseModel):
+class QUpdateScenarioV4QuestionTimestamp(BaseModel):
 
     question_id: UUID | None
     video_id: UUID | None
@@ -17527,7 +17527,7 @@ class UpdateScenarioSqlParams(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameters: list[QUpdateScenarioV3Parameter]
+    parameters: list[QUpdateScenarioV4Parameter]
     profile_id: UUID
     description: str | None = None
     video_agent_id: UUID | None = None
@@ -17540,7 +17540,7 @@ class UpdateScenarioSqlParams(BaseModel):
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: list[QUpdateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    question_timestamps: list[QUpdateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
     scenario_agent_id: UUID | None = None
     image_agent_id: UUID | None = None
 
@@ -17605,7 +17605,7 @@ class UpdateScenarioApiRequest(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameters: list[QUpdateScenarioV3Parameter]
+    parameters: list[QUpdateScenarioV4Parameter]
     description: str | None = None
     video_agent_id: UUID | None = None
     problem_statement_name: str | None = None
@@ -17617,7 +17617,7 @@ class UpdateScenarioApiRequest(BaseModel):
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: list[QUpdateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    question_timestamps: list[QUpdateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
     scenario_agent_id: UUID | None = None
     image_agent_id: UUID | None = None
 
@@ -17643,26 +17643,26 @@ class GetActiveSettingsSqlParams(BaseModel):
             self.department_id,
         )
 
-class QGetSettingsDetailV3AuthItem(BaseModel):
+class QGetSettingsDetailV4AuthItem(BaseModel):
 
     auth_item_id: UUID | None
     name: str | None
     description: str | None
     encrypted: bool | None
 
-class QGetSettingsDetailV3Auth(BaseModel):
+class QGetSettingsDetailV4Auth(BaseModel):
 
     auth_id: UUID | None
     name: str | None
     description: str | None
     slug: str | None
     active: bool | None
-    auth_items: list[QGetSettingsDetailV3AuthItem] | None
+    auth_items: list[QGetSettingsDetailV4AuthItem] | None
 
 
 
 
-class QGetSettingsDetailV3Provider(BaseModel):
+class QGetSettingsDetailV4Provider(BaseModel):
 
     provider_id: UUID | None
     name: str | None
@@ -17696,9 +17696,9 @@ class GetActiveSettingsSqlRow(BaseModel):
     warning_threshold: int | None = None
     danger_threshold: int | None = None
     auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV3Auth] | None = None
+    auths: list[QGetSettingsDetailV4Auth] | None = None
     provider_ids: list[str] | None = None
-    providers: list[QGetSettingsDetailV3Provider] | None = None
+    providers: list[QGetSettingsDetailV4Provider] | None = None
     default_guest_profile_id: UUID | None = None
     default_account_profile_id: UUID | None = None
 
@@ -17732,9 +17732,9 @@ class GetActiveSettingsApiResponse(BaseModel):
     warning_threshold: int | None = None
     danger_threshold: int | None = None
     auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV3Auth] | None = None
+    auths: list[QGetSettingsDetailV4Auth] | None = None
     provider_ids: list[str] | None = None
-    providers: list[QGetSettingsDetailV3Provider] | None = None
+    providers: list[QGetSettingsDetailV4Provider] | None = None
     default_guest_profile_id: UUID | None = None
     default_account_profile_id: UUID | None = None
 
@@ -17753,33 +17753,33 @@ class GetSettingsDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetSettingsDetailV3AuthKeyItem(BaseModel):
+class QGetSettingsDetailV4AuthKeyItem(BaseModel):
 
     auth_item_id: UUID | None
     key_id: UUID | None
 
-class QGetSettingsDetailV3AuthKey(BaseModel):
+class QGetSettingsDetailV4AuthKey(BaseModel):
 
     auth_id: UUID | None
-    items: list[QGetSettingsDetailV3AuthKeyItem] | None
+    items: list[QGetSettingsDetailV4AuthKeyItem] | None
 
 
 
 
-class QGetSettingsDetailV3AuthValueItem(BaseModel):
+class QGetSettingsDetailV4AuthValueItem(BaseModel):
 
     auth_item_id: UUID | None
     value: str | None
 
-class QGetSettingsDetailV3AuthValue(BaseModel):
+class QGetSettingsDetailV4AuthValue(BaseModel):
 
     auth_id: UUID | None
-    items: list[QGetSettingsDetailV3AuthValueItem] | None
+    items: list[QGetSettingsDetailV4AuthValueItem] | None
 
 
 
 
-class QGetSettingsDetailV3ProviderKey(BaseModel):
+class QGetSettingsDetailV4ProviderKey(BaseModel):
 
     provider_id: UUID | None
     key_id: UUID | None
@@ -17811,14 +17811,14 @@ class GetSettingsDetailSqlRow(BaseModel):
     warning_threshold: int | None = None
     danger_threshold: int | None = None
     auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV3Auth] | None = None
+    auths: list[QGetSettingsDetailV4Auth] | None = None
     provider_ids: list[str] | None = None
-    providers: list[QGetSettingsDetailV3Provider] | None = None
-    provider_keys: list[QGetSettingsDetailV3ProviderKey] | None = None
-    auth_keys: list[QGetSettingsDetailV3AuthKey] | None = None
-    auth_values: list[QGetSettingsDetailV3AuthValue] | None = None
-    all_providers: list[QGetSettingsDetailV3Provider] | None = None
-    all_auths: list[QGetSettingsDetailV3Auth] | None = None
+    providers: list[QGetSettingsDetailV4Provider] | None = None
+    provider_keys: list[QGetSettingsDetailV4ProviderKey] | None = None
+    auth_keys: list[QGetSettingsDetailV4AuthKey] | None = None
+    auth_values: list[QGetSettingsDetailV4AuthValue] | None = None
+    all_providers: list[QGetSettingsDetailV4Provider] | None = None
+    all_auths: list[QGetSettingsDetailV4Auth] | None = None
     default_admin_profile_id: UUID | None = None
     default_admin_name: str | None = None
     default_guest_profile_id: UUID | None = None
@@ -17857,14 +17857,14 @@ class GetSettingsDetailApiResponse(BaseModel):
     warning_threshold: int | None = None
     danger_threshold: int | None = None
     auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV3Auth] | None = None
+    auths: list[QGetSettingsDetailV4Auth] | None = None
     provider_ids: list[str] | None = None
-    providers: list[QGetSettingsDetailV3Provider] | None = None
-    provider_keys: list[QGetSettingsDetailV3ProviderKey] | None = None
-    auth_keys: list[QGetSettingsDetailV3AuthKey] | None = None
-    auth_values: list[QGetSettingsDetailV3AuthValue] | None = None
-    all_providers: list[QGetSettingsDetailV3Provider] | None = None
-    all_auths: list[QGetSettingsDetailV3Auth] | None = None
+    providers: list[QGetSettingsDetailV4Provider] | None = None
+    provider_keys: list[QGetSettingsDetailV4ProviderKey] | None = None
+    auth_keys: list[QGetSettingsDetailV4AuthKey] | None = None
+    auth_values: list[QGetSettingsDetailV4AuthValue] | None = None
+    all_providers: list[QGetSettingsDetailV4Provider] | None = None
+    all_auths: list[QGetSettingsDetailV4Auth] | None = None
     default_admin_profile_id: UUID | None = None
     default_admin_name: str | None = None
     default_guest_profile_id: UUID | None = None
@@ -17885,7 +17885,7 @@ class GetSettingsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetSettingsListV3Setting(BaseModel):
+class QGetSettingsListV4Setting(BaseModel):
 
     settings_id: UUID | None
     created_at: str | None
@@ -17897,7 +17897,7 @@ class QGetSettingsListV3Setting(BaseModel):
 class GetSettingsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    settings: list[QGetSettingsListV3Setting] | None = None
+    settings: list[QGetSettingsListV4Setting] | None = None
 
 class GetSettingsListApiRequest(BaseModel):
 
@@ -17906,13 +17906,13 @@ class GetSettingsListApiRequest(BaseModel):
 class GetSettingsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    settings: list[QGetSettingsListV3Setting] | None = None
+    settings: list[QGetSettingsListV4Setting] | None = None
 
 
 
 # Generated from: update_settings
 
-class IUpdateSettingsV3AuthEnabled(BaseModel):
+class IUpdateSettingsV4AuthEnabled(BaseModel):
 
     auth_id: UUID | None
     enabled: bool | None
@@ -17920,33 +17920,33 @@ class IUpdateSettingsV3AuthEnabled(BaseModel):
 
 
 
-class IUpdateSettingsV3AuthKeyItem(BaseModel):
+class IUpdateSettingsV4AuthKeyItem(BaseModel):
 
     auth_item_id: UUID | None
     key_id: UUID | None
 
-class IUpdateSettingsV3AuthKey(BaseModel):
+class IUpdateSettingsV4AuthKey(BaseModel):
 
     auth_id: UUID | None
-    items: list[IUpdateSettingsV3AuthKeyItem] | None
+    items: list[IUpdateSettingsV4AuthKeyItem] | None
 
 
 
 
-class IUpdateSettingsV3AuthValueItem(BaseModel):
+class IUpdateSettingsV4AuthValueItem(BaseModel):
 
     auth_item_id: UUID | None
     value: str | None
 
-class IUpdateSettingsV3AuthValue(BaseModel):
+class IUpdateSettingsV4AuthValue(BaseModel):
 
     auth_id: UUID | None
-    items: list[IUpdateSettingsV3AuthValueItem] | None
+    items: list[IUpdateSettingsV4AuthValueItem] | None
 
 
 
 
-class IUpdateSettingsV3ProviderEnabled(BaseModel):
+class IUpdateSettingsV4ProviderEnabled(BaseModel):
 
     provider_id: UUID | None
     enabled: bool | None
@@ -17954,7 +17954,7 @@ class IUpdateSettingsV3ProviderEnabled(BaseModel):
 
 
 
-class IUpdateSettingsV3ProviderKey(BaseModel):
+class IUpdateSettingsV4ProviderKey(BaseModel):
 
     provider_id: UUID | None
     key_id: UUID | None
@@ -17982,13 +17982,13 @@ class UpdateSettingsSqlParams(BaseModel):
     warning_threshold: int
     danger_threshold: int
     profile_id: UUID
-    provider_keys: list[IUpdateSettingsV3ProviderKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_keys: list[IUpdateSettingsV3AuthKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider_keys: list[IUpdateSettingsV4ProviderKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_keys: list[IUpdateSettingsV4AuthKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
     default_admin_profile_id: UUID | None = None
     default_guest_profile_id: UUID | None = None
-    provider_enabled: list[IUpdateSettingsV3ProviderEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_enabled: list[IUpdateSettingsV3AuthEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_values: list[IUpdateSettingsV3AuthValue] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider_enabled: list[IUpdateSettingsV4ProviderEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_enabled: list[IUpdateSettingsV4AuthEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_values: list[IUpdateSettingsV4AuthValue] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -18077,13 +18077,13 @@ class UpdateSettingsApiRequest(BaseModel):
     success_threshold: int
     warning_threshold: int
     danger_threshold: int
-    provider_keys: list[IUpdateSettingsV3ProviderKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_keys: list[IUpdateSettingsV3AuthKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider_keys: list[IUpdateSettingsV4ProviderKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_keys: list[IUpdateSettingsV4AuthKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
     default_admin_profile_id: UUID | None = None
     default_guest_profile_id: UUID | None = None
-    provider_enabled: list[IUpdateSettingsV3ProviderEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_enabled: list[IUpdateSettingsV3AuthEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_values: list[IUpdateSettingsV3AuthValue] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider_enabled: list[IUpdateSettingsV4ProviderEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_enabled: list[IUpdateSettingsV4AuthEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_values: list[IUpdateSettingsV4AuthValue] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class UpdateSettingsApiResponse(BaseModel):
@@ -18111,7 +18111,7 @@ class GetVoiceRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IGetVoiceRegenerationRunContextAndCreateRunV3Document(BaseModel):
+class IGetVoiceRegenerationRunContextAndCreateRunV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -18122,7 +18122,7 @@ class IGetVoiceRegenerationRunContextAndCreateRunV3Document(BaseModel):
 
 
 
-class IGetVoiceRegenerationRunContextAndCreateRunV3Msg(BaseModel):
+class IGetVoiceRegenerationRunContextAndCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -18164,9 +18164,9 @@ class GetVoiceRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     profile_id: UUID | None = None
     agent_id: UUID | None = None
     voice_agent_id: UUID | None = None
-    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV3Document] | None = None
+    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
-    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV3Msg] | None = None
+    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV4Msg] | None = None
 
 class GetVoiceRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -18211,9 +18211,9 @@ class GetVoiceRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     profile_id: UUID | None = None
     agent_id: UUID | None = None
     voice_agent_id: UUID | None = None
-    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV3Document] | None = None
+    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
-    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV3Msg] | None = None
+    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV4Msg] | None = None
 
 
 
@@ -18230,7 +18230,7 @@ class GetVoiceRunContextSqlParams(BaseModel):
             self.run_id,
         )
 
-class IGetVoiceRunContextV3Document(BaseModel):
+class IGetVoiceRunContextV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -18275,7 +18275,7 @@ class GetVoiceRunContextSqlRow(BaseModel):
     profile_id: UUID | None = None
     agent_id: UUID | None = None
     voice_agent_id: UUID | None = None
-    documents: list[IGetVoiceRunContextV3Document] | None = None
+    documents: list[IGetVoiceRunContextV4Document] | None = None
 
 class GetVoiceRunContextApiRequest(BaseModel):
 
@@ -18319,7 +18319,7 @@ class GetVoiceRunContextApiResponse(BaseModel):
     profile_id: UUID | None = None
     agent_id: UUID | None = None
     voice_agent_id: UUID | None = None
-    documents: list[IGetVoiceRunContextV3Document] | None = None
+    documents: list[IGetVoiceRunContextV4Document] | None = None
 
 
 
@@ -18427,7 +18427,7 @@ class CreateHintsSqlParams(BaseModel):
             self.hint_texts,
         )
 
-class ICreateHintsV3HintResult(BaseModel):
+class ICreateHintsV4HintResult(BaseModel):
 
     simulation_message_id: UUID | None
     idx: int | None
@@ -18435,7 +18435,7 @@ class ICreateHintsV3HintResult(BaseModel):
 
 class CreateHintsSqlRow(BaseModel):
 
-    hints: list[ICreateHintsV3HintResult] | None = None
+    hints: list[ICreateHintsV4HintResult] | None = None
 
 class CreateHintsApiRequest(BaseModel):
 
@@ -18444,13 +18444,13 @@ class CreateHintsApiRequest(BaseModel):
 
 class CreateHintsApiResponse(BaseModel):
 
-    hints: list[ICreateHintsV3HintResult] | None = None
+    hints: list[ICreateHintsV4HintResult] | None = None
 
 
 
 # Generated from: create_simulation
 
-class ICreateSimulationV3ScenarioRubricGradeAgent(BaseModel):
+class ICreateSimulationV4ScenarioRubricGradeAgent(BaseModel):
 
     scenario_id: UUID | None
     rubric_id: UUID | None
@@ -18470,7 +18470,7 @@ class CreateSimulationSqlParams(BaseModel):
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
+    scenario_rubric_grade_agents: list[ICreateSimulationV4ScenarioRubricGradeAgent]
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: UUID
     profile_id: UUID
@@ -18517,7 +18517,7 @@ class CreateSimulationApiRequest(BaseModel):
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
+    scenario_rubric_grade_agents: list[ICreateSimulationV4ScenarioRubricGradeAgent]
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: UUID
 
@@ -18609,7 +18609,7 @@ class GenerateHintsSqlParams(BaseModel):
             self.profile_id,
         )
 
-class IGetHintRunContextAndCreateRunV3Document(BaseModel):
+class IGetHintRunContextAndCreateRunV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -18642,7 +18642,7 @@ class GenerateHintsSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[IGetHintRunContextAndCreateRunV3Document] | None = None
+    documents: list[IGetHintRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
 
 class GenerateHintsApiRequest(BaseModel):
@@ -18677,7 +18677,7 @@ class GenerateHintsApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[IGetHintRunContextAndCreateRunV3Document] | None = None
+    documents: list[IGetHintRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
 
 
@@ -18705,7 +18705,7 @@ class GetHintRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IHintRegenRunContextCreateRunV3Document(BaseModel):
+class IHintRegenRunContextCreateRunV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -18715,7 +18715,7 @@ class IHintRegenRunContextCreateRunV3Document(BaseModel):
 
 
 
-class IHintRegenRunContextCreateRunV3Msg(BaseModel):
+class IHintRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -18746,10 +18746,10 @@ class GetHintRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[IHintRegenRunContextCreateRunV3Document] | None = None
+    documents: list[IHintRegenRunContextCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IHintRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IHintRegenRunContextCreateRunV4Msg] | None = None
 
 class GetHintRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -18786,10 +18786,10 @@ class GetHintRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[IHintRegenRunContextCreateRunV3Document] | None = None
+    documents: list[IHintRegenRunContextCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IHintRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IHintRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -18842,7 +18842,7 @@ class GetSimulationDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetSimulationDetailV3Agent(BaseModel):
+class QGetSimulationDetailV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -18852,7 +18852,7 @@ class QGetSimulationDetailV3Agent(BaseModel):
 
 
 
-class QGetSimulationDetailV3Department(BaseModel):
+class QGetSimulationDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -18864,7 +18864,7 @@ class QGetSimulationDetailV3Department(BaseModel):
 
 
 
-class QGetSimulationDetailV3Field(BaseModel):
+class QGetSimulationDetailV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -18875,7 +18875,7 @@ class QGetSimulationDetailV3Field(BaseModel):
 
 
 
-class QGetSimulationDetailV3Parameter(BaseModel):
+class QGetSimulationDetailV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -18886,7 +18886,7 @@ class QGetSimulationDetailV3Parameter(BaseModel):
 
 
 
-class QGetSimulationDetailV3ParameterItem(BaseModel):
+class QGetSimulationDetailV4ParameterItem(BaseModel):
 
     id: UUID | None
     parameter_id: UUID | None
@@ -18896,7 +18896,7 @@ class QGetSimulationDetailV3ParameterItem(BaseModel):
 
 
 
-class QGetSimulationDetailV3ParameterItemDetail(BaseModel):
+class QGetSimulationDetailV4ParameterItemDetail(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -18906,7 +18906,7 @@ class QGetSimulationDetailV3ParameterItemDetail(BaseModel):
 
 
 
-class QGetSimulationDetailV3Rubric(BaseModel):
+class QGetSimulationDetailV4Rubric(BaseModel):
 
     rubric_id: UUID | None
     name: str | None
@@ -18915,7 +18915,7 @@ class QGetSimulationDetailV3Rubric(BaseModel):
 
 
 
-class QGetSimulationDetailV3RubricGradeAgent(BaseModel):
+class QGetSimulationDetailV4RubricGradeAgent(BaseModel):
 
     rubric_grade_agent_id: UUID | None
     rubric_id: UUID | None
@@ -18925,7 +18925,7 @@ class QGetSimulationDetailV3RubricGradeAgent(BaseModel):
     audio_agent_id: UUID | None
     audio_agent_name: str | None
 
-class QGetSimulationDetailV3Scenario(BaseModel):
+class QGetSimulationDetailV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     title: str | None
@@ -18943,12 +18943,12 @@ class QGetSimulationDetailV3Scenario(BaseModel):
     last_used: str | None
     can_remove: bool | None
     has_active_video: bool | None
-    rubric_grade_agents: list[QGetSimulationDetailV3RubricGradeAgent] | None
+    rubric_grade_agents: list[QGetSimulationDetailV4RubricGradeAgent] | None
 
 
 
 
-class QGetSimulationDetailV3Document(BaseModel):
+class QGetSimulationDetailV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -18957,7 +18957,7 @@ class QGetSimulationDetailV3Document(BaseModel):
 
 
 
-class QGetSimulationDetailV3Persona(BaseModel):
+class QGetSimulationDetailV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -18966,15 +18966,15 @@ class QGetSimulationDetailV3Persona(BaseModel):
     icon: str | None
     image_model: bool | None
 
-class QGetSimulationDetailV3ScenarioFull(BaseModel):
+class QGetSimulationDetailV4ScenarioFull(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
     description: str | None
     persona_ids: list[UUID] | None
-    persona_mapping: list[QGetSimulationDetailV3Persona] | None
-    document_mapping: list[QGetSimulationDetailV3Document] | None
-    parameter_item_mapping: list[QGetSimulationDetailV3Field] | None
+    persona_mapping: list[QGetSimulationDetailV4Persona] | None
+    document_mapping: list[QGetSimulationDetailV4Document] | None
+    parameter_item_mapping: list[QGetSimulationDetailV4Field] | None
     parameter_item_ids: list[UUID] | None
     document_ids: list[UUID] | None
 
@@ -19002,15 +19002,15 @@ class GetSimulationDetailSqlRow(BaseModel):
     can_delete: bool | None = None
     in_use: bool | None = None
     cohort_count: int | None = None
-    scenarios: list[QGetSimulationDetailV3Scenario] | None = None
-    parameters: list[QGetSimulationDetailV3ParameterItem] | None = None
-    parameter_items: list[QGetSimulationDetailV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationDetailV3ScenarioFull] | None = None
-    rubrics: list[QGetSimulationDetailV3Rubric] | None = None
-    departments: list[QGetSimulationDetailV3Department] | None = None
-    parameters_full: list[QGetSimulationDetailV3Parameter] | None = None
-    fields: list[QGetSimulationDetailV3Field] | None = None
-    agents: list[QGetSimulationDetailV3Agent] | None = None
+    scenarios: list[QGetSimulationDetailV4Scenario] | None = None
+    parameters: list[QGetSimulationDetailV4ParameterItem] | None = None
+    parameter_items: list[QGetSimulationDetailV4ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationDetailV4ScenarioFull] | None = None
+    rubrics: list[QGetSimulationDetailV4Rubric] | None = None
+    departments: list[QGetSimulationDetailV4Department] | None = None
+    parameters_full: list[QGetSimulationDetailV4Parameter] | None = None
+    fields: list[QGetSimulationDetailV4Field] | None = None
+    agents: list[QGetSimulationDetailV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
 
 class GetSimulationDetailApiRequest(BaseModel):
@@ -19041,15 +19041,15 @@ class GetSimulationDetailApiResponse(BaseModel):
     can_delete: bool | None = None
     in_use: bool | None = None
     cohort_count: int | None = None
-    scenarios: list[QGetSimulationDetailV3Scenario] | None = None
-    parameters: list[QGetSimulationDetailV3ParameterItem] | None = None
-    parameter_items: list[QGetSimulationDetailV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationDetailV3ScenarioFull] | None = None
-    rubrics: list[QGetSimulationDetailV3Rubric] | None = None
-    departments: list[QGetSimulationDetailV3Department] | None = None
-    parameters_full: list[QGetSimulationDetailV3Parameter] | None = None
-    fields: list[QGetSimulationDetailV3Field] | None = None
-    agents: list[QGetSimulationDetailV3Agent] | None = None
+    scenarios: list[QGetSimulationDetailV4Scenario] | None = None
+    parameters: list[QGetSimulationDetailV4ParameterItem] | None = None
+    parameter_items: list[QGetSimulationDetailV4ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationDetailV4ScenarioFull] | None = None
+    rubrics: list[QGetSimulationDetailV4Rubric] | None = None
+    departments: list[QGetSimulationDetailV4Department] | None = None
+    parameters_full: list[QGetSimulationDetailV4Parameter] | None = None
+    fields: list[QGetSimulationDetailV4Field] | None = None
+    agents: list[QGetSimulationDetailV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
 
 
@@ -19065,7 +19065,7 @@ class GetSimulationMessagesSqlParams(BaseModel):
             self.chat_id,
         )
 
-class QGetSimulationMessagesV3Message(BaseModel):
+class QGetSimulationMessagesV4Message(BaseModel):
 
     id: str | None
     chat_id: str | None
@@ -19079,7 +19079,7 @@ class QGetSimulationMessagesV3Message(BaseModel):
 
 class GetSimulationMessagesSqlRow(BaseModel):
 
-    messages: list[QGetSimulationMessagesV3Message] | None = None
+    messages: list[QGetSimulationMessagesV4Message] | None = None
 
 class GetSimulationMessagesApiRequest(BaseModel):
 
@@ -19087,7 +19087,7 @@ class GetSimulationMessagesApiRequest(BaseModel):
 
 class GetSimulationMessagesApiResponse(BaseModel):
 
-    messages: list[QGetSimulationMessagesV3Message] | None = None
+    messages: list[QGetSimulationMessagesV4Message] | None = None
 
 
 
@@ -19102,7 +19102,7 @@ class GetSimulationNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetSimulationNewV3Agent(BaseModel):
+class QGetSimulationNewV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -19112,7 +19112,7 @@ class QGetSimulationNewV3Agent(BaseModel):
 
 
 
-class QGetSimulationNewV3Department(BaseModel):
+class QGetSimulationNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -19124,7 +19124,7 @@ class QGetSimulationNewV3Department(BaseModel):
 
 
 
-class QGetSimulationNewV3Field(BaseModel):
+class QGetSimulationNewV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -19135,7 +19135,7 @@ class QGetSimulationNewV3Field(BaseModel):
 
 
 
-class QGetSimulationNewV3Parameter(BaseModel):
+class QGetSimulationNewV4Parameter(BaseModel):
 
     parameter_id: UUID | None
     name: str | None
@@ -19146,7 +19146,7 @@ class QGetSimulationNewV3Parameter(BaseModel):
 
 
 
-class QGetSimulationNewV3ParameterItem(BaseModel):
+class QGetSimulationNewV4ParameterItem(BaseModel):
 
     id: UUID | None
     parameter_id: UUID | None
@@ -19156,7 +19156,7 @@ class QGetSimulationNewV3ParameterItem(BaseModel):
 
 
 
-class QGetSimulationNewV3ParameterItemDetail(BaseModel):
+class QGetSimulationNewV4ParameterItemDetail(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -19166,7 +19166,7 @@ class QGetSimulationNewV3ParameterItemDetail(BaseModel):
 
 
 
-class QGetSimulationNewV3Rubric(BaseModel):
+class QGetSimulationNewV4Rubric(BaseModel):
 
     rubric_id: UUID | None
     name: str | None
@@ -19175,7 +19175,7 @@ class QGetSimulationNewV3Rubric(BaseModel):
 
 
 
-class QGetSimulationNewV3Scenario(BaseModel):
+class QGetSimulationNewV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     title: str | None
@@ -19197,7 +19197,7 @@ class QGetSimulationNewV3Scenario(BaseModel):
 
 
 
-class QGetSimulationNewV3Document(BaseModel):
+class QGetSimulationNewV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -19206,7 +19206,7 @@ class QGetSimulationNewV3Document(BaseModel):
 
 
 
-class QGetSimulationNewV3Persona(BaseModel):
+class QGetSimulationNewV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -19215,22 +19215,22 @@ class QGetSimulationNewV3Persona(BaseModel):
     icon: str | None
     image_model: bool | None
 
-class QGetSimulationNewV3ScenarioFull(BaseModel):
+class QGetSimulationNewV4ScenarioFull(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
     description: str | None
     persona_ids: list[UUID] | None
-    persona_mapping: list[QGetSimulationNewV3Persona] | None
-    document_mapping: list[QGetSimulationNewV3Document] | None
-    parameter_item_mapping: list[QGetSimulationNewV3Field] | None
+    persona_mapping: list[QGetSimulationNewV4Persona] | None
+    document_mapping: list[QGetSimulationNewV4Document] | None
+    parameter_item_mapping: list[QGetSimulationNewV4Field] | None
     parameter_item_ids: list[UUID] | None
     document_ids: list[UUID] | None
 
 
 
 
-class QGetSimulationNewV3Video(BaseModel):
+class QGetSimulationNewV4Video(BaseModel):
 
     video_id: UUID | None
     name: str | None
@@ -19261,16 +19261,16 @@ class GetSimulationNewSqlRow(BaseModel):
     can_delete: bool | None = None
     in_use: bool | None = None
     cohort_count: int | None = None
-    scenarios: list[QGetSimulationNewV3Scenario] | None = None
-    videos: list[QGetSimulationNewV3Video] | None = None
-    parameters: list[QGetSimulationNewV3ParameterItem] | None = None
-    parameter_items: list[QGetSimulationNewV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationNewV3ScenarioFull] | None = None
-    rubrics: list[QGetSimulationNewV3Rubric] | None = None
-    departments: list[QGetSimulationNewV3Department] | None = None
-    parameters_full: list[QGetSimulationNewV3Parameter] | None = None
-    fields: list[QGetSimulationNewV3Field] | None = None
-    agents: list[QGetSimulationNewV3Agent] | None = None
+    scenarios: list[QGetSimulationNewV4Scenario] | None = None
+    videos: list[QGetSimulationNewV4Video] | None = None
+    parameters: list[QGetSimulationNewV4ParameterItem] | None = None
+    parameter_items: list[QGetSimulationNewV4ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationNewV4ScenarioFull] | None = None
+    rubrics: list[QGetSimulationNewV4Rubric] | None = None
+    departments: list[QGetSimulationNewV4Department] | None = None
+    parameters_full: list[QGetSimulationNewV4Parameter] | None = None
+    fields: list[QGetSimulationNewV4Field] | None = None
+    agents: list[QGetSimulationNewV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
 
@@ -19302,16 +19302,16 @@ class GetSimulationNewApiResponse(BaseModel):
     can_delete: bool | None = None
     in_use: bool | None = None
     cohort_count: int | None = None
-    scenarios: list[QGetSimulationNewV3Scenario] | None = None
-    videos: list[QGetSimulationNewV3Video] | None = None
-    parameters: list[QGetSimulationNewV3ParameterItem] | None = None
-    parameter_items: list[QGetSimulationNewV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationNewV3ScenarioFull] | None = None
-    rubrics: list[QGetSimulationNewV3Rubric] | None = None
-    departments: list[QGetSimulationNewV3Department] | None = None
-    parameters_full: list[QGetSimulationNewV3Parameter] | None = None
-    fields: list[QGetSimulationNewV3Field] | None = None
-    agents: list[QGetSimulationNewV3Agent] | None = None
+    scenarios: list[QGetSimulationNewV4Scenario] | None = None
+    videos: list[QGetSimulationNewV4Video] | None = None
+    parameters: list[QGetSimulationNewV4ParameterItem] | None = None
+    parameter_items: list[QGetSimulationNewV4ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationNewV4ScenarioFull] | None = None
+    rubrics: list[QGetSimulationNewV4Rubric] | None = None
+    departments: list[QGetSimulationNewV4Department] | None = None
+    parameters_full: list[QGetSimulationNewV4Parameter] | None = None
+    fields: list[QGetSimulationNewV4Field] | None = None
+    agents: list[QGetSimulationNewV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
 
@@ -19334,7 +19334,7 @@ class GetSimulationRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class QGetSimRegenRunContextCreateRunV3Document(BaseModel):
+class QGetSimRegenRunContextCreateRunV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -19344,7 +19344,7 @@ class QGetSimRegenRunContextCreateRunV3Document(BaseModel):
 
 
 
-class QGetSimRegenRunContextCreateRunV3Msg(BaseModel):
+class QGetSimRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -19390,10 +19390,10 @@ class GetSimulationRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetSimRegenRunContextCreateRunV3Document] | None = None
+    documents: list[QGetSimRegenRunContextCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[QGetSimRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[QGetSimRegenRunContextCreateRunV4Msg] | None = None
 
 class GetSimulationRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -19442,10 +19442,10 @@ class GetSimulationRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetSimRegenRunContextCreateRunV3Document] | None = None
+    documents: list[QGetSimRegenRunContextCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[QGetSimRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[QGetSimRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -19464,7 +19464,7 @@ class GetSimulationRunContextAndCreateRunSqlParams(BaseModel):
             self.group_id,
         )
 
-class QGetSimulationRunContextAndCreateRunV3Document(BaseModel):
+class QGetSimulationRunContextAndCreateRunV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -19512,7 +19512,7 @@ class GetSimulationRunContextAndCreateRunSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetSimulationRunContextAndCreateRunV3Document] | None = None
+    documents: list[QGetSimulationRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
 
@@ -19562,7 +19562,7 @@ class GetSimulationRunContextAndCreateRunApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetSimulationRunContextAndCreateRunV3Document] | None = None
+    documents: list[QGetSimulationRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
 
@@ -19579,7 +19579,7 @@ class GetSimulationRunContextSqlParams(BaseModel):
             self.chat_id,
         )
 
-class QGetSimulationRunContextV3Document(BaseModel):
+class QGetSimulationRunContextV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -19627,7 +19627,7 @@ class GetSimulationRunContextSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetSimulationRunContextV3Document] | None = None
+    documents: list[QGetSimulationRunContextV4Document] | None = None
 
 class GetSimulationRunContextApiRequest(BaseModel):
 
@@ -19674,7 +19674,7 @@ class GetSimulationRunContextApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: list[QGetSimulationRunContextV3Document] | None = None
+    documents: list[QGetSimulationRunContextV4Document] | None = None
 
 
 
@@ -19689,7 +19689,7 @@ class GetSimulationsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListSimulationsV3Cohort(BaseModel):
+class QListSimulationsV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -19698,7 +19698,7 @@ class QListSimulationsV3Cohort(BaseModel):
 
 
 
-class QListSimulationsV3Department(BaseModel):
+class QListSimulationsV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -19707,7 +19707,7 @@ class QListSimulationsV3Department(BaseModel):
 
 
 
-class QListSimulationsV3Option(BaseModel):
+class QListSimulationsV4Option(BaseModel):
 
     value: str | None
     label: str | None
@@ -19715,7 +19715,7 @@ class QListSimulationsV3Option(BaseModel):
 
 
 
-class QListSimulationsV3Rubric(BaseModel):
+class QListSimulationsV4Rubric(BaseModel):
 
     rubric_id: UUID | None
     name: str | None
@@ -19724,7 +19724,7 @@ class QListSimulationsV3Rubric(BaseModel):
 
 
 
-class QListSimulationsV3Document(BaseModel):
+class QListSimulationsV4Document(BaseModel):
 
     document_id: UUID | None
     name: str | None
@@ -19733,7 +19733,7 @@ class QListSimulationsV3Document(BaseModel):
 
 
 
-class QListSimulationsV3Field(BaseModel):
+class QListSimulationsV4Field(BaseModel):
 
     field_id: UUID | None
     name: str | None
@@ -19744,7 +19744,7 @@ class QListSimulationsV3Field(BaseModel):
 
 
 
-class QListSimulationsV3Persona(BaseModel):
+class QListSimulationsV4Persona(BaseModel):
 
     persona_id: UUID | None
     name: str | None
@@ -19753,23 +19753,23 @@ class QListSimulationsV3Persona(BaseModel):
     icon: str | None
     image_model: bool | None
 
-class QListSimulationsV3Scenario(BaseModel):
+class QListSimulationsV4Scenario(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
     description: str | None
     active: bool | None
     persona_ids: list[str] | None
-    persona_mapping: list[QListSimulationsV3Persona] | None
-    document_mapping: list[QListSimulationsV3Document] | None
-    parameter_item_mapping: list[QListSimulationsV3Field] | None
+    persona_mapping: list[QListSimulationsV4Persona] | None
+    document_mapping: list[QListSimulationsV4Document] | None
+    parameter_item_mapping: list[QListSimulationsV4Field] | None
     parameter_item_ids: list[str] | None
     document_ids: list[str] | None
 
 
 
 
-class QListSimulationsV3Simulation(BaseModel):
+class QListSimulationsV4Simulation(BaseModel):
 
     simulation_id: UUID | None
     name: str | None
@@ -19790,14 +19790,14 @@ class QListSimulationsV3Simulation(BaseModel):
 class GetSimulationsListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    simulations: list[QListSimulationsV3Simulation] | None = None
-    scenarios: list[QListSimulationsV3Scenario] | None = None
-    rubrics: list[QListSimulationsV3Rubric] | None = None
-    departments: list[QListSimulationsV3Department] | None = None
-    cohorts: list[QListSimulationsV3Cohort] | None = None
-    rubric_options: list[QListSimulationsV3Option] | None = None
-    cohort_options: list[QListSimulationsV3Option] | None = None
-    department_options: list[QListSimulationsV3Option] | None = None
+    simulations: list[QListSimulationsV4Simulation] | None = None
+    scenarios: list[QListSimulationsV4Scenario] | None = None
+    rubrics: list[QListSimulationsV4Rubric] | None = None
+    departments: list[QListSimulationsV4Department] | None = None
+    cohorts: list[QListSimulationsV4Cohort] | None = None
+    rubric_options: list[QListSimulationsV4Option] | None = None
+    cohort_options: list[QListSimulationsV4Option] | None = None
+    department_options: list[QListSimulationsV4Option] | None = None
 
 class GetSimulationsListApiRequest(BaseModel):
 
@@ -19806,14 +19806,14 @@ class GetSimulationsListApiRequest(BaseModel):
 class GetSimulationsListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    simulations: list[QListSimulationsV3Simulation] | None = None
-    scenarios: list[QListSimulationsV3Scenario] | None = None
-    rubrics: list[QListSimulationsV3Rubric] | None = None
-    departments: list[QListSimulationsV3Department] | None = None
-    cohorts: list[QListSimulationsV3Cohort] | None = None
-    rubric_options: list[QListSimulationsV3Option] | None = None
-    cohort_options: list[QListSimulationsV3Option] | None = None
-    department_options: list[QListSimulationsV3Option] | None = None
+    simulations: list[QListSimulationsV4Simulation] | None = None
+    scenarios: list[QListSimulationsV4Scenario] | None = None
+    rubrics: list[QListSimulationsV4Rubric] | None = None
+    departments: list[QListSimulationsV4Department] | None = None
+    cohorts: list[QListSimulationsV4Cohort] | None = None
+    rubric_options: list[QListSimulationsV4Option] | None = None
+    cohort_options: list[QListSimulationsV4Option] | None = None
+    department_options: list[QListSimulationsV4Option] | None = None
 
 
 
@@ -19889,7 +19889,7 @@ class StartSimulationAttemptSqlParams(BaseModel):
             self.scenario_id_override,
         )
 
-class QStartSimulationAttemptV3Document(BaseModel):
+class QStartSimulationAttemptV4Document(BaseModel):
 
     id: str | None
     name: str | None
@@ -19899,7 +19899,7 @@ class QStartSimulationAttemptV3Document(BaseModel):
 
 
 
-class QStartSimulationAttemptV3ParameterItem(BaseModel):
+class QStartSimulationAttemptV4ParameterItem(BaseModel):
 
     id: str | None
     name: str | None
@@ -19907,7 +19907,7 @@ class QStartSimulationAttemptV3ParameterItem(BaseModel):
     parameter_id: str | None
     parameter_name: str | None
 
-class QStartSimulationAttemptV3ScenarioMetadata(BaseModel):
+class QStartSimulationAttemptV4ScenarioMetadata(BaseModel):
 
     persona_id: str | None
     persona_name: str | None
@@ -19921,8 +19921,8 @@ class QStartSimulationAttemptV3ScenarioMetadata(BaseModel):
     provider: str | None
     provider_base_url: str | None
     provider_api_key: str | None
-    documents: list[QStartSimulationAttemptV3Document] | None
-    parameter_items: list[QStartSimulationAttemptV3ParameterItem] | None
+    documents: list[QStartSimulationAttemptV4Document] | None
+    parameter_items: list[QStartSimulationAttemptV4ParameterItem] | None
     active: bool | None
     default_scenario: bool | None
     generated: bool | None
@@ -19930,7 +19930,7 @@ class QStartSimulationAttemptV3ScenarioMetadata(BaseModel):
 
 
 
-class QStartSimulationAttemptV3SimulationData(BaseModel):
+class QStartSimulationAttemptV4SimulationData(BaseModel):
 
     id: str | None
     title: str | None
@@ -19951,8 +19951,8 @@ class StartSimulationAttemptSqlRow(BaseModel):
     content_type: str | None = None
     video_id: str | None = None
     trace_id: str | None = None
-    simulation_data: QStartSimulationAttemptV3SimulationData | None = None
-    scenario_metadata: QStartSimulationAttemptV3ScenarioMetadata | None = None
+    simulation_data: QStartSimulationAttemptV4SimulationData | None = None
+    scenario_metadata: QStartSimulationAttemptV4ScenarioMetadata | None = None
 
 class StartSimulationAttemptApiRequest(BaseModel):
 
@@ -19972,8 +19972,8 @@ class StartSimulationAttemptApiResponse(BaseModel):
     content_type: str | None = None
     video_id: str | None = None
     trace_id: str | None = None
-    simulation_data: QStartSimulationAttemptV3SimulationData | None = None
-    scenario_metadata: QStartSimulationAttemptV3ScenarioMetadata | None = None
+    simulation_data: QStartSimulationAttemptV4SimulationData | None = None
+    scenario_metadata: QStartSimulationAttemptV4ScenarioMetadata | None = None
 
 
 
@@ -19995,7 +19995,7 @@ class UpdateSimulationSqlParams(BaseModel):
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
+    scenario_rubric_grade_agents: list[ICreateSimulationV4ScenarioRubricGradeAgent]
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
@@ -20055,7 +20055,7 @@ class UpdateSimulationApiRequest(BaseModel):
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    scenario_rubric_grade_agents: list[ICreateSimulationV3ScenarioRubricGradeAgent]
+    scenario_rubric_grade_agents: list[ICreateSimulationV4ScenarioRubricGradeAgent]
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
@@ -20073,7 +20073,7 @@ class UpdateSimulationApiResponse(BaseModel):
 
 class BulkCreateStaffSqlParams(BaseModel):
 
-    profiles: list[IBulkCreateStaffV3Profile]
+    profiles: list[IBulkCreateStaffV4Profile]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -20095,7 +20095,7 @@ class BulkCreateStaffSqlRow(BaseModel):
 
 class BulkCreateStaffApiRequest(BaseModel):
 
-    profiles: list[IBulkCreateStaffV3Profile]
+    profiles: list[IBulkCreateStaffV4Profile]
 
 class BulkCreateStaffApiResponse(BaseModel):
 
@@ -20188,7 +20188,7 @@ class GetCreateStaffDataSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetCreateStaffDataV3Cohort(BaseModel):
+class QGetCreateStaffDataV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -20197,7 +20197,7 @@ class QGetCreateStaffDataV3Cohort(BaseModel):
 
 
 
-class QGetCreateStaffDataV3Department(BaseModel):
+class QGetCreateStaffDataV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -20206,7 +20206,7 @@ class QGetCreateStaffDataV3Department(BaseModel):
 
 
 
-class QGetCreateStaffDataV3Staff(BaseModel):
+class QGetCreateStaffDataV4Staff(BaseModel):
 
     profile_id: UUID | None
     first_name: str | None
@@ -20227,9 +20227,9 @@ class QGetCreateStaffDataV3Staff(BaseModel):
 class GetCreateStaffDataSqlRow(BaseModel):
 
     actor_name: str | None = None
-    staff: list[QGetCreateStaffDataV3Staff] | None = None
-    cohorts: list[QGetCreateStaffDataV3Cohort] | None = None
-    departments: list[QGetCreateStaffDataV3Department] | None = None
+    staff: list[QGetCreateStaffDataV4Staff] | None = None
+    cohorts: list[QGetCreateStaffDataV4Cohort] | None = None
+    departments: list[QGetCreateStaffDataV4Department] | None = None
     role_options: list[str] | None = None
 
 class GetCreateStaffDataApiRequest(BaseModel):
@@ -20239,9 +20239,9 @@ class GetCreateStaffDataApiRequest(BaseModel):
 class GetCreateStaffDataApiResponse(BaseModel):
 
     actor_name: str | None = None
-    staff: list[QGetCreateStaffDataV3Staff] | None = None
-    cohorts: list[QGetCreateStaffDataV3Cohort] | None = None
-    departments: list[QGetCreateStaffDataV3Department] | None = None
+    staff: list[QGetCreateStaffDataV4Staff] | None = None
+    cohorts: list[QGetCreateStaffDataV4Cohort] | None = None
+    departments: list[QGetCreateStaffDataV4Department] | None = None
     role_options: list[str] | None = None
 
 
@@ -20259,7 +20259,7 @@ class GetStaffDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetStaffDetailV3Cohort(BaseModel):
+class QGetStaffDetailV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -20268,7 +20268,7 @@ class QGetStaffDetailV3Cohort(BaseModel):
 
 
 
-class QGetStaffDetailV3Department(BaseModel):
+class QGetStaffDetailV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -20293,8 +20293,8 @@ class GetStaffDetailSqlRow(BaseModel):
     can_edit: bool | None = None
     valid_department_ids: list[str] | None = None
     valid_cohort_ids: list[str] | None = None
-    cohorts: list[QGetStaffDetailV3Cohort] | None = None
-    departments: list[QGetStaffDetailV3Department] | None = None
+    cohorts: list[QGetStaffDetailV4Cohort] | None = None
+    departments: list[QGetStaffDetailV4Department] | None = None
 
 class GetStaffDetailApiRequest(BaseModel):
 
@@ -20319,8 +20319,8 @@ class GetStaffDetailApiResponse(BaseModel):
     can_edit: bool | None = None
     valid_department_ids: list[str] | None = None
     valid_cohort_ids: list[str] | None = None
-    cohorts: list[QGetStaffDetailV3Cohort] | None = None
-    departments: list[QGetStaffDetailV3Department] | None = None
+    cohorts: list[QGetStaffDetailV4Cohort] | None = None
+    departments: list[QGetStaffDetailV4Department] | None = None
 
 
 
@@ -20335,7 +20335,7 @@ class GetStaffListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QListStaffV3Cohort(BaseModel):
+class QListStaffV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -20344,7 +20344,7 @@ class QListStaffV3Cohort(BaseModel):
 
 
 
-class QListStaffV3Department(BaseModel):
+class QListStaffV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -20353,7 +20353,7 @@ class QListStaffV3Department(BaseModel):
 
 
 
-class QListStaffV3Staff(BaseModel):
+class QListStaffV4Staff(BaseModel):
 
     profile_id: UUID | None
     first_name: str | None
@@ -20377,7 +20377,7 @@ class QListStaffV3Staff(BaseModel):
 
 
 
-class QListStaffV3TrendData(BaseModel):
+class QListStaffV4TrendData(BaseModel):
 
     date: str | None
     value: float | None
@@ -20387,14 +20387,14 @@ class GetStaffListSqlRow(BaseModel):
 
     actor_name: str | None = None
     current_user_role: str | None = None
-    staff: list[QListStaffV3Staff] | None = None
-    cohorts: list[QListStaffV3Cohort] | None = None
-    departments: list[QListStaffV3Department] | None = None
-    trend_data_active: list[QListStaffV3TrendData] | None = None
-    trend_data_admin: list[QListStaffV3TrendData] | None = None
-    trend_data_instructional: list[QListStaffV3TrendData] | None = None
-    trend_data_member: list[QListStaffV3TrendData] | None = None
-    trend_data_total_requests: list[QListStaffV3TrendData] | None = None
+    staff: list[QListStaffV4Staff] | None = None
+    cohorts: list[QListStaffV4Cohort] | None = None
+    departments: list[QListStaffV4Department] | None = None
+    trend_data_active: list[QListStaffV4TrendData] | None = None
+    trend_data_admin: list[QListStaffV4TrendData] | None = None
+    trend_data_instructional: list[QListStaffV4TrendData] | None = None
+    trend_data_member: list[QListStaffV4TrendData] | None = None
+    trend_data_total_requests: list[QListStaffV4TrendData] | None = None
     valid_department_ids: list[str] | None = None
     role_options: list[str] | None = None
     cohort_options: list[str] | None = None
@@ -20408,14 +20408,14 @@ class GetStaffListApiResponse(BaseModel):
 
     actor_name: str | None = None
     current_user_role: str | None = None
-    staff: list[QListStaffV3Staff] | None = None
-    cohorts: list[QListStaffV3Cohort] | None = None
-    departments: list[QListStaffV3Department] | None = None
-    trend_data_active: list[QListStaffV3TrendData] | None = None
-    trend_data_admin: list[QListStaffV3TrendData] | None = None
-    trend_data_instructional: list[QListStaffV3TrendData] | None = None
-    trend_data_member: list[QListStaffV3TrendData] | None = None
-    trend_data_total_requests: list[QListStaffV3TrendData] | None = None
+    staff: list[QListStaffV4Staff] | None = None
+    cohorts: list[QListStaffV4Cohort] | None = None
+    departments: list[QListStaffV4Department] | None = None
+    trend_data_active: list[QListStaffV4TrendData] | None = None
+    trend_data_admin: list[QListStaffV4TrendData] | None = None
+    trend_data_instructional: list[QListStaffV4TrendData] | None = None
+    trend_data_member: list[QListStaffV4TrendData] | None = None
+    trend_data_total_requests: list[QListStaffV4TrendData] | None = None
     valid_department_ids: list[str] | None = None
     role_options: list[str] | None = None
     cohort_options: list[str] | None = None
@@ -20434,7 +20434,7 @@ class GetStaffNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetStaffNewV3Cohort(BaseModel):
+class QGetStaffNewV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -20443,7 +20443,7 @@ class QGetStaffNewV3Cohort(BaseModel):
 
 
 
-class QGetStaffNewV3Department(BaseModel):
+class QGetStaffNewV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -20457,8 +20457,8 @@ class GetStaffNewSqlRow(BaseModel):
     valid_department_ids: list[str] | None = None
     valid_cohort_ids: list[str] | None = None
     role_options: list[str] | None = None
-    cohorts: list[QGetStaffNewV3Cohort] | None = None
-    departments: list[QGetStaffNewV3Department] | None = None
+    cohorts: list[QGetStaffNewV4Cohort] | None = None
+    departments: list[QGetStaffNewV4Department] | None = None
 
 class GetStaffNewApiRequest(BaseModel):
 
@@ -20472,8 +20472,8 @@ class GetStaffNewApiResponse(BaseModel):
     valid_department_ids: list[str] | None = None
     valid_cohort_ids: list[str] | None = None
     role_options: list[str] | None = None
-    cohorts: list[QGetStaffNewV3Cohort] | None = None
-    departments: list[QGetStaffNewV3Department] | None = None
+    cohorts: list[QGetStaffNewV4Cohort] | None = None
+    departments: list[QGetStaffNewV4Department] | None = None
 
 
 
@@ -20496,7 +20496,7 @@ class GetStaffSearchSqlParams(BaseModel):
             self.limit_count,
         )
 
-class QSearchStaffV3Cohort(BaseModel):
+class QSearchStaffV4Cohort(BaseModel):
 
     cohort_id: UUID | None
     name: str | None
@@ -20505,7 +20505,7 @@ class QSearchStaffV3Cohort(BaseModel):
 
 
 
-class QSearchStaffV3Department(BaseModel):
+class QSearchStaffV4Department(BaseModel):
 
     department_id: UUID | None
     name: str | None
@@ -20514,7 +20514,7 @@ class QSearchStaffV3Department(BaseModel):
 
 
 
-class QSearchStaffV3Staff(BaseModel):
+class QSearchStaffV4Staff(BaseModel):
 
     profile_id: UUID | None
     first_name: str | None
@@ -20538,9 +20538,9 @@ class QSearchStaffV3Staff(BaseModel):
 class GetStaffSearchSqlRow(BaseModel):
 
     actor_name: str | None = None
-    staff: list[QSearchStaffV3Staff] | None = None
-    cohorts: list[QSearchStaffV3Cohort] | None = None
-    departments: list[QSearchStaffV3Department] | None = None
+    staff: list[QSearchStaffV4Staff] | None = None
+    cohorts: list[QSearchStaffV4Cohort] | None = None
+    departments: list[QSearchStaffV4Department] | None = None
 
 class GetStaffSearchApiRequest(BaseModel):
 
@@ -20552,15 +20552,15 @@ class GetStaffSearchApiRequest(BaseModel):
 class GetStaffSearchApiResponse(BaseModel):
 
     actor_name: str | None = None
-    staff: list[QSearchStaffV3Staff] | None = None
-    cohorts: list[QSearchStaffV3Cohort] | None = None
-    departments: list[QSearchStaffV3Department] | None = None
+    staff: list[QSearchStaffV4Staff] | None = None
+    cohorts: list[QSearchStaffV4Cohort] | None = None
+    departments: list[QSearchStaffV4Department] | None = None
 
 
 
 # Generated from: process_csv
 
-class IProcessCsvV3ColumnMapping(BaseModel):
+class IProcessCsvV4ColumnMapping(BaseModel):
 
     csv_column: str | None
     target_field: str | None
@@ -20568,7 +20568,7 @@ class IProcessCsvV3ColumnMapping(BaseModel):
 class ProcessCsvSqlParams(BaseModel):
 
     csv_content: str
-    column_mappings: list[IProcessCsvV3ColumnMapping]
+    column_mappings: list[IProcessCsvV4ColumnMapping]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -20583,13 +20583,13 @@ class ProcessCsvSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QProcessCsvV3CsvRowError(BaseModel):
+class QProcessCsvV4CsvRowError(BaseModel):
 
     row_index: int | None
     field: str | None
     message: str | None
 
-class QProcessCsvV3ProcessedRow(BaseModel):
+class QProcessCsvV4ProcessedRow(BaseModel):
 
     row_index: int | None
     first_name: str | None
@@ -20599,25 +20599,25 @@ class QProcessCsvV3ProcessedRow(BaseModel):
     role: str | None
     department_ids: list[str] | None
     cohort_ids: list[str] | None
-    errors: list[QProcessCsvV3CsvRowError] | None
+    errors: list[QProcessCsvV4CsvRowError] | None
 
 class ProcessCsvSqlRow(BaseModel):
 
     success: bool | None = None
     headers: list[str] | None = None
-    rows: list[QProcessCsvV3ProcessedRow] | None = None
+    rows: list[QProcessCsvV4ProcessedRow] | None = None
     actor_name: str | None = None
 
 class ProcessCsvApiRequest(BaseModel):
 
     csv_content: str
-    column_mappings: list[IProcessCsvV3ColumnMapping]
+    column_mappings: list[IProcessCsvV4ColumnMapping]
 
 class ProcessCsvApiResponse(BaseModel):
 
     success: bool | None = None
     headers: list[str] | None = None
-    rows: list[QProcessCsvV3ProcessedRow] | None = None
+    rows: list[QProcessCsvV4ProcessedRow] | None = None
     actor_name: str | None = None
 
 
@@ -20626,7 +20626,7 @@ class ProcessCsvApiResponse(BaseModel):
 
 class UpsertStaffSqlParams(BaseModel):
 
-    profiles: list[IUpsertStaffV3Profile]
+    profiles: list[IUpsertStaffV4Profile]
     current_profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -20649,7 +20649,7 @@ class UpsertStaffSqlRow(BaseModel):
 
 class UpsertStaffApiRequest(BaseModel):
 
-    profiles: list[IUpsertStaffV3Profile]
+    profiles: list[IUpsertStaffV4Profile]
     current_profile_id: UUID
 
 class UpsertStaffApiResponse(BaseModel):
@@ -20786,7 +20786,7 @@ class GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams(BaseMod
             self.user_instructions,
         )
 
-class IGetUploadClassRegenRunContextCreateRunV3Msg(BaseModel):
+class IGetUploadClassRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -20809,7 +20809,7 @@ class GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow(BaseModel)
     earliest_run_created_at: str | None = None
     run_id: str | None = None
     upload_id: UUID | None = None
-    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV4Msg] | None = None
 
 class GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -20836,7 +20836,7 @@ class GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse(BaseM
     earliest_run_created_at: str | None = None
     run_id: str | None = None
     upload_id: UUID | None = None
-    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -20953,7 +20953,7 @@ class GetVideoRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IVideoRegenRunContextCreateRunV3Msg(BaseModel):
+class IVideoRegenRunContextCreateRunV4Msg(BaseModel):
 
     role: str | None
     content: str | None
@@ -20980,7 +20980,7 @@ class GetVideoRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     department_id: UUID | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IVideoRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IVideoRegenRunContextCreateRunV4Msg] | None = None
 
 class GetVideoRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -21010,7 +21010,7 @@ class GetVideoRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     department_id: UUID | None = None
     run_id: str | None = None
     group_id: UUID | None = None
-    previous_messages: list[IVideoRegenRunContextCreateRunV3Msg] | None = None
+    previous_messages: list[IVideoRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -21083,1687 +21083,1687 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 # ============================================================================
 
 _registry: dict[str, tuple[str, str, str, str]] = {
-    "app/sql/v3/activity/get_activity_bundle_complete.sql": (
+    "app/sql/v4/activity/get_activity_bundle_complete.sql": (
         "GetActivityBundleSqlParams",
         "GetActivityBundleSqlRow",
         "GetActivityBundleApiRequest",
         "GetActivityBundleApiResponse",
     ),
-    "app/sql/v3/activity/get_activity_list_complete.sql": (
+    "app/sql/v4/activity/get_activity_list_complete.sql": (
         "GetActivityListSqlParams",
         "GetActivityListSqlRow",
         "GetActivityListApiRequest",
         "GetActivityListApiResponse",
     ),
-    "app/sql/v3/agents/agents_audio_audio_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_audio_audio_eval_start_complete.sql": (
         "AgentsAudioAudioEvalStartSqlParams",
         "AgentsAudioAudioEvalStartSqlRow",
         "AgentsAudioAudioEvalStartApiRequest",
         "AgentsAudioAudioEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_audio_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_audio_tools_debug_debug_eval_start_complete.sql": (
         "AgentsAudioToolsDebugDebugEvalStartSqlParams",
         "AgentsAudioToolsDebugDebugEvalStartSqlRow",
         "AgentsAudioToolsDebugDebugEvalStartApiRequest",
         "AgentsAudioToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_classify_classify_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_classify_classify_eval_start_complete.sql": (
         "AgentsClassifyClassifyEvalStartSqlParams",
         "AgentsClassifyClassifyEvalStartSqlRow",
         "AgentsClassifyClassifyEvalStartApiRequest",
         "AgentsClassifyClassifyEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_classify_tools_classification_classification_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_classify_tools_classification_classification_eval_start_complete.sql": (
         "AgentsClassifyToolsClassificationClassificationEvalStartSqlParams",
         "AgentsClassifyToolsClassificationClassificationEvalStartSqlRow",
         "AgentsClassifyToolsClassificationClassificationEvalStartApiRequest",
         "AgentsClassifyToolsClassificationClassificationEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_classify_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_classify_tools_debug_debug_eval_start_complete.sql": (
         "AgentsClassifyToolsDebugDebugEvalStartSqlParams",
         "AgentsClassifyToolsDebugDebugEvalStartSqlRow",
         "AgentsClassifyToolsDebugDebugEvalStartApiRequest",
         "AgentsClassifyToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_document_document_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_document_document_eval_start_complete.sql": (
         "AgentsDocumentDocumentEvalStartSqlParams",
         "AgentsDocumentDocumentEvalStartSqlRow",
         "AgentsDocumentDocumentEvalStartApiRequest",
         "AgentsDocumentDocumentEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_document_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_document_tools_debug_debug_eval_start_complete.sql": (
         "AgentsDocumentToolsDebugDebugEvalStartSqlParams",
         "AgentsDocumentToolsDebugDebugEvalStartSqlRow",
         "AgentsDocumentToolsDebugDebugEvalStartApiRequest",
         "AgentsDocumentToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_document_tools_title_title_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_document_tools_title_title_eval_start_complete.sql": (
         "AgentsDocumentToolsTitleTitleEvalStartSqlParams",
         "AgentsDocumentToolsTitleTitleEvalStartSqlRow",
         "AgentsDocumentToolsTitleTitleEvalStartApiRequest",
         "AgentsDocumentToolsTitleTitleEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_grade_grade_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_grade_grade_eval_start_complete.sql": (
         "AgentsGradeGradeEvalStartSqlParams",
         "AgentsGradeGradeEvalStartSqlRow",
         "AgentsGradeGradeEvalStartApiRequest",
         "AgentsGradeGradeEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_grade_tools_audio_audio_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_grade_tools_audio_audio_eval_start_complete.sql": (
         "AgentsGradeToolsAudioAudioEvalStartSqlParams",
         "AgentsGradeToolsAudioAudioEvalStartSqlRow",
         "AgentsGradeToolsAudioAudioEvalStartApiRequest",
         "AgentsGradeToolsAudioAudioEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_grade_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_grade_tools_debug_debug_eval_start_complete.sql": (
         "AgentsGradeToolsDebugDebugEvalStartSqlParams",
         "AgentsGradeToolsDebugDebugEvalStartSqlRow",
         "AgentsGradeToolsDebugDebugEvalStartApiRequest",
         "AgentsGradeToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_grade_tools_grade_grade_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_grade_tools_grade_grade_eval_start_complete.sql": (
         "AgentsGradeToolsGradeGradeEvalStartSqlParams",
         "AgentsGradeToolsGradeGradeEvalStartSqlRow",
         "AgentsGradeToolsGradeGradeEvalStartApiRequest",
         "AgentsGradeToolsGradeGradeEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_grade_tools_improvement_improvement_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_grade_tools_improvement_improvement_eval_start_complete.sql": (
         "AgentsGradeToolsImprovementImprovementEvalStartSqlParams",
         "AgentsGradeToolsImprovementImprovementEvalStartSqlRow",
         "AgentsGradeToolsImprovementImprovementEvalStartApiRequest",
         "AgentsGradeToolsImprovementImprovementEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_grade_tools_strength_strength_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_grade_tools_strength_strength_eval_start_complete.sql": (
         "AgentsGradeToolsStrengthStrengthEvalStartSqlParams",
         "AgentsGradeToolsStrengthStrengthEvalStartSqlRow",
         "AgentsGradeToolsStrengthStrengthEvalStartApiRequest",
         "AgentsGradeToolsStrengthStrengthEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_hint_hint_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_hint_hint_eval_start_complete.sql": (
         "AgentsHintHintEvalStartSqlParams",
         "AgentsHintHintEvalStartSqlRow",
         "AgentsHintHintEvalStartApiRequest",
         "AgentsHintHintEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_hint_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_hint_tools_debug_debug_eval_start_complete.sql": (
         "AgentsHintToolsDebugDebugEvalStartSqlParams",
         "AgentsHintToolsDebugDebugEvalStartSqlRow",
         "AgentsHintToolsDebugDebugEvalStartApiRequest",
         "AgentsHintToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_hint_tools_hint_hint_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_hint_tools_hint_hint_eval_start_complete.sql": (
         "AgentsHintToolsHintHintEvalStartSqlParams",
         "AgentsHintToolsHintHintEvalStartSqlRow",
         "AgentsHintToolsHintHintEvalStartApiRequest",
         "AgentsHintToolsHintHintEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_image_image_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_image_image_eval_start_complete.sql": (
         "AgentsImageImageEvalStartSqlParams",
         "AgentsImageImageEvalStartSqlRow",
         "AgentsImageImageEvalStartApiRequest",
         "AgentsImageImageEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_image_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_image_tools_debug_debug_eval_start_complete.sql": (
         "AgentsImageToolsDebugDebugEvalStartSqlParams",
         "AgentsImageToolsDebugDebugEvalStartSqlRow",
         "AgentsImageToolsDebugDebugEvalStartApiRequest",
         "AgentsImageToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_image_tools_title_title_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_image_tools_title_title_eval_start_complete.sql": (
         "AgentsImageToolsTitleTitleEvalStartSqlParams",
         "AgentsImageToolsTitleTitleEvalStartSqlRow",
         "AgentsImageToolsTitleTitleEvalStartApiRequest",
         "AgentsImageToolsTitleTitleEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_member_member_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_member_member_eval_start_complete.sql": (
         "AgentsMemberMemberEvalStartSqlParams",
         "AgentsMemberMemberEvalStartSqlRow",
         "AgentsMemberMemberEvalStartApiRequest",
         "AgentsMemberMemberEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_member_tools_conversation_conversation_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_member_tools_conversation_conversation_eval_start_complete.sql": (
         "AgentsMemberToolsConversationConversationEvalStartSqlParams",
         "AgentsMemberToolsConversationConversationEvalStartSqlRow",
         "AgentsMemberToolsConversationConversationEvalStartApiRequest",
         "AgentsMemberToolsConversationConversationEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_rubric_rubric_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_rubric_rubric_eval_start_complete.sql": (
         "AgentsRubricRubricEvalStartSqlParams",
         "AgentsRubricRubricEvalStartSqlRow",
         "AgentsRubricRubricEvalStartApiRequest",
         "AgentsRubricRubricEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_rubric_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_rubric_tools_debug_debug_eval_start_complete.sql": (
         "AgentsRubricToolsDebugDebugEvalStartSqlParams",
         "AgentsRubricToolsDebugDebugEvalStartSqlRow",
         "AgentsRubricToolsDebugDebugEvalStartApiRequest",
         "AgentsRubricToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_rubric_tools_rubric_rubric_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_rubric_tools_rubric_rubric_eval_start_complete.sql": (
         "AgentsRubricToolsRubricRubricEvalStartSqlParams",
         "AgentsRubricToolsRubricRubricEvalStartSqlRow",
         "AgentsRubricToolsRubricRubricEvalStartApiRequest",
         "AgentsRubricToolsRubricRubricEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_rubric_tools_title_title_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_rubric_tools_title_title_eval_start_complete.sql": (
         "AgentsRubricToolsTitleTitleEvalStartSqlParams",
         "AgentsRubricToolsTitleTitleEvalStartSqlRow",
         "AgentsRubricToolsTitleTitleEvalStartApiRequest",
         "AgentsRubricToolsTitleTitleEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_scenario_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_scenario_eval_start_complete.sql": (
         "AgentsScenarioScenarioEvalStartSqlParams",
         "AgentsScenarioScenarioEvalStartSqlRow",
         "AgentsScenarioScenarioEvalStartApiRequest",
         "AgentsScenarioScenarioEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_debug_debug_eval_start_complete.sql": (
         "AgentsScenarioToolsDebugDebugEvalStartSqlParams",
         "AgentsScenarioToolsDebugDebugEvalStartSqlRow",
         "AgentsScenarioToolsDebugDebugEvalStartApiRequest",
         "AgentsScenarioToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_document_document_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_document_document_eval_start_complete.sql": (
         "AgentsScenarioToolsDocumentDocumentEvalStartSqlParams",
         "AgentsScenarioToolsDocumentDocumentEvalStartSqlRow",
         "AgentsScenarioToolsDocumentDocumentEvalStartApiRequest",
         "AgentsScenarioToolsDocumentDocumentEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_image_image_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_image_image_eval_start_complete.sql": (
         "AgentsScenarioToolsImageImageEvalStartSqlParams",
         "AgentsScenarioToolsImageImageEvalStartSqlRow",
         "AgentsScenarioToolsImageImageEvalStartApiRequest",
         "AgentsScenarioToolsImageImageEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_objective_objective_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_objective_objective_eval_start_complete.sql": (
         "AgentsScenarioToolsObjectiveObjectiveEvalStartSqlParams",
         "AgentsScenarioToolsObjectiveObjectiveEvalStartSqlRow",
         "AgentsScenarioToolsObjectiveObjectiveEvalStartApiRequest",
         "AgentsScenarioToolsObjectiveObjectiveEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_question_question_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_question_question_eval_start_complete.sql": (
         "AgentsScenarioToolsQuestionQuestionEvalStartSqlParams",
         "AgentsScenarioToolsQuestionQuestionEvalStartSqlRow",
         "AgentsScenarioToolsQuestionQuestionEvalStartApiRequest",
         "AgentsScenarioToolsQuestionQuestionEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_statement_statement_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_statement_statement_eval_start_complete.sql": (
         "AgentsScenarioToolsStatementStatementEvalStartSqlParams",
         "AgentsScenarioToolsStatementStatementEvalStartSqlRow",
         "AgentsScenarioToolsStatementStatementEvalStartApiRequest",
         "AgentsScenarioToolsStatementStatementEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_title_title_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_title_title_eval_start_complete.sql": (
         "AgentsScenarioToolsTitleTitleEvalStartSqlParams",
         "AgentsScenarioToolsTitleTitleEvalStartSqlRow",
         "AgentsScenarioToolsTitleTitleEvalStartApiRequest",
         "AgentsScenarioToolsTitleTitleEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_scenario_tools_video_video_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_scenario_tools_video_video_eval_start_complete.sql": (
         "AgentsScenarioToolsVideoVideoEvalStartSqlParams",
         "AgentsScenarioToolsVideoVideoEvalStartSqlRow",
         "AgentsScenarioToolsVideoVideoEvalStartApiRequest",
         "AgentsScenarioToolsVideoVideoEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_simulation_simulation_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_simulation_simulation_eval_start_complete.sql": (
         "AgentsSimulationSimulationEvalStartSqlParams",
         "AgentsSimulationSimulationEvalStartSqlRow",
         "AgentsSimulationSimulationEvalStartApiRequest",
         "AgentsSimulationSimulationEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql": (
         "AgentsSimulationToolsDebugDebugEvalStartSqlParams",
         "AgentsSimulationToolsDebugDebugEvalStartSqlRow",
         "AgentsSimulationToolsDebugDebugEvalStartApiRequest",
         "AgentsSimulationToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_simulation_tools_speak_speak_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_simulation_tools_speak_speak_eval_start_complete.sql": (
         "AgentsSimulationToolsSpeakSpeakEvalStartSqlParams",
         "AgentsSimulationToolsSpeakSpeakEvalStartSqlRow",
         "AgentsSimulationToolsSpeakSpeakEvalStartApiRequest",
         "AgentsSimulationToolsSpeakSpeakEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_video_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_video_tools_debug_debug_eval_start_complete.sql": (
         "AgentsVideoToolsDebugDebugEvalStartSqlParams",
         "AgentsVideoToolsDebugDebugEvalStartSqlRow",
         "AgentsVideoToolsDebugDebugEvalStartApiRequest",
         "AgentsVideoToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_video_tools_title_title_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_video_tools_title_title_eval_start_complete.sql": (
         "AgentsVideoToolsTitleTitleEvalStartSqlParams",
         "AgentsVideoToolsTitleTitleEvalStartSqlRow",
         "AgentsVideoToolsTitleTitleEvalStartApiRequest",
         "AgentsVideoToolsTitleTitleEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_video_video_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_video_video_eval_start_complete.sql": (
         "AgentsVideoVideoEvalStartSqlParams",
         "AgentsVideoVideoEvalStartSqlRow",
         "AgentsVideoVideoEvalStartApiRequest",
         "AgentsVideoVideoEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_voice_tools_debug_debug_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_voice_tools_debug_debug_eval_start_complete.sql": (
         "AgentsVoiceToolsDebugDebugEvalStartSqlParams",
         "AgentsVoiceToolsDebugDebugEvalStartSqlRow",
         "AgentsVoiceToolsDebugDebugEvalStartApiRequest",
         "AgentsVoiceToolsDebugDebugEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_voice_tools_speak_speak_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_voice_tools_speak_speak_eval_start_complete.sql": (
         "AgentsVoiceToolsSpeakSpeakEvalStartSqlParams",
         "AgentsVoiceToolsSpeakSpeakEvalStartSqlRow",
         "AgentsVoiceToolsSpeakSpeakEvalStartApiRequest",
         "AgentsVoiceToolsSpeakSpeakEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/agents_voice_voice_eval_start_complete.sql": (
+    "app/sql/v4/agents/agents_voice_voice_eval_start_complete.sql": (
         "AgentsVoiceVoiceEvalStartSqlParams",
         "AgentsVoiceVoiceEvalStartSqlRow",
         "AgentsVoiceVoiceEvalStartApiRequest",
         "AgentsVoiceVoiceEvalStartApiResponse",
     ),
-    "app/sql/v3/agents/create_agent_complete.sql": (
+    "app/sql/v4/agents/create_agent_complete.sql": (
         "CreateAgentSqlParams",
         "CreateAgentSqlRow",
         "CreateAgentApiRequest",
         "CreateAgentApiResponse",
     ),
-    "app/sql/v3/agents/delete_agent_complete.sql": (
+    "app/sql/v4/agents/delete_agent_complete.sql": (
         "DeleteAgentSqlParams",
         "DeleteAgentSqlRow",
         "DeleteAgentApiRequest",
         "DeleteAgentApiResponse",
     ),
-    "app/sql/v3/agents/duplicate_agent_complete.sql": (
+    "app/sql/v4/agents/duplicate_agent_complete.sql": (
         "DuplicateAgentSqlParams",
         "DuplicateAgentSqlRow",
         "DuplicateAgentApiRequest",
         "DuplicateAgentApiResponse",
     ),
-    "app/sql/v3/agents/get_agent_detail_complete.sql": (
+    "app/sql/v4/agents/get_agent_detail_complete.sql": (
         "GetAgentDetailSqlParams",
         "GetAgentDetailSqlRow",
         "GetAgentDetailApiRequest",
         "GetAgentDetailApiResponse",
     ),
-    "app/sql/v3/agents/get_agent_new_complete.sql": (
+    "app/sql/v4/agents/get_agent_new_complete.sql": (
         "GetAgentNewSqlParams",
         "GetAgentNewSqlRow",
         "GetAgentNewApiRequest",
         "GetAgentNewApiResponse",
     ),
-    "app/sql/v3/agents/get_agent_tools_complete.sql": (
+    "app/sql/v4/agents/get_agent_tools_complete.sql": (
         "GetAgentToolsSqlParams",
         "GetAgentToolsSqlRow",
         "GetAgentToolsApiRequest",
         "GetAgentToolsApiResponse",
     ),
-    "app/sql/v3/agents/get_agents_list_complete.sql": (
+    "app/sql/v4/agents/get_agents_list_complete.sql": (
         "GetAgentsListSqlParams",
         "GetAgentsListSqlRow",
         "GetAgentsListApiRequest",
         "GetAgentsListApiResponse",
     ),
-    "app/sql/v3/agents/update_agent_complete.sql": (
+    "app/sql/v4/agents/update_agent_complete.sql": (
         "UpdateAgentSqlParams",
         "UpdateAgentSqlRow",
         "UpdateAgentApiRequest",
         "UpdateAgentApiResponse",
     ),
-    "app/sql/v3/analytics/create_analytics_view_function_complete.sql": (
+    "app/sql/v4/analytics/create_analytics_view_function_complete.sql": (
         "CreateAnalyticsViewFunctionSqlParams",
         "CreateAnalyticsViewFunctionSqlRow",
         "CreateAnalyticsViewFunctionApiRequest",
         "CreateAnalyticsViewFunctionApiResponse",
     ),
-    "app/sql/v3/analytics/refresh_analytics_complete.sql": (
+    "app/sql/v4/analytics/refresh_analytics_complete.sql": (
         "RefreshAnalyticsSqlParams",
         "RefreshAnalyticsSqlRow",
         "RefreshAnalyticsApiRequest",
         "RefreshAnalyticsApiResponse",
     ),
-    "app/sql/v3/attempts/bulk_archive_attempts_complete.sql": (
+    "app/sql/v4/attempts/bulk_archive_attempts_complete.sql": (
         "BulkArchiveAttemptsSqlParams",
         "BulkArchiveAttemptsSqlRow",
         "BulkArchiveAttemptsApiRequest",
         "BulkArchiveAttemptsApiResponse",
     ),
-    "app/sql/v3/attempts/get_eval_attempt_complete.sql": (
+    "app/sql/v4/attempts/get_eval_attempt_complete.sql": (
         "GetEvalAttemptSqlParams",
         "GetEvalAttemptSqlRow",
         "GetEvalAttemptApiRequest",
         "GetEvalAttemptApiResponse",
     ),
-    "app/sql/v3/attempts/get_simulation_attempt_complete.sql": (
+    "app/sql/v4/attempts/get_simulation_attempt_complete.sql": (
         "GetSimulationAttemptSqlParams",
         "GetSimulationAttemptSqlRow",
         "GetSimulationAttemptApiRequest",
         "GetSimulationAttemptApiResponse",
     ),
-    "app/sql/v3/audio/get_audio_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/audio/get_audio_regeneration_run_context_and_create_run_complete.sql": (
         "GetAudioRegenerationRunContextAndCreateRunSqlParams",
         "GetAudioRegenerationRunContextAndCreateRunSqlRow",
         "GetAudioRegenerationRunContextAndCreateRunApiRequest",
         "GetAudioRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/audio/get_audio_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql": (
         "GetAudioRunContextAndCreateRunSqlParams",
         "GetAudioRunContextAndCreateRunSqlRow",
         "GetAudioRunContextAndCreateRunApiRequest",
         "GetAudioRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/auth/create_auth_complete.sql": (
+    "app/sql/v4/auth/create_auth_complete.sql": (
         "CreateAuthSqlParams",
         "CreateAuthSqlRow",
         "CreateAuthApiRequest",
         "CreateAuthApiResponse",
     ),
-    "app/sql/v3/auth/delete_auth_complete.sql": (
+    "app/sql/v4/auth/delete_auth_complete.sql": (
         "DeleteAuthSqlParams",
         "DeleteAuthSqlRow",
         "DeleteAuthApiRequest",
         "DeleteAuthApiResponse",
     ),
-    "app/sql/v3/auth/duplicate_auth_complete.sql": (
+    "app/sql/v4/auth/duplicate_auth_complete.sql": (
         "DuplicateAuthSqlParams",
         "DuplicateAuthSqlRow",
         "DuplicateAuthApiRequest",
         "DuplicateAuthApiResponse",
     ),
-    "app/sql/v3/auth/get_auth_detail_complete.sql": (
+    "app/sql/v4/auth/get_auth_detail_complete.sql": (
         "GetAuthDetailSqlParams",
         "GetAuthDetailSqlRow",
         "GetAuthDetailApiRequest",
         "GetAuthDetailApiResponse",
     ),
-    "app/sql/v3/auth/get_auth_list_complete.sql": (
+    "app/sql/v4/auth/get_auth_list_complete.sql": (
         "GetAuthListSqlParams",
         "GetAuthListSqlRow",
         "GetAuthListApiRequest",
         "GetAuthListApiResponse",
     ),
-    "app/sql/v3/auth/get_auth_new_complete.sql": (
+    "app/sql/v4/auth/get_auth_new_complete.sql": (
         "GetAuthNewSqlParams",
         "GetAuthNewSqlRow",
         "GetAuthNewApiRequest",
         "GetAuthNewApiResponse",
     ),
-    "app/sql/v3/auth/get_login_data_complete.sql": (
+    "app/sql/v4/auth/get_login_data_complete.sql": (
         "GetLoginDataSqlParams",
         "GetLoginDataSqlRow",
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
     ),
-    "app/sql/v3/auth/update_auth_complete.sql": (
+    "app/sql/v4/auth/update_auth_complete.sql": (
         "UpdateAuthSqlParams",
         "UpdateAuthSqlRow",
         "UpdateAuthApiRequest",
         "UpdateAuthApiResponse",
     ),
-    "app/sql/v3/benchmark/add_eval_groups_complete.sql": (
+    "app/sql/v4/benchmark/add_eval_groups_complete.sql": (
         "AddEvalGroupsSqlParams",
         "AddEvalGroupsSqlRow",
         "AddEvalGroupsApiRequest",
         "AddEvalGroupsApiResponse",
     ),
-    "app/sql/v3/benchmark/add_eval_runs_complete.sql": (
+    "app/sql/v4/benchmark/add_eval_runs_complete.sql": (
         "AddEvalRunsSqlParams",
         "AddEvalRunsSqlRow",
         "AddEvalRunsApiRequest",
         "AddEvalRunsApiResponse",
     ),
-    "app/sql/v3/benchmark/benchmark_error_complete.sql": (
+    "app/sql/v4/benchmark/benchmark_error_complete.sql": (
         "BenchmarkErrorSqlParams",
         "BenchmarkErrorSqlRow",
         "BenchmarkErrorApiRequest",
         "BenchmarkErrorApiResponse",
     ),
-    "app/sql/v3/benchmark/benchmark_eval_complete_complete.sql": (
+    "app/sql/v4/benchmark/benchmark_eval_complete_complete.sql": (
         "BenchmarkEvalCompleteSqlParams",
         "BenchmarkEvalCompleteSqlRow",
         "BenchmarkEvalCompleteApiRequest",
         "BenchmarkEvalCompleteApiResponse",
     ),
-    "app/sql/v3/benchmark/create_eval_complete.sql": (
+    "app/sql/v4/benchmark/create_eval_complete.sql": (
         "CreateEvalSqlParams",
         "CreateEvalSqlRow",
         "CreateEvalApiRequest",
         "CreateEvalApiResponse",
     ),
-    "app/sql/v3/benchmark/delete_eval_complete.sql": (
+    "app/sql/v4/benchmark/delete_eval_complete.sql": (
         "DeleteEvalSqlParams",
         "DeleteEvalSqlRow",
         "DeleteEvalApiRequest",
         "DeleteEvalApiResponse",
     ),
-    "app/sql/v3/benchmark/get_benchmark_bundle_complete.sql": (
+    "app/sql/v4/benchmark/get_benchmark_bundle_complete.sql": (
         "GetBenchmarkBundleSqlParams",
         "GetBenchmarkBundleSqlRow",
         "GetBenchmarkBundleApiRequest",
         "GetBenchmarkBundleApiResponse",
     ),
-    "app/sql/v3/benchmark/get_eval_detail_complete.sql": (
+    "app/sql/v4/benchmark/get_eval_detail_complete.sql": (
         "GetEvalDetailSqlParams",
         "GetEvalDetailSqlRow",
         "GetEvalDetailApiRequest",
         "GetEvalDetailApiResponse",
     ),
-    "app/sql/v3/benchmark/get_eval_new_complete.sql": (
+    "app/sql/v4/benchmark/get_eval_new_complete.sql": (
         "GetEvalNewSqlParams",
         "GetEvalNewSqlRow",
         "GetEvalNewApiRequest",
         "GetEvalNewApiResponse",
     ),
-    "app/sql/v3/benchmark/get_evals_list_complete.sql": (
+    "app/sql/v4/benchmark/get_evals_list_complete.sql": (
         "GetEvalsListSqlParams",
         "GetEvalsListSqlRow",
         "GetEvalsListApiRequest",
         "GetEvalsListApiResponse",
     ),
-    "app/sql/v3/benchmark/update_eval_complete.sql": (
+    "app/sql/v4/benchmark/update_eval_complete.sql": (
         "UpdateEvalSqlParams",
         "UpdateEvalSqlRow",
         "UpdateEvalApiRequest",
         "UpdateEvalApiResponse",
     ),
-    "app/sql/v3/cohorts/create_cohort_complete.sql": (
+    "app/sql/v4/cohorts/create_cohort_complete.sql": (
         "CreateCohortSqlParams",
         "CreateCohortSqlRow",
         "CreateCohortApiRequest",
         "CreateCohortApiResponse",
     ),
-    "app/sql/v3/cohorts/delete_cohort_complete.sql": (
+    "app/sql/v4/cohorts/delete_cohort_complete.sql": (
         "DeleteCohortSqlParams",
         "DeleteCohortSqlRow",
         "DeleteCohortApiRequest",
         "DeleteCohortApiResponse",
     ),
-    "app/sql/v3/cohorts/duplicate_cohort_complete.sql": (
+    "app/sql/v4/cohorts/duplicate_cohort_complete.sql": (
         "DuplicateCohortSqlParams",
         "DuplicateCohortSqlRow",
         "DuplicateCohortApiRequest",
         "DuplicateCohortApiResponse",
     ),
-    "app/sql/v3/cohorts/get_cohort_detail_complete.sql": (
+    "app/sql/v4/cohorts/get_cohort_detail_complete.sql": (
         "GetCohortDetailSqlParams",
         "GetCohortDetailSqlRow",
         "GetCohortDetailApiRequest",
         "GetCohortDetailApiResponse",
     ),
-    "app/sql/v3/cohorts/get_cohort_new_complete.sql": (
+    "app/sql/v4/cohorts/get_cohort_new_complete.sql": (
         "GetCohortNewSqlParams",
         "GetCohortNewSqlRow",
         "GetCohortNewApiRequest",
         "GetCohortNewApiResponse",
     ),
-    "app/sql/v3/cohorts/get_cohort_search_complete.sql": (
+    "app/sql/v4/cohorts/get_cohort_search_complete.sql": (
         "GetCohortSearchSqlParams",
         "GetCohortSearchSqlRow",
         "GetCohortSearchApiRequest",
         "GetCohortSearchApiResponse",
     ),
-    "app/sql/v3/cohorts/get_cohorts_list_complete.sql": (
+    "app/sql/v4/cohorts/get_cohorts_list_complete.sql": (
         "GetCohortsListSqlParams",
         "GetCohortsListSqlRow",
         "GetCohortsListApiRequest",
         "GetCohortsListApiResponse",
     ),
-    "app/sql/v3/cohorts/leave_cohort_complete.sql": (
+    "app/sql/v4/cohorts/leave_cohort_complete.sql": (
         "LeaveCohortSqlParams",
         "LeaveCohortSqlRow",
         "LeaveCohortApiRequest",
         "LeaveCohortApiResponse",
     ),
-    "app/sql/v3/cohorts/update_cohort_complete.sql": (
+    "app/sql/v4/cohorts/update_cohort_complete.sql": (
         "UpdateCohortSqlParams",
         "UpdateCohortSqlRow",
         "UpdateCohortApiRequest",
         "UpdateCohortApiResponse",
     ),
-    "app/sql/v3/dashboard/get_dashboard_bundle_complete.sql": (
+    "app/sql/v4/dashboard/get_dashboard_bundle_complete.sql": (
         "GetDashboardBundleSqlParams",
         "GetDashboardBundleSqlRow",
         "GetDashboardBundleApiRequest",
         "GetDashboardBundleApiResponse",
     ),
-    "app/sql/v3/dashboard/get_dashboard_history_complete.sql": (
+    "app/sql/v4/dashboard/get_dashboard_history_complete.sql": (
         "GetDashboardHistorySqlParams",
         "GetDashboardHistorySqlRow",
         "GetDashboardHistoryApiRequest",
         "GetDashboardHistoryApiResponse",
     ),
-    "app/sql/v3/departments/create_department_complete.sql": (
+    "app/sql/v4/departments/create_department_complete.sql": (
         "CreateDepartmentSqlParams",
         "CreateDepartmentSqlRow",
         "CreateDepartmentApiRequest",
         "CreateDepartmentApiResponse",
     ),
-    "app/sql/v3/departments/delete_department_complete.sql": (
+    "app/sql/v4/departments/delete_department_complete.sql": (
         "DeleteDepartmentSqlParams",
         "DeleteDepartmentSqlRow",
         "DeleteDepartmentApiRequest",
         "DeleteDepartmentApiResponse",
     ),
-    "app/sql/v3/departments/duplicate_department_complete.sql": (
+    "app/sql/v4/departments/duplicate_department_complete.sql": (
         "DuplicateDepartmentSqlParams",
         "DuplicateDepartmentSqlRow",
         "DuplicateDepartmentApiRequest",
         "DuplicateDepartmentApiResponse",
     ),
-    "app/sql/v3/departments/get_department_detail_complete.sql": (
+    "app/sql/v4/departments/get_department_detail_complete.sql": (
         "GetDepartmentDetailSqlParams",
         "GetDepartmentDetailSqlRow",
         "GetDepartmentDetailApiRequest",
         "GetDepartmentDetailApiResponse",
     ),
-    "app/sql/v3/departments/get_department_new_complete.sql": (
+    "app/sql/v4/departments/get_department_new_complete.sql": (
         "GetDepartmentNewSqlParams",
         "GetDepartmentNewSqlRow",
         "GetDepartmentNewApiRequest",
         "GetDepartmentNewApiResponse",
     ),
-    "app/sql/v3/departments/get_departments_list_complete.sql": (
+    "app/sql/v4/departments/get_departments_list_complete.sql": (
         "GetDepartmentsListSqlParams",
         "GetDepartmentsListSqlRow",
         "GetDepartmentsListApiRequest",
         "GetDepartmentsListApiResponse",
     ),
-    "app/sql/v3/departments/update_department_complete.sql": (
+    "app/sql/v4/departments/update_department_complete.sql": (
         "UpdateDepartmentSqlParams",
         "UpdateDepartmentSqlRow",
         "UpdateDepartmentApiRequest",
         "UpdateDepartmentApiResponse",
     ),
-    "app/sql/v3/documents/create_document_complete.sql": (
+    "app/sql/v4/documents/create_document_complete.sql": (
         "CreateDocumentSqlParams",
         "CreateDocumentSqlRow",
         "CreateDocumentApiRequest",
         "CreateDocumentApiResponse",
     ),
-    "app/sql/v3/documents/create_template_and_link_complete.sql": (
+    "app/sql/v4/documents/create_template_and_link_complete.sql": (
         "CreateTemplateAndLinkSqlParams",
         "CreateTemplateAndLinkSqlRow",
         "CreateTemplateAndLinkApiRequest",
         "CreateTemplateAndLinkApiResponse",
     ),
-    "app/sql/v3/documents/delete_document_complete.sql": (
+    "app/sql/v4/documents/delete_document_complete.sql": (
         "DeleteDocumentSqlParams",
         "DeleteDocumentSqlRow",
         "DeleteDocumentApiRequest",
         "DeleteDocumentApiResponse",
     ),
-    "app/sql/v3/documents/get_certificate_data_complete.sql": (
+    "app/sql/v4/documents/get_certificate_data_complete.sql": (
         "GetCertificateDataSqlParams",
         "GetCertificateDataSqlRow",
         "GetCertificateDataApiRequest",
         "GetCertificateDataApiResponse",
     ),
-    "app/sql/v3/documents/get_document_detail_complete.sql": (
+    "app/sql/v4/documents/get_document_detail_complete.sql": (
         "GetDocumentDetailSqlParams",
         "GetDocumentDetailSqlRow",
         "GetDocumentDetailApiRequest",
         "GetDocumentDetailApiResponse",
     ),
-    "app/sql/v3/documents/get_document_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/documents/get_document_regeneration_run_context_and_create_run_complete.sql": (
         "GetDocumentRegenerationRunContextAndCreateRunSqlParams",
         "GetDocumentRegenerationRunContextAndCreateRunSqlRow",
         "GetDocumentRegenerationRunContextAndCreateRunApiRequest",
         "GetDocumentRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/documents/get_document_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql": (
         "GetDocumentRunContextAndCreateRunSqlParams",
         "GetDocumentRunContextAndCreateRunSqlRow",
         "GetDocumentRunContextAndCreateRunApiRequest",
         "GetDocumentRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/documents/get_document_template_context_complete.sql": (
+    "app/sql/v4/documents/get_document_template_context_complete.sql": (
         "GetDocumentTemplateContextSqlParams",
         "GetDocumentTemplateContextSqlRow",
         "GetDocumentTemplateContextApiRequest",
         "GetDocumentTemplateContextApiResponse",
     ),
-    "app/sql/v3/documents/get_documents_list_complete.sql": (
+    "app/sql/v4/documents/get_documents_list_complete.sql": (
         "GetDocumentsListSqlParams",
         "GetDocumentsListSqlRow",
         "GetDocumentsListApiRequest",
         "GetDocumentsListApiResponse",
     ),
-    "app/sql/v3/documents/render_template_complete.sql": (
+    "app/sql/v4/documents/render_template_complete.sql": (
         "RenderTemplateSqlParams",
         "RenderTemplateSqlRow",
         "RenderTemplateApiRequest",
         "RenderTemplateApiResponse",
     ),
-    "app/sql/v3/documents/update_document_complete.sql": (
+    "app/sql/v4/documents/update_document_complete.sql": (
         "UpdateDocumentSqlParams",
         "UpdateDocumentSqlRow",
         "UpdateDocumentApiRequest",
         "UpdateDocumentApiResponse",
     ),
-    "app/sql/v3/documents/update_document_name_complete.sql": (
+    "app/sql/v4/documents/update_document_name_complete.sql": (
         "UpdateDocumentNameSqlParams",
         "UpdateDocumentNameSqlRow",
         "UpdateDocumentNameApiRequest",
         "UpdateDocumentNameApiResponse",
     ),
-    "app/sql/v3/fields/create_field_complete.sql": (
+    "app/sql/v4/fields/create_field_complete.sql": (
         "CreateFieldSqlParams",
         "CreateFieldSqlRow",
         "CreateFieldApiRequest",
         "CreateFieldApiResponse",
     ),
-    "app/sql/v3/fields/delete_field_complete.sql": (
+    "app/sql/v4/fields/delete_field_complete.sql": (
         "DeleteFieldSqlParams",
         "DeleteFieldSqlRow",
         "DeleteFieldApiRequest",
         "DeleteFieldApiResponse",
     ),
-    "app/sql/v3/fields/duplicate_field_complete.sql": (
+    "app/sql/v4/fields/duplicate_field_complete.sql": (
         "DuplicateFieldSqlParams",
         "DuplicateFieldSqlRow",
         "DuplicateFieldApiRequest",
         "DuplicateFieldApiResponse",
     ),
-    "app/sql/v3/fields/get_field_detail_complete.sql": (
+    "app/sql/v4/fields/get_field_detail_complete.sql": (
         "GetFieldDetailSqlParams",
         "GetFieldDetailSqlRow",
         "GetFieldDetailApiRequest",
         "GetFieldDetailApiResponse",
     ),
-    "app/sql/v3/fields/get_field_new_complete.sql": (
+    "app/sql/v4/fields/get_field_new_complete.sql": (
         "GetFieldNewSqlParams",
         "GetFieldNewSqlRow",
         "GetFieldNewApiRequest",
         "GetFieldNewApiResponse",
     ),
-    "app/sql/v3/fields/get_fields_list_complete.sql": (
+    "app/sql/v4/fields/get_fields_list_complete.sql": (
         "GetFieldsListSqlParams",
         "GetFieldsListSqlRow",
         "GetFieldsListApiRequest",
         "GetFieldsListApiResponse",
     ),
-    "app/sql/v3/fields/update_field_complete.sql": (
+    "app/sql/v4/fields/update_field_complete.sql": (
         "UpdateFieldSqlParams",
         "UpdateFieldSqlRow",
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
-    "app/sql/v3/grading/create_feedback_complete.sql": (
+    "app/sql/v4/grading/create_feedback_complete.sql": (
         "CreateFeedbackSqlParams",
         "CreateFeedbackSqlRow",
         "CreateFeedbackApiRequest",
         "CreateFeedbackApiResponse",
     ),
-    "app/sql/v3/grading/create_message_feedback_complete.sql": (
+    "app/sql/v4/grading/create_message_feedback_complete.sql": (
         "CreateMessageFeedbackSqlParams",
         "CreateMessageFeedbackSqlRow",
         "CreateMessageFeedbackApiRequest",
         "CreateMessageFeedbackApiResponse",
     ),
-    "app/sql/v3/grading/create_message_feedback_highlight_complete.sql": (
+    "app/sql/v4/grading/create_message_feedback_highlight_complete.sql": (
         "CreateMessageFeedbackHighlightSqlParams",
         "CreateMessageFeedbackHighlightSqlRow",
         "CreateMessageFeedbackHighlightApiRequest",
         "CreateMessageFeedbackHighlightApiResponse",
     ),
-    "app/sql/v3/grading/create_message_feedback_replace_complete.sql": (
+    "app/sql/v4/grading/create_message_feedback_replace_complete.sql": (
         "CreateMessageFeedbackReplaceSqlParams",
         "CreateMessageFeedbackReplaceSqlRow",
         "CreateMessageFeedbackReplaceApiRequest",
         "CreateMessageFeedbackReplaceApiResponse",
     ),
-    "app/sql/v3/grading/find_standard_by_group_and_score_complete.sql": (
+    "app/sql/v4/grading/find_standard_by_group_and_score_complete.sql": (
         "FindStandardByGroupAndScoreSqlParams",
         "FindStandardByGroupAndScoreSqlRow",
         "FindStandardByGroupAndScoreApiRequest",
         "FindStandardByGroupAndScoreApiResponse",
     ),
-    "app/sql/v3/grading/get_audio_grading_run_context_complete.sql": (
+    "app/sql/v4/grading/get_audio_grading_run_context_complete.sql": (
         "GetAudioGradingRunContextSqlParams",
         "GetAudioGradingRunContextSqlRow",
         "GetAudioGradingRunContextApiRequest",
         "GetAudioGradingRunContextApiResponse",
     ),
-    "app/sql/v3/grading/get_feedback_totals_for_grade_complete.sql": (
+    "app/sql/v4/grading/get_feedback_totals_for_grade_complete.sql": (
         "GetFeedbackTotalsForGradeSqlParams",
         "GetFeedbackTotalsForGradeSqlRow",
         "GetFeedbackTotalsForGradeApiRequest",
         "GetFeedbackTotalsForGradeApiResponse",
     ),
-    "app/sql/v3/grading/get_grading_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/grading/get_grading_regeneration_run_context_and_create_run_complete.sql": (
         "GetGradingRegenerationRunContextAndCreateRunSqlParams",
         "GetGradingRegenerationRunContextAndCreateRunSqlRow",
         "GetGradingRegenerationRunContextAndCreateRunApiRequest",
         "GetGradingRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/grading/get_grading_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/grading/get_grading_run_context_and_create_run_complete.sql": (
         "GetGradingRunContextAndCreateRunSqlParams",
         "GetGradingRunContextAndCreateRunSqlRow",
         "GetGradingRunContextAndCreateRunApiRequest",
         "GetGradingRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/grading/update_grade_final_complete.sql": (
+    "app/sql/v4/grading/update_grade_final_complete.sql": (
         "UpdateGradeFinalSqlParams",
         "UpdateGradeFinalSqlRow",
         "UpdateGradeFinalApiRequest",
         "UpdateGradeFinalApiResponse",
     ),
-    "app/sql/v3/health/get_health_bundle_complete.sql": (
+    "app/sql/v4/health/get_health_bundle_complete.sql": (
         "GetHealthBundleSqlParams",
         "GetHealthBundleSqlRow",
         "GetHealthBundleApiRequest",
         "GetHealthBundleApiResponse",
     ),
-    "app/sql/v3/home/get_home_history_complete.sql": (
+    "app/sql/v4/home/get_home_history_complete.sql": (
         "GetHomeHistorySqlParams",
         "GetHomeHistorySqlRow",
         "GetHomeHistoryApiRequest",
         "GetHomeHistoryApiResponse",
     ),
-    "app/sql/v3/home/get_home_overview_complete.sql": (
+    "app/sql/v4/home/get_home_overview_complete.sql": (
         "GetHomeOverviewSqlParams",
         "GetHomeOverviewSqlRow",
         "GetHomeOverviewApiRequest",
         "GetHomeOverviewApiResponse",
     ),
-    "app/sql/v3/images/complete_image_generation_complete.sql": (
+    "app/sql/v4/images/complete_image_generation_complete.sql": (
         "CompleteImageGenerationSqlParams",
         "CompleteImageGenerationSqlRow",
         "CompleteImageGenerationApiRequest",
         "CompleteImageGenerationApiResponse",
     ),
-    "app/sql/v3/images/get_image_generation_context_and_create_upload_complete.sql": (
+    "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql": (
         "GetImageGenerationContextAndCreateUploadSqlParams",
         "GetImageGenerationContextAndCreateUploadSqlRow",
         "GetImageGenerationContextAndCreateUploadApiRequest",
         "GetImageGenerationContextAndCreateUploadApiResponse",
     ),
-    "app/sql/v3/images/get_image_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/images/get_image_regeneration_run_context_and_create_run_complete.sql": (
         "GetImageRegenerationRunContextAndCreateRunSqlParams",
         "GetImageRegenerationRunContextAndCreateRunSqlRow",
         "GetImageRegenerationRunContextAndCreateRunApiRequest",
         "GetImageRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/infrastructure/infrastructure_activity_insert_complete.sql": (
+    "app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql": (
         "InfrastructureActivityInsertSqlParams",
         "InfrastructureActivityInsertSqlRow",
         "InfrastructureActivityInsertApiRequest",
         "InfrastructureActivityInsertApiResponse",
     ),
-    "app/sql/v3/infrastructure/infrastructure_activity_insert_websocket_complete.sql": (
+    "app/sql/v4/infrastructure/infrastructure_activity_insert_websocket_complete.sql": (
         "InfrastructureActivityInsertWebsocketSqlParams",
         "InfrastructureActivityInsertWebsocketSqlRow",
         "InfrastructureActivityInsertWebsocketApiRequest",
         "InfrastructureActivityInsertWebsocketApiResponse",
     ),
-    "app/sql/v3/infrastructure/infrastructure_activity_profile_exists_complete.sql": (
+    "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql": (
         "InfrastructureActivityProfileExistsSqlParams",
         "InfrastructureActivityProfileExistsSqlRow",
         "InfrastructureActivityProfileExistsApiRequest",
         "InfrastructureActivityProfileExistsApiResponse",
     ),
-    "app/sql/v3/infrastructure/infrastructure_debug_insert_debug_info_complete.sql": (
+    "app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql": (
         "InfrastructureDebugInsertDebugInfoSqlParams",
         "InfrastructureDebugInsertDebugInfoSqlRow",
         "InfrastructureDebugInsertDebugInfoApiRequest",
         "InfrastructureDebugInsertDebugInfoApiResponse",
     ),
-    "app/sql/v3/infrastructure/infrastructure_metrics_health_complete.sql": (
+    "app/sql/v4/infrastructure/infrastructure_metrics_health_complete.sql": (
         "InfrastructureMetricsHealthSqlParams",
         "InfrastructureMetricsHealthSqlRow",
         "InfrastructureMetricsHealthApiRequest",
         "InfrastructureMetricsHealthApiResponse",
     ),
-    "app/sql/v3/infrastructure/infrastructure_metrics_snapshot_complete.sql": (
+    "app/sql/v4/infrastructure/infrastructure_metrics_snapshot_complete.sql": (
         "InfrastructureMetricsSnapshotSqlParams",
         "InfrastructureMetricsSnapshotSqlRow",
         "InfrastructureMetricsSnapshotApiRequest",
         "InfrastructureMetricsSnapshotApiResponse",
     ),
-    "app/sql/v3/infrastructure/infrastructure_profile_resolve_from_department_complete.sql": (
+    "app/sql/v4/infrastructure/infrastructure_profile_resolve_from_department_complete.sql": (
         "InfrastructureProfileResolveFromDepartmentSqlParams",
         "InfrastructureProfileResolveFromDepartmentSqlRow",
         "InfrastructureProfileResolveFromDepartmentApiRequest",
         "InfrastructureProfileResolveFromDepartmentApiResponse",
     ),
-    "app/sql/v3/keys/create_key_complete.sql": (
+    "app/sql/v4/keys/create_key_complete.sql": (
         "CreateKeySqlParams",
         "CreateKeySqlRow",
         "CreateKeyApiRequest",
         "CreateKeyApiResponse",
     ),
-    "app/sql/v3/keys/delete_key_complete.sql": (
+    "app/sql/v4/keys/delete_key_complete.sql": (
         "DeleteKeySqlParams",
         "DeleteKeySqlRow",
         "DeleteKeyApiRequest",
         "DeleteKeyApiResponse",
     ),
-    "app/sql/v3/keys/get_key_detail_complete.sql": (
+    "app/sql/v4/keys/get_key_detail_complete.sql": (
         "GetKeyDetailSqlParams",
         "GetKeyDetailSqlRow",
         "GetKeyDetailApiRequest",
         "GetKeyDetailApiResponse",
     ),
-    "app/sql/v3/keys/get_key_for_decrypt_complete.sql": (
+    "app/sql/v4/keys/get_key_for_decrypt_complete.sql": (
         "GetKeyForDecryptSqlParams",
         "GetKeyForDecryptSqlRow",
         "GetKeyForDecryptApiRequest",
         "GetKeyForDecryptApiResponse",
     ),
-    "app/sql/v3/keys/get_key_new_complete.sql": (
+    "app/sql/v4/keys/get_key_new_complete.sql": (
         "GetKeyNewSqlParams",
         "GetKeyNewSqlRow",
         "GetKeyNewApiRequest",
         "GetKeyNewApiResponse",
     ),
-    "app/sql/v3/keys/get_keys_list_complete.sql": (
+    "app/sql/v4/keys/get_keys_list_complete.sql": (
         "GetKeysListSqlParams",
         "GetKeysListSqlRow",
         "GetKeysListApiRequest",
         "GetKeysListApiResponse",
     ),
-    "app/sql/v3/keys/update_key_complete.sql": (
+    "app/sql/v4/keys/update_key_complete.sql": (
         "UpdateKeySqlParams",
         "UpdateKeySqlRow",
         "UpdateKeyApiRequest",
         "UpdateKeyApiResponse",
     ),
-    "app/sql/v3/leaderboard/get_leaderboard_bundle_complete.sql": (
+    "app/sql/v4/leaderboard/get_leaderboard_bundle_complete.sql": (
         "GetLeaderboardBundleSqlParams",
         "GetLeaderboardBundleSqlRow",
         "GetLeaderboardBundleApiRequest",
         "GetLeaderboardBundleApiResponse",
     ),
-    "app/sql/v3/logs/get_logs_bundle_complete.sql": (
+    "app/sql/v4/logs/get_logs_bundle_complete.sql": (
         "GetLogsBundleSqlParams",
         "GetLogsBundleSqlRow",
         "GetLogsBundleApiRequest",
         "GetLogsBundleApiResponse",
     ),
-    "app/sql/v3/member/get_member_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/member/get_member_regeneration_run_context_and_create_run_complete.sql": (
         "GetMemberRegenerationRunContextAndCreateRunSqlParams",
         "GetMemberRegenerationRunContextAndCreateRunSqlRow",
         "GetMemberRegenerationRunContextAndCreateRunApiRequest",
         "GetMemberRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/member/get_member_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/member/get_member_run_context_and_create_run_complete.sql": (
         "GetMemberRunContextAndCreateRunSqlParams",
         "GetMemberRunContextAndCreateRunSqlRow",
         "GetMemberRunContextAndCreateRunApiRequest",
         "GetMemberRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/member/member_progress_upsert_complete.sql": (
+    "app/sql/v4/member/member_progress_upsert_complete.sql": (
         "MemberProgressUpsertSqlParams",
         "MemberProgressUpsertSqlRow",
         "MemberProgressUpsertApiRequest",
         "MemberProgressUpsertApiResponse",
     ),
-    "app/sql/v3/messages/get_message_created_at_complete.sql": (
+    "app/sql/v4/messages/get_message_created_at_complete.sql": (
         "GetMessageCreatedAtSqlParams",
         "GetMessageCreatedAtSqlRow",
         "GetMessageCreatedAtApiRequest",
         "GetMessageCreatedAtApiResponse",
     ),
-    "app/sql/v3/model_runs/create_model_run_complete.sql": (
+    "app/sql/v4/model_runs/create_model_run_complete.sql": (
         "CreateModelRunSqlParams",
         "CreateModelRunSqlRow",
         "CreateModelRunApiRequest",
         "CreateModelRunApiResponse",
     ),
-    "app/sql/v3/model_runs/link_system_developer_messages_to_run_complete.sql": (
+    "app/sql/v4/model_runs/link_system_developer_messages_to_run_complete.sql": (
         "LinkSystemDeveloperMessagesToRunSqlParams",
         "LinkSystemDeveloperMessagesToRunSqlRow",
         "LinkSystemDeveloperMessagesToRunApiRequest",
         "LinkSystemDeveloperMessagesToRunApiResponse",
     ),
-    "app/sql/v3/models/create_model_complete.sql": (
+    "app/sql/v4/models/create_model_complete.sql": (
         "CreateModelSqlParams",
         "CreateModelSqlRow",
         "CreateModelApiRequest",
         "CreateModelApiResponse",
     ),
-    "app/sql/v3/models/delete_model_complete.sql": (
+    "app/sql/v4/models/delete_model_complete.sql": (
         "DeleteModelSqlParams",
         "DeleteModelSqlRow",
         "DeleteModelApiRequest",
         "DeleteModelApiResponse",
     ),
-    "app/sql/v3/models/duplicate_model_complete.sql": (
+    "app/sql/v4/models/duplicate_model_complete.sql": (
         "DuplicateModelSqlParams",
         "DuplicateModelSqlRow",
         "DuplicateModelApiRequest",
         "DuplicateModelApiResponse",
     ),
-    "app/sql/v3/models/get_model_detail_complete.sql": (
+    "app/sql/v4/models/get_model_detail_complete.sql": (
         "GetModelDetailSqlParams",
         "GetModelDetailSqlRow",
         "GetModelDetailApiRequest",
         "GetModelDetailApiResponse",
     ),
-    "app/sql/v3/models/get_model_new_complete.sql": (
+    "app/sql/v4/models/get_model_new_complete.sql": (
         "GetModelNewSqlParams",
         "GetModelNewSqlRow",
         "GetModelNewApiRequest",
         "GetModelNewApiResponse",
     ),
-    "app/sql/v3/models/list_models_complete.sql": (
+    "app/sql/v4/models/list_models_complete.sql": (
         "ListModelsSqlParams",
         "ListModelsSqlRow",
         "ListModelsApiRequest",
         "ListModelsApiResponse",
     ),
-    "app/sql/v3/models/update_model_complete.sql": (
+    "app/sql/v4/models/update_model_complete.sql": (
         "UpdateModelSqlParams",
         "UpdateModelSqlRow",
         "UpdateModelApiRequest",
         "UpdateModelApiResponse",
     ),
-    "app/sql/v3/parameters/create_parameter_complete.sql": (
+    "app/sql/v4/parameters/create_parameter_complete.sql": (
         "CreateParameterSqlParams",
         "CreateParameterSqlRow",
         "CreateParameterApiRequest",
         "CreateParameterApiResponse",
     ),
-    "app/sql/v3/parameters/delete_parameter_complete.sql": (
+    "app/sql/v4/parameters/delete_parameter_complete.sql": (
         "DeleteParameterSqlParams",
         "DeleteParameterSqlRow",
         "DeleteParameterApiRequest",
         "DeleteParameterApiResponse",
     ),
-    "app/sql/v3/parameters/duplicate_parameter_complete.sql": (
+    "app/sql/v4/parameters/duplicate_parameter_complete.sql": (
         "DuplicateParameterSqlParams",
         "DuplicateParameterSqlRow",
         "DuplicateParameterApiRequest",
         "DuplicateParameterApiResponse",
     ),
-    "app/sql/v3/parameters/get_parameter_detail_complete.sql": (
+    "app/sql/v4/parameters/get_parameter_detail_complete.sql": (
         "GetParameterDetailSqlParams",
         "GetParameterDetailSqlRow",
         "GetParameterDetailApiRequest",
         "GetParameterDetailApiResponse",
     ),
-    "app/sql/v3/parameters/get_parameter_new_complete.sql": (
+    "app/sql/v4/parameters/get_parameter_new_complete.sql": (
         "GetParameterNewSqlParams",
         "GetParameterNewSqlRow",
         "GetParameterNewApiRequest",
         "GetParameterNewApiResponse",
     ),
-    "app/sql/v3/parameters/get_parameters_list_complete.sql": (
+    "app/sql/v4/parameters/get_parameters_list_complete.sql": (
         "GetParametersListSqlParams",
         "GetParametersListSqlRow",
         "GetParametersListApiRequest",
         "GetParametersListApiResponse",
     ),
-    "app/sql/v3/parameters/update_parameter_complete.sql": (
+    "app/sql/v4/parameters/update_parameter_complete.sql": (
         "UpdateParameterSqlParams",
         "UpdateParameterSqlRow",
         "UpdateParameterApiRequest",
         "UpdateParameterApiResponse",
     ),
-    "app/sql/v3/personas/create_persona_complete.sql": (
+    "app/sql/v4/personas/create_persona_complete.sql": (
         "CreatePersonaSqlParams",
         "CreatePersonaSqlRow",
         "CreatePersonaApiRequest",
         "CreatePersonaApiResponse",
     ),
-    "app/sql/v3/personas/delete_persona_complete.sql": (
+    "app/sql/v4/personas/delete_persona_complete.sql": (
         "DeletePersonaSqlParams",
         "DeletePersonaSqlRow",
         "DeletePersonaApiRequest",
         "DeletePersonaApiResponse",
     ),
-    "app/sql/v3/personas/duplicate_persona_complete.sql": (
+    "app/sql/v4/personas/duplicate_persona_complete.sql": (
         "DuplicatePersonaSqlParams",
         "DuplicatePersonaSqlRow",
         "DuplicatePersonaApiRequest",
         "DuplicatePersonaApiResponse",
     ),
-    "app/sql/v3/personas/get_persona_detail_complete.sql": (
+    "app/sql/v4/personas/get_persona_detail_complete.sql": (
         "GetPersonaDetailSqlParams",
         "GetPersonaDetailSqlRow",
         "GetPersonaDetailApiRequest",
         "GetPersonaDetailApiResponse",
     ),
-    "app/sql/v3/personas/get_persona_new_complete.sql": (
+    "app/sql/v4/personas/get_persona_new_complete.sql": (
         "GetPersonaNewSqlParams",
         "GetPersonaNewSqlRow",
         "GetPersonaNewApiRequest",
         "GetPersonaNewApiResponse",
     ),
-    "app/sql/v3/personas/get_personas_list_complete.sql": (
+    "app/sql/v4/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
         "GetPersonasListSqlRow",
         "GetPersonasListApiRequest",
         "GetPersonasListApiResponse",
     ),
-    "app/sql/v3/personas/update_persona_complete.sql": (
+    "app/sql/v4/personas/update_persona_complete.sql": (
         "UpdatePersonaSqlParams",
         "UpdatePersonaSqlRow",
         "UpdatePersonaApiRequest",
         "UpdatePersonaApiResponse",
     ),
-    "app/sql/v3/practice/get_practice_history_complete.sql": (
+    "app/sql/v4/practice/get_practice_history_complete.sql": (
         "GetPracticeHistorySqlParams",
         "GetPracticeHistorySqlRow",
         "GetPracticeHistoryApiRequest",
         "GetPracticeHistoryApiResponse",
     ),
-    "app/sql/v3/practice/get_practice_overview_complete.sql": (
+    "app/sql/v4/practice/get_practice_overview_complete.sql": (
         "GetPracticeOverviewSqlParams",
         "GetPracticeOverviewSqlRow",
         "GetPracticeOverviewApiRequest",
         "GetPracticeOverviewApiResponse",
     ),
-    "app/sql/v3/pricing/get_pricing_analytics_complete.sql": (
+    "app/sql/v4/pricing/get_pricing_analytics_complete.sql": (
         "GetPricingAnalyticsSqlParams",
         "GetPricingAnalyticsSqlRow",
         "GetPricingAnalyticsApiRequest",
         "GetPricingAnalyticsApiResponse",
     ),
-    "app/sql/v3/pricing/get_pricing_group_detail_complete.sql": (
+    "app/sql/v4/pricing/get_pricing_group_detail_complete.sql": (
         "GetPricingGroupDetailSqlParams",
         "GetPricingGroupDetailSqlRow",
         "GetPricingGroupDetailApiRequest",
         "GetPricingGroupDetailApiResponse",
     ),
-    "app/sql/v3/pricing/get_pricing_runs_complete.sql": (
+    "app/sql/v4/pricing/get_pricing_runs_complete.sql": (
         "GetPricingRunsSqlParams",
         "GetPricingRunsSqlRow",
         "GetPricingRunsApiRequest",
         "GetPricingRunsApiResponse",
     ),
-    "app/sql/v3/profile/authorize_emulation_complete.sql": (
+    "app/sql/v4/profile/authorize_emulation_complete.sql": (
         "AuthorizeEmulationSqlParams",
         "AuthorizeEmulationSqlRow",
         "AuthorizeEmulationApiRequest",
         "AuthorizeEmulationApiResponse",
     ),
-    "app/sql/v3/profile/check_login_authorization_complete.sql": (
+    "app/sql/v4/profile/check_login_authorization_complete.sql": (
         "CheckLoginAuthorizationSqlParams",
         "CheckLoginAuthorizationSqlRow",
         "CheckLoginAuthorizationApiRequest",
         "CheckLoginAuthorizationApiResponse",
     ),
-    "app/sql/v3/profile/create_or_update_profile_complete.sql": (
+    "app/sql/v4/profile/create_or_update_profile_complete.sql": (
         "CreateOrUpdateProfileSqlParams",
         "CreateOrUpdateProfileSqlRow",
         "CreateOrUpdateProfileApiRequest",
         "CreateOrUpdateProfileApiResponse",
     ),
-    "app/sql/v3/profile/create_profile_complete.sql": (
+    "app/sql/v4/profile/create_profile_complete.sql": (
         "CreateProfileSqlParams",
         "CreateProfileSqlRow",
         "CreateProfileApiRequest",
         "CreateProfileApiResponse",
     ),
-    "app/sql/v3/profile/delete_profile_complete.sql": (
+    "app/sql/v4/profile/delete_profile_complete.sql": (
         "DeleteProfileSqlParams",
         "DeleteProfileSqlRow",
         "DeleteProfileApiRequest",
         "DeleteProfileApiResponse",
     ),
-    "app/sql/v3/profile/get_first_department_for_profile_complete.sql": (
+    "app/sql/v4/profile/get_first_department_for_profile_complete.sql": (
         "GetFirstDepartmentForProfileSqlParams",
         "GetFirstDepartmentForProfileSqlRow",
         "GetFirstDepartmentForProfileApiRequest",
         "GetFirstDepartmentForProfileApiResponse",
     ),
-    "app/sql/v3/profile/get_profile_by_email_complete.sql": (
+    "app/sql/v4/profile/get_profile_by_email_complete.sql": (
         "GetProfileByEmailSqlParams",
         "GetProfileByEmailSqlRow",
         "GetProfileByEmailApiRequest",
         "GetProfileByEmailApiResponse",
     ),
-    "app/sql/v3/profile/get_profile_context_complete.sql": (
+    "app/sql/v4/profile/get_profile_context_complete.sql": (
         "GetProfileContextSqlParams",
         "GetProfileContextSqlRow",
         "GetProfileContextApiRequest",
         "GetProfileContextApiResponse",
     ),
-    "app/sql/v3/profile/get_profile_detail_complete.sql": (
+    "app/sql/v4/profile/get_profile_detail_complete.sql": (
         "GetProfileDetailSqlParams",
         "GetProfileDetailSqlRow",
         "GetProfileDetailApiRequest",
         "GetProfileDetailApiResponse",
     ),
-    "app/sql/v3/profile/get_profile_new_complete.sql": (
+    "app/sql/v4/profile/get_profile_new_complete.sql": (
         "GetProfileNewSqlParams",
         "GetProfileNewSqlRow",
         "GetProfileNewApiRequest",
         "GetProfileNewApiResponse",
     ),
-    "app/sql/v3/profile/profile_staff_bulk_create_profile_complete.sql": (
+    "app/sql/v4/profile/profile_staff_bulk_create_profile_complete.sql": (
         "ProfileStaffBulkCreateProfileSqlParams",
         "ProfileStaffBulkCreateProfileSqlRow",
         "ProfileStaffBulkCreateProfileApiRequest",
         "ProfileStaffBulkCreateProfileApiResponse",
     ),
-    "app/sql/v3/profile/profile_staff_bulk_delete_profiles_complete.sql": (
+    "app/sql/v4/profile/profile_staff_bulk_delete_profiles_complete.sql": (
         "ProfileStaffBulkDeleteProfilesSqlParams",
         "ProfileStaffBulkDeleteProfilesSqlRow",
         "ProfileStaffBulkDeleteProfilesApiRequest",
         "ProfileStaffBulkDeleteProfilesApiResponse",
     ),
-    "app/sql/v3/profile/profile_staff_bulk_update_profile_complete.sql": (
+    "app/sql/v4/profile/profile_staff_bulk_update_profile_complete.sql": (
         "ProfileStaffBulkUpdateProfileSqlParams",
         "ProfileStaffBulkUpdateProfileSqlRow",
         "ProfileStaffBulkUpdateProfileApiRequest",
         "ProfileStaffBulkUpdateProfileApiResponse",
     ),
-    "app/sql/v3/profile/profile_staff_create_or_update_staff_complete.sql": (
+    "app/sql/v4/profile/profile_staff_create_or_update_staff_complete.sql": (
         "ProfileStaffCreateOrUpdateStaffSqlParams",
         "ProfileStaffCreateOrUpdateStaffSqlRow",
         "ProfileStaffCreateOrUpdateStaffApiRequest",
         "ProfileStaffCreateOrUpdateStaffApiResponse",
     ),
-    "app/sql/v3/profile/search_simulatable_profiles_complete.sql": (
+    "app/sql/v4/profile/search_simulatable_profiles_complete.sql": (
         "SearchSimulatableProfilesSqlParams",
         "SearchSimulatableProfilesSqlRow",
         "SearchSimulatableProfilesApiRequest",
         "SearchSimulatableProfilesApiResponse",
     ),
-    "app/sql/v3/profile/update_profile_complete.sql": (
+    "app/sql/v4/profile/update_profile_complete.sql": (
         "UpdateProfileSqlParams",
         "UpdateProfileSqlRow",
         "UpdateProfileApiRequest",
         "UpdateProfileApiResponse",
     ),
-    "app/sql/v3/profile/update_profile_to_active_complete.sql": (
+    "app/sql/v4/profile/update_profile_to_active_complete.sql": (
         "UpdateProfileToActiveSqlParams",
         "UpdateProfileToActiveSqlRow",
         "UpdateProfileToActiveApiRequest",
         "UpdateProfileToActiveApiResponse",
     ),
-    "app/sql/v3/profile/update_profile_to_inactive_complete.sql": (
+    "app/sql/v4/profile/update_profile_to_inactive_complete.sql": (
         "UpdateProfileToInactiveSqlParams",
         "UpdateProfileToInactiveSqlRow",
         "UpdateProfileToInactiveApiRequest",
         "UpdateProfileToInactiveApiResponse",
     ),
-    "app/sql/v3/prompts/delete_prompt_complete.sql": (
+    "app/sql/v4/prompts/delete_prompt_complete.sql": (
         "DeletePromptSqlParams",
         "DeletePromptSqlRow",
         "DeletePromptApiRequest",
         "DeletePromptApiResponse",
     ),
-    "app/sql/v3/providers/create_provider_complete.sql": (
+    "app/sql/v4/providers/create_provider_complete.sql": (
         "CreateProviderSqlParams",
         "CreateProviderSqlRow",
         "CreateProviderApiRequest",
         "CreateProviderApiResponse",
     ),
-    "app/sql/v3/providers/delete_provider_complete.sql": (
+    "app/sql/v4/providers/delete_provider_complete.sql": (
         "DeleteProviderSqlParams",
         "DeleteProviderSqlRow",
         "DeleteProviderApiRequest",
         "DeleteProviderApiResponse",
     ),
-    "app/sql/v3/providers/get_provider_detail_complete.sql": (
+    "app/sql/v4/providers/get_provider_detail_complete.sql": (
         "GetProviderDetailSqlParams",
         "GetProviderDetailSqlRow",
         "GetProviderDetailApiRequest",
         "GetProviderDetailApiResponse",
     ),
-    "app/sql/v3/providers/get_provider_new_complete.sql": (
+    "app/sql/v4/providers/get_provider_new_complete.sql": (
         "GetProviderNewSqlParams",
         "GetProviderNewSqlRow",
         "GetProviderNewApiRequest",
         "GetProviderNewApiResponse",
     ),
-    "app/sql/v3/providers/get_providers_list_complete.sql": (
+    "app/sql/v4/providers/get_providers_list_complete.sql": (
         "GetProvidersListSqlParams",
         "GetProvidersListSqlRow",
         "GetProvidersListApiRequest",
         "GetProvidersListApiResponse",
     ),
-    "app/sql/v3/providers/update_provider_complete.sql": (
+    "app/sql/v4/providers/update_provider_complete.sql": (
         "UpdateProviderSqlParams",
         "UpdateProviderSqlRow",
         "UpdateProviderApiRequest",
         "UpdateProviderApiResponse",
     ),
-    "app/sql/v3/reports/get_per_simulation_metrics_complete.sql": (
+    "app/sql/v4/reports/get_per_simulation_metrics_complete.sql": (
         "GetPerSimulationMetricsSqlParams",
         "GetPerSimulationMetricsSqlRow",
         "GetPerSimulationMetricsApiRequest",
         "GetPerSimulationMetricsApiResponse",
     ),
-    "app/sql/v3/reports/get_reports_bundle_complete.sql": (
+    "app/sql/v4/reports/get_reports_bundle_complete.sql": (
         "GetReportsBundleSqlParams",
         "GetReportsBundleSqlRow",
         "GetReportsBundleApiRequest",
         "GetReportsBundleApiResponse",
     ),
-    "app/sql/v3/reports/get_reports_history_complete.sql": (
+    "app/sql/v4/reports/get_reports_history_complete.sql": (
         "GetReportsHistorySqlParams",
         "GetReportsHistorySqlRow",
         "GetReportsHistoryApiRequest",
         "GetReportsHistoryApiResponse",
     ),
-    "app/sql/v3/reports/get_reports_overview_complete.sql": (
+    "app/sql/v4/reports/get_reports_overview_complete.sql": (
         "GetReportsOverviewSqlParams",
         "GetReportsOverviewSqlRow",
         "GetReportsOverviewApiRequest",
         "GetReportsOverviewApiResponse",
     ),
-    "app/sql/v3/rubric/create_rubric_complete.sql": (
+    "app/sql/v4/rubric/create_rubric_complete.sql": (
         "CreateRubricSqlParams",
         "CreateRubricSqlRow",
         "CreateRubricApiRequest",
         "CreateRubricApiResponse",
     ),
-    "app/sql/v3/rubric/delete_rubric_complete.sql": (
+    "app/sql/v4/rubric/delete_rubric_complete.sql": (
         "DeleteRubricSqlParams",
         "DeleteRubricSqlRow",
         "DeleteRubricApiRequest",
         "DeleteRubricApiResponse",
     ),
-    "app/sql/v3/rubric/duplicate_rubric_complete.sql": (
+    "app/sql/v4/rubric/duplicate_rubric_complete.sql": (
         "DuplicateRubricSqlParams",
         "DuplicateRubricSqlRow",
         "DuplicateRubricApiRequest",
         "DuplicateRubricApiResponse",
     ),
-    "app/sql/v3/rubric/get_rubric_detail_complete.sql": (
+    "app/sql/v4/rubric/get_rubric_detail_complete.sql": (
         "GetRubricDetailSqlParams",
         "GetRubricDetailSqlRow",
         "GetRubricDetailApiRequest",
         "GetRubricDetailApiResponse",
     ),
-    "app/sql/v3/rubric/get_rubric_new_complete.sql": (
+    "app/sql/v4/rubric/get_rubric_new_complete.sql": (
         "GetRubricNewSqlParams",
         "GetRubricNewSqlRow",
         "GetRubricNewApiRequest",
         "GetRubricNewApiResponse",
     ),
-    "app/sql/v3/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql": (
         "GetRubricRegenerationRunContextAndCreateRunSqlParams",
         "GetRubricRegenerationRunContextAndCreateRunSqlRow",
         "GetRubricRegenerationRunContextAndCreateRunApiRequest",
         "GetRubricRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/rubric/get_rubric_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/rubric/get_rubric_run_context_and_create_run_complete.sql": (
         "GetRubricRunContextAndCreateRunSqlParams",
         "GetRubricRunContextAndCreateRunSqlRow",
         "GetRubricRunContextAndCreateRunApiRequest",
         "GetRubricRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/rubric/get_rubrics_list_complete.sql": (
+    "app/sql/v4/rubric/get_rubrics_list_complete.sql": (
         "GetRubricsListSqlParams",
         "GetRubricsListSqlRow",
         "GetRubricsListApiRequest",
         "GetRubricsListApiResponse",
     ),
-    "app/sql/v3/rubric/rubric_generation_complete_complete.sql": (
+    "app/sql/v4/rubric/rubric_generation_complete_complete.sql": (
         "RubricGenerationCompleteSqlParams",
         "RubricGenerationCompleteSqlRow",
         "RubricGenerationCompleteApiRequest",
         "RubricGenerationCompleteApiResponse",
     ),
-    "app/sql/v3/rubric/rubric_generation_error_complete.sql": (
+    "app/sql/v4/rubric/rubric_generation_error_complete.sql": (
         "RubricGenerationErrorSqlParams",
         "RubricGenerationErrorSqlRow",
         "RubricGenerationErrorApiRequest",
         "RubricGenerationErrorApiResponse",
     ),
-    "app/sql/v3/rubric/rubric_generation_progress_complete.sql": (
+    "app/sql/v4/rubric/rubric_generation_progress_complete.sql": (
         "RubricGenerationProgressSqlParams",
         "RubricGenerationProgressSqlRow",
         "RubricGenerationProgressApiRequest",
         "RubricGenerationProgressApiResponse",
     ),
-    "app/sql/v3/rubric/update_rubric_complete.sql": (
+    "app/sql/v4/rubric/update_rubric_complete.sql": (
         "UpdateRubricSqlParams",
         "UpdateRubricSqlRow",
         "UpdateRubricApiRequest",
         "UpdateRubricApiResponse",
     ),
-    "app/sql/v3/rubric/update_rubric_name_complete.sql": (
+    "app/sql/v4/rubric/update_rubric_name_complete.sql": (
         "UpdateRubricNameSqlParams",
         "UpdateRubricNameSqlRow",
         "UpdateRubricNameApiRequest",
         "UpdateRubricNameApiResponse",
     ),
-    "app/sql/v3/rubrics/standard_group_descriptions_complete_complete.sql": (
+    "app/sql/v4/rubrics/standard_group_descriptions_complete_complete.sql": (
         "StandardGroupDescriptionsCompleteSqlParams",
         "StandardGroupDescriptionsCompleteSqlRow",
         "StandardGroupDescriptionsCompleteApiRequest",
         "StandardGroupDescriptionsCompleteApiResponse",
     ),
-    "app/sql/v3/rubrics/standard_group_descriptions_error_complete.sql": (
+    "app/sql/v4/rubrics/standard_group_descriptions_error_complete.sql": (
         "StandardGroupDescriptionsErrorSqlParams",
         "StandardGroupDescriptionsErrorSqlRow",
         "StandardGroupDescriptionsErrorApiRequest",
         "StandardGroupDescriptionsErrorApiResponse",
     ),
-    "app/sql/v3/rubrics/standard_group_descriptions_progress_complete.sql": (
+    "app/sql/v4/rubrics/standard_group_descriptions_progress_complete.sql": (
         "StandardGroupDescriptionsProgressSqlParams",
         "StandardGroupDescriptionsProgressSqlRow",
         "StandardGroupDescriptionsProgressApiRequest",
         "StandardGroupDescriptionsProgressApiResponse",
     ),
-    "app/sql/v3/rubrics/update_standard_descriptions_complete.sql": (
+    "app/sql/v4/rubrics/update_standard_descriptions_complete.sql": (
         "UpdateStandardDescriptionsSqlParams",
         "UpdateStandardDescriptionsSqlRow",
         "UpdateStandardDescriptionsApiRequest",
         "UpdateStandardDescriptionsApiResponse",
     ),
-    "app/sql/v3/scenario/create_scenario_complete.sql": (
+    "app/sql/v4/scenario/create_scenario_complete.sql": (
         "CreateScenarioSqlParams",
         "CreateScenarioSqlRow",
         "CreateScenarioApiRequest",
         "CreateScenarioApiResponse",
     ),
-    "app/sql/v3/scenario/delete_scenario_complete.sql": (
+    "app/sql/v4/scenario/delete_scenario_complete.sql": (
         "DeleteScenarioSqlParams",
         "DeleteScenarioSqlRow",
         "DeleteScenarioApiRequest",
         "DeleteScenarioApiResponse",
     ),
-    "app/sql/v3/scenario/duplicate_scenario_complete.sql": (
+    "app/sql/v4/scenario/duplicate_scenario_complete.sql": (
         "DuplicateScenarioSqlParams",
         "DuplicateScenarioSqlRow",
         "DuplicateScenarioApiRequest",
         "DuplicateScenarioApiResponse",
     ),
-    "app/sql/v3/scenario/get_scenario_detail_complete.sql": (
+    "app/sql/v4/scenario/get_scenario_detail_complete.sql": (
         "GetScenarioDetailSqlParams",
         "GetScenarioDetailSqlRow",
         "GetScenarioDetailApiRequest",
         "GetScenarioDetailApiResponse",
     ),
-    "app/sql/v3/scenario/get_scenario_new_complete.sql": (
+    "app/sql/v4/scenario/get_scenario_new_complete.sql": (
         "GetScenarioNewSqlParams",
         "GetScenarioNewSqlRow",
         "GetScenarioNewApiRequest",
         "GetScenarioNewApiResponse",
     ),
-    "app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql": (
         "GetScenarioRegenerationRunContextAndCreateRunSqlParams",
         "GetScenarioRegenerationRunContextAndCreateRunSqlRow",
         "GetScenarioRegenerationRunContextAndCreateRunApiRequest",
         "GetScenarioRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/scenario/get_scenario_run_context_and_create_run_complete.sql": (
         "GetScenarioRunContextAndCreateRunSqlParams",
         "GetScenarioRunContextAndCreateRunSqlRow",
         "GetScenarioRunContextAndCreateRunApiRequest",
         "GetScenarioRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/scenario/get_scenarios_list_complete.sql": (
+    "app/sql/v4/scenario/get_scenarios_list_complete.sql": (
         "GetScenariosListSqlParams",
         "GetScenariosListSqlRow",
         "GetScenariosListApiRequest",
         "GetScenariosListApiResponse",
     ),
-    "app/sql/v3/scenario/randomize_scenario_complete.sql": (
+    "app/sql/v4/scenario/randomize_scenario_complete.sql": (
         "RandomizeScenarioSqlParams",
         "RandomizeScenarioSqlRow",
         "RandomizeScenarioApiRequest",
         "RandomizeScenarioApiResponse",
     ),
-    "app/sql/v3/scenario/update_scenario_complete.sql": (
+    "app/sql/v4/scenario/update_scenario_complete.sql": (
         "UpdateScenarioSqlParams",
         "UpdateScenarioSqlRow",
         "UpdateScenarioApiRequest",
         "UpdateScenarioApiResponse",
     ),
-    "app/sql/v3/settings/get_active_settings_complete.sql": (
+    "app/sql/v4/settings/get_active_settings_complete.sql": (
         "GetActiveSettingsSqlParams",
         "GetActiveSettingsSqlRow",
         "GetActiveSettingsApiRequest",
         "GetActiveSettingsApiResponse",
     ),
-    "app/sql/v3/settings/get_settings_detail_complete.sql": (
+    "app/sql/v4/settings/get_settings_detail_complete.sql": (
         "GetSettingsDetailSqlParams",
         "GetSettingsDetailSqlRow",
         "GetSettingsDetailApiRequest",
         "GetSettingsDetailApiResponse",
     ),
-    "app/sql/v3/settings/get_settings_list_complete.sql": (
+    "app/sql/v4/settings/get_settings_list_complete.sql": (
         "GetSettingsListSqlParams",
         "GetSettingsListSqlRow",
         "GetSettingsListApiRequest",
         "GetSettingsListApiResponse",
     ),
-    "app/sql/v3/settings/update_settings_complete.sql": (
+    "app/sql/v4/settings/update_settings_complete.sql": (
         "UpdateSettingsSqlParams",
         "UpdateSettingsSqlRow",
         "UpdateSettingsApiRequest",
         "UpdateSettingsApiResponse",
     ),
-    "app/sql/v3/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql": (
         "GetVoiceRegenerationRunContextAndCreateRunSqlParams",
         "GetVoiceRegenerationRunContextAndCreateRunSqlRow",
         "GetVoiceRegenerationRunContextAndCreateRunApiRequest",
         "GetVoiceRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/simulation_voice/get_voice_run_context_complete.sql": (
+    "app/sql/v4/simulation_voice/get_voice_run_context_complete.sql": (
         "GetVoiceRunContextSqlParams",
         "GetVoiceRunContextSqlRow",
         "GetVoiceRunContextApiRequest",
         "GetVoiceRunContextApiResponse",
     ),
-    "app/sql/v3/simulation_voice/voice_complete_complete.sql": (
+    "app/sql/v4/simulation_voice/voice_complete_complete.sql": (
         "VoiceCompleteSqlParams",
         "VoiceCompleteSqlRow",
         "VoiceCompleteApiRequest",
         "VoiceCompleteApiResponse",
     ),
-    "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql": (
+    "app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql": (
         "VoiceProgressUpsertSqlParams",
         "VoiceProgressUpsertSqlRow",
         "VoiceProgressUpsertApiRequest",
         "VoiceProgressUpsertApiResponse",
     ),
-    "app/sql/v3/simulations/create_hints_complete.sql": (
+    "app/sql/v4/simulations/create_hints_complete.sql": (
         "CreateHintsSqlParams",
         "CreateHintsSqlRow",
         "CreateHintsApiRequest",
         "CreateHintsApiResponse",
     ),
-    "app/sql/v3/simulations/create_simulation_complete.sql": (
+    "app/sql/v4/simulations/create_simulation_complete.sql": (
         "CreateSimulationSqlParams",
         "CreateSimulationSqlRow",
         "CreateSimulationApiRequest",
         "CreateSimulationApiResponse",
     ),
-    "app/sql/v3/simulations/delete_simulation_complete.sql": (
+    "app/sql/v4/simulations/delete_simulation_complete.sql": (
         "DeleteSimulationSqlParams",
         "DeleteSimulationSqlRow",
         "DeleteSimulationApiRequest",
         "DeleteSimulationApiResponse",
     ),
-    "app/sql/v3/simulations/duplicate_simulation_complete.sql": (
+    "app/sql/v4/simulations/duplicate_simulation_complete.sql": (
         "DuplicateSimulationSqlParams",
         "DuplicateSimulationSqlRow",
         "DuplicateSimulationApiRequest",
         "DuplicateSimulationApiResponse",
     ),
-    "app/sql/v3/simulations/generate_hints_complete.sql": (
+    "app/sql/v4/simulations/generate_hints_complete.sql": (
         "GenerateHintsSqlParams",
         "GenerateHintsSqlRow",
         "GenerateHintsApiRequest",
         "GenerateHintsApiResponse",
     ),
-    "app/sql/v3/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql": (
         "GetHintRegenerationRunContextAndCreateRunSqlParams",
         "GetHintRegenerationRunContextAndCreateRunSqlRow",
         "GetHintRegenerationRunContextAndCreateRunApiRequest",
         "GetHintRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/simulations/get_messages_with_audio_complete.sql": (
+    "app/sql/v4/simulations/get_messages_with_audio_complete.sql": (
         "GetMessagesWithAudioSqlParams",
         "GetMessagesWithAudioSqlRow",
         "GetMessagesWithAudioApiRequest",
         "GetMessagesWithAudioApiResponse",
     ),
-    "app/sql/v3/simulations/get_simulation_detail_complete.sql": (
+    "app/sql/v4/simulations/get_simulation_detail_complete.sql": (
         "GetSimulationDetailSqlParams",
         "GetSimulationDetailSqlRow",
         "GetSimulationDetailApiRequest",
         "GetSimulationDetailApiResponse",
     ),
-    "app/sql/v3/simulations/get_simulation_messages_complete.sql": (
+    "app/sql/v4/simulations/get_simulation_messages_complete.sql": (
         "GetSimulationMessagesSqlParams",
         "GetSimulationMessagesSqlRow",
         "GetSimulationMessagesApiRequest",
         "GetSimulationMessagesApiResponse",
     ),
-    "app/sql/v3/simulations/get_simulation_new_complete.sql": (
+    "app/sql/v4/simulations/get_simulation_new_complete.sql": (
         "GetSimulationNewSqlParams",
         "GetSimulationNewSqlRow",
         "GetSimulationNewApiRequest",
         "GetSimulationNewApiResponse",
     ),
-    "app/sql/v3/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql": (
         "GetSimulationRegenerationRunContextAndCreateRunSqlParams",
         "GetSimulationRegenerationRunContextAndCreateRunSqlRow",
         "GetSimulationRegenerationRunContextAndCreateRunApiRequest",
         "GetSimulationRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/simulations/get_simulation_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql": (
         "GetSimulationRunContextAndCreateRunSqlParams",
         "GetSimulationRunContextAndCreateRunSqlRow",
         "GetSimulationRunContextAndCreateRunApiRequest",
         "GetSimulationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/simulations/get_simulation_run_context_complete.sql": (
+    "app/sql/v4/simulations/get_simulation_run_context_complete.sql": (
         "GetSimulationRunContextSqlParams",
         "GetSimulationRunContextSqlRow",
         "GetSimulationRunContextApiRequest",
         "GetSimulationRunContextApiResponse",
     ),
-    "app/sql/v3/simulations/get_simulations_list_complete.sql": (
+    "app/sql/v4/simulations/get_simulations_list_complete.sql": (
         "GetSimulationsListSqlParams",
         "GetSimulationsListSqlRow",
         "GetSimulationsListApiRequest",
         "GetSimulationsListApiResponse",
     ),
-    "app/sql/v3/simulations/link_developer_message_to_run_complete.sql": (
+    "app/sql/v4/simulations/link_developer_message_to_run_complete.sql": (
         "LinkDeveloperMessageToRunSqlParams",
         "LinkDeveloperMessageToRunSqlRow",
         "LinkDeveloperMessageToRunApiRequest",
         "LinkDeveloperMessageToRunApiResponse",
     ),
-    "app/sql/v3/simulations/mark_chat_completed_complete.sql": (
+    "app/sql/v4/simulations/mark_chat_completed_complete.sql": (
         "MarkChatCompletedSqlParams",
         "MarkChatCompletedSqlRow",
         "MarkChatCompletedApiRequest",
         "MarkChatCompletedApiResponse",
     ),
-    "app/sql/v3/simulations/start_simulation_attempt_complete.sql": (
+    "app/sql/v4/simulations/start_simulation_attempt_complete.sql": (
         "StartSimulationAttemptSqlParams",
         "StartSimulationAttemptSqlRow",
         "StartSimulationAttemptApiRequest",
         "StartSimulationAttemptApiResponse",
     ),
-    "app/sql/v3/simulations/update_simulation_complete.sql": (
+    "app/sql/v4/simulations/update_simulation_complete.sql": (
         "UpdateSimulationSqlParams",
         "UpdateSimulationSqlRow",
         "UpdateSimulationApiRequest",
         "UpdateSimulationApiResponse",
     ),
-    "app/sql/v3/staff/bulk_create_staff_complete.sql": (
+    "app/sql/v4/staff/bulk_create_staff_complete.sql": (
         "BulkCreateStaffSqlParams",
         "BulkCreateStaffSqlRow",
         "BulkCreateStaffApiRequest",
         "BulkCreateStaffApiResponse",
     ),
-    "app/sql/v3/staff/bulk_delete_staff_complete.sql": (
+    "app/sql/v4/staff/bulk_delete_staff_complete.sql": (
         "BulkDeleteStaffSqlParams",
         "BulkDeleteStaffSqlRow",
         "BulkDeleteStaffApiRequest",
         "BulkDeleteStaffApiResponse",
     ),
-    "app/sql/v3/staff/bulk_update_staff_complete.sql": (
+    "app/sql/v4/staff/bulk_update_staff_complete.sql": (
         "BulkUpdateStaffSqlParams",
         "BulkUpdateStaffSqlRow",
         "BulkUpdateStaffApiRequest",
         "BulkUpdateStaffApiResponse",
     ),
-    "app/sql/v3/staff/get_create_staff_data_complete.sql": (
+    "app/sql/v4/staff/get_create_staff_data_complete.sql": (
         "GetCreateStaffDataSqlParams",
         "GetCreateStaffDataSqlRow",
         "GetCreateStaffDataApiRequest",
         "GetCreateStaffDataApiResponse",
     ),
-    "app/sql/v3/staff/get_staff_detail_complete.sql": (
+    "app/sql/v4/staff/get_staff_detail_complete.sql": (
         "GetStaffDetailSqlParams",
         "GetStaffDetailSqlRow",
         "GetStaffDetailApiRequest",
         "GetStaffDetailApiResponse",
     ),
-    "app/sql/v3/staff/get_staff_list_complete.sql": (
+    "app/sql/v4/staff/get_staff_list_complete.sql": (
         "GetStaffListSqlParams",
         "GetStaffListSqlRow",
         "GetStaffListApiRequest",
         "GetStaffListApiResponse",
     ),
-    "app/sql/v3/staff/get_staff_new_complete.sql": (
+    "app/sql/v4/staff/get_staff_new_complete.sql": (
         "GetStaffNewSqlParams",
         "GetStaffNewSqlRow",
         "GetStaffNewApiRequest",
         "GetStaffNewApiResponse",
     ),
-    "app/sql/v3/staff/get_staff_search_complete.sql": (
+    "app/sql/v4/staff/get_staff_search_complete.sql": (
         "GetStaffSearchSqlParams",
         "GetStaffSearchSqlRow",
         "GetStaffSearchApiRequest",
         "GetStaffSearchApiResponse",
     ),
-    "app/sql/v3/staff/process_csv_complete.sql": (
+    "app/sql/v4/staff/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
         "ProcessCsvSqlRow",
         "ProcessCsvApiRequest",
         "ProcessCsvApiResponse",
     ),
-    "app/sql/v3/staff/upsert_staff_complete.sql": (
+    "app/sql/v4/staff/upsert_staff_complete.sql": (
         "UpsertStaffSqlParams",
         "UpsertStaffSqlRow",
         "UpsertStaffApiRequest",
         "UpsertStaffApiResponse",
     ),
-    "app/sql/v3/tools/check_group_stop_complete.sql": (
+    "app/sql/v4/tools/check_group_stop_complete.sql": (
         "CheckGroupStopSqlParams",
         "CheckGroupStopSqlRow",
         "CheckGroupStopApiRequest",
         "CheckGroupStopApiResponse",
     ),
-    "app/sql/v3/uploads/finalize_upload_complete.sql": (
+    "app/sql/v4/uploads/finalize_upload_complete.sql": (
         "FinalizeUploadSqlParams",
         "FinalizeUploadSqlRow",
         "FinalizeUploadApiRequest",
         "FinalizeUploadApiResponse",
     ),
-    "app/sql/v3/uploads/get_classification_context_complete.sql": (
+    "app/sql/v4/uploads/get_classification_context_complete.sql": (
         "GetClassificationContextSqlParams",
         "GetClassificationContextSqlRow",
         "GetClassificationContextApiRequest",
         "GetClassificationContextApiResponse",
     ),
-    "app/sql/v3/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql": (
         "GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams",
         "GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow",
         "GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest",
         "GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/uploads/get_upload_classification_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/uploads/get_upload_classification_run_context_and_create_run_complete.sql": (
         "GetUploadClassificationRunContextAndCreateRunSqlParams",
         "GetUploadClassificationRunContextAndCreateRunSqlRow",
         "GetUploadClassificationRunContextAndCreateRunApiRequest",
         "GetUploadClassificationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/uploads/get_upload_file_info_complete.sql": (
+    "app/sql/v4/uploads/get_upload_file_info_complete.sql": (
         "GetUploadFileInfoSqlParams",
         "GetUploadFileInfoSqlRow",
         "GetUploadFileInfoApiRequest",
         "GetUploadFileInfoApiResponse",
     ),
-    "app/sql/v3/videos/get_video_regeneration_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql": (
         "GetVideoRegenerationRunContextAndCreateRunSqlParams",
         "GetVideoRegenerationRunContextAndCreateRunSqlRow",
         "GetVideoRegenerationRunContextAndCreateRunApiRequest",
         "GetVideoRegenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v3/videos/get_video_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql": (
         "GetVideoRunContextAndCreateRunSqlParams",
         "GetVideoRunContextAndCreateRunSqlRow",
         "GetVideoRunContextAndCreateRunApiRequest",
@@ -22780,7 +22780,7 @@ def get_sql_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get SQL input and output types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (SqlParamsType, SqlRowType)
@@ -22806,7 +22806,7 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get API request and response types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (ApiRequestType, ApiResponseType)
@@ -22833,1407 +22833,1407 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
 if TYPE_CHECKING:
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/activity/get_activity_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/activity/get_activity_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/activity/get_activity_list_complete.sql"]
+        file_path: Literal["app/sql/v4/activity/get_activity_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_audio_audio_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_audio_audio_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_audio_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_audio_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_classify_classify_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_classify_classify_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_classify_tools_classification_classification_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_classify_tools_classification_classification_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_classify_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_classify_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_document_document_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_document_document_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_document_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_document_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_document_tools_title_title_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_document_tools_title_title_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_grade_grade_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_grade_grade_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_grade_tools_audio_audio_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_grade_tools_audio_audio_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_grade_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_grade_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_grade_tools_grade_grade_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_grade_tools_grade_grade_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_grade_tools_improvement_improvement_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_grade_tools_improvement_improvement_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_grade_tools_strength_strength_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_grade_tools_strength_strength_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_hint_hint_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_hint_hint_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_hint_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_hint_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_hint_tools_hint_hint_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_hint_tools_hint_hint_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_image_image_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_image_image_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_image_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_image_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_image_tools_title_title_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_image_tools_title_title_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_member_member_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_member_member_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_member_tools_conversation_conversation_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_member_tools_conversation_conversation_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_rubric_rubric_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_rubric_rubric_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_rubric_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_rubric_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_rubric_tools_rubric_rubric_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_rubric_tools_rubric_rubric_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_rubric_tools_title_title_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_rubric_tools_title_title_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_scenario_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_scenario_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_document_document_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_document_document_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_image_image_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_image_image_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_objective_objective_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_objective_objective_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_question_question_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_question_question_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_statement_statement_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_statement_statement_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_title_title_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_title_title_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_video_video_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_scenario_tools_video_video_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_simulation_simulation_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_simulation_simulation_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_simulation_tools_speak_speak_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_simulation_tools_speak_speak_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_video_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_video_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_video_tools_title_title_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_video_tools_title_title_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_video_video_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_video_video_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_voice_tools_debug_debug_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_voice_tools_debug_debug_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_voice_tools_speak_speak_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_voice_tools_speak_speak_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/agents_voice_voice_eval_start_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/agents_voice_voice_eval_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/create_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/create_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/delete_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/delete_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/duplicate_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/duplicate_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/get_agent_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/get_agent_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/get_agent_new_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/get_agent_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/get_agent_tools_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/get_agent_tools_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/get_agents_list_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/get_agents_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/agents/update_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/agents/update_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/analytics/create_analytics_view_function_complete.sql"]
+        file_path: Literal["app/sql/v4/analytics/create_analytics_view_function_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/analytics/refresh_analytics_complete.sql"]
+        file_path: Literal["app/sql/v4/analytics/refresh_analytics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/attempts/bulk_archive_attempts_complete.sql"]
+        file_path: Literal["app/sql/v4/attempts/bulk_archive_attempts_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/attempts/get_eval_attempt_complete.sql"]
+        file_path: Literal["app/sql/v4/attempts/get_eval_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/attempts/get_simulation_attempt_complete.sql"]
+        file_path: Literal["app/sql/v4/attempts/get_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/audio/get_audio_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/audio/get_audio_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/audio/get_audio_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/create_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/create_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/delete_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/delete_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/duplicate_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/duplicate_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/get_auth_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/get_auth_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/get_auth_list_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/get_auth_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/get_auth_new_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/get_auth_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/get_login_data_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/get_login_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/update_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/auth/update_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/add_eval_groups_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/add_eval_groups_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/add_eval_runs_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/add_eval_runs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/benchmark_error_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/benchmark_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/benchmark_eval_complete_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/benchmark_eval_complete_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/create_eval_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/create_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/delete_eval_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/delete_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/get_benchmark_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/get_benchmark_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/get_eval_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/get_eval_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/get_eval_new_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/get_eval_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/get_evals_list_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/get_evals_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/benchmark/update_eval_complete.sql"]
+        file_path: Literal["app/sql/v4/benchmark/update_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/create_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/create_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/delete_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/delete_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/duplicate_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/duplicate_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/get_cohort_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/get_cohort_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/get_cohort_new_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/get_cohort_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/get_cohort_search_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/get_cohort_search_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/get_cohorts_list_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/get_cohorts_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/leave_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/leave_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/cohorts/update_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/cohorts/update_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/dashboard/get_dashboard_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/dashboard/get_dashboard_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/dashboard/get_dashboard_history_complete.sql"]
+        file_path: Literal["app/sql/v4/dashboard/get_dashboard_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/create_department_complete.sql"]
+        file_path: Literal["app/sql/v4/departments/create_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/delete_department_complete.sql"]
+        file_path: Literal["app/sql/v4/departments/delete_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/duplicate_department_complete.sql"]
+        file_path: Literal["app/sql/v4/departments/duplicate_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/get_department_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/departments/get_department_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/get_department_new_complete.sql"]
+        file_path: Literal["app/sql/v4/departments/get_department_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/get_departments_list_complete.sql"]
+        file_path: Literal["app/sql/v4/departments/get_departments_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/update_department_complete.sql"]
+        file_path: Literal["app/sql/v4/departments/update_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/create_document_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/create_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/create_template_and_link_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/create_template_and_link_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/delete_document_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/delete_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/get_certificate_data_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/get_certificate_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/get_document_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/get_document_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/get_document_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/get_document_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/get_document_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/get_document_template_context_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/get_document_template_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/get_documents_list_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/get_documents_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/render_template_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/render_template_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/update_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/update_document_name_complete.sql"]
+        file_path: Literal["app/sql/v4/documents/update_document_name_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/fields/create_field_complete.sql"]
+        file_path: Literal["app/sql/v4/fields/create_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/fields/delete_field_complete.sql"]
+        file_path: Literal["app/sql/v4/fields/delete_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/fields/duplicate_field_complete.sql"]
+        file_path: Literal["app/sql/v4/fields/duplicate_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/fields/get_field_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/fields/get_field_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/fields/get_field_new_complete.sql"]
+        file_path: Literal["app/sql/v4/fields/get_field_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/fields/get_fields_list_complete.sql"]
+        file_path: Literal["app/sql/v4/fields/get_fields_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/fields/update_field_complete.sql"]
+        file_path: Literal["app/sql/v4/fields/update_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/create_feedback_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/create_feedback_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/create_message_feedback_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/create_message_feedback_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/create_message_feedback_highlight_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/create_message_feedback_highlight_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/create_message_feedback_replace_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/create_message_feedback_replace_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/find_standard_by_group_and_score_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/find_standard_by_group_and_score_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/get_audio_grading_run_context_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/get_audio_grading_run_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/get_feedback_totals_for_grade_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/get_feedback_totals_for_grade_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/get_grading_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/get_grading_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/get_grading_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/get_grading_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/update_grade_final_complete.sql"]
+        file_path: Literal["app/sql/v4/grading/update_grade_final_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/health/get_health_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/health/get_health_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/home/get_home_history_complete.sql"]
+        file_path: Literal["app/sql/v4/home/get_home_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/home/get_home_overview_complete.sql"]
+        file_path: Literal["app/sql/v4/home/get_home_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/images/complete_image_generation_complete.sql"]
+        file_path: Literal["app/sql/v4/images/complete_image_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/images/get_image_generation_context_and_create_upload_complete.sql"]
+        file_path: Literal["app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/images/get_image_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/images/get_image_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/infrastructure_activity_insert_complete.sql"]
+        file_path: Literal["app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/infrastructure_activity_insert_websocket_complete.sql"]
+        file_path: Literal["app/sql/v4/infrastructure/infrastructure_activity_insert_websocket_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/infrastructure_activity_profile_exists_complete.sql"]
+        file_path: Literal["app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"]
+        file_path: Literal["app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/infrastructure_metrics_health_complete.sql"]
+        file_path: Literal["app/sql/v4/infrastructure/infrastructure_metrics_health_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/infrastructure_metrics_snapshot_complete.sql"]
+        file_path: Literal["app/sql/v4/infrastructure/infrastructure_metrics_snapshot_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
+        file_path: Literal["app/sql/v4/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/create_key_complete.sql"]
+        file_path: Literal["app/sql/v4/keys/create_key_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/delete_key_complete.sql"]
+        file_path: Literal["app/sql/v4/keys/delete_key_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/get_key_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/keys/get_key_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/get_key_for_decrypt_complete.sql"]
+        file_path: Literal["app/sql/v4/keys/get_key_for_decrypt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/get_key_new_complete.sql"]
+        file_path: Literal["app/sql/v4/keys/get_key_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/get_keys_list_complete.sql"]
+        file_path: Literal["app/sql/v4/keys/get_keys_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/update_key_complete.sql"]
+        file_path: Literal["app/sql/v4/keys/update_key_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/leaderboard/get_leaderboard_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/leaderboard/get_leaderboard_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/logs/get_logs_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/logs/get_logs_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/member/get_member_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/member/get_member_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/member/get_member_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/member/get_member_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/member/member_progress_upsert_complete.sql"]
+        file_path: Literal["app/sql/v4/member/member_progress_upsert_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/messages/get_message_created_at_complete.sql"]
+        file_path: Literal["app/sql/v4/messages/get_message_created_at_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/model_runs/create_model_run_complete.sql"]
+        file_path: Literal["app/sql/v4/model_runs/create_model_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/model_runs/link_system_developer_messages_to_run_complete.sql"]
+        file_path: Literal["app/sql/v4/model_runs/link_system_developer_messages_to_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/models/create_model_complete.sql"]
+        file_path: Literal["app/sql/v4/models/create_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/models/delete_model_complete.sql"]
+        file_path: Literal["app/sql/v4/models/delete_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/models/duplicate_model_complete.sql"]
+        file_path: Literal["app/sql/v4/models/duplicate_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/models/get_model_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/models/get_model_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/models/get_model_new_complete.sql"]
+        file_path: Literal["app/sql/v4/models/get_model_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/models/list_models_complete.sql"]
+        file_path: Literal["app/sql/v4/models/list_models_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/models/update_model_complete.sql"]
+        file_path: Literal["app/sql/v4/models/update_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/parameters/create_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/parameters/create_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/parameters/delete_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/parameters/delete_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/parameters/duplicate_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/parameters/duplicate_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/parameters/get_parameter_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/parameters/get_parameter_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/parameters/get_parameter_new_complete.sql"]
+        file_path: Literal["app/sql/v4/parameters/get_parameter_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/parameters/get_parameters_list_complete.sql"]
+        file_path: Literal["app/sql/v4/parameters/get_parameters_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/parameters/update_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/parameters/update_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/personas/create_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/create_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/personas/delete_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/delete_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/personas/duplicate_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/duplicate_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/personas/get_persona_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/get_persona_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/personas/get_persona_new_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/get_persona_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/personas/get_personas_list_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/get_personas_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/personas/update_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/update_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/practice/get_practice_history_complete.sql"]
+        file_path: Literal["app/sql/v4/practice/get_practice_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/practice/get_practice_overview_complete.sql"]
+        file_path: Literal["app/sql/v4/practice/get_practice_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/pricing/get_pricing_analytics_complete.sql"]
+        file_path: Literal["app/sql/v4/pricing/get_pricing_analytics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/pricing/get_pricing_group_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/pricing/get_pricing_group_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/pricing/get_pricing_runs_complete.sql"]
+        file_path: Literal["app/sql/v4/pricing/get_pricing_runs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/authorize_emulation_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/authorize_emulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/check_login_authorization_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/check_login_authorization_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/create_or_update_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/create_or_update_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/create_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/create_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/delete_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/delete_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/get_first_department_for_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/get_first_department_for_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/get_profile_by_email_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/get_profile_by_email_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/get_profile_context_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/get_profile_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/get_profile_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/get_profile_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/get_profile_new_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/get_profile_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/profile_staff_bulk_create_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/profile_staff_bulk_create_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/profile_staff_bulk_delete_profiles_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/profile_staff_bulk_delete_profiles_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/profile_staff_bulk_update_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/profile_staff_bulk_update_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/profile_staff_create_or_update_staff_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/profile_staff_create_or_update_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/search_simulatable_profiles_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/search_simulatable_profiles_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/update_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/update_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_active_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/update_profile_to_active_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_inactive_complete.sql"]
+        file_path: Literal["app/sql/v4/profile/update_profile_to_inactive_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/prompts/delete_prompt_complete.sql"]
+        file_path: Literal["app/sql/v4/prompts/delete_prompt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/create_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/create_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/delete_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/delete_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/get_provider_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/get_provider_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/get_provider_new_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/get_provider_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/get_providers_list_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/get_providers_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/update_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/update_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/reports/get_per_simulation_metrics_complete.sql"]
+        file_path: Literal["app/sql/v4/reports/get_per_simulation_metrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/reports/get_reports_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/reports/get_reports_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/reports/get_reports_history_complete.sql"]
+        file_path: Literal["app/sql/v4/reports/get_reports_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/reports/get_reports_overview_complete.sql"]
+        file_path: Literal["app/sql/v4/reports/get_reports_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/create_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/create_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/delete_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/delete_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/duplicate_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/duplicate_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/get_rubric_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/get_rubric_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/get_rubric_new_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/get_rubric_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/get_rubric_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/get_rubric_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/get_rubrics_list_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/get_rubrics_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/rubric_generation_complete_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/rubric_generation_complete_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/rubric_generation_error_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/rubric_generation_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/rubric_generation_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/rubric_generation_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/update_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/update_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubric/update_rubric_name_complete.sql"]
+        file_path: Literal["app/sql/v4/rubric/update_rubric_name_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/standard_group_descriptions_complete_complete.sql"]
+        file_path: Literal["app/sql/v4/rubrics/standard_group_descriptions_complete_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/standard_group_descriptions_error_complete.sql"]
+        file_path: Literal["app/sql/v4/rubrics/standard_group_descriptions_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/standard_group_descriptions_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/rubrics/standard_group_descriptions_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/update_standard_descriptions_complete.sql"]
+        file_path: Literal["app/sql/v4/rubrics/update_standard_descriptions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/create_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/create_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/delete_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/delete_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/duplicate_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/duplicate_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/get_scenario_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/get_scenario_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/get_scenario_new_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/get_scenario_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/get_scenario_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/get_scenarios_list_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/get_scenarios_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/randomize_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/randomize_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/update_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/scenario/update_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/settings/get_active_settings_complete.sql"]
+        file_path: Literal["app/sql/v4/settings/get_active_settings_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/settings/get_settings_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/settings/get_settings_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/settings/get_settings_list_complete.sql"]
+        file_path: Literal["app/sql/v4/settings/get_settings_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/settings/update_settings_complete.sql"]
+        file_path: Literal["app/sql/v4/settings/update_settings_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulation_voice/get_voice_run_context_complete.sql"]
+        file_path: Literal["app/sql/v4/simulation_voice/get_voice_run_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulation_voice/voice_complete_complete.sql"]
+        file_path: Literal["app/sql/v4/simulation_voice/voice_complete_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"]
+        file_path: Literal["app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/create_hints_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/create_hints_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/create_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/create_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/delete_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/delete_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/duplicate_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/duplicate_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/generate_hints_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/generate_hints_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_messages_with_audio_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_messages_with_audio_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_simulation_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_messages_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_simulation_messages_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_new_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_simulation_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_run_context_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/get_simulations_list_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/get_simulations_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/link_developer_message_to_run_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/link_developer_message_to_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/mark_chat_completed_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/mark_chat_completed_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/start_simulation_attempt_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/start_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/update_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/simulations/update_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/bulk_create_staff_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/bulk_create_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/bulk_delete_staff_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/bulk_delete_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/bulk_update_staff_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/bulk_update_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/get_create_staff_data_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/get_create_staff_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/get_staff_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/get_staff_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/get_staff_list_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/get_staff_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/get_staff_new_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/get_staff_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/get_staff_search_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/get_staff_search_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/process_csv_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/process_csv_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/staff/upsert_staff_complete.sql"]
+        file_path: Literal["app/sql/v4/staff/upsert_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/tools/check_group_stop_complete.sql"]
+        file_path: Literal["app/sql/v4/tools/check_group_stop_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/uploads/finalize_upload_complete.sql"]
+        file_path: Literal["app/sql/v4/uploads/finalize_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/uploads/get_classification_context_complete.sql"]
+        file_path: Literal["app/sql/v4/uploads/get_classification_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/uploads/get_upload_classification_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/uploads/get_upload_classification_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/uploads/get_upload_file_info_complete.sql"]
+        file_path: Literal["app/sql/v4/uploads/get_upload_file_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/videos/get_video_regeneration_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/videos/get_video_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -24251,14 +24251,14 @@ def load_sql_query(
     Uses Literal overloads to provide strong type hints for file paths.
 
     Args:
-        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
+        file_path: Relative path from server root (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
 
     Returns:
         SQL string with parameter placeholders ($1, $2, etc.)
 
     Example:
         ```python
-        sql_query = load_sql_query("app/sql/v3/agents/get_agent_new_complete.sql")
+        sql_query = load_sql_query("app/sql/v4/agents/get_agent_new_complete.sql")
         # sql_query is typed as SqlString
         ```
     """

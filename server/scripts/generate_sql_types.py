@@ -13,6 +13,9 @@ from pathlib import Path
 
 import asyncpg  # type: ignore
 
+# Version constant - change this to switch versions (e.g., 'v4', 'v5')
+VERSION = "v4"
+
 # Add server directory to path for imports
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
@@ -42,8 +45,8 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
     """Extract route name from SQL file path.
 
     Example:
-        "app/sql/v3/agents/create_agent_complete.sql" -> "create_agent"
-        "tests/sql/integration/infra/activity/insert_test_profile.sql" -> "insert_test_profile"
+        f"app/sql/{VERSION}/agents/create_agent_complete.sql" -> "create_agent"
+        f"tests/sql/{VERSION}/integration/infra/activity/insert_test_profile.sql" -> "insert_test_profile"
 
     Args:
         sql_path: SQL file path relative to server root
@@ -51,10 +54,13 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
     Returns:
         Route name or None if pattern doesn't match
     """
-    # Pattern: app/sql/v3/[resource]/[operation]_complete.sql
-    # Pattern: app/sql/v3/infrastructure/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
-    if sql_path.startswith("app/sql/v3/"):
-        relative = sql_path[len("app/sql/v3/") :]
+    app_sql_prefix = f"app/sql/{VERSION}/"
+    tests_sql_prefix = f"tests/sql/{VERSION}/integration/"
+    
+    # Pattern: app/sql/{VERSION}/[resource]/[operation]_complete.sql
+    # Pattern: app/sql/{VERSION}/infrastructure/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
+    if sql_path.startswith(app_sql_prefix):
+        relative = sql_path[len(app_sql_prefix) :]
         parts = relative.split("/")
         # Handle infrastructure paths: infrastructure/[category]/[operation]_complete.sql
         if len(parts) == 3 and parts[0] == "infrastructure":
@@ -72,9 +78,9 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         operation = filename[: -len("_complete.sql")]
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/integration/infra/[resource]/[operation].sql
-    if sql_path.startswith("tests/sql/integration/infra/"):
-        relative = sql_path[len("tests/sql/integration/infra/") :]
+    # Pattern: tests/sql/{VERSION}/integration/infra/[resource]/[operation].sql
+    if sql_path.startswith(f"{tests_sql_prefix}infra/"):
+        relative = sql_path[len(f"{tests_sql_prefix}infra/") :]
         parts = relative.split("/")
         if len(parts) != 2:
             return None
@@ -84,12 +90,51 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         operation = filename[: -len(".sql")]
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/integration/socket/[operation].sql
-    if sql_path.startswith("tests/sql/integration/socket/"):
-        relative = sql_path[len("tests/sql/integration/socket/") :]
+    # Pattern: tests/sql/{VERSION}/integration/socket/[operation].sql
+    if sql_path.startswith(f"{tests_sql_prefix}socket/"):
+        relative = sql_path[len(f"{tests_sql_prefix}socket/") :]
         if not relative.endswith(".sql"):
             return None
         operation = relative[: -len(".sql")]
+        return operation.replace("-", "_")
+
+    # Pattern: tests/sql/{VERSION}/integration/api/[resource]/test_[operation]_v4_complete.sql
+    if sql_path.startswith(f"{tests_sql_prefix}api/"):
+        relative = sql_path[len(f"{tests_sql_prefix}api/") :]
+        if not relative.endswith("_complete.sql"):
+            return None
+        # Remove test_ prefix and _v4_complete.sql suffix
+        operation = relative[: -len("_complete.sql")]
+        if operation.startswith("test_"):
+            operation = operation[len("test_") :]
+        if operation.endswith(f"_{VERSION}"):
+            operation = operation[: -len(f"_{VERSION}")]
+        return operation.replace("-", "_")
+
+    # Pattern: tests/sql/{VERSION}/integration/helpers/test_[operation]_v4_complete.sql
+    if sql_path.startswith(f"{tests_sql_prefix}helpers/"):
+        relative = sql_path[len(f"{tests_sql_prefix}helpers/") :]
+        if not relative.endswith("_complete.sql"):
+            return None
+        # Remove test_ prefix and _v4_complete.sql suffix
+        operation = relative[: -len("_complete.sql")]
+        if operation.startswith("test_"):
+            operation = operation[len("test_") :]
+        if operation.endswith(f"_{VERSION}"):
+            operation = operation[: -len(f"_{VERSION}")]
+        return operation.replace("-", "_")
+
+    # Pattern: tests/sql/{VERSION}/integration/conftest/test_[operation]_v4_complete.sql
+    if sql_path.startswith(f"{tests_sql_prefix}conftest/"):
+        relative = sql_path[len(f"{tests_sql_prefix}conftest/") :]
+        if not relative.endswith("_complete.sql"):
+            return None
+        # Remove test_ prefix and _v4_complete.sql suffix
+        operation = relative[: -len("_complete.sql")]
+        if operation.startswith("test_"):
+            operation = operation[len("test_") :]
+        if operation.endswith(f"_{VERSION}"):
+            operation = operation[: -len(f"_{VERSION}")]
         return operation.replace("-", "_")
 
     return None
@@ -101,15 +146,18 @@ def generate_registry_entry(
     """Generate registry entry for a SQL file.
 
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., f"app/sql/{VERSION}/agents/get_agent_new_complete.sql")
         route_name: Route name (e.g., "get_agent_new")
 
     Returns:
         Tuple of (registry_type, sql_path, sql_params_class, sql_row_class, api_request_class, api_response_class) or None if invalid
         registry_type is either "app" or "test"
     """
-    # Process app/sql/v3/ files
-    if sql_path.startswith("app/sql/v3/"):
+    app_sql_prefix = f"app/sql/{VERSION}/"
+    tests_sql_prefix = f"tests/sql/{VERSION}/integration/"
+    
+    # Process app/sql/{VERSION}/ files
+    if sql_path.startswith(app_sql_prefix):
         # Generate class names
         sql_params_class = _to_class_name(route_name, "SqlParams")
         sql_row_class = _to_class_name(route_name, "SqlRow")
@@ -126,7 +174,7 @@ def generate_registry_entry(
         )
 
     # Process test SQL files
-    if sql_path.startswith("tests/sql/integration/"):
+    if sql_path.startswith(tests_sql_prefix):
         # Generate class names
         sql_params_class = _to_class_name(route_name, "SqlParams")
         sql_row_class = _to_class_name(route_name, "SqlRow")
@@ -494,7 +542,7 @@ def write_consolidated_types_file(
     lines.append("    ")
     lines.append("    Args:")
     lines.append(
-        '        sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")'
+        f'        sql_path: SQL file path (e.g., "app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
     )
     lines.append("    ")
     lines.append("    Returns:")
@@ -524,7 +572,7 @@ def write_consolidated_types_file(
     lines.append("    ")
     lines.append("    Args:")
     lines.append(
-        '        sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")'
+        f'        sql_path: SQL file path (e.g., "app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
     )
     lines.append("    ")
     lines.append("    Returns:")
@@ -591,7 +639,7 @@ def write_consolidated_types_file(
     lines.append("    Args:")
     if registry_type == "app":
         lines.append(
-            '        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")'
+            f'        file_path: Relative path from server root (e.g., "app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
         )
     else:
         lines.append(
@@ -605,7 +653,7 @@ def write_consolidated_types_file(
     lines.append("        ```python")
     if registry_type == "app":
         lines.append(
-            '        sql_query = load_sql_query("app/sql/v3/agents/get_agent_new_complete.sql")'
+            f'        sql_query = load_sql_query("app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
         )
     else:
         lines.append(
@@ -965,18 +1013,18 @@ async def main() -> int:
     # Find all SQL files from both app and tests directories
     sql_files: list[Path] = []
 
-    # Process app/sql/v3/
-    app_sql_dir = server_root / "app" / "sql" / "v3"
+    # Process app/sql/{VERSION}/
+    app_sql_dir = server_root / "app" / "sql" / VERSION
     if app_sql_dir.exists():
         sql_files.extend(app_sql_dir.rglob("*.sql"))
 
-    # Process tests/sql/integration/ (all subdirectories)
-    tests_sql_dir = server_root / "tests" / "sql" / "integration"
+    # Process tests/sql/{VERSION}/integration/ (all subdirectories)
+    tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
     if tests_sql_dir.exists():
         sql_files.extend(tests_sql_dir.rglob("*.sql"))
 
     if not sql_files:
-        print(f"⚠️  No SQL files found in {app_sql_dir} or {tests_sql_dir}")
+        print(f"⚠️  No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/")
         return 0
 
     print(f"🔍 Found {len(sql_files)} SQL files to process")
@@ -995,21 +1043,21 @@ async def main() -> int:
         sql_path = str(sql_file.relative_to(server_root))
 
         # Analytics view creation file must be first
-        if sql_path == "app/sql/v3/analytics/create_analytics_view_complete.sql":
+        if sql_path == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql":
             return (0, sql_path)
 
         # Other analytics routes come next
-        if sql_path.startswith("app/sql/v3/analytics/"):
+        if sql_path.startswith(f"app/sql/{VERSION}/analytics/"):
             return (1, sql_path)
 
         # Settings detail must come before active settings (type dependency)
-        if sql_path == "app/sql/v3/settings/get_settings_detail_complete.sql":
+        if sql_path == f"app/sql/{VERSION}/settings/get_settings_detail_complete.sql":
             return (
                 2,
                 "a_" + sql_path,
             )  # 'a_' prefix ensures it sorts before 'get_active_'
 
-        if sql_path == "app/sql/v3/settings/get_active_settings_complete.sql":
+        if sql_path == f"app/sql/{VERSION}/settings/get_active_settings_complete.sql":
             return (2, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
 
         # All other routes sorted alphabetically
@@ -1118,10 +1166,10 @@ async def main() -> int:
 
         # Separate app and test type definitions
         app_type_definitions = [
-            td for td in type_definitions if td[0].startswith("app/sql/v3/")
+            td for td in type_definitions if td[0].startswith(f"app/sql/{VERSION}/")
         ]
         test_type_definitions = [
-            td for td in type_definitions if td[0].startswith("tests/sql/integration/")
+            td for td in type_definitions if td[0].startswith(f"tests/sql/{VERSION}/integration/")
         ]
 
         # Write app consolidated types file if we have entries
