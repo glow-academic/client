@@ -14,7 +14,7 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading text file."""
-        from app.infra.v3.documents.read_document_content_for_similarity import (
+        from app.infra.v4.documents.read_document_content_for_similarity import (
             read_document_content_for_similarity,
         )
 
@@ -35,7 +35,7 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading non-existent file."""
-        from app.infra.v3.documents.read_document_content_for_similarity import (
+        from app.infra.v4.documents.read_document_content_for_similarity import (
             read_document_content_for_similarity,
         )
 
@@ -52,7 +52,7 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading file with latin-1 encoding fallback."""
-        from app.infra.v3.documents.read_document_content_for_similarity import (
+        from app.infra.v4.documents.read_document_content_for_similarity import (
             read_document_content_for_similarity,
         )
 
@@ -77,7 +77,7 @@ class TestRead_Document_Content_For_Similarity:
         """Test reading PDF file."""
         from unittest.mock import MagicMock, patch
 
-        from app.infra.v3.documents.read_document_content_for_similarity import (
+        from app.infra.v4.documents.read_document_content_for_similarity import (
             read_document_content_for_similarity,
         )
 
@@ -109,7 +109,7 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading PDF file with error."""
-        from app.infra.v3.documents.read_document_content_for_similarity import (
+        from app.infra.v4.documents.read_document_content_for_similarity import (
             read_document_content_for_similarity,
         )
 

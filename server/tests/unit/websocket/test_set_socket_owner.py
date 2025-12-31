@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.v3.websocket.set_socket_owner import set_socket_owner
+from app.infra.v4.websocket.set_socket_owner import set_socket_owner
 
 
 class TestSet_Socket_Owner:

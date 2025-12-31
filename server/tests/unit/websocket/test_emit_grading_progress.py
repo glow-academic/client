@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from app.infra.v3.websocket.emit_grading_progress import emit_grading_progress
+from app.infra.v4.websocket.emit_grading_progress import emit_grading_progress
 
 
 class TestEmitGradingProgress:

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.v3.websocket.remove_guest_socket import remove_guest_socket
+from app.infra.v4.websocket.remove_guest_socket import remove_guest_socket
 
 
 class TestRemove_Guest_Socket:

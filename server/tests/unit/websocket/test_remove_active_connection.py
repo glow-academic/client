@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.v3.websocket.remove_active_connection import remove_active_connection
+from app.infra.v4.websocket.remove_active_connection import remove_active_connection
 
 
 class TestRemove_Active_Connection:

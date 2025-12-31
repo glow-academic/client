@@ -23,7 +23,6 @@ import type {
   UpdatePersonaIn,
   UpdatePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
-import { personaSearchParamsClient } from "@/app/(main)/create/personas/searchParams.client";
 import {
   GenericForm,
   type StepStatus,
@@ -46,7 +45,13 @@ import {
 } from "@/utils/department-picker-helpers";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check, Loader2, Power } from "lucide-react";
-import { useQueryStates, type Parser } from "nuqs";
+import {
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+  useQueryStates,
+  type Parser,
+} from "nuqs";
 
 export interface PersonaProps {
   personaId?: string;
@@ -95,6 +100,22 @@ export default function Persona({
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
+
+  // Inline parsers for URL-backed state (client-side only - no server-side parsing needed)
+  const personaSearchParamsClient = {
+    name: parseAsString,
+    description: parseAsString,
+    color: parseAsString,
+    icon: parseAsString,
+    instructions: parseAsString,
+    active: parseAsBoolean,
+    departmentIds: parseAsArrayOf(parseAsString),
+    parameterIds: parseAsArrayOf(parseAsString),
+    parameterFieldIds: parseAsArrayOf(parseAsString),
+    // Search params (URL-backed)
+    colorSearch: parseAsString,
+    iconSearch: parseAsString,
+  } as const;
 
   // URL-backed state using nuqs (managed by GenericForm, but we need access for initialization)
   const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {

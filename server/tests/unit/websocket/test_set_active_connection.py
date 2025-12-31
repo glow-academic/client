@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.v3.websocket.set_active_connection import set_active_connection
+from app.infra.v4.websocket.set_active_connection import set_active_connection
 
 
 class TestSet_Active_Connection:

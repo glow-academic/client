@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.v3.websocket.is_guest_socket import is_guest_socket
+from app.infra.v4.websocket.is_guest_socket import is_guest_socket
 
 
 class TestIs_Guest_Socket:

@@ -8,7 +8,7 @@ import asyncpg  # type: ignore
 import pytest
 from fastapi import HTTPException, Request
 
-from app.infra.v3.error.log_and_raise_error import log_and_raise_error
+from app.infra.v4.error.log_and_raise_error import log_and_raise_error
 
 
 class TestLog_And_Raise_Error:

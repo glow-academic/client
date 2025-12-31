@@ -633,3 +633,67 @@ When migrating other resources (Scenario, Document, Parameter, etc.):
 - `client/components/common/forms/GenericForm.tsx` - Form wrapper with step management
 - `client/components/common/forms/GenericPicker.tsx` - Similar function-based pattern for pickers
 
+## Search Params Pattern
+
+### Overview
+
+URL search params are used for form state persistence and server-side filtering. The pattern uses `nuqs` for type-safe URL search param parsing.
+
+### When to Inline Parsers
+
+**Inline parser definitions directly in components when:**
+- Parser definitions are used in only one component
+- No server-side parsing needed (client-only for UI state)
+- Simple, straightforward parser definitions
+
+**Example - Persona.tsx:**
+```typescript
+// Inline parsers (client-side only)
+const personaSearchParamsClient = {
+  name: parseAsString,
+  description: parseAsString,
+  color: parseAsString,
+  icon: parseAsString,
+  instructions: parseAsString,
+  active: parseAsBoolean,
+  departmentIds: parseAsArrayOf(parseAsString),
+  parameterIds: parseAsArrayOf(parseAsString),
+  parameterFieldIds: parseAsArrayOf(parseAsString),
+  // Search params (URL-backed)
+  colorSearch: parseAsString,
+  iconSearch: parseAsString,
+} as const;
+
+// Use in useQueryStates
+const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
+  history: "replace",
+  shallow: false,
+});
+```
+
+### When to Keep Separate Files
+
+**Keep parser definitions in separate files when:**
+- Parser definitions are shared across multiple components
+- Server-side parsing needed (keep `searchParams.ts` for server, inline client-side)
+- Complex parser definitions with helper functions
+
+**Example - Scenarios:**
+- **Server-side**: `searchParams.ts` - Used in server pages to parse URL params and pass to API calls
+- **Client-side**: Inline in `Scenario.tsx` - Used for URL-backed form state
+
+**Pattern**: Inline when possible, separate when shared or server-side needed.
+
+### Benefits of Inlining
+
+- **Co-location**: Parser definitions live with their usage
+- **Simpler imports**: No need to import from separate files
+- **Clearer intent**: Makes it obvious these parsers are component-specific
+- **Reduced file count**: Fewer files to maintain
+
+### Trade-offs
+
+- **Duplication risk**: If parsers are later needed elsewhere, will need to extract
+- **File size**: Component files become slightly larger
+- **Consistency**: Some resources still have server-side `searchParams.ts` (but that's necessary)
+

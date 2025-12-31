@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.v3.websocket.remove_socket_owner import remove_socket_owner
+from app.infra.v4.websocket.remove_socket_owner import remove_socket_owner
 
 
 class TestRemove_Socket_Owner:

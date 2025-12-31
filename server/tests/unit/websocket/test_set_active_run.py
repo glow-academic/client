@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.v3.websocket.set_active_run import set_active_run
+from app.infra.v4.websocket.set_active_run import set_active_run
 
 
 class TestSet_Active_Run:
@@ -23,7 +23,7 @@ class TestSet_Active_Run:
 
         # Act
         with patch(
-            "app.utils.websocket.set_active_run.get_redis_client",
+            "app.infra.v4.websocket.set_active_run.get_redis_client",
             return_value=mock_redis,
         ):
             await set_active_run(chat_id, run_id)
@@ -40,7 +40,7 @@ class TestSet_Active_Run:
 
         # Act
         with patch(
-            "app.utils.websocket.set_active_run.get_redis_client", return_value=None
+            "app.infra.v4.websocket.set_active_run.get_redis_client", return_value=None
         ):
             await set_active_run(chat_id, run_id)
 
@@ -57,7 +57,7 @@ class TestSet_Active_Run:
 
         # Act
         with patch(
-            "app.utils.websocket.set_active_run.get_redis_client",
+            "app.infra.v4.websocket.set_active_run.get_redis_client",
             return_value=mock_redis,
         ):
             await set_active_run(chat_id, run_id)

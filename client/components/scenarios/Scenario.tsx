@@ -9,10 +9,15 @@ import {
   parseJsonDict,
   stringifyJsonDict,
 } from "@/app/(main)/create/scenarios/searchParams";
-import { scenarioSearchParamsClient } from "@/app/(main)/create/scenarios/searchParams.client";
 import { Loader2, RotateCcw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useQueryStates } from "nuqs";
+import {
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsInteger,
+  parseAsString,
+  useQueryStates,
+} from "nuqs";
 import {
   useCallback,
   useEffect,
@@ -113,6 +118,58 @@ export default function Scenario({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!scenarioId;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
+
+  // Inline parsers for URL-backed state (client-side only - server-side parsing in searchParams.ts)
+  const scenarioSearchParamsClient = {
+    departmentIds: parseAsArrayOf(parseAsString),
+    personaIds: parseAsArrayOf(parseAsString),
+    documentIds: parseAsArrayOf(parseAsString),
+    templateDocumentIds: parseAsArrayOf(parseAsString),
+    parameterIds: parseAsArrayOf(parseAsString),
+    fieldIds: parseAsArrayOf(parseAsString),
+
+    imageIds: parseAsArrayOf(parseAsString),
+    objectiveIds: parseAsArrayOf(parseAsString),
+    problemStatementIds: parseAsArrayOf(parseAsString),
+
+    personaSearch: parseAsString,
+    documentSearch: parseAsString,
+    parameterSearch: parseAsString,
+
+    documentShowSelected: parseAsBoolean,
+    documentShowTemplate: parseAsBoolean,
+    personaShowSelected: parseAsBoolean,
+    parameterShowSelected: parseAsBoolean,
+
+    personaMin: parseAsInteger,
+    personaMax: parseAsInteger,
+    documentMin: parseAsInteger,
+    documentMax: parseAsInteger,
+    parameterSelectionMin: parseAsInteger,
+    parameterSelectionMax: parseAsInteger,
+
+    useImage: parseAsBoolean,
+    useVideo: parseAsBoolean,
+    useObjectives: parseAsBoolean,
+    useQuestions: parseAsBoolean,
+    useProblemStatement: parseAsBoolean,
+
+    // Text fields
+    name: parseAsString,
+    problemStatement: parseAsString,
+    objectives: parseAsString, // JSON-encoded array: string[]
+    videoLength: parseAsInteger, // 4, 8, or 12
+
+    randomize: parseAsString,
+    randomizePersonas: parseAsString,
+    randomizeDocuments: parseAsString,
+    randomizeParameters: parseAsString,
+
+    // Dict types (JSON-encoded strings)
+    fieldShowSelected: parseAsString, // JSON: Record<string, boolean>
+    fieldRanges: parseAsString, // JSON: Record<string, { min: number; max: number }>
+    randomizeParameterItems: parseAsString, // JSON: Record<string, string>
+  } as const;
 
   // URL-backed state using nuqs (replaces manual useState + updateUrlParams)
   const [q, setQ] = useQueryStates(scenarioSearchParamsClient, {

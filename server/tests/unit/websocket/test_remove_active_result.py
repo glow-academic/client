@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.infra.v3.websocket.remove_active_result import remove_active_result
+from app.infra.v4.websocket.remove_active_result import remove_active_result
 
 
 class TestRemove_Active_Result:
