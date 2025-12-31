@@ -59,6 +59,79 @@ class CreateAgentDepartmentLinkApiResponse(BaseModel):
 
 
 
+# Generated from: create_agent_department_prompt_link
+
+class CreateAgentDepartmentPromptLinkSqlParams(BaseModel):
+
+    agent_id: UUID
+    department_id: UUID
+    prompt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.department_id,
+            self.prompt_id,
+        )
+
+class CreateAgentDepartmentPromptLinkSqlRow(BaseModel):
+
+    agent_id: UUID | None = None
+    department_id: UUID | None = None
+    prompt_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateAgentDepartmentPromptLinkApiRequest(BaseModel):
+
+    agent_id: UUID
+    department_id: UUID
+    prompt_id: UUID
+
+class CreateAgentDepartmentPromptLinkApiResponse(BaseModel):
+
+    agent_id: UUID | None = None
+    department_id: UUID | None = None
+    prompt_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: create_agent_prompt_link_inactive
+
+class CreateAgentPromptLinkInactiveSqlParams(BaseModel):
+
+    agent_id: UUID
+    prompt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.prompt_id,
+        )
+
+class CreateAgentPromptLinkInactiveSqlRow(BaseModel):
+
+    agent_id: UUID | None = None
+    prompt_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateAgentPromptLinkInactiveApiRequest(BaseModel):
+
+    agent_id: UUID
+    prompt_id: UUID
+
+class CreateAgentPromptLinkInactiveApiResponse(BaseModel):
+
+    agent_id: UUID | None = None
+    prompt_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: create_agent_prompt_link
 
 class CreateAgentPromptLinkSqlParams(BaseModel):
@@ -329,6 +402,65 @@ class GetAgentDepartmentLinksApiResponse(BaseModel):
 
 
 
+# Generated from: get_agent_department_prompt_link_status
+
+class GetAgentDepartmentPromptLinkStatusSqlParams(BaseModel):
+
+    input_agent_id: UUID
+    input_department_id: UUID
+    input_prompt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_agent_id,
+            self.input_department_id,
+            self.input_prompt_id,
+        )
+
+class GetAgentDepartmentPromptLinkStatusSqlRow(BaseModel):
+
+    active: bool | None = None
+
+class GetAgentDepartmentPromptLinkStatusApiRequest(BaseModel):
+
+    input_agent_id: UUID
+    input_department_id: UUID
+    input_prompt_id: UUID
+
+class GetAgentDepartmentPromptLinkStatusApiResponse(BaseModel):
+
+    active: bool | None = None
+
+
+
+# Generated from: get_agent_prompt_link_status
+
+class GetAgentPromptLinkStatusSqlParams(BaseModel):
+
+    input_agent_id: UUID
+    input_prompt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_agent_id,
+            self.input_prompt_id,
+        )
+
+class GetAgentPromptLinkStatusSqlRow(BaseModel):
+
+    active: bool | None = None
+
+class GetAgentPromptLinkStatusApiRequest(BaseModel):
+
+    input_agent_id: UUID
+    input_prompt_id: UUID
+
+class GetAgentPromptLinkStatusApiResponse(BaseModel):
+
+    active: bool | None = None
+
+
+
 # Generated from: get_agent_prompt_link
 
 class GetAgentPromptLinkSqlParams(BaseModel):
@@ -401,6 +533,73 @@ class GetFirstModelApiResponse(BaseModel):
     model_id: UUID | None = None
     name: str | None = None
     provider_id: UUID | None = None
+
+
+
+# Generated from: create_cohort_department_link
+
+class CreateCohortDepartmentLinkSqlParams(BaseModel):
+
+    cohort_id: UUID
+    department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.cohort_id,
+            self.department_id,
+        )
+
+class CreateCohortDepartmentLinkSqlRow(BaseModel):
+
+    cohort_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateCohortDepartmentLinkApiRequest(BaseModel):
+
+    cohort_id: UUID
+    department_id: UUID
+
+class CreateCohortDepartmentLinkApiResponse(BaseModel):
+
+    cohort_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: create_profile_department_link
+
+class CreateProfileDepartmentLinkSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+        )
+
+class CreateProfileDepartmentLinkSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateProfileDepartmentLinkApiRequest(BaseModel):
+
+    department_id: UUID
+
+class CreateProfileDepartmentLinkApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
 
 
 
@@ -974,6 +1173,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateAgentDepartmentLinkApiRequest",
         "CreateAgentDepartmentLinkApiResponse",
     ),
+    "tests/sql/v4/integration/api/agents/test_create_agent_department_prompt_link_v4_complete.sql": (
+        "CreateAgentDepartmentPromptLinkSqlParams",
+        "CreateAgentDepartmentPromptLinkSqlRow",
+        "CreateAgentDepartmentPromptLinkApiRequest",
+        "CreateAgentDepartmentPromptLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql": (
+        "CreateAgentPromptLinkInactiveSqlParams",
+        "CreateAgentPromptLinkInactiveSqlRow",
+        "CreateAgentPromptLinkInactiveApiRequest",
+        "CreateAgentPromptLinkInactiveApiResponse",
+    ),
     "tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql": (
         "CreateAgentPromptLinkSqlParams",
         "CreateAgentPromptLinkSqlRow",
@@ -1022,6 +1233,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAgentDepartmentLinksApiRequest",
         "GetAgentDepartmentLinksApiResponse",
     ),
+    "tests/sql/v4/integration/api/agents/test_get_agent_department_prompt_link_status_v4_complete.sql": (
+        "GetAgentDepartmentPromptLinkStatusSqlParams",
+        "GetAgentDepartmentPromptLinkStatusSqlRow",
+        "GetAgentDepartmentPromptLinkStatusApiRequest",
+        "GetAgentDepartmentPromptLinkStatusApiResponse",
+    ),
+    "tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql": (
+        "GetAgentPromptLinkStatusSqlParams",
+        "GetAgentPromptLinkStatusSqlRow",
+        "GetAgentPromptLinkStatusApiRequest",
+        "GetAgentPromptLinkStatusApiResponse",
+    ),
     "tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql": (
         "GetAgentPromptLinkSqlParams",
         "GetAgentPromptLinkSqlRow",
@@ -1039,6 +1262,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFirstModelSqlRow",
         "GetFirstModelApiRequest",
         "GetFirstModelApiResponse",
+    ),
+    "tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql": (
+        "CreateCohortDepartmentLinkSqlParams",
+        "CreateCohortDepartmentLinkSqlRow",
+        "CreateCohortDepartmentLinkApiRequest",
+        "CreateCohortDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql": (
+        "CreateProfileDepartmentLinkSqlParams",
+        "CreateProfileDepartmentLinkSqlRow",
+        "CreateProfileDepartmentLinkApiRequest",
+        "CreateProfileDepartmentLinkApiResponse",
     ),
     "tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql": (
         "CreateTestCohortSqlParams",
@@ -1205,6 +1440,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_department_prompt_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -1245,6 +1490,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_department_prompt_link_status_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -1256,6 +1511,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
