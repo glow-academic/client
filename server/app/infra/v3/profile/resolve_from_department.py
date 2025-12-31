@@ -9,7 +9,7 @@ from app.sql.types import (
 )
 from utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql"
+SQL_PATH = "app/sql/v3/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"
 
 
 async def resolve_profile_from_department(

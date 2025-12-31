@@ -52,7 +52,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         Route name or None if pattern doesn't match
     """
     # Pattern: app/sql/v3/[resource]/[operation]_complete.sql
-    # Pattern: app/sql/v3/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
+    # Pattern: app/sql/v3/infrastructure/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
     if sql_path.startswith("app/sql/v3/"):
         relative = sql_path[len("app/sql/v3/") :]
         parts = relative.split("/")

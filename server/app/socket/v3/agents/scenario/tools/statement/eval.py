@@ -20,7 +20,7 @@ from app.sql.types import (
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/agents_scenario_tools_statement_statement_eval_start_complete.sql"
+SQL_PATH = "app/sql/v3/agents/agents_scenario_tools_statement_statement_eval_start_complete.sql"
 
 
 async def _statement_eval_impl(

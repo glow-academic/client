@@ -11,7 +11,7 @@ from app.sql.types import (
 )
 from utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v3/infrastructure/metrics/snapshot_complete.sql"
+SQL_PATH = "app/sql/v3/infrastructure/infrastructure_metrics_snapshot_complete.sql"
 
 
 async def log_metrics_snapshot(

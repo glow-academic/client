@@ -20,7 +20,7 @@ from app.sql.types import (
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/agents_grade_tools_audio_audio_eval_start_complete.sql"
+SQL_PATH = "app/sql/v3/agents/agents_grade_tools_audio_audio_eval_start_complete.sql"
 
 
 async def _audio_eval_impl(

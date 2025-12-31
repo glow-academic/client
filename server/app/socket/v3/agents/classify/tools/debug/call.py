@@ -67,7 +67,7 @@ async def _debug_info_impl(sid: str, data: dict[str, Any]) -> str | None:
     try:
         async with get_db_connection() as conn:
             # Load SQL for debug_info tool call
-            sql_debug_info = load_sql("app/sql/v3/tools_debug_call_complete.sql")
+            sql_debug_info = load_sql("app/sql/v3/tools/tools_debug_call_complete.sql")
 
             # Execute debug_info tool call (no-op for now, just logs)
             # Emit complete event

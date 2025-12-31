@@ -28,7 +28,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = (
-    "app/sql/v3/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql"
+    "app/sql/v3/simulations_get_simulation_regeneration_run_context_and_create_run_complete.sql"
 )
 
 internal_sio = get_internal_sio()
@@ -66,7 +66,7 @@ async def _simulation_regenerate_impl(
         async with get_db_connection() as conn:
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits, creates run, gets all previous messages,
-            # and links existing system/developer messages atomically
+            # and links existing system_developer messages atomically
             try:
                 # Use execute_sql_typed() - auto-detects function
                 params = GetSimulationRegenerationRunContextAndCreateRunSqlParams(

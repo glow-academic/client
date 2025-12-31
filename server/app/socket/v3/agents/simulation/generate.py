@@ -32,7 +32,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH_CONTEXT = "app/sql/v3/simulations/get_simulation_run_context_and_create_run_complete.sql"
-SQL_PATH_MESSAGES = "app/sql/v3/simulations/get_simulation_messages_complete.sql"
+SQL_PATH_MESSAGES = "app/sql/v3/simulations_get_simulation_messages_complete.sql"
 
 
 # Helper functions for incremental JSON parsing (from send.py)
@@ -229,7 +229,7 @@ async def _simulation_text_generate_impl(
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Handle simulation_text_generate internal event - runs agent and emits to progress/complete."""
+    """Handle simulation_text_generate internal event - runs agent and emits to progress_complete."""
     try:
         chat_id_uuid = uuid.UUID(data.chat_id)
         run_id_uuid = uuid.UUID(data.run_id)

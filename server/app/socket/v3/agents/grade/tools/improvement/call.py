@@ -116,7 +116,7 @@ async def _grading_tool_message_improvement_impl(
                 return
 
             # Create message feedback record
-            SQL_CREATE_FEEDBACK_PATH = "app/sql/v3/grading/create_message_feedback_complete.sql"
+            SQL_CREATE_FEEDBACK_PATH = "app/sql/v3/grading_create_message_feedback_complete.sql"
             feedback_params = CreateMessageFeedbackSqlParams(
                 grade_id=grade_id_uuid,
                 message_id=message_id_uuid,
@@ -131,7 +131,7 @@ async def _grading_tool_message_improvement_impl(
 
             message_feedback_id = uuid.UUID(feedback_result.id)
 
-            # Insert strike/replace items if provided (using composite type array)
+            # Insert strike_replace items if provided (using composite type array)
             if data.strike:
                 from app.sql.types import (
                     ICreateMessageFeedbackReplaceV3Replace,

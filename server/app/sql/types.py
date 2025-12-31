@@ -6252,42 +6252,9 @@ class GetImageGenerationContextAndCreateUploadApiResponse(BaseModel):
 
 
 
-# Generated from: infra_activity_insert
+# Generated from: infrastructure_activity_insert
 
-class InfraActivityInsertSqlParams(BaseModel):
-
-    message: str
-    endpoint: str
-    profile_id: UUID
-    error: bool
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message,
-            self.endpoint,
-            self.profile_id,
-            self.error,
-        )
-
-class InfraActivityInsertSqlRow(BaseModel):
-
-    success: bool | None = None
-
-class InfraActivityInsertApiRequest(BaseModel):
-
-    message: str
-    endpoint: str
-    error: bool
-
-class InfraActivityInsertApiResponse(BaseModel):
-
-    success: bool | None = None
-
-
-
-# Generated from: infra_activity_insert_websocket
-
-class InfraActivityInsertWebsocketSqlParams(BaseModel):
+class InfrastructureActivityInsertSqlParams(BaseModel):
 
     message: str
     endpoint: str
@@ -6302,25 +6269,58 @@ class InfraActivityInsertWebsocketSqlParams(BaseModel):
             self.error,
         )
 
-class InfraActivityInsertWebsocketSqlRow(BaseModel):
+class InfrastructureActivityInsertSqlRow(BaseModel):
 
     success: bool | None = None
 
-class InfraActivityInsertWebsocketApiRequest(BaseModel):
+class InfrastructureActivityInsertApiRequest(BaseModel):
 
     message: str
     endpoint: str
     error: bool
 
-class InfraActivityInsertWebsocketApiResponse(BaseModel):
+class InfrastructureActivityInsertApiResponse(BaseModel):
 
     success: bool | None = None
 
 
 
-# Generated from: infra_activity_profile_exists
+# Generated from: infrastructure_activity_insert_websocket
 
-class InfraActivityProfileExistsSqlParams(BaseModel):
+class InfrastructureActivityInsertWebsocketSqlParams(BaseModel):
+
+    message: str
+    endpoint: str
+    profile_id: UUID
+    error: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.message,
+            self.endpoint,
+            self.profile_id,
+            self.error,
+        )
+
+class InfrastructureActivityInsertWebsocketSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class InfrastructureActivityInsertWebsocketApiRequest(BaseModel):
+
+    message: str
+    endpoint: str
+    error: bool
+
+class InfrastructureActivityInsertWebsocketApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: infrastructure_activity_profile_exists
+
+class InfrastructureActivityProfileExistsSqlParams(BaseModel):
 
     profile_id: UUID
 
@@ -6329,23 +6329,23 @@ class InfraActivityProfileExistsSqlParams(BaseModel):
             self.profile_id,
         )
 
-class InfraActivityProfileExistsSqlRow(BaseModel):
+class InfrastructureActivityProfileExistsSqlRow(BaseModel):
 
     profile_exists: bool | None = None
 
-class InfraActivityProfileExistsApiRequest(BaseModel):
+class InfrastructureActivityProfileExistsApiRequest(BaseModel):
 
     pass
 
-class InfraActivityProfileExistsApiResponse(BaseModel):
+class InfrastructureActivityProfileExistsApiResponse(BaseModel):
 
     profile_exists: bool | None = None
 
 
 
-# Generated from: infra_debug_insert_debug_info
+# Generated from: infrastructure_debug_insert_debug_info
 
-class InfraDebugInsertDebugInfoSqlParams(BaseModel):
+class InfrastructureDebugInsertDebugInfoSqlParams(BaseModel):
 
     run_id: UUID
     content: str
@@ -6356,24 +6356,24 @@ class InfraDebugInsertDebugInfoSqlParams(BaseModel):
             self.content,
         )
 
-class InfraDebugInsertDebugInfoSqlRow(BaseModel):
+class InfrastructureDebugInsertDebugInfoSqlRow(BaseModel):
 
     success: bool | None = None
 
-class InfraDebugInsertDebugInfoApiRequest(BaseModel):
+class InfrastructureDebugInsertDebugInfoApiRequest(BaseModel):
 
     run_id: UUID
     content: str
 
-class InfraDebugInsertDebugInfoApiResponse(BaseModel):
+class InfrastructureDebugInsertDebugInfoApiResponse(BaseModel):
 
     success: bool | None = None
 
 
 
-# Generated from: infra_metrics_health
+# Generated from: infrastructure_metrics_health
 
-class InfraMetricsHealthSqlParams(BaseModel):
+class InfrastructureMetricsHealthSqlParams(BaseModel):
 
     ts: str
     service: str
@@ -6390,11 +6390,11 @@ class InfraMetricsHealthSqlParams(BaseModel):
             self.error,
         )
 
-class InfraMetricsHealthSqlRow(BaseModel):
+class InfrastructureMetricsHealthSqlRow(BaseModel):
 
     success: bool | None = None
 
-class InfraMetricsHealthApiRequest(BaseModel):
+class InfrastructureMetricsHealthApiRequest(BaseModel):
 
     ts: str
     service: str
@@ -6402,15 +6402,15 @@ class InfraMetricsHealthApiRequest(BaseModel):
     latency_ms: float
     error: str
 
-class InfraMetricsHealthApiResponse(BaseModel):
+class InfrastructureMetricsHealthApiResponse(BaseModel):
 
     success: bool | None = None
 
 
 
-# Generated from: infra_metrics_snapshot
+# Generated from: infrastructure_metrics_snapshot
 
-class InfraMetricsSnapshotSqlParams(BaseModel):
+class InfrastructureMetricsSnapshotSqlParams(BaseModel):
 
     ts: str
     requests_total: int
@@ -6429,11 +6429,11 @@ class InfraMetricsSnapshotSqlParams(BaseModel):
             self.memory_bytes,
         )
 
-class InfraMetricsSnapshotSqlRow(BaseModel):
+class InfrastructureMetricsSnapshotSqlRow(BaseModel):
 
     success: bool | None = None
 
-class InfraMetricsSnapshotApiRequest(BaseModel):
+class InfrastructureMetricsSnapshotApiRequest(BaseModel):
 
     ts: str
     requests_total: int
@@ -6442,15 +6442,15 @@ class InfraMetricsSnapshotApiRequest(BaseModel):
     cpu_percent: float
     memory_bytes: int
 
-class InfraMetricsSnapshotApiResponse(BaseModel):
+class InfrastructureMetricsSnapshotApiResponse(BaseModel):
 
     success: bool | None = None
 
 
 
-# Generated from: infra_profile_resolve_from_department
+# Generated from: infrastructure_profile_resolve_from_department
 
-class InfraProfileResolveFromDepartmentSqlParams(BaseModel):
+class InfrastructureProfileResolveFromDepartmentSqlParams(BaseModel):
 
     department_id: str
     auth_mode: str
@@ -6461,16 +6461,16 @@ class InfraProfileResolveFromDepartmentSqlParams(BaseModel):
             self.auth_mode,
         )
 
-class InfraProfileResolveFromDepartmentSqlRow(BaseModel):
+class InfrastructureProfileResolveFromDepartmentSqlRow(BaseModel):
 
     resolved_profile_id: UUID | None = None
 
-class InfraProfileResolveFromDepartmentApiRequest(BaseModel):
+class InfrastructureProfileResolveFromDepartmentApiRequest(BaseModel):
 
     department_id: str
     auth_mode: str
 
-class InfraProfileResolveFromDepartmentApiResponse(BaseModel):
+class InfrastructureProfileResolveFromDepartmentApiResponse(BaseModel):
 
     resolved_profile_id: UUID | None = None
 
@@ -10355,6 +10355,172 @@ class GetProfileNewApiResponse(BaseModel):
     role_options: list[str] | None = None
     departments: list[QGetProfileNewV3Department] | None = None
     cohorts: list[QGetProfileNewV3Cohort] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: profile_staff_bulk_create_profile
+
+class IBulkCreateStaffV3Profile(BaseModel):
+
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    department_ids: list[UUID] | None
+    primary_department_index: int | None
+
+class ProfileStaffBulkCreateProfileSqlParams(BaseModel):
+
+    profiles: list[IBulkCreateStaffV3Profile]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert profiles composite array to tuples for asyncpg
+        profiles_tuples = [
+            (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.department_ids, conn.primary_department_index)
+            for conn in self.profiles
+        ]
+        return (
+            profiles_tuples,
+            self.profile_id,
+        )
+
+class ProfileStaffBulkCreateProfileSqlRow(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    existing_emails: list[str] | None = None
+    actor_name: str | None = None
+
+class ProfileStaffBulkCreateProfileApiRequest(BaseModel):
+
+    profiles: list[IBulkCreateStaffV3Profile]
+
+class ProfileStaffBulkCreateProfileApiResponse(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    existing_emails: list[str] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: profile_staff_bulk_delete_profiles
+
+class ProfileStaffBulkDeleteProfilesSqlParams(BaseModel):
+
+    profile_ids: list[UUID]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_ids,
+            self.profile_id,
+        )
+
+class ProfileStaffBulkDeleteProfilesSqlRow(BaseModel):
+
+    deleted_count: int | None = None
+    actor_name: str | None = None
+
+class ProfileStaffBulkDeleteProfilesApiRequest(BaseModel):
+
+    profile_ids: list[UUID]
+
+class ProfileStaffBulkDeleteProfilesApiResponse(BaseModel):
+
+    deleted_count: int | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: profile_staff_bulk_update_profile
+
+class ProfileStaffBulkUpdateProfileSqlParams(BaseModel):
+
+    profile_id: UUID
+    profile_ids: list[UUID]
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    primary_department_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.profile_ids,
+            self.role,
+            self.active,
+            self.requests_per_day,
+            self.primary_department_id,
+        )
+
+class ProfileStaffBulkUpdateProfileSqlRow(BaseModel):
+
+    updated_count: int | None = None
+    actor_name: str | None = None
+
+class ProfileStaffBulkUpdateProfileApiRequest(BaseModel):
+
+    profile_ids: list[UUID]
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    primary_department_id: UUID | None = None
+
+class ProfileStaffBulkUpdateProfileApiResponse(BaseModel):
+
+    updated_count: int | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: profile_staff_create_or_update_staff
+
+class IUpsertStaffV3Profile(BaseModel):
+
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+
+class ProfileStaffCreateOrUpdateStaffSqlParams(BaseModel):
+
+    profiles: list[IUpsertStaffV3Profile]
+    current_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert profiles composite array to tuples for asyncpg
+        profiles_tuples = [
+            (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
+            for conn in self.profiles
+        ]
+        return (
+            profiles_tuples,
+            self.current_profile_id,
+        )
+
+class ProfileStaffCreateOrUpdateStaffSqlRow(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
+    actor_name: str | None = None
+
+class ProfileStaffCreateOrUpdateStaffApiRequest(BaseModel):
+
+    profiles: list[IUpsertStaffV3Profile]
+    current_profile_id: UUID
+
+class ProfileStaffCreateOrUpdateStaffApiResponse(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
     actor_name: str | None = None
 
 
@@ -16512,16 +16678,6 @@ class UpdateSimulationApiResponse(BaseModel):
 
 # Generated from: bulk_create_staff
 
-class IBulkCreateStaffV3Profile(BaseModel):
-
-    first_name: str | None
-    last_name: str | None
-    emails: list[str] | None
-    primary_email_index: int | None
-    role: str | None
-    department_ids: list[UUID] | None
-    primary_department_index: int | None
-
 class BulkCreateStaffSqlParams(BaseModel):
 
     profiles: list[IBulkCreateStaffV3Profile]
@@ -17074,17 +17230,6 @@ class ProcessCsvApiResponse(BaseModel):
 
 
 # Generated from: upsert_staff
-
-class IUpsertStaffV3Profile(BaseModel):
-
-    first_name: str | None
-    last_name: str | None
-    emails: list[str] | None
-    primary_email_index: int | None
-    role: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-    cohort_ids: list[UUID] | None
 
 class UpsertStaffSqlParams(BaseModel):
 
@@ -17904,47 +18049,47 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetImageGenerationContextAndCreateUploadApiRequest",
         "GetImageGenerationContextAndCreateUploadApiResponse",
     ),
-    "app/sql/v3/infrastructure/activity/insert_complete.sql": (
-        "InfraActivityInsertSqlParams",
-        "InfraActivityInsertSqlRow",
-        "InfraActivityInsertApiRequest",
-        "InfraActivityInsertApiResponse",
+    "app/sql/v3/infrastructure/infrastructure_activity_insert_complete.sql": (
+        "InfrastructureActivityInsertSqlParams",
+        "InfrastructureActivityInsertSqlRow",
+        "InfrastructureActivityInsertApiRequest",
+        "InfrastructureActivityInsertApiResponse",
     ),
-    "app/sql/v3/infrastructure/activity/insert_websocket_complete.sql": (
-        "InfraActivityInsertWebsocketSqlParams",
-        "InfraActivityInsertWebsocketSqlRow",
-        "InfraActivityInsertWebsocketApiRequest",
-        "InfraActivityInsertWebsocketApiResponse",
+    "app/sql/v3/infrastructure/infrastructure_activity_insert_websocket_complete.sql": (
+        "InfrastructureActivityInsertWebsocketSqlParams",
+        "InfrastructureActivityInsertWebsocketSqlRow",
+        "InfrastructureActivityInsertWebsocketApiRequest",
+        "InfrastructureActivityInsertWebsocketApiResponse",
     ),
-    "app/sql/v3/infrastructure/activity/profile_exists_complete.sql": (
-        "InfraActivityProfileExistsSqlParams",
-        "InfraActivityProfileExistsSqlRow",
-        "InfraActivityProfileExistsApiRequest",
-        "InfraActivityProfileExistsApiResponse",
+    "app/sql/v3/infrastructure/infrastructure_activity_profile_exists_complete.sql": (
+        "InfrastructureActivityProfileExistsSqlParams",
+        "InfrastructureActivityProfileExistsSqlRow",
+        "InfrastructureActivityProfileExistsApiRequest",
+        "InfrastructureActivityProfileExistsApiResponse",
     ),
-    "app/sql/v3/infrastructure/debug/insert_debug_info_complete.sql": (
-        "InfraDebugInsertDebugInfoSqlParams",
-        "InfraDebugInsertDebugInfoSqlRow",
-        "InfraDebugInsertDebugInfoApiRequest",
-        "InfraDebugInsertDebugInfoApiResponse",
+    "app/sql/v3/infrastructure/infrastructure_debug_insert_debug_info_complete.sql": (
+        "InfrastructureDebugInsertDebugInfoSqlParams",
+        "InfrastructureDebugInsertDebugInfoSqlRow",
+        "InfrastructureDebugInsertDebugInfoApiRequest",
+        "InfrastructureDebugInsertDebugInfoApiResponse",
     ),
-    "app/sql/v3/infrastructure/metrics/health_complete.sql": (
-        "InfraMetricsHealthSqlParams",
-        "InfraMetricsHealthSqlRow",
-        "InfraMetricsHealthApiRequest",
-        "InfraMetricsHealthApiResponse",
+    "app/sql/v3/infrastructure/infrastructure_metrics_health_complete.sql": (
+        "InfrastructureMetricsHealthSqlParams",
+        "InfrastructureMetricsHealthSqlRow",
+        "InfrastructureMetricsHealthApiRequest",
+        "InfrastructureMetricsHealthApiResponse",
     ),
-    "app/sql/v3/infrastructure/metrics/snapshot_complete.sql": (
-        "InfraMetricsSnapshotSqlParams",
-        "InfraMetricsSnapshotSqlRow",
-        "InfraMetricsSnapshotApiRequest",
-        "InfraMetricsSnapshotApiResponse",
+    "app/sql/v3/infrastructure/infrastructure_metrics_snapshot_complete.sql": (
+        "InfrastructureMetricsSnapshotSqlParams",
+        "InfrastructureMetricsSnapshotSqlRow",
+        "InfrastructureMetricsSnapshotApiRequest",
+        "InfrastructureMetricsSnapshotApiResponse",
     ),
-    "app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql": (
-        "InfraProfileResolveFromDepartmentSqlParams",
-        "InfraProfileResolveFromDepartmentSqlRow",
-        "InfraProfileResolveFromDepartmentApiRequest",
-        "InfraProfileResolveFromDepartmentApiResponse",
+    "app/sql/v3/infrastructure/infrastructure_profile_resolve_from_department_complete.sql": (
+        "InfrastructureProfileResolveFromDepartmentSqlParams",
+        "InfrastructureProfileResolveFromDepartmentSqlRow",
+        "InfrastructureProfileResolveFromDepartmentApiRequest",
+        "InfrastructureProfileResolveFromDepartmentApiResponse",
     ),
     "app/sql/v3/keys/create_key_complete.sql": (
         "CreateKeySqlParams",
@@ -18251,6 +18396,30 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileNewSqlRow",
         "GetProfileNewApiRequest",
         "GetProfileNewApiResponse",
+    ),
+    "app/sql/v3/profile/profile_staff_bulk_create_profile_complete.sql": (
+        "ProfileStaffBulkCreateProfileSqlParams",
+        "ProfileStaffBulkCreateProfileSqlRow",
+        "ProfileStaffBulkCreateProfileApiRequest",
+        "ProfileStaffBulkCreateProfileApiResponse",
+    ),
+    "app/sql/v3/profile/profile_staff_bulk_delete_profiles_complete.sql": (
+        "ProfileStaffBulkDeleteProfilesSqlParams",
+        "ProfileStaffBulkDeleteProfilesSqlRow",
+        "ProfileStaffBulkDeleteProfilesApiRequest",
+        "ProfileStaffBulkDeleteProfilesApiResponse",
+    ),
+    "app/sql/v3/profile/profile_staff_bulk_update_profile_complete.sql": (
+        "ProfileStaffBulkUpdateProfileSqlParams",
+        "ProfileStaffBulkUpdateProfileSqlRow",
+        "ProfileStaffBulkUpdateProfileApiRequest",
+        "ProfileStaffBulkUpdateProfileApiResponse",
+    ),
+    "app/sql/v3/profile/profile_staff_create_or_update_staff_complete.sql": (
+        "ProfileStaffCreateOrUpdateStaffSqlParams",
+        "ProfileStaffCreateOrUpdateStaffSqlRow",
+        "ProfileStaffCreateOrUpdateStaffApiRequest",
+        "ProfileStaffCreateOrUpdateStaffApiResponse",
     ),
     "app/sql/v3/profile/search_simulatable_profiles_complete.sql": (
         "SearchSimulatableProfilesSqlParams",
@@ -19227,37 +19396,37 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/activity/insert_complete.sql"]
+        file_path: Literal["app/sql/v3/infrastructure/infrastructure_activity_insert_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/activity/insert_websocket_complete.sql"]
+        file_path: Literal["app/sql/v3/infrastructure/infrastructure_activity_insert_websocket_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/activity/profile_exists_complete.sql"]
+        file_path: Literal["app/sql/v3/infrastructure/infrastructure_activity_profile_exists_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/debug/insert_debug_info_complete.sql"]
+        file_path: Literal["app/sql/v3/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/metrics/health_complete.sql"]
+        file_path: Literal["app/sql/v3/infrastructure/infrastructure_metrics_health_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/metrics/snapshot_complete.sql"]
+        file_path: Literal["app/sql/v3/infrastructure/infrastructure_metrics_snapshot_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql"]
+        file_path: Literal["app/sql/v3/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -19513,6 +19682,26 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/profile/get_profile_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/profile_staff_bulk_create_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/profile_staff_bulk_delete_profiles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/profile_staff_bulk_update_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/profile_staff_create_or_update_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -569,7 +569,7 @@ async def run_eval_single_run(
 
             # Create assistant message with branch
             sql_create_assistant = load_sql(
-                "app/sql/v3/messages/create_assistant_message_with_branch.sql"
+                "app/sql/v3/messages_create_assistant_message_with_branch.sql"
             )
             await conn.fetchrow(
                 sql_create_assistant,
@@ -578,7 +578,7 @@ async def run_eval_single_run(
                 str(parent_message_id_eval) if parent_message_id_eval else None,
             )
 
-        # 14. Handle pricing/logs (emit log_run event via internal_sio)
+        # 14. Handle pricing_logs (emit log_run event via internal_sio)
         await internal_sio.emit(
             "log_run",
             {

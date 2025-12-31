@@ -33,7 +33,7 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/tools_debug_call_complete.sql"
+SQL_PATH = "app/sql/v3/tools/tools_debug_call_complete.sql"
 
 
 class DebugInfoToolPayload(BaseModel):

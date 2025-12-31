@@ -151,7 +151,7 @@ async def _simulation_text_progress_impl(
                 from utils.sql_helper import load_sql
 
                 sql_update = load_sql(
-                    "app/sql/v3/simulation_text/text_progress_update_complete.sql"
+                    "app/sql/v3/simulation_text_text_progress_update_complete.sql"
                 )
                 try:
                     result_row = await conn.fetchrow(
@@ -164,7 +164,7 @@ async def _simulation_text_progress_impl(
                         data.token,
                         data.accumulated_content,
                         data.arguments_raw,
-                        None,  # message_id - will be created/retrieved by SQL
+                        None,  # message_id - will be created_retrieved by SQL
                         uuid.UUID(data.parent_message_id)
                         if data.parent_message_id
                         else None,

@@ -12,7 +12,7 @@ from app.sql.types import (
 )
 from utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v3/infrastructure/debug/insert_debug_info_complete.sql"
+SQL_PATH = "app/sql/v3/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
 
 
 @dataclass

@@ -20,7 +20,7 @@ from app.sql.types import (
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/agents_hint_tools_hint_hint_eval_start_complete.sql"
+SQL_PATH = "app/sql/v3/agents/agents_hint_tools_hint_hint_eval_start_complete.sql"
 
 
 async def _hint_eval_impl(
