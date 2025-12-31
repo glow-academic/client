@@ -75,6 +75,7 @@ class RegenerateScenarioPayload(BaseModel):
     scenarioId: str
     userInstructions: str
     departmentId: str
+    groupId: str  # REQUIRED for regeneration
     profileId: str | None = None
     objectivesEnabled: bool = True
 
@@ -126,109 +127,77 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
         # Convert string IDs to UUIDs
         scenario_id = uuid.UUID(data.scenarioId)
         department_id = uuid.UUID(data.departmentId)
+        group_id = uuid.UUID(data.groupId)  # REQUIRED for regeneration
         objectives_enabled = data.objectivesEnabled
 
         try:
             async with get_db_connection() as conn:
-                # Clear previous results (now handled by storage with keys)
-
-                # Emit start event
-                await scenario_regeneration_progress(
-                ScenarioRegenerationProgressPayload(
-                    type="start",
-                    message="Starting scenario regeneration",
-                    trace_id=trace_id,
-                ),
-                room=sid,
-            )
-
-            # Get previous run for this scenario
-            sql_get_previous_run = load_sql(
-                "app/sql/v3/messages/get_previous_run_for_entity.sql"
-            )
-            previous_run_row = await conn.fetchrow(
-                sql_get_previous_run,
-                str(scenario_id),
-                "scenario",
-            )
-
-            if not previous_run_row or not previous_run_row.get("run_id"):
-                await scenario_regeneration_error(
-                    ScenarioRegenerationErrorPayload(
-                        success=False,
-                        message=f"No previous run found for scenario {data.scenarioId}",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
+                # Get scenario's current persona/document/parameter IDs and agent_id
+                sql_get_scenario_ids = load_sql(
+                    "app/sql/v3/scenario/get_scenario_ids_for_regeneration.sql"
                 )
-                return
-
-            previous_run_id = uuid.UUID(previous_run_row["run_id"])
-
-            # Get scenario's current persona/document/parameter IDs and agent_id
-            sql_get_scenario_ids = load_sql(
-                "app/sql/v3/scenario/get_scenario_ids_for_regeneration.sql"
-            )
-            scenario_ids_row = await conn.fetchrow(
-                sql_get_scenario_ids, str(scenario_id)
-            )
-
-            if not scenario_ids_row:
-                await scenario_regeneration_error(
-                    ScenarioRegenerationErrorPayload(
-                        success=False,
-                        message=f"Scenario {data.scenarioId} not found",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
+                scenario_ids_row = await conn.fetchrow(
+                    sql_get_scenario_ids, str(scenario_id)
                 )
-                return
 
-            persona_id = (
-                uuid.UUID(scenario_ids_row["persona_id"])
-                if scenario_ids_row["persona_id"]
-                else None
-            )
-            document_ids = (
-                [uuid.UUID(d) for d in scenario_ids_row["document_ids"]]
-                if scenario_ids_row["document_ids"]
-                else []
-            )
-            parameter_item_ids = (
-                [uuid.UUID(p) for p in scenario_ids_row["parameter_item_ids"]]
-                if scenario_ids_row["parameter_item_ids"]
-                else []
-            )
-            scenario_agent_id = (
-                uuid.UUID(scenario_ids_row["scenario_agent_id"])
-                if scenario_ids_row["scenario_agent_id"]
-                else None
-            )
+                if not scenario_ids_row:
+                    await scenario_regeneration_error(
+                        ScenarioRegenerationErrorPayload(
+                            success=False,
+                            message=f"Scenario {data.scenarioId} not found",
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
 
-            if not scenario_agent_id:
-                await scenario_regeneration_error(
-                    ScenarioRegenerationErrorPayload(
-                        success=False,
-                        message=f"Scenario {data.scenarioId} has no scenario agent configured",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
+                persona_id = (
+                    uuid.UUID(scenario_ids_row["persona_id"])
+                    if scenario_ids_row["persona_id"]
+                    else None
                 )
-                return
-
-            # Get context AND create run in single atomic transaction
-            # This validates rate limits and creates run atomically
-            try:
-                # Use execute_sql_typed() - auto-detects function
-                params = GetScenarioRegenerationRunContextAndCreateRunSqlParams(
-                    department_id=department_id,
-                    profile_id=profile_id,  # From sid lookup
-                    agent_id=scenario_agent_id,
-                    group_id=None,  # NULL for new group
-                    persona_id=persona_id,
-                    document_ids=document_ids if document_ids else None,
-                    parameter_item_ids=parameter_item_ids if parameter_item_ids else None,
+                document_ids = (
+                    [uuid.UUID(d) for d in scenario_ids_row["document_ids"]]
+                    if scenario_ids_row["document_ids"]
+                    else []
                 )
+                parameter_item_ids = (
+                    [uuid.UUID(p) for p in scenario_ids_row["parameter_item_ids"]]
+                    if scenario_ids_row["parameter_item_ids"]
+                    else []
+                )
+                scenario_agent_id = (
+                    uuid.UUID(scenario_ids_row["scenario_agent_id"])
+                    if scenario_ids_row["scenario_agent_id"]
+                    else None
+                )
+
+                if not scenario_agent_id:
+                    await scenario_regeneration_error(
+                        ScenarioRegenerationErrorPayload(
+                            success=False,
+                            message=f"Scenario {data.scenarioId} has no scenario agent configured",
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+
+                # Get context AND create run in single atomic transaction
+                # This validates rate limits, creates run, gets all previous messages,
+                # and links existing system/developer messages atomically
+                try:
+                    # Use execute_sql_typed() - auto-detects function
+                    params = GetScenarioRegenerationRunContextAndCreateRunSqlParams(
+                        department_id=department_id,
+                        profile_id=profile_id,  # From sid lookup
+                        agent_id=scenario_agent_id,
+                        group_id=group_id,  # REQUIRED for regeneration (uses existing group)
+                        persona_id=persona_id,
+                        document_ids=document_ids if document_ids else None,
+                        parameter_item_ids=parameter_item_ids if parameter_item_ids else None,
+                        user_instructions=data.userInstructions if data.userInstructions else None,
+                    )
                 result = cast(
                     GetScenarioRegenerationRunContextAndCreateRunSqlRow,
                     await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -280,13 +249,37 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # result.group_id and result.trace_id come from groups table
             trace_id = result.trace_id  # From groups.trace_id
-            group_id = result.group_id  # Created by SQL
+            group_id = result.group_id  # Uses existing group
+
+            # Get previous messages from result (already properly typed as composite types)
+            previous_messages: list[TResponseInputItem] = []
+            if result.previous_messages:
+                previous_messages = [
+                    cast(
+                        TResponseInputItem,
+                        {
+                            "role": msg.role or "",
+                            "content": msg.content or "",
+                        },
+                    )
+                    for msg in result.previous_messages
+                ]
 
             # Documents, parameter_items, and document_templates are now composite type arrays
             # No JSON parsing needed - they're already Pydantic models
             documents = result.documents if result.documents else []
             parameter_items = result.parameter_items if result.parameter_items else []
             document_templates = result.document_templates if result.document_templates else []
+
+            # Emit start event
+            await scenario_regeneration_progress(
+                ScenarioRegenerationProgressPayload(
+                    type="start",
+                    message="Starting scenario regeneration",
+                    trace_id=trace_id,
+                ),
+                room=sid,
+            )
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(result.agent_id)
@@ -408,11 +401,29 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         "content": content,
                     }
 
-            input_items: list[TResponseInputItem | None] = [
+            # Build input items: previous messages + persona/documents/parameters + user instructions
+            input_items: list[TResponseInputItem] = []
+
+            # Add previous messages first (conversation history from all runs)
+            input_items.extend(previous_messages)
+
+            # Add persona/documents/parameters context
+            context_items: list[TResponseInputItem | None] = [
                 persona_info,
                 document_info,
                 parameter_item_info,
             ]
+            clean_context_items = [item for item in context_items if item is not None]
+            input_items.extend(clean_context_items)
+
+            # Add user instructions on top (most recent instruction goes last)
+            if data.userInstructions and data.userInstructions.strip():
+                input_items.append(
+                    {
+                        "role": "user",
+                        "content": f"User Instructions: {data.userInstructions.strip()}",
+                    }
+                )
 
             # Create scenario tools
             # group_id and trace_id already extracted above from context_row
@@ -425,7 +436,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # For regeneration, use scenario_id as primary_id (same scenario = same key)
             primary_id = str(scenario_id)
 
-            clean_input_items = [item for item in input_items if item is not None]
+            clean_input_items = input_items
 
             # Set image generation context before creating tools (async)
             # Image generation context is now passed directly to background tasks (no-op removed)
@@ -655,71 +666,12 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
-            # Log regeneration messages (reuse existing system/developer, add user + assistant)
-            assistant_output = getattr(result, "final_output", None) or ""
-
-            # Get latest message from previous run (assistant if exists, otherwise developer/system)
-            sql_get_latest = load_sql(
-                "app/sql/v3/scenario/get_latest_message_without_children_for_run.sql"
-            )
-            latest_row = await conn.fetchrow(sql_get_latest, str(previous_run_id))
-
-            if not latest_row or not latest_row.get("latest_message_id"):
-                # Fallback: get any system/developer message from previous run
-                sql_fallback = load_sql(
-                    "app/sql/v3/scenario/get_first_system_developer_message_for_run.sql"
-                )
-                latest_row = await conn.fetchrow(sql_fallback, str(previous_run_id))
-
-            parent_message_id: uuid.UUID | None = None
-            if latest_row and latest_row.get("latest_message_id"):
-                parent_message_id = uuid.UUID(latest_row["latest_message_id"])
-
-            # Link existing system/developer messages to new run (reuse them)
-            # They're already shared via deduplication, just need to link via message_runs
-            sql_link_existing = load_sql(
-                "app/sql/v3/messages/link_existing_messages_to_run.sql"
-            )
-            await conn.execute(
-                sql_link_existing, str(model_run_id), str(previous_run_id)
-            )
-
-            # Create user message with branch from latest message
-            user_message_id: uuid.UUID | None = None
-            if data.userInstructions and data.userInstructions.strip():
-                sql_create_user = load_sql(
-                    "app/sql/v3/messages/create_user_message_with_branch.sql"
-                )
-                user_result = await conn.fetchrow(
-                    sql_create_user,
-                    data.userInstructions.strip(),
-                    str(model_run_id),
-                    str(parent_message_id) if parent_message_id else None,
-                )
-
-                if user_result and user_result.get("id"):
-                    user_message_id = uuid.UUID(user_result["id"])
-
-            # Create assistant message with branch from user message (if exists) or latest message
-            if assistant_output and assistant_output.strip():
-                # Use user message as parent if it exists, otherwise use the latest message from previous run
-                assistant_parent_id = (
-                    user_message_id if user_message_id else parent_message_id
-                )
-
-                sql_create_assistant = load_sql(
-                    "app/sql/v3/messages/create_assistant_message_with_branch.sql"
-                )
-                await conn.fetchrow(
-                    sql_create_assistant,
-                    assistant_output.strip(),
-                    str(model_run_id),
-                    str(assistant_parent_id) if assistant_parent_id else None,
-                )
-
             # Extract results from closure variables
             usage = result.context_wrapper.usage
             assistant_output = getattr(result, "final_output", None) or ""
+
+            # Note: Message linking is now handled by SQL (link_existing_messages CTE)
+            # User and assistant messages will be created by the agent's tool calls
 
             # Emit async pricing event via internal bus (non-blocking)
             # This handles token updates and message logging in background

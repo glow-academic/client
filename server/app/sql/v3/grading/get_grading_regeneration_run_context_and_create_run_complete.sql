@@ -1,4 +1,5 @@
--- Get all data needed to run scenario regeneration agent AND create run in single atomic transaction
+-- Get all data needed to run grading regeneration agent AND create run in single atomic transaction
+-- Uses existing group_id to get previous context from previous runs
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
@@ -13,115 +14,127 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'socket_get_scenario_regeneration_run_context_and_create_run_v3'
+        WHERE proname = 'socket_get_grading_regeneration_run_context_and_create_run_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_scenario_regeneration_run_context_and_create_run_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_grading_regeneration_run_context_and_create_run_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
--- 2) Drop types
+-- 2) Drop types WITHOUT CASCADE
 -- Drop all types matching prefix pattern to handle type additions/removals
--- Also handle truncated type names (PostgreSQL identifier limit is 63 chars)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    -- Drop all types matching prefix pattern (includes truncated name)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'i_get_scenario_regeneration_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'q_get_grading_regeneration_run_context_and_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
     END LOOP;
 END $$;
 
--- 3) Recreate types for composite structures
--- Use shortened name (62 chars) to avoid PostgreSQL 63-char identifier limit issues
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc AS (
+-- 3) Recreate types for output (standard groups and standards as composite types)
+CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group AS (
     id text,
     name text,
-    file_path text,
-    mime_type text,
-    template boolean,
-    template_args jsonb
+    short_name text,
+    description text,
+    points integer,
+    pass_points integer,
+    rubric_id text
 );
 
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template AS (
-    document_id text,
-    document_name text,
-    template_args jsonb,
-    template_upload_id text
+CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_standard AS (
+    id text,
+    name text,
+    description text,
+    points integer,
+    standard_group_id text
 );
 
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item AS (
-    item_name text,
-    item_description text,
-    param_name text,
-    param_description text
-);
-
-CREATE TYPE types.i_scenario_regen_run_context_create_run_v3_msg AS (
+CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_msg AS (
     role text,
     content text
 );
 
 -- 4) Recreate function
 -- group_id is REQUIRED (not NULL) for regeneration - uses existing group
-CREATE OR REPLACE FUNCTION socket_get_scenario_regeneration_run_context_and_create_run_v3(
+-- Gets all messages from all previous runs in the group
+-- Links existing system/developer messages to the new run
+CREATE OR REPLACE FUNCTION socket_get_grading_regeneration_run_context_and_create_run_v3(
+    chat_id uuid,
     department_id uuid,
     profile_id uuid,
-    agent_id uuid,
     group_id uuid,  -- REQUIRED for regeneration (not NULL)
-    persona_id uuid DEFAULT NULL,
-    document_ids uuid[] DEFAULT NULL,
-    parameter_item_ids uuid[] DEFAULT NULL,
     user_instructions text DEFAULT NULL
 )
 RETURNS TABLE (
+    -- Chat data
+    chat_id text,
+    scenario_id text,
+    chat_attempt_id text,
+    title text,
+    trace_id text,
+    chat_created_at timestamptz,
+    completed boolean,
+    problem_statement text,
+    -- Attempt data
+    attempt_id text,
+    simulation_id text,
+    total_chats integer,
+    -- Simulation data
+    simulation_id_out text,
+    rubric_id_out text,
+    simulation_rubric_id text,
+    department_id_out text,
+    time_limit integer,
+    rubric_grade_agent_id text,
+    grade_agent_id text,
+    audio_agent_id text,
+    -- Rubric data
+    rubric_name text,
+    rubric_description text,
+    rubric_points integer,
+    rubric_pass_points integer,
+    -- Standard groups and standards (as composite type arrays)
+    standard_groups types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group[],
+    standards types.q_get_grading_regeneration_run_context_and_create_run_v3_standard[],
+    -- Previous messages (from all previous runs in group)
+    previous_messages types.q_get_grading_regeneration_run_context_and_create_run_v3_msg[],
+    -- Agent data
     agent_id text,
     agent_name text,
-    agent_role text,
     system_prompt text,
     temperature float,
     reasoning text,
+    -- Model data
     model_id text,
     model_name text,
     provider text,
     base_url text,
     api_key text,
-    custom_model text,
-    provider_id text,
-    provider_name text,
-    persona_id text,
-    persona_name text,
-    persona_description text,
-    documents types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[],
-    document_templates types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template[],
-    parameter_items types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item[],
-    profile_id text,
+    -- Profile data
+    profile_id_out text,
+    -- Rate limit data
     req_per_day integer,
     runs_today_count bigint,
     earliest_run_created_at timestamptz,
-    run_id text,
-    group_id uuid,
-    trace_id text,
-    previous_messages types.i_scenario_regen_run_context_create_run_v3_msg[]  -- All messages from all previous runs in group
+    -- Run ID (created in same transaction)
+    run_id text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
     SELECT 
-        department_id AS department_id, 
-        profile_id AS profile_id, 
-        agent_id AS agent_id,
+        chat_id AS chat_id,
+        department_id AS department_id,
+        profile_id AS profile_id,
         group_id AS group_id,
-        persona_id AS persona_id,
-        document_ids AS document_ids,
-        parameter_item_ids AS parameter_item_ids,
         user_instructions AS user_instructions
 ),
 group_data AS (
@@ -160,31 +173,86 @@ previous_messages_array AS (
     -- Aggregate all previous messages into composite type array
     SELECT COALESCE(
         ARRAY_AGG(
-            (role, content)::types.i_scenario_regen_run_context_create_run_v3_msg
+            (role, content)::types.q_get_grading_regeneration_run_context_and_create_run_v3_msg
             ORDER BY run_idx, created_at
         ),
-        '{}'::types.i_scenario_regen_run_context_create_run_v3_msg[]
+        '{}'::types.q_get_grading_regeneration_run_context_and_create_run_v3_msg[]
     ) as previous_messages
     FROM previous_messages_all_runs
 ),
+chat_info AS (
+    SELECT 
+        sc.id,
+        sc.scenario_id,
+        ac.attempt_id,
+        sc.title,
+        gd.trace_id,
+        sc.created_at,
+        sc.completed
+    FROM chats sc
+    JOIN attempt_chats ac ON ac.chat_id = sc.id
+    CROSS JOIN group_data gd
+    WHERE sc.id = (SELECT chat_id FROM params)
+),
+attempt_info AS (
+    SELECT 
+        sa.id,
+        sa.simulation_id,
+        (SELECT COUNT(*) FROM attempt_chats WHERE attempt_id = sa.id) as total_chats
+    FROM simulation_attempts sa
+    WHERE sa.id = (SELECT attempt_id FROM chat_info)
+),
+scenario_rubric_grade_agent AS (
+    -- Get rubric_grade_agent_id for this scenario
+    SELECT 
+        ssrga.rubric_grade_agent_id,
+        rga.rubric_id,
+        rga.grade_agent_id,
+        rgav.audio_agent_id
+    FROM chat_info ci
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.scenario_id = ci.scenario_id
+    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    LEFT JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
+    LIMIT 1
+),
+simulation_info AS (
+    SELECT 
+        s.id,
+        srga.rubric_id,
+        (SELECT sd.department_id::text FROM simulation_departments sd 
+         WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as department_id,
+        srga.rubric_grade_agent_id::text as rubric_grade_agent_id,
+        srga.grade_agent_id::text as grade_agent_id,
+        srga.audio_agent_id::text as audio_agent_id,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit
+    FROM simulations s
+    CROSS JOIN scenario_rubric_grade_agent srga
+    WHERE s.id = (SELECT simulation_id FROM attempt_info)
+),
 best_agent AS (
-    -- Use the provided agent_id directly (UI handles filtering and selection)
+    -- Use grade_agent_id from rubric_grade_agents (for text grading)
     SELECT a.id as agent_id
-    FROM agents a
-    CROSS JOIN params p
-    WHERE a.id = p.agent_id
-    AND a.active = true
+    FROM simulation_info si
+    JOIN agents a ON a.id = si.grade_agent_id::uuid
+    WHERE a.active = true AND si.grade_agent_id IS NOT NULL
+    LIMIT 1
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles prof
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    WHERE prof.id = (SELECT profile_id FROM params)
+    FROM profiles p
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    WHERE p.id = (SELECT profile_id FROM params)
 ),
 runs_today AS (
-    -- Count model runs for the profile since start of day
+    -- Count model runs for this profile since start of day
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
@@ -194,19 +262,15 @@ runs_today AS (
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
--- Get active settings for profile (for key lookup via setting_provider_keys)
--- Use profile's primary department for settings resolution
 profile_primary_department AS (
     SELECT pd.department_id
-    FROM profile_departments pd
-    CROSS JOIN params p
-    WHERE pd.profile_id = p.profile_id
-      AND pd.is_primary = TRUE 
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id
+    WHERE pd.is_primary = TRUE 
       AND pd.active = true
     LIMIT 1
 ),
 default_settings AS (
-    -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM settings s
     WHERE s.active = true
@@ -264,13 +328,80 @@ active_settings AS (
             (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
 ),
+standard_groups_data AS (
+    -- Get standard groups data for aggregation
+    SELECT DISTINCT
+        sg.id,
+        sg.name,
+        sg.short_name,
+        sg.description,
+        sg.points,
+        sg.pass_points,
+        rsg.rubric_id
+    FROM chat_info ci
+    CROSS JOIN attempt_info ai
+    CROSS JOIN simulation_info si
+    INNER JOIN rubrics r ON r.id = si.rubric_id
+    LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = r.id AND rsg.active = true
+    LEFT JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    WHERE sg.id IS NOT NULL
+),
+standards_data AS (
+    -- Get standards data for aggregation
+    SELECT DISTINCT
+        std.id,
+        std.name,
+        std.description,
+        std.points,
+        std.standard_group_id
+    FROM chat_info ci
+    CROSS JOIN attempt_info ai
+    CROSS JOIN simulation_info si
+    INNER JOIN rubrics r ON r.id = si.rubric_id
+    LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = r.id AND rsg.active = true
+    LEFT JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    LEFT JOIN standards std ON std.standard_group_id = sg.id
+    WHERE std.id IS NOT NULL
+),
 context_data AS (
-    -- Get all context data (agent, model, provider, persona, documents, etc.)
+    -- Get all context data (agent, model, provider, rubric, standard groups, standards, etc.)
     SELECT 
-        -- Agent data (via department_agents junction for 'scenario' role)
+        -- Chat data
+        ci.id::text as chat_id,
+        ci.scenario_id::text,
+        ci.attempt_id::text as chat_attempt_id,
+        ci.title,
+        gd.trace_id,
+        ci.created_at as chat_created_at,
+        ci.completed,
+        
+        -- Scenario data
+        ps.problem_statement,
+        
+        -- Attempt data
+        ai.id::text as attempt_id,
+        ai.simulation_id::text as attempt_simulation_id,
+        ai.total_chats,
+        
+        -- Simulation data
+        si.id::text as simulation_id,
+        si.rubric_id::text as simulation_rubric_id,
+        si.department_id::text,
+        si.time_limit,
+        si.rubric_grade_agent_id::text as rubric_grade_agent_id,
+        si.grade_agent_id::text as grade_agent_id,
+        si.audio_agent_id::text as audio_agent_id,
+        
+        -- Rubric data
+        r.id::text as rubric_id,
+        r.name as rubric_name,
+        r.description as rubric_description,
+        r.points as rubric_points,
+        r.pass_points as rubric_pass_points,
+        
+        -- Agent data (via department_agents junction for 'grade' role)
         a.id::text as agent_id,
         a.name as agent_name,
-        a.role::text as agent_role,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -281,75 +412,26 @@ context_data AS (
         COALESCE(p_prov.value::text, '') as provider,
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
-        -- Custom model (if any) - indicated by presence of base_url in model_endpoints
-        CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
-        -- Provider data (provider enum is now on models table, no separate providers table)
-        NULL::text as provider_id,
-        COALESCE(p_prov.value::text, '') as provider_name,
         
-        -- Persona data (nullable)
-        pers.id::text as persona_id,
-        pers.name as persona_name,
-        pers.description as persona_description,
+        -- Profile data
+        p.profile_id::text as profile_id,
         
-        -- Documents data (aggregated as composite type array)
-        -- Includes template file paths for template documents (COALESCE pattern)
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, t.args)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc
-                ORDER BY array_position(p.document_ids, d.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[]
-            FROM documents d
-            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-            LEFT JOIN uploads u ON u.id = du.upload_id
-            LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            LEFT JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN uploads template_u ON template_u.id = t.upload_id
-            WHERE d.id = ANY(p.document_ids)
-            ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[]
-        ) as documents,
-        
-        -- Document templates data (aggregated as composite type array for template documents)
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (d.id::text, d.name, t.args, t.upload_id::text)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template
-                ORDER BY array_position(p.document_ids, d.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template[]
-            FROM documents d
-            INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            INNER JOIN templates t ON t.id = dt.template_id
-            WHERE d.id = ANY(p.document_ids)
-              AND d.template = true
-            ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template[]
-        ) as document_templates,
-        
-        -- Parameter items data (aggregated as composite type array with parameter info)
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (f.name, f.description, pa.name, pa.description)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item
-                ORDER BY array_position(p.parameter_item_ids, f.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item[]
-            FROM fields f
-            JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-            JOIN parameters pa ON pa.id = fp.parameter_id
-            WHERE f.id = ANY(p.parameter_item_ids)
-            ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item[]
-        ) as parameter_items,
-        
-        -- Rate limit data (for profile)
+        -- Rate limit data
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
-        rt.earliest_run_created_at,
-        
-        -- Profile ID
-        p.profile_id::text as profile_id
+        rt.earliest_run_created_at
 
-    FROM best_agent ba
-    INNER JOIN agents a ON a.id = ba.agent_id
+    FROM chat_info ci
+    CROSS JOIN attempt_info ai
+    CROSS JOIN simulation_info si
+    CROSS JOIN best_agent ba
     CROSS JOIN params p
+    CROSS JOIN group_data gd
+    INNER JOIN scenarios sc ON sc.id = ci.scenario_id
+    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sc.id AND sps.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    INNER JOIN rubrics r ON r.id = si.rubric_id
+    INNER JOIN agents a ON a.id = ba.agent_id
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
@@ -362,7 +444,6 @@ context_data AS (
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
     -- Join reasoning from junction table
-    -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
@@ -373,11 +454,34 @@ context_data AS (
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    LEFT JOIN personas pers ON pers.id = p.persona_id
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
+),
+standard_groups_aggregated AS (
+    -- Aggregate standard groups as composite type array
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (sgd.id::text, sgd.name, sgd.short_name, COALESCE(sgd.description, ''), sgd.points, sgd.pass_points, sgd.rubric_id::text)::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group
+                ORDER BY sgd.name
+            ),
+            ARRAY[]::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group[]
+        ) as standard_groups
+    FROM standard_groups_data sgd
+),
+standards_aggregated AS (
+    -- Aggregate standards as composite type array
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (std.id::text, std.name, COALESCE(std.description, ''), std.points, std.standard_group_id::text)::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard
+                ORDER BY std.name
+            ),
+            ARRAY[]::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard[]
+        ) as standards
+    FROM standards_data std
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
@@ -400,6 +504,7 @@ link_profile AS (
     SELECT lm.run_id, cd.profile_id::uuid, true
     FROM link_model lm
     CROSS JOIN context_data cd
+    WHERE cd.profile_id IS NOT NULL
     RETURNING run_id
 ),
 link_group AS (
@@ -427,9 +532,34 @@ link_existing_messages AS (
 )
 SELECT 
     -- Context data
+    cd.chat_id,
+    cd.scenario_id,
+    cd.chat_attempt_id,
+    cd.title,
+    cd.trace_id,
+    cd.chat_created_at,
+    cd.completed,
+    cd.problem_statement,
+    cd.attempt_id,
+    cd.simulation_id,
+    cd.total_chats,
+    cd.simulation_id as simulation_id_out,
+    cd.rubric_id as rubric_id_out,
+    cd.simulation_rubric_id,
+    cd.department_id as department_id_out,
+    cd.time_limit,
+    cd.rubric_grade_agent_id,
+    cd.grade_agent_id,
+    cd.audio_agent_id,
+    cd.rubric_name,
+    cd.rubric_description,
+    cd.rubric_points,
+    cd.rubric_pass_points,
+    -- Standard groups and standards as composite type arrays
+    sga.standard_groups,
+    sta.standards,
     cd.agent_id,
     cd.agent_name,
-    cd.agent_role,
     cd.system_prompt,
     cd.temperature,
     cd.reasoning,
@@ -438,29 +568,19 @@ SELECT
     cd.provider,
     cd.base_url,
     cd.api_key,
-    cd.custom_model,
-    cd.provider_id,
-    cd.provider_name,
-    cd.persona_id,
-    cd.persona_name,
-    cd.persona_description,
-    cd.documents,
-    cd.document_templates,
-    cd.parameter_items,
-    cd.profile_id,
+    cd.profile_id as profile_id_out,
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
     -- Run ID (created in same transaction)
     cr.id::text as run_id,
-    -- Group ID and trace_id (from existing group)
-    gd.group_id,
-    gd.trace_id,
     -- Previous messages (from all previous runs in group)
     pma.previous_messages
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN group_data gd
+CROSS JOIN standard_groups_aggregated sga
+CROSS JOIN standards_aggregated sta
 CROSS JOIN previous_messages_array pma
 $$;
 

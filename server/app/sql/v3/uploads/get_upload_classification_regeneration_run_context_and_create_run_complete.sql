@@ -1,4 +1,5 @@
--- Get all data needed to run scenario regeneration agent AND create run in single atomic transaction
+-- Get all data needed to run classification regeneration agent AND create run in single atomic transaction
+-- Uses existing group_id to get previous context from previous runs
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
@@ -13,77 +14,51 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'socket_get_scenario_regeneration_run_context_and_create_run_v3'
+        WHERE proname = 'socket_get_upload_classification_regeneration_run_context_and_create_run_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_scenario_regeneration_run_context_and_create_run_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_upload_classification_regeneration_run_context_and_create_run_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
--- 2) Drop types
+-- 2) Drop types WITHOUT CASCADE
 -- Drop all types matching prefix pattern to handle type additions/removals
--- Also handle truncated type names (PostgreSQL identifier limit is 63 chars)
+-- If any other object depends on them, this will ERROR and stop the migration (good)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    -- Drop all types matching prefix pattern (includes truncated name)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'i_get_scenario_regeneration_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'i_get_upload_classification_regeneration_run_context_and_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
     END LOOP;
 END $$;
 
 -- 3) Recreate types for composite structures
--- Use shortened name (62 chars) to avoid PostgreSQL 63-char identifier limit issues
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc AS (
-    id text,
-    name text,
-    file_path text,
-    mime_type text,
-    template boolean,
-    template_args jsonb
-);
-
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template AS (
-    document_id text,
-    document_name text,
-    template_args jsonb,
-    template_upload_id text
-);
-
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item AS (
-    item_name text,
-    item_description text,
-    param_name text,
-    param_description text
-);
-
-CREATE TYPE types.i_scenario_regen_run_context_create_run_v3_msg AS (
+CREATE TYPE types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg AS (
     role text,
     content text
 );
 
 -- 4) Recreate function
 -- group_id is REQUIRED (not NULL) for regeneration - uses existing group
-CREATE OR REPLACE FUNCTION socket_get_scenario_regeneration_run_context_and_create_run_v3(
-    department_id uuid,
+-- upload_id is REQUIRED to get upload context
+-- Gets all messages from all previous runs in the group
+-- Links existing system/developer messages to the new run
+CREATE OR REPLACE FUNCTION socket_get_upload_classification_regeneration_run_context_and_create_run_v3(
+    upload_id uuid,
     profile_id uuid,
-    agent_id uuid,
+    department_id uuid DEFAULT NULL,
     group_id uuid,  -- REQUIRED for regeneration (not NULL)
-    persona_id uuid DEFAULT NULL,
-    document_ids uuid[] DEFAULT NULL,
-    parameter_item_ids uuid[] DEFAULT NULL,
     user_instructions text DEFAULT NULL
 )
 RETURNS TABLE (
     agent_id text,
     agent_name text,
-    agent_role text,
     system_prompt text,
     temperature float,
     reasoning text,
@@ -92,36 +67,23 @@ RETURNS TABLE (
     provider text,
     base_url text,
     api_key text,
-    custom_model text,
-    provider_id text,
-    provider_name text,
-    persona_id text,
-    persona_name text,
-    persona_description text,
-    documents types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[],
-    document_templates types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template[],
-    parameter_items types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item[],
     profile_id text,
     req_per_day integer,
     runs_today_count bigint,
     earliest_run_created_at timestamptz,
     run_id text,
-    group_id uuid,
-    trace_id text,
-    previous_messages types.i_scenario_regen_run_context_create_run_v3_msg[]  -- All messages from all previous runs in group
+    upload_id uuid,
+    previous_messages types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg[]
 )
 LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
     SELECT 
-        department_id AS department_id, 
-        profile_id AS profile_id, 
-        agent_id AS agent_id,
+        upload_id AS upload_id,
+        profile_id AS profile_id,
+        department_id AS department_id,
         group_id AS group_id,
-        persona_id AS persona_id,
-        document_ids AS document_ids,
-        parameter_item_ids AS parameter_item_ids,
         user_instructions AS user_instructions
 ),
 group_data AS (
@@ -160,20 +122,30 @@ previous_messages_array AS (
     -- Aggregate all previous messages into composite type array
     SELECT COALESCE(
         ARRAY_AGG(
-            (role, content)::types.i_scenario_regen_run_context_create_run_v3_msg
+            (role, content)::types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg
             ORDER BY run_idx, created_at
         ),
-        '{}'::types.i_scenario_regen_run_context_create_run_v3_msg[]
+        '{}'::types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg[]
     ) as previous_messages
     FROM previous_messages_all_runs
 ),
 best_agent AS (
-    -- Use the provided agent_id directly (UI handles filtering and selection)
     SELECT a.id as agent_id
     FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN params p
-    WHERE a.id = p.agent_id
+    WHERE a.role = 'classify'
     AND a.active = true
+    AND (
+        -- Include if agent is linked to the specified department (if provided)
+        (p.department_id IS NOT NULL AND ad.department_id = p.department_id)
+        -- OR agent has no department links (cross-department)
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        -- Prioritize department-specific agents over cross-department agents
+        CASE WHEN p.department_id IS NOT NULL AND ad.department_id = p.department_id THEN 0 ELSE 1 END
+    LIMIT 1
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile
@@ -206,7 +178,6 @@ profile_primary_department AS (
     LIMIT 1
 ),
 default_settings AS (
-    -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM settings s
     WHERE s.active = true
@@ -265,12 +236,11 @@ active_settings AS (
         ) as settings_id
 ),
 context_data AS (
-    -- Get all context data (agent, model, provider, persona, documents, etc.)
+    -- Get all context data (agent, model, provider, etc.)
     SELECT 
-        -- Agent data (via department_agents junction for 'scenario' role)
+        -- Agent data
         a.id::text as agent_id,
         a.name as agent_name,
-        a.role::text as agent_role,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -278,74 +248,17 @@ context_data AS (
         -- Model data
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p_prov.value::text, '') as provider,
+        COALESCE(prov.value::text, '') as provider,
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
-        -- Custom model (if any) - indicated by presence of base_url in model_endpoints
-        CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
-        -- Provider data (provider enum is now on models table, no separate providers table)
-        NULL::text as provider_id,
-        COALESCE(p_prov.value::text, '') as provider_name,
         
-        -- Persona data (nullable)
-        pers.id::text as persona_id,
-        pers.name as persona_name,
-        pers.description as persona_description,
+        -- Profile data
+        p.profile_id::text as profile_id,
         
-        -- Documents data (aggregated as composite type array)
-        -- Includes template file paths for template documents (COALESCE pattern)
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, t.args)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc
-                ORDER BY array_position(p.document_ids, d.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[]
-            FROM documents d
-            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-            LEFT JOIN uploads u ON u.id = du.upload_id
-            LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            LEFT JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN uploads template_u ON template_u.id = t.upload_id
-            WHERE d.id = ANY(p.document_ids)
-            ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_doc[]
-        ) as documents,
-        
-        -- Document templates data (aggregated as composite type array for template documents)
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (d.id::text, d.name, t.args, t.upload_id::text)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template
-                ORDER BY array_position(p.document_ids, d.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template[]
-            FROM documents d
-            INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            INNER JOIN templates t ON t.id = dt.template_id
-            WHERE d.id = ANY(p.document_ids)
-              AND d.template = true
-            ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_document_template[]
-        ) as document_templates,
-        
-        -- Parameter items data (aggregated as composite type array with parameter info)
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (f.name, f.description, pa.name, pa.description)::types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item
-                ORDER BY array_position(p.parameter_item_ids, f.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item[]
-            FROM fields f
-            JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-            JOIN parameters pa ON pa.id = fp.parameter_id
-            WHERE f.id = ANY(p.parameter_item_ids)
-            ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v3_parameter_item[]
-        ) as parameter_items,
-        
-        -- Rate limit data (for profile)
+        -- Rate limit data
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
-        rt.earliest_run_created_at,
-        
-        -- Profile ID
-        p.profile_id::text as profile_id
+        rt.earliest_run_created_at
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
@@ -367,13 +280,12 @@ context_data AS (
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN providers p_prov ON p_prov.id = m.provider_id
+    LEFT JOIN providers prov ON prov.id = m.provider_id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
-        AND spk.settings_id = act_s.settings_id 
-        AND spk.active = true
+    LEFT JOIN setting_provider_keys spk ON spk.provider_id = prov.id
+    AND spk.settings_id = act_s.settings_id 
+    AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    LEFT JOIN personas pers ON pers.id = p.persona_id
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
@@ -400,6 +312,7 @@ link_profile AS (
     SELECT lm.run_id, cd.profile_id::uuid, true
     FROM link_model lm
     CROSS JOIN context_data cd
+    WHERE cd.profile_id IS NOT NULL
     RETURNING run_id
 ),
 link_group AS (
@@ -429,7 +342,6 @@ SELECT
     -- Context data
     cd.agent_id,
     cd.agent_name,
-    cd.agent_role,
     cd.system_prompt,
     cd.temperature,
     cd.reasoning,
@@ -438,29 +350,19 @@ SELECT
     cd.provider,
     cd.base_url,
     cd.api_key,
-    cd.custom_model,
-    cd.provider_id,
-    cd.provider_name,
-    cd.persona_id,
-    cd.persona_name,
-    cd.persona_description,
-    cd.documents,
-    cd.document_templates,
-    cd.parameter_items,
     cd.profile_id,
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
     -- Run ID (created in same transaction)
     cr.id::text as run_id,
-    -- Group ID and trace_id (from existing group)
-    gd.group_id,
-    gd.trace_id,
+    -- Upload ID (from params)
+    p.upload_id,
     -- Previous messages (from all previous runs in group)
     pma.previous_messages
 FROM context_data cd
 CROSS JOIN create_run cr
-CROSS JOIN group_data gd
+CROSS JOIN params p
 CROSS JOIN previous_messages_array pma
 $$;
 

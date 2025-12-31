@@ -12,8 +12,8 @@ import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
+import { api } from "@/lib/api/client";
 
 import type {
   CreatePersonaIn,
@@ -134,6 +134,7 @@ export default function Persona({
               body: {
                 color_search: debouncedColorSearch || undefined,
                 icon_search: debouncedIconSearch || undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
               } as any, // Type assertion needed until OpenAPI schema is regenerated
             },
             {
@@ -161,6 +162,7 @@ export default function Persona({
                 persona_id: personaId,
                 color_search: debouncedColorSearch || undefined,
                 icon_search: debouncedIconSearch || undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
               } as any, // Type assertion needed until OpenAPI schema is regenerated
             },
             {
@@ -189,7 +191,7 @@ export default function Persona({
           preset_colors?: Array<{ hex: string; name: string }> | string[];
         }
       )?.preset_colors || [];
-    
+
     // Handle both old format (string[]) and new format (Array<{hex, name}>)
     if (colors.length > 0 && typeof colors[0] === "string") {
       // Old format - convert to new format (shouldn't happen after migration)
@@ -1005,8 +1007,8 @@ export default function Persona({
                         <SelectableGrid<{ hex: string; name: string }>
                           items={presetColors}
                           selectedId={currentColor}
-                          onSelect={(color) =>
-                            setStepFormData({ color: color?.hex || null })
+                          onSelect={(colorHex) =>
+                            setStepFormData({ color: colorHex || null })
                           }
                           getId={(color) => color.hex}
                           renderItem={(color, isSelected) => (
