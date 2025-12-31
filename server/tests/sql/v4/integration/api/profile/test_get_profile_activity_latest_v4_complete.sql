@@ -1,0 +1,32 @@
+-- Get latest profile activity for test verification
+-- Returns latest activity record
+
+BEGIN;
+
+-- Drop function if exists
+DROP FUNCTION IF EXISTS test_get_profile_activity_latest_v4(uuid);
+
+-- Create function
+CREATE OR REPLACE FUNCTION test_get_profile_activity_latest_v4(
+    input_profile_id uuid
+)
+RETURNS TABLE (
+    profile_id uuid,
+    activity_type text,
+    created_at timestamptz
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT 
+        profile_id,
+        activity_type,
+        created_at
+    FROM profile_activity
+    WHERE profile_id = input_profile_id
+    ORDER BY created_at DESC
+    LIMIT 1;
+$$;
+
+COMMIT;
+

@@ -955,6 +955,50 @@ class GetPersonaByIdApiResponse(BaseModel):
 
 
 
+# Generated from: create_profile_email
+
+class CreateProfileEmailSqlParams(BaseModel):
+
+    input_profile_id: UUID
+    email_address: str
+    is_primary: bool | None = True
+    email_active: bool | None = True
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_profile_id,
+            self.email_address,
+            self.is_primary,
+            self.email_active,
+        )
+
+class CreateProfileEmailSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    email: str | None = None
+    is_primary: bool | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class CreateProfileEmailApiRequest(BaseModel):
+
+    input_profile_id: UUID
+    email_address: str
+    is_primary: bool | None = True
+    email_active: bool | None = True
+
+class CreateProfileEmailApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
+    email: str | None = None
+    is_primary: bool | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
 # Generated from: create_rubric_department_link
 
 class CreateRubricDepartmentLinkSqlParams(BaseModel):
@@ -1613,6 +1657,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaByIdApiRequest",
         "GetPersonaByIdApiResponse",
     ),
+    "tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql": (
+        "CreateProfileEmailSqlParams",
+        "CreateProfileEmailSqlRow",
+        "CreateProfileEmailApiRequest",
+        "CreateProfileEmailApiResponse",
+    ),
     "tests/sql/v4/integration/api/rubrics/test_create_rubric_department_link_v4_complete.sql": (
         "CreateRubricDepartmentLinkSqlParams",
         "CreateRubricDepartmentLinkSqlRow",
@@ -1897,6 +1947,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
