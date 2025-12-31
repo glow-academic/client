@@ -84,17 +84,9 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await benchmark_enter_error(
-                BenchmarkEnterErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Update test created_at timestamp
             sql_update_test = load_sql(
                 "app/sql/v3/benchmark/update_test_created_at.sql"
@@ -102,9 +94,6 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
             result = await conn.fetchrow(sql_update_test, created_at_dt, test_id)
 
             if result and result.get("test_id"):
-                logger.info(
-                    f"Updated created_at timestamp for test {test_id} from client {sid}"
-                )
                 await benchmark_enter_response(
                     BenchmarkEnterResponsePayload(
                         success=True,
@@ -124,9 +113,6 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(
-                        f"Error logging benchmark enter activity: {log_error}"
-                    )
             else:
                 await benchmark_enter_error(
                     BenchmarkEnterErrorPayload(
@@ -136,9 +122,6 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
                 )
 
     except Exception as e:
-        logger.error(
-            f"Error updating test created_at timestamp for {sid}: {e}", exc_info=True
-        )
         await benchmark_enter_error(
             BenchmarkEnterErrorPayload(
                 success=False, message=f"Failed to update test timestamp: {str(e)}"
@@ -154,7 +137,6 @@ async def benchmark_enter(sid: str, data: dict[str, Any]) -> None:
         validated = BenchmarkEnterPayload(**data)
         await _benchmark_enter_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_enter for {sid}: {e}")
         await benchmark_enter_error(
             BenchmarkEnterErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

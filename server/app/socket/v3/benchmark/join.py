@@ -52,9 +52,6 @@ async def _benchmark_join_impl(sid: str, data: BenchmarkJoinPayload) -> None:
     if attempt_id:
         room_name = f"benchmark_{attempt_id}"
         await sio.enter_room(sid, room_name)
-        logger.info(
-            f"Client {sid} joined benchmark attempt {attempt_id} (room: {room_name})"
-        )
         await benchmark_joined(BenchmarkJoinedPayload(attempt_id=attempt_id), room=sid)
         # Log activity
         try:
@@ -67,7 +64,6 @@ async def _benchmark_join_impl(sid: str, data: BenchmarkJoinPayload) -> None:
                 error=False,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging benchmark join activity: {log_error}")
     else:
         await benchmark_join_error(
             BenchmarkJoinErrorPayload(
@@ -84,7 +80,6 @@ async def benchmark_join(sid: str, data: dict[str, Any]) -> None:
         validated = BenchmarkJoinPayload(**data)
         await _benchmark_join_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_join for {sid}: {e}")
         await benchmark_join_error(
             BenchmarkJoinErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

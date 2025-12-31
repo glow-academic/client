@@ -67,29 +67,16 @@ class ImageToolErrorPayload(BaseModel):
 
 
 async def image_tool_complete(payload: ImageToolCompletePayload, room: str) -> None:
-    logger.info(
-        f"[scenario_tool_image_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, "
-        f"image_id={payload.image_id}"
-    )
     await sio.emit("scenarios_tools_image_complete", payload.model_dump(), room=room)
-    logger.info(f"[scenario_tool_image_complete] Emitted to room={room}")
-
-
 async def image_tool_error(payload: ImageToolErrorPayload, room: str) -> None:
     await sio.emit("scenarios_tools_image_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for image creation."""
-    logger.info(
-        f"[scenario_tool_image] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = ImageToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_tool_image for {sid}: {e}")
         await image_tool_error(
             ImageToolErrorPayload(
                 success=False,
@@ -101,22 +88,11 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await image_tool_error(
-            ImageToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
+    # Replaced with get_db_connection()
 
     try:
         await _prune_pending_video_generations()
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             async with conn.transaction():
                 # Create image record immediately
                 sql_insert_image = load_sql(
@@ -165,10 +141,6 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
                 },
             )
 
-            logger.info(
-                f"✓ Created image record {image_id} and kicked off background generation "
-                f"(scenario_id={validated.scenario_id}, trace_id={trace_id})"
-            )
 
             # Check if there's a pending video generation waiting for this image
             if validated.scenario_id:
@@ -182,9 +154,6 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
                         expected_image_ids = pending.get("expected_image_ids", set())
 
                         if expected_image_ids.issubset(completed_image_ids):
-                            logger.info(
-                                f"All images ready for scenario {validated.scenario_id}, triggering video generation"
-                            )
                             del _pending_video_generations[pending_key]
 
                             # Trigger video generation by calling the handler directly
@@ -218,7 +187,6 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
             )
 
     except Exception as e:
-        logger.error(f"Error in scenario_tool_image for {sid}: {str(e)}", exc_info=True)
         await image_tool_error(
             ImageToolErrorPayload(success=False, message=str(e), trace_id=trace_id),
             room=sid,
@@ -236,7 +204,6 @@ async def scenario_tool_image_internal(data: dict[str, Any]) -> None:
     """Handle image creation event from internal bus (server-to-server)."""
     sid = data.get("sid")
     if not sid:
-        logger.error("[scenario_tool_image_internal] Missing 'sid' in payload")
         return
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}

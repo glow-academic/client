@@ -1,36 +1,31 @@
 /**
- * Shared search params schema for scenario pages
- * Uses nuqs for type-safe URL search param parsing
+ * Server-side search params schema for scenario pages
+ * Uses nuqs/server for type-safe URL search param parsing
+ * This file should only be imported by server components
  */
 
 import {
-  parseAsArrayOf,
-  parseAsBoolean as parseAsBooleanClient,
-  parseAsInteger as parseAsIntegerClient,
-  parseAsString as parseAsStringClient,
-} from "nuqs";
-import {
   createLoader,
-  parseAsArrayOf as parseAsArrayOfServer,
+  parseAsArrayOf,
   parseAsBoolean,
   parseAsInteger,
   parseAsString,
 } from "nuqs/server";
 
-// Shared parsers for both create and edit modes
+// Server-side parsers for both create and edit modes
 export const scenarioSearchParams = {
   // ID arrays (using nuqs array parsing)
-  departmentIds: parseAsArrayOfServer(parseAsString),
-  personaIds: parseAsArrayOfServer(parseAsString),
-  documentIds: parseAsArrayOfServer(parseAsString),
-  templateDocumentIds: parseAsArrayOfServer(parseAsString),
-  parameterIds: parseAsArrayOfServer(parseAsString),
-  fieldIds: parseAsArrayOfServer(parseAsString),
+  departmentIds: parseAsArrayOf(parseAsString),
+  personaIds: parseAsArrayOf(parseAsString),
+  documentIds: parseAsArrayOf(parseAsString),
+  templateDocumentIds: parseAsArrayOf(parseAsString),
+  parameterIds: parseAsArrayOf(parseAsString),
+  fieldIds: parseAsArrayOf(parseAsString),
 
   // Generated resources IDs
-  imageIds: parseAsArrayOfServer(parseAsString),
-  objectiveIds: parseAsArrayOfServer(parseAsString),
-  problemStatementIds: parseAsArrayOfServer(parseAsString),
+  imageIds: parseAsArrayOf(parseAsString),
+  objectiveIds: parseAsArrayOf(parseAsString),
+  problemStatementIds: parseAsArrayOf(parseAsString),
 
   // Search terms
   personaSearch: parseAsString,
@@ -76,58 +71,6 @@ export const scenarioSearchParams = {
   fieldShowSelected: parseAsString, // JSON: Record<string, boolean>
   fieldRanges: parseAsString, // JSON: Record<string, { min: number; max: number }>
   randomizeParameterItems: parseAsString, // JSON: Record<string, string>
-};
-
-// Client-side parsers (same structure)
-export const scenarioSearchParamsClient = {
-  departmentIds: parseAsArrayOf(parseAsStringClient),
-  personaIds: parseAsArrayOf(parseAsStringClient),
-  documentIds: parseAsArrayOf(parseAsStringClient),
-  templateDocumentIds: parseAsArrayOf(parseAsStringClient),
-  parameterIds: parseAsArrayOf(parseAsStringClient),
-  fieldIds: parseAsArrayOf(parseAsStringClient),
-
-  imageIds: parseAsArrayOf(parseAsStringClient),
-  objectiveIds: parseAsArrayOf(parseAsStringClient),
-  problemStatementIds: parseAsArrayOf(parseAsStringClient),
-
-  personaSearch: parseAsStringClient,
-  documentSearch: parseAsStringClient,
-  parameterSearch: parseAsStringClient,
-
-  documentShowSelected: parseAsBooleanClient,
-  documentShowTemplate: parseAsBooleanClient,
-  personaShowSelected: parseAsBooleanClient,
-  parameterShowSelected: parseAsBooleanClient,
-
-  personaMin: parseAsIntegerClient,
-  personaMax: parseAsIntegerClient,
-  documentMin: parseAsIntegerClient,
-  documentMax: parseAsIntegerClient,
-  parameterSelectionMin: parseAsIntegerClient,
-  parameterSelectionMax: parseAsIntegerClient,
-
-  useImage: parseAsBooleanClient,
-  useVideo: parseAsBooleanClient,
-  useObjectives: parseAsBooleanClient,
-  useQuestions: parseAsBooleanClient,
-  useProblemStatement: parseAsBooleanClient,
-
-  // Text fields
-  name: parseAsStringClient,
-  problemStatement: parseAsStringClient,
-  objectives: parseAsStringClient, // JSON-encoded array: string[]
-  videoLength: parseAsIntegerClient, // 4, 8, or 12
-
-  randomize: parseAsStringClient,
-  randomizePersonas: parseAsStringClient,
-  randomizeDocuments: parseAsStringClient,
-  randomizeParameters: parseAsStringClient,
-
-  // Dict types (JSON-encoded strings)
-  fieldShowSelected: parseAsStringClient, // JSON: Record<string, boolean>
-  fieldRanges: parseAsStringClient, // JSON: Record<string, { min: number; max: number }>
-  randomizeParameterItems: parseAsStringClient, // JSON: Record<string, string>
 };
 
 // Server-side loaders

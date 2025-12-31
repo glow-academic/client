@@ -51,15 +51,7 @@ class ScenarioVideoToolErrorPayload(BaseModel):
 async def scenario_video_tool_complete(
     payload: ScenarioVideoToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[scenario_tool_video_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, "
-        f"generation_id={payload.generation_id}, video_id={payload.video_id}"
-    )
     await sio.emit("scenarios_tools_video_complete", payload.model_dump(), room=room)
-    logger.info(f"[scenario_tool_video_complete] Emitted to room={room}")
-
-
 async def scenario_video_tool_error(
     payload: ScenarioVideoToolErrorPayload, room: str
 ) -> None:
@@ -68,14 +60,9 @@ async def scenario_video_tool_error(
 
 async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for video generation in scenario context."""
-    logger.info(
-        f"[scenario_tool_video] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = ScenarioVideoToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_tool_video for {sid}: {e}")
         await scenario_video_tool_error(
             ScenarioVideoToolErrorPayload(
                 success=False,
@@ -87,18 +74,7 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await scenario_video_tool_error(
-            ScenarioVideoToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
+    # Replaced with get_db_connection()
 
     try:
         import app.socket.v3.agents.scenario.tools.image as image_tool_module
@@ -122,9 +98,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
 
                 if was_pending:
                     # Images are ready - proceed with video generation
-                    logger.info(
-                        f"All images ready for scenario {validated.scenario_id}, starting video generation"
-                    )
                     # Remove from pending
                     pending_data = image_tool_module._pending_video_generations[
                         pending_key
@@ -136,9 +109,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                 else:
                     # If image tool indicates readiness, proceed immediately
                     if validated.images_ready:
-                        logger.info(
-                            f"Images provided for scenario {validated.scenario_id}, starting video generation"
-                        )
                     else:
                         # Store pending video generation - image tool will trigger when ready
                         image_tool_module._pending_video_generations[pending_key] = {
@@ -152,9 +122,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                             "video_id": validated.video_id,
                             "created_at": time.monotonic(),
                         }
-                        logger.info(
-                            f"Video generation queued for scenario {validated.scenario_id}, waiting for {len(validated.image_ids)} images"
-                        )
                         # Don't emit completion yet - image tool will trigger actual generation
                         return
 
@@ -165,13 +132,10 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
 
         # If video_id provided, update existing video
         # Otherwise, create new video and link to scenario
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             if validated.video_id:
                 video_id_uuid = uuid.UUID(validated.video_id)
                 # Update existing video (video generation will be handled separately)
-                logger.info(
-                    f"Updating video {validated.video_id} for scenario {validated.scenario_id}"
-                )
             else:
                 # Create new video and link to scenario
                 from utils.sql_helper import load_sql
@@ -200,10 +164,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                         str(video_id_uuid),
                         True,  # active
                     )
-                    logger.info(
-                        f"Created and linked video {video_id_uuid} to scenario {validated.scenario_id}"
-                    )
-
         from app.socket.v3.agents.video.generate import (
             GenerateVideoPayload,
             _video_generate_impl,
@@ -218,10 +178,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
             ),
         )
 
-        logger.info(
-            f"✓ Video tool completed for scenario {validated.scenario_id} "
-            f"(video_id={video_id_uuid}, trace_id={trace_id})"
-        )
 
         await scenario_video_tool_complete(
             ScenarioVideoToolCompletePayload(
@@ -235,7 +191,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
         )
 
     except Exception as e:
-        logger.error(f"Error in scenario_tool_video for {sid}: {str(e)}", exc_info=True)
         await scenario_video_tool_error(
             ScenarioVideoToolErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
@@ -255,7 +210,6 @@ async def scenario_tool_video_internal(data: dict[str, Any]) -> None:
     """Handle video generation event from internal bus (server-to-server)."""
     sid = data.get("sid")
     if not sid:
-        logger.error("[scenario_tool_video_internal] Missing 'sid' in payload")
         return
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}

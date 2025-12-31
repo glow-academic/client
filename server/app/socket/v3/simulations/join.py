@@ -74,7 +74,6 @@ async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:
     room_name = f"{chat_type}_{chat_id}"
     await sio.enter_room(sid, room_name)
     await set_active_connection(room_name, sid)
-    logger.info(f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})")
     await simulation_joined(
         SimulationJoinedPayload(chat_id=chat_id, chat_type=chat_type), room=sid
     )
@@ -89,9 +88,6 @@ async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:
             error=False,
         )
     except Exception as log_error:
-        logger.warning(f"Error logging simulation join activity: {log_error}")
-
-
 @sio.event  # type: ignore
 async def simulation_join(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -99,7 +95,6 @@ async def simulation_join(sid: str, data: dict[str, Any]) -> None:
         validated = SimulationJoinPayload(**data)
         await _simulation_join_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_join for {sid}: {e}")
         await simulation_join_error(
             SimulationJoinErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -117,11 +112,6 @@ async def simulation_join(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation join validation error activity: {log_error}"
-            )
-
-
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/join", response_model=dict[str, bool])
 async def simulation_join_api(request: SimulationJoinPayload) -> dict[str, bool]:

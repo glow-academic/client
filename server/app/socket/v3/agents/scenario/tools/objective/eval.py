@@ -5,12 +5,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, get_pool
+from app.main import get_internal_sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 server_router = APIRouter()
@@ -40,16 +39,9 @@ class ObjectiveEvalCompletePayload(BaseModel):
 async def _objective_eval_impl(sid: str, data: ObjectiveEvalStartPayload) -> None:
     """Handle objective_eval_start requests via WebSocket."""
     try:
-        logger.info(
-            f"Received objective_eval_start request from {sid} with data: {data}"
-        )
         test_id = data.test_id
         tool_id = data.tool_id
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            return
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             test_id_uuid = uuid.UUID(test_id)
             tool_id_uuid = uuid.UUID(tool_id)
             if data.use_groups and data.group_id:
@@ -60,7 +52,7 @@ async def _objective_eval_impl(sid: str, data: ObjectiveEvalStartPayload) -> Non
                     tool_id_uuid,
                 )
                 if in_group_stop:
-                    logger.info(f"Marked tool {tool_id} as called for test {test_id}")
+                    pass
             await emit_to_internal(
                 "objective_eval_complete",
                 ObjectiveEvalCompletePayload(
@@ -71,8 +63,18 @@ async def _objective_eval_impl(sid: str, data: ObjectiveEvalStartPayload) -> Non
                 ),
                 sid=sid,
             )
+    except RuntimeError:
+        await emit_to_internal(
+            "objective_eval_complete",
+            ObjectiveEvalCompletePayload(
+                test_id=data.test_id,
+                tool_id=data.tool_id,
+                success=False,
+                message="Database connection pool not available",
+            ),
+            sid=sid,
+        )
     except Exception as e:
-        logger.error(f"Error in objective_eval for {sid}: {str(e)}", exc_info=True)
         await emit_to_internal(
             "objective_eval_complete",
             ObjectiveEvalCompletePayload(
@@ -92,8 +94,17 @@ async def objective_eval_internal(data: dict[str, Any]) -> None:
         validated = ObjectiveEvalStartPayload(**data)
         sid = data.get("sid", "internal")
         await _objective_eval_impl(sid, validated)
-    except ValidationError as e:
-        logger.error(f"Validation error in objective_eval_internal: {e}")
+    except ValidationError:
+        await emit_to_internal(
+            "objective_eval_complete",
+            ObjectiveEvalCompletePayload(
+                test_id=data.get("test_id", "unknown"),
+                tool_id=data.get("tool_id", "unknown"),
+                success=False,
+                message="Invalid payload",
+            ),
+            sid=data.get("sid", "internal"),
+        )
 
 
 @server_router.post("/eval", response_model=dict[str, bool])

@@ -86,17 +86,9 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await simulation_enter_error(
-                SimulationEnterErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Load and execute SQL query
             sql_query = load_sql(
                 "app/sql/v3/attempts/update_chat_created_at_complete.sql"
@@ -104,9 +96,6 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
             result = await conn.fetchrow(sql_query, created_at_dt, chat_id)
 
             if result and result.get("chat_id"):
-                logger.info(
-                    f"Updated created_at timestamp for chat {chat_id} from client {sid}"
-                )
                 await simulation_enter_response(
                     SimulationEnterResponsePayload(
                         success=True,
@@ -126,9 +115,6 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(
-                        f"Error logging simulation enter activity: {log_error}"
-                    )
             else:
                 await simulation_enter_error(
                     SimulationEnterErrorPayload(
@@ -138,9 +124,6 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                 )
 
     except Exception as e:
-        logger.error(
-            f"Error updating chat created_at timestamp for {sid}: {e}", exc_info=True
-        )
         await simulation_enter_error(
             SimulationEnterErrorPayload(
                 success=False, message=f"Failed to update chat timestamp: {str(e)}"
@@ -158,11 +141,6 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation enter error activity: {log_error}"
-            )
-
-
 @sio.event  # type: ignore
 async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -170,7 +148,6 @@ async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
         validated = SimulationEnterPayload(**data)
         await _simulation_enter_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_enter for {sid}: {e}")
         await simulation_enter_error(
             SimulationEnterErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -188,11 +165,6 @@ async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation enter validation error activity: {log_error}"
-            )
-
-
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/enter", response_model=dict[str, bool])
 async def simulation_enter_api(request: SimulationEnterPayload) -> dict[str, bool]:

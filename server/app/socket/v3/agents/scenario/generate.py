@@ -13,7 +13,6 @@ from agents import (
     Tool,
     ToolsToFinalOutputResult,
     function_tool,
-    gen_trace_id,
     trace,
 )
 from agents.items import TResponseInputItem
@@ -266,9 +265,6 @@ def _build_template_model(schema: dict[str, Any]) -> type[BaseModel]:
             item_def = field.get("item", {})
             if not item_def:
                 # Fallback: if no item definition, use list[str] (shouldn't happen in practice)
-                logger.warning(
-                    f"Array field '{field_name}' has no item definition, defaulting to list[str]"
-                )
                 python_type = list[str]
             elif item_def.get("type") == "object":
                 # Array of objects - always build a proper Pydantic model
@@ -319,9 +315,6 @@ def _build_template_model(schema: dict[str, Any]) -> type[BaseModel]:
                 python_type = nested_model  # type: ignore[assignment, misc]
             else:
                 # Empty object - create empty model (shouldn't happen in practice)
-                logger.warning(
-                    f"Object field '{field_name}' has no fields definition, creating empty model"
-                )
                 empty_model = create_model(
                     f"{field_name}_empty",
                     __base__=BaseModel,
@@ -424,23 +417,15 @@ async def _randomize_missing_scenario_values(
 
         if scenario_dept_ids and len(scenario_dept_ids) > 0:
             selected_department_id = random.choice(scenario_dept_ids)
-            logger.info(f"Using department_id from scenario: {selected_department_id}")
-
     if not selected_department_id and profile_id:
         sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
         profile_dept_rows = await conn.fetch(sql, str(profile_id))
         if profile_dept_rows and len(profile_dept_rows) > 0:
             profile_dept_ids = [uuid.UUID(str(row["id"])) for row in profile_dept_rows]
             selected_department_id = random.choice(profile_dept_ids)
-            logger.info(f"Using department_id from profile: {selected_department_id}")
-
     if not selected_department_id:
-        logger.info(
-            "No department_id available - will select general/cross-department items"
-        )
-
-    # Step 2: Get randomization ranges
-    scenario_id_uuid = scenario_id
+        # Step 2: Get randomization ranges
+        scenario_id_uuid = scenario_id
     if scenario_id_uuid:
         sql = load_sql("app/sql/v3/scenario/get_randomization_ranges.sql")
         ranges_result = await conn.fetchrow(sql, scenario_id_uuid)
@@ -598,10 +583,8 @@ async def _randomize_missing_scenario_values(
     if should_randomize_persona:
         if existing_persona_ids:
             scenario_persona_ids = existing_persona_ids
-            logger.info(f"Using provided persona_ids: {scenario_persona_ids}")
         elif scenario_id_uuid and existing_scenario_persona_ids:
             scenario_persona_ids = [uuid.UUID(p) for p in existing_scenario_persona_ids]
-            logger.info(f"Using existing scenario persona_ids: {scenario_persona_ids}")
         elif active_personas:
             # Randomize persona
             available_count = len(active_personas)
@@ -612,16 +595,9 @@ async def _randomize_missing_scenario_values(
                 shuffled = active_personas.copy()
                 random.shuffle(shuffled)
                 scenario_persona_ids = [p["id"] for p in shuffled[:count]]
-                logger.info(
-                    f"Randomly selected {count} persona(s) (range: {persona_min}-{persona_max}, "
-                    f"available: {available_count}): {scenario_persona_ids}"
-                )
             else:
                 selected_persona = random.choice(active_personas)
                 scenario_persona_ids = [selected_persona["id"]]
-                logger.info(
-                    f"Range invalid ({effective_min}-{capped_max}), selected 1 persona: {scenario_persona_ids[0]}"
-                )
     else:
         # Keep existing persona_ids if not randomizing
         if existing_persona_ids:
@@ -702,9 +678,6 @@ async def _randomize_missing_scenario_values(
                 else:
                     selected_item = random.choice(param_items)
                     param_ids.append(selected_item["id"])
-                logger.info(
-                    f"Randomly selected {len(param_ids)} parameter item(s) for parameter {parameter_id_to_randomize}"
-                )
             # Keep existing field_ids for other parameters
             if existing_field_ids:
                 other_param_ids = [
@@ -713,10 +686,8 @@ async def _randomize_missing_scenario_values(
                 param_ids.extend(other_param_ids)
         elif existing_field_ids:
             param_ids = existing_field_ids
-            logger.info(f"Using provided field_ids: {param_ids}")
         elif scenario_id_uuid and existing_scenario_parameter_item_ids:
             param_ids = [uuid.UUID(p) for p in existing_scenario_parameter_item_ids]
-            logger.info(f"Using existing scenario parameter_item_ids: {param_ids}")
         else:
             # Randomize parameters
             general_parameters = [
@@ -766,11 +737,6 @@ async def _randomize_missing_scenario_values(
                         else:
                             selected_item = random.choice(param_items)
                             param_ids.append(selected_item["id"])
-                logger.info(
-                    f"Randomly selected {len(selected_parameters)} parameter(s) "
-                    f"(range: {parameter_min}-{parameter_max}), "
-                    f"with {len(param_ids)} parameter_item_ids: {param_ids}"
-                )
     else:
         # Keep existing field_ids if not randomizing
         if existing_field_ids:
@@ -786,10 +752,8 @@ async def _randomize_missing_scenario_values(
     if should_randomize_documents:
         if existing_document_ids:
             doc_ids = existing_document_ids
-            logger.info(f"Using provided document_ids: {doc_ids}")
         elif scenario_id_uuid and existing_scenario_document_ids:
             doc_ids = [uuid.UUID(d) for d in existing_scenario_document_ids]
-            logger.info(f"Using existing scenario document_ids: {doc_ids}")
         elif active_documents:
             # Randomize documents (prefer documents matching parameter items)
             doc_matching_param_item_ids = all_param_ids.copy() if all_param_ids else []
@@ -822,10 +786,6 @@ async def _randomize_missing_scenario_values(
                     shuffled = available_documents.copy()
                     random.shuffle(shuffled)
                     doc_ids = [d["id"] for d in shuffled[:count]]
-                    logger.info(
-                        f"Randomly selected {count} document(s) (range: {document_min}-{document_max}, "
-                        f"available: {available_count}): {doc_ids}"
-                    )
                 else:
                     if effective_min == 0:
                         doc_ids = []
@@ -872,11 +832,10 @@ async def _randomize_missing_scenario_values(
 
 async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> None:
     """Handle scenario generation requests via WebSocket."""
-    trace_id = gen_trace_id()
+    # trace_id will be retrieved from SQL result (from groups.trace_id - auto-generated by database)
+    trace_id: str | None = None
 
     try:
-        logger.info(f"Received generate_scenario request from {sid} with data: {data}")
-
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(data.departmentId)
         persona_ids = (
@@ -894,19 +853,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             document_ids = None
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await scenario_generation_error(
-                ScenarioGenerationErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                    trace_id=trace_id,
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Emit start event
             await scenario_generation_progress(
                 ScenarioGenerationProgressPayload(
@@ -974,12 +923,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             randomized_selections = None
             if needs_persona or needs_documents or needs_fields:
-                logger.info(
-                    f"Randomizing values: persona={needs_persona}, "
-                    f"documents={needs_documents}, fields={needs_fields}, "
-                    f"randomizeType={data.randomizeType}"
-                )
-
                 # Extract parameter_id if needed for selective parameter randomization
                 if data.randomizeType and data.randomizeType.startswith("parameter_"):
                     param_id_str = data.randomizeType.replace("parameter_", "")
@@ -1008,16 +951,10 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 if randomized_selections.get("persona_ids") and needs_persona:
                     persona_ids = randomized_selections["persona_ids"]
                     persona_id = persona_ids[0] if persona_ids else None
-                    logger.info(f"Randomized persona_ids: {persona_ids}")
-
                 if randomized_selections.get("document_ids") and needs_documents:
                     document_ids = randomized_selections["document_ids"]
-                    logger.info(f"Randomized document_ids: {document_ids}")
-
                 if randomized_selections.get("field_ids") and needs_fields:
                     field_ids = randomized_selections["field_ids"]
-                    logger.info(f"Randomized field_ids: {field_ids}")
-
                 # Update department_id if it was randomized
                 if randomized_selections.get("department_id"):
                     department_id = randomized_selections["department_id"]
@@ -1033,9 +970,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             await conn.execute(
                                 sql, scenario_id_uuid, persona_id_val, True
                             )
-                        logger.info(
-                            f"Linked {len(randomized_selections['persona_ids'])} persona(s) to scenario"
-                        )
 
                     # Link documents
                     if randomized_selections.get("document_ids"):
@@ -1044,9 +978,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         )
                         for doc_id_val in randomized_selections["document_ids"]:
                             await conn.execute(sql, scenario_id_uuid, doc_id_val, True)
-                        logger.info(
-                            f"Linked {len(randomized_selections['document_ids'])} document(s) to scenario"
-                        )
 
                     # Link parameters (field_ids are parameter_item_ids)
                     if randomized_selections.get("field_ids"):
@@ -1057,9 +988,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             await conn.execute(
                                 sql, scenario_id_uuid, field_id_val, True
                             )
-                        logger.info(
-                            f"Linked {len(randomized_selections['field_ids'])} parameter item(s) to scenario"
-                        )
 
                     # Link department
                     if randomized_selections.get("department_id"):
@@ -1072,8 +1000,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             randomized_selections["department_id"],
                             True,
                         )
-                        logger.info("Linked department to scenario")
-
                 # Emit randomization complete event
                 await sio.emit(
                     "scenario_randomize_complete",
@@ -1100,8 +1026,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     },
                     room=sid,
                 )
-                logger.info("Emitted scenario_randomize_complete event")
-
             # If skipGeneration is True, stop here after randomization
             if data.skipGeneration:
                 await scenario_generation_progress(
@@ -1123,9 +1047,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(
-                        f"Error logging scenario randomization activity: {log_error}"
-                    )
+                    pass
                 return
 
             # Get all context data AND create run in single atomic transaction
@@ -1209,10 +1131,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     )
                     return
                 # Log run creation failures for debugging
-                logger.error(
-                    f"Failed to get context and create run for {sid}: {str(e)}",
-                    exc_info=True,
-                )
                 await scenario_generation_error(
                     ScenarioGenerationErrorPayload(
                         success=False,
@@ -1233,6 +1151,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     room=sid,
                 )
                 return
+
+            # Get group_id and trace_id from SQL result (from groups table - auto-generated by database)
+            group_id = context_row.get("group_id")
+            if not trace_id:
+                trace_id = context_row.get("trace_id")
 
             # Parse JSON arrays
             documents = (
@@ -1362,7 +1285,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     }
 
             # Determine which tools to enable based on agent role
-            group_id = None
+            # group_id already extracted above from context_row
 
             # Determine tool availability based on agent role
             # Base 'scenario' role supports all tools (backward compatibility)
@@ -1404,13 +1327,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             questions_enabled = (
                 hasattr(data, "questionsEnabled") and data.questionsEnabled
             )
-
-            logger.info(
-                f"Agent role: {agent_role}, objectives_enabled: {objectives_enabled}, "
-                f"images_enabled: {images_enabled}, documents_enabled: {documents_enabled}, "
-                f"video_enabled: {video_enabled}, questions_enabled: {questions_enabled}"
-            )
-
             # profile_id is required (validated above)
             final_profile_id = profile_id
 
@@ -1487,15 +1403,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     },
                 )
 
-                logger.info(
-                    f"[generate_scenario] Emitted problem statement to internal bus: "
-                    f"statement_length={len(statement)}"
-                )
                 return "Created problem statement successfully"
 
             scenario_tools.append(function_tool(create_statement))
-            logger.info("Created statement tool")
-
             # 1.5. Title Tool (always included)
             title_config = tool_config_map.get("create_title")
             if title_config:
@@ -1529,15 +1439,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         "scenario_id": data.scenarioId if data.scenarioId else None,
                     },
                 )
-
-                logger.info(
-                    f"[generate_scenario] Emitted title to internal bus: title={title}"
-                )
                 return "Created title successfully"
 
             scenario_tools.append(function_tool(create_title))
-            logger.info("Created title tool")
-
             # 2. Objectives Tool (if enabled)
             if objectives_enabled:
                 # Build signature from database config if available
@@ -1584,9 +1488,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     objectives = objectives[:max_objectives]
 
                     if len(objectives) < 1 or len(objectives) > max_objectives:
-                        logger.warning(
-                            f"Objectives count ({len(objectives)}) outside recommended range of 1-{max_objectives}"
-                        )
+                        # Validation failed - skip creation
+                        return f"Objectives count must be between 1 and {max_objectives}"
 
                     # Emit to internal bus for objectives creation
                     await internal_sio.emit(
@@ -1599,23 +1502,14 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         },
                     )
 
-                    logger.info(
-                        f"[generate_scenario] Emitted objectives to internal bus: "
-                        f"{len(objectives)} objectives"
-                    )
                     return f"Set {len(objectives)} learning objectives successfully"
 
                 scenario_tools.append(function_tool(set_objectives))
-                logger.info("Created objectives tool")
-            else:
-                logger.info("Objectives tool skipped (objectives_enabled=False)")
 
             # 3. Dynamic Document Tool (if enabled)
             if documents_enabled:
                 if not final_profile_id:
-                    logger.warning(
-                        "profile_id required for dynamic document storage, skipping tool"
-                    )
+                    pass  # Skip document tool if no profile
                 else:
                     # Extract template schema from document_templates if available
                     template_schema: dict[str, Any] | None = None
@@ -1629,15 +1523,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 try:
                                     template_schema = json.loads(template_args_raw)
                                 except json.JSONDecodeError:
-                                    logger.warning(
-                                        "Failed to parse template_args JSON, falling back to untyped function"
-                                    )
+                                    template_schema = {}
                             elif isinstance(template_args_raw, dict):
                                 template_schema = template_args_raw
                             else:
-                                logger.warning(
-                                    f"Unexpected template_args type: {type(template_args_raw)}, falling back to untyped function"
-                                )
+                                template_schema = {}
 
                     # Core implementation function that processes template args
                     async def _create_document_impl(
@@ -1692,9 +1582,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             )
                         except Exception as e:
                             error_msg = f"Error rendering template: {str(e)}"
-                            logger.error(
-                                f"Template rendering failed: {error_msg}", exc_info=True
-                            )
                             return error_msg
 
                         # Save rendered HTML to file
@@ -1732,12 +1619,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 else None,
                             },
                         )
-
-                        logger.info(
-                            f"[generate_scenario] Emitted document to internal bus: "
-                            f"parent={parent_document_id}, file_path={file_path}, "
-                            f"size={file_size} bytes"
-                        )
                         return "Dynamic document created successfully. Template rendered and saved."
 
                     # If we have a template schema, create a function with individual parameters
@@ -1745,14 +1626,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         TemplateArgsModel: type[BaseModel] | None = None
                         try:
                             TemplateArgsModel = _build_template_model(template_schema)
-                            logger.info(
-                                f"Built strongly typed template model: {TemplateArgsModel.__name__}"
-                            )
                         except Exception as e:
-                            logger.warning(
-                                f"Failed to build template model, falling back to dict: {e}",
-                                exc_info=True,
-                            )
                             TemplateArgsModel = None
 
                         if template_schema and TemplateArgsModel:
@@ -1874,9 +1748,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 )
                                 create_document_func = exec_namespace["create_document"]
 
-                                logger.info(
-                                    f"Created dynamic document function with {len(param_names)} individual parameters"
-                                )
                                 scenario_tools.append(
                                     function_tool(create_document_func)
                                 )  # type: ignore
@@ -1930,6 +1801,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             )  # type: ignore[arg-type]
                     else:
                         # Fallback: create function with dict parameter (for backward compatibility)
+                        # This is handled in the main create_document function above
+                        pass
                         async def create_document_fallback(
                             template_args: dict[str, Any],
                         ) -> str:
@@ -1950,15 +1823,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             return await _create_document_impl(template_args)
 
                         scenario_tools.append(function_tool(create_document_fallback))  # type: ignore[arg-type]
-            else:
-                logger.info("Dynamic document tool skipped (documents_enabled=False)")
 
             # 4. Video Generation Tool (if enabled)
             if video_enabled:
                 if not hasattr(data, "videoAgentId") or not data.videoAgentId:
-                    logger.warning(
-                        "videoAgentId required for video generation, skipping tool"
-                    )
+                    pass  # Skip video tool if no agent ID
                 else:
                     video_agent_id = uuid.UUID(data.videoAgentId)
 
@@ -1998,9 +1867,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             Confirmation message
                         """
                         if not data.scenarioId:
-                            logger.warning(
-                                "[generate_scenario] scenarioId missing; skipping video generation tool"
-                            )
                             return "Video generation skipped because scenarioId was not provided."
                         # Emit to internal bus for video generation
                         await internal_sio.emit(
@@ -2021,16 +1887,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             },
                         )
 
-                        logger.info(
-                            f"[generate_scenario] Emitted video generation to internal bus: "
-                            f"prompt_length={len(prompt)}, image_ids={image_ids}"
-                        )
                         return "Video generation started successfully"
 
                     scenario_tools.append(function_tool(create_video))
-                    logger.info("Created video creation tool")
-            else:
-                logger.info("Video generation tool skipped (video_enabled=False)")
 
             # 5. Questions Generation Tool (if enabled)
             if questions_enabled:
@@ -2111,10 +1970,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     )
 
                     # Emit to internal bus for question creation (accumulate, emit all at end if needed)
-                    logger.info(
-                        f"[generate_scenario] Created question {current_count}: {question_text[:50]}..."
-                    )
-
                     # For now, emit each question individually (can be optimized later)
                     await internal_sio.emit(
                         "scenario_tool_questions",
@@ -2132,19 +1987,12 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
                     return f"Created question successfully (total: {current_count})"
 
-                scenario_tools.append(function_tool(create_question))
-                logger.info("Created question tool")
-            else:
-                logger.info(
-                    "Questions generation tool skipped (questions_enabled=False)"
-                )
+                    scenario_tools.append(function_tool(create_question))
 
             # 6. Image Generation Tool (if enabled)
             if images_enabled:
                 if not final_profile_id:
-                    logger.warning(
-                        "profile_id required for image generation, skipping tool"
-                    )
+                    pass  # Skip image tool if no profile
                 else:
                     # Build signature from database config if available
                     image_config = tool_config_map.get("create_image")
@@ -2202,21 +2050,13 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             },
                         )
 
-                        logger.info(
-                            f"[generate_scenario] Emitted image to internal bus: "
-                            f"name={name}, prompt_length={len(prompt)}"
-                        )
                         return f"Image generation initiated for '{name}'. Image will be created and linked when ready."
 
                     scenario_tools.append(function_tool(create_image))
-                    logger.info("Created image creation tool")
-            else:
-                logger.info("Image generation tool skipped (images_enabled=False)")
 
             # Add debug info tool
             scenario_tools.append(debug_info_tool)
 
-            logger.info(f"Total scenario tools created: {len(scenario_tools)}")
 
             # Create tool use behavior to check when all required tools are called
             def tool_use_behavior(
@@ -2238,15 +2078,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
                 # Check which tools have been called
                 completed_tools = []
-                logger.info(
-                    f"tool_use_behavior called with {len(tool_results)} tool results"
-                )
 
                 for idx, result in enumerate(tool_results):
-                    logger.info(f"Tool result {idx}: type={type(result)}")
-                    logger.info(
-                        f"Tool result {idx} dir: {[x for x in dir(result) if not x.startswith('_')]}"
-                    )
 
                     # Try multiple ways to get tool name (FunctionToolResult structure may vary)
                     tool_name = None
@@ -2254,37 +2087,21 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     # Try direct attribute access (like hint agent)
                     if hasattr(result, "tool_name"):
                         tool_name = result.tool_name  # type: ignore[attr-defined]
-                        logger.info(
-                            f"Tool result {idx}: Found tool_name via hasattr: {tool_name}"
-                        )
                     # Try getattr as fallback
                     else:
                         tool_name = getattr(result, "tool_name", None)  # type: ignore[misc]
                         if tool_name:
-                            logger.info(
-                                f"Tool result {idx}: Found tool_name via getattr: {tool_name}"
-                            )
+                            pass  # tool_name already set
                         else:
                             tool_name = getattr(result, "name", None)  # type: ignore[misc]
                             if tool_name:
-                                logger.info(
-                                    f"Tool result {idx}: Found name via getattr: {tool_name}"
-                                )
-
+                                pass  # tool_name already set
                     # Try to get tool name from tool object if result has one
                     if not tool_name:
                         tool_obj = getattr(result, "tool", None)  # type: ignore[misc]
                         if tool_obj:
                             tool_name = getattr(tool_obj, "name", None)  # type: ignore[misc]
-                            if tool_name:
-                                logger.info(
-                                    f"Tool result {idx}: Found tool.name: {tool_name}"
-                                )
-
                     if tool_name and isinstance(tool_name, str):
-                        logger.info(
-                            f"Tool result {idx}: Processing tool_name={tool_name}"
-                        )
                         # Normalize tool names to match required_tools
                         normalized_name = tool_name
                         if tool_name == "create_statement" or (
@@ -2322,32 +2139,15 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         ):
                             normalized_name = "create_question"
                         completed_tools.append(normalized_name)
-                        logger.info(
-                            f"Tool result {idx}: Normalized to {normalized_name}"
-                        )
-                    else:
-                        logger.warning(
-                            f"Tool result {idx}: Could not extract tool name. tool_name={tool_name}, type={type(tool_name)}"
-                        )
-                        # Log the actual result object for debugging
-                        logger.info(f"Tool result {idx} repr: {repr(result)}")
+                    # If tool_name not found, skip (no action needed)
 
                 # Check if all required tools have been completed
                 all_completed = all(tool in completed_tools for tool in required_tools)
 
-                logger.info(
-                    f"Tool use behavior check: required={required_tools}, "
-                    f"completed={completed_tools}, all_completed={all_completed}, "
-                    f"tool_results_count={len(tool_results)}"
-                )
 
                 # If no tools detected but we have results, log what we got
                 if len(tool_results) > 0 and len(completed_tools) == 0:
-                    logger.warning(
-                        f"Tool results present ({len(tool_results)}) but no tool names extracted. "
-                        f"First result type: {type(tool_results[0])}, "
-                        f"First result dir: {[x for x in dir(tool_results[0]) if not x.startswith('_')][:10]}"
-                    )
+                    pass  # No tools detected, continue
 
                 return ToolsToFinalOutputResult(is_final_output=all_completed)
 
@@ -2438,9 +2238,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # If simulation_id is present, emit advance event after generation completes
             # This allows scenario generation to trigger advance automatically when done
             if data.simulationId and data.scenarioId:
-                logger.info(
-                    f"Scenario generation completed with simulation_id={data.simulationId}, emitting advance event"
-                )
                 await internal_sio.emit(
                     "simulation_advance",
                     {
@@ -2461,12 +2258,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging scenario generation activity: {log_error}"
-                )
-
+                pass
     except Exception as e:
-        logger.error(f"Error in generate_scenario for {sid}: {str(e)}", exc_info=True)
         await scenario_generation_error(
             ScenarioGenerationErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
@@ -2484,9 +2277,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging scenario generation error activity: {log_error}"
-            )
+            pass
 
 
 @sio.event  # type: ignore
@@ -2496,7 +2287,6 @@ async def generate_scenario(sid: str, data: dict[str, Any]) -> None:
         validated = GenerateScenarioAIPayload(**data)
         await _generate_scenario_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in generate_scenario for {sid}: {e}")
         await scenario_generation_error(
             ScenarioGenerationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}", trace_id=None
@@ -2512,7 +2302,6 @@ async def scenario_randomize(sid: str, data: dict[str, Any]) -> None:
         validated = RandomizeScenarioPayload(**data)
         await _randomize_scenario_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_randomize for {sid}: {e}")
         await scenario_randomize_error(
             ScenarioRandomizeErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -2529,30 +2318,15 @@ async def scenario_randomize(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging scenario randomization validation error activity: {log_error}"
-            )
+            pass
 
 
 async def _randomize_scenario_impl(sid: str, data: RandomizeScenarioPayload) -> None:
     """Convert RandomizeScenarioPayload to GenerateScenarioAIPayload and call generation handler."""
     try:
-        logger.info(
-            f"Received scenario_randomize request from {sid} with randomize: {data.randomize}"
-        )
+        # Replaced with get_db_connection()
 
-        pool = get_pool()
-        if not pool:
-            await scenario_randomize_error(
-                ScenarioRandomizeErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                ),
-                room=sid,
-            )
-            return
-
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Get departmentId (required for GenerateScenarioAIPayload)
             # Use first from departmentIds, or get from scenario/profile
             department_id = None
@@ -2601,7 +2375,6 @@ async def _randomize_scenario_impl(sid: str, data: RandomizeScenarioPayload) -> 
             await _generate_scenario_impl(sid, generate_payload)
 
     except Exception as e:
-        logger.error(f"Error in scenario_randomize for {sid}: {str(e)}", exc_info=True)
         await scenario_randomize_error(
             ScenarioRandomizeErrorPayload(success=False, message=str(e)),
             room=sid,
@@ -2616,9 +2389,7 @@ async def _randomize_scenario_impl(sid: str, data: RandomizeScenarioPayload) -> 
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging scenario randomization error activity: {log_error}"
-            )
+            pass
 
 
 # FastAPI endpoint for OpenAPI documentation

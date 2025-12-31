@@ -52,29 +52,17 @@ class FeedbackToolErrorPayload(BaseModel):
 async def feedback_tool_complete(
     payload: FeedbackToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[grading_tool_feedback_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, chat_id={payload.chat_id}"
-    )
     await sio.emit("grading_tools_feedback_complete", payload.model_dump(), room=room)
-    logger.info(f"[grading_tool_feedback_complete] Emitted to room={room}")
-
-
 async def feedback_tool_error(payload: FeedbackToolErrorPayload, room: str) -> None:
     await sio.emit("grading_tools_feedback_error", payload.model_dump(), room=room)
 
 
 async def _grading_tool_feedback_impl(sid: str, data: dict[str, Any]) -> str | None:
     """Internal implementation for standard group feedback."""
-    logger.info(
-        f"[grading_tool_feedback] Handler received event: sid={sid}, "
-        f"chat_id={data.get('chat_id', 'unknown')}, trace_id={data.get('trace_id', 'unknown')}"
-    )
 
     try:
         validated = FeedbackToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in grading_tool_feedback for {sid}: {e}")
         await feedback_tool_error(
             FeedbackToolErrorPayload(
                 success=False,
@@ -88,25 +76,13 @@ async def _grading_tool_feedback_impl(sid: str, data: dict[str, Any]) -> str | N
 
     chat_id = validated.chat_id
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await feedback_tool_error(
-            FeedbackToolErrorPayload(
-                success=False,
-                chat_id=chat_id,
-                trace_id=trace_id,
-                message="Database connection pool not available",
-            ),
-            room=f"simulation_{chat_id}",
-        )
-        return None
+    # Replaced with get_db_connection() None
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             grade_id_uuid = uuid.UUID(validated.grade_id)
             standard_group_id_uuid = uuid.UUID(validated.standard_group_id)
 
@@ -128,7 +104,6 @@ async def _grading_tool_feedback_impl(sid: str, data: dict[str, Any]) -> str | N
                     f"No standard found for standard_group_id={validated.standard_group_id} "
                     f"with score={validated.score}"
                 )
-                logger.warning(error_msg)
                 await feedback_tool_error(
                     FeedbackToolErrorPayload(
                         success=False,
@@ -173,10 +148,6 @@ async def _grading_tool_feedback_impl(sid: str, data: dict[str, Any]) -> str | N
 
             feedback_id = uuid.UUID(feedback_row["id"])
 
-            logger.info(
-                f"✓ Created feedback for standard_group {validated.standard_group_id} "
-                f"with score {validated.score} (feedback_id={feedback_id})"
-            )
 
             await feedback_tool_complete(
                 FeedbackToolCompletePayload(
@@ -192,9 +163,6 @@ async def _grading_tool_feedback_impl(sid: str, data: dict[str, Any]) -> str | N
             return f"Feedback created for standard group with score {validated.score}"
 
     except Exception as e:
-        logger.error(
-            f"Error in grading_tool_feedback for {sid}: {str(e)}", exc_info=True
-        )
         await feedback_tool_error(
             FeedbackToolErrorPayload(
                 success=False,

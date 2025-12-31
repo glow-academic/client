@@ -45,31 +45,18 @@ class ObjectivesToolErrorPayload(BaseModel):
 async def objectives_tool_complete(
     payload: ObjectivesToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[scenario_tool_objectives_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, "
-        f"objective_ids={payload.objective_ids}"
-    )
     await sio.emit(
         "scenarios_tools_objectives_complete", payload.model_dump(), room=room
     )
-    logger.info(f"[scenario_tool_objectives_complete] Emitted to room={room}")
-
-
 async def objectives_tool_error(payload: ObjectivesToolErrorPayload, room: str) -> None:
     await sio.emit("scenarios_tools_objectives_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for objectives creation."""
-    logger.info(
-        f"[scenario_tool_objectives] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = ObjectivesToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_tool_objectives for {sid}: {e}")
         await objectives_tool_error(
             ObjectivesToolErrorPayload(
                 success=False,
@@ -81,21 +68,10 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await objectives_tool_error(
-            ObjectivesToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
+    # Replaced with get_db_connection()
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Limit to maximum 3 objectives
             objectives = validated.objectives[:3]
             scenario_id_uuid = (
@@ -116,9 +92,6 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
                 )
 
                 if not result:
-                    logger.warning(
-                        f"Failed to create objective {idx} '{objective}' (trace_id={trace_id})"
-                    )
                     continue
 
                 objective_ids.append(result["objective_id"])
@@ -134,10 +107,6 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
                 )
                 return
 
-            logger.info(
-                f"✓ Created {len(objective_ids)} objectives "
-                f"(scenario_id={scenario_id_uuid}, trace_id={trace_id})"
-            )
 
             await objectives_tool_complete(
                 ObjectivesToolCompletePayload(
@@ -150,9 +119,6 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in scenario_tool_objectives for {sid}: {str(e)}", exc_info=True
-        )
         await objectives_tool_error(
             ObjectivesToolErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
@@ -172,7 +138,6 @@ async def scenario_tool_objectives_internal(data: dict[str, Any]) -> None:
     """Handle objectives creation event from internal bus (server-to-server)."""
     sid = data.get("sid")
     if not sid:
-        logger.error("[scenario_tool_objectives_internal] Missing 'sid' in payload")
         return
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}

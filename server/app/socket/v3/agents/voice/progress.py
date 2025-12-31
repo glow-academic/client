@@ -214,9 +214,6 @@ async def simulation_voice_assistant_delta(sid: str, data: dict[str, Any]) -> No
         validated = VoiceAssistantDeltaPayload(**data)
         await _simulation_voice_assistant_delta_impl(sid, validated)
     except ValidationError as e:
-        logger.error(
-            f"Validation error in simulation_voice_assistant_delta for {sid}: {e}"
-        )
         await voice_tool_call_error(
             VoiceProgressErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -232,9 +229,6 @@ async def simulation_voice_assistant_done(sid: str, data: dict[str, Any]) -> Non
         validated = VoiceAssistantDonePayload(**data)
         await _simulation_voice_assistant_done_impl(sid, validated)
     except ValidationError as e:
-        logger.error(
-            f"Validation error in simulation_voice_assistant_done for {sid}: {e}"
-        )
         await voice_tool_call_error(
             VoiceProgressErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -250,9 +244,6 @@ async def simulation_voice_assistant_audio_link(sid: str, data: dict[str, Any]) 
         validated = VoiceAssistantAudioLinkPayload(**data)
         await _simulation_voice_assistant_audio_link_impl(sid, validated)
     except ValidationError as e:
-        logger.error(
-            f"Validation error in simulation_voice_assistant_audio_link for {sid}: {e}"
-        )
         await voice_assistant_audio_link_error(
             VoiceProgressErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -297,19 +288,9 @@ async def _simulation_voice_assistant_delta_impl(
         call_lock = tool_calls_locks[chat_id_str][call_id]
 
         async with call_lock:
-            pool = get_pool()
-            if not pool:
-                logger.error("Database connection pool not available")
-                await voice_tool_call_error(
-                    VoiceProgressErrorPayload(
-                        success=False,
-                        message="Database connection pool not available",
-                    ),
-                    room=sid,
-                )
-                return
+            # Replaced with get_db_connection()
 
-            async with pool.acquire() as conn:
+            async with get_db_connection() as conn:
                 if chat_id_str not in tool_calls_dict:
                     return
 
@@ -452,10 +433,6 @@ async def _simulation_voice_assistant_delta_impl(
                     )
 
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_assistant_delta for {sid}: {str(e)}",
-            exc_info=True,
-        )
         await voice_tool_call_error(
             VoiceProgressErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -495,26 +472,15 @@ async def _simulation_voice_assistant_done_impl(
         call_lock = tool_calls_locks[chat_id_str][call_id]
 
         async with call_lock:
-            pool = get_pool()
-            if not pool:
-                logger.error("Database connection pool not available")
-                await voice_tool_call_error(
-                    VoiceProgressErrorPayload(
-                        success=False,
-                        message="Database connection pool not available",
-                    ),
-                    room=sid,
-                )
-                return
+            # Replaced with get_db_connection()
 
-            async with pool.acquire() as conn:
+            async with get_db_connection() as conn:
                 # Parse final arguments
                 try:
                     final_args = json.loads(data.arguments)
                     persona_name = final_args.get("persona", "")
                     message_content = final_args.get("message", "")
                 except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse final arguments JSON: {e}")
                     await voice_tool_call_error(
                         VoiceProgressErrorPayload(
                             success=False,
@@ -539,9 +505,6 @@ async def _simulation_voice_assistant_done_impl(
                     chat_id_str not in tool_calls_dict
                     or call_id not in tool_calls_dict[chat_id_str]
                 ):
-                    logger.warning(
-                        f"Tool call state not found for call_id={call_id}, chat_id={chat_id_str}"
-                    )
                     # Try to process directly
                     sql_get_latest_run = load_sql(
                         "app/sql/v3/simulations/get_latest_run_for_chat.sql"
@@ -756,10 +719,6 @@ async def _simulation_voice_assistant_done_impl(
                     del tool_calls_locks[chat_id_str]
 
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_assistant_done for {sid}: {str(e)}",
-            exc_info=True,
-        )
         await voice_tool_call_error(
             VoiceProgressErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -787,19 +746,9 @@ async def _simulation_voice_assistant_audio_link_impl(
         message_id_uuid = uuid.UUID(message_id)
         upload_id_uuid = uuid.UUID(upload_id)
 
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            await voice_assistant_audio_link_error(
-                VoiceProgressErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Validate message belongs to chat
             sql_validate_message = load_sql(
                 "app/sql/v3/simulations/validate_message_belongs_to_chat.sql"
@@ -809,9 +758,6 @@ async def _simulation_voice_assistant_audio_link_impl(
             )
 
             if not message_row:
-                logger.warning(
-                    f"Message {message_id} does not belong to chat {chat_id}"
-                )
                 await voice_assistant_audio_link_error(
                     VoiceProgressErrorPayload(
                         success=False,
@@ -826,7 +772,6 @@ async def _simulation_voice_assistant_audio_link_impl(
             upload_row = await conn.fetchrow(sql_get_upload, str(upload_id_uuid))
 
             if not upload_row:
-                logger.warning(f"Upload {upload_id} does not exist")
                 await voice_assistant_audio_link_error(
                     VoiceProgressErrorPayload(
                         success=False, message=f"Upload {upload_id} does not exist"
@@ -862,19 +807,8 @@ async def _simulation_voice_assistant_audio_link_impl(
             )
 
             if result_row and result_row.get("upload_linked"):
-                logger.info(
-                    f"Linked audio upload {upload_id} to assistant message {message_id}"
-                )
             else:
-                logger.warning(
-                    f"Failed to link audio upload {upload_id} to message {message_id}"
-                )
-
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_assistant_audio_link for {sid}: {str(e)}",
-            exc_info=True,
-        )
         await voice_assistant_audio_link_error(
             VoiceProgressErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -909,9 +843,6 @@ async def _simulation_voice_debug_info_impl(
     When debug_info tool is called, save it to the current model run.
     """
     try:
-        logger.info(
-            f"Received simulation_voice_debug_info from {sid}: chat_id={data.chat_id}, content_length={len(data.content)}"
-        )
 
         chat_id = data.chat_id
         if not chat_id:
@@ -929,18 +860,9 @@ async def _simulation_voice_debug_info_impl(
             )
             return
 
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            await simulation_voice_debug_info_error(
-                VoiceDebugInfoErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             chat_id_uuid = uuid.UUID(chat_id)
 
             # Get the latest run for this chat
@@ -950,9 +872,6 @@ async def _simulation_voice_debug_info_impl(
             run_row = await conn.fetchrow(sql_get_latest_run, str(chat_id_uuid))
 
             if not run_row:
-                logger.warning(
-                    f"No run found for chat {chat_id}, cannot save debug info"
-                )
                 # Don't error - just log and return
                 return
 
@@ -963,15 +882,7 @@ async def _simulation_voice_debug_info_impl(
                 "app/sql/v3/model_runs/insert_debug_info.sql"
             )
             await conn.execute(sql_insert_debug_info, run_id, content)
-
-            logger.info(
-                f"Saved debug info for run {run_id} in chat {chat_id}: {content[:100]}..."
-            )
-
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_debug_info for {sid}: {str(e)}", exc_info=True
-        )
         await simulation_voice_debug_info_error(
             VoiceDebugInfoErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -984,7 +895,6 @@ async def simulation_voice_debug_info(sid: str, data: dict[str, Any]) -> None:
         validated = VoiceDebugInfoPayload(**data)
         await _simulation_voice_debug_info_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_debug_info for {sid}: {e}")
         await simulation_voice_debug_info_error(
             VoiceDebugInfoErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

@@ -53,29 +53,16 @@ class DocumentToolErrorPayload(BaseModel):
 async def document_tool_complete(
     payload: DocumentToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[scenario_tool_document_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, "
-        f"scenario_id={payload.scenario_id}, parent_scenario_id={payload.parent_scenario_id}"
-    )
     await sio.emit("scenarios_tools_document_complete", payload.model_dump(), room=room)
-    logger.info(f"[scenario_tool_document_complete] Emitted to room={room}")
-
-
 async def document_tool_error(payload: DocumentToolErrorPayload, room: str) -> None:
     await sio.emit("scenarios_tools_document_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for dynamic document creation."""
-    logger.info(
-        f"[scenario_tool_document] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = DocumentToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_tool_document for {sid}: {e}")
         await document_tool_error(
             DocumentToolErrorPayload(
                 success=False,
@@ -87,24 +74,13 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await document_tool_error(
-            DocumentToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
+    # Replaced with get_db_connection()
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             parent_scenario_id = uuid.UUID(validated.parent_scenario_id)
             classify_agent_id = uuid.UUID(validated.classify_agent_id)
             document_agent_id = uuid.UUID(validated.document_agent_id)
@@ -138,10 +114,6 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
             child_scenario_id = result["child_scenario_id"]
             upload_id = result["upload_id"]
 
-            logger.info(
-                f"✓ Created dynamic document {child_scenario_id} from parent {parent_scenario_id} "
-                f"(scenario_id={validated.scenario_id}, trace_id={trace_id}, upload_id={upload_id})"
-            )
 
             await document_tool_complete(
                 DocumentToolCompletePayload(
@@ -155,10 +127,6 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in scenario_tool_document for {sid}: {str(e)}",
-            exc_info=True,
-        )
         await document_tool_error(
             DocumentToolErrorPayload(success=False, message=str(e), trace_id=trace_id),
             room=sid,
@@ -176,7 +144,6 @@ async def scenario_tool_document_internal(data: dict[str, Any]) -> None:
     """Handle dynamic document creation event from internal bus (server-to-server)."""
     sid = data.get("sid")
     if not sid:
-        logger.error("[scenario_tool_document_internal] Missing 'sid' in payload")
         return
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}

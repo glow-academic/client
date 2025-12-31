@@ -1059,6 +1059,9 @@ async def main() -> int:
         # Ensure connection is in clean state before introspection
         await _recover_from_transaction_abort(conn)
 
+        # Add execution errors to main errors list for accurate counting
+        errors.extend(execution_errors)
+
         if execution_errors:
             print(f"\n⚠️  {len(execution_errors)} SQL files failed to execute:")
             for sql_path, error_msg in execution_errors:

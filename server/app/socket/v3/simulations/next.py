@@ -47,8 +47,6 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
     Creates fresh scenario variant and delegates to generate.py for randomization and AI generation.
     """
     try:
-        logger.info(f"Received simulation_next request from {sid} with data: {data}")
-
         attempt_id = data.attempt_id
         parent_scenario_id = data.scenario_id
         profile_id = data.profile_id
@@ -64,18 +62,9 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await simulation_next_error(
-                SimulationNextErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             parent_scenario_id_uuid = uuid.UUID(parent_scenario_id)
             profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
 
@@ -116,11 +105,6 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 child_scenario_id,
                 True,
             )
-
-            logger.info(
-                f"Created child scenario {child_scenario_id} for parent {parent_scenario_id}"
-            )
-
             # Check which AI fields need filling
             sql = load_sql("app/sql/v3/scenario/get_scenario_problem_statement.sql")
             problem_statement_row = await conn.fetchrow(sql, child_scenario_id)
@@ -209,9 +193,6 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 or needs_images
                 or needs_questions
             ):
-                logger.info(
-                    f"Child scenario {child_scenario_id} needs AI generation, emitting to scenario generate"
-                )
                 # Don't pass personaIds/documentIds/fieldIds - let generate.py randomize them
                 await sio.emit(
                     "generate_scenario",
@@ -233,10 +214,6 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             else:
                 # No AI fields needed, but we still need to randomize and link selections
                 # Emit to generate_scenario anyway (it will randomize and link, then immediately advance)
-                logger.info(
-                    f"Child scenario {child_scenario_id} doesn't need AI generation, "
-                    "but will randomize selections via generate.py"
-                )
                 await sio.emit(
                     "generate_scenario",
                     {
@@ -265,10 +242,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging simulation next activity: {log_error}")
-
     except Exception as e:
-        logger.error(f"Error in simulation_next for {sid}: {str(e)}", exc_info=True)
         await simulation_next_error(
             SimulationNextErrorPayload(success=False, message=str(e)),
             room=sid,
@@ -284,9 +258,6 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation next error activity: {log_error}")
-
-
 @internal_sio.on("simulation_next")  # type: ignore
 async def simulation_next_internal(data: dict[str, Any]) -> None:
     """Handle simulation_next event from internal bus (server-to-server)."""
@@ -296,7 +267,6 @@ async def simulation_next_internal(data: dict[str, Any]) -> None:
         sid = data.get("sid", "internal")
         await _simulation_next_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_next_internal: {e}")
         await simulation_next_error(
             SimulationNextErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

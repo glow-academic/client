@@ -11,16 +11,15 @@ from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.documents.format_document_info import format_document_info
-from app.main import get_internal_sio, get_pool, get_simulation_tool_calls_dict
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, get_simulation_tool_calls_dict
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -226,80 +225,7 @@ async def _simulation_text_generate_impl(
         chat_id_uuid = uuid.UUID(data.chat_id)
         run_id_uuid = uuid.UUID(data.run_id)
         chat_id_str = str(chat_id_uuid)
-
-        logger.info(
-            f"Received simulation_text_generate: chat_id={data.chat_id}, run_id={data.run_id}"
-        )
-
-        pool = get_pool()
-        if not pool:
-            raise ValueError("Database connection pool not available")
-
-        async with pool.acquire() as conn:
-            # Get context (run already exists from member_progress)
-            sql_context = load_sql(
-                "app/sql/v3/simulation_text/get_text_run_context_complete.sql"
-            )
-            context_row = await conn.fetchrow(
-                sql_context, str(chat_id_uuid), str(run_id_uuid)
-            )
-
-            if not context_row:
-                raise ValueError(f"Chat {chat_id_uuid} or run {run_id_uuid} not found")
-
-            # Parse JSON array for documents
-            documents = (
-                json.loads(context_row["documents"])
-                if isinstance(context_row["documents"], str)
-                else context_row["documents"]
-            )
-
-            context = {
-                "chat_id": context_row["chat_id"],
-                "chat_title": context_row["chat_title"],
-                "trace_id": context_row["trace_id"],
-                "attempt_id": context_row["attempt_id"],
-                "simulation_id": context_row["simulation_id"],
-                "scenario_id": context_row["scenario_id"],
-                "department_id": context_row["department_id"],
-                "problem_statement": context_row["problem_statement"],
-                "persona_id": context_row["persona_id"],
-                "persona_name": context_row["persona_name"],
-                "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"])
-                if context_row["temperature"] is not None
-                else 0.0,
-                "reasoning": context_row["reasoning"],
-                "model_id": context_row["model_id"],
-                "model_name": context_row["model_name"],
-                "custom_model": context_row["custom_model"],
-                "provider_id": context_row["provider_id"],
-                "provider_name": context_row["provider_name"],
-                "base_url": context_row["base_url"],
-                "api_key": context_row["api_key"],
-                "image_input_active": context_row["image_input_enabled"],
-                "profile_id": context_row["profile_id"],
-                "documents": documents,
-            }
-
-            # Validate API key
-            if not context.get("api_key"):
-                error_msg = (
-                    f"API key not configured for provider '{context.get('provider_name', 'unknown')}' "
-                    f"in settings. Model: {context.get('model_name', 'unknown')}, "
-                    f"Persona: {context.get('persona_name', 'unknown')}. "
-                    f"Please configure a provider key in settings."
-                )
-                await internal_sio.emit(
-                    "simulation_text_error",
-                    {
-                        "sid": sid,
-                        "success": False,
-                        "message": error_msg,
-                    },
-                )
-                logger.error(f"Missing API key for chat {chat_id_uuid}: {error_msg}")
-                return
+        # Replaced with get_db_connection()
 
             # Get department_id
             department_id_str = context.get("department_id")
@@ -311,9 +237,6 @@ async def _simulation_text_generate_impl(
                         "success": False,
                         "message": "No active departments found in system",
                     },
-                )
-                logger.error(
-                    f"No active departments found in system for chat {chat_id_uuid}"
                 )
                 return
 
@@ -417,9 +340,6 @@ async def _simulation_text_generate_impl(
                     message: str = Field(description=message_desc),
                 ) -> str:
                     """Make a persona speak by calling this tool with the persona name and message."""
-                    logger.info(
-                        f"Speak tool called: persona={persona}, message_length={len(message)}"
-                    )
 
                     persona_match = find_persona_by_name_inline(
                         persona.strip() if persona else "", personas
@@ -430,20 +350,13 @@ async def _simulation_text_generate_impl(
                             for p in personas
                         )
                         error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"
-                        logger.error(error_msg)
                         return f"Error: {error_msg}"
 
                     persona_id, persona_display_name = persona_match
-                    logger.info(
-                        f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})"
-                    )
 
                     return f"Tool call confirmed for {persona_display_name}"
 
                 persona_tools.append(function_tool(speak))
-                logger.info(
-                    f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}"
-                )
 
                 # Get persona instructions for developer message
                 sql_get_persona_instructions = load_sql(
@@ -607,9 +520,6 @@ Tool Usage Instructions:
                                         tool_call_counter += 1
                                         real_item_id = f"{chat_id_str}_{tool_call_counter}_{uuid.uuid4().hex[:8]}"
                                     else:
-                                        logger.error(
-                                            "output_item.added: missing both call_id and item_id"
-                                        )
                                         continue
 
                                     if tool_name:
@@ -709,15 +619,9 @@ Tool Usage Instructions:
                                 if not delta_real_item_id:
                                     continue
                             else:
-                                logger.warning(
-                                    "Delta event has no call_id or item_id, skipping"
-                                )
                                 continue
 
                             if not delta_real_item_id:
-                                logger.error(
-                                    f"Failed to get real_id for fake_id={fake_item_id}, call_id={call_id}"
-                                )
                                 continue
 
                             tool_call_id = delta_real_item_id
@@ -825,15 +729,9 @@ Tool Usage Instructions:
                                         fake_item_id
                                     )
                                 else:
-                                    logger.warning(
-                                        "Completion event has no call_id or item_id"
-                                    )
                                     continue
 
                                 if not done_real_item_id:
-                                    logger.warning(
-                                        f"Completion event for unknown fake_id={fake_item_id}, call_id={call_id}"
-                                    )
                                     continue
 
                                 if done_real_item_id in tool_calls_dict.get(
@@ -908,9 +806,6 @@ Tool Usage Instructions:
                                         del tool_calls_dict[chat_id_str][tool_call_id]
 
                                     except json.JSONDecodeError as e:
-                                        logger.error(
-                                            f"Failed to parse final tool call arguments: {e}"
-                                        )
                                         final_message = tool_call_state[
                                             "message_so_far"
                                         ]
@@ -941,18 +836,14 @@ Tool Usage Instructions:
                     (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
                 ):
                     raise
-                logger.error(f"Error processing stream: {stream_error}", exc_info=True)
                 raise
             except Exception as stream_error:
-                logger.error(f"Error processing stream: {stream_error}", exc_info=True)
                 raise
             finally:
                 # Complete any remaining tool calls
                 if chat_id_str in tool_calls_dict and tool_calls_dict[chat_id_str]:
-                    pool = get_pool()
-                    if pool:
-                        try:
-                            async with pool.acquire() as cleanup_conn:
+                    try:
+                        async with get_db_connection() as cleanup_conn:
                                 for tool_call_id, tool_call_state in list(
                                     tool_calls_dict[chat_id_str].items()
                                 ):
@@ -1010,16 +901,7 @@ Tool Usage Instructions:
                                                 }
                                             )
                                     except Exception as e:
-                                        logger.error(
-                                            f"Error completing tool call {tool_call_id}: {e}",
-                                            exc_info=True,
-                                        )
                         except Exception as e:
-                            logger.error(
-                                f"Error in cleanup for chat {chat_id_str}: {e}",
-                                exc_info=True,
-                            )
-
                 # Clean up tool call states
                 if chat_id_str in tool_calls_dict:
                     del tool_calls_dict[chat_id_str]
@@ -1067,9 +949,6 @@ Tool Usage Instructions:
             )
             sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
             if not sim_metadata_row:
-                logger.warning(
-                    f"Failed to get simulation metadata for chat {chat_id_uuid}"
-                )
                 sim_metadata = {"practice_simulation": False}
             else:
                 sim_metadata = {
@@ -1079,9 +958,6 @@ Tool Usage Instructions:
                 }
 
             if sim_metadata["practice_simulation"]:
-                logger.info(
-                    f"Triggering hint generation for practice message {last_tool_message.get('id')}"
-                )
                 sql = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
                 run_context_for_hints = await conn.fetchrow(sql, str(chat_id_uuid))
                 hint_dept_id = (
@@ -1133,9 +1009,6 @@ Tool Usage Instructions:
         )
 
     except Exception as e:
-        logger.error(
-            f"Error in simulation_text_generate for {sid}: {str(e)}", exc_info=True
-        )
         await internal_sio.emit(
             "simulation_text_error",
             {

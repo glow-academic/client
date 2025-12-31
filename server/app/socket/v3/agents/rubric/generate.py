@@ -268,14 +268,12 @@ async def _rubric_generate_impl(
                         "rubric_id": str(rubric_id) if rubric_id else None,
                     },
                 )
-                logger.info(f"✓ Created title: {title}")
                 return "Created title successfully"
 
             rubric_tools = [
                 function_tool(standard_description),
                 function_tool(create_title),
             ]
-            logger.info("Created title tool for rubric agent")
 
             # Build rubric agent with tools
             rubric_agent = GenericAgent(

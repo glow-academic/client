@@ -18,16 +18,15 @@ from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.agents.create_safe_field_name import create_safe_field_name
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -80,14 +79,9 @@ async def simulation_grading_progress(
 
 async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for starting simulation grading."""
-    logger.info(
-        f"[simulation_grading_start] Handler received event: sid={sid}, "
-        f"data={data}, chat_id={data.get('chat_id', 'unknown')}"
-    )
     try:
         validated = SimulationGradingStartPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_grading_start for {sid}: {e}")
         await simulation_grading_progress(
             SimulationGradingProgressPayload(
                 type="error",
@@ -102,24 +96,11 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
     chat_id = validated.chat_id
     department_id_str = validated.department_id
 
-    pool = get_pool()
-    if not pool:
-        await simulation_grading_progress(
-            SimulationGradingProgressPayload(
-                type="error",
-                chat_id=chat_id,
-                message="Database connection pool not available",
-                error="Database connection pool not available",
-            ),
-            room=f"simulation_{chat_id}",
-        )
-        return
-
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             simulation_chat_id = uuid.UUID(chat_id)
             department_id = uuid.UUID(department_id_str)
 
@@ -165,11 +146,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                         room=f"simulation_{simulation_chat_id}",
                     )
                     return
-                # Log run creation failures for debugging
-                logger.error(
-                    f"Failed to get context and create run for grading {simulation_chat_id}: {str(e)}",
-                    exc_info=True,
-                )
                 await simulation_grading_progress(
                     SimulationGradingProgressPayload(
                         type="error",
@@ -418,13 +394,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             input_items.insert(0, chat_scenario)
             input_items.extend(conversation_history)
 
-            logger.info(
-                f"Starting grading for simulation chat {simulation_chat_id} with rubric {rubric['name']}"
-            )
-            logger.info(
-                f"Found {len(standard_groups)} standard groups and {len(standards)} standards"
-            )
-
             # Emit grading start event
             await simulation_grading_progress(
                 SimulationGradingProgressPayload(
@@ -436,7 +405,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 ),
                 room=f"simulation_{simulation_chat_id}",
             )
-            logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
 
             # Build dynamic rubric
             rubric_lines = [
@@ -567,10 +535,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 raise ValueError("Failed to create simulation chat grade")
             grade_id = uuid.UUID(grade_row["id"])
 
-            logger.info(
-                f"Created grade record {grade_id} for chat {simulation_chat_id}"
-            )
-
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent"]["id"])
             sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
@@ -684,9 +648,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                             }
                         )
 
-                        logger.info(
-                            f"✓ Graded {group_dict['name']}: {score}/5 - {feedback[:50]}..."
-                        )
                         return f"Graded {group_dict['name']} with score {score}"
 
                     grade_standard_group.__name__ = f"grade_{safe_name}"
@@ -696,8 +657,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                     group, full_description, score_desc, feedback_desc
                 )
                 grading_tools.append(function_tool(grade_func))
-                logger.info(f"Created grading tool for: {group['name']}")
-
             # Add message_strength tool if grade_id and message_id_map are available
             if grade_id and message_id_map:
                 message_strength_config = tool_config_map_grading.get(
@@ -765,15 +724,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                             else feedback,
                         }
                     )
-
-                    logger.info(
-                        f"✓ Added strength feedback to message {message_number}"
-                    )
                     return f"Strength feedback added to message {message_number}"
 
                 grading_tools.append(function_tool(message_strength))
-                logger.info("Created message_strength tool")
-
                 # Add message_improvement tool
                 message_improvement_config = tool_config_map_grading.get(
                     "create_feedback_improvement"
@@ -843,15 +796,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                             else feedback,
                         }
                     )
-
-                    logger.info(
-                        f"✓ Added improvement feedback to message {message_number}"
-                    )
                     return f"Improvement feedback added to message {message_number}"
 
                 grading_tools.append(function_tool(message_improvement))
-                logger.info("Created message_improvement tool")
-
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and audio_agent_id:
                 from app.socket.v3.agents.grade.tools.audio.call import (
@@ -933,18 +880,10 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
                         return "Audio analysis completed but no result was returned."
                     except Exception as e:
-                        logger.error(
-                            f"Error in grade_audio tool: {str(e)}", exc_info=True
-                        )
                         return f"Error analyzing audio: {str(e)}"
 
                 grading_tools.append(function_tool(grade_audio))
-                logger.info("Added grade_audio tool to grading tools")
-
             grading_tools.append(debug_info_tool)
-            logger.info(
-                f"Created {len(grading_tools)} grading tools (including debug_info)"
-            )
 
             # Create tool use behavior to check when all required tools are called
             def tool_use_behavior(
@@ -961,10 +900,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
                 completed_required = all(
                     grading_progress.get(tool, False) for tool in required_tools
-                )
-
-                logger.info(
-                    f"Tool use check: required={required_tools}, completed={completed_required}, progress={grading_progress}"
                 )
                 return ToolsToFinalOutputResult(is_final_output=completed_required)
 
@@ -995,7 +930,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # model_run_id is already extracted from context_row above
 
             # Run the grading
-            logger.info("Running grading agent...")
             with trace(
                 chat["title"], trace_id=chat["trace_id"], group_id=str(attempt["id"])
             ):
@@ -1031,9 +965,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                     "departmentId": str(department_id),
                 },
             )
-
-            logger.info("Grading agent completed successfully")
-
             # Calculate overall score from feedbacks in database
             sql_get_feedbacks = load_sql(
                 "app/sql/v3/grading/get_feedback_totals_for_grade.sql"
@@ -1062,9 +993,6 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             )
             await conn.execute(sql_mark_completed, str(simulation_chat_id))
 
-            logger.info(
-                f"Saved grading results with {len(standard_groups)} feedback records"
-            )
 
             # Emit grading completion event
             await simulation_grading_progress(
@@ -1081,15 +1009,17 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 ),
                 room=f"simulation_{simulation_chat_id}",
             )
-            logger.info(
-                f"Emitted grading completion event for chat {simulation_chat_id}"
-            )
-
-            logger.info(f"Grading completed successfully with grade ID: {grade_id}")
-
+    except RuntimeError:
+        await simulation_grading_progress(
+            SimulationGradingProgressPayload(
+                type="error",
+                chat_id=chat_id,
+                message="Database connection pool not available",
+                error="Database connection pool not available",
+            ),
+            room=f"simulation_{chat_id}",
+        )
     except Exception as e:
-        logger.error(f"Error in grading agent: {str(e)}", exc_info=True)
-
         # Emit error event
         try:
             await simulation_grading_progress(
@@ -1101,8 +1031,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 ),
                 room=f"simulation_{chat_id}",
             )
-        except Exception as emit_err:
-            logger.warning(f"Failed to emit error event: {emit_err}")
+        except Exception:
+            # Error emitting error event - Socket.IO handles logging
+            pass
 
 
 @sio.event  # type: ignore
@@ -1116,7 +1047,7 @@ async def simulation_grading_start_internal(data: dict[str, Any]) -> None:
     """Handle grading start event from internal bus (server-to-server)."""
     sid = data.get("sid")
     if not sid:
-        logger.error("[simulation_grading_start_internal] Missing 'sid' in payload")
+        # Missing sid - Socket.IO handles logging
         return
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}

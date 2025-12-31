@@ -67,17 +67,9 @@ class ScenarioQuestionsToolErrorPayload(BaseModel):
 async def scenario_questions_tool_complete(
     payload: ScenarioQuestionsToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[scenario_tool_questions_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, "
-        f"question_ids={len(payload.question_ids)} questions"
-    )
     await sio.emit(
         "scenarios_tools_questions_complete", payload.model_dump(), room=room
     )
-    logger.info(f"[scenario_tool_questions_complete] Emitted to room={room}")
-
-
 async def scenario_questions_tool_error(
     payload: ScenarioQuestionsToolErrorPayload, room: str
 ) -> None:
@@ -86,14 +78,9 @@ async def scenario_questions_tool_error(
 
 async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for questions creation in scenario context."""
-    logger.info(
-        f"[scenario_tool_questions] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = ScenarioQuestionsToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_tool_questions for {sid}: {e}")
         await scenario_questions_tool_error(
             ScenarioQuestionsToolErrorPayload(
                 success=False,
@@ -105,18 +92,7 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await scenario_questions_tool_error(
-            ScenarioQuestionsToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
+    # Replaced with get_db_connection()
 
     if validated.question_timestamps and not validated.video_id:
         await scenario_questions_tool_error(
@@ -133,7 +109,7 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             scenario_id_uuid = uuid.UUID(validated.scenario_id)
             video_id_uuid = (
                 uuid.UUID(validated.video_id) if validated.video_id else None
@@ -175,9 +151,6 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
                         question_id,
                         True,  # active
                     )
-                logger.info(
-                    f"✓ Linked {len(question_ids)} questions to scenario {scenario_id_uuid}"
-                )
 
                 # Save question timestamps if provided (requires video_id)
                 if validated.question_timestamps and video_id_uuid:
@@ -192,14 +165,6 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
                         str(video_id_uuid),
                         timestamps_json,
                     )
-                    logger.info(
-                        f"✓ Saved question timestamps for scenario {scenario_id_uuid} and video {video_id_uuid}"
-                    )
-
-            logger.info(
-                f"✓ Created {len(question_ids)} questions for scenario {scenario_id_uuid} "
-                f"(video_id={validated.video_id}, trace_id={trace_id})"
-            )
 
             await scenario_questions_tool_complete(
                 ScenarioQuestionsToolCompletePayload(
@@ -212,9 +177,6 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in scenario_tool_questions for {sid}: {str(e)}", exc_info=True
-        )
         await scenario_questions_tool_error(
             ScenarioQuestionsToolErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
@@ -234,7 +196,6 @@ async def scenario_tool_questions_internal(data: dict[str, Any]) -> None:
     """Handle questions creation event from internal bus (server-to-server)."""
     sid = data.get("sid")
     if not sid:
-        logger.error("[scenario_tool_questions_internal] Missing 'sid' in payload")
         return
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}

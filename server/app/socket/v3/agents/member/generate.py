@@ -4,12 +4,9 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -42,13 +39,10 @@ async def member_generate(sid: str, data: dict[str, Any]) -> None:
     """Handler for member_generate event - BUILT BUT UNUSED IN THIS MIGRATION."""
     try:
         validated = MemberGeneratePayload(**data)
-        logger.info(
-            f"member_generate received (unused in this migration): chat_id={validated.chat_id}, voice_mode={validated.voice_mode}"
-        )
         # This is built but not triggered in this migration
         # Future use: member agent will decide what to do based on user message
     except ValidationError as e:
-        logger.error(f"Validation error in member_generate for {sid}: {e}")
+        # Removed logger call - Socket.IO handles logging
         await member_generate_error(
             MemberGenerateErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

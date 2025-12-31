@@ -7,9 +7,9 @@
 "use client";
 import {
   parseJsonDict,
-  scenarioSearchParamsClient,
   stringifyJsonDict,
 } from "@/app/(main)/create/scenarios/searchParams";
+import { scenarioSearchParamsClient } from "@/app/(main)/create/scenarios/searchParams.client";
 import { Loader2, RotateCcw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQueryStates } from "nuqs";

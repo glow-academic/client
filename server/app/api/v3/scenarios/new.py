@@ -21,7 +21,7 @@ from app.sql.types import (
 )
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v3/scenarios/get_scenario_new_complete.sql"
+SQL_PATH = "app/sql/v3/scenario/get_scenario_new_complete.sql"
 
 
 router = APIRouter()

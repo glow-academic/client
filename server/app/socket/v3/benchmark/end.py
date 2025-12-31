@@ -63,8 +63,6 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
     Runs rubric_grade_agent, creates grade record, marks test completed.
     """
     try:
-        logger.info(f"Received benchmark_end request from {sid} with data: {data}")
-
         test_id = data.test_id
         attempt_id = data.attempt_id
         eval_id = data.eval_id
@@ -82,17 +80,9 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await benchmark_end_error(
-                BenchmarkEndErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             test_id_uuid = uuid.UUID(test_id)
             eval_id_uuid = uuid.UUID(eval_id)
             attempt_id_uuid = uuid.UUID(attempt_id)
@@ -217,9 +207,6 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     eval_id_uuid,
                     uuid.UUID(run_id),
                 )
-
-            logger.info(f"Completed benchmark test {test_id}, created grade {grade_id}")
-
             # Check if more runs/groups exist
             sql = load_sql(
                 "app/sql/v3/benchmark/get_next_pending_run_or_group_for_benchmark.sql"
@@ -235,9 +222,6 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                 next_row.get("next_run_id") or next_row.get("next_group_id")
             ):
                 # More runs/groups exist - emit benchmark_next
-                logger.info(
-                    f"More runs/groups exist for attempt {attempt_id}, emitting benchmark_next"
-                )
                 await emit_to_internal(
                     "benchmark_next",
                     {
@@ -255,9 +239,6 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                 )
             else:
                 # All done - emit benchmarks_completed
-                logger.info(
-                    f"All runs/groups completed for attempt {attempt_id}, emitting benchmarks_completed"
-                )
                 await benchmark_completed(
                     BenchmarkCompletedPayload(
                         success=True,
@@ -279,10 +260,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging benchmark end activity: {log_error}")
-
     except Exception as e:
-        logger.error(f"Error in benchmark_end for {sid}: {str(e)}", exc_info=True)
         await benchmark_end_error(
             BenchmarkEndErrorPayload(success=False, message=str(e)),
             room=sid,
@@ -297,7 +275,6 @@ async def benchmark_end_internal(data: dict[str, Any]) -> None:
         sid = data.get("sid", "internal")
         await _benchmark_end_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_end_internal: {e}")
         await benchmark_end_error(
             BenchmarkEndErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

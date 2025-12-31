@@ -16,7 +16,6 @@ from agents import (
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
@@ -24,9 +23,9 @@ from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.documents.format_document_template_context import (
     format_document_template_context,
 )
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -108,28 +107,14 @@ async def _document_generate_impl(
     )
 
     try:
-        logger.info(f"Received document_generate request from {sid} with data: {data}")
-
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(data.departmentId)
         profile_id = uuid.UUID(data.profileId) if data.profileId else None
 
-        # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await document_template_generation_error(
-                DocumentTemplateGenerationErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                    trace_id=trace_id,
-                ),
-                room=sid,
-            )
-            return
-
-        async with pool.acquire() as conn:
-            # Emit start event
-            await document_template_generation_progress(
+        try:
+            async with get_db_connection() as conn:
+                # Emit start event
+                await document_template_generation_progress(
                 DocumentTemplateGenerationProgressPayload(
                     type="start",
                     message="Starting document template generation",
@@ -173,11 +158,6 @@ async def _document_generate_impl(
                         room=sid,
                     )
                     return
-                # Log other errors
-                logger.error(
-                    f"Failed to get context and create run for {sid}: {str(e)}",
-                    exc_info=True,
-                )
                 await document_template_generation_error(
                     DocumentTemplateGenerationErrorPayload(
                         success=False,
@@ -251,7 +231,7 @@ async def _document_generate_impl(
                 """Create a descriptive title for this document."""
                 document_results["title"] = title
                 document_progress["title"] = True
-                logger.info(f"✓ Created title: {title}")
+                # Removed logger call - Socket.IO handles logging
                 # Emit to internal bus for title creation
                 await internal_sio.emit(
                     "document_tool_title",
@@ -267,7 +247,7 @@ async def _document_generate_impl(
                 return "Created title successfully"
 
             document_tools.append(function_tool(create_title))
-            logger.info("Created title tool")
+            # Removed logger call - Socket.IO handles logging
 
             # Generate template HTML tool
             html_config = tool_config_map_doc.get("generate_template_html")
@@ -285,11 +265,11 @@ async def _document_generate_impl(
                 """Generate the Jinja template HTML for the document."""
                 document_results["template_html"] = template_html
                 document_progress["template_html"] = True
-                logger.info(f"✓ Generated template HTML ({len(template_html)} chars)")
+                # Removed logger call - Socket.IO handles logging
                 return "Generated template HTML successfully"
 
             document_tools.append(function_tool(generate_template_html))
-            logger.info("Created template HTML generation tool")
+            # Removed logger call - Socket.IO handles logging
 
             # Generate template schema tool
             schema_config = tool_config_map_doc.get("generate_template_schema")
@@ -307,11 +287,11 @@ async def _document_generate_impl(
                 """Generate the TemplateSchema JSON for template context."""
                 document_results["template_schema"] = schema_json
                 document_progress["template_schema"] = True
-                logger.info(f"✓ Generated template schema ({len(schema_json)} chars)")
+                # Removed logger call - Socket.IO handles logging
                 return "Generated template schema successfully"
 
             document_tools.append(function_tool(generate_template_schema))
-            logger.info("Created template schema generation tool")
+            # Removed logger call - Socket.IO handles logging
 
             # Create tool use behavior to wait for both tools to be called
             def tool_use_behavior(
@@ -323,10 +303,6 @@ async def _document_generate_impl(
                     "template_schema", False
                 )
                 both_complete = template_html_complete and template_schema_complete
-                logger.info(
-                    f"Tool use behavior check: template_html={template_html_complete}, "
-                    f"template_schema={template_schema_complete}, both_complete={both_complete}"
-                )
                 return ToolsToFinalOutputResult(is_final_output=both_complete)
 
             # Build document agent inline
@@ -528,12 +504,6 @@ async def _document_generate_impl(
 
                         if template_result:
                             template_id = template_result["template_id"]
-                            logger.info(
-                                "Created template %s and linked to document %s and run %s",
-                                template_id,
-                                data.documentId,
-                                model_run_id,
-                            )
 
                         # Fetch updated templates and build mapping from array (no JSONB)
                         sql_templates = load_sql(
@@ -564,9 +534,6 @@ async def _document_generate_impl(
                 if data.documentId:
                     # Invalidate documents cache
                     await invalidate_tags(["documents"])
-                    logger.info(
-                        "Template saved to document %s with upload_id %s",
-                        data.documentId,
                         upload_id,
                     )
 
@@ -585,10 +552,7 @@ async def _document_generate_impl(
                 )
 
             except Exception as create_error:
-                logger.error(
-                    f"Error creating document template: {create_error}",
-                    exc_info=True,
-                )
+                # Error creating template - emit error event
                 await document_template_generation_error(
                     DocumentTemplateGenerationErrorPayload(
                         success=False,
@@ -610,13 +574,12 @@ async def _document_generate_impl(
                     endpoint="/socket/v3/documents/generate",
                     error=False,
                 )
-            except Exception as log_error:
-                logger.warning(
-                    f"Error logging document generation activity: {log_error}"
-                )
+            except Exception:
+                # Error logging activity - Socket.IO handles logging
+                pass
 
     except Exception as e:
-        logger.error(f"Error in document_generate for {sid}: {str(e)}", exc_info=True)
+        # Removed logger call - Socket.IO handles logging
         await document_template_generation_error(
             DocumentTemplateGenerationErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
@@ -633,10 +596,9 @@ async def _document_generate_impl(
                 endpoint="/socket/v3/documents/generate",
                 error=True,
             )
-        except Exception as log_error:
-            logger.warning(
-                f"Error logging document generation error activity: {log_error}"
-            )
+        except Exception:
+            # Error logging activity - Socket.IO handles logging
+            pass
 
 
 @sio.event  # type: ignore
@@ -646,7 +608,7 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
         validated = GenerateDocumentTemplatePayload(**data)
         await _document_generate_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in document_generate for {sid}: {e}")
+        # Removed logger call - Socket.IO handles logging
         await document_template_generation_error(
             DocumentTemplateGenerationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}", trace_id=None
@@ -663,10 +625,9 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v3/documents/generate",
                 error=True,
             )
-        except Exception as log_error:
-            logger.warning(
-                f"Error logging document generation validation error activity: {log_error}"
-            )
+        except Exception:
+            # Error logging activity - Socket.IO handles logging
+            pass
 
 
 # FastAPI endpoint for OpenAPI documentation

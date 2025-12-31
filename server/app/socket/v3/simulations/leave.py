@@ -65,7 +65,6 @@ async def _simulation_leave_impl(sid: str, data: SimulationLeavePayload) -> None
     room_name = f"{chat_type}_{chat_id}"
     await sio.leave_room(sid, room_name)
     await remove_active_connection(room_name, sid)
-    logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
     # Log activity
     try:
         await log_websocket_activity(
@@ -77,9 +76,6 @@ async def _simulation_leave_impl(sid: str, data: SimulationLeavePayload) -> None
             error=False,
         )
     except Exception as log_error:
-        logger.warning(f"Error logging simulation leave activity: {log_error}")
-
-
 @sio.event  # type: ignore
 async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -87,7 +83,6 @@ async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
         validated = SimulationLeavePayload(**data)
         await _simulation_leave_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_leave for {sid}: {e}")
         await simulation_leave_error(
             SimulationLeaveErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -105,11 +100,6 @@ async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation leave validation error activity: {log_error}"
-            )
-
-
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/leave", response_model=dict[str, bool])
 async def simulation_leave_api(request: SimulationLeavePayload) -> dict[str, bool]:

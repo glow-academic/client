@@ -100,21 +100,12 @@ async def _simulation_text_complete_impl(
         run_id_uuid = uuid.UUID(data.run_id)
         chat_id_str = data.chat_id
         room = f"simulation_{chat_id_uuid}"
+        # Replaced with get_db_connection()
 
-        logger.debug(
-            f"Received simulation_text_complete: type={data.type}, chat_id={chat_id_str}"
-        )
-
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            return
-
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             if data.type == "tool_call_complete":
                 # Tool call completed - finalize message and tool call
                 if not data.final_message:
-                    logger.warning("Missing final_message in tool_call_complete")
                     return
 
                 # Resolve persona_id if final_persona provided
@@ -184,7 +175,6 @@ async def _simulation_text_complete_impl(
                             message_id_uuid = message_row["message_id"]
 
                 if not message_id_uuid:
-                    logger.error("Failed to get message_id from tool_call")
                     return
 
                 # Finalize via consolidated SQL file
@@ -204,7 +194,6 @@ async def _simulation_text_complete_impl(
                     )
 
                     if not result_row:
-                        logger.error("Failed to finalize message/tool call")
                         return
 
                     final_message_id = result_row["message_id"]
@@ -250,10 +239,6 @@ async def _simulation_text_complete_impl(
                     )
 
                 except Exception as e:
-                    logger.error(
-                        f"Error finalizing message/tool call: {e}",
-                        exc_info=True,
-                    )
                     await internal_sio.emit(
                         "simulation_text_error",
                         {
@@ -271,9 +256,6 @@ async def _simulation_text_complete_impl(
                 )
 
     except Exception as e:
-        logger.error(
-            f"Error in simulation_text_complete for {sid}: {str(e)}", exc_info=True
-        )
         await internal_sio.emit(
             "simulation_text_error",
             {

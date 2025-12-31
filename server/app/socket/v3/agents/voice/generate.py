@@ -11,14 +11,13 @@ import httpx
 from agents import function_tool
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.utils.build_voice_agent import build_voice_agent
-from app.main import _voice_sessions, get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import _voice_sessions, get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -181,17 +180,9 @@ async def _simulation_voice_generate_impl(
         chat_id_uuid = uuid.UUID(data.chat_id)
         run_id_uuid = uuid.UUID(data.run_id)
         chat_id_str = data.chat_id
+        # Replaced with get_db_connection()
 
-        logger.info(
-            f"Received simulation_voice_generate: chat_id={data.chat_id}, run_id={data.run_id}"
-        )
-
-        pool = get_pool()
-        if not pool:
-            await emit_error("Database connection pool not available")
-            return
-
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Get context (run already exists from member_progress)
             sql_context = load_sql(
                 "app/sql/v3/simulation_voice/get_voice_run_context_complete.sql"
@@ -266,11 +257,7 @@ async def _simulation_voice_generate_impl(
                     if not ephemeral_key:
                         raise ValueError("No ephemeral key in response")
 
-                logger.info(
-                    f"Generated ephemeral key for chat {chat_id_str} with model {ephemeral_model} (expires in {expires_in}s)"
-                )
             except Exception as e:
-                logger.error(f"Failed to generate ephemeral key: {e}", exc_info=True)
                 await emit_error(f"Failed to generate ephemeral key: {str(e)}")
                 return
 
@@ -371,9 +358,6 @@ async def _simulation_voice_generate_impl(
                 message: str = Field(description=message_desc),
             ) -> str:
                 """Make a persona speak by calling this tool with the persona name and message."""
-                logger.info(
-                    f"Speak tool called: persona={persona}, message_length={len(message)}"
-                )
 
                 persona_match = find_persona_by_name_inline(
                     persona.strip() if persona else "", personas
@@ -384,13 +368,9 @@ async def _simulation_voice_generate_impl(
                         for p in personas
                     )
                     error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"
-                    logger.error(error_msg)
                     return f"Error: {error_msg}"
 
                 persona_id, persona_display_name = persona_match
-                logger.info(
-                    f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})"
-                )
 
                 return f"Tool call confirmed for {persona_display_name}"
 
@@ -516,7 +496,6 @@ async def _simulation_voice_generate_impl(
                             "required": required,
                         }
                     except Exception as e:
-                        logger.warning(f"Failed to extract tool parameters: {e}")
                         tool_parameters = {
                             "type": "object",
                             "properties": {},
@@ -640,9 +619,6 @@ async def _simulation_voice_generate_impl(
 
             realtime_history = [RealtimeItem(**item) for item in cleaned_history_dicts]
 
-            logger.info(
-                f"Generated ephemeral key for chat {chat_id_str} with {len(persona_tools)} persona tools and {len(realtime_history)} history items"
-            )
 
             # Emit response to client
             await simulation_voice_start_response(
@@ -673,27 +649,15 @@ async def _simulation_voice_generate_impl(
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(
-                    f"Error logging voice simulation start activity: {log_error}"
-                )
-
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_generate for {sid}: {str(e)}", exc_info=True
-        )
         await emit_error(str(e))
 
 
 async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> None:
     """Handle voice session start requests via WebSocket (client event)."""
     try:
-        logger.info(
-            f"Received simulation_voice_start request from {sid} with data: {data}"
-        )
-
         chat_id = data.chat_id
         if not chat_id:
-            logger.error(f"Missing chat_id in request from {sid}")
             await simulation_voice_start_error(
                 StartVoiceErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
@@ -702,17 +666,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
         chat_id_uuid = uuid.UUID(chat_id)
 
-        pool = get_pool()
-        if not pool:
-            await simulation_voice_start_error(
-                StartVoiceErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Get chat context (similar to start.py)
             sql_context = load_sql(
                 "app/sql/v3/simulations/get_simulation_run_context.sql"
@@ -801,7 +757,6 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 )
                 simulation_agent_id = uuid.UUID(str(voice_agent_id_str))
             except (ValueError, TypeError) as e:
-                logger.error(f"Invalid UUID format: {e}")
                 await simulation_voice_start_error(
                     StartVoiceErrorPayload(
                         success=False,
@@ -834,10 +789,6 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 try:
                     key_id_uuid = uuid.UUID(key_id_row["key_id"])
                 except (ValueError, TypeError):
-                    logger.warning(
-                        f"Invalid key_id format from database: {key_id_row['key_id']}"
-                    )
-
             # Get or create run for this chat
             sql_get_or_create_run = load_sql(
                 "app/sql/v3/simulations/get_or_create_run_for_chat.sql"
@@ -904,9 +855,6 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_start for {sid}: {str(e)}", exc_info=True
-        )
         await simulation_voice_start_error(
             StartVoiceErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -921,11 +869,6 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging voice simulation start error activity: {log_error}"
-            )
-
-
 @sio.event  # type: ignore
 async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler (client event)."""
@@ -933,7 +876,6 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
         validated = StartVoicePayload(**data)
         await _simulation_voice_start_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_start for {sid}: {e}")
         await simulation_voice_start_error(
             StartVoiceErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
@@ -949,11 +891,6 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging voice simulation start validation error activity: {log_error}"
-            )
-
-
 @internal_sio.on("simulation_voice_generate")  # type: ignore
 async def simulation_voice_generate_internal(
     data: dict[str, Any],

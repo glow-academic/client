@@ -289,7 +289,8 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import \
+            PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:18")
         _test_container.start()
@@ -429,40 +430,39 @@ async def transaction(
         raise
 
 
+from app.socket.v3.agents.document.tools.title.call import \
+    document_tool_title_internal  # noqa: F401
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
 # Import simulation hints to register internal_sio handler
-from app.socket.v3.agents.hint.generate import (
-    simulation_hints_generate_internal,  # noqa: F401
-)
-from app.socket.v3.agents.image.complete import (
-    image_generation_complete_internal,  # noqa: F401
-)
-
+from app.socket.v3.agents.hint.generate import \
+    simulation_hints_generate_internal  # noqa: F401
+from app.socket.v3.agents.image.complete import \
+    image_generation_complete_internal  # noqa: F401
 # Import image modules to register internal_sio handlers
 from app.socket.v3.agents.image.generate import generate_image  # noqa: F401
-
-# Import log module to register internal_sio handler
-from app.socket.v3.log import log_run  # noqa: F401
-
+from app.socket.v3.agents.rubric.tools.title.call import \
+    rubric_tool_title_internal  # noqa: F401
 # Import quiz handlers
 # Note: Quiz events removed - questions now handled through scenarios
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.tools.document.call import scenario_tool_document  # noqa: F401
-from app.socket.v3.tools.image.call import scenario_tool_image  # noqa: F401
-from app.socket.v3.tools.objective.call import scenario_tool_objectives  # noqa: F401
-from app.socket.v3.tools.question.call import scenario_tool_questions  # noqa: F401
-from app.socket.v3.tools.statement.call import (
-    scenario_tool_problem_statement_internal,  # noqa: F401
-)
-from app.socket.v3.tools.title.call import (  # noqa: F401
-    document_tool_title_internal,
-    rubric_tool_title_internal,
-    scenario_tool_title_internal,
-)
-
+from app.socket.v3.agents.scenario.tools.document.call import \
+    scenario_tool_document  # noqa: F401
+from app.socket.v3.agents.scenario.tools.image.call import \
+    scenario_tool_image  # noqa: F401
+from app.socket.v3.agents.scenario.tools.objective.call import \
+    scenario_tool_objectives  # noqa: F401
+from app.socket.v3.agents.scenario.tools.question.call import \
+    scenario_tool_questions  # noqa: F401
+from app.socket.v3.agents.scenario.tools.statement.call import \
+    scenario_tool_problem_statement_internal  # noqa: F401
+from app.socket.v3.agents.scenario.tools.title.call import \
+    scenario_tool_title_internal  # noqa: F401
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.tools.video.call import scenario_tool_video  # noqa: F401
+from app.socket.v3.agents.scenario.tools.video.call import \
+    scenario_tool_video  # noqa: F401
+# Import log module to register internal_sio handler
+from app.socket.v3.log import log_run  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
@@ -534,7 +534,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
         if pool:
             # Setup activity logger
-            from app.infra.v3.activity.logger import setup_activity_logger  # noqa: E402
+            from app.infra.v3.activity.logger import \
+                setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
@@ -543,7 +544,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.infra.v3.metrics.collector import initialize_metrics  # noqa: E402
+        from app.infra.v3.metrics.collector import \
+            initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)
@@ -612,9 +614,8 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from utils.logging.db_logger import get_logger, set_profile_id
-
         from app.infra.v3.metrics.collector import record_error, record_request
+        from utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
         start_time = time.perf_counter()
@@ -693,9 +694,8 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
             # Log activity to database (fire and forget - don't block response)
             try:
-                from utils.logging.db_logger import profile_id_context
-
                 from app.infra.v3.activity.logger import log_activity
+                from utils.logging.db_logger import profile_id_context
 
                 # Get resolved profile_id for activity logging
                 resolved_profile_id = profile_id_context.get(None)

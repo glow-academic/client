@@ -17,15 +17,14 @@ from agents import (
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
-from app.main import TUS_UPLOADS_DIR, get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import TUS_UPLOADS_DIR, get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -88,24 +87,10 @@ async def classify_upload_error(payload: ClassifyUploadErrorPayload, room: str) 
 async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
     """Handle upload classification requests via WebSocket."""
     try:
-        logger.info(f"Received classify_upload request from {sid} with data: {data}")
-
         upload_id = data.uploadId
         profile_id = uuid.UUID(data.profileId)
 
-        # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await classify_upload_error(
-                ClassifyUploadErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                ),
-                room=sid,
-            )
-            return
-
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Emit start event
             await classify_upload_progress(
                 ClassifyUploadProgressPayload(
@@ -171,11 +156,6 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                         room=sid,
                     )
                     return
-                # Log run creation failures for debugging
-                logger.error(
-                    f"Failed to get context and create run for {sid}: {str(e)}",
-                    exc_info=True,
-                )
                 await classify_upload_error(
                     ClassifyUploadErrorPayload(
                         success=False,
@@ -295,7 +275,7 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                             if name and not name.endswith("/")
                         )
                 except Exception as e:
-                    logger.error(f"Error reading ZIP file: {str(e)}")
+                    # Removed logger call - Socket.IO handles logging
                     await classify_upload_error(
                         ClassifyUploadErrorPayload(
                             success=False,
@@ -371,7 +351,6 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                         classification_results[item_dict["id"]].extend(
                             valid_file_numbers
                         )
-                        logger.info(
                             f"✓ Classified {len(valid_file_numbers)} files for {item_dict['name']}"
                         )
                         return f"Classified {len(valid_file_numbers)} file(s) for {item_dict['name']}"
@@ -389,7 +368,7 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 )
                 classification_tools.append(function_tool(classify_func))
 
-            logger.info(f"Created {len(classification_tools)} classification tools")
+            # Removed logger call - Socket.IO handles logging
 
             # Create tool use behavior - allow agent to finish after tool calls
             classification_progress_tracker: dict[str, bool] = {}
@@ -569,9 +548,8 @@ Use the provided classification tools to indicate which files match each paramet
                             if param_item_id not in suggested_items[file_name]:
                                 suggested_items[file_name].append(param_item_id)
                     except (ValueError, IndexError):
-                        logger.warning(
-                            f"Invalid file number in classification results: {file_num_str}"
-                        )
+                        # Invalid file number - skip
+                        pass
 
             # Emit completion event
             await classify_upload_complete(
@@ -593,13 +571,12 @@ Use the provided classification tools to indicate which files match each paramet
                     endpoint="/socket/v3/uploads/classify",
                     error=False,
                 )
-            except Exception as log_error:
-                logger.warning(
-                    f"Error logging upload classification activity: {log_error}"
-                )
+            except Exception:
+                # Error logging activity - Socket.IO handles logging
+                pass
 
     except Exception as e:
-        logger.error(f"Error in classify_upload for {sid}: {str(e)}", exc_info=True)
+        # Removed logger call - Socket.IO handles logging
         await classify_upload_error(
             ClassifyUploadErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -613,10 +590,9 @@ Use the provided classification tools to indicate which files match each paramet
                 endpoint="/socket/v3/uploads/classify",
                 error=True,
             )
-        except Exception as log_error:
-            logger.warning(
-                f"Error logging upload classification error activity: {log_error}"
-            )
+        except Exception:
+            # Error logging activity - Socket.IO handles logging
+            pass
 
 
 @sio.event  # type: ignore
@@ -626,7 +602,7 @@ async def classify_upload(sid: str, data: dict[str, Any]) -> None:
         validated = ClassifyUploadPayload(**data)
         await _classify_upload_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in classify_upload for {sid}: {e}")
+        # Removed logger call - Socket.IO handles logging
         await classify_upload_error(
             ClassifyUploadErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

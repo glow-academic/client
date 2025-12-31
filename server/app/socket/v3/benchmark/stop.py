@@ -65,17 +65,9 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await benchmark_stop_error(
-                BenchmarkStopErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Get active test for this attempt
@@ -105,11 +97,6 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     "UPDATE tests SET completed = true WHERE id = $1::uuid",
                     uuid.UUID(test_id),
                 )
-
-                logger.info(
-                    f"Stopped benchmark attempt {attempt_id}, marked test {test_id} as completed"
-                )
-
             # Emit stop signal
             await benchmark_stopped(
                 BenchmarkStoppedPayload(
@@ -131,10 +118,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging benchmark stop activity: {log_error}")
-
     except Exception as e:
-        logger.error(f"Error stopping benchmark for {sid}: {str(e)}", exc_info=True)
         await benchmark_stop_error(
             BenchmarkStopErrorPayload(
                 success=False, message=f"Failed to stop benchmark: {str(e)}"
@@ -152,9 +136,6 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging benchmark stop error activity: {log_error}")
-
-
 @sio.event  # type: ignore
 async def benchmark_stop(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -162,7 +143,6 @@ async def benchmark_stop(sid: str, data: dict[str, Any]) -> None:
         validated = BenchmarkStopPayload(**data)
         await _benchmark_stop_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_stop for {sid}: {e}")
         await benchmark_stop_error(
             BenchmarkStopErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

@@ -64,8 +64,6 @@ async def _benchmark_start_impl(
     Creates attempt and checks for next pending run/group, then emits to next.py if found.
     """
     try:
-        logger.info(f"Received benchmark_start request from {sid} with data: {data}")
-
         eval_id = data.eval_id
         infinite_mode = data.infinite_mode
 
@@ -80,17 +78,9 @@ async def _benchmark_start_impl(
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await benchmark_start_error(
-                BenchmarkStartErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Create attempt and get eval data + pending runs/groups
             sql = load_sql(SQL_PATH)
             result = await conn.fetchrow(sql, eval_id, infinite_mode)
@@ -124,9 +114,6 @@ async def _benchmark_start_impl(
             if use_groups:
                 if pending_group_ids:
                     next_group_id = pending_group_ids[0]
-                    logger.info(
-                        f"Found next group {next_group_id} for attempt {attempt_id}, emitting to next.py"
-                    )
                     await emit_to_internal(
                         "benchmark_next",
                         {
@@ -140,9 +127,6 @@ async def _benchmark_start_impl(
             else:
                 if pending_run_ids:
                     next_run_id = pending_run_ids[0]
-                    logger.info(
-                        f"Found next run {next_run_id} for attempt {attempt_id}, emitting to next.py"
-                    )
                     await emit_to_internal(
                         "benchmark_next",
                         {
@@ -165,10 +149,7 @@ async def _benchmark_start_impl(
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging benchmark start activity: {log_error}")
-
     except Exception as e:
-        logger.error(f"Error starting benchmark attempt for {sid}: {e}", exc_info=True)
         await benchmark_start_error(
             BenchmarkStartErrorPayload(
                 success=False, message=f"Failed to start benchmark: {str(e)}"
@@ -184,7 +165,6 @@ async def benchmark_start(sid: str, data: dict[str, Any]) -> None:
         validated = BenchmarkStartPayload(**data)
         await _benchmark_start_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_start for {sid}: {e}")
         await benchmark_start_error(
             BenchmarkStartErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

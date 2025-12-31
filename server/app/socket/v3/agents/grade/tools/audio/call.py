@@ -7,14 +7,13 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
-from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import UPLOAD_FOLDER, get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -55,12 +54,7 @@ class AudioToolErrorPayload(BaseModel):
 
 
 async def audio_tool_complete(payload: AudioToolCompletePayload, room: str) -> None:
-    logger.info(
-        f"[grading_tool_audio_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, chat_id={payload.chat_id}"
-    )
     await sio.emit("grading_tools_audio_complete", payload.model_dump(), room=room)
-    logger.info(f"[grading_tool_audio_complete] Emitted to room={room}")
 
 
 async def audio_tool_error(payload: AudioToolErrorPayload, room: str) -> None:
@@ -73,11 +67,6 @@ async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None
     Returns:
         Analysis result string if called synchronously (with _result_callback), None otherwise
     """
-    logger.info(
-        f"[grading_tool_audio] Handler received event: sid={sid}, "
-        f"chat_id={data.get('chat_id', 'unknown')}, trace_id={data.get('trace_id', 'unknown')}"
-    )
-
     # Check if this is a synchronous call (for tool result)
     result_callback = data.pop("_result_callback", None)
     is_synchronous = result_callback is not None
@@ -86,7 +75,6 @@ async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None
         validated = AudioToolPayload(**data)
     except ValidationError as e:
         error_msg = f"Invalid payload: {str(e)}"
-        logger.error(f"Validation error in grading_tool_audio for {sid}: {e}")
         if is_synchronous and result_callback:
             await result_callback(None, error_msg)
             return None
@@ -103,29 +91,12 @@ async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None
 
     chat_id = validated.chat_id
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        error_msg = "Database connection pool not available"
-        if is_synchronous and result_callback:
-            await result_callback(None, error_msg)
-            return None
-        await audio_tool_error(
-            AudioToolErrorPayload(
-                success=False,
-                chat_id=chat_id,
-                trace_id=trace_id,
-                message=error_msg,
-            ),
-            room=f"simulation_{chat_id}",
-        )
-        return None
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             chat_id_uuid = uuid.UUID(chat_id)
             department_id_uuid = uuid.UUID(validated.department_id)
             agent_id_uuid = uuid.UUID(validated.agent_id)
@@ -139,14 +110,10 @@ async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None
                 if num in number_to_id_map:
                     try:
                         message_ids.append(uuid.UUID(number_to_id_map[num]))
-                    except ValueError as e:
-                        logger.warning(
-                            f"Invalid message ID format {number_to_id_map[num]}: {e}, skipping"
-                        )
+                    except ValueError:
+                        pass
                 else:
-                    logger.warning(
-                        f"Message number {num} not found in message_id_map, skipping"
-                    )
+                    pass
 
             if not message_ids:
                 error_msg = (
@@ -227,10 +194,6 @@ async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None
                             "mime_type": row["mime_type"],
                         }
                     )
-                else:
-                    logger.warning(
-                        f"Audio file not found: {full_path} for message {row['message_id']}"
-                    )
 
             if not audio_files:
                 error_msg = "Audio files not found on disk"
@@ -306,7 +269,6 @@ Please provide a detailed analysis based on this request. Consider aspects such 
             model_run_id = uuid.UUID(model_run_row["run_id"])
 
             # Run the audio agent
-            logger.info(f"Running audio grading agent for chat {chat_id}...")
             with trace(
                 f"Audio Grading - {chat_id}",
                 trace_id=trace_id,
@@ -353,14 +315,24 @@ Please provide a detailed analysis based on this request. Consider aspects such 
                 ),
                 room=f"simulation_{chat_id}",
             )
-
-            logger.info(
-                f"Audio grading completed for chat {chat_id}, analysis length: {len(analysis)}"
-            )
             return None
 
+    except RuntimeError:
+        error_msg = "Database connection pool not available"
+        if is_synchronous and result_callback:
+            await result_callback(None, error_msg)
+            return None
+        await audio_tool_error(
+            AudioToolErrorPayload(
+                success=False,
+                chat_id=chat_id if "chat_id" in locals() else "unknown",
+                trace_id=trace_id if "trace_id" in locals() else "unknown",
+                message=error_msg,
+            ),
+            room=f"simulation_{chat_id if 'chat_id' in locals() else 'unknown'}",
+        )
+        return None
     except Exception as e:
-        logger.error(f"Error in grading_tool_audio for {sid}: {str(e)}", exc_info=True)
         error_msg = str(e)
         if is_synchronous and result_callback:
             await result_callback(None, error_msg)

@@ -123,24 +123,12 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 ),
                 room=sid,
             )
-            logger.error(f"Emitted error to {sid}: Missing chat_id or attempt_id")
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await simulation_text_end_error(
-                EndSimulationErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            logger.error(
-                f"Emitted error to {sid}: Database connection pool not available"
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Get the chat
             sql = load_sql("app/sql/v3/simulations/get_chat_basic.sql")
             chat = await conn.fetchrow(sql, chat_id)
@@ -149,7 +137,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                     EndSimulationErrorPayload(success=False, message="Chat not found"),
                     room=sid,
                 )
-                logger.error(f"Emitted error to {sid}: Chat not found")
                 return
 
             # Get the attempt with profile
@@ -162,7 +149,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                     ),
                     room=sid,
                 )
-                logger.error(f"Emitted error to {sid}: Attempt not found")
                 return
 
             # If end_all is True, emit end_all_started event immediately so all watchers see the loading state
@@ -171,19 +157,12 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                     EndAllStartedPayload(chat_id=chat_id, attempt_id=attempt_id),
                     room=f"simulation_{chat_id}",
                 )
-                logger.info(
-                    f"Emitted end_all_started for chat {chat_id}, attempt {attempt_id}"
-                )
             else:
                 # If end_all is False, emit end_chat_started event immediately so all watchers see the loading state
                 await end_chat_started(
                     EndChatStartedPayload(chat_id=chat_id, attempt_id=attempt_id),
                     room=f"simulation_{chat_id}",
                 )
-                logger.info(
-                    f"Emitted end_chat_started for chat {chat_id}, attempt {attempt_id}"
-                )
-
             simulation_attempt = attempt_with_profile
             profile_id = attempt_with_profile.get("profile_id")
 
@@ -200,9 +179,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                     ),
                     room=sid,
                 )
-                logger.error(
-                    f"Emitted error to {sid}: Failed to get run context for chat {chat_id}"
-                )
                 return
 
             # department_id should always be present due to SQL fallback logic
@@ -215,9 +191,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         message="No active departments found in system",
                     ),
                     room=sid,
-                )
-                logger.error(
-                    f"Emitted error to {sid}: No active departments found in system for chat {chat_id}"
                 )
                 return
 
@@ -235,7 +208,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                     ),
                     room=sid,
                 )
-                logger.error(f"Emitted error to {sid}: Simulation not found")
                 return
 
             # Practice simulations cannot use previous chats - must always go through manual grading
@@ -247,9 +219,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         message="Practice simulations cannot reuse previous attempts. Manual grading is required.",
                     ),
                     room=sid,
-                )
-                logger.warning(
-                    f"Emitted error to {sid}: Attempted to reuse previous chat for practice simulation"
                 )
                 return
 
@@ -272,9 +241,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         message=f"Existing chats missing 'id' field: {existing_chats[0]}",
                     ),
                     room=sid,
-                )
-                logger.error(
-                    f"Emitted error to {sid}: Existing chats missing 'id' field: {existing_chats[0]}"
                 )
                 return
 
@@ -535,9 +501,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 if next_scenario_row and next_scenario_row.get("has_next_scenario"):
                     next_scenario_id = next_scenario_row.get("next_scenario_id")
                     if next_scenario_id:
-                        logger.info(
-                            f"Found next scenario {next_scenario_id} for attempt {attempt_id}, emitting to next.py"
-                        )
                         # Emit to next.py handler - it will create the scenario/chat
                         await internal_sio.emit(
                             "simulation_next",
@@ -711,10 +674,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             }
 
             if end_all:
-                logger.info(
-                    f"End all completed for attempt {attempt_id}: created {result['created_chats_count']} new chats"
-                )
-
                 # Get all chat IDs for this attempt to help frontend with cache invalidation
                 sql = load_sql("app/sql/v3/attempts/get_existing_chats_for_attempt.sql")
                 all_chats = await conn.fetch(sql, attempt_id)
@@ -761,10 +720,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 await simulation_ended(ended_payload, room=sid)
                 # Also broadcast to the simulation room so watchers stay in sync
                 await simulation_ended(ended_payload, room=f"simulation_{chat_id}")
-
-                logger.info(
-                    f"Simulation ended successfully: completed_chat={result['completed_chat_id']}, next_chat={result['next_chat_id']}"
-                )
                 # Log activity
                 try:
                     await log_websocket_activity(
@@ -776,19 +731,13 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(
-                        f"Error logging simulation end activity: {log_error}"
-                    )
-
     except Exception as e:
-        logger.error(f"Error ending simulation for {sid}: {str(e)}", exc_info=True)
         await simulation_text_end_error(
             EndSimulationErrorPayload(
                 success=False, message=f"Failed to end simulation: {str(e)}"
             ),
             room=sid,
         )
-        logger.error(f"Emitted error to {sid}: Failed to end simulation: {str(e)}")
         # Log activity error
         try:
             await log_websocket_activity(
@@ -800,9 +749,6 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation end error activity: {log_error}")
-
-
 @sio.event  # type: ignore
 async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -810,9 +756,6 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
         validated = EndSimulationPayload(**data)
         await _end_simulation_impl(sid, validated)
     except ValidationError as e:
-        logger.error(
-            f"Validation error in continue_simulation for {sid}: {e}", exc_info=True
-        )
         await simulation_text_end_error(
             EndSimulationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -830,14 +773,7 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation end validation error activity: {log_error}"
-            )
     except Exception as e:
-        logger.error(
-            f"Unexpected error in continue_simulation wrapper for {sid}: {str(e)}",
-            exc_info=True,
-        )
         await simulation_text_end_error(
             EndSimulationErrorPayload(
                 success=False, message=f"Unexpected error: {str(e)}"
@@ -855,11 +791,6 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation end unexpected error activity: {log_error}"
-            )
-
-
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/end", response_model=dict[str, bool])
 async def simulation_text_end_api(

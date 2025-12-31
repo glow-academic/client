@@ -91,30 +91,15 @@ async def _simulation_text_progress_impl(
         run_id_uuid = uuid.UUID(data.run_id)
         chat_id_str = data.chat_id
         room = f"simulation_{chat_id_uuid}"
+        # Replaced with get_db_connection()
 
-        logger.debug(
-            f"Received simulation_text_progress: type={data.type}, chat_id={chat_id_str}"
-        )
-
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            return
-
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             if data.type == "tool_call_start":
                 # Tool call started - create tool call and initial message
                 # This will be handled by the SQL file when message_token is received
-                logger.debug(
-                    f"Tool call started: call_id={data.call_id}, tool_name={data.tool_name}"
-                )
-
             elif data.type == "message_token":
                 # Message token received - update DB incrementally
                 if not data.token or not data.accumulated_content:
-                    logger.warning(
-                        "Missing token or accumulated_content in message_token"
-                    )
                     return
 
                 # Resolve persona_id if persona_so_far provided
@@ -174,7 +159,6 @@ async def _simulation_text_progress_impl(
                     )
 
                     if not result_row:
-                        logger.error("Failed to update message/tool call in progress")
                         return
 
                     message_id = result_row["message_id"]
@@ -222,10 +206,6 @@ async def _simulation_text_progress_impl(
                         )
 
                 except Exception as e:
-                    logger.error(
-                        f"Error updating message/tool call in progress: {e}",
-                        exc_info=True,
-                    )
                     await internal_sio.emit(
                         "simulation_text_error",
                         {
@@ -236,9 +216,6 @@ async def _simulation_text_progress_impl(
                     )
 
     except Exception as e:
-        logger.error(
-            f"Error in simulation_text_progress for {sid}: {str(e)}", exc_info=True
-        )
         await internal_sio.emit(
             "simulation_text_error",
             {

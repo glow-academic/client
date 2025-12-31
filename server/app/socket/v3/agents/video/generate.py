@@ -8,13 +8,12 @@ from fastapi import APIRouter
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import VIDEO_FOLDER, get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import VIDEO_FOLDER, get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -84,24 +83,12 @@ async def video_generation_error(
 async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
     """Handle video generation requests via WebSocket."""
     try:
-        logger.info(f"Received video_generate request from {sid} with data: {data}")
-
         video_id = uuid.UUID(data.videoId)
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await video_generation_error(
-                VideoGenerationErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                    video_id=str(video_id),
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Emit start event
             await video_generation_progress(
                 VideoGenerationProgressPayload(
@@ -146,10 +133,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     )
                     return
                 # Log other errors
-                logger.error(
-                    f"Failed to get context and create run for {sid}: {str(e)}",
-                    exc_info=True,
-                )
                 await video_generation_error(
                     VideoGenerationErrorPayload(
                         success=False,
@@ -198,10 +181,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
             # Extract context data
             encrypted_api_key = context_row["api_key"]
             model_name = context_row["model_name"]
-            logger.info(
-                f"Using video agent: {context_row['agent_name']}, model: {model_name}"
-            )
-
             # Decrypt the API key
             try:
                 api_key = decrypt_api_key(encrypted_api_key)
@@ -239,10 +218,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
             video_job = await asyncio.to_thread(client.videos.create, **create_params)
 
             video_job_id = video_job.id
-            logger.info(
-                f"Created video job: {video_job_id}, status: {video_job.status}"
-            )
-
             # Poll for completion with progress updates
             max_polls = 60  # 5 minutes max (5 second intervals)
             poll_count = 0
@@ -250,10 +225,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                 video_status = await asyncio.to_thread(
                     client.videos.retrieve, video_job_id
                 )
-                logger.info(
-                    f"Video job {video_job_id} status: {video_status.status}, progress: {video_status.progress}"
-                )
-
                 # Emit progress update
                 progress_value = (
                     video_status.progress / 100.0
@@ -297,9 +268,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     VIDEO_FOLDER.mkdir(parents=True, exist_ok=True)
                     video_path = VIDEO_FOLDER / video_filename
                     await asyncio.to_thread(video_path.write_bytes, video_content_bytes)
-
-                    logger.info(f"Video saved to: {video_path}")
-
                     async with conn.transaction():
                         # Create upload record
                         mime_type = "video/mp4"
@@ -322,11 +290,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                                 room=sid,
                             )
                             return
-
-                        logger.info(
-                            f"Created upload record: {upload_id_str}, file_path: {video_relative_path}"
-                        )
-
                         # Create generation and link to video (with run_id from SQL)
                         sql_create_generation = load_sql(
                             "app/sql/v3/videos/create_generation_and_link.sql"
@@ -364,14 +327,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
 
                     if generation_result:
                         generation_id = generation_result["generation_id"]
-                        logger.info(
-                            f"Created generation {generation_id} and linked to video {video_id}"
-                        )
                     else:
-                        logger.warning(
-                            f"Failed to create generation for video {video_id}"
-                        )
-
                     # Emit completion event
                     await video_generation_complete(
                         VideoGenerationCompletePayload(
@@ -393,9 +349,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                             error=False,
                         )
                     except Exception as log_error:
-                        logger.warning(
-                            f"Error logging video generation activity: {log_error}"
-                        )
                     return
 
                 elif video_status.status == "failed":
@@ -424,7 +377,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
             )
 
     except Exception as e:
-        logger.error(f"Error in video_generate for {sid}: {str(e)}", exc_info=True)
         video_id_str = str(data.videoId) if hasattr(data, "videoId") else None
         await video_generation_error(
             VideoGenerationErrorPayload(
@@ -441,7 +393,6 @@ async def video_generate(sid: str, data: dict[str, Any]) -> None:
         validated = GenerateVideoPayload(**data)
         await _video_generate_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in video_generate for {sid}: {e}")
         await video_generation_error(
             VideoGenerationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}", video_id=None

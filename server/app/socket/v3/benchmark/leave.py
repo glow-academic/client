@@ -42,7 +42,6 @@ async def _benchmark_leave_impl(sid: str, data: BenchmarkLeavePayload) -> None:
     if attempt_id:
         room_name = f"benchmark_{attempt_id}"
         await sio.leave_room(sid, room_name)
-        logger.info(f"Client {sid} left benchmark attempt {attempt_id}")
         # Log activity
         try:
             await log_websocket_activity(
@@ -54,7 +53,6 @@ async def _benchmark_leave_impl(sid: str, data: BenchmarkLeavePayload) -> None:
                 error=False,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging benchmark leave activity: {log_error}")
     else:
         await benchmark_leave_error(
             BenchmarkLeaveErrorPayload(
@@ -71,7 +69,6 @@ async def benchmark_leave(sid: str, data: dict[str, Any]) -> None:
         validated = BenchmarkLeavePayload(**data)
         await _benchmark_leave_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_leave for {sid}: {e}")
         await benchmark_leave_error(
             BenchmarkLeaveErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

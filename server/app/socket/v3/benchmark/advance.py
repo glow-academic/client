@@ -63,8 +63,6 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
     Updates client with test/run/group status.
     """
     try:
-        logger.info(f"Received benchmark_advance request from {sid} with data: {data}")
-
         test_id = data.test_id
         attempt_id = data.attempt_id
         run_id = data.run_id
@@ -80,18 +78,9 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await benchmark_advance_error(
-                BenchmarkAdvanceErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             test_id_uuid = uuid.UUID(test_id)
             attempt_id_uuid = uuid.UUID(attempt_id)
 
@@ -108,11 +97,6 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                     room=sid,
                 )
                 return
-
-            logger.info(
-                f"Advancing benchmark: test_id={test_id}, attempt_id={attempt_id}, run_id={run_id}, group_id={group_id}"
-            )
-
             # Emit success event to client
             await benchmark_advanced(
                 BenchmarkAdvancedPayload(
@@ -150,10 +134,7 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging benchmark advance activity: {log_error}")
-
     except Exception as e:
-        logger.error(f"Error in benchmark_advance for {sid}: {str(e)}", exc_info=True)
         await benchmark_advance_error(
             BenchmarkAdvanceErrorPayload(success=False, message=str(e)),
             room=sid,
@@ -169,11 +150,6 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging benchmark advance error activity: {log_error}"
-            )
-
-
 @internal_sio.on("benchmark_advance")  # type: ignore
 async def benchmark_advance_internal(data: dict[str, Any]) -> None:
     """Handle benchmark_advance event from internal bus (server-to-server)."""
@@ -183,7 +159,6 @@ async def benchmark_advance_internal(data: dict[str, Any]) -> None:
         sid = data.get("sid", "internal")
         await _benchmark_advance_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_advance_internal: {e}")
         await benchmark_advance_error(
             BenchmarkAdvanceErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

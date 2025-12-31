@@ -7,12 +7,11 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.main import IMAGE_FOLDER, get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import IMAGE_FOLDER, get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -25,7 +24,6 @@ try:
     LITELLM_AVAILABLE = True
 except ImportError:
     LITELLM_AVAILABLE = False
-    logger.warning("litellm not available - image generation will not work")
 
 
 class GenerateImagePayload(BaseModel):
@@ -51,17 +49,13 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
     profile_id = data.profile_id
     room = data.room or sid
 
-    pool = get_pool()
-    if not pool:
-        logger.error(f"Database pool not available for image {image_id}")
-        await _emit_image_error(image_id, room, "Database pool not available")
-        return
+    # Replaced with get_db_connection()
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Load SQL query at top (DHH style - one SQL file per route)
             sql = load_sql(
                 "app/sql/v3/images/get_image_generation_context_and_create_upload.sql"
@@ -79,10 +73,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             try:
                 context_row = await conn.fetchrow(sql, *sql_params)
             except Exception as e:
-                logger.error(
-                    f"Failed to get context and create run for image {image_id}: {str(e)}",
-                    exc_info=True,
-                )
                 await _emit_image_error(
                     image_id, room, f"Failed to initialize image generation: {str(e)}"
                 )
@@ -118,12 +108,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             # Use model_name directly from database (set via image_agent_id)
             # The SQL query already returns the correct model_name based on the agent's model_id
             image_model = model_name
-
-            logger.info(
-                f"Image generation started: image_id={image_id}, "
-                f"agent_id={agent_id}, model={image_model}, provider={provider}, run_id={run_id}"
-            )
-
             # Emit progress event
             await _emit_image_progress(
                 image_id,
@@ -139,11 +123,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 return
 
             try:
-                logger.info(
-                    f"Calling litellm.aimage_generation for image {image_id}: "
-                    f"model={image_model}, prompt_length={len(prompt)}, "
-                    f"has_api_key={bool(decrypted_api_key)}, has_base_url={bool(base_url)}"
-                )
                 response = await litellm.aimage_generation(
                     prompt=prompt,
                     model=image_model,
@@ -151,33 +130,14 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     base_url=base_url if base_url else None,
                 )
 
-                logger.info(
-                    f"litellm.aimage_generation response for image {image_id}: "
-                    f"type={type(response)}, "
-                    f"is_dict={isinstance(response, dict)}, "
-                    f"is_str={isinstance(response, str)}, "
-                    f"response_keys={list(response.keys()) if isinstance(response, dict) else 'N/A'}"
-                )
 
                 # Extract image URL or bytes from response
                 image_url = None
                 image_bytes = None
 
                 if isinstance(response, dict):
-                    logger.info(
-                        f"Processing dict response for image {image_id}: "
-                        f"has_data_key={'data' in response}, "
-                        f"data_type={type(response.get('data'))}, "
-                        f"data_length={len(response.get('data', [])) if isinstance(response.get('data'), list) else 'N/A'}"
-                    )
                     if "data" in response and len(response["data"]) > 0:
                         data_item = response["data"][0]
-                        logger.info(
-                            f"Processing data item for image {image_id}: "
-                            f"keys={list(data_item.keys()) if isinstance(data_item, dict) else 'N/A'}, "
-                            f"has_url={'url' in data_item if isinstance(data_item, dict) else False}, "
-                            f"has_b64_json={'b64_json' in data_item if isinstance(data_item, dict) else False}"
-                        )
                         image_url = data_item.get("url")
                         if not image_url:
                             b64_json = data_item.get("b64_json")
@@ -185,10 +145,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                                 import base64
 
                                 image_bytes = base64.b64decode(b64_json)
-                                logger.info(
-                                    f"Decoded base64 image for {image_id}: "
-                                    f"bytes_length={len(image_bytes)}"
-                                )
                     else:
                         # Truncate response for logging (avoid base64 mess)
                         response_str = str(response)
@@ -197,16 +153,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                             if len(response_str) > 500
                             else response_str
                         )
-                        logger.warning(
-                            f"No data array in response for image {image_id}: "
-                            f"response={truncated_response}"
-                        )
                 elif isinstance(response, str):
-                    logger.info(
-                        f"Processing string response for image {image_id}: "
-                        f"length={len(response)}, "
-                        f"is_url_like={response.startswith('http')}"
-                    )
                     image_url = response
                 else:
                     # Truncate response for logging (avoid base64 mess)
@@ -215,10 +162,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                         response_str[:500] + "...[truncated]"
                         if len(response_str) > 500
                         else response_str
-                    )
-                    logger.warning(
-                        f"Unexpected response type for image {image_id}: "
-                        f"type={type(response)}, response={truncated_response}"
                     )
 
                 if not image_url and not image_bytes:
@@ -234,7 +177,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                         f"Response type: {type(response)}, "
                         f"Response: {truncated_response}"
                     )
-                    logger.error(error_msg)
                     await _emit_image_error(
                         image_id, room, error_msg, trace_id=data.trace_id
                     )
@@ -242,9 +184,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
                 # Download image if URL provided
                 if image_url and not image_bytes:
-                    logger.info(
-                        f"Downloading image from URL for {image_id}: {image_url}"
-                    )
                     try:
                         import httpx
 
@@ -253,18 +192,12 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                             image_response = await client.get(image_url)
                             image_response.raise_for_status()
                             image_bytes = image_response.content
-                            logger.info(
-                                f"Successfully downloaded image for {image_id}: "
-                                f"bytes_length={len(image_bytes)}, "
-                                f"content_type={image_response.headers.get('content-type')}"
-                            )
                     except Exception as download_error:
                         error_msg = (
                             f"Failed to download image from URL for {image_id}: "
                             f"{str(download_error)}. URL: {image_url}, "
                             f"Exception type: {type(download_error).__name__}"
                         )
-                        logger.error(error_msg, exc_info=True)
                         await _emit_image_error(
                             image_id, room, error_msg, trace_id=data.trace_id
                         )
@@ -275,7 +208,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                         f"Failed to get image bytes for {image_id}. "
                         f"image_url={image_url}, image_bytes={image_bytes}"
                     )
-                    logger.error(error_msg)
                     await _emit_image_error(
                         image_id, room, error_msg, trace_id=data.trace_id
                     )
@@ -286,7 +218,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     f"Image generation failed for {image_id}: {str(e)}. "
                     f"Exception type: {type(e).__name__}"
                 )
-                logger.error(error_msg, exc_info=True)
                 await _emit_image_error(
                     image_id, room, error_msg, trace_id=data.trace_id
                 )
@@ -318,37 +249,20 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             file_path = f"image/{file_name}"
             full_path = IMAGE_FOLDER / file_name
 
-            logger.info(
-                f"Preparing to save image {image_id}: "
-                f"IMAGE_FOLDER={IMAGE_FOLDER}, "
-                f"file_name={file_name}, "
-                f"full_path={full_path}, "
-                f"image_bytes_length={len(image_bytes) if image_bytes else 0}"
-            )
 
             # Ensure image directory exists
             IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
-            logger.info(
-                f"[IMAGE_DIR_CHECK] image_id={image_id}, trace_id={data.trace_id}, "
-                f"IMAGE_FOLDER={IMAGE_FOLDER}, exists={IMAGE_FOLDER.exists()}"
-            )
 
             # Save image bytes to file
             try:
                 with open(full_path, "wb") as f:
                     f.write(image_bytes)
-                logger.info(
-                    f"[IMAGE_SAVE_SUCCESS] image_id={image_id}, trace_id={data.trace_id}, "
-                    f"full_path={full_path}, file_exists={full_path.exists()}, "
-                    f"file_size={len(image_bytes)} bytes"
-                )
             except Exception as write_error:
                 error_msg = (
                     f"Failed to write image file for {image_id}: {str(write_error)}. "
                     f"full_path={full_path}, IMAGE_FOLDER={IMAGE_FOLDER}, "
                     f"Exception type: {type(write_error).__name__}"
                 )
-                logger.error(error_msg, exc_info=True)
                 await _emit_image_error(
                     image_id, room, error_msg, trace_id=data.trace_id
                 )
@@ -356,11 +270,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
             file_size = len(image_bytes)
 
-            logger.info(
-                f"[IMAGE_GEN_COMPLETE] image_id={image_id}, trace_id={data.trace_id}, "
-                f"file_path={file_path}, size={file_size} bytes, "
-                f"full_path={full_path}, file_exists={full_path.exists()}"
-            )
 
             # Call log_run via internal bus (similar to scenario generation)
             # Note: Image generation via litellm doesn't provide token counts,
@@ -393,10 +302,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in image generation for {image_id}: {e}",
-            exc_info=True,
-        )
         await _emit_image_error(
             image_id, room, f"Unexpected error: {str(e)}", trace_id=data.trace_id
         )
@@ -411,9 +316,6 @@ async def _emit_image_progress(
 ) -> None:
     """Emit WebSocket event for image generation progress."""
     if not room:
-        logger.warning(
-            f"No room specified for image {image_id}, cannot emit WebSocket event"
-        )
         return
 
     if not trace_id:
@@ -452,23 +354,16 @@ async def _emit_image_error(
 ) -> None:
     """Emit WebSocket event for image generation error."""
     if not room:
-        logger.warning(
-            f"No room specified for image {image_id}, cannot emit WebSocket event"
-        )
         return
 
     # Update image record: mark as completed (even on error) to prevent retries
-    pool = get_pool()
-    if pool:
-        try:
-            async with pool.acquire() as conn:
+    try:
+        async with get_db_connection() as conn:
                 sql_update_image = load_sql(
                     "app/sql/v3/images/update_image_completed.sql"
                 )
                 await conn.execute(sql_update_image, image_id, True)
         except Exception as e:
-            logger.error(f"Failed to update image record on error: {e}")
-
     if not trace_id:
         await sio.emit(
             "images_generation_error",
@@ -504,7 +399,6 @@ async def generate_image(sid: str, data: dict[str, Any]) -> None:
         payload = GenerateImagePayload(**data)
         await _generate_image_impl(sid, payload)
     except Exception as e:
-        logger.error(f"Error in generate_image for {sid}: {str(e)}", exc_info=True)
         # Try to emit error if we have image_id
         if isinstance(data, dict) and "image_id" in data:
             image_id = data["image_id"]
@@ -518,14 +412,12 @@ async def generate_image_internal(data: dict[str, Any]) -> None:
     # Extract room from payload (it's passed as "room" not "sid")
     room = data.get("room")
     if not room:
-        logger.error("[generate_image_internal] Missing 'room' in payload")
         return
 
     try:
         payload = GenerateImagePayload(**data)
         await _generate_image_impl(room, payload)  # Use room as sid for internal calls
     except Exception as e:
-        logger.error(f"Error in generate_image_internal: {str(e)}", exc_info=True)
         # Try to emit error if we have image_id
         if isinstance(data, dict) and "image_id" in data:
             image_id = data["image_id"]

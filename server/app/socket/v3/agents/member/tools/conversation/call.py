@@ -45,14 +45,7 @@ class ConversationEndToolErrorPayload(BaseModel):
 async def conversation_end_tool_complete(
     payload: ConversationEndToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[conversation_end_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, chat_id={payload.chat_id}"
-    )
     await sio.emit("conversation_end_complete", payload.model_dump(), room=room)
-    logger.info(f"[conversation_end_complete] Emitted to room={room}")
-
-
 async def conversation_end_tool_error(
     payload: ConversationEndToolErrorPayload, room: str
 ) -> None:
@@ -61,15 +54,10 @@ async def conversation_end_tool_error(
 
 async def _conversation_end_impl(sid: str, data: dict[str, Any]) -> str | None:
     """Internal implementation for ending a conversation."""
-    logger.info(
-        f"[conversation_end] Handler received event: sid={sid}, "
-        f"chat_id={data.get('chat_id', 'unknown')}, trace_id={data.get('trace_id', 'unknown')}"
-    )
 
     try:
         validated = ConversationEndToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in conversation_end for {sid}: {e}")
         await conversation_end_tool_error(
             ConversationEndToolErrorPayload(
                 success=False,
@@ -83,29 +71,15 @@ async def _conversation_end_impl(sid: str, data: dict[str, Any]) -> str | None:
 
     chat_id = validated.chat_id
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await conversation_end_tool_error(
-            ConversationEndToolErrorPayload(
-                success=False,
-                chat_id=chat_id,
-                trace_id=trace_id,
-                message="Database connection pool not available",
-            ),
-            room=f"simulation_{chat_id}",
-        )
-        return None
+    # Replaced with get_db_connection() None
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Mark conversation as ended
             # This is a placeholder - actual implementation will mark chat as completed
-            logger.info(f"[conversation_end] Ending conversation for chat {chat_id}")
-
             # Emit complete event
             await internal_sio.emit(
                 "conversation_end_complete",
@@ -121,7 +95,6 @@ async def _conversation_end_impl(sid: str, data: dict[str, Any]) -> str | None:
             return "success"
 
     except Exception as e:
-        logger.error(f"Error in conversation_end for {sid}: {str(e)}", exc_info=True)
         await conversation_end_tool_error(
             ConversationEndToolErrorPayload(
                 success=False,

@@ -8,16 +8,15 @@ from agents import Runner, Tool, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.agents.utils.build_hint_agent import build_hint_agent
 from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.documents.format_document_info import format_document_info
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -71,27 +70,8 @@ async def _generate_hints_impl(
     department_id: uuid.UUID,
 ) -> None:
     """Internal implementation for hint generation."""
-    """Internal implementation for hint generation."""
-    pool = get_pool()
-    if not pool:
-        logger.error("Database connection pool not available for hint generation")
-        await hint_generation_progress(
-            HintGenerationProgressPayload(
-                type="error",
-                message="Database connection pool not available",
-                error="Database connection pool not available",
-                chat_id=str(chat_id),
-                message_id=str(message_id),
-            ),
-            room=f"simulation_{chat_id}",
-        )
-        return
-
-    async with pool.acquire() as conn:
-        try:
-            logger.info(
-                f"Starting hint generation for chat {chat_id}, message {message_id}"
-            )
+    try:
+        async with get_db_connection() as conn:
 
             # Get context AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
@@ -127,10 +107,6 @@ async def _generate_hints_impl(
                     )
                     return
                 # Log other errors
-                logger.error(
-                    f"Failed to get context and create run for hint generation: {str(e)}",
-                    exc_info=True,
-                )
                 await hint_generation_progress(
                     HintGenerationProgressPayload(
                         type="error",
@@ -377,7 +353,6 @@ async def _generate_hints_impl(
                 """Create a strategic hint for the GTA. Call this tool multiple times to create multiple hints."""
                 hint_results.append(hint)
                 current_count = len(hint_results)
-                logger.info(f"✓ Created hint {current_count}: {hint[:80]}...")
                 if current_count < 3:
                     return f"Hint {current_count} created successfully. Continue until at least 3 hints are created."
                 else:
@@ -393,7 +368,6 @@ async def _generate_hints_impl(
             hint_agent = build_hint_agent(context, hint_tools)
 
             # Run the hint agent
-            logger.info("Running hint agent with parallel tool calls...")
             with trace(
                 chat["title"], trace_id=chat["trace_id"], group_id=str(attempt["id"])
             ):
@@ -425,19 +399,8 @@ async def _generate_hints_impl(
                     "departmentId": str(department_id),
                 },
             )
-
-            logger.info("Hint agent completed successfully")
-
             # Extract hints from closure variables (now a list)
             hints_generated = len(hint_results)
-            logger.info(f"Generated {hints_generated} hints")
-
-            if hints_generated < 3:
-                logger.warning(
-                    f"Not all hints were generated for message {message_id}. "
-                    f"Got {hints_generated} hints, expected at least 3"
-                )
-
             # Create hints directly in database
             non_empty_hints = [h for h in hint_results if h and h.strip()]
 
@@ -458,9 +421,6 @@ async def _generate_hints_impl(
                         elif hint_ids is None:
                             hint_ids = []
 
-                        logger.info(
-                            f"Created {len(hint_ids)} hints for message {message_id} in chat {chat_id}"
-                        )
 
                         # Emit completion event
                         hints_for_event = [
@@ -484,7 +444,6 @@ async def _generate_hints_impl(
                             room=f"simulation_{chat_id}",
                         )
                     else:
-                        logger.error(f"Failed to create hints for message {message_id}")
                         await hint_generation_progress(
                             HintGenerationProgressPayload(
                                 type="error",
@@ -496,10 +455,6 @@ async def _generate_hints_impl(
                             room=f"simulation_{chat_id}",
                         )
                 except Exception as create_error:
-                    logger.error(
-                        f"Error creating hints for message {message_id}: {create_error}",
-                        exc_info=True,
-                    )
                     await hint_generation_progress(
                         HintGenerationProgressPayload(
                             type="error",
@@ -511,13 +466,29 @@ async def _generate_hints_impl(
                         room=f"simulation_{chat_id}",
                     )
             else:
-                logger.warning(f"No non-empty hints provided for message {message_id}")
-        except Exception as e:
-            logger.error(
-                f"Hint generation failed for message {message_id}: {e}",
-                exc_info=True,
-            )
-
+                # No non-empty hints provided
+                await hint_generation_progress(
+                    HintGenerationProgressPayload(
+                        type="error",
+                        message="No valid hints generated",
+                        error="No non-empty hints provided",
+                        chat_id=str(chat_id),
+                        message_id=str(message_id),
+                    ),
+                    room=f"simulation_{chat_id}",
+                )
+    except RuntimeError:
+        await hint_generation_progress(
+            HintGenerationProgressPayload(
+                type="error",
+                message="Database connection pool not available",
+                error="Database connection pool not available",
+                chat_id=str(chat_id),
+                message_id=str(message_id),
+            ),
+            room=f"simulation_{chat_id}",
+        )
+    except Exception as e:
             # Emit error event
             try:
                 await hint_generation_progress(
@@ -530,8 +501,9 @@ async def _generate_hints_impl(
                     ),
                     room=f"simulation_{chat_id}",
                 )
-            except Exception as emit_err:
-                logger.warning(f"Failed to emit error event: {emit_err}")
+            except Exception:
+                # Error emitting error event - Socket.IO handles logging
+                pass
 
 
 @sio.event  # type: ignore
@@ -545,7 +517,6 @@ async def simulation_hints_generate(sid: str, data: dict[str, Any]) -> None:
             uuid.UUID(validated.department_id),
         )
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_hints_generate for {sid}: {e}")
         await hint_generation_progress(
             HintGenerationProgressPayload(
                 type="error",
@@ -567,11 +538,20 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
         message_id = uuid.UUID(data["message_id"])
         department_id = uuid.UUID(data["department_id"])
         await _generate_hints_impl(chat_id, message_id, department_id)
-    except Exception as e:
-        logger.error(
-            f"Error in internal simulation_hints_generate: {e}",
-            exc_info=True,
+    except RuntimeError:
+        await hint_generation_progress(
+            HintGenerationProgressPayload(
+                type="error",
+                message="Database connection pool not available",
+                error="Database connection pool not available",
+                chat_id=str(data.get("chat_id", "unknown")),
+                message_id=str(data.get("message_id", "unknown")),
+            ),
+            room=f"simulation_{data.get('chat_id', 'unknown')}",
         )
+    except Exception as e:
+        # Error in hint generation - Socket.IO handles logging
+        pass
 
 
 # FastAPI endpoint for OpenAPI documentation

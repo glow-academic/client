@@ -59,9 +59,10 @@ latest_grade AS (
          c.id AS simulation_chat_id,
          g.score::numeric AS score,
          g.time_taken::numeric AS time_taken_seconds,
-         g.rubric_id,
+         rga.rubric_id,
          g.created_at
   FROM grades g
+  JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
   JOIN runs r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id
@@ -391,9 +392,9 @@ CREATE INDEX analytics_simulation_idx
   ON analytics (simulation_id);
 
 -- Additional indexes for skill performance optimization
--- Latest grade per (run, rubric) fast path
-CREATE INDEX IF NOT EXISTS grades_run_rubric_created_idx
-  ON grades (run_id, rubric_id, created_at DESC);
+-- Latest grade per (run, rubric_grade_agent) fast path
+CREATE INDEX IF NOT EXISTS grades_run_rubric_grade_agent_created_idx
+  ON grades (run_id, rubric_grade_agent_id, created_at DESC);
 
 -- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
@@ -470,6 +471,12 @@ CREATE INDEX analytics_practice_unarch_idx
 -- Department ID index for filtering by department
 CREATE INDEX analytics_department_id_idx
   ON analytics (department_id);
+
+-- ============================================================================
+-- Step 7: Refresh Materialized View with Data
+-- ============================================================================
+
+REFRESH MATERIALIZED VIEW analytics;
 
 COMMIT;
 

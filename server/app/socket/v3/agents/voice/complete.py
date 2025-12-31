@@ -54,25 +54,9 @@ async def _simulation_voice_complete_impl(
     try:
         chat_id_uuid = uuid.UUID(data.chat_id)
         chat_id_str = data.chat_id
+        # Replaced with get_db_connection()
 
-        logger.info(
-            f"Received simulation_voice_complete: chat_id={data.chat_id}, run_id={data.run_id}"
-        )
-
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            await sio.emit(
-                "simulations_voice_complete",
-                SimulationVoiceCompleteResponsePayload(
-                    success=False,
-                    message="Database connection pool not available",
-                ).model_dump(),
-                room=sid,
-            )
-            return
-
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Get run_id if not provided
             run_id_uuid = None
             if data.run_id:
@@ -88,7 +72,6 @@ async def _simulation_voice_complete_impl(
                     run_id_uuid = latest_run_row["run_id"]
 
             if not run_id_uuid:
-                logger.warning(f"No run_id found for chat {chat_id_str}")
                 await sio.emit(
                     "simulations_voice_complete",
                     SimulationVoiceCompleteResponsePayload(
@@ -108,10 +91,6 @@ async def _simulation_voice_complete_impl(
 
             if result_row and result_row.get("success"):
                 messages_finalized = result_row.get("messages_finalized", "0")
-                logger.info(
-                    f"Finalized voice simulation for chat {chat_id_str}, run {str(run_id_uuid)}, "
-                    f"messages_finalized={messages_finalized}"
-                )
                 await sio.emit(
                     "simulations_voice_complete",
                     SimulationVoiceCompleteResponsePayload(
@@ -121,9 +100,6 @@ async def _simulation_voice_complete_impl(
                     room=sid,
                 )
             else:
-                logger.warning(
-                    f"Failed to finalize voice simulation for chat {chat_id_str}"
-                )
                 await sio.emit(
                     "simulations_voice_complete",
                     SimulationVoiceCompleteResponsePayload(
@@ -133,9 +109,6 @@ async def _simulation_voice_complete_impl(
                 )
 
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_complete for {sid}: {str(e)}", exc_info=True
-        )
         await sio.emit(
             "simulations_voice_complete",
             SimulationVoiceCompleteResponsePayload(
@@ -158,7 +131,6 @@ async def simulation_voice_complete(sid: str, data: dict[str, Any]) -> None:
             error_response_type=SimulationVoiceErrorPayload,
         )
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_complete for {sid}: {e}")
         await sio.emit(
             "simulations_voice_error",
             SimulationVoiceErrorPayload(

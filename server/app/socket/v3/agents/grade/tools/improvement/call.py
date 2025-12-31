@@ -61,16 +61,9 @@ class MessageImprovementToolErrorPayload(BaseModel):
 async def message_improvement_tool_complete(
     payload: MessageImprovementToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[grading_tool_message_improvement_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, chat_id={payload.chat_id}"
-    )
     await sio.emit(
         "grading_tools_message_improvement_complete", payload.model_dump(), room=room
     )
-    logger.info(f"[grading_tool_message_improvement_complete] Emitted to room={room}")
-
-
 async def message_improvement_tool_error(
     payload: MessageImprovementToolErrorPayload, room: str
 ) -> None:
@@ -83,17 +76,10 @@ async def _grading_tool_message_improvement_impl(
     sid: str, data: dict[str, Any]
 ) -> str | None:
     """Internal implementation for message improvement feedback."""
-    logger.info(
-        f"[grading_tool_message_improvement] Handler received event: sid={sid}, "
-        f"chat_id={data.get('chat_id', 'unknown')}, trace_id={data.get('trace_id', 'unknown')}"
-    )
 
     try:
         validated = MessageImprovementToolPayload(**data)
     except ValidationError as e:
-        logger.error(
-            f"Validation error in grading_tool_message_improvement for {sid}: {e}"
-        )
         await message_improvement_tool_error(
             MessageImprovementToolErrorPayload(
                 success=False,
@@ -107,25 +93,13 @@ async def _grading_tool_message_improvement_impl(
 
     chat_id = validated.chat_id
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await message_improvement_tool_error(
-            MessageImprovementToolErrorPayload(
-                success=False,
-                chat_id=chat_id,
-                trace_id=trace_id,
-                message="Database connection pool not available",
-            ),
-            room=f"simulation_{chat_id}",
-        )
-        return None
+    # Replaced with get_db_connection() None
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             grade_id_uuid = uuid.UUID(validated.grade_id)
 
             # Map message number to message ID (reverse the mapping)
@@ -135,7 +109,6 @@ async def _grading_tool_message_improvement_impl(
 
             if validated.message_number not in number_to_id_map:
                 error_msg = f"Message number {validated.message_number} not found in message_id_map"
-                logger.warning(error_msg)
                 await message_improvement_tool_error(
                     MessageImprovementToolErrorPayload(
                         success=False,
@@ -152,7 +125,6 @@ async def _grading_tool_message_improvement_impl(
                 message_id_uuid = uuid.UUID(message_id_str)
             except ValueError as e:
                 error_msg = f"Invalid message ID format {message_id_str}: {e}"
-                logger.warning(error_msg)
                 await message_improvement_tool_error(
                     MessageImprovementToolErrorPayload(
                         success=False,
@@ -213,14 +185,7 @@ async def _grading_tool_message_improvement_impl(
                 await conn.execute(
                     sql_create_replaces, str(message_feedback_id), replaces_json
                 )
-                logger.info(
-                    f"✓ Created {len(validated.strike)} strike/replace(s) for message feedback {message_feedback_id}"
-                )
 
-            logger.info(
-                f"✓ Created message improvement feedback for message {validated.message_number} "
-                f"(message_id={message_id_uuid}, feedback_id={message_feedback_id})"
-            )
 
             await message_improvement_tool_complete(
                 MessageImprovementToolCompletePayload(
@@ -236,10 +201,6 @@ async def _grading_tool_message_improvement_impl(
             return f"Improvement feedback added to message {validated.message_number}"
 
     except Exception as e:
-        logger.error(
-            f"Error in grading_tool_message_improvement for {sid}: {str(e)}",
-            exc_info=True,
-        )
         await message_improvement_tool_error(
             MessageImprovementToolErrorPayload(
                 success=False,

@@ -56,10 +56,6 @@ async def _member_progress_impl(
 ) -> None:
     """Handle member_progress event - upserts user message/run, triggers generate."""
     try:
-        logger.info(
-            f"Received member_progress from {sid}: chat_id={data.chat_id}, voice_mode={data.voice_mode}"
-        )
-
         chat_id = data.chat_id
         if not chat_id:
             await member_progress_error(
@@ -79,19 +75,9 @@ async def _member_progress_impl(
             return
 
         chat_id_uuid = uuid.UUID(chat_id)
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            await member_progress_error(
-                MemberProgressErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                ),
-                room=sid,
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Upsert user message and run via SQL
             sql_upsert = load_sql(
                 "app/sql/v3/member/member_progress_upsert_complete.sql"
@@ -126,10 +112,6 @@ async def _member_progress_impl(
                         room=sid,
                     )
                     return
-                logger.error(
-                    f"Failed to upsert user message/run for {sid}: {str(e)}",
-                    exc_info=True,
-                )
                 await member_progress_error(
                     MemberProgressErrorPayload(
                         success=False,
@@ -184,8 +166,6 @@ async def _member_progress_impl(
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging member progress activity: {log_error}")
-
             # Trigger appropriate generate event based on audio flag (voice_mode)
             if audio:
                 # Voice mode: trigger simulation_voice_generate
@@ -198,9 +178,6 @@ async def _member_progress_impl(
                         "group_id": group_id,
                     },
                 )
-                logger.info(
-                    f"Triggered simulation_voice_generate for chat {chat_id_uuid}"
-                )
             else:
                 # Text mode: trigger simulation_text_generate
                 await internal_sio.emit(
@@ -212,16 +189,7 @@ async def _member_progress_impl(
                         "group_id": group_id,
                     },
                 )
-                logger.info(
-                    f"Triggered simulation_text_generate for chat {chat_id_uuid}"
-                )
-
-            logger.info(
-                f"Successfully processed member_progress: message_id={message_id}, run_id={run_id}, audio={audio}"
-            )
-
     except ValueError as e:
-        logger.error(f"Invalid UUID format in member_progress for {sid}: {e}")
         await member_progress_error(
             MemberProgressErrorPayload(
                 success=False, message=f"Invalid UUID format: {str(e)}"
@@ -229,7 +197,6 @@ async def _member_progress_impl(
             room=sid,
         )
     except Exception as e:
-        logger.error(f"Error handling member_progress: {e}", exc_info=True)
         await member_progress_error(
             MemberProgressErrorPayload(success=False, message=str(e)),
             room=sid,

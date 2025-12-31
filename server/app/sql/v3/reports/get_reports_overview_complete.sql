@@ -791,13 +791,14 @@ filt AS (
                     sg.created_at,
                     (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
                 FROM grades sg
+                LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
                 JOIN runs r_stag ON r_stag.id = sg.run_id
                 JOIN group_runs gr_stag ON gr_stag.run_id = r_stag.id
                 JOIN groups g_stag ON g_stag.id = gr_stag.group_id
                 JOIN chat_groups cg_stag ON cg_stag.group_id = g_stag.id
                 JOIN chats c_stag ON c_stag.id = cg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
-                JOIN rubrics r ON r.id = sg.rubric_id
+                LEFT JOIN rubrics r ON r.id = rga.rubric_id
                 WHERE EXISTS (
                     SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
@@ -1297,8 +1298,9 @@ filt AS (
                 SELECT DISTINCT ON (c.id)
                     scg.id,
                     c.id AS chat_id,
-                    scg.rubric_id
+                    rga.rubric_id
                 FROM grades scg
+                LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
                 JOIN runs r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN groups g ON g.id = gr.group_id

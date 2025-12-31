@@ -52,10 +52,6 @@ class LogRunPayload(BaseModel):
 async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
     """Handle run pricing and logging requests via WebSocket (async, non-blocking)."""
     try:
-        logger.info(
-            f"Received log_run request from {sid} for run_id={data.runId}, operation={data.operationType}"
-        )
-
         run_id = uuid.UUID(data.runId)
         department_id = uuid.UUID(data.departmentId) if data.departmentId else None
 
@@ -71,12 +67,9 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                             developer_contents.append(stripped)
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available for pricing")
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Use consolidated SQL file that handles everything in one transaction
             sql_log_run = load_sql("app/sql/v3/model_runs/log_run_complete.sql")
             await conn.execute(
@@ -93,12 +86,6 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                 developer_contents if developer_contents else None,
                 data.assistantOutput,
             )
-
-            logger.info(
-                f"✓ Completed pricing and logging for run_id={run_id}, "
-                f"operation={data.operationType}, "
-                f"tokens={data.inputTextTokens}+{data.outputTextTokens}"
-            )
             # Log activity (only for client-to-server events, not internal)
             if sid and sid != "" and sid != "internal":
                 try:
@@ -114,8 +101,6 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(f"Error logging websocket log activity: {log_error}")
-
             # Always save OpenAI messages as JSON file
             try:
                 messages: list[dict[str, str]] = []
@@ -145,21 +130,10 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                     json_file_path = UPLOAD_FOLDER / f"{run_id}.json"
                     with open(json_file_path, "w", encoding="utf-8") as f:
                         json.dump(messages, f, indent=2, ensure_ascii=False)
-                    logger.info(
-                        f"Saved OpenAI messages to {json_file_path} ({len(messages)} messages)"
-                    )
             except Exception as json_error:
                 # Log error but don't fail the request
-                logger.error(
-                    f"Failed to save JSON file for run_id={run_id}: {str(json_error)}",
-                    exc_info=True,
-                )
 
     except Exception as e:
-        logger.error(
-            f"Error in log_run for {sid}, run_id={data.runId}: {str(e)}",
-            exc_info=True,
-        )
         # Don't emit error to client - pricing is async and failures are logged
 
 
@@ -170,9 +144,6 @@ async def log_run(sid: str, data: dict[str, Any]) -> None:
         validated = LogRunPayload(**data)
         await _log_run_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in log_run for {sid}: {e}")
-
-
 @internal_sio.on("log_run")
 async def log_run_internal(data: dict[str, Any]) -> None:
     """Handle log_run event from internal bus (server-to-server)."""
@@ -181,9 +152,6 @@ async def log_run_internal(data: dict[str, Any]) -> None:
         # Use empty string as sid for internal calls (not needed for async background work)
         await _log_run_impl("", validated)
     except ValidationError as e:
-        logger.error(f"Validation error in log_run_internal: {e}")
-
-
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/log", response_model=dict[str, bool])
 async def log_run_api(request: LogRunPayload) -> dict[str, bool]:

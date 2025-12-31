@@ -310,8 +310,9 @@ history_chat_grades AS (
     SELECT DISTINCT ON (c.id)
         c.id AS chat_id,
         scg.score,
-        scg.rubric_id
+        rga.rubric_id
     FROM grades scg
+    LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
     JOIN runs r ON r.id = scg.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN grade_groups gg ON gg.group_id = gr.group_id

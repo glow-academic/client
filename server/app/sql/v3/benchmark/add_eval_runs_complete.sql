@@ -19,19 +19,13 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
+-- 2) Drop types WITHOUT CASCADE (drop dependent types first)
 DO $$
-DECLARE
-    r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
-        WHERE typname LIKE 'i_add_eval_runs_v3_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
-    END LOOP;
+    -- Drop i_add_eval_runs_v3_run first (depends on i_add_eval_runs_v3_rubric_grade_agent)
+    DROP TYPE IF EXISTS types.i_add_eval_runs_v3_run;
+    -- Then drop i_add_eval_runs_v3_rubric_grade_agent
+    DROP TYPE IF EXISTS types.i_add_eval_runs_v3_rubric_grade_agent;
 END $$;
 
 -- 3) Create composite types

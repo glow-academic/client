@@ -1197,7 +1197,7 @@ messages_with_tree AS (
 grades_data AS (
     SELECT DISTINCT ON (c.id)
         c.id as chat_id,
-        (scg.id, scg.created_at, c.id, scg.rubric_id, scg.description, scg.passed, scg.score, scg.time_taken)::types.q_get_simulation_attempt_v3_grade as grade
+        (scg.id, scg.created_at, c.id, rga.rubric_id, scg.description, scg.passed, scg.score, scg.time_taken)::types.q_get_simulation_attempt_v3_grade as grade
     FROM params x
     JOIN chats c ON EXISTS (
         SELECT 1 FROM chat_groups cg2
@@ -1212,6 +1212,7 @@ grades_data AS (
     JOIN group_runs gr ON gr.group_id = g.id
     JOIN runs r ON r.id = gr.run_id
     JOIN grades scg ON scg.run_id = r.id
+    LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id

@@ -118,24 +118,12 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                 StopSimulationErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
-            logger.error(f"Emitted error to {sid}: Missing chat_id")
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            await simulation_text_stop_error(
-                StopSimulationErrorPayload(
-                    success=False, message="Database connection pool not available"
-                ),
-                room=sid,
-            )
-            logger.error(
-                f"Emitted error to {sid}: Database connection pool not available"
-            )
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Attempt to cancel the simulation run and the in-process Runner immediately
             from app.infra.v3.websocket.cancel_active_result import cancel_active_result
 
@@ -164,8 +152,6 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                 }
 
             if result["success"] and result["cancelled_message_id"]:
-                logger.info(f"Successfully cancelled simulation run for chat {chat_id}")
-
                 # Emit a cancellation / final content event so clients update UI
                 await simulation_message_cancelled(
                     SimulationMessageCancelledPayload(
@@ -198,12 +184,7 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(
-                        f"Error logging simulation stop activity: {log_error}"
-                    )
-
             else:
-                logger.warning(f"No active simulation run found for chat {chat_id}")
                 await simulation_stopped(
                     SimulationStoppedPayload(
                         chat_id=chat_id,
@@ -214,14 +195,12 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                 )
 
     except Exception as e:
-        logger.error(f"Error stopping simulation for {sid}: {str(e)}")
         await simulation_text_stop_error(
             StopSimulationErrorPayload(
                 success=False, message=f"Failed to stop simulation: {str(e)}"
             ),
             room=sid,
         )
-        logger.error(f"Emitted error to {sid}: Failed to stop simulation: {str(e)}")
         # Log activity error
         try:
             await log_websocket_activity(
@@ -233,9 +212,6 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation stop error activity: {log_error}")
-
-
 @sio.event  # type: ignore
 async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
@@ -243,7 +219,6 @@ async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
         validated = StopSimulationPayload(**data)
         await _simulation_text_stop_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_text_stop for {sid}: {e}")
         await simulation_text_stop_error(
             StopSimulationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -261,11 +236,6 @@ async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging simulation stop validation error activity: {log_error}"
-            )
-
-
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/stop", response_model=dict[str, bool])
 async def simulation_text_stop_api(request: StopSimulationPayload) -> dict[str, bool]:
@@ -298,10 +268,6 @@ async def simulation_text_stop_error_api(
 async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
     """Handle voice session stop requests via WebSocket."""
     try:
-        logger.info(
-            f"Received simulation_voice_stop request from {sid} for chat {data.chat_id}"
-        )
-
         chat_id = data.chat_id
         if not chat_id:
             await simulation_voice_stop_error(
@@ -313,16 +279,11 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
         # Remove voice session
         if chat_id in _voice_sessions:
             del _voice_sessions[chat_id]
-            logger.info(f"Stopped voice session for chat {chat_id}")
         else:
-            logger.warning(f"No voice session found for chat {chat_id}")
-
         # Clear accumulated message IDs to prevent stale data
         async with _voice_message_ids_lock:
             if chat_id in _voice_message_ids:
                 del _voice_message_ids[chat_id]
-                logger.info(f"Cleared accumulated message IDs for chat {chat_id}")
-
         await simulation_voice_stop_response(
             StopVoiceResponsePayload(
                 success=True, message="Voice session stopped successfully"
@@ -340,12 +301,7 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
                 error=False,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging voice simulation stop activity: {log_error}")
-
     except Exception as e:
-        logger.error(
-            f"Error in simulation_voice_stop for {sid}: {str(e)}", exc_info=True
-        )
         await simulation_voice_stop_error(
             StopVoiceErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -360,11 +316,6 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging voice simulation stop error activity: {log_error}"
-            )
-
-
 @sio.event  # type: ignore
 async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler."""
@@ -372,7 +323,6 @@ async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
         validated = StopVoicePayload(**data)
         await _simulation_voice_stop_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_stop for {sid}: {e}")
         await simulation_voice_stop_error(
             StopVoiceErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
@@ -388,11 +338,6 @@ async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(
-                f"Error logging voice simulation stop validation error activity: {log_error}"
-            )
-
-
 # FastAPI endpoints for voice stop
 @client_router.post("/voice_stop", response_model=dict[str, bool])
 async def simulation_voice_stop_api(request: StopVoicePayload) -> dict[str, bool]:

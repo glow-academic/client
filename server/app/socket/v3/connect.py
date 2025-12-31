@@ -60,50 +60,32 @@ async def connect(
         try:
             uuid.UUID(profile_id)
         except ValueError:
-            logger.warning(f"Invalid profileId in connect query params: {profile_id}")
             profile_id = None
 
     if guest_id:
         try:
             uuid.UUID(guest_id)
         except ValueError:
-            logger.warning(f"Invalid guestId in connect query params: {guest_id}")
             guest_id = None
-
-    logger.info(
-        f"Client connecting: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
-    )
-
     if profile_id:
         # Check if another socket is already active for this profile
         old_sid = await get_socket_owner(profile_id)
         if old_sid and old_sid != sid:
-            logger.warning(
-                f"Profile {profile_id} already has active socket {old_sid}. "
-                f"Closing old connection and accepting new one {sid}."
-            )
             # Clean up the entire old session for this profile
-            logger.info(
-                f"Cleaning up profile {profile_id} connections - new socket takeover"
-            )
             # Remove from socket ownership using Redis
             await remove_socket_owner(profile_id)
             # Update database to mark profile as inactive
             try:
                 from datetime import UTC, datetime
 
-                pool = get_pool()
-                if pool:
-                    async with pool.acquire() as conn:
+                async with get_db_connection() as conn:
                         async with conn.transaction():
                             sql = load_sql(
                                 "app/sql/v3/profile/update_profile_to_inactive_complete.sql"
                             )
                             last_active = datetime.now(UTC)
                             await conn.fetchrow(sql, profile_id, last_active)
-                    logger.info(f"Updated profile {profile_id} to inactive in database")
             except Exception as e:
-                logger.error(f"Error updating profile {profile_id} in database: {e}")
             # Forcefully disconnect the old socket from the server-side
             await sio.disconnect(old_sid)
 
@@ -115,33 +97,25 @@ async def connect(
         try:
             from datetime import UTC, datetime
 
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
+            async with get_db_connection() as conn:
                     async with conn.transaction():
                         sql = load_sql(
                             "app/sql/v3/profile/update_profile_to_active_complete.sql"
                         )
                         last_active = datetime.now(UTC)
                         await conn.fetchrow(sql, profile_id, last_active)
-                logger.info(f"Updated profile {profile_id} to active in database")
         except Exception as e:
-            logger.error(f"Error updating profile {profile_id} in database: {e}")
     else:
         # Guest connection (no profile). Optionally join a guest room for targeted emits.
         if guest_id:
             await sio.enter_room(sid, f"guest_{guest_id}")
-            logger.info(f"Guest {guest_id} joined room guest_{guest_id}")
             # Track guest connection and update default guest profile activity
             try:
                 await add_guest_socket(sid)
                 # Increment guest connection counter
                 await increment_guest_count()
             except Exception as e:
-                logger.error(f"Error adding guest socket: {e}")
         else:
-            logger.info("Anonymous guest connection with no guest_id; broadcasts only.")
-
     await connection_confirmed(
         ConnectionConfirmedPayload(
             sid=sid,
@@ -151,11 +125,6 @@ async def connect(
         ),
         room=sid,
     )
-
-    logger.info(
-        f"Client connected successfully: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
-    )
-
     # Log activity (after set_socket_owner so find_profile_by_socket works)
     try:
         await log_websocket_activity(
@@ -167,8 +136,6 @@ async def connect(
             error=False,
         )
     except Exception as e:
-        logger.warning(f"Error logging WebSocket connect activity: {e}")
-
     return True
 
 

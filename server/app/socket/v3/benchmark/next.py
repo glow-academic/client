@@ -39,8 +39,6 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
     Orchestrates section-by-section execution: tools first, then agents.
     """
     try:
-        logger.info(f"Received benchmark_next request from {sid} with data: {data}")
-
         attempt_id = data.attempt_id
         eval_id = data.eval_id
         run_id = data.run_id
@@ -48,16 +46,12 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
         use_groups = data.use_groups
 
         if not attempt_id or not eval_id:
-            logger.error("Missing attempt_id or eval_id in benchmark_next")
             return
 
         # Get connection pool
-        pool = get_pool()
-        if not pool:
-            logger.error("Database connection pool not available")
-            return
+        # Replaced with get_db_connection()
 
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             attempt_id_uuid = uuid.UUID(attempt_id)
             eval_id_uuid = uuid.UUID(eval_id)
 
@@ -67,7 +61,6 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 attempt_id_uuid,
             )
             if not attempt_row:
-                logger.error(f"Attempt {attempt_id} not found")
                 return
 
             infinite_mode = attempt_row.get("infinite_mode", False)
@@ -178,8 +171,6 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                         # Note: Completion is handled asynchronously via event listeners
                         # The tool's eval.py will emit {tool_name}_eval_complete when done
                     else:
-                        logger.warning(f"Tool {tool_id} not found, skipping")
-
             # Note: Stopping condition logic removed - tools execute sequentially
 
             # Execute agents (if not stopped)
@@ -220,8 +211,6 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                         # Note: Completion is handled asynchronously via event listeners
                         # The agent's eval.py will emit {agent_name}_eval_complete when done
                     else:
-                        logger.warning(f"Agent {agent_id} not found, skipping")
-
             # After agents, emit benchmark_end to complete the test
             # Note: Cycle counting and infinite mode logic removed
             await emit_to_internal(
@@ -249,7 +238,6 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             )
 
     except Exception as e:
-        logger.error(f"Error in benchmark_next for {sid}: {str(e)}", exc_info=True)
 
 
 @internal_sio.on("benchmark_next")  # type: ignore
@@ -260,9 +248,6 @@ async def benchmark_next_internal(data: dict[str, Any]) -> None:
         sid = data.get("sid", "internal")
         await _benchmark_next_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in benchmark_next_internal: {e}")
-
-
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/next", response_model=dict[str, bool])
 async def benchmark_next_api(request: BenchmarkNextPayload) -> dict[str, bool]:

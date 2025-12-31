@@ -21,11 +21,16 @@ import type {
   UpdatePersonaIn,
   UpdatePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
+import { personaSearchParamsClient } from "@/app/(main)/create/personas/searchParams.client";
+import {
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { PersonaColorSection } from "@/components/personas/PersonaColorSection";
-import { PersonaIconSection } from "@/components/personas/PersonaIconSection";
 import { PersonaContentSection } from "@/components/personas/PersonaContentSection";
+import { PersonaIconSection } from "@/components/personas/PersonaIconSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -38,27 +43,7 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { Check, Loader2, Power } from "lucide-react";
-
-type StepStatus = "pending" | "active" | "completed";
-
-interface Step {
-  id: string;
-  title: string;
-  description: string;
-  status: StepStatus;
-}
-
-interface FormData {
-  name?: string;
-  description?: string;
-  instructions?: string;
-  color?: string;
-  icon?: string;
-  active?: boolean;
-  departmentIds?: string[] | null;
-  parameterIds?: string[] | null;
-  parameterFieldIds?: string[] | null;
-}
+import { useQueryStates, type Parser } from "nuqs";
 
 export interface PersonaProps {
   personaId?: string;
@@ -89,26 +74,12 @@ export default function Persona({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null,
+        effectiveProfile?.primaryDepartmentId || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
-  );
-
-  const initialFormData: FormData = useMemo(
-    () => ({
-      name: "",
-      description: "",
-      instructions: "",
-      color: "#000000",
-      icon: "Zap",
-      active: true,
-      departmentIds: defaultDepartmentIds,
-    }),
-    [defaultDepartmentIds],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<FormData>();
   const [currentExamples, setCurrentExamples] = useState<string[]>([]);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
@@ -117,6 +88,12 @@ export default function Persona({
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
+
+  // URL-backed state using nuqs (managed by GenericForm, but we need access for initialization)
+  const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
+    history: "replace",
+    shallow: false,
+  });
 
   // Extract body types for type safety
   type CreatePersonaBody = CreatePersonaIn extends { body: infer B }
@@ -144,7 +121,7 @@ export default function Persona({
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
   const createPersona = (
     body: CreatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
   ) => {
     handleCreatePersona(body)
       .then(() => {
@@ -161,7 +138,7 @@ export default function Persona({
 
   const updatePersona = (
     body: UpdatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
   ) => {
     handleUpdatePersona(body)
       .then(() => {
@@ -179,7 +156,10 @@ export default function Persona({
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
     if (!isEditMode || !personaData) return false;
-    return !personaData.can_edit;
+    if ("can_edit" in personaData) {
+      return !(personaData as PersonaDetailOut).can_edit;
+    }
+    return false;
   }, [isEditMode, personaData]);
 
   // Extract examples from example_mapping
@@ -197,15 +177,16 @@ export default function Persona({
   const getExamplesFromMapping = useCallback(
     (
       exampleIds: string[],
-      mapping: Record<string, { name: string }>,
+      mapping: Record<string, { name: string }>
     ): string[] => {
       return exampleIds.map((id) => mapping[id]?.name || "");
     },
-    [],
+    []
   );
 
   // Filter examples_history based on selected departments
   const examplesHistory = useMemo(() => {
+    if (!personaData || !("examples_history" in personaData)) return [];
     const rawHistory =
       (
         personaData as PersonaDetailOut & {
@@ -215,7 +196,8 @@ export default function Persona({
           }>;
         }
       )?.examples_history || [];
-    const selectedDeptIds = formData?.departmentIds || [];
+    const selectedDeptIds =
+      (formData["departmentIds"] as string[] | null | undefined) || [];
 
     // Convert to array of strings for autocomplete
     const examples: string[] = [];
@@ -264,54 +246,103 @@ export default function Persona({
     });
 
     return examples;
-  }, [personaData, formData?.departmentIds]);
+  }, [personaData, formData]);
+
+  // Initialize form data from server (only if URL params are empty)
+  // Use a ref to track if we've initialized to avoid re-initializing on every render
+  const hasInitializedRef = React.useRef(false);
 
   useEffect(() => {
-    if (personaData && isEditMode) {
-      const deptIds = personaData.department_ids || [];
+    if (!personaData || hasInitializedRef.current) return;
+
+    // Only initialize if formData is empty (no URL params set)
+    const hasUrlData =
+      formData["name"] || formData["description"] || formData["color"];
+    if (hasUrlData) {
+      hasInitializedRef.current = true;
+      return;
+    }
+
+    if (isEditMode && "department_ids" in personaData) {
+      const personaDetail = personaData as PersonaDetailOut;
+      const deptIds = personaDetail.department_ids || [];
       const exampleIds =
-        (personaData as PersonaDetailOut & { example_ids?: string[] })
+        (personaDetail as PersonaDetailOut & { example_ids?: string[] })
           ?.example_ids || [];
       const examples = getExamplesFromMapping(exampleIds, exampleMapping);
 
       setFormData({
-        name: personaData.name,
-        description: personaData.description || "",
-        instructions: personaData.instructions || "",
-        color: personaData.color || "#000000",
-        icon: personaData.icon || "Zap",
-        active: personaData.active ?? true,
-        departmentIds: deptIds,
+        name: personaDetail.name || null,
+        description: personaDetail.description || null,
+        instructions: personaDetail.instructions || null,
+        color: personaDetail.color || "#000000",
+        icon: personaDetail.icon || "Zap",
+        active: personaDetail.active ?? true,
+        departmentIds: deptIds.length > 0 ? deptIds : null,
         parameterIds:
           (
-            personaData as PersonaDetailOut & {
+            personaDetail as PersonaDetailOut & {
               linked_parameter_ids?: string[];
             }
-          ).linked_parameter_ids || [],
+          ).linked_parameter_ids &&
+          (
+            personaDetail as PersonaDetailOut & {
+              linked_parameter_ids?: string[];
+            }
+          ).linked_parameter_ids!.length > 0
+            ? (
+                personaDetail as PersonaDetailOut & {
+                  linked_parameter_ids?: string[];
+                }
+              ).linked_parameter_ids!
+            : null,
         parameterFieldIds:
-          (personaData as PersonaDetailOut & { parameter_field_ids?: string[] })
-            .parameter_field_ids || [],
+          (
+            personaDetail as PersonaDetailOut & {
+              parameter_field_ids?: string[];
+            }
+          ).parameter_field_ids &&
+          (
+            personaDetail as PersonaDetailOut & {
+              parameter_field_ids?: string[];
+            }
+          ).parameter_field_ids!.length > 0
+            ? (
+                personaDetail as PersonaDetailOut & {
+                  parameter_field_ids?: string[];
+                }
+              ).parameter_field_ids!
+            : null,
       });
       setCurrentExamples(examples);
-    } else if (!isEditMode && personaData) {
+    } else {
       // For create mode, use defaults from the API response
+      const personaNew = personaData as PersonaNewOut;
       setFormData({
-        ...initialFormData,
-        color: personaData.color || initialFormData.color || "#000000",
-        icon: personaData.icon || initialFormData.icon || "Zap",
+        name: null,
+        description: null,
         instructions:
-          personaData.instructions || initialFormData.instructions || "",
-        parameterIds: [],
-        parameterFieldIds: [],
+          (personaNew as { instructions?: string }).instructions || null,
+        color: (personaNew as { color?: string }).color || "#000000",
+        icon: (personaNew as { icon?: string }).icon || "Zap",
+        active: true,
+        departmentIds:
+          defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
+        parameterIds: null,
+        parameterFieldIds: null,
       });
       setCurrentExamples([]);
     }
+
+    hasInitializedRef.current = true;
   }, [
     personaData,
     isEditMode,
-    initialFormData,
+    defaultDepartmentIds,
     exampleMapping,
     getExamplesFromMapping,
+    setFormData,
+    formData,
   ]);
 
   // Set breadcrumb context when persona data is loaded
@@ -335,17 +366,17 @@ export default function Persona({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData?.name) {
+    if (!formData["name"]) {
       toast.error("Persona name is required");
       return;
     }
 
-    if (!formData?.description) {
+    if (!formData["description"]) {
       toast.error("Persona description is required");
       return;
     }
 
-    if (!formData.instructions) {
+    if (!formData["instructions"]) {
       toast.error("Instructions are required");
       return;
     }
@@ -356,9 +387,13 @@ export default function Persona({
     try {
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
-        formData.departmentIds || [],
+        (formData["departmentIds"] as string[] | null | undefined) || [],
         isSuperadmin,
-        personaData?.valid_department_ids || [],
+        (
+          personaData as PersonaDetailOut & {
+            valid_department_ids?: string[];
+          }
+        )?.valid_department_ids || []
       );
 
       // Ensure profileId exists - required for API calls
@@ -369,17 +404,37 @@ export default function Persona({
       }
 
       if (isEditMode) {
+        const nameValue = formData["name"] as string | null | undefined;
+        const description = formData["description"] as
+          | string
+          | null
+          | undefined;
+        const instructions = formData["instructions"] as
+          | string
+          | null
+          | undefined;
+        const parameterIds = formData["parameterIds"] as
+          | string[]
+          | null
+          | undefined;
+        if (!nameValue) {
+          toast.error("Persona name is required");
+          setIsSubmitting(false);
+          return;
+        }
+        // After null check, nameValue is guaranteed to be string
         updatePersona(
           {
             personaId: personaId!,
-            name: formData.name,
-            description: formData.description || null,
-            instructions: formData.instructions || "",
-            color: formData.color || "#000000",
-            icon: formData.icon || "Zap",
-            active: formData.active ?? true,
+            name: nameValue!,
+            description: description || null,
+            instructions: instructions || "",
+            color:
+              (formData["color"] as string | null | undefined) || "#000000",
+            icon: (formData["icon"] as string | null | undefined) || "Zap",
+            active: (formData["active"] as boolean | null | undefined) ?? true,
             department_ids: finalDepartmentIds,
-            parameter_ids: formData.parameterIds || [],
+            parameter_ids: (parameterIds || []) as string[],
             example_ids: [],
             // profileId comes from X-Profile-Id header automatically
           },
@@ -392,19 +447,40 @@ export default function Persona({
               toast.error(`Failed to update persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          },
+          }
         );
       } else {
+        const nameValue = formData["name"] as string | null | undefined;
+        const description = formData["description"] as
+          | string
+          | null
+          | undefined;
+        const instructions = formData["instructions"] as
+          | string
+          | null
+          | undefined;
+        const parameterIdsValue = formData["parameterIds"] as
+          | string[]
+          | null
+          | undefined;
+        if (!nameValue) {
+          toast.error("Persona name is required");
+          setIsSubmitting(false);
+          return;
+        }
+        // TypeScript type narrowing - nameValue is guaranteed to be string after check
+        const name: string = nameValue; // Explicit type annotation helps TypeScript
         createPersona(
           {
-            name: formData.name,
-            description: formData.description || null,
-            instructions: formData.instructions || "",
-            color: formData.color || "#000000",
-            icon: formData.icon || "Zap",
-            active: formData.active ?? true,
+            name,
+            description: description || null,
+            instructions: instructions || "",
+            color:
+              (formData["color"] as string | null | undefined) || "#000000",
+            icon: (formData["icon"] as string | null | undefined) || "Zap",
+            active: (formData["active"] as boolean | null | undefined) ?? true,
             department_ids: finalDepartmentIds,
-            parameter_ids: formData.parameterIds || [],
+            parameter_ids: (parameterIdsValue || []) as string[],
             example_ids: currentExamples.filter((ex) => ex.trim()),
             // profileId comes from X-Profile-Id header automatically
           },
@@ -417,25 +493,31 @@ export default function Persona({
               toast.error(`Failed to create persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          },
+          }
         );
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
       setIsSubmitting(false);
     }
   };
 
-  // Step status logic
+  // Step status logic (for GenericForm)
   const getStepStatus = useCallback(
-    (stepId: string): StepStatus => {
-      const hasName = !!formData?.name?.trim();
-      const hasDescription = !!formData?.description?.trim();
-      const hasColor = !!formData?.color?.trim();
-      const hasIcon = !!formData?.icon?.trim();
-      const hasInstructions = !!formData?.instructions?.trim();
+    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
+      const hasDescription = !!(
+        formData["description"] as string | null | undefined
+      )?.trim();
+      const hasColor = !!(
+        formData["color"] as string | null | undefined
+      )?.trim();
+      const hasIcon = !!(formData["icon"] as string | null | undefined)?.trim();
+      const hasInstructions = !!(
+        formData["instructions"] as string | null | undefined
+      )?.trim();
 
       switch (stepId) {
         case "basic":
@@ -453,40 +535,37 @@ export default function Persona({
           return "pending";
       }
     },
-    [formData],
+    []
   );
 
-  // Steps array
-  const steps: Step[] = useMemo(() => {
-    return [
+  // Steps configuration for GenericForm
+  const steps = useMemo(
+    () => [
       {
         id: "basic",
         title: "Basic Information",
         description:
           "Set the persona name, description, departments, and active status.",
-        status: getStepStatus("basic"),
       },
       {
         id: "color",
         title: "Color",
         description: "Select a color for the persona.",
-        status: getStepStatus("color"),
       },
       {
         id: "icon",
         title: "Icon",
         description: "Select an icon for the persona.",
-        status: getStepStatus("icon"),
       },
       {
         id: "content",
         title: "Personality",
         description:
           "Define instructions and example messages for the persona.",
-        status: getStepStatus("content"),
       },
-    ];
-  }, [getStepStatus]);
+    ],
+    []
+  );
 
   return (
     <TooltipProvider>
@@ -516,7 +595,8 @@ export default function Persona({
                 </h3>
                 <div className="mt-2 text-sm text-muted-foreground">
                   <p>
-                    {personaData?.department_ids?.length === 0
+                    {(personaData as PersonaDetailOut)?.department_ids
+                      ?.length === 0
                       ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
                       : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
                   </p>
@@ -527,268 +607,346 @@ export default function Persona({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Step 1: Basic Information */}
-          <Card className="transition-all">
-            <CardContent className="pt-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
-                    steps[0]?.status === "completed"
-                      ? "bg-green-500 text-white"
-                      : steps[0]?.status === "active"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted",
-                  )}
-                >
-                  {steps[0]?.status === "completed" ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <span>1</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  {formData?.name !== undefined ? (
-                    <input
-                      type="text"
-                      id="name"
-                      data-testid="input-persona-name"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          name: e.target.value,
-                        }))
-                      }
-                      className={cn(
-                        "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      )}
-                      placeholder="e.g., Enthusiastic Student"
-                      required
-                      disabled={isReadonly}
-                    />
-                  ) : null}
-                  <p className="text-xs text-muted-foreground mt-1 px-2">
-                    {formData?.name === "" || !formData?.name
-                      ? "Click to edit • Name is required"
-                      : "Click to edit"}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-            <CardContent className="pt-0 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                {formData?.description !== undefined ? (
-                  <Textarea
-                    id="description"
-                    data-testid="input-persona-description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    placeholder="Detailed behavior description and personality traits"
-                    rows={4}
-                    required
-                    disabled={isReadonly}
-                  />
-                ) : null}
-              </div>
-
-              {/* Department Selection */}
-              {personaData?.valid_department_ids &&
-              personaData.valid_department_ids.length > 1 ? (
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  {formData?.departmentIds !== undefined ? (
-                    <GenericPicker
-                      items={personaData?.department_mapping || {}}
-                      itemIds={personaData?.valid_department_ids || []}
-                      selectedIds={formData.departmentIds || []}
-                      onSelect={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          departmentIds: ids,
-                        }))
-                      }
-                      getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => dept.name || ""}
-                      getSearchText={(dept) =>
-                        `${dept.name} ${dept.description || ""}`
-                      }
-                      placeholder="All Departments"
-                      disabled={isReadonly}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                    />
-                  ) : null}
-                </div>
-              ) : null}
-
-              {/* Required Parameters */}
-              {personaData &&
-              (
-                personaData as PersonaDetailOut & {
-                  linked_parameter_ids?: string[];
-                }
-              ).linked_parameter_ids &&
-              (
-                personaData as PersonaDetailOut & {
-                  linked_parameter_ids?: string[];
-                }
-              ).linked_parameter_ids!.length > 0 ? (
-                <div className="space-y-4">
-                  <Label>Required Parameters</Label>
-                  {formData?.parameterFieldIds !== undefined ? (
-                    <ParameterSelector
-                      parameterMapping={
-                        (
-                          personaData as PersonaDetailOut & {
-                            parameter_mapping?: Record<
-                              string,
-                              {
-                                name: string;
-                                description: string;
-                                numerical: boolean;
-                                document_parameter: boolean;
-                                persona_parameter: boolean;
+          <GenericForm
+            nuqsParsers={
+              personaSearchParamsClient as Record<string, Parser<unknown>>
+            }
+            steps={steps}
+            getStepStatus={getStepStatus}
+            formData={formData}
+            setFormData={setFormData}
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+            renderStep={({
+              stepId,
+              stepStatus,
+              stepTitle,
+              stepDescription,
+              stepNumber,
+              formData: stepFormData,
+              setFormData: setStepFormData,
+            }) => {
+              switch (stepId) {
+                case "basic":
+                  return (
+                    <Card className="transition-all">
+                      <CardContent className="pt-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
+                              stepStatus === "completed"
+                                ? "bg-green-500 text-white"
+                                : stepStatus === "active"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                            )}
+                          >
+                            {stepStatus === "completed" ? (
+                              <Check className="w-4 h-4" />
+                            ) : (
+                              <span>{stepNumber}</span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              id="name"
+                              data-testid="input-persona-name"
+                              value={
+                                (stepFormData["name"] as
+                                  | string
+                                  | null
+                                  | undefined) || ""
                               }
-                            >;
-                          }
-                        ).parameter_mapping || {}
-                      }
-                      fieldMapping={
-                        (
-                          personaData as PersonaDetailOut & {
-                            field_mapping?: Record<
-                              string,
-                              {
-                                name: string;
-                                description: string;
-                                parameter_id: string;
-                                parameter_name: string;
-                                value: string;
+                              onChange={(e) =>
+                                setStepFormData({
+                                  name: e.target.value || null,
+                                })
                               }
-                            >;
-                          }
-                        ).field_mapping || {}
-                      }
-                      validParameterItemIds={
+                              className={cn(
+                                "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                              )}
+                              placeholder="e.g., Enthusiastic Student"
+                              required
+                              disabled={isReadonly}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1 px-2">
+                              {!stepFormData["name"]
+                                ? "Click to edit • Name is required"
+                                : "Click to edit"}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardContent className="pt-0 space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Description *</Label>
+                          <Textarea
+                            id="description"
+                            data-testid="input-persona-description"
+                            value={
+                              (stepFormData["description"] as
+                                | string
+                                | null
+                                | undefined) || ""
+                            }
+                            onChange={(e) =>
+                              setStepFormData({
+                                description: e.target.value || null,
+                              })
+                            }
+                            placeholder="Detailed behavior description and personality traits"
+                            rows={4}
+                            required
+                            disabled={isReadonly}
+                          />
+                        </div>
+
+                        {/* Department Selection */}
+                        {personaData?.valid_department_ids &&
+                        personaData.valid_department_ids.length > 1 ? (
+                          <div className="space-y-2">
+                            <Label htmlFor="department">Department</Label>
+                            <GenericPicker
+                              items={
+                                (
+                                  personaData as PersonaDetailOut & {
+                                    department_mapping?: Record<
+                                      string,
+                                      unknown
+                                    >;
+                                  }
+                                )?.department_mapping || {}
+                              }
+                              itemIds={
+                                (
+                                  personaData as PersonaDetailOut & {
+                                    valid_department_ids?: string[];
+                                  }
+                                )?.valid_department_ids || []
+                              }
+                              selectedIds={
+                                (stepFormData["departmentIds"] as
+                                  | string[]
+                                  | null
+                                  | undefined) || []
+                              }
+                              onSelect={(ids) =>
+                                setStepFormData({
+                                  departmentIds: ids.length > 0 ? ids : null,
+                                })
+                              }
+                              getId={(dept) => (dept as { id: string }).id}
+                              getLabel={(dept) =>
+                                (dept as { name: string }).name || ""
+                              }
+                              getSearchText={(dept) =>
+                                `${(dept as { name: string }).name} ${(dept as { description?: string }).description || ""}`
+                              }
+                              placeholder="All Departments"
+                              disabled={isReadonly}
+                              multiSelect={true}
+                              hideSelectedChips={true}
+                              buttonClassName="w-full"
+                            />
+                          </div>
+                        ) : null}
+
+                        {/* Required Parameters */}
+                        {personaData &&
+                        "linked_parameter_ids" in personaData &&
                         (
                           personaData as PersonaDetailOut & {
-                            valid_parameter_item_ids?: string[];
+                            linked_parameter_ids?: string[];
                           }
-                        ).valid_parameter_item_ids || []
+                        ).linked_parameter_ids &&
+                        (
+                          personaData as PersonaDetailOut & {
+                            linked_parameter_ids?: string[];
+                          }
+                        ).linked_parameter_ids!.length > 0 ? (
+                          <div className="space-y-4">
+                            <Label>Required Parameters</Label>
+                            <ParameterSelector
+                              parameterMapping={
+                                (
+                                  personaData as PersonaDetailOut & {
+                                    parameter_mapping?: Record<
+                                      string,
+                                      {
+                                        name: string;
+                                        description: string;
+                                        numerical: boolean;
+                                        document_parameter: boolean;
+                                        persona_parameter: boolean;
+                                      }
+                                    >;
+                                  }
+                                ).parameter_mapping || {}
+                              }
+                              fieldMapping={
+                                (
+                                  personaData as PersonaDetailOut & {
+                                    field_mapping?: Record<
+                                      string,
+                                      {
+                                        name: string;
+                                        description: string;
+                                        parameter_id: string;
+                                        parameter_name: string;
+                                        value: string;
+                                      }
+                                    >;
+                                  }
+                                ).field_mapping || {}
+                              }
+                              validParameterItemIds={
+                                (
+                                  personaData as PersonaDetailOut & {
+                                    valid_parameter_item_ids?: string[];
+                                  }
+                                ).valid_parameter_item_ids || []
+                              }
+                              selectedParameterItemIds={
+                                (stepFormData["parameterFieldIds"] as
+                                  | string[]
+                                  | null
+                                  | undefined) || []
+                              }
+                              onParameterItemIdsChange={(ids) =>
+                                setStepFormData({
+                                  parameterFieldIds:
+                                    ids.length > 0 ? ids : null,
+                                })
+                              }
+                              disabled={isReadonly}
+                            />
+                          </div>
+                        ) : null}
+
+                        {/* Active Switch */}
+                        <div className="space-y-2 pt-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor="active"
+                                className="text-sm flex items-center gap-1.5"
+                              >
+                                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                                Active
+                              </Label>
+                              <Switch
+                                id="active"
+                                checked={
+                                  (stepFormData["active"] as
+                                    | boolean
+                                    | null
+                                    | undefined) ?? true
+                                }
+                                onCheckedChange={(checked) =>
+                                  setStepFormData({ active: checked || null })
+                                }
+                                disabled={isReadonly}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground pl-5">
+                              Inactive personas will not be available for
+                              scenarios
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+
+                case "color":
+                  return (
+                    <PersonaColorSection
+                      color={
+                        (stepFormData["color"] as string | null | undefined) ||
+                        "#000000"
                       }
-                      selectedParameterItemIds={
-                        formData.parameterFieldIds || []
+                      presetColors={
+                        (
+                          personaData as PersonaDetailOut & {
+                            preset_colors?: string[];
+                          }
+                        )?.preset_colors || []
                       }
-                      onParameterItemIdsChange={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          parameterFieldIds: ids,
-                        }))
+                      onColorChange={(color) =>
+                        setStepFormData({ color: color || null })
                       }
-                      disabled={isReadonly}
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
                     />
-                  ) : null}
-                </div>
-              ) : null}
+                  );
 
-              {/* Active Switch */}
-              <div className="space-y-2 pt-2">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="active"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                      Active
-                    </Label>
-                    {formData?.active !== undefined ? (
-                      <Switch
-                        id="active"
-                        checked={formData.active ?? true}
-                        onCheckedChange={(checked) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            active: checked,
-                          }))
-                        }
-                        disabled={isReadonly}
-                      />
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Inactive personas will not be available for scenarios
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                case "icon":
+                  return (
+                    <PersonaIconSection
+                      icon={
+                        (stepFormData["icon"] as string | null | undefined) ||
+                        "Zap"
+                      }
+                      suggestedIcons={
+                        (
+                          personaData as PersonaDetailOut & {
+                            suggested_icons?: string[];
+                          }
+                        )?.suggested_icons || []
+                      }
+                      validIcons={
+                        (
+                          personaData as PersonaDetailOut & {
+                            valid_icons?: string[];
+                          }
+                        )?.valid_icons || []
+                      }
+                      onIconChange={(icon) =>
+                        setStepFormData({ icon: icon || null })
+                      }
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
+                    />
+                  );
 
-          {/* Step 2: Color */}
-          {formData?.color !== undefined && (
-            <PersonaColorSection
-              color={formData.color}
-              presetColors={personaData?.preset_colors || []}
-              onColorChange={(color) =>
-                setFormData((prev) => ({ ...prev, color }))
-              }
-              stepStatus={getStepStatus("color")}
-              stepNumber={2}
-              stepTitle={steps[1]?.title || "Color"}
-              stepDescription={
-                steps[1]?.description || "Select a color for the persona."
-              }
-              isReadonly={isReadonly}
-            />
-          )}
+                case "content":
+                  return (
+                    <PersonaContentSection
+                      instructions={
+                        (stepFormData["instructions"] as
+                          | string
+                          | null
+                          | undefined) || ""
+                      }
+                      onInstructionsChange={(instructions) =>
+                        setStepFormData({
+                          instructions: instructions || null,
+                        })
+                      }
+                      exampleMessages={currentExamples}
+                      onExampleMessagesChange={setCurrentExamples}
+                      examplesHistory={examplesHistory}
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
+                    />
+                  );
 
-          {/* Step 3: Icon */}
-          {formData?.icon !== undefined && (
-            <PersonaIconSection
-              icon={formData.icon}
-              suggestedIcons={personaData?.suggested_icons || []}
-              validIcons={personaData?.valid_icons || []}
-              onIconChange={(icon) =>
-                setFormData((prev) => ({ ...prev, icon }))
+                default:
+                  return null;
               }
-              stepStatus={getStepStatus("icon")}
-              stepNumber={3}
-              stepTitle={steps[2]?.title || "Icon"}
-              stepDescription={
-                steps[2]?.description || "Select an icon for the persona."
-              }
-              isReadonly={isReadonly}
-            />
-          )}
-
-          {/* Step 4: Personality */}
-          {formData?.instructions !== undefined && (
-            <PersonaContentSection
-              instructions={formData.instructions}
-              onInstructionsChange={(instructions) =>
-                setFormData((prev) => ({ ...prev, instructions }))
-              }
-              exampleMessages={currentExamples}
-              onExampleMessagesChange={setCurrentExamples}
-              examplesHistory={examplesHistory}
-              stepStatus={getStepStatus("content")}
-              stepNumber={4}
-              stepTitle={steps[3]?.title || "Personality"}
-              stepDescription={
-                steps[3]?.description ||
-                "Define instructions and example messages for the persona."
-              }
-              isReadonly={isReadonly}
-            />
-          )}
+            }}
+          />
 
           {/* Submit Button */}
           <div className="flex justify-end gap-3">
