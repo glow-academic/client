@@ -1,7 +1,15 @@
 """Resolve profile ID from department cookies."""
 
 import asyncpg  # type: ignore
-from utils.sql_helper import load_sql
+from typing import cast
+
+from app.sql.types import (
+    InfraResolveFromDepartmentProfileSqlParams,
+    InfraResolveFromDepartmentProfileSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql"
 
 
 async def resolve_profile_from_department(
@@ -22,11 +30,14 @@ async def resolve_profile_from_department(
     if not auth_mode or auth_mode not in ("default-guest", "default-account"):
         return None
 
-    sql = load_sql(
-        "app/sql/v3/infrastructure_profile_resolve_from_department_complete.sql"
+    params = InfraResolveFromDepartmentProfileSqlParams(
+        department_id=department_id or "",
+        auth_mode=auth_mode,
     )
-    result = await conn.fetchval(sql, department_id, auth_mode)
-    if result is None:
+    result = cast(
+        InfraResolveFromDepartmentProfileSqlRow | None,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+    if result is None or result.resolved_profile_id is None:
         return None
-    # fetchval returns UUID object, convert to string
-    return str(result)  # type: ignore[return-value]
+    return str(result.resolved_profile_id)

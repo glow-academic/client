@@ -1903,6 +1903,58 @@ class AddEvalRunsApiResponse(BaseModel):
 
 
 
+# Generated from: benchmark_error
+
+class BenchmarkErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    error_message: str
+    attempt_id: UUID
+    eval_id: UUID | None = None
+    test_id: UUID | None = None
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.error_message,
+            self.attempt_id,
+            self.eval_id,
+            self.test_id,
+            self.run_id,
+            self.group_id,
+        )
+
+class BenchmarkErrorSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    test_id: str | None = None
+    trace_id: str | None = None
+
+class BenchmarkErrorApiRequest(BaseModel):
+
+    error_message: str
+    attempt_id: UUID
+    eval_id: UUID | None = None
+    test_id: UUID | None = None
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+
+class BenchmarkErrorApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    test_id: str | None = None
+    trace_id: str | None = None
+
+
+
 # Generated from: create_eval
 
 class CreateEvalSqlParams(BaseModel):
@@ -4575,6 +4627,93 @@ class GetDocumentDetailApiResponse(BaseModel):
 
 
 
+# Generated from: get_document_regeneration_run_context_and_create_run
+
+class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+    document_agent_id: UUID
+    group_id: UUID
+    document_id: UUID | None = None
+    document_name: str | None = None
+    document_description: str | None = None
+    field_ids: list[UUID] | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+            self.document_agent_id,
+            self.group_id,
+            self.document_id,
+            self.document_name,
+            self.document_description,
+            self.field_ids,
+            self.user_instructions,
+        )
+
+class IDocumentRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    previous_messages: list[IDocumentRegenRunContextCreateRunV3Msg] | None = None
+
+class GetDocumentRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    department_id: UUID
+    document_agent_id: UUID
+    group_id: UUID
+    document_id: UUID | None = None
+    document_name: str | None = None
+    document_description: str | None = None
+    field_ids: list[UUID] | None = None
+    user_instructions: str | None = None
+
+class GetDocumentRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    previous_messages: list[IDocumentRegenRunContextCreateRunV3Msg] | None = None
+
+
+
 # Generated from: get_document_run_context_and_create_run
 
 class GetDocumentRunContextAndCreateRunSqlParams(BaseModel):
@@ -6113,6 +6252,230 @@ class GetImageGenerationContextAndCreateUploadApiResponse(BaseModel):
 
 
 
+# Generated from: infra_activity_insert
+
+class InfraActivityInsertSqlParams(BaseModel):
+
+    message: str
+    endpoint: str
+    profile_id: UUID
+    error: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.message,
+            self.endpoint,
+            self.profile_id,
+            self.error,
+        )
+
+class InfraActivityInsertSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class InfraActivityInsertApiRequest(BaseModel):
+
+    message: str
+    endpoint: str
+    error: bool
+
+class InfraActivityInsertApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: infra_activity_insert_websocket
+
+class InfraActivityInsertWebsocketSqlParams(BaseModel):
+
+    message: str
+    endpoint: str
+    profile_id: UUID
+    error: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.message,
+            self.endpoint,
+            self.profile_id,
+            self.error,
+        )
+
+class InfraActivityInsertWebsocketSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class InfraActivityInsertWebsocketApiRequest(BaseModel):
+
+    message: str
+    endpoint: str
+    error: bool
+
+class InfraActivityInsertWebsocketApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: infra_activity_profile_exists
+
+class InfraActivityProfileExistsSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class InfraActivityProfileExistsSqlRow(BaseModel):
+
+    profile_exists: bool | None = None
+
+class InfraActivityProfileExistsApiRequest(BaseModel):
+
+    pass
+
+class InfraActivityProfileExistsApiResponse(BaseModel):
+
+    profile_exists: bool | None = None
+
+
+
+# Generated from: infra_debug_insert_debug_info
+
+class InfraDebugInsertDebugInfoSqlParams(BaseModel):
+
+    run_id: UUID
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.content,
+        )
+
+class InfraDebugInsertDebugInfoSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class InfraDebugInsertDebugInfoApiRequest(BaseModel):
+
+    run_id: UUID
+    content: str
+
+class InfraDebugInsertDebugInfoApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: infra_metrics_health
+
+class InfraMetricsHealthSqlParams(BaseModel):
+
+    ts: str
+    service: str
+    ok: bool
+    latency_ms: float
+    error: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ts,
+            self.service,
+            self.ok,
+            self.latency_ms,
+            self.error,
+        )
+
+class InfraMetricsHealthSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class InfraMetricsHealthApiRequest(BaseModel):
+
+    ts: str
+    service: str
+    ok: bool
+    latency_ms: float
+    error: str
+
+class InfraMetricsHealthApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: infra_metrics_snapshot
+
+class InfraMetricsSnapshotSqlParams(BaseModel):
+
+    ts: str
+    requests_total: int
+    errors_total: int
+    avg_latency_ms: float
+    cpu_percent: float
+    memory_bytes: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ts,
+            self.requests_total,
+            self.errors_total,
+            self.avg_latency_ms,
+            self.cpu_percent,
+            self.memory_bytes,
+        )
+
+class InfraMetricsSnapshotSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class InfraMetricsSnapshotApiRequest(BaseModel):
+
+    ts: str
+    requests_total: int
+    errors_total: int
+    avg_latency_ms: float
+    cpu_percent: float
+    memory_bytes: int
+
+class InfraMetricsSnapshotApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: infra_profile_resolve_from_department
+
+class InfraProfileResolveFromDepartmentSqlParams(BaseModel):
+
+    department_id: str
+    auth_mode: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.auth_mode,
+        )
+
+class InfraProfileResolveFromDepartmentSqlRow(BaseModel):
+
+    resolved_profile_id: UUID | None = None
+
+class InfraProfileResolveFromDepartmentApiRequest(BaseModel):
+
+    department_id: str
+    auth_mode: str
+
+class InfraProfileResolveFromDepartmentApiResponse(BaseModel):
+
+    resolved_profile_id: UUID | None = None
+
+
+
 # Generated from: create_key
 
 class CreateKeySqlParams(BaseModel):
@@ -6659,6 +7022,116 @@ class GetLogsBundleApiResponse(BaseModel):
     actor_name: str | None = None
     health_kpis: QGetLogsBundleV3HealthKpis | None = None
     metrics: list[QGetLogsBundleV3MetricsDataPoint] | None = None
+
+
+
+# Generated from: get_member_regeneration_run_context_and_create_run
+
+class GetMemberRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    chat_id: UUID
+    profile_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.profile_id,
+            self.group_id,
+            self.user_instructions,
+        )
+
+class IMemberRegenRunContextCreateRunV3Document(BaseModel):
+
+    id: str | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+
+
+
+
+class IMemberRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetMemberRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: list[IMemberRegenRunContextCreateRunV3Document] | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IMemberRegenRunContextCreateRunV3Msg] | None = None
+
+class GetMemberRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    chat_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+class GetMemberRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: list[IMemberRegenRunContextCreateRunV3Document] | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IMemberRegenRunContextCreateRunV3Msg] | None = None
 
 
 
@@ -8272,9 +8745,6 @@ class GetPersonaDetailApiResponse(BaseModel):
     fields: list[QGetPersonaDetailV3Field] | None = None
     examples: list[QGetPersonaDetailV3Example] | None = None
     examples_history: list[QGetPersonaDetailV3ExampleHistoryItem] | None = None
-    preset_colors: list[dict[str, str]] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
 
 
 
@@ -8366,23 +8836,6 @@ class GetPersonaNewApiResponse(BaseModel):
     agents: list[QGetPersonaNewV3Agent] | None = None
     parameters: list[QGetPersonaNewV3Parameter] | None = None
     fields: list[QGetPersonaNewV3Field] | None = None
-    preset_colors: list[dict[str, str]] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
-    name: str | None = None
-    description: str | None = None
-    department_ids: list[UUID] | None = None
-    active: bool | None = None
-    color: str | None = None
-    icon: str | None = None
-    instructions: str | None = None
-    text_agent_id: str | None = None
-    voice_agent_id: str | None = None
-    in_use: bool | None = None
-    scenario_count: int | None = None
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
 
 
 
@@ -13368,129 +13821,6 @@ class GetScenarioNewApiResponse(BaseModel):
 
 
 
-# Generated from: get_scenario_regeneration_run_context_and_create_run
-
-class GetScenarioRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    agent_id: UUID
-    group_id: UUID | None = None
-    persona_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-            self.agent_id,
-            self.group_id,
-            self.persona_id,
-            self.document_ids,
-            self.parameter_item_ids,
-        )
-
-class IGetScenarioRegenerationRunContextAndCreateRunV3Doc(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-    template: bool | None
-    template_args: dict[str, Any] | None
-
-
-
-
-class IGetScenarioRegenerationRunContextAndCreateRunV3Docum(BaseModel):
-
-    document_id: str | None
-    document_name: str | None
-    template_args: dict[str, Any] | None
-    template_upload_id: str | None
-
-
-
-
-class IGetScenarioRegenerationRunContextAndCreateRunV3Param(BaseModel):
-
-    item_name: str | None
-    item_description: str | None
-    param_name: str | None
-    param_description: str | None
-
-class GetScenarioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    persona_description: str | None = None
-    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV3Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV3Docum] | None = None
-    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV3Param] | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-
-class GetScenarioRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID
-    agent_id: UUID
-    group_id: UUID | None = None
-    persona_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
-
-class GetScenarioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    persona_description: str | None = None
-    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV3Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV3Docum] | None = None
-    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV3Param] | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-
-
-
 # Generated from: get_scenario_run_context_and_create_run
 
 class GetScenarioRunContextAndCreateRunSqlParams(BaseModel):
@@ -14445,6 +14775,129 @@ class UpdateSettingsApiResponse(BaseModel):
     settings_id: UUID | None = None
     settings_name: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: get_voice_regeneration_run_context_and_create_run
+
+class GetVoiceRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    chat_id: UUID
+    profile_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.profile_id,
+            self.group_id,
+            self.user_instructions,
+        )
+
+class IGetVoiceRegenerationRunContextAndCreateRunV3Document(BaseModel):
+
+    id: str | None
+    name: str | None
+    url: str | None
+    type: str | None
+    created_at: str | None
+
+
+
+
+class IGetVoiceRegenerationRunContextAndCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetVoiceRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    chat_id: UUID | None = None
+    chat_title: str | None = None
+    created_at: str | None = None
+    trace_id: str | None = None
+    attempt_id: UUID | None = None
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    problem_statement: str | None = None
+    department_id: UUID | None = None
+    persona_id: UUID | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    custom_model: str | None = None
+    voice_model_id: UUID | None = None
+    voice_model_name: str | None = None
+    voice_custom_model: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    voice_provider_id: UUID | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    settings_id: UUID | None = None
+    api_key: str | None = None
+    voice_api_key: str | None = None
+    profile_id: UUID | None = None
+    agent_id: UUID | None = None
+    voice_agent_id: UUID | None = None
+    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV3Document] | None = None
+    run_id: str | None = None
+    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV3Msg] | None = None
+
+class GetVoiceRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    chat_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+class GetVoiceRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    chat_id: UUID | None = None
+    chat_title: str | None = None
+    created_at: str | None = None
+    trace_id: str | None = None
+    attempt_id: UUID | None = None
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    problem_statement: str | None = None
+    department_id: UUID | None = None
+    persona_id: UUID | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    custom_model: str | None = None
+    voice_model_id: UUID | None = None
+    voice_model_name: str | None = None
+    voice_custom_model: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    voice_provider_id: UUID | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    settings_id: UUID | None = None
+    api_key: str | None = None
+    voice_api_key: str | None = None
+    profile_id: UUID | None = None
+    agent_id: UUID | None = None
+    voice_agent_id: UUID | None = None
+    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV3Document] | None = None
+    run_id: str | None = None
+    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV3Msg] | None = None
 
 
 
@@ -17097,6 +17550,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "AddEvalRunsApiRequest",
         "AddEvalRunsApiResponse",
     ),
+    "app/sql/v3/benchmark/benchmark_error_complete.sql": (
+        "BenchmarkErrorSqlParams",
+        "BenchmarkErrorSqlRow",
+        "BenchmarkErrorApiRequest",
+        "BenchmarkErrorApiResponse",
+    ),
     "app/sql/v3/benchmark/create_eval_complete.sql": (
         "CreateEvalSqlParams",
         "CreateEvalSqlRow",
@@ -17277,6 +17736,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentDetailApiRequest",
         "GetDocumentDetailApiResponse",
     ),
+    "app/sql/v3/documents/get_document_regeneration_run_context_and_create_run_complete.sql": (
+        "GetDocumentRegenerationRunContextAndCreateRunSqlParams",
+        "GetDocumentRegenerationRunContextAndCreateRunSqlRow",
+        "GetDocumentRegenerationRunContextAndCreateRunApiRequest",
+        "GetDocumentRegenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/documents/get_document_run_context_and_create_run_complete.sql": (
         "GetDocumentRunContextAndCreateRunSqlParams",
         "GetDocumentRunContextAndCreateRunSqlRow",
@@ -17439,6 +17904,48 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetImageGenerationContextAndCreateUploadApiRequest",
         "GetImageGenerationContextAndCreateUploadApiResponse",
     ),
+    "app/sql/v3/infrastructure/activity/insert_complete.sql": (
+        "InfraActivityInsertSqlParams",
+        "InfraActivityInsertSqlRow",
+        "InfraActivityInsertApiRequest",
+        "InfraActivityInsertApiResponse",
+    ),
+    "app/sql/v3/infrastructure/activity/insert_websocket_complete.sql": (
+        "InfraActivityInsertWebsocketSqlParams",
+        "InfraActivityInsertWebsocketSqlRow",
+        "InfraActivityInsertWebsocketApiRequest",
+        "InfraActivityInsertWebsocketApiResponse",
+    ),
+    "app/sql/v3/infrastructure/activity/profile_exists_complete.sql": (
+        "InfraActivityProfileExistsSqlParams",
+        "InfraActivityProfileExistsSqlRow",
+        "InfraActivityProfileExistsApiRequest",
+        "InfraActivityProfileExistsApiResponse",
+    ),
+    "app/sql/v3/infrastructure/debug/insert_debug_info_complete.sql": (
+        "InfraDebugInsertDebugInfoSqlParams",
+        "InfraDebugInsertDebugInfoSqlRow",
+        "InfraDebugInsertDebugInfoApiRequest",
+        "InfraDebugInsertDebugInfoApiResponse",
+    ),
+    "app/sql/v3/infrastructure/metrics/health_complete.sql": (
+        "InfraMetricsHealthSqlParams",
+        "InfraMetricsHealthSqlRow",
+        "InfraMetricsHealthApiRequest",
+        "InfraMetricsHealthApiResponse",
+    ),
+    "app/sql/v3/infrastructure/metrics/snapshot_complete.sql": (
+        "InfraMetricsSnapshotSqlParams",
+        "InfraMetricsSnapshotSqlRow",
+        "InfraMetricsSnapshotApiRequest",
+        "InfraMetricsSnapshotApiResponse",
+    ),
+    "app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql": (
+        "InfraProfileResolveFromDepartmentSqlParams",
+        "InfraProfileResolveFromDepartmentSqlRow",
+        "InfraProfileResolveFromDepartmentApiRequest",
+        "InfraProfileResolveFromDepartmentApiResponse",
+    ),
     "app/sql/v3/keys/create_key_complete.sql": (
         "CreateKeySqlParams",
         "CreateKeySqlRow",
@@ -17492,6 +17999,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLogsBundleSqlRow",
         "GetLogsBundleApiRequest",
         "GetLogsBundleApiResponse",
+    ),
+    "app/sql/v3/member/get_member_regeneration_run_context_and_create_run_complete.sql": (
+        "GetMemberRegenerationRunContextAndCreateRunSqlParams",
+        "GetMemberRegenerationRunContextAndCreateRunSqlRow",
+        "GetMemberRegenerationRunContextAndCreateRunApiRequest",
+        "GetMemberRegenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v3/member/get_member_run_context_and_create_run_complete.sql": (
         "GetMemberRunContextAndCreateRunSqlParams",
@@ -17961,12 +18474,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioNewApiRequest",
         "GetScenarioNewApiResponse",
     ),
-    "app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql": (
-        "GetScenarioRegenerationRunContextAndCreateRunSqlParams",
-        "GetScenarioRegenerationRunContextAndCreateRunSqlRow",
-        "GetScenarioRegenerationRunContextAndCreateRunApiRequest",
-        "GetScenarioRegenerationRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql": (
         "GetScenarioRunContextAndCreateRunSqlParams",
         "GetScenarioRunContextAndCreateRunSqlRow",
@@ -18014,6 +18521,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateSettingsSqlRow",
         "UpdateSettingsApiRequest",
         "UpdateSettingsApiResponse",
+    ),
+    "app/sql/v3/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql": (
+        "GetVoiceRegenerationRunContextAndCreateRunSqlParams",
+        "GetVoiceRegenerationRunContextAndCreateRunSqlRow",
+        "GetVoiceRegenerationRunContextAndCreateRunApiRequest",
+        "GetVoiceRegenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v3/simulation_voice/get_voice_run_context_complete.sql": (
         "GetVoiceRunContextSqlParams",
@@ -18419,6 +18932,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/benchmark/benchmark_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/benchmark/create_eval_complete.sql"]
     ) -> SqlString: ...
 
@@ -18569,6 +19087,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/get_document_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/documents/get_document_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -18704,6 +19227,41 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/infrastructure/activity/insert_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/infrastructure/activity/insert_websocket_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/infrastructure/activity/profile_exists_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/infrastructure/debug/insert_debug_info_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/infrastructure/metrics/health_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/infrastructure/metrics/snapshot_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/keys/create_key_complete.sql"]
     ) -> SqlString: ...
 
@@ -18745,6 +19303,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/logs/get_logs_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/member/get_member_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -19139,11 +19702,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -19180,6 +19738,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/settings/update_settings_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

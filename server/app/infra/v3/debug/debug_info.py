@@ -1,10 +1,18 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
+from typing import cast
 
 import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
-from utils.sql_helper import load_sql
+
+from app.sql.types import (
+    InfraDebugInsertDebugInfoSqlParams,
+    InfraDebugInsertDebugInfoSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v3/infrastructure/debug/insert_debug_info_complete.sql"
 
 
 @dataclass
@@ -37,8 +45,13 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
 
     try:
         # Insert debug info asynchronously (fire-and-forget)
-        sql = load_sql("app/sql/v3/model_runs/insert_debug_info.sql")
-        asyncio.create_task(conn.execute(sql, run_id, content))
+        params = InfraDebugInsertDebugInfoSqlParams(
+            run_id=run_id,
+            content=content,
+        )
+        asyncio.create_task(
+            execute_sql_typed(conn, SQL_PATH, params=params)
+        )
     except Exception as e:
         print(f"Error saving debug info: {e}")
         return f"Error saving debug info: {e}"

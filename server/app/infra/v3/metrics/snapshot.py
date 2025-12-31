@@ -3,7 +3,15 @@
 from datetime import datetime
 
 import asyncpg  # type: ignore
-from utils.sql_helper import load_sql
+from typing import cast
+
+from app.sql.types import (
+    InfraSnapshotMetricsSqlParams,
+    InfraSnapshotMetricsSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v3/infrastructure/metrics/snapshot_complete.sql"
 
 
 async def log_metrics_snapshot(
@@ -26,13 +34,15 @@ async def log_metrics_snapshot(
         memory_bytes: Memory usage in bytes
         conn: Database connection
     """
-    sql = load_sql("app/sql/v3/infrastructure_metrics_snapshot_complete.sql")
-    await conn.execute(
-        sql,
-        ts,
-        requests_total,
-        errors_total,
-        avg_latency_ms,
-        cpu_percent,
-        memory_bytes,
+    params = InfraSnapshotMetricsSqlParams(
+        ts=ts,
+        requests_total=requests_total,
+        errors_total=errors_total,
+        avg_latency_ms=avg_latency_ms,
+        cpu_percent=cpu_percent,
+        memory_bytes=memory_bytes,
+    )
+    cast(
+        InfraSnapshotMetricsSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
     )

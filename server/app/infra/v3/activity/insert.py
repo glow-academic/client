@@ -1,9 +1,16 @@
 """Insert activity record for HTTP requests."""
 
 import asyncpg  # type: ignore
-from utils.sql_helper import load_sql
+from typing import cast
 
 from app.infra.v3.activity.profile_exists import profile_exists
+from app.sql.types import (
+    InfraActivityInsertSqlParams,
+    InfraActivityInsertSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v3/infrastructure/activity/insert_complete.sql"
 
 
 async def insert_activity(
@@ -31,5 +38,13 @@ async def insert_activity(
             profile_id_uuid = profile_id
         # If profile doesn't exist, profile_id_uuid remains None (NULL in database)
 
-    sql = load_sql("app/sql/v3/infrastructure_activity_insert_complete.sql")
-    await conn.execute(sql, message, endpoint, profile_id_uuid, error)
+    params = InfraActivityInsertSqlParams(
+        message=message,
+        endpoint=endpoint,
+        profile_id=profile_id_uuid,
+        error=error,
+    )
+    cast(
+        InfraActivityInsertSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )

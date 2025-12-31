@@ -3,7 +3,15 @@
 from datetime import datetime
 
 import asyncpg  # type: ignore
-from utils.sql_helper import load_sql
+from typing import cast
+
+from app.sql.types import (
+    InfraHealthMetricsSqlParams,
+    InfraHealthMetricsSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v3/infrastructure/metrics/health_complete.sql"
 
 
 async def log_service_health(
@@ -24,5 +32,14 @@ async def log_service_health(
         error: Error message (empty string if ok)
         conn: Database connection
     """
-    sql = load_sql("app/sql/v3/infrastructure_metrics_health_complete.sql")
-    await conn.execute(sql, ts, service, ok, latency_ms, error)
+    params = InfraHealthMetricsSqlParams(
+        ts=ts,
+        service=service,
+        ok=ok,
+        latency_ms=latency_ms,
+        error=error,
+    )
+    cast(
+        InfraHealthMetricsSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
