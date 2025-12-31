@@ -1,41 +1,78 @@
 -- Upsert assistant message and tool call for voice simulation
--- Parameters:
---   $1=chat_id (uuid)
---   $2=run_id (uuid)
---   $3=call_id (text - tool call identifier from Realtime API)
---   $4=tool_name (text - tool name, typically "speak")
---   $5=arguments_raw (text - JSON string of tool call arguments)
---   $6=message_content (text - extracted message content from arguments)
---   $7=persona_id (uuid, nullable - resolved persona ID)
---   $8=parent_message_id (uuid, nullable - for message branching)
---   $9=upload_id (uuid, nullable - for audio linking)
---   $10=message_id (uuid, nullable - if provided, update existing message; otherwise create new)
---   $11=is_complete (boolean - true if this is final update, false for incremental)
--- Returns: message_id (uuid as text), tool_call_id (uuid as text), final_content (text), upload_linked (boolean)
---
--- This function:
--- 1. Gets or creates tool call (by call_id)
--- 2. Gets or creates assistant message (by message_id or creates new)
--- 3. Updates message content incrementally or with final content
--- 4. Updates tool call arguments incrementally or with final arguments
--- 5. Links message to run (atomic)
--- 6. Links tool call to run (atomic)
--- 7. Links audio upload to message if upload_id provided
--- 8. Links message to persona if persona_id provided
--- 9. Creates message branch if parent_message_id provided
+-- Converted to PostgreSQL function pattern
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'socket_voice_progress_upsert_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_voice_progress_upsert_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'i_voice_progress_upsert_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate function (no types needed for this function)
+CREATE OR REPLACE FUNCTION socket_voice_progress_upsert_v3(
+    chat_id uuid,
+    run_id uuid,
+    call_id text DEFAULT NULL,
+    tool_name text DEFAULT NULL,
+    arguments_raw text DEFAULT NULL,
+    message_content text DEFAULT NULL,
+    persona_id uuid DEFAULT NULL,
+    parent_message_id uuid DEFAULT NULL,
+    upload_id uuid DEFAULT NULL,
+    message_id uuid DEFAULT NULL,
+    is_complete boolean DEFAULT false
+)
+RETURNS TABLE (
+    message_id text,
+    tool_call_id text,
+    final_content text,
+    upload_linked boolean
+)
+LANGUAGE sql
+VOLATILE
+AS $$
 WITH params AS (
     SELECT 
-        $1::uuid as chat_id,
-        $2::uuid as run_id,
-        $3::text as call_id,
-        $4::text as tool_name,
-        $5::text as arguments_raw,
-        $6::text as message_content,
-        $7::uuid as persona_id,
-        $8::uuid as parent_message_id,
-        $9::uuid as upload_id,
-        $10::uuid as message_id,
-        $11::boolean as is_complete
+        chat_id AS chat_id,
+        run_id AS run_id,
+        call_id AS call_id,
+        tool_name AS tool_name,
+        arguments_raw AS arguments_raw,
+        message_content AS message_content,
+        persona_id AS persona_id,
+        parent_message_id AS parent_message_id,
+        upload_id AS upload_id,
+        message_id AS message_id,
+        is_complete AS is_complete
 ),
 -- Get tool_id by tool_name
 get_tool_id AS (
@@ -230,4 +267,6 @@ SELECT
     (SELECT tool_call_id FROM selected_tool_call LIMIT 1)::text as tool_call_id,
     (SELECT message_content FROM params LIMIT 1) as final_content,
     (SELECT EXISTS(SELECT 1 FROM link_audio_to_message)) as upload_linked
+$$;
 
+COMMIT;

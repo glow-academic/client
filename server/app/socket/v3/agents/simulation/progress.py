@@ -5,14 +5,19 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
-from app.main import get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, sio
+# Note: SQL types will be imported after SQL files are converted to functions
+# from app.sql.types import (
+#     TextProgressUpdateSqlParams,
+#     TextProgressUpdateSqlRow,
+#     GetMessageCreatedAtSqlParams,
+#     GetMessageCreatedAtSqlRow,
+# )
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -105,6 +110,9 @@ async def _simulation_text_progress_impl(
                 # Resolve persona_id if persona_so_far provided
                 persona_id_uuid = None
                 if data.persona_so_far:
+                    # Note: get_chat_personas.sql is a simple query - keep as is for now
+                    from utils.sql_helper import load_sql
+
                     sql_get_personas = load_sql(
                         "app/sql/v3/voice/get_chat_personas.sql"
                     )
@@ -137,6 +145,10 @@ async def _simulation_text_progress_impl(
                         persona_id_uuid = persona_match[0]
 
                 # Update DB via consolidated SQL file
+                # Note: text_progress_update_complete.sql needs to be converted to function
+                # For now, using load_sql() - will convert to execute_sql_typed() after SQL conversion
+                from utils.sql_helper import load_sql
+
                 sql_update = load_sql(
                     "app/sql/v3/simulation_text/text_progress_update_complete.sql"
                 )
@@ -178,6 +190,7 @@ async def _simulation_text_progress_impl(
 
                     # Emit new message event if this is the first token (message just created)
                     if data.token == accumulated_content[: len(data.token)]:
+                        # Note: get_message_created_at.sql is a simple query - keep as is for now
                         sql_get_created_at = load_sql(
                             "app/sql/v3/messages/get_message_created_at.sql"
                         )

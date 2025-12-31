@@ -4,14 +4,14 @@ import asyncio
 import json
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from agents import Runner, function_tool, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
@@ -19,11 +19,20 @@ from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.documents.format_document_info import format_document_info
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, get_simulation_tool_calls_dict
+from app.sql.types import (
+    GetSimulationRunContextAndCreateRunSqlParams,
+    GetSimulationRunContextAndCreateRunSqlRow,
+    GetSimulationMessagesSqlParams,
+    GetSimulationMessagesSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH_CONTEXT = "app/sql/v3/simulations/get_simulation_run_context_and_create_run_complete.sql"
+SQL_PATH_MESSAGES = "app/sql/v3/simulations/get_simulation_messages_complete.sql"
 
 
 # Helper functions for incremental JSON parsing (from send.py)
@@ -225,10 +234,67 @@ async def _simulation_text_generate_impl(
         chat_id_uuid = uuid.UUID(data.chat_id)
         run_id_uuid = uuid.UUID(data.run_id)
         chat_id_str = str(chat_id_uuid)
-        # Replaced with get_db_connection()
+
+        async with get_db_connection() as conn:
+            # Get all context data AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
+            try:
+                params = GetSimulationRunContextAndCreateRunSqlParams(
+                    chat_id=chat_id_uuid,
+                    profile_id=profile_id,
+                    group_id=group_id,
+                )
+                result = cast(
+                    GetSimulationRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=params),
+                )
+            except Exception as e:
+                import asyncpg  # type: ignore
+
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
+                    await internal_sio.emit(
+                        "simulation_text_error",
+                        {
+                            "sid": sid,
+                            "success": False,
+                            "message": user_msg,
+                        },
+                    )
+                    return
+                await internal_sio.emit(
+                    "simulation_text_error",
+                    {
+                        "sid": sid,
+                        "success": False,
+                        "message": f"Failed to initialize simulation generation: {str(e)}",
+                    },
+                )
+                return
+
+            if not result:
+                await internal_sio.emit(
+                    "simulation_text_error",
+                    {
+                        "sid": sid,
+                        "success": False,
+                        "message": f"No simulation agent configured for chat {data.chat_id}",
+                    },
+                )
+                return
 
             # Get department_id
-            department_id_str = context.get("department_id")
+            department_id_str = result.department_id
             if not department_id_str:
                 await internal_sio.emit(
                     "simulation_text_error",
@@ -242,22 +308,88 @@ async def _simulation_text_generate_impl(
 
             department_id = uuid.UUID(str(department_id_str))
 
+            # Build context dict from result
+            context = {
+                "chat_id": result.chat_id,
+                "chat_title": result.chat_title,
+                "trace_id": result.trace_id,
+                "attempt_id": result.attempt_id,
+                "simulation_id": result.simulation_id,
+                "scenario_id": result.scenario_id,
+                "department_id": result.department_id,
+                "problem_statement": result.problem_statement,
+                "persona_id": result.persona_id,
+                "persona_name": result.persona_name,
+                "system_prompt": result.system_prompt,
+                "temperature": float(result.temperature) if result.temperature is not None else 0.0,
+                "reasoning": result.reasoning,
+                "model_id": result.model_id,
+                "model_name": result.model_name,
+                "provider": result.provider,
+                "base_url": result.base_url,
+                "api_key": result.api_key,
+                "custom_model": result.custom_model,
+                "provider_id": result.provider_id,
+                "provider_name": result.provider_name,
+                "agent_id": result.agent_id,
+                "voice_system_prompt": result.voice_system_prompt,
+                "voice_temperature": float(result.voice_temperature) if result.voice_temperature is not None else 0.0,
+                "voice_reasoning": result.voice_reasoning,
+                "voice_model_id": result.voice_model_id,
+                "voice_model_name": result.voice_model_name,
+                "voice_provider": result.voice_provider,
+                "voice_base_url": result.voice_base_url,
+                "voice_api_key": result.voice_api_key,
+                "voice_custom_model": result.voice_custom_model,
+                "voice_provider_name": result.voice_provider_name,
+                "voice_agent_id": result.voice_agent_id,
+                "image_input_enabled": result.image_input_enabled,
+                "copy_paste_allowed": result.copy_paste_allowed,
+                "profile_id": result.profile_id,
+                "documents": result.documents,
+            }
+
             # Build input items
             input_items: list[TResponseInputItem] = []
 
             # Format document info if documents are available
             if context["documents"]:
+                # Convert composite type documents to dict format for format_document_info
+                documents_dict = [
+                    {
+                        "id": doc.id,
+                        "name": doc.name,
+                        "file_path": doc.file_path,
+                        "mime_type": doc.mime_type,
+                    }
+                    for doc in context["documents"]
+                ]
                 document_info = format_document_info(
-                    context["documents"], context["image_input_active"]
+                    documents_dict, context["image_input_enabled"]
                 )
                 input_items.append(document_info)
 
-            # Get all messages using SQL file
-            sql_messages = load_sql(
-                "app/sql/v3/simulations/get_simulation_messages.sql"
+            # Get all messages using execute_sql_typed
+            messages_params = GetSimulationMessagesSqlParams(chat_id=chat_id_uuid)
+            messages_result = cast(
+                GetSimulationMessagesSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_MESSAGES, params=messages_params),
             )
-            message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
-            messages = [dict(row) for row in message_rows]
+            # Convert composite type messages to dict format
+            messages = [
+                {
+                    "id": msg.id,
+                    "chat_id": msg.chat_id,
+                    "role": msg.role,
+                    "content": msg.content,
+                    "created_at": msg.created_at,
+                    "completed": msg.completed,
+                    "updated_at": msg.updated_at,
+                    "audio": msg.audio,
+                    "upload_id": msg.upload_id,
+                }
+                for msg in (messages_result.messages or [])
+            ]
 
             # Prepare conversation history
             conversation_history, _ = get_simulation_conversation_history(messages)
@@ -269,25 +401,28 @@ async def _simulation_text_generate_impl(
             input_items.extend(conversation_history)
 
             # Get simulation agent ID
-            simulation_agent_id = context_row.get("agent_id")
+            simulation_agent_id = context["agent_id"]
             if not simulation_agent_id:
                 raise ValueError(
                     f"Simulation Text Agent not found for simulation {context['simulation_id']}"
                 )
 
             # Get all personas for this scenario and create persona tools
+            # Note: get_chat_personas.sql is a simple query - we'll keep it as is for now
+            # but should convert to function if needed
+            from utils.sql_helper import load_sql
+
             sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
             persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
             personas = [dict(row) for row in persona_rows]
 
             # Track parent message for branching (latest user message)
-            sql_latest_user = load_sql(
-                "app/sql/v3/simulations/get_latest_user_message.sql"
-            )
-            latest_user_row = await conn.fetchrow(sql_latest_user, str(chat_id_uuid))
+            # Find latest user message from messages list
             parent_message_id_for_branching: uuid.UUID | None = None
-            if latest_user_row:
-                parent_message_id_for_branching = latest_user_row["id"]
+            for msg in reversed(messages):
+                if msg.get("role") == "user" or msg.get("type") == "query":
+                    parent_message_id_for_branching = uuid.UUID(msg["id"])
+                    break
 
             # Track completed tool messages for hint generation
             completed_tool_messages: list[dict[str, Any]] = []
@@ -296,6 +431,8 @@ async def _simulation_text_generate_impl(
             persona_tools = []
             if personas:
                 # Load agent tools from database
+                # Note: get_agent_tools.sql is a simple query - we'll keep it as is for now
+                # but should convert to function if needed
                 simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
                 sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
                 rows = await conn.fetch(
@@ -359,6 +496,8 @@ async def _simulation_text_generate_impl(
                 persona_tools.append(function_tool(speak))
 
                 # Get persona instructions for developer message
+                # Note: get_persona_instructions.sql is a simple query - we'll keep it as is for now
+                # but should convert to function if needed
                 sql_get_persona_instructions = load_sql(
                     "app/sql/v3/voice/get_persona_instructions.sql"
                 )
@@ -750,33 +889,32 @@ Tool Usage Instructions:
 
                                     tool_call_state["completed"] = True
 
-                                    # Parse final JSON arguments
-                                    try:
-                                        final_args = json.loads(
-                                            tool_call_state["arguments_raw"]
-                                        )
-                                        final_message = final_args.get(
-                                            "message",
-                                            tool_call_state["message_so_far"],
-                                        )
-                                        final_persona = final_args.get(
-                                            "persona",
-                                            tool_call_state["persona_so_far"],
-                                        )
-
-                                        tool_call_state["message_so_far"] = (
-                                            final_message
-                                        )
-                                        if (
-                                            final_persona
-                                            and not tool_call_state["persona_so_far"]
-                                        ):
-                                            tool_call_state["persona_so_far"] = (
-                                                final_persona
+                                    # Use already-extracted values, only parse JSON if needed for final values
+                                    final_message = tool_call_state["message_so_far"]
+                                    final_persona = tool_call_state["persona_so_far"]
+                                    
+                                    # Try to extract final values from JSON if arguments_raw is complete
+                                    # This is safe because we're parsing a complete JSON string, not streaming
+                                    if tool_call_state["arguments_raw"]:
+                                        try:
+                                            final_args = json.loads(
+                                                tool_call_state["arguments_raw"]
                                             )
+                                            # Only update if we got valid values
+                                            if "message" in final_args:
+                                                final_message = final_args["message"]
+                                            if "persona" in final_args and not final_persona:
+                                                final_persona = final_args["persona"]
+                                        except json.JSONDecodeError:
+                                            # If JSON parsing fails, use already-extracted values
+                                            pass
 
-                                        # Emit completion to complete handler
-                                        await internal_sio.emit(
+                                    tool_call_state["message_so_far"] = final_message
+                                    if final_persona and not tool_call_state["persona_so_far"]:
+                                        tool_call_state["persona_so_far"] = final_persona
+
+                                    # Emit completion to complete handler
+                                    await internal_sio.emit(
                                             "simulation_text_complete",
                                             {
                                                 "sid": sid,
@@ -844,9 +982,9 @@ Tool Usage Instructions:
                 if chat_id_str in tool_calls_dict and tool_calls_dict[chat_id_str]:
                     try:
                         async with get_db_connection() as cleanup_conn:
-                                for tool_call_id, tool_call_state in list(
-                                    tool_calls_dict[chat_id_str].items()
-                                ):
+                            for tool_call_id, tool_call_state in list(
+                                tool_calls_dict[chat_id_str].items()
+                            ):
                                     try:
                                         db_message_id = tool_call_state.get(
                                             "db_message_id"
@@ -858,16 +996,18 @@ Tool Usage Instructions:
                                                 "message_so_far"
                                             ]
 
-                                            try:
-                                                if tool_call_state.get("arguments_raw"):
+                                            # Try to extract final message from JSON if available
+                                            # This is safe because we're parsing a complete JSON string, not streaming
+                                            if tool_call_state.get("arguments_raw"):
+                                                try:
                                                     final_args = json.loads(
                                                         tool_call_state["arguments_raw"]
                                                     )
-                                                    final_message = final_args.get(
-                                                        "message", final_message
-                                                    )
-                                            except json.JSONDecodeError:
-                                                pass
+                                                    if "message" in final_args:
+                                                        final_message = final_args["message"]
+                                                except json.JSONDecodeError:
+                                                    # If JSON parsing fails, use already-extracted value
+                                                    pass
 
                                             await internal_sio.emit(
                                                 "simulation_text_complete",
@@ -900,8 +1040,8 @@ Tool Usage Instructions:
                                                     "content": final_message,
                                                 }
                                             )
-                                    except Exception as e:
-                        except Exception as e:
+                                    except Exception:
+                                        pass
                 # Clean up tool call states
                 if chat_id_str in tool_calls_dict:
                     del tool_calls_dict[chat_id_str]
@@ -913,67 +1053,71 @@ Tool Usage Instructions:
 
                 await remove_active_run(chat_id_str)
 
-        # Emit async pricing event
-        usage = result.context_wrapper.usage
-        await internal_sio.emit(
-            "log_run",
-            {
-                "runId": str(run_id_uuid),
-                "operationType": "simulation",
-                "inputTextTokens": usage.input_tokens,
-                "outputTextTokens": usage.output_tokens,
-                "systemPrompt": context["system_prompt"],
-                "inputItems": input_items,
-                "assistantOutput": None,
-                "departmentId": str(context.get("department_id")),
-            },
-        )
-
-        # Emit run complete event
-        await internal_sio.emit(
-            "simulation_text_complete",
-            {
-                "sid": sid,
-                "type": "run_complete",
-                "chat_id": chat_id_str,
-                "run_id": str(run_id_uuid),
-            },
-        )
-
-        # Trigger hint generation for practice simulations
-        if completed_tool_messages:
-            last_tool_message = completed_tool_messages[-1]
-
-            sql = load_sql(
-                "app/sql/v3/simulations/get_simulation_metadata_for_chat.sql"
+            # Emit async pricing event
+            usage = result.context_wrapper.usage
+            await internal_sio.emit(
+                "log_run",
+                {
+                    "runId": str(run_id_uuid),
+                    "operationType": "simulation",
+                    "inputTextTokens": usage.input_tokens,
+                    "outputTextTokens": usage.output_tokens,
+                    "systemPrompt": context["system_prompt"],
+                    "inputItems": input_items,
+                    "assistantOutput": None,
+                    "departmentId": str(context.get("department_id")),
+                },
             )
-            sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
-            if not sim_metadata_row:
-                sim_metadata = {"practice_simulation": False}
-            else:
-                sim_metadata = {
-                    "simulation_id": sim_metadata_row["simulation_id"],
-                    "attempt_id": sim_metadata_row["attempt_id"],
-                    "practice_simulation": sim_metadata_row["practice_simulation"],
-                }
 
-            if sim_metadata["practice_simulation"]:
-                sql = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
-                run_context_for_hints = await conn.fetchrow(sql, str(chat_id_uuid))
-                hint_dept_id = (
-                    run_context_for_hints.get("department_id")
-                    if run_context_for_hints
-                    else None
+            # Emit run complete event
+            await internal_sio.emit(
+                "simulation_text_complete",
+                {
+                    "sid": sid,
+                    "type": "run_complete",
+                    "chat_id": chat_id_str,
+                    "run_id": str(run_id_uuid),
+                },
+            )
+
+            # Trigger hint generation for practice simulations
+            if completed_tool_messages:
+                last_tool_message = completed_tool_messages[-1]
+
+                # Note: get_simulation_metadata_for_chat.sql is a simple query - we'll keep it as is for now
+                # but should convert to function if needed
+                sql = load_sql(
+                    "app/sql/v3/simulations/get_simulation_metadata_for_chat.sql"
                 )
-                if hint_dept_id:
-                    await internal_sio.emit(
-                        "simulation_hints_generate",
-                        {
-                            "chat_id": str(chat_id_uuid),
-                            "message_id": str(last_tool_message.get("id")),
-                            "department_id": hint_dept_id,
-                        },
+                sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
+                if not sim_metadata_row:
+                    sim_metadata = {"practice_simulation": False}
+                else:
+                    sim_metadata = {
+                        "simulation_id": sim_metadata_row["simulation_id"],
+                        "attempt_id": sim_metadata_row["attempt_id"],
+                        "practice_simulation": sim_metadata_row["practice_simulation"],
+                    }
+
+                if sim_metadata["practice_simulation"]:
+                    # Note: get_simulation_run_context.sql is a simple query - we'll keep it as is for now
+                    # but should convert to function if needed
+                    sql = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
+                    run_context_for_hints = await conn.fetchrow(sql, str(chat_id_uuid))
+                    hint_dept_id = (
+                        run_context_for_hints.get("department_id")
+                        if run_context_for_hints
+                        else None
                     )
+                    if hint_dept_id:
+                        await internal_sio.emit(
+                            "simulation_hints_generate",
+                            {
+                                "chat_id": str(chat_id_uuid),
+                                "message_id": str(last_tool_message.get("id")),
+                                "department_id": hint_dept_id,
+                            },
+                        )
 
     except OutputGuardrailTripwireTriggered as e:
         reason = ""

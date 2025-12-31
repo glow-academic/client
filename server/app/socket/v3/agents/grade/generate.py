@@ -1,9 +1,8 @@
 """Handler for simulation_grading_start WebSocket event."""
 
-import json
 import uuid
-from datetime import UTC
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, cast
 
 from agents import (
     FunctionToolResult,
@@ -18,14 +17,22 @@ from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.agents.create_safe_field_name import create_safe_field_name
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_client_event
+from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.sql.types import (
+    GetGradingRunContextAndCreateRunSqlParams,
+    GetGradingRunContextAndCreateRunSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
@@ -77,27 +84,12 @@ async def simulation_grading_progress(
     )
 
 
-async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None:
+async def _simulation_grading_start_impl(
+    sid: str, data: SimulationGradingStartPayload, profile_id: uuid.UUID
+) -> None:
     """Internal implementation for starting simulation grading."""
-    try:
-        validated = SimulationGradingStartPayload(**data)
-    except ValidationError as e:
-        await simulation_grading_progress(
-            SimulationGradingProgressPayload(
-                type="error",
-                chat_id=data.get("chat_id", "unknown"),
-                message=f"Invalid payload: {str(e)}",
-                error=str(e),
-            ),
-            room=f"simulation_{data.get('chat_id', 'unknown')}",
-        )
-        return
-
-    chat_id = validated.chat_id
-    department_id_str = validated.department_id
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
+    chat_id = data.chat_id
+    department_id_str = data.department_id
 
     try:
         async with get_db_connection() as conn:
@@ -114,13 +106,17 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # This validates rate limits and creates run atomically
             # Pattern: All AI operations use atomic context+run creation SQL files
             # See WEBSOCKET_STANDARDS.md for details
-            sql = load_sql(
-                "app/sql/v3/grading/get_grading_run_context_and_create_run.sql"
-            )
-            sql_query = sql
-            sql_params = (str(simulation_chat_id), str(department_id))
+            SQL_PATH = "app/sql/v3/grading/get_grading_run_context_and_create_run_complete.sql"
             try:
-                context_row = await conn.fetchrow(sql, *sql_params)
+                params = GetGradingRunContextAndCreateRunSqlParams(
+                    chat_id=simulation_chat_id,
+                    department_id=department_id,
+                    profile_id=profile_id,  # From sid lookup
+                )
+                result = cast(
+                    GetGradingRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
             except Exception as e:
                 import asyncpg  # type: ignore
 
@@ -157,72 +153,58 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 )
                 return
 
-            if not context_row:
-                raise ValueError(
-                    f"Chat {simulation_chat_id} not found or no grading agent configured"
-                )
-
             # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(context_row["run_id"])
+            model_run_id = uuid.UUID(result.run_id)
 
-            # Parse JSON arrays for standard_groups and standards
-            standard_groups_json = (
-                json.loads(context_row["standard_groups"])
-                if isinstance(context_row["standard_groups"], str)
-                else context_row["standard_groups"]
-            )
-            standards_json = (
-                json.loads(context_row["standards"])
-                if isinstance(context_row["standards"], str)
-                else context_row["standards"]
-            )
+            # Standard groups and standards are now composite types (auto-decoded by asyncpg)
+            # No need for json.loads() - they're already Python objects
+            standard_groups_objects = result.standard_groups or []
+            standards_objects = result.standards or []
 
             context = {
-                "chat_id": context_row["chat_id"],
-                "scenario_id": context_row["scenario_id"],
-                "attempt_id": context_row["attempt_id"],
-                "title": context_row["title"],
-                "trace_id": context_row["trace_id"],
-                "created_at": context_row["chat_created_at"],
-                "completed": context_row["completed"],
-                "problem_statement": context_row["problem_statement"],
-                "simulation_id": context_row["simulation_id"],
-                "total_chats": context_row["total_chats"],
-                "time_limit": context_row["time_limit"],
+                "chat_id": result.chat_id,
+                "scenario_id": result.scenario_id,
+                "attempt_id": result.attempt_id,
+                "title": result.title,
+                "trace_id": result.trace_id,
+                "created_at": result.chat_created_at,
+                "completed": result.completed,
+                "problem_statement": result.problem_statement,
+                "simulation_id": result.simulation_id,
+                "total_chats": result.total_chats,
+                "time_limit": result.time_limit,
                 "rubric": {
-                    "id": context_row["rubric_id"],
-                    "name": context_row["rubric_name"],
-                    "description": context_row["rubric_description"],
-                    "points": context_row["rubric_points"],
-                    "pass_points": context_row["rubric_pass_points"],
+                    "id": result.rubric_id_out,
+                    "name": result.rubric_name,
+                    "description": result.rubric_description,
+                    "points": result.rubric_points,
+                    "pass_points": result.rubric_pass_points,
                 },
-                "standard_groups": standard_groups_json,
-                "standards": standards_json,
+                "standard_groups": standard_groups_objects,
+                "standards": standards_objects,
                 "agent": {
-                    "id": context_row["agent_id"],
-                    "name": context_row["agent_name"],
-                    "system_prompt": context_row["system_prompt"],
-                    "temperature": float(context_row["temperature"])
-                    if context_row["temperature"] is not None
-                    else 0.0,
-                    "reasoning": context_row["reasoning"],
+                    "id": result.agent_id,
+                    "name": result.agent_name,
+                    "system_prompt": result.system_prompt,
+                    "temperature": float(result.temperature) if result.temperature is not None else 0.0,
+                    "reasoning": result.reasoning,
                 },
                 "model": {
-                    "id": context_row["model_id"],
-                    "name": context_row["model_name"],
-                    "custom_model": context_row["custom_model"],
+                    "id": result.model_id,
+                    "name": result.model_name,
+                    "custom_model": None,  # Not in result, set to None
                 },
                 "provider": {
-                    "id": context_row["provider_id"],
-                    "name": context_row["provider_name"],
-                    "base_url": context_row["base_url"],
-                    "api_key": context_row["api_key"],
+                    "id": None,  # Not in result
+                    "name": result.provider,
+                    "base_url": result.base_url,
+                    "api_key": result.api_key,
                 },
-                "profile_id": context_row["profile_id"],
-                "req_per_day": context_row["req_per_day"],
-                "runs_today_count": context_row["runs_today_count"],
-                "earliest_run_created_at": context_row["earliest_run_created_at"],
-                "audio_agent_id": context_row.get("audio_agent_id"),
+                "profile_id": result.profile_id_out,
+                "req_per_day": result.req_per_day,
+                "runs_today_count": result.runs_today_count,
+                "earliest_run_created_at": result.earliest_run_created_at,
+                "audio_agent_id": result.audio_agent_id,
             }
 
             # Extract data from context
@@ -256,50 +238,70 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             rubric_id = rubric["id"]
 
-            # Convert standard_groups and standards from JSON to dicts with UUID conversion
+            # Convert standard_groups and standards from composite types to dicts with UUID conversion
             standard_groups = []
-            for sg in context["standard_groups"]:
+            for sg in standard_groups_objects:
                 standard_groups.append(
                     {
-                        "id": uuid.UUID(sg["id"]),
-                        "name": sg["name"],
-                        "short_name": sg["short_name"],
-                        "description": sg["description"],
-                        "points": sg["points"],
-                        "pass_points": sg["pass_points"],
-                        "rubric_id": uuid.UUID(sg["rubric_id"]),
+                        "id": uuid.UUID(sg.id),
+                        "name": sg.name,
+                        "short_name": sg.short_name,
+                        "description": sg.description,
+                        "points": sg.points,
+                        "pass_points": sg.pass_points,
+                        "rubric_id": uuid.UUID(sg.rubric_id),
                     }
                 )
 
             standards = []
-            for std in context["standards"]:
+            for std in standards_objects:
                 standards.append(
                     {
-                        "id": uuid.UUID(std["id"]),
-                        "name": std["name"],
-                        "description": std["description"],
-                        "points": std["points"],
-                        "standard_group_id": uuid.UUID(std["standard_group_id"]),
+                        "id": uuid.UUID(std.id),
+                        "name": std.name,
+                        "description": std.description,
+                        "points": std.points,
+                        "standard_group_id": uuid.UUID(std.standard_group_id),
                     }
                 )
 
             # Get messages using SQL file
-            sql_messages = load_sql(
-                "app/sql/v3/simulations/get_simulation_messages.sql"
+            from app.sql.types import (
+                GetSimulationMessagesSqlParams,
+                GetSimulationMessagesSqlRow,
             )
-            message_rows = await conn.fetch(sql_messages, str(simulation_chat_id))
-            messages = [dict(row) for row in message_rows]
+            SQL_MESSAGES_PATH = "app/sql/v3/simulations/get_simulation_messages_complete.sql"
+            message_params = GetSimulationMessagesSqlParams(chat_id=simulation_chat_id)
+            message_result = cast(
+                GetSimulationMessagesSqlRow,
+                await execute_sql_typed(conn, SQL_MESSAGES_PATH, params=message_params),
+            )
+            # Function returns a single row with messages array field
+            messages_objects = message_result.messages or []
+            # Convert composite type objects to dicts
+            messages = [
+                {
+                    "id": msg.id,
+                    "chat_id": msg.chat_id,
+                    "role": msg.role,
+                    "content": msg.content,
+                    "created_at": msg.created_at,
+                    "completed": msg.completed,
+                    "updated_at": msg.updated_at,
+                    "audio": msg.audio == "true" if msg.audio else False,
+                    "upload_id": msg.upload_id,
+                }
+                for msg in messages_objects
+            ]
 
             input_items: list[TResponseInputItem] = []
 
             # prepare conversation history from chat_id
             # Always enable message numbering for grading so agent can reference messages
             has_audio_messages = any(msg.get("audio", False) for msg in messages)
-            audio_agent_id = context_row.get("audio_agent_id")
+            audio_agent_id = result.audio_agent_id
 
             # Always enable message numbering for grading (inlined from get_simulation_conversation_history)
-            from datetime import datetime
-
             include_message_numbers = True
             conversation_history: list[TResponseInputItem] = []
             message_id_map: dict[str, int] = {}
@@ -518,28 +520,44 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             # Create grade record at START with placeholder values
             # Tools will insert feedbacks as they're called
-            sql_create_grade = load_sql("app/sql/v3/grading/create_grade_complete.sql")
-            rubric_grade_agent_id = context_row.get("rubric_grade_agent_id")
+            from app.sql.types import CreateGradeSqlParams, CreateGradeSqlRow
+            SQL_CREATE_GRADE_PATH = "app/sql/v3/grading/create_grade_complete.sql"
+            rubric_grade_agent_id = result.rubric_grade_agent_id
             if not rubric_grade_agent_id:
                 raise ValueError("rubric_grade_agent_id not found in context")
-            grade_row = await conn.fetchrow(
-                sql_create_grade,
-                str(model_run_id),  # run_id
-                str(rubric_grade_agent_id),  # rubric_grade_agent_id
-                "",  # description (placeholder)
-                False,  # passed (placeholder)
-                0,  # score (placeholder)
-                actual_time_taken,
+            grade_params = CreateGradeSqlParams(
+                run_id=model_run_id,
+                rubric_grade_agent_id=uuid.UUID(rubric_grade_agent_id),
+                description="",  # placeholder
+                passed=False,  # placeholder
+                score=0,  # placeholder
+                time_taken=actual_time_taken,
             )
-            if not grade_row:
-                raise ValueError("Failed to create simulation chat grade")
-            grade_id = uuid.UUID(grade_row["id"])
+            grade_result = cast(
+                CreateGradeSqlRow,
+                await execute_sql_typed(conn, SQL_CREATE_GRADE_PATH, params=grade_params),
+            )
+            grade_id = uuid.UUID(grade_result.id)
 
             # Load agent tools from database
+            # Note: get_agent_tools.sql may not be converted yet - check if it exists as _complete.sql
+            # For now, we'll keep the old pattern if the file doesn't exist as _complete.sql
             agent_id_uuid = uuid.UUID(context["agent"]["id"])
-            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
-            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
-            agent_tools_config = [dict(row) for row in rows]
+            try:
+                from app.sql.types import GetAgentToolsSqlParams, GetAgentToolsSqlRow
+                SQL_GET_AGENT_TOOLS_PATH = "app/sql/v3/agents/get_agent_tools_complete.sql"
+                agent_tools_params = GetAgentToolsSqlParams(agent_id=agent_id_uuid)
+                agent_tools_rows = await execute_sql_typed(conn, SQL_GET_AGENT_TOOLS_PATH, params=agent_tools_params)
+                if isinstance(agent_tools_rows, list):
+                    agent_tools_config = [dict(row) for row in agent_tools_rows]
+                else:
+                    agent_tools_config = [dict(agent_tools_rows)] if agent_tools_rows else []
+            except Exception:
+                # Fallback to old pattern if SQL file not converted yet
+                from utils.sql_helper import load_sql
+                sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
+                rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+                agent_tools_config = [dict(row) for row in rows]
             tool_config_map_grading: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
@@ -966,11 +984,17 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 },
             )
             # Calculate overall score from feedbacks in database
-            sql_get_feedbacks = load_sql(
-                "app/sql/v3/grading/get_feedback_totals_for_grade.sql"
+            from app.sql.types import (
+                GetFeedbackTotalsForGradeSqlParams,
+                GetFeedbackTotalsForGradeSqlRow,
             )
-            feedback_rows = await conn.fetch(sql_get_feedbacks, str(grade_id))
-            overall_score = sum(row["total"] for row in feedback_rows)
+            SQL_GET_FEEDBACKS_PATH = "app/sql/v3/grading/get_feedback_totals_for_grade_complete.sql"
+            feedback_params = GetFeedbackTotalsForGradeSqlParams(grade_id=grade_id)
+            feedback_rows = await execute_sql_typed(conn, SQL_GET_FEEDBACKS_PATH, params=feedback_params)
+            if isinstance(feedback_rows, list):
+                overall_score = sum(row.total for row in feedback_rows)
+            else:
+                overall_score = feedback_rows.total if feedback_rows else 0
 
             passed = overall_score >= rubric["pass_points"]
 
@@ -978,20 +1002,21 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             summary = getattr(result, "final_output", None) or ""
 
             # Update grade record with final values
-            sql_update_grade = load_sql("app/sql/v3/grading/update_grade_final.sql")
-            await conn.execute(
-                sql_update_grade,
-                str(grade_id),
-                summary,
-                passed,
-                overall_score,
+            from app.sql.types import UpdateGradeFinalSqlParams
+            SQL_UPDATE_GRADE_PATH = "app/sql/v3/grading/update_grade_final_complete.sql"
+            update_grade_params = UpdateGradeFinalSqlParams(
+                grade_id=grade_id,
+                description=summary,
+                passed=passed,
+                score=overall_score,
             )
+            await execute_sql_typed(conn, SQL_UPDATE_GRADE_PATH, params=update_grade_params)
 
             # 3. Mark chat as completed
-            sql_mark_completed = load_sql(
-                "app/sql/v3/simulations/mark_chat_completed.sql"
-            )
-            await conn.execute(sql_mark_completed, str(simulation_chat_id))
+            from app.sql.types import MarkChatCompletedSqlParams
+            SQL_MARK_COMPLETED_PATH = "app/sql/v3/simulations/mark_chat_completed_complete.sql"
+            mark_completed_params = MarkChatCompletedSqlParams(chat_id=simulation_chat_id)
+            await execute_sql_typed(conn, SQL_MARK_COMPLETED_PATH, params=mark_completed_params)
 
 
             # Emit grading completion event
@@ -1039,7 +1064,38 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 @sio.event  # type: ignore
 async def simulation_grading_start(sid: str, data: dict[str, Any]) -> None:
     """Handle grading start event from client (client-to-server)."""
-    await _simulation_grading_start_impl(sid, data)
+    # Get profile_id from sid lookup
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        await simulation_grading_progress(
+            SimulationGradingProgressPayload(
+                type="error",
+                chat_id=data.get("chat_id", "unknown"),
+                message="Profile not found for socket",
+                error="Profile not found for socket",
+            ),
+            room=f"simulation_{data.get('chat_id', 'unknown')}",
+        )
+        return
+    
+    profile_id = uuid.UUID(profile_id_str)
+    
+    # Validate payload
+    try:
+        validated = SimulationGradingStartPayload(**data)
+    except ValidationError as e:
+        await simulation_grading_progress(
+            SimulationGradingProgressPayload(
+                type="error",
+                chat_id=data.get("chat_id", "unknown"),
+                message=f"Invalid payload: {str(e)}",
+                error=str(e),
+            ),
+            room=f"simulation_{data.get('chat_id', 'unknown')}",
+        )
+        return
+    
+    await _simulation_grading_start_impl(sid, validated, profile_id)
 
 
 @internal_sio.on("simulation_grading_start")
@@ -1049,23 +1105,50 @@ async def simulation_grading_start_internal(data: dict[str, Any]) -> None:
     if not sid:
         # Missing sid - Socket.IO handles logging
         return
+    # Get profile_id from sid lookup
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        # Profile not found - emit error
+        await simulation_grading_progress(
+            SimulationGradingProgressPayload(
+                type="error",
+                chat_id=data.get("chat_id", "unknown"),
+                message="Profile not found for socket",
+                error="Profile not found for socket",
+            ),
+            room=f"simulation_{data.get('chat_id', 'unknown')}",
+        )
+        return
+    profile_id = uuid.UUID(profile_id_str)
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
-    await _simulation_grading_start_impl(sid, payload)
+    try:
+        validated = SimulationGradingStartPayload(**payload)
+    except ValidationError as e:
+        await simulation_grading_progress(
+            SimulationGradingProgressPayload(
+                type="error",
+                chat_id=payload.get("chat_id", "unknown"),
+                message=f"Invalid payload: {str(e)}",
+                error=str(e),
+            ),
+            room=f"simulation_{payload.get('chat_id', 'unknown')}",
+        )
+        return
+    await _simulation_grading_start_impl(sid, validated, profile_id)
 
 
 # FastAPI endpoint for OpenAPI documentation
-@client_router.post("/start", response_model=dict[str, bool])
-async def simulation_grading_start_api(
-    request: SimulationGradingStartPayload,
-) -> dict[str, bool]:
-    """Client-to-server event: Start grading for a simulation chat."""
-    return {"success": True}
+register_client_endpoint(
+    client_router,
+    "/start",
+    SimulationGradingStartPayload,
+    "Start grading for a simulation chat",
+)
 
-
-@server_router.post("/progress", response_model=dict[str, bool])
-async def simulation_grading_progress_api(
-    request: SimulationGradingProgressPayload,
-) -> dict[str, bool]:
-    """Server-to-client event: Simulation grading progress update."""
-    return {"success": True}
+register_client_endpoint(
+    server_router,
+    "/progress",
+    SimulationGradingProgressPayload,
+    "Simulation grading progress update",
+)

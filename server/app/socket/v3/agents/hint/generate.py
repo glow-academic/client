@@ -1,26 +1,42 @@
 """Handler for simulation_hints_generate WebSocket event."""
 
-import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from agents import Runner, Tool, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, ValidationError
-from utils.sql_helper import load_sql
+from pydantic import BaseModel, Field
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.agents.utils.build_hint_agent import build_hint_agent
 from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.documents.format_document_info import format_document_info
 from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_client_event
+from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.sql.types import (
+    CreateHintsSqlParams,
+    CreateHintsSqlRow,
+    GetHintRunContextAndCreateRunApiRequest,
+    GetHintRunContextAndCreateRunSqlParams,
+    GetHintRunContextAndCreateRunSqlRow,
+    GetSimulationMessagesSqlParams,
+    GetSimulationMessagesSqlRow,
+    HintGenerationErrorSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH_GENERATE = "app/sql/v3/simulations/generate_hints_complete.sql"
+SQL_PATH_MESSAGES = "app/sql/v3/simulations/get_simulation_messages_complete.sql"
+SQL_PATH_CREATE_HINTS = "app/sql/v3/simulations/create_hints_complete.sql"
 
 
 # Pydantic models for server-to-client events
@@ -44,41 +60,31 @@ class HintGenerationProgressPayload(BaseModel):
     hints: list[HintItem] | None = None
 
 
-# Pydantic model for client-to-server event
-class GenerateHintsPayload(BaseModel):
-    """Request to generate hints for a simulation message."""
-
-    chat_id: str
-    message_id: str
-    department_id: str
-
-
-# Emit helper functions
-async def hint_generation_progress(
-    payload: HintGenerationProgressPayload, room: str
-) -> None:
-    await sio.emit(
-        "simulations_text_hint_generation_progress",
-        payload.model_dump(exclude_none=True),
-        room=room,
-    )
-
-
 async def _generate_hints_impl(
-    chat_id: uuid.UUID,
-    message_id: uuid.UUID,
-    department_id: uuid.UUID,
+    sid: str,
+    data: GetHintRunContextAndCreateRunApiRequest,
+    profile_id: uuid.UUID,
 ) -> None:
     """Internal implementation for hint generation."""
+    chat_id = data.chat_id
+    message_id = data.message_id
+    department_id = data.department_id
+
     try:
         async with get_db_connection() as conn:
-
             # Get context AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            sql = load_sql("app/sql/v3/simulations/generate_hints_complete.sql")
             try:
-                context_row = await conn.fetchrow(
-                    sql, str(message_id), str(chat_id), str(department_id)
+                # Use execute_sql_typed() - auto-detects function
+                params = GetHintRunContextAndCreateRunSqlParams(
+                    message_id=message_id,
+                    chat_id=chat_id,
+                    department_id=department_id,
+                    profile_id=profile_id,  # From sid lookup
+                )
+                result = cast(
+                    GetHintRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH_GENERATE, params=params),
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
@@ -95,101 +101,87 @@ async def _generate_hints_impl(
                         if "RATE_LIMIT_EXCEEDED: " in error_msg
                         else error_msg
                     )
-                    await hint_generation_progress(
-                        HintGenerationProgressPayload(
-                            type="error",
+                    await emit_to_internal(
+                        "hint_error",
+                        HintGenerationErrorSqlRow(
+                            success=False,
                             message=user_msg,
-                            error=user_msg,
-                            chat_id=str(chat_id),
-                            message_id=str(message_id),
                         ),
-                        room=f"simulation_{chat_id}",
+                        sid=sid,
                     )
                     return
-                # Log other errors
-                await hint_generation_progress(
-                    HintGenerationProgressPayload(
-                        type="error",
+                await emit_to_internal(
+                    "hint_error",
+                    HintGenerationErrorSqlRow(
+                        success=False,
                         message=f"Failed to initialize hint generation: {str(e)}",
-                        error=str(e),
-                        chat_id=str(chat_id),
-                        message_id=str(message_id),
                     ),
-                    room=f"simulation_{chat_id}",
+                    sid=sid,
                 )
                 return
 
-            if not context_row:
-                await hint_generation_progress(
-                    HintGenerationProgressPayload(
-                        type="error",
+            if not result:
+                await emit_to_internal(
+                    "hint_error",
+                    HintGenerationErrorSqlRow(
+                        success=False,
                         message=(
                             f"Message {message_id} in chat {chat_id} not found or "
                             f"no hint agent configured for department {department_id}"
                         ),
-                        error="Context not found",
-                        chat_id=str(chat_id),
-                        message_id=str(message_id),
                     ),
-                    room=f"simulation_{chat_id}",
+                    sid=sid,
                 )
                 return
 
-            # Parse JSON array for documents
-            documents = (
-                json.loads(context_row["documents"])
-                if isinstance(context_row["documents"], str)
-                else context_row["documents"]
-            )
+            # result.documents is already a list of composite type objects, no JSON parsing needed
+            documents = result.documents or []
 
             # Validate profile_id is required
-            profile_id = context_row["profile_id"]
-            if not profile_id:
-                await hint_generation_progress(
-                    HintGenerationProgressPayload(
-                        type="error",
+            profile_id_str = result.profile_id
+            if not profile_id_str:
+                await emit_to_internal(
+                    "hint_error",
+                    HintGenerationErrorSqlRow(
+                        success=False,
                         message="profileId is required",
-                        error="Missing profile_id",
-                        chat_id=str(chat_id),
-                        message_id=str(message_id),
                     ),
-                    room=f"simulation_{chat_id}",
+                    sid=sid,
                 )
                 return
 
             context = {
-                "message_id": context_row["message_id"],
-                "message_created_at": context_row["message_created_at"],
-                "chat_id": context_row["chat_id"],
-                "attempt_id": context_row["attempt_id"],
-                "scenario_id": context_row["scenario_id"],
-                "trace_id": context_row["trace_id"],
-                "chat_title": context_row["chat_title"],
-                "simulation_id": context_row["simulation_id"],
-                "problem_statement": context_row["problem_statement"],
-                "agent_id": context_row["agent_id"],
-                "agent_name": context_row["agent_name"],
-                "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"])
-                if context_row["temperature"] is not None
+                "message_id": result.message_id,
+                "message_created_at": result.message_created_at,
+                "chat_id": result.chat_id,
+                "attempt_id": result.attempt_id,
+                "scenario_id": result.scenario_id,
+                "trace_id": result.trace_id,
+                "chat_title": result.chat_title,
+                "simulation_id": result.simulation_id,
+                "problem_statement": result.problem_statement,
+                "agent_id": result.agent_id,
+                "agent_name": result.agent_name,
+                "system_prompt": result.system_prompt,
+                "temperature": float(result.temperature)
+                if result.temperature is not None
                 else 0.0,
-                "reasoning": context_row["reasoning"],
-                "model_id": context_row["model_id"],
-                "model_name": context_row["model_name"],
-                "custom_model": context_row["custom_model"],
-                "provider_id": context_row["provider_id"],
-                "provider_name": context_row["provider_name"],
-                "base_url": context_row["base_url"],
-                "api_key": context_row["api_key"],
-                "profile_id": profile_id,
+                "reasoning": result.reasoning,
+                "model_id": result.model_id,
+                "model_name": result.model_name,
+                "provider_id": result.provider_id,
+                "provider_name": result.provider_name,
+                "base_url": result.base_url,
+                "api_key": result.api_key,
+                "profile_id": profile_id_str,
                 "documents": documents,
-                "req_per_day": context_row["req_per_day"],
-                "runs_today_count": context_row["runs_today_count"],
-                "earliest_run_created_at": context_row["earliest_run_created_at"],
+                "req_per_day": result.req_per_day,
+                "runs_today_count": result.runs_today_count,
+                "earliest_run_created_at": result.earliest_run_created_at,
             }
 
-            # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(context_row["run_id"])
+            # Extract run_id from result (created in same transaction)
+            model_run_id = uuid.UUID(result.run_id)
 
             # Extract data from context
             chat = {
@@ -207,28 +199,40 @@ async def _generate_hints_impl(
 
             message_created_at = context["message_created_at"]
 
-            # Emit start event
-            await hint_generation_progress(
+            # Emit start event via internal bus
+            await emit_to_internal(
+                "hint_progress",
                 HintGenerationProgressPayload(
                     type="start",
                     message="Starting hint generation",
                     chat_id=str(chat_id),
                     message_id=str(message_id),
                 ),
-                room=f"simulation_{chat_id}",
+                sid=sid,
             )
 
             # Build input items
             input_items: list[TResponseInputItem] = []
 
             # Format document info if documents are available (no images needed for hints)
-            if context["documents"]:
-                document_info = format_document_info(context["documents"], False)
+            if documents:
+                # Convert composite type objects to dict format for format_document_info
+                documents_dict = [
+                    {
+                        "id": str(doc.document_id),
+                        "name": doc.name,
+                        "file_path": doc.file_path or "",
+                        "mime_type": doc.mime_type or "",
+                    }
+                    for doc in documents
+                ]
+                document_info = format_document_info(documents_dict, False)
                 input_items.append(document_info)
 
-            # Get all messages for the chat using SQL file
-            sql = load_sql("app/sql/v3/simulations/get_simulation_messages.sql")
-            message_rows = await conn.fetch(sql, str(chat_id))
+            # Get all messages for the chat using function call (RETURNS TABLE returns multiple rows)
+            # execute_sql_typed uses fetchrow which only gets one row, so we use fetch directly for multi-row results
+            function_call_sql = "SELECT * FROM socket_get_simulation_messages_v3($1::uuid)"
+            message_rows = await conn.fetch(function_call_sql, chat_id)
             all_messages = [dict(row) for row in message_rows]
 
             # Filter messages up to and including the target message
@@ -240,8 +244,6 @@ async def _generate_hints_impl(
             from datetime import datetime
 
             conversation_history: list[TResponseInputItem] = []
-            message_id_map: dict[str, int] = {}
-            message_number = 1
 
             # Filter out error messages and make a list of all items
             items = [
@@ -261,7 +263,7 @@ async def _generate_hints_impl(
                 msg_type = item.get("type", "")
                 msg_role = item.get("role", "")
                 msg_content = item.get("content", "")
-                message_id = item.get("id", "")
+                message_id_item = item.get("id", "")
 
                 # Check if this is a user message (type="query" or role="user")
                 is_user_message = (
@@ -272,7 +274,6 @@ async def _generate_hints_impl(
                     # If we have pending response messages, add the latest one
                     if current_response_messages:
                         latest_response = current_response_messages[-1]
-                        response_id = latest_response.get("id", "")
                         content = latest_response.get("content", "")
 
                         assistant_message_item: TResponseInputItem = {
@@ -300,7 +301,6 @@ async def _generate_hints_impl(
             # Handle any remaining response messages at the end
             if current_response_messages:
                 latest_response = current_response_messages[-1]
-                response_id = latest_response.get("id", "")
                 content = latest_response.get("content", "")
 
                 current_assistant_message_item: TResponseInputItem = {
@@ -371,7 +371,7 @@ async def _generate_hints_impl(
             with trace(
                 chat["title"], trace_id=chat["trace_id"], group_id=str(attempt["id"])
             ):
-                result = await Runner.run(
+                result_runner = await Runner.run(
                     hint_agent.agent(),
                     input=input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
@@ -379,8 +379,8 @@ async def _generate_hints_impl(
 
             # Emit async pricing event (non-blocking)
             # This handles token updates and message logging in background
-            usage = result.context_wrapper.usage
-            assistant_output = getattr(result, "final_output", None) or ""
+            usage = result_runner.context_wrapper.usage
+            assistant_output = getattr(result_runner, "final_output", None) or ""
             hint_dev_content = "Now please generate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student."
             # Create input_items with developer message for logging
             input_items_with_dev = input_items + [
@@ -406,166 +406,153 @@ async def _generate_hints_impl(
 
             if non_empty_hints:
                 try:
-                    # Create hints in single transaction
-                    sql_create_hints = load_sql(
-                        "app/sql/v3/simulations/create_hints_complete.sql"
+                    # Create hints in single transaction using typed SQL execution
+                    create_hints_params = CreateHintsSqlParams(
+                        message_id=message_id,
+                        hint_texts=non_empty_hints,
                     )
-                    result_row = await conn.fetchrow(
-                        sql_create_hints, str(message_id), non_empty_hints
+                    create_hints_result = cast(
+                        CreateHintsSqlRow,
+                        await execute_sql_typed(
+                            conn, SQL_PATH_CREATE_HINTS, params=create_hints_params
+                        ),
                     )
 
-                    if result_row and result_row.get("hint_ids"):
-                        hint_ids = result_row["hint_ids"]
-                        if isinstance(hint_ids, str):
-                            hint_ids = json.loads(hint_ids)
-                        elif hint_ids is None:
-                            hint_ids = []
+                    # create_hints_result.hints is already a list of composite type objects
+                    hints_list = create_hints_result.hints or []
 
-
-                        # Emit completion event
+                    if hints_list:
+                        # Emit completion event via internal bus
                         hints_for_event = [
-                            HintItem(idx=h["idx"], hint=h.get("hint", ""))
-                            for h in hint_ids
+                            HintItem(idx=hint.idx, hint=hint.hint)
+                            for hint in hints_list
                         ]
 
-                        await hint_generation_progress(
+                        await emit_to_internal(
+                            "hint_complete",
                             HintGenerationProgressPayload(
                                 type="complete",
                                 message="Hints created successfully",
                                 chat_id=str(chat_id),
                                 message_id=str(message_id),
                                 hint_ids=[
-                                    f"{h['simulation_message_id']}_{h['idx']}"
-                                    for h in hint_ids
+                                    f"{hint.simulation_message_id}_{hint.idx}"
+                                    for hint in hints_list
                                 ],
-                                hints_count=len(hint_ids),
+                                hints_count=len(hints_list),
                                 hints=hints_for_event,
                             ),
-                            room=f"simulation_{chat_id}",
+                            sid=sid,
                         )
                     else:
-                        await hint_generation_progress(
-                            HintGenerationProgressPayload(
-                                type="error",
+                        await emit_to_internal(
+                            "hint_error",
+                            HintGenerationErrorSqlRow(
+                                success=False,
                                 message="Failed to create hints in database",
-                                error="Database operation failed",
-                                chat_id=str(chat_id),
-                                message_id=str(message_id),
                             ),
-                            room=f"simulation_{chat_id}",
+                            sid=sid,
                         )
                 except Exception as create_error:
-                    await hint_generation_progress(
-                        HintGenerationProgressPayload(
-                            type="error",
+                    await emit_to_internal(
+                        "hint_error",
+                        HintGenerationErrorSqlRow(
+                            success=False,
                             message=f"Failed to create hints: {str(create_error)}",
-                            error=str(create_error),
-                            chat_id=str(chat_id),
-                            message_id=str(message_id),
                         ),
-                        room=f"simulation_{chat_id}",
+                        sid=sid,
                     )
             else:
                 # No non-empty hints provided
-                await hint_generation_progress(
-                    HintGenerationProgressPayload(
-                        type="error",
+                await emit_to_internal(
+                    "hint_error",
+                    HintGenerationErrorSqlRow(
+                        success=False,
                         message="No valid hints generated",
-                        error="No non-empty hints provided",
-                        chat_id=str(chat_id),
-                        message_id=str(message_id),
                     ),
-                    room=f"simulation_{chat_id}",
+                    sid=sid,
                 )
     except RuntimeError:
-        await hint_generation_progress(
-            HintGenerationProgressPayload(
-                type="error",
+        # Pool not initialized - emit error event
+        await emit_to_internal(
+            "hint_error",
+            HintGenerationErrorSqlRow(
+                success=False,
                 message="Database connection pool not available",
-                error="Database connection pool not available",
-                chat_id=str(chat_id),
-                message_id=str(message_id),
             ),
-            room=f"simulation_{chat_id}",
+            sid=sid,
         )
     except Exception as e:
-            # Emit error event
-            try:
-                await hint_generation_progress(
-                    HintGenerationProgressPayload(
-                        type="error",
-                        message=f"Hint generation failed: {str(e)}",
-                        error=str(e),
-                        chat_id=str(chat_id),
-                        message_id=str(message_id),
-                    ),
-                    room=f"simulation_{chat_id}",
-                )
-            except Exception:
-                # Error emitting error event - Socket.IO handles logging
-                pass
+        # Emit error event
+        await emit_to_internal(
+            "hint_error",
+            HintGenerationErrorSqlRow(
+                success=False,
+                message=f"Hint generation failed: {str(e)}",
+            ),
+            sid=sid,
+        )
 
 
 @sio.event  # type: ignore
 async def simulation_hints_generate(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
-    try:
-        validated = GenerateHintsPayload(**data)
-        await _generate_hints_impl(
-            uuid.UUID(validated.chat_id),
-            uuid.UUID(validated.message_id),
-            uuid.UUID(validated.department_id),
-        )
-    except ValidationError as e:
-        await hint_generation_progress(
-            HintGenerationProgressPayload(
-                type="error",
-                message=f"Invalid payload: {str(e)}",
-                error=str(e),
-                chat_id=data.get("chat_id", "unknown"),
-                message_id=data.get("message_id", "unknown"),
-            ),
-            room=sid,
-        )
+    await handle_client_event(
+        sid=sid,
+        data=data,
+        request_type=GetHintRunContextAndCreateRunApiRequest,
+        handler=_generate_hints_impl,  # type: ignore[arg-type]
+        error_event_name="simulation_hints_error",
+        error_response_type=HintGenerationErrorSqlRow,
+    )
 
 
 @internal_sio.on("simulation_hints_generate")
 async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
     """Internal event handler for hint generation (called from other handlers)."""
-    """Internal event handler for hint generation (called from other handlers)"""
-    try:
-        chat_id = uuid.UUID(data["chat_id"])
-        message_id = uuid.UUID(data["message_id"])
-        department_id = uuid.UUID(data["department_id"])
-        await _generate_hints_impl(chat_id, message_id, department_id)
-    except RuntimeError:
-        await hint_generation_progress(
-            HintGenerationProgressPayload(
-                type="error",
-                message="Database connection pool not available",
-                error="Database connection pool not available",
-                chat_id=str(data.get("chat_id", "unknown")),
-                message_id=str(data.get("message_id", "unknown")),
+    # Extract sid from payload if available
+    sid = data.get("sid", "internal")
+    chat_id = uuid.UUID(data["chat_id"])
+    message_id = uuid.UUID(data["message_id"])
+    department_id = uuid.UUID(data["department_id"])
+    
+    # Create request object for handler
+    request = GetHintRunContextAndCreateRunApiRequest(
+        chat_id=str(chat_id),
+        message_id=str(message_id),
+        department_id=str(department_id),
+    )
+    
+    # Get profile_id from sid lookup
+    from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+    
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        await emit_to_internal(
+            "hint_error",
+            HintGenerationErrorSqlRow(
+                success=False,
+                message="No profile found for socket",
             ),
-            room=f"simulation_{data.get('chat_id', 'unknown')}",
+            sid=sid,
         )
-    except Exception as e:
-        # Error in hint generation - Socket.IO handles logging
-        pass
+        return
+    
+    profile_id = uuid.UUID(profile_id_str)
+    await _generate_hints_impl(sid, request, profile_id)
 
 
-# FastAPI endpoint for OpenAPI documentation
-@client_router.post("/generate", response_model=dict[str, bool])
-async def simulation_hints_generate_api(
-    request: GenerateHintsPayload,
-) -> dict[str, bool]:
-    """Client-to-server event: Generate hints for a simulation message."""
-    return {"success": True}
+register_client_endpoint(
+    client_router,
+    "/generate",
+    GetHintRunContextAndCreateRunApiRequest,
+    "Generate hints for a simulation message",
+)
 
 
-@server_router.post("/generation_progress", response_model=dict[str, bool])
-async def hint_generation_progress_api(
-    request: HintGenerationProgressPayload,
-) -> dict[str, bool]:
-    """Server-to-client event: Hint generation progress update."""
-    return {"success": True}
+register_client_endpoint(
+    server_router,
+    "/generation_progress",
+    HintGenerationProgressPayload,
+    "Hint generation progress update",
+)

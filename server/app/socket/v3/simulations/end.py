@@ -5,16 +5,21 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import load_sql, execute_sql_typed
+from typing import cast
+
+from app.sql.types import (
+    GetSimulationRunContextSqlParams,
+    GetSimulationRunContextSqlRow,
+)
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
 # Import chat creation function from start.py
 from app.socket.v3.simulations.start import simulation_chat_create_impl
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -168,10 +173,13 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
             # Extract department_id from chat/scenario for grading
             # SQL query includes fallback: scenario -> profile -> any active department
-            sql = load_sql("app/sql/v3/simulations/get_simulation_run_context.sql")
-            run_context = await conn.fetchrow(sql, chat_id)
-
-            if not run_context:
+            SQL_PATH_CONTEXT = "app/sql/v3/simulations/get_simulation_run_context_complete.sql"
+            context_params = GetSimulationRunContextSqlParams(chat_id=chat_id_uuid)
+            run_context_result = cast(
+                GetSimulationRunContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
+            )
+            if not run_context_result:
                 await simulation_text_end_error(
                     EndSimulationErrorPayload(
                         success=False,
@@ -183,7 +191,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
             # department_id should always be present due to SQL fallback logic
             # but handle edge case where no departments exist in system
-            department_id = run_context.get("department_id")
+            department_id = run_context_result.department_id
             if not department_id:
                 await simulation_text_end_error(
                     EndSimulationErrorPayload(

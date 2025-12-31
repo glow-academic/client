@@ -1,25 +1,21 @@
 """Handler for simulation_voice_progress WebSocket events - consolidates assistant/delta, assistant/done, assistant/audio."""
 
 import asyncio
-import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.main import (
     _voice_message_ids,
     _voice_message_ids_lock,
-    get_pool,
     get_simulation_tool_calls_dict,
     get_simulation_tool_calls_locks,
     sio,
 )
-
-logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -162,6 +158,13 @@ class VoiceAssistantDeltaPayload(BaseModel):
     item_id: str
     delta: str
     response_id: str
+
+
+class SpeakToolArguments(BaseModel):
+    """Arguments for speak tool call."""
+
+    persona: str
+    message: str
 
 
 class VoiceAssistantDonePayload(BaseModel):
@@ -383,33 +386,61 @@ async def _simulation_voice_assistant_delta_impl(
                     if persona_match:
                         persona_id_uuid = persona_match[0]
 
-                # Upsert via SQL
-                sql_upsert = load_sql(
-                    "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
-                )
-                result_row = await conn.fetchrow(
-                    sql_upsert,
-                    str(chat_id_uuid),
-                    str(tool_call_state["run_id"])
-                    if tool_call_state.get("run_id")
-                    else None,
-                    call_id,
-                    "speak",
-                    new_raw,
-                    tool_call_state["message_so_far"],
-                    persona_id_uuid,
-                    uuid.UUID(tool_call_state["parent_message_id"])
-                    if tool_call_state.get("parent_message_id")
-                    else None,
-                    None,  # upload_id - not provided in delta
-                    uuid.UUID(tool_call_state["db_message_id"])
-                    if tool_call_state.get("db_message_id")
-                    else None,
-                    False,  # is_complete - false for delta
-                )
+                # Upsert via SQL using execute_sql_typed()
+                try:
+                    from app.sql.types import (
+                        VoiceProgressUpsertV3SqlParams,
+                        VoiceProgressUpsertV3SqlRow,
+                    )
+
+                    SQL_PATH = "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                    params = VoiceProgressUpsertV3SqlParams(
+                        chat_id=chat_id_uuid,
+                        run_id=uuid.UUID(tool_call_state["run_id"]) if tool_call_state.get("run_id") else None,
+                        call_id=call_id,
+                        tool_name="speak",
+                        arguments_raw=new_raw,
+                        message_content=tool_call_state["message_so_far"],
+                        persona_id=persona_id_uuid,
+                        parent_message_id=uuid.UUID(tool_call_state["parent_message_id"]) if tool_call_state.get("parent_message_id") else None,
+                        upload_id=None,
+                        message_id=uuid.UUID(tool_call_state["db_message_id"]) if tool_call_state.get("db_message_id") else None,
+                        is_complete=False,
+                    )
+                    result = cast(
+                        VoiceProgressUpsertV3SqlRow,
+                        await execute_sql_typed(conn, SQL_PATH, params=params),
+                    )
+                    result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+                except ImportError:
+                    # Fallback to load_sql if types not generated yet
+                    sql_upsert = load_sql(
+                        "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                    )
+                    result_row = await conn.fetchrow(
+                        sql_upsert,
+                        str(chat_id_uuid),
+                        str(tool_call_state["run_id"])
+                        if tool_call_state.get("run_id")
+                        else None,
+                        call_id,
+                        "speak",
+                        new_raw,
+                        tool_call_state["message_so_far"],
+                        persona_id_uuid,
+                        uuid.UUID(tool_call_state["parent_message_id"])
+                        if tool_call_state.get("parent_message_id")
+                        else None,
+                        None,  # upload_id - not provided in delta
+                        uuid.UUID(tool_call_state["db_message_id"])
+                        if tool_call_state.get("db_message_id")
+                        else None,
+                        False,  # is_complete - false for delta
+                    )
+                    result_row = dict(result_row) if result_row else None
 
                 if result_row:
-                    message_id = result_row["message_id"]
+                    message_id = result_row.get("message_id")
                     tool_call_id = result_row.get("tool_call_id")
                     if message_id and not tool_call_state.get("db_message_id"):
                         tool_call_state["db_message_id"] = uuid.UUID(message_id)
@@ -475,16 +506,16 @@ async def _simulation_voice_assistant_done_impl(
             # Replaced with get_db_connection()
 
             async with get_db_connection() as conn:
-                # Parse final arguments
+                # Parse final arguments using Pydantic model
                 try:
-                    final_args = json.loads(data.arguments)
-                    persona_name = final_args.get("persona", "")
-                    message_content = final_args.get("message", "")
-                except json.JSONDecodeError as e:
+                    final_args = SpeakToolArguments.model_validate_json(data.arguments)
+                    persona_name = final_args.persona
+                    message_content = final_args.message
+                except Exception as e:
                     await voice_tool_call_error(
                         VoiceProgressErrorPayload(
                             success=False,
-                            message=f"Invalid JSON in arguments: {str(e)}",
+                            message=f"Invalid arguments format: {str(e)}",
                         ),
                         room=sid,
                     )
@@ -535,24 +566,52 @@ async def _simulation_voice_assistant_done_impl(
 
                     persona_id_uuid = persona_match[0]
 
-                    # Upsert via SQL
-                    sql_upsert = load_sql(
-                        "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
-                    )
-                    result_row = await conn.fetchrow(
-                        sql_upsert,
-                        str(chat_id_uuid),
-                        str(run_id) if run_id else None,
-                        call_id,
-                        "speak",
-                        data.arguments,
-                        message_content,
-                        persona_id_uuid,
-                        None,  # parent_message_id
-                        None,  # upload_id
-                        None,  # message_id - create new
-                        True,  # is_complete
-                    )
+                    # Upsert via SQL using execute_sql_typed()
+                    try:
+                        from app.sql.types import (
+                            VoiceProgressUpsertV3SqlParams,
+                            VoiceProgressUpsertV3SqlRow,
+                        )
+
+                        SQL_PATH = "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                        params = VoiceProgressUpsertV3SqlParams(
+                            chat_id=chat_id_uuid,
+                            run_id=uuid.UUID(run_id) if run_id else None,
+                            call_id=call_id,
+                            tool_name="speak",
+                            arguments_raw=data.arguments,
+                            message_content=message_content,
+                            persona_id=persona_id_uuid,
+                            parent_message_id=None,
+                            upload_id=None,
+                            message_id=None,
+                            is_complete=True,
+                        )
+                        result = cast(
+                            VoiceProgressUpsertV3SqlRow,
+                            await execute_sql_typed(conn, SQL_PATH, params=params),
+                        )
+                        result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+                    except ImportError:
+                        # Fallback to load_sql if types not generated yet
+                        sql_upsert = load_sql(
+                            "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                        )
+                        result_row_raw = await conn.fetchrow(
+                            sql_upsert,
+                            str(chat_id_uuid),
+                            str(run_id) if run_id else None,
+                            call_id,
+                            "speak",
+                            data.arguments,
+                            message_content,
+                            persona_id_uuid,
+                            None,  # parent_message_id
+                            None,  # upload_id
+                            None,  # message_id - create new
+                            True,  # is_complete
+                        )
+                        result_row = dict(result_row_raw) if result_row_raw else None
 
                     if result_row:
                         message_id = result_row["message_id"]
@@ -632,30 +691,58 @@ async def _simulation_voice_assistant_done_impl(
 
                 persona_id_uuid = persona_match[0]
 
-                # Upsert via SQL
-                sql_upsert = load_sql(
-                    "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
-                )
-                result_row = await conn.fetchrow(
-                    sql_upsert,
-                    str(chat_id_uuid),
-                    str(tool_call_state["run_id"])
-                    if tool_call_state.get("run_id")
-                    else None,
-                    call_id,
-                    "speak",
-                    data.arguments,
-                    final_content,
-                    persona_id_uuid,
-                    uuid.UUID(tool_call_state["parent_message_id"])
-                    if tool_call_state.get("parent_message_id")
-                    else None,
-                    None,  # upload_id
-                    uuid.UUID(tool_call_state["db_message_id"])
-                    if tool_call_state.get("db_message_id")
-                    else None,
-                    True,  # is_complete
-                )
+                # Upsert via SQL using execute_sql_typed()
+                try:
+                    from app.sql.types import (
+                        VoiceProgressUpsertV3SqlParams,
+                        VoiceProgressUpsertV3SqlRow,
+                    )
+
+                    SQL_PATH = "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                    params = VoiceProgressUpsertV3SqlParams(
+                        chat_id=chat_id_uuid,
+                        run_id=uuid.UUID(tool_call_state["run_id"]) if tool_call_state.get("run_id") else None,
+                        call_id=call_id,
+                        tool_name="speak",
+                        arguments_raw=data.arguments,
+                        message_content=final_content,
+                        persona_id=persona_id_uuid,
+                        parent_message_id=uuid.UUID(tool_call_state["parent_message_id"]) if tool_call_state.get("parent_message_id") else None,
+                        upload_id=None,
+                        message_id=uuid.UUID(tool_call_state["db_message_id"]) if tool_call_state.get("db_message_id") else None,
+                        is_complete=True,
+                    )
+                    result = cast(
+                        VoiceProgressUpsertV3SqlRow,
+                        await execute_sql_typed(conn, SQL_PATH, params=params),
+                    )
+                    result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+                except ImportError:
+                    # Fallback to load_sql if types not generated yet
+                    sql_upsert = load_sql(
+                        "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                    )
+                    result_row_raw = await conn.fetchrow(
+                        sql_upsert,
+                        str(chat_id_uuid),
+                        str(tool_call_state["run_id"])
+                        if tool_call_state.get("run_id")
+                        else None,
+                        call_id,
+                        "speak",
+                        data.arguments,
+                        final_content,
+                        persona_id_uuid,
+                        uuid.UUID(tool_call_state["parent_message_id"])
+                        if tool_call_state.get("parent_message_id")
+                        else None,
+                        None,  # upload_id
+                        uuid.UUID(tool_call_state["db_message_id"])
+                        if tool_call_state.get("db_message_id")
+                        else None,
+                        True,  # is_complete
+                    )
+                    result_row = dict(result_row_raw) if result_row_raw else None
 
                 if result_row:
                     message_id = result_row["message_id"]
@@ -787,24 +874,52 @@ async def _simulation_voice_assistant_audio_link_impl(
             latest_run_row = await conn.fetchrow(sql_get_latest_run, str(chat_id_uuid))
             run_id = latest_run_row["run_id"] if latest_run_row else None
 
-            # Upsert via SQL (with upload_id for audio linking)
-            sql_upsert = load_sql(
-                "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
-            )
-            result_row = await conn.fetchrow(
-                sql_upsert,
-                str(chat_id_uuid),
-                str(run_id) if run_id else None,
-                None,  # call_id - not provided for audio link
-                None,  # tool_name - not provided for audio link
-                None,  # arguments_raw - not provided for audio link
-                None,  # message_content - not provided for audio link
-                None,  # persona_id - not provided for audio link
-                None,  # parent_message_id - not provided for audio link
-                upload_id_uuid,  # upload_id - provided for audio linking
-                message_id_uuid,  # message_id - provided
-                False,  # is_complete - false for audio link
-            )
+            # Upsert via SQL (with upload_id for audio linking) using execute_sql_typed()
+            try:
+                from app.sql.types import (
+                    VoiceProgressUpsertV3SqlParams,
+                    VoiceProgressUpsertV3SqlRow,
+                )
+
+                SQL_PATH = "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                params = VoiceProgressUpsertV3SqlParams(
+                    chat_id=chat_id_uuid,
+                    run_id=uuid.UUID(run_id) if run_id else None,
+                    call_id=None,
+                    tool_name=None,
+                    arguments_raw=None,
+                    message_content=None,
+                    persona_id=None,
+                    parent_message_id=None,
+                    upload_id=upload_id_uuid,
+                    message_id=message_id_uuid,
+                    is_complete=False,
+                )
+                result = cast(
+                    VoiceProgressUpsertV3SqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
+                result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+            except ImportError:
+                # Fallback to load_sql if types not generated yet
+                sql_upsert = load_sql(
+                    "app/sql/v3/simulation_voice/voice_progress_upsert_complete.sql"
+                )
+                result_row_raw = await conn.fetchrow(
+                    sql_upsert,
+                    str(chat_id_uuid),
+                    str(run_id) if run_id else None,
+                    None,  # call_id - not provided for audio link
+                    None,  # tool_name - not provided for audio link
+                    None,  # arguments_raw - not provided for audio link
+                    None,  # message_content - not provided for audio link
+                    None,  # persona_id - not provided for audio link
+                    None,  # parent_message_id - not provided for audio link
+                    upload_id_uuid,  # upload_id - provided for audio linking
+                    message_id_uuid,  # message_id - provided
+                    False,  # is_complete - false for audio link
+                )
+                result_row = dict(result_row_raw) if result_row_raw else None
 
             if result_row and result_row.get("upload_linked"):
             else:

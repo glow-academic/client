@@ -3,7 +3,7 @@
 import json
 import uuid
 import zipfile
-from typing import Any
+from typing import Any, cast
 
 from agents import (
     FunctionToolResult,
@@ -17,13 +17,28 @@ from agents import (
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.main import TUS_UPLOADS_DIR, get_internal_sio, sio
+from app.sql.types import (
+    GetFirstDepartmentForProfileSqlParams,
+    GetFirstDepartmentForProfileSqlRow,
+    GetUploadClassificationRunContextAndCreateRunSqlParams,
+    GetUploadClassificationRunContextAndCreateRunSqlRow,
+    GetClassificationContextSqlParams,
+    GetClassificationContextSqlRow,
+    GetAgentToolsSqlParams,
+    GetAgentToolsSqlRow,
+    LinkSystemDeveloperMessagesToRunSqlParams,
+    LinkSystemDeveloperMessagesToRunSqlRow,
+    LinkDeveloperMessageToRunSqlParams,
+    LinkDeveloperMessageToRunSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
@@ -59,7 +74,7 @@ class ClassifyUploadPayload(BaseModel):
     """Request to classify an uploaded file."""
 
     uploadId: str
-    profileId: str
+    # profileId removed - retrieved via find_profile_by_socket(sid)
     parameterIds: list[str] | None = None  # Optional filter for specific parameters
 
 
@@ -88,7 +103,19 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
     """Handle upload classification requests via WebSocket."""
     try:
         upload_id = data.uploadId
-        profile_id = uuid.UUID(data.profileId)
+        
+        # Get profile_id from socket lookup
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
+            await classify_upload_error(
+                ClassifyUploadErrorPayload(
+                    success=False,
+                    message="Profile not found for socket",
+                ),
+                room=sid,
+            )
+            return
+        profile_id = uuid.UUID(profile_id_str)
 
         async with get_db_connection() as conn:
             # Emit start event
@@ -100,38 +127,28 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 room=sid,
             )
 
-            # Validate profile_id is required
-            if not profile_id:
-                await classify_upload_error(
-                    ClassifyUploadErrorPayload(
-                        success=False,
-                        message="profileId is required",
-                    ),
-                    room=sid,
-                )
-                return
-
             # Get user's department for agent selection (use first department or None)
-            sql_get_department = load_sql(
-                "app/sql/v3/profile/get_first_department_for_profile.sql"
+            SQL_PATH_DEPT = "app/sql/v3/profile/get_first_department_for_profile_complete.sql"
+            dept_params = GetFirstDepartmentForProfileSqlParams(profile_id=profile_id)
+            dept_result = cast(
+                GetFirstDepartmentForProfileSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_DEPT, params=dept_params),
             )
-            user_dept_rows = await conn.fetch(sql_get_department, profile_id)
-            department_id = (
-                user_dept_rows[0]["department_id"] if user_dept_rows else None
-            )
+            department_id = dept_result.department_id if dept_result else None
 
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
             # Pattern: All AI operations use atomic context+run creation SQL files
             # See WEBSOCKET_STANDARDS.md for details
-            sql = load_sql(
-                "app/sql/v3/uploads/get_upload_classification_run_context_and_create_run.sql"
-            )
+            SQL_PATH_CONTEXT = "app/sql/v3/uploads/get_upload_classification_run_context_and_create_run_complete.sql"
             try:
-                context_row = await conn.fetchrow(
-                    sql,
-                    str(department_id) if department_id else None,
-                    str(profile_id),
+                context_params = GetUploadClassificationRunContextAndCreateRunSqlParams(
+                    department_id=department_id,
+                    profile_id=profile_id,
+                )
+                context_result = cast(
+                    GetUploadClassificationRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
@@ -165,7 +182,7 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 )
                 return
 
-            if not context_row:
+            if not context_result:
                 await classify_upload_error(
                     ClassifyUploadErrorPayload(
                         success=False,
@@ -176,20 +193,20 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 return
 
             # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(context_row["run_id"])
+            model_run_id = uuid.UUID(context_result.run_id)
 
             context = {
-                "agent_id": context_row["agent_id"],
-                "agent_name": context_row["agent_name"],
-                "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"]),
-                "reasoning": context_row["reasoning"],
-                "model_id": context_row["model_id"],
-                "model_name": context_row["model_name"],
-                "provider": context_row["provider"],
-                "base_url": context_row["base_url"] or None,
-                "api_key": context_row["api_key"],
-                "profile_id": context_row["profile_id"],
+                "agent_id": context_result.agent_id,
+                "agent_name": context_result.agent_name,
+                "system_prompt": context_result.system_prompt,
+                "temperature": float(context_result.temperature),
+                "reasoning": context_result.reasoning,
+                "model_id": context_result.model_id,
+                "model_name": context_result.model_name,
+                "provider": context_result.provider,
+                "base_url": context_result.base_url or None,
+                "api_key": context_result.api_key,
+                "profile_id": context_result.profile_id,
             }
 
             # Find the upload directory
@@ -233,25 +250,25 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
             if data.parameterIds:
                 parameter_ids_filter = [uuid.UUID(pid) for pid in data.parameterIds]
 
-            sql_param_items = load_sql(
-                "app/sql/v3/uploads/get_classification_context.sql"
+            SQL_PATH_PARAM_ITEMS = "app/sql/v3/uploads/get_classification_context_complete.sql"
+            param_items_params = GetClassificationContextSqlParams(
+                parameter_ids=parameter_ids_filter if parameter_ids_filter else [],
+                profile_id=profile_id,
             )
-            rows = await conn.fetch(
-                sql_param_items,
-                parameter_ids_filter if parameter_ids_filter else [],
-                profile_id,
+            param_items_results = cast(
+                list[GetClassificationContextSqlRow],
+                await execute_sql_typed(conn, SQL_PATH_PARAM_ITEMS, params=param_items_params),
             )
 
             parameter_items = [
                 {
-                    "id": row["id"],
-                    "name": row["name"],
-                    "description": row["description"],
-                    "value": row["value"],
-                    "parameter_id": row["parameter_id"],
-                    "parameter_name": row["parameter_name"],
+                    "id": row.id,
+                    "name": row.name,
+                    "description": row.description,
+                    "parameter_id": row.parameter_id,
+                    "parameter_name": row.parameter_name,
                 }
-                for row in rows
+                for row in param_items_results
             ]
 
             if not parameter_items:
@@ -436,15 +453,13 @@ Use the provided classification tools to indicate which files match each paramet
             # Log system and developer messages for this run
             # Link system message (and scenario developer message if chat_id provided)
             if context["system_prompt"]:
-                sql_link_sys_dev = load_sql(
-                    "app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                SQL_PATH_LINK_SYS_DEV = "app/sql/v3/model_runs/link_system_developer_messages_to_run_complete.sql"
+                link_sys_dev_params = LinkSystemDeveloperMessagesToRunSqlParams(
+                    run_id=model_run_id,
+                    department_id=department_id,
+                    chat_id=None,  # chat_id not provided for upload classification
                 )
-                await conn.fetchrow(
-                    sql_link_sys_dev,
-                    str(model_run_id),
-                    str(department_id) if department_id else None,
-                    None,  # chat_id
-                )
+                await execute_sql_typed(conn, SQL_PATH_LINK_SYS_DEV, params=link_sys_dev_params)
 
             # Link developer messages from input_items if provided
             developer_contents: list[str] = []
@@ -464,22 +479,19 @@ Use the provided classification tools to indicate which files match each paramet
                             developer_contents.append(stripped)
 
             # Link each developer message to the run
-            sql_link_dev = load_sql(
-                "app/sql/v3/simulations/link_developer_message_to_run.sql"
-            )
+            SQL_PATH_LINK_DEV = "app/sql/v3/simulations/link_developer_message_to_run_complete.sql"
             developer_message_ids: list[uuid.UUID] = []
             for content in developer_contents:
-                result = await conn.fetchrow(
-                    sql_link_dev,
-                    content,
-                    str(model_run_id),
+                link_dev_params = LinkDeveloperMessageToRunSqlParams(
+                    content=content,
+                    run_id=model_run_id,
                 )
-                if result and result.get("message_id"):
-                    message_id = result["message_id"]
-                    if isinstance(message_id, uuid.UUID):
-                        developer_message_ids.append(message_id)
-                    else:
-                        developer_message_ids.append(uuid.UUID(str(message_id)))
+                result = cast(
+                    LinkDeveloperMessageToRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH_LINK_DEV, params=link_dev_params),
+                )
+                if result and result.message_id:
+                    developer_message_ids.append(result.message_id)
 
             # Rate limit validation and run creation are now handled in SQL
             # (get_upload_classification_run_context_and_create_run.sql) - both happen atomically

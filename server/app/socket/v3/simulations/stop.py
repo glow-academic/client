@@ -4,20 +4,17 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.cancel_active_run import cancel_active_run
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.main import (
     _voice_message_ids,
     _voice_message_ids_lock,
     _voice_sessions,
-    get_pool,
     sio,
 )
-
-logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()

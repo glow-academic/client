@@ -1,15 +1,16 @@
 """Handler for debug_info WebSocket event."""
 
+import uuid
 from typing import Any
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from pydantic import BaseModel
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.handler_wrapper import handle_internal_event
+from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_internal
+from app.main import get_internal_sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -20,7 +21,7 @@ class DebugInfoToolPayload(BaseModel):
     """Request to output debug information."""
 
     info: str
-    profile_id: str | None = None
+    profile_id: str | None = None  # Deprecated - retrieved from sid
     sid: str | None = None
 
 
@@ -38,76 +39,36 @@ class DebugInfoToolErrorPayload(BaseModel):
     message: str
 
 
-async def debug_info_tool_complete(
-    payload: DebugInfoToolCompletePayload, room: str
+async def _debug_info_impl(
+    sid: str,
+    data: DebugInfoToolPayload,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
 ) -> None:
-    await sio.emit("debug_info_complete", payload.model_dump(), room=room)
-async def debug_info_tool_error(payload: DebugInfoToolErrorPayload, room: str) -> None:
-    await sio.emit("debug_info_error", payload.model_dump(), room=room)
-
-
-async def _debug_info_impl(sid: str, data: dict[str, Any]) -> str | None:
     """Internal implementation for debug_info tool."""
-    try:
-        validated = DebugInfoToolPayload(**data)
-    except ValidationError as e:
-        await debug_info_tool_error(
-            DebugInfoToolErrorPayload(
-                success=False,
-                message=f"Invalid payload: {str(e)}",
-            ),
-            room=sid,
-        )
-        return None
-
-    # Replaced with get_db_connection() None
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
-    try:
-        async with get_db_connection() as conn:
-            # Load SQL for debug_info tool call
-            sql_debug_info = load_sql("app/sql/v3/tools/debug/call_complete.sql")
-
-            # Execute debug_info tool call (no-op for now, just logs)
-            # Emit complete event
-            await internal_sio.emit(
-                "debug_info_complete",
-                {
-                    "sid": sid,
-                    "success": True,
-                    "message": "Debug information logged successfully",
-                },
-            )
-
-            return "success"
-
-    except Exception as e:
-        await debug_info_tool_error(
-            DebugInfoToolErrorPayload(
-                success=False,
-                message=f"Internal error: {str(e)}",
-            ),
-            room=sid,
-        )
-        return None
-
-
-async def debug_info(sid: str, data: dict[str, Any]) -> None:
-    """Handle debug_info event from client."""
-    await _debug_info_impl(sid, data)
+    # Emit complete event via internal bus
+    await emit_to_internal(
+        "debug_info_complete",
+        DebugInfoToolCompletePayload(
+            success=True,
+            message="Debug information logged successfully",
+        ),
+        sid=sid,
+        group_id=str(group_id) if group_id else None,
+    )
 
 
 @internal_sio.on("debug_info")  # type: ignore
 async def debug_info_internal(data: dict[str, Any]) -> None:
     """Handle debug_info event from internal bus (server-to-server)."""
-    sid = data.get("sid", "")
-    payload = {k: v for k, v in data.items() if k != "sid"}
-    await _debug_info_impl(sid, payload)
+    await handle_internal_event(
+        data=data,
+        request_type=DebugInfoToolPayload,
+        handler=_debug_info_impl,  # type: ignore[arg-type]
+        error_event_name="debug_info_error",
+        error_response_type=DebugInfoToolErrorPayload,
+    )
 
-
-from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 
 register_server_endpoint(
     server_router,

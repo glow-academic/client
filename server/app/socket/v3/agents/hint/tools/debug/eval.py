@@ -1,7 +1,7 @@
-"""Handler for debug_eval_start WebSocket event - eval-specific logic for debug tool."""
+"""Handler for hint_tool_debug_eval_start WebSocket event - eval-specific logic for debug tool."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
@@ -9,14 +9,21 @@ from pydantic import BaseModel, ValidationError
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
+from app.sql.types import (
+    CheckGroupStopSqlParams,
+    CheckGroupStopSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 server_router = APIRouter()
 
+SQL_PATH = "app/sql/v3/tools/check_group_stop_complete.sql"
 
-class DebugEvalStartPayload(BaseModel):
-    """Request to execute debug tool for eval."""
+
+class HintToolDebugEvalStartPayload(BaseModel):
+    """Request to execute hint debug tool for eval."""
 
     test_id: str
     attempt_id: str
@@ -27,8 +34,8 @@ class DebugEvalStartPayload(BaseModel):
     use_groups: bool = False
 
 
-class DebugEvalCompletePayload(BaseModel):
-    """Response indicating debug eval completed."""
+class HintToolDebugEvalCompletePayload(BaseModel):
+    """Response indicating hint debug eval completed."""
 
     test_id: str
     tool_id: str
@@ -36,8 +43,8 @@ class DebugEvalCompletePayload(BaseModel):
     message: str | None = None
 
 
-async def _debug_eval_impl(sid: str, data: DebugEvalStartPayload) -> None:
-    """Handle debug_eval_start requests via WebSocket."""
+async def _hint_tool_debug_eval_impl(sid: str, data: HintToolDebugEvalStartPayload) -> None:
+    """Handle hint_tool_debug_eval_start requests via WebSocket."""
     try:
         test_id = data.test_id
         tool_id = data.tool_id
@@ -46,27 +53,31 @@ async def _debug_eval_impl(sid: str, data: DebugEvalStartPayload) -> None:
             tool_id_uuid = uuid.UUID(tool_id)
             if data.use_groups and data.group_id:
                 group_id_uuid = uuid.UUID(data.group_id)
-                in_group_stop = await conn.fetchrow(
-                    "SELECT 1 FROM group_stop WHERE group_id = $1::uuid AND tool_id = $2::uuid",
-                    group_id_uuid,
-                    tool_id_uuid,
+                # Use typed SQL execution instead of inline SQL
+                check_params = CheckGroupStopSqlParams(
+                    group_id=group_id_uuid,
+                    tool_id=tool_id_uuid,
                 )
-                if in_group_stop:
-                    pass
+                check_result = cast(
+                    CheckGroupStopSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=check_params),
+                )
+                if check_result.exists:
+                    pass  # Tool is in group_stop, handle as needed
             await emit_to_internal(
-                "debug_eval_complete",
-                DebugEvalCompletePayload(
+                "hint_tool_debug_eval_complete",
+                HintToolDebugEvalCompletePayload(
                     test_id=test_id,
                     tool_id=tool_id,
                     success=True,
-                    message="Debug eval completed",
+                    message="Hint debug eval completed",
                 ),
                 sid=sid,
             )
     except RuntimeError:
         await emit_to_internal(
-            "debug_eval_complete",
-            DebugEvalCompletePayload(
+            "hint_tool_debug_eval_complete",
+            HintToolDebugEvalCompletePayload(
                 test_id=data.test_id,
                 tool_id=data.tool_id,
                 success=False,
@@ -76,8 +87,8 @@ async def _debug_eval_impl(sid: str, data: DebugEvalStartPayload) -> None:
         )
     except Exception as e:
         await emit_to_internal(
-            "debug_eval_complete",
-            DebugEvalCompletePayload(
+            "hint_tool_debug_eval_complete",
+            HintToolDebugEvalCompletePayload(
                 test_id=data.test_id,
                 tool_id=data.tool_id,
                 success=False,
@@ -87,17 +98,17 @@ async def _debug_eval_impl(sid: str, data: DebugEvalStartPayload) -> None:
         )
 
 
-@internal_sio.on("debug_eval_start")  # type: ignore
-async def debug_eval_internal(data: dict[str, Any]) -> None:
-    """Handle debug_eval_start event from internal bus."""
+@internal_sio.on("hint_tool_debug_eval_start")  # type: ignore
+async def hint_tool_debug_eval_internal(data: dict[str, Any]) -> None:
+    """Handle hint_tool_debug_eval_start event from internal bus."""
     try:
-        validated = DebugEvalStartPayload(**data)
+        validated = HintToolDebugEvalStartPayload(**data)
         sid = data.get("sid", "internal")
-        await _debug_eval_impl(sid, validated)
+        await _hint_tool_debug_eval_impl(sid, validated)
     except ValidationError:
         await emit_to_internal(
-            "debug_eval_complete",
-            DebugEvalCompletePayload(
+            "hint_tool_debug_eval_complete",
+            HintToolDebugEvalCompletePayload(
                 test_id=data.get("test_id", "unknown"),
                 tool_id=data.get("tool_id", "unknown"),
                 success=False,
@@ -108,6 +119,6 @@ async def debug_eval_internal(data: dict[str, Any]) -> None:
 
 
 @server_router.post("/eval", response_model=dict[str, bool])
-async def debug_eval_api(request: DebugEvalStartPayload) -> dict[str, bool]:
-    """Internal event: Execute debug tool for eval."""
+async def hint_tool_debug_eval_api(request: HintToolDebugEvalStartPayload) -> dict[str, bool]:
+    """Internal event: Execute hint debug tool for eval."""
     return {"success": True}

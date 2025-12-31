@@ -1,19 +1,24 @@
 """Handler for member_progress WebSocket event - handles user message upserts."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.handler_wrapper import handle_client_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
-from app.main import get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, sio
+from app.sql.types import (
+    MemberProgressUpsertSqlParams,
+    MemberProgressUpsertSqlRow,
+    GetMessageCreatedAtSqlParams,
+    GetMessageCreatedAtSqlRow,
+)
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -79,16 +84,17 @@ async def _member_progress_impl(
 
         async with get_db_connection() as conn:
             # Upsert user message and run via SQL
-            sql_upsert = load_sql(
-                "app/sql/v3/member/member_progress_upsert_complete.sql"
-            )
+            SQL_PATH_UPSERT = "app/sql/v3/member/member_progress_upsert_complete.sql"
             try:
-                result_row = await conn.fetchrow(
-                    sql_upsert,
-                    str(chat_id_uuid),
-                    message_str,
-                    data.voice_mode,  # Maps to audio column in DB
-                    str(uuid.UUID(data.upload_id)) if data.upload_id else None,
+                params = MemberProgressUpsertSqlParams(
+                    chat_id=chat_id_uuid,
+                    message_content=message_str,
+                    audio=data.voice_mode,  # Maps to audio column in DB
+                    upload_id=uuid.UUID(data.upload_id) if data.upload_id else None,
+                )
+                result = cast(
+                    MemberProgressUpsertSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH_UPSERT, params=params),
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
@@ -121,7 +127,7 @@ async def _member_progress_impl(
                 )
                 return
 
-            if not result_row:
+            if not result:
                 await member_progress_error(
                     MemberProgressErrorPayload(
                         success=False,
@@ -131,17 +137,21 @@ async def _member_progress_impl(
                 )
                 return
 
-            message_id = result_row["message_id"]
-            run_id = result_row["run_id"]
-            audio = result_row["audio"]  # audio column indicates voice mode
-            group_id = result_row["group_id"]
+            message_id = result.message_id
+            run_id = result.run_id
+            audio = result.audio  # audio column indicates voice mode
+            group_id = result.group_id
 
             # Get created_at for message_sent event
-            sql_get_created_at = load_sql(
-                "app/sql/v3/messages/get_message_created_at.sql"
+            SQL_PATH_CREATED_AT = "app/sql/v3/messages/get_message_created_at_complete.sql"
+            created_at_params = GetMessageCreatedAtSqlParams(
+                message_id=uuid.UUID(message_id)
             )
-            message_row = await conn.fetchrow(sql_get_created_at, uuid.UUID(message_id))
-            created_at = message_row["created_at"] if message_row else None
+            created_at_result = cast(
+                GetMessageCreatedAtSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_CREATED_AT, params=created_at_params),
+            )
+            created_at = created_at_result.created_at if created_at_result else None
 
             # Emit message_sent event for tour progression and cross-component communication
             await sio.emit(

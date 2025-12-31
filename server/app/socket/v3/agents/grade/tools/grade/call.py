@@ -1,16 +1,24 @@
 """Handler for grading_tool_feedback WebSocket event."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_internal_event
+from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_client
+from app.main import get_internal_sio, sio
+from app.sql.types import (
+    CreateFeedbackSqlParams,
+    CreateFeedbackSqlRow,
+    FindStandardByGroupAndScoreSqlParams,
+    FindStandardByGroupAndScoreSqlRow,
+)
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -26,7 +34,7 @@ class FeedbackToolPayload(BaseModel):
     standard_group_id: str
     score: int
     feedback: str
-    profile_id: str | None = None
+    profile_id: str | None = None  # Deprecated - retrieved from sid
     sid: str | None = None
 
 
@@ -49,163 +57,132 @@ class FeedbackToolErrorPayload(BaseModel):
     message: str
 
 
-async def feedback_tool_complete(
-    payload: FeedbackToolCompletePayload, room: str
+async def _grading_tool_feedback_impl(
+    sid: str,
+    data: FeedbackToolPayload,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
 ) -> None:
-    await sio.emit("grading_tools_feedback_complete", payload.model_dump(), room=room)
-async def feedback_tool_error(payload: FeedbackToolErrorPayload, room: str) -> None:
-    await sio.emit("grading_tools_feedback_error", payload.model_dump(), room=room)
-
-
-async def _grading_tool_feedback_impl(sid: str, data: dict[str, Any]) -> str | None:
     """Internal implementation for standard group feedback."""
-
-    try:
-        validated = FeedbackToolPayload(**data)
-    except ValidationError as e:
-        await feedback_tool_error(
-            FeedbackToolErrorPayload(
-                success=False,
-                chat_id=data.get("chat_id", "unknown"),
-                trace_id=data.get("trace_id", "unknown"),
-                message=f"Invalid payload: {str(e)}",
-            ),
-            room=f"simulation_{data.get('chat_id', 'unknown')}",
-        )
-        return None
-
-    chat_id = validated.chat_id
-    trace_id = validated.trace_id
-    # Replaced with get_db_connection() None
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
+    chat_id = data.chat_id
+    trace_id = data.trace_id
 
     try:
         async with get_db_connection() as conn:
-            grade_id_uuid = uuid.UUID(validated.grade_id)
-            standard_group_id_uuid = uuid.UUID(validated.standard_group_id)
+            grade_id_uuid = uuid.UUID(data.grade_id)
+            standard_group_id_uuid = uuid.UUID(data.standard_group_id)
 
             # Find the standard that matches the score for this standard group
-            sql_find_standard = """
-                SELECT id
-                FROM standards
-                WHERE standard_group_id = $1::uuid
-                  AND points = $2::integer
-                ORDER BY points DESC
-                LIMIT 1
-            """
-            standard_row = await conn.fetchrow(
-                sql_find_standard, str(standard_group_id_uuid), validated.score
+            SQL_FIND_STANDARD_PATH = "app/sql/v3/grading/find_standard_by_group_and_score_complete.sql"
+            find_standard_params = FindStandardByGroupAndScoreSqlParams(
+                standard_group_id=standard_group_id_uuid,
+                score=data.score,
+            )
+            standard_result = cast(
+                FindStandardByGroupAndScoreSqlRow | None,
+                await execute_sql_typed(conn, SQL_FIND_STANDARD_PATH, params=find_standard_params),
             )
 
-            if not standard_row:
+            if not standard_result or not standard_result.id:
                 error_msg = (
-                    f"No standard found for standard_group_id={validated.standard_group_id} "
-                    f"with score={validated.score}"
+                    f"No standard found for standard_group_id={data.standard_group_id} "
+                    f"with score={data.score}"
                 )
-                await feedback_tool_error(
+                await emit_to_client(
+                    "grading_tools_feedback_error",
                     FeedbackToolErrorPayload(
                         success=False,
                         chat_id=chat_id,
                         trace_id=trace_id,
                         message=error_msg,
                     ),
-                    room=f"simulation_{chat_id}",
+                    room=sid,
                 )
-                return None
+                return
 
-            standard_id_uuid = uuid.UUID(standard_row["id"])
+            standard_id_uuid = uuid.UUID(standard_result.id)
 
             # Create feedback record
-            sql_create_feedback = load_sql("app/sql/v3/grading/create_feedback.sql")
-            sql_query = sql_create_feedback
-            sql_params = (
-                str(grade_id_uuid),
-                str(standard_id_uuid),
-                validated.score,
-                validated.feedback,
+            SQL_CREATE_FEEDBACK_PATH = "app/sql/v3/grading/create_feedback_complete.sql"
+            feedback_params = CreateFeedbackSqlParams(
+                grade_id=grade_id_uuid,
+                standard_id=standard_id_uuid,
+                total=data.score,
+                feedback=data.feedback,
             )
-            feedback_row = await conn.fetchrow(
-                sql_create_feedback,
-                str(grade_id_uuid),
-                str(standard_id_uuid),
-                validated.score,
-                validated.feedback,
+            feedback_result = cast(
+                CreateFeedbackSqlRow,
+                await execute_sql_typed(conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params),
             )
 
-            if not feedback_row:
-                await feedback_tool_error(
-                    FeedbackToolErrorPayload(
-                        success=False,
-                        chat_id=chat_id,
-                        trace_id=trace_id,
-                        message="Failed to create feedback",
-                    ),
-                    room=f"simulation_{chat_id}",
-                )
-                return None
+            feedback_id = uuid.UUID(feedback_result.id)
 
-            feedback_id = uuid.UUID(feedback_row["id"])
-
-
-            await feedback_tool_complete(
+            await emit_to_client(
+                "grading_tools_feedback_complete",
                 FeedbackToolCompletePayload(
                     success=True,
                     chat_id=chat_id,
                     trace_id=trace_id,
                     feedback_id=str(feedback_id),
-                    message=f"Feedback created for standard group with score {validated.score}",
+                    message=f"Feedback created for standard group with score {data.score}",
                 ),
-                room=f"simulation_{chat_id}",
+                room=sid,
             )
 
-            return f"Feedback created for standard group with score {validated.score}"
-
+    except RuntimeError:
+        await emit_to_client(
+            "grading_tools_feedback_error",
+            FeedbackToolErrorPayload(
+                success=False,
+                chat_id=chat_id,
+                trace_id=trace_id,
+                message="Database connection pool not available",
+            ),
+            room=sid,
+        )
     except Exception as e:
-        await feedback_tool_error(
+        await emit_to_client(
+            "grading_tools_feedback_error",
             FeedbackToolErrorPayload(
                 success=False,
                 chat_id=chat_id,
                 trace_id=trace_id,
                 message=str(e),
             ),
-            room=f"simulation_{chat_id}",
+            room=sid,
         )
-        return None
 
 
-@sio.event  # type: ignore
-async def grading_tool_feedback(sid: str, data: dict[str, Any]) -> None:
-    """Handle feedback creation event from grading tool (client-to-server)."""
-    await _grading_tool_feedback_impl(sid, data)
-
-
-@internal_sio.on("grading_tool_feedback")
+@internal_sio.on("grading_tool_feedback")  # type: ignore
 async def grading_tool_feedback_internal(data: dict[str, Any]) -> None:
     """Handle feedback creation event from internal bus (server-to-server)."""
-    sid = data.get("sid", "internal")
-    # Remove sid from data before passing to implementation
-    payload = {k: v for k, v in data.items() if k != "sid"}
-    await _grading_tool_feedback_impl(sid, payload)
+    await handle_internal_event(
+        data=data,
+        request_type=FeedbackToolPayload,
+        handler=_grading_tool_feedback_impl,  # type: ignore[arg-type]
+        error_event_name="grading_tools_feedback_error",
+        error_response_type=FeedbackToolErrorPayload,
+    )
 
 
-# FastAPI endpoints for OpenAPI documentation
-@client_router.post("/feedback", response_model=dict[str, bool])
-async def grading_tool_feedback_api(request: FeedbackToolPayload) -> dict[str, bool]:
-    """Client-to-server event: Create feedback for a standard group."""
-    return {"success": True}
+# Register OpenAPI endpoints
+register_client_endpoint(
+    client_router,
+    "/feedback",
+    FeedbackToolPayload,
+    "Create feedback for a standard group",
+)
 
+register_client_endpoint(
+    server_router,
+    "/feedback_complete",
+    FeedbackToolCompletePayload,
+    "Feedback tool completed successfully",
+)
 
-@server_router.post("/feedback_complete", response_model=dict[str, bool])
-async def feedback_tool_complete_api(
-    request: FeedbackToolCompletePayload,
-) -> dict[str, bool]:
-    """Server-to-client event: Feedback tool completed successfully."""
-    return {"success": True}
-
-
-@server_router.post("/feedback_error", response_model=dict[str, bool])
-async def feedback_tool_error_api(request: FeedbackToolErrorPayload) -> dict[str, bool]:
-    """Server-to-client event: Feedback tool error."""
-    return {"success": True}
+register_client_endpoint(
+    server_router,
+    "/feedback_error",
+    FeedbackToolErrorPayload,
+    "Feedback tool error",
+)

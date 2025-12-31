@@ -1,10 +1,99 @@
 -- Get all data needed to run simulation voice agent
--- Parameters: $1=chat_id (uuid), $2=run_id (uuid - already exists from member_progress)
--- Returns: chat, attempt, scenario, persona, model, provider, simulation settings, profile, and documents data
--- Run already exists from member_progress, so we just get context
--- Based on get_simulation_run_context.sql but takes run_id as parameter and focuses on voice fields
+-- Converted to PostgreSQL function pattern
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'socket_get_voice_run_context_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_voice_run_context_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'i_get_voice_run_context_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types for documents (composite type instead of JSONB)
+CREATE TYPE types.i_get_voice_run_context_v3_document AS (
+    id text,
+    name text,
+    url text,
+    type text,
+    created_at timestamptz
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION socket_get_voice_run_context_v3(
+    chat_id uuid,
+    run_id uuid
+)
+RETURNS TABLE (
+    chat_id uuid,
+    chat_title text,
+    created_at timestamptz,
+    trace_id text,
+    attempt_id uuid,
+    simulation_id uuid,
+    scenario_id uuid,
+    problem_statement text,
+    department_id uuid,
+    persona_id uuid,
+    persona_name text,
+    system_prompt text,
+    temperature float,
+    reasoning text,
+    voice_system_prompt text,
+    voice_temperature float,
+    voice_reasoning text,
+    model_id uuid,
+    model_name text,
+    custom_model text,
+    voice_model_id uuid,
+    voice_model_name text,
+    voice_custom_model text,
+    provider_id uuid,
+    provider_name text,
+    base_url text,
+    voice_provider_id uuid,
+    voice_provider text,
+    voice_base_url text,
+    settings_id uuid,
+    api_key text,
+    voice_api_key text,
+    profile_id uuid,
+    agent_id uuid,
+    voice_agent_id uuid,
+    documents types.i_get_voice_run_context_v3_document[]
+)
+LANGUAGE sql
+VOLATILE
+AS $$
 WITH params AS (
-    SELECT $1::uuid as chat_id, $2::uuid as run_id
+    SELECT chat_id AS chat_id, run_id AS run_id
 ),
 scenario_dept AS (
     SELECT 
@@ -124,6 +213,26 @@ active_settings AS (
             (SELECT settings_id FROM default_settings),
             (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
+),
+documents_data AS (
+    -- Get documents as composite type array
+    SELECT 
+        s.id as scenario_id,
+        COALESCE(
+            ARRAY_AGG(
+                (d.id::text, d.name, d.url, d.type, d.created_at)::types.i_get_voice_run_context_v3_document
+                ORDER BY d.created_at
+            ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true AND d.active = true),
+            ARRAY[]::types.i_get_voice_run_context_v3_document[]
+        ) as documents
+    FROM params p
+    JOIN chats sc ON sc.id = p.chat_id
+    JOIN attempt_chats ac ON ac.chat_id = sc.id
+    INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
+    LEFT JOIN documents d ON d.id = sd.document_id
+    GROUP BY s.id
 )
 SELECT 
     -- Chat data
@@ -188,22 +297,8 @@ SELECT
     sim.simulation_text_agent_id as agent_id,
     -- Voice agent data (preferred for voice mode)
     sim.simulation_voice_agent_id as voice_agent_id,
-    -- Documents data
-    COALESCE(
-        (SELECT json_agg(
-            json_build_object(
-                'id', d.id::text,
-                'name', d.name,
-                'url', d.url,
-                'type', d.type,
-                'created_at', d.created_at
-            )
-        )
-        FROM documents d
-        JOIN scenario_documents sd ON sd.document_id = d.id
-        WHERE sd.scenario_id = s.id AND sd.active = true AND d.active = true),
-        '[]'::json
-    ) as documents
+    -- Documents data (composite type array)
+    COALESCE(dd.documents, ARRAY[]::types.i_get_voice_run_context_v3_document[]) as documents
 FROM params p
 JOIN chats sc ON sc.id = p.chat_id
 JOIN attempt_chats ac ON ac.chat_id = sc.id
@@ -218,5 +313,8 @@ LEFT JOIN providers vpr ON vpr.id = vm.provider_id AND vpr.active = true
 LEFT JOIN active_settings ast ON true
 LEFT JOIN settings st ON st.id = ast.settings_id
 LEFT JOIN profile_from_attempt pf ON true
+LEFT JOIN documents_data dd ON dd.scenario_id = s.id
 WHERE sc.id = p.chat_id
+$$;
 
+COMMIT;

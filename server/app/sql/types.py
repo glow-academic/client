@@ -4200,6 +4200,46 @@ class CreateDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: create_template_and_link
+
+class CreateTemplateAndLinkSqlParams(BaseModel):
+
+    document_id: UUID
+    upload_id: UUID
+    name: str
+    template_schema: dict[str, Any]
+    active: bool
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+            self.upload_id,
+            self.name,
+            self.template_schema,
+            self.active,
+            self.run_id,
+        )
+
+class CreateTemplateAndLinkSqlRow(BaseModel):
+
+    template_id: UUID | None = None
+
+class CreateTemplateAndLinkApiRequest(BaseModel):
+
+    document_id: UUID
+    upload_id: UUID
+    name: str
+    template_schema: dict[str, Any]
+    active: bool
+    run_id: UUID
+
+class CreateTemplateAndLinkApiResponse(BaseModel):
+
+    template_id: UUID | None = None
+
+
+
 # Generated from: delete_document
 
 class DeleteDocumentSqlParams(BaseModel):
@@ -4416,6 +4456,38 @@ class GetDocumentDetailApiResponse(BaseModel):
     template_html: str | None = None
     templates: list[QGetDocumentDetailV3Template] | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: get_document_template_context
+
+class GetDocumentTemplateContextSqlParams(BaseModel):
+
+    field_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.field_ids,
+        )
+
+class QGetDocumentTemplateContextV3Field(BaseModel):
+
+    item_name: str | None
+    item_description: str | None
+    param_name: str | None
+    param_description: str | None
+
+class GetDocumentTemplateContextSqlRow(BaseModel):
+
+    fields: list[QGetDocumentTemplateContextV3Field] | None = None
+
+class GetDocumentTemplateContextApiRequest(BaseModel):
+
+    field_ids: list[UUID]
+
+class GetDocumentTemplateContextApiResponse(BaseModel):
+
+    fields: list[QGetDocumentTemplateContextV3Field] | None = None
 
 
 
@@ -4663,6 +4735,36 @@ class UpdateDocumentApiResponse(BaseModel):
     document_id: UUID | None = None
     document_name: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: update_document_name
+
+class UpdateDocumentNameSqlParams(BaseModel):
+
+    document_id: UUID
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+            self.name,
+        )
+
+class UpdateDocumentNameSqlRow(BaseModel):
+
+    document_id: UUID | None = None
+    name: str | None = None
+
+class UpdateDocumentNameApiRequest(BaseModel):
+
+    document_id: UUID
+    name: str
+
+class UpdateDocumentNameApiResponse(BaseModel):
+
+    document_id: UUID | None = None
+    name: str | None = None
 
 
 
@@ -5015,6 +5117,299 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
+# Generated from: create_feedback
+
+class CreateFeedbackSqlParams(BaseModel):
+
+    grade_id: UUID
+    standard_id: UUID
+    total: int
+    feedback: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grade_id,
+            self.standard_id,
+            self.total,
+            self.feedback,
+        )
+
+class CreateFeedbackSqlRow(BaseModel):
+
+    id: str | None = None
+
+class CreateFeedbackApiRequest(BaseModel):
+
+    grade_id: UUID
+    standard_id: UUID
+    total: int
+    feedback: str
+
+class CreateFeedbackApiResponse(BaseModel):
+
+    id: str | None = None
+
+
+
+# Generated from: create_message_feedback
+
+class CreateMessageFeedbackSqlParams(BaseModel):
+
+    grade_id: UUID
+    message_id: UUID
+    name: str
+    description: str
+    type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grade_id,
+            self.message_id,
+            self.name,
+            self.description,
+            self.type,
+        )
+
+class CreateMessageFeedbackSqlRow(BaseModel):
+
+    id: str | None = None
+
+class CreateMessageFeedbackApiRequest(BaseModel):
+
+    grade_id: UUID
+    message_id: UUID
+    name: str
+    description: str
+    type: str
+
+class CreateMessageFeedbackApiResponse(BaseModel):
+
+    id: str | None = None
+
+
+
+# Generated from: create_message_feedback_highlight
+
+class ICreateMessageFeedbackHighlightV3Highlight(BaseModel):
+
+    section: str | None
+
+class CreateMessageFeedbackHighlightSqlParams(BaseModel):
+
+    message_feedback_id: UUID
+    highlights: list[ICreateMessageFeedbackHighlightV3Highlight]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert highlights composite array to tuples for asyncpg
+        highlights_tuples = [
+            (conn.section)
+            for conn in self.highlights
+        ]
+        return (
+            self.message_feedback_id,
+            highlights_tuples,
+        )
+
+class CreateMessageFeedbackHighlightSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class CreateMessageFeedbackHighlightApiRequest(BaseModel):
+
+    message_feedback_id: UUID
+    highlights: list[ICreateMessageFeedbackHighlightV3Highlight]
+
+class CreateMessageFeedbackHighlightApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: create_message_feedback_replace
+
+class ICreateMessageFeedbackReplaceV3Replace(BaseModel):
+
+    section: str | None
+    replace: str | None
+
+class CreateMessageFeedbackReplaceSqlParams(BaseModel):
+
+    message_feedback_id: UUID
+    replaces: list[ICreateMessageFeedbackReplaceV3Replace]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert replaces composite array to tuples for asyncpg
+        replaces_tuples = [
+            (conn.section, conn.replace)
+            for conn in self.replaces
+        ]
+        return (
+            self.message_feedback_id,
+            replaces_tuples,
+        )
+
+class CreateMessageFeedbackReplaceSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class CreateMessageFeedbackReplaceApiRequest(BaseModel):
+
+    message_feedback_id: UUID
+    replaces: list[ICreateMessageFeedbackReplaceV3Replace]
+
+class CreateMessageFeedbackReplaceApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
+# Generated from: find_standard_by_group_and_score
+
+class FindStandardByGroupAndScoreSqlParams(BaseModel):
+
+    standard_group_id_param: UUID
+    score_param: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.standard_group_id_param,
+            self.score_param,
+        )
+
+class FindStandardByGroupAndScoreSqlRow(BaseModel):
+
+    id: str | None = None
+
+class FindStandardByGroupAndScoreApiRequest(BaseModel):
+
+    standard_group_id_param: UUID
+    score_param: int
+
+class FindStandardByGroupAndScoreApiResponse(BaseModel):
+
+    id: str | None = None
+
+
+
+# Generated from: get_audio_grading_run_context
+
+class GetAudioGradingRunContextSqlParams(BaseModel):
+
+    agent_id: UUID
+    department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.department_id,
+        )
+
+class GetAudioGradingRunContextSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+
+class GetAudioGradingRunContextApiRequest(BaseModel):
+
+    agent_id: UUID
+    department_id: UUID
+
+class GetAudioGradingRunContextApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+
+
+
+# Generated from: get_feedback_totals_for_grade
+
+class GetFeedbackTotalsForGradeSqlParams(BaseModel):
+
+    grade_id_param: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grade_id_param,
+        )
+
+class GetFeedbackTotalsForGradeSqlRow(BaseModel):
+
+    total: int | None = None
+
+class GetFeedbackTotalsForGradeApiRequest(BaseModel):
+
+    grade_id_param: UUID
+
+class GetFeedbackTotalsForGradeApiResponse(BaseModel):
+
+    total: int | None = None
+
+
+
+# Generated from: update_grade_final
+
+class UpdateGradeFinalSqlParams(BaseModel):
+
+    grade_id_param: UUID
+    description_param: str
+    passed_param: bool
+    score_param: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grade_id_param,
+            self.description_param,
+            self.passed_param,
+            self.score_param,
+        )
+
+class UpdateGradeFinalSqlRow(BaseModel):
+
+    id: str | None = None
+
+class UpdateGradeFinalApiRequest(BaseModel):
+
+    grade_id_param: UUID
+    description_param: str
+    passed_param: bool
+    score_param: int
+
+class UpdateGradeFinalApiResponse(BaseModel):
+
+    id: str | None = None
+
+
+
 # Generated from: get_health_bundle
 
 class GetHealthBundleSqlParams(BaseModel):
@@ -5302,6 +5697,40 @@ class GetHomeOverviewApiResponse(BaseModel):
     standard_groups: list[QGetHomeOverviewV3StandardGroup] | None = None
     standards: list[QGetHomeOverviewV3Standard] | None = None
     simulations: list[QGetHomeOverviewV3Simulation] | None = None
+
+
+
+# Generated from: complete_image_generation
+
+class CompleteImageGenerationSqlParams(BaseModel):
+
+    image_id: UUID
+    file_path: str
+    mime_type: str
+    file_size: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.image_id,
+            self.file_path,
+            self.mime_type,
+            self.file_size,
+        )
+
+class CompleteImageGenerationSqlRow(BaseModel):
+
+    upload_id: UUID | None = None
+
+class CompleteImageGenerationApiRequest(BaseModel):
+
+    image_id: UUID
+    file_path: str
+    mime_type: str
+    file_size: int
+
+class CompleteImageGenerationApiResponse(BaseModel):
+
+    upload_id: UUID | None = None
 
 
 
@@ -5851,6 +6280,48 @@ class GetLogsBundleApiResponse(BaseModel):
     actor_name: str | None = None
     health_kpis: QGetLogsBundleV3HealthKpis | None = None
     metrics: list[QGetLogsBundleV3MetricsDataPoint] | None = None
+
+
+
+# Generated from: create_model_run
+
+class CreateModelRunSqlParams(BaseModel):
+
+    department_id: UUID
+    model_id: UUID
+    entity_id: UUID
+    entity_type: str
+    profile_id: UUID | None = None
+    key_id: UUID | None = None
+    agent_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.model_id,
+            self.entity_id,
+            self.entity_type,
+            self.profile_id,
+            self.key_id,
+            self.agent_id,
+        )
+
+class CreateModelRunSqlRow(BaseModel):
+
+    run_id: str | None = None
+
+class CreateModelRunApiRequest(BaseModel):
+
+    department_id: UUID
+    model_id: UUID
+    entity_id: UUID
+    entity_type: str
+    key_id: UUID | None = None
+    agent_id: UUID | None = None
+
+class CreateModelRunApiResponse(BaseModel):
+
+    run_id: str | None = None
 
 
 
@@ -13222,6 +13693,40 @@ class UpdateSettingsApiResponse(BaseModel):
 
 
 
+# Generated from: create_hints
+
+class CreateHintsSqlParams(BaseModel):
+
+    message_id: UUID
+    hint_texts: list[str]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.message_id,
+            self.hint_texts,
+        )
+
+class ICreateHintsV3HintResult(BaseModel):
+
+    simulation_message_id: UUID | None
+    idx: int | None
+    hint: str | None
+
+class CreateHintsSqlRow(BaseModel):
+
+    hints: list[ICreateHintsV3HintResult] | None = None
+
+class CreateHintsApiRequest(BaseModel):
+
+    message_id: UUID
+    hint_texts: list[str]
+
+class CreateHintsApiResponse(BaseModel):
+
+    hints: list[ICreateHintsV3HintResult] | None = None
+
+
+
 # Generated from: create_simulation
 
 class ICreateSimulationV3ScenarioRubricGradeAgent(BaseModel):
@@ -13363,6 +13868,42 @@ class DuplicateSimulationApiResponse(BaseModel):
     simulation_id: UUID | None = None
     simulation_name: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: get_messages_with_audio
+
+class GetMessagesWithAudioSqlParams(BaseModel):
+
+    chat_id: UUID
+    message_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.message_ids,
+        )
+
+class GetMessagesWithAudioSqlRow(BaseModel):
+
+    message_id: str | None = None
+    upload_id: str | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    size: int | None = None
+
+class GetMessagesWithAudioApiRequest(BaseModel):
+
+    chat_id: UUID
+    message_ids: list[UUID]
+
+class GetMessagesWithAudioApiResponse(BaseModel):
+
+    message_id: str | None = None
+    upload_id: str | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    size: int | None = None
 
 
 
@@ -13588,6 +14129,43 @@ class GetSimulationDetailApiResponse(BaseModel):
     fields: list[QGetSimulationDetailV3Field] | None = None
     agents: list[QGetSimulationDetailV3Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
+
+
+
+# Generated from: get_simulation_messages
+
+class GetSimulationMessagesSqlParams(BaseModel):
+
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+        )
+
+class QGetSimulationMessagesV3Message(BaseModel):
+
+    id: str | None
+    chat_id: str | None
+    role: str | None
+    content: str | None
+    created_at: str | None
+    completed: bool | None
+    updated_at: str | None
+    audio: str | None
+    upload_id: str | None
+
+class GetSimulationMessagesSqlRow(BaseModel):
+
+    messages: list[QGetSimulationMessagesV3Message] | None = None
+
+class GetSimulationMessagesApiRequest(BaseModel):
+
+    chat_id: UUID
+
+class GetSimulationMessagesApiResponse(BaseModel):
+
+    messages: list[QGetSimulationMessagesV3Message] | None = None
 
 
 
@@ -13953,6 +14531,31 @@ class GetSimulationsListApiResponse(BaseModel):
     rubric_options: list[QListSimulationsV3Option] | None = None
     cohort_options: list[QListSimulationsV3Option] | None = None
     department_options: list[QListSimulationsV3Option] | None = None
+
+
+
+# Generated from: mark_chat_completed
+
+class MarkChatCompletedSqlParams(BaseModel):
+
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+        )
+
+class MarkChatCompletedSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class MarkChatCompletedApiRequest(BaseModel):
+
+    chat_id: UUID
+
+class MarkChatCompletedApiResponse(BaseModel):
+
+    success: bool | None = None
 
 
 
@@ -14743,6 +15346,69 @@ class GetUploadFileInfoApiResponse(BaseModel):
 
 
 
+# Generated from: get_video_run_context_and_create_run
+
+class GetVideoRunContextAndCreateRunSqlParams(BaseModel):
+
+    video_id: UUID
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.video_id,
+            self.profile_id,
+        )
+
+class GetVideoRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+
+class GetVideoRunContextAndCreateRunApiRequest(BaseModel):
+
+    video_id: UUID
+
+class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+
+
+
 
 # ============================================================================
 # REGISTRY
@@ -15049,6 +15715,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateDocumentApiRequest",
         "CreateDocumentApiResponse",
     ),
+    "app/sql/v3/documents/create_template_and_link_complete.sql": (
+        "CreateTemplateAndLinkSqlParams",
+        "CreateTemplateAndLinkSqlRow",
+        "CreateTemplateAndLinkApiRequest",
+        "CreateTemplateAndLinkApiResponse",
+    ),
     "app/sql/v3/documents/delete_document_complete.sql": (
         "DeleteDocumentSqlParams",
         "DeleteDocumentSqlRow",
@@ -15067,6 +15739,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentDetailApiRequest",
         "GetDocumentDetailApiResponse",
     ),
+    "app/sql/v3/documents/get_document_template_context_complete.sql": (
+        "GetDocumentTemplateContextSqlParams",
+        "GetDocumentTemplateContextSqlRow",
+        "GetDocumentTemplateContextApiRequest",
+        "GetDocumentTemplateContextApiResponse",
+    ),
     "app/sql/v3/documents/get_documents_list_complete.sql": (
         "GetDocumentsListSqlParams",
         "GetDocumentsListSqlRow",
@@ -15084,6 +15762,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentSqlRow",
         "UpdateDocumentApiRequest",
         "UpdateDocumentApiResponse",
+    ),
+    "app/sql/v3/documents/update_document_name_complete.sql": (
+        "UpdateDocumentNameSqlParams",
+        "UpdateDocumentNameSqlRow",
+        "UpdateDocumentNameApiRequest",
+        "UpdateDocumentNameApiResponse",
     ),
     "app/sql/v3/fields/create_field_complete.sql": (
         "CreateFieldSqlParams",
@@ -15127,6 +15811,54 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
+    "app/sql/v3/grading/create_feedback_complete.sql": (
+        "CreateFeedbackSqlParams",
+        "CreateFeedbackSqlRow",
+        "CreateFeedbackApiRequest",
+        "CreateFeedbackApiResponse",
+    ),
+    "app/sql/v3/grading/create_message_feedback_complete.sql": (
+        "CreateMessageFeedbackSqlParams",
+        "CreateMessageFeedbackSqlRow",
+        "CreateMessageFeedbackApiRequest",
+        "CreateMessageFeedbackApiResponse",
+    ),
+    "app/sql/v3/grading/create_message_feedback_highlight_complete.sql": (
+        "CreateMessageFeedbackHighlightSqlParams",
+        "CreateMessageFeedbackHighlightSqlRow",
+        "CreateMessageFeedbackHighlightApiRequest",
+        "CreateMessageFeedbackHighlightApiResponse",
+    ),
+    "app/sql/v3/grading/create_message_feedback_replace_complete.sql": (
+        "CreateMessageFeedbackReplaceSqlParams",
+        "CreateMessageFeedbackReplaceSqlRow",
+        "CreateMessageFeedbackReplaceApiRequest",
+        "CreateMessageFeedbackReplaceApiResponse",
+    ),
+    "app/sql/v3/grading/find_standard_by_group_and_score_complete.sql": (
+        "FindStandardByGroupAndScoreSqlParams",
+        "FindStandardByGroupAndScoreSqlRow",
+        "FindStandardByGroupAndScoreApiRequest",
+        "FindStandardByGroupAndScoreApiResponse",
+    ),
+    "app/sql/v3/grading/get_audio_grading_run_context_complete.sql": (
+        "GetAudioGradingRunContextSqlParams",
+        "GetAudioGradingRunContextSqlRow",
+        "GetAudioGradingRunContextApiRequest",
+        "GetAudioGradingRunContextApiResponse",
+    ),
+    "app/sql/v3/grading/get_feedback_totals_for_grade_complete.sql": (
+        "GetFeedbackTotalsForGradeSqlParams",
+        "GetFeedbackTotalsForGradeSqlRow",
+        "GetFeedbackTotalsForGradeApiRequest",
+        "GetFeedbackTotalsForGradeApiResponse",
+    ),
+    "app/sql/v3/grading/update_grade_final_complete.sql": (
+        "UpdateGradeFinalSqlParams",
+        "UpdateGradeFinalSqlRow",
+        "UpdateGradeFinalApiRequest",
+        "UpdateGradeFinalApiResponse",
+    ),
     "app/sql/v3/health/get_health_bundle_complete.sql": (
         "GetHealthBundleSqlParams",
         "GetHealthBundleSqlRow",
@@ -15144,6 +15876,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetHomeOverviewSqlRow",
         "GetHomeOverviewApiRequest",
         "GetHomeOverviewApiResponse",
+    ),
+    "app/sql/v3/images/complete_image_generation_complete.sql": (
+        "CompleteImageGenerationSqlParams",
+        "CompleteImageGenerationSqlRow",
+        "CompleteImageGenerationApiRequest",
+        "CompleteImageGenerationApiResponse",
     ),
     "app/sql/v3/keys/create_key_complete.sql": (
         "CreateKeySqlParams",
@@ -15198,6 +15936,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLogsBundleSqlRow",
         "GetLogsBundleApiRequest",
         "GetLogsBundleApiResponse",
+    ),
+    "app/sql/v3/model_runs/create_model_run_complete.sql": (
+        "CreateModelRunSqlParams",
+        "CreateModelRunSqlRow",
+        "CreateModelRunApiRequest",
+        "CreateModelRunApiResponse",
     ),
     "app/sql/v3/models/create_model_complete.sql": (
         "CreateModelSqlParams",
@@ -15679,6 +16423,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateSettingsApiRequest",
         "UpdateSettingsApiResponse",
     ),
+    "app/sql/v3/simulations/create_hints_complete.sql": (
+        "CreateHintsSqlParams",
+        "CreateHintsSqlRow",
+        "CreateHintsApiRequest",
+        "CreateHintsApiResponse",
+    ),
     "app/sql/v3/simulations/create_simulation_complete.sql": (
         "CreateSimulationSqlParams",
         "CreateSimulationSqlRow",
@@ -15697,11 +16447,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateSimulationApiRequest",
         "DuplicateSimulationApiResponse",
     ),
+    "app/sql/v3/simulations/get_messages_with_audio_complete.sql": (
+        "GetMessagesWithAudioSqlParams",
+        "GetMessagesWithAudioSqlRow",
+        "GetMessagesWithAudioApiRequest",
+        "GetMessagesWithAudioApiResponse",
+    ),
     "app/sql/v3/simulations/get_simulation_detail_complete.sql": (
         "GetSimulationDetailSqlParams",
         "GetSimulationDetailSqlRow",
         "GetSimulationDetailApiRequest",
         "GetSimulationDetailApiResponse",
+    ),
+    "app/sql/v3/simulations/get_simulation_messages_complete.sql": (
+        "GetSimulationMessagesSqlParams",
+        "GetSimulationMessagesSqlRow",
+        "GetSimulationMessagesApiRequest",
+        "GetSimulationMessagesApiResponse",
     ),
     "app/sql/v3/simulations/get_simulation_new_complete.sql": (
         "GetSimulationNewSqlParams",
@@ -15714,6 +16476,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationsListSqlRow",
         "GetSimulationsListApiRequest",
         "GetSimulationsListApiResponse",
+    ),
+    "app/sql/v3/simulations/mark_chat_completed_complete.sql": (
+        "MarkChatCompletedSqlParams",
+        "MarkChatCompletedSqlRow",
+        "MarkChatCompletedApiRequest",
+        "MarkChatCompletedApiResponse",
     ),
     "app/sql/v3/simulations/update_simulation_complete.sql": (
         "UpdateSimulationSqlParams",
@@ -15792,6 +16560,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetUploadFileInfoSqlRow",
         "GetUploadFileInfoApiRequest",
         "GetUploadFileInfoApiResponse",
+    ),
+    "app/sql/v3/videos/get_video_run_context_and_create_run_complete.sql": (
+        "GetVideoRunContextAndCreateRunSqlParams",
+        "GetVideoRunContextAndCreateRunSqlRow",
+        "GetVideoRunContextAndCreateRunApiRequest",
+        "GetVideoRunContextAndCreateRunApiResponse",
     ),
 }
 
@@ -16107,6 +16881,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/create_template_and_link_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/documents/delete_document_complete.sql"]
     ) -> SqlString: ...
 
@@ -16122,6 +16901,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/get_document_template_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/documents/get_documents_list_complete.sql"]
     ) -> SqlString: ...
 
@@ -16133,6 +16917,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/update_document_name_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -16172,6 +16961,46 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/create_feedback_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/create_message_feedback_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/create_message_feedback_highlight_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/create_message_feedback_replace_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/find_standard_by_group_and_score_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/get_audio_grading_run_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/get_feedback_totals_for_grade_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/update_grade_final_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/health/get_health_bundle_complete.sql"]
     ) -> SqlString: ...
 
@@ -16183,6 +17012,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/home/get_home_overview_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/images/complete_image_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -16228,6 +17062,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/logs/get_logs_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/model_runs/create_model_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -16632,6 +17471,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/create_hints_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/create_simulation_complete.sql"]
     ) -> SqlString: ...
 
@@ -16647,7 +17491,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/get_messages_with_audio_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/get_simulation_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/get_simulation_messages_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -16658,6 +17512,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/get_simulations_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/mark_chat_completed_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -16723,6 +17582,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/uploads/get_upload_file_info_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/videos/get_video_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

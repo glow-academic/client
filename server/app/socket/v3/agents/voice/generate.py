@@ -1,17 +1,17 @@
 """Handler for simulation_voice_generate internal event - generates ephemeral key and returns configuration."""
 
 import inspect
-import json
+import json as json_module
 import os
 import uuid
 from datetime import datetime
-from typing import Any, get_type_hints
+from typing import Any, cast, get_type_hints
 
 import httpx
 from agents import function_tool
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.utils.build_voice_agent import build_voice_agent
@@ -183,17 +183,42 @@ async def _simulation_voice_generate_impl(
         # Replaced with get_db_connection()
 
         async with get_db_connection() as conn:
-            # Get context (run already exists from member_progress)
-            sql_context = load_sql(
-                "app/sql/v3/simulation_voice/get_voice_run_context_complete.sql"
-            )
-            context_row = await conn.fetchrow(
-                sql_context, str(chat_id_uuid), str(run_id_uuid)
-            )
+            # Get context (run already exists from member_progress) using execute_sql_typed()
+            try:
+                from app.sql.types import (
+                    GetVoiceRunContextV3SqlParams,
+                    GetVoiceRunContextV3SqlRow,
+                )
 
-            if not context_row:
-                await emit_error(f"Chat {chat_id_str} or run {data.run_id} not found")
-                return
+                SQL_PATH = "app/sql/v3/simulation_voice/get_voice_run_context_complete.sql"
+                params = GetVoiceRunContextV3SqlParams(
+                    chat_id=chat_id_uuid,
+                    run_id=run_id_uuid,
+                )
+                context_result = cast(
+                    GetVoiceRunContextV3SqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
+
+                if not context_result:
+                    await emit_error(f"Chat {chat_id_str} or run {data.run_id} not found")
+                    return
+
+                # Convert result to dict for compatibility with existing code
+                context_row = context_result.model_dump() if hasattr(context_result, 'model_dump') else dict(context_result)
+            except ImportError:
+                # Fallback to load_sql if types not generated yet
+                sql_context = load_sql(
+                    "app/sql/v3/simulation_voice/get_voice_run_context_complete.sql"
+                )
+                context_row = await conn.fetchrow(
+                    sql_context, str(chat_id_uuid), str(run_id_uuid)
+                )
+
+                if not context_row:
+                    await emit_error(f"Chat {chat_id_str} or run {data.run_id} not found")
+                    return
+                context_row = dict(context_row)
 
             # Get all personas for this scenario
             sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
@@ -509,11 +534,13 @@ async def _simulation_voice_generate_impl(
                     }
 
                 tool_name_str = tool.name if hasattr(tool, "name") else "unknown"
+                # Convert tool_parameters dict to JSON string for client compatibility
+                parameters_json_str = json_module.dumps(tool_parameters)
                 persona_tools_response.append(
                     PersonaTool(
                         name=tool_name_str,
                         description=str(tool_description),
-                        parameters=json.dumps(tool_parameters),
+                        parameters=parameters_json_str,
                     )
                 )
 
@@ -638,7 +665,7 @@ async def _simulation_voice_generate_impl(
                 room=sid,
             )
 
-            # Log activity
+            # Log activity (wrapped in try/except to avoid breaking event flow)
             try:
                 await log_websocket_activity(
                     sid=sid,
@@ -648,7 +675,8 @@ async def _simulation_voice_generate_impl(
                     endpoint="/socket/v3/simulations/voice/generate",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
+                pass
     except Exception as e:
         await emit_error(str(e))
 
@@ -858,7 +886,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
         await simulation_voice_start_error(
             StartVoiceErrorPayload(success=False, message=str(e)), room=sid
         )
-        # Log activity error
+        # Log activity error (wrapped in try/except to avoid breaking event flow)
         try:
             await log_websocket_activity(
                 sid=sid,
@@ -868,7 +896,8 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 endpoint="/socket/v3/simulations/voice/start",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
+            pass
 @sio.event  # type: ignore
 async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler (client event)."""
@@ -880,7 +909,7 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
             StartVoiceErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
-        # Log activity error
+        # Log activity error (wrapped in try/except to avoid breaking event flow)
         try:
             await log_websocket_activity(
                 sid=sid,
@@ -890,7 +919,8 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v3/simulations/voice/start",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
+            pass
 @internal_sio.on("simulation_voice_generate")  # type: ignore
 async def simulation_voice_generate_internal(
     data: dict[str, Any],

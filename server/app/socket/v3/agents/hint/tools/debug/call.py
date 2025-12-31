@@ -1,117 +1,117 @@
-"""Handler for debug_info WebSocket event."""
+"""Handler for hint_tool_debug WebSocket event - ONE EVENT PER FILE."""
 
-from typing import Any
+import uuid
+from typing import Any, cast
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from pydantic import BaseModel
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_internal_event
+from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_internal
+from app.main import get_internal_sio
+from app.sql.types import (
+    DebugInfoSqlParams,
+    DebugInfoSqlRow,
+)
+from utils.sql_helper import execute_sql_typed
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
-
-client_router = APIRouter()
 server_router = APIRouter()
 
+SQL_PATH = "app/sql/v3/tools/debug/call_complete.sql"
 
-class DebugInfoToolPayload(BaseModel):
-    """Request to output debug information."""
+
+class HintToolDebugApiRequest(BaseModel):
+    """Request for hint debug tool call."""
 
     info: str
-    profile_id: str | None = None
-    sid: str | None = None
 
 
-class DebugInfoToolCompletePayload(BaseModel):
-    """Response indicating debug_info tool completed successfully."""
+class HintToolDebugCompleteApiRequest(BaseModel):
+    """Response indicating hint debug tool completed successfully."""
 
     success: bool
     message: str | None = None
 
 
-class DebugInfoToolErrorPayload(BaseModel):
-    """Response indicating an error occurred in debug_info tool."""
+class HintToolDebugErrorSqlRow(BaseModel):
+    """Response indicating an error occurred in hint debug tool."""
 
     success: bool
     message: str
 
 
-async def debug_info_tool_complete(
-    payload: DebugInfoToolCompletePayload, room: str
+async def _hint_tool_debug_impl(
+    sid: str,
+    data: HintToolDebugApiRequest,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
 ) -> None:
-    await sio.emit("debug_info_complete", payload.model_dump(), room=room)
-async def debug_info_tool_error(payload: DebugInfoToolErrorPayload, room: str) -> None:
-    await sio.emit("debug_info_error", payload.model_dump(), room=room)
-
-
-async def _debug_info_impl(sid: str, data: dict[str, Any]) -> str | None:
-    """Internal implementation for debug_info tool."""
-    try:
-        validated = DebugInfoToolPayload(**data)
-    except ValidationError as e:
-        await debug_info_tool_error(
-            DebugInfoToolErrorPayload(
-                success=False,
-                message=f"Invalid payload: {str(e)}",
-            ),
-            room=sid,
-        )
-        return None
-
-    # Replaced with get_db_connection() None
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
+    """Internal implementation for hint debug tool call."""
     try:
         async with get_db_connection() as conn:
-            # Load SQL for debug_info tool call
-            sql_debug_info = load_sql("app/sql/v3/tools/debug/call_complete.sql")
-
-            # Execute debug_info tool call (no-op for now, just logs)
-            # Emit complete event
-            await internal_sio.emit(
-                "debug_info_complete",
-                {
-                    "sid": sid,
-                    "success": True,
-                    "message": "Debug information logged successfully",
-                },
+            # Execute debug_info tool call using typed SQL execution
+            params = DebugInfoSqlParams(
+                profile_id=profile_id,  # From sid lookup
+                info=data.info,
+            )
+            result = cast(
+                DebugInfoSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            return "success"
-
-    except Exception as e:
-        await debug_info_tool_error(
-            DebugInfoToolErrorPayload(
+            # Emit complete event via internal bus
+            await emit_to_internal(
+                "hint_tool_debug_complete",
+                HintToolDebugCompleteApiRequest(
+                    success=result.success,
+                    message=result.message,
+                ),
+                sid=sid,
+                group_id=str(group_id) if group_id else None,
+            )
+    except RuntimeError:
+        # Pool not initialized - emit error event
+        await emit_to_internal(
+            "hint_tool_debug_error",
+            HintToolDebugErrorSqlRow(
                 success=False,
-                message=f"Internal error: {str(e)}",
+                message="Database connection pool not available",
             ),
-            room=sid,
+            sid=sid,
+            group_id=str(group_id) if group_id else None,
         )
-        return None
+    except Exception as e:
+        await emit_to_internal(
+            "hint_tool_debug_error",
+            HintToolDebugErrorSqlRow(
+                success=False,
+                message=f"Error in debug tool: {str(e)}",
+            ),
+            sid=sid,
+            group_id=str(group_id) if group_id else None,
+        )
 
 
-async def debug_info(sid: str, data: dict[str, Any]) -> None:
-    """Handle debug_info event from client."""
-    await _debug_info_impl(sid, data)
+@internal_sio.on("hint_tool_debug")  # type: ignore
+async def hint_tool_debug_internal(
+    data: dict[str, Any],
+) -> None:
+    """Handle hint_tool_debug event from internal bus (server-to-server)."""
+    await handle_internal_event(
+        data=data,
+        request_type=HintToolDebugApiRequest,
+        handler=_hint_tool_debug_impl,  # type: ignore[arg-type]
+        error_event_name="hint_tool_debug_error",
+        error_response_type=HintToolDebugErrorSqlRow,
+    )
 
-
-@internal_sio.on("debug_info")  # type: ignore
-async def debug_info_internal(data: dict[str, Any]) -> None:
-    """Handle debug_info event from internal bus (server-to-server)."""
-    sid = data.get("sid", "")
-    payload = {k: v for k, v in data.items() if k != "sid"}
-    await _debug_info_impl(sid, payload)
-
-
-from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 
 register_server_endpoint(
     server_router,
-    "/debug_info",
-    DebugInfoToolPayload,
-    "Debug info tool handler",
+    "/hint_tool_debug",
+    HintToolDebugApiRequest,
+    "Hint debug tool handler",
 )

@@ -4,13 +4,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.remove_active_connection import remove_active_connection
 from app.main import sio
-
-logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()

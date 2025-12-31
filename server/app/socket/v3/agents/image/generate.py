@@ -2,20 +2,27 @@
 
 import re
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.main import IMAGE_FOLDER, get_internal_sio, sio
+from app.sql.types import (
+    GetImageGenerationContextAndCreateUploadSqlParams,
+    GetImageGenerationContextAndCreateUploadSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH = "app/sql/v3/images/get_image_generation_context_and_create_upload_complete.sql"
 
 # Try to import litellm, fall back gracefully if not available
 try:
@@ -46,45 +53,45 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
     prompt = data.prompt
     agent_id = data.agent_id
     department_id = data.department_id
-    profile_id = data.profile_id
+    profile_id_from_payload = data.profile_id
     room = data.room or sid
 
-    # Replaced with get_db_connection()
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
+    # Get profile_id from sid lookup (O(1) Redis lookup) if not provided in payload
+    # Image generation can be called from scenario tool which may pass profile_id
+    if not profile_id_from_payload:
+        profile_id_str = await find_profile_by_socket(sid)
+        profile_id = uuid.UUID(profile_id_str) if profile_id_str else None
+    else:
+        profile_id = uuid.UUID(profile_id_from_payload) if profile_id_from_payload else None
 
     try:
         async with get_db_connection() as conn:
-            # Load SQL query at top (DHH style - one SQL file per route)
-            sql = load_sql(
-                "app/sql/v3/images/get_image_generation_context_and_create_upload.sql"
-            )
-
             # Get context + create run atomically
-            sql_query = sql
-            sql_params = (
-                image_id,
-                agent_id,
-                profile_id,
-                department_id,
-            )
-
             try:
-                context_row = await conn.fetchrow(sql, *sql_params)
+                # Use execute_sql_typed() - auto-detects function
+                params = GetImageGenerationContextAndCreateUploadSqlParams(
+                    image_id=uuid.UUID(image_id),
+                    agent_id=uuid.UUID(agent_id),
+                    profile_id=profile_id,  # Can be None
+                    department_id=uuid.UUID(department_id) if department_id else None,
+                )
+                result = cast(
+                    GetImageGenerationContextAndCreateUploadSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
             except Exception as e:
                 await _emit_image_error(
                     image_id, room, f"Failed to initialize image generation: {str(e)}"
                 )
                 return
 
-            if not context_row:
+            if not result:
                 await _emit_image_error(
                     image_id, room, f"Agent {agent_id} not found or inactive"
                 )
                 return
 
-            api_key = context_row["api_key"]
+            api_key = result.api_key
             if not api_key:
                 await _emit_image_error(
                     image_id, room, f"API key not found for agent {agent_id}"
@@ -100,10 +107,10 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 )
                 return
 
-            model_name = context_row["model_name"]
-            base_url = context_row["base_url"]
-            provider = context_row["provider"]
-            run_id = context_row["run_id"]
+            model_name = result.model_name
+            base_url = result.base_url
+            provider = result.provider
+            run_id = result.run_id
 
             # Use model_name directly from database (set via image_agent_id)
             # The SQL query already returns the correct model_name based on the agent's model_id
@@ -359,11 +366,13 @@ async def _emit_image_error(
     # Update image record: mark as completed (even on error) to prevent retries
     try:
         async with get_db_connection() as conn:
-                sql_update_image = load_sql(
-                    "app/sql/v3/images/update_image_completed.sql"
-                )
-                await conn.execute(sql_update_image, image_id, True)
-        except Exception as e:
+            sql_update_image = load_sql(
+                "app/sql/v3/images/update_image_completed.sql"
+            )
+            await conn.execute(sql_update_image, image_id, True)
+    except Exception:
+        pass
+
     if not trace_id:
         await sio.emit(
             "images_generation_error",

@@ -2,17 +2,21 @@
 
 import asyncio
 import uuid
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from fastapi import APIRouter
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.main import VIDEO_FOLDER, get_internal_sio, sio
+from app.sql.types import (
+    GetVideoRunContextAndCreateRunSqlParams,
+    GetVideoRunContextAndCreateRunSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
@@ -80,13 +84,18 @@ async def video_generation_error(
     await sio.emit("videos_generation_error", payload.model_dump(), room=room)
 
 
+SQL_PATH = "app/sql/v3/videos/get_video_run_context_and_create_run_complete.sql"
+
+
 async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
     """Handle video generation requests via WebSocket."""
     try:
         video_id = uuid.UUID(data.videoId)
 
-        # Get connection pool
-        # Replaced with get_db_connection()
+        # Get profile_id from sid lookup (O(1) Redis lookup)
+        # Video generation can work without profile_id (guest mode)
+        profile_id_str = await find_profile_by_socket(sid)
+        profile_id = uuid.UUID(profile_id_str) if profile_id_str else None
 
         async with get_db_connection() as conn:
             # Emit start event
@@ -102,12 +111,16 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
 
             # Get agent context AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            # Note: Video generation doesn't have profile_id in payload, so we use None (defaults to guest)
-            sql_query = load_sql(
-                "app/sql/v3/videos/get_video_run_context_and_create_run.sql"
-            )
             try:
-                context_row = await conn.fetchrow(sql_query, str(video_id), None)
+                # Use execute_sql_typed() - auto-detects function
+                params = GetVideoRunContextAndCreateRunSqlParams(
+                    video_id=video_id,
+                    profile_id=profile_id,  # Can be None for guest mode
+                )
+                result = cast(
+                    GetVideoRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
             except Exception as e:
                 import asyncpg  # type: ignore
 
@@ -132,7 +145,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                         room=sid,
                     )
                     return
-                # Log other errors
                 await video_generation_error(
                     VideoGenerationErrorPayload(
                         success=False,
@@ -143,7 +155,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                 )
                 return
 
-            if not context_row:
+            if not result:
                 await video_generation_error(
                     VideoGenerationErrorPayload(
                         success=False,
@@ -158,12 +170,12 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                 return
 
             # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(context_row["run_id"])
-            department_id = context_row.get("department_id")
+            model_run_id = uuid.UUID(result.run_id)
+            department_id = result.department_id
 
-            if not context_row.get("api_key"):
-                agent_name = context_row.get("agent_name", "video agent")
-                model_name = context_row.get("model_name", "unknown model")
+            if not result.api_key:
+                agent_name = result.agent_name or "video agent"
+                model_name = result.model_name or "unknown model"
                 await video_generation_error(
                     VideoGenerationErrorPayload(
                         success=False,
@@ -179,8 +191,8 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                 return
 
             # Extract context data
-            encrypted_api_key = context_row["api_key"]
-            model_name = context_row["model_name"]
+            encrypted_api_key = result.api_key
+            model_name = result.model_name
             # Decrypt the API key
             try:
                 api_key = decrypt_api_key(encrypted_api_key)
@@ -314,7 +326,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                             "operationType": "video",
                             "inputTextTokens": 0,  # Video generation doesn't use LLM tokens
                             "outputTextTokens": 0,  # Video generation doesn't use LLM tokens
-                            "systemPrompt": context_row.get("system_prompt", ""),
+                            "systemPrompt": result.system_prompt or "",
                             "inputItems": [
                                 {"role": "user", "content": data.prompt}
                             ],  # Simple prompt input
@@ -338,17 +350,6 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                         ),
                         room=sid,
                     )
-                    # Log activity
-                    try:
-                        await log_websocket_activity(
-                            sid=sid,
-                            event_key="videos.generated",
-                            template="{{ actor.name }} generated video",
-                            context={"video_id": str(video_id)},
-                            endpoint="/socket/v3/videos/generate",
-                            error=False,
-                        )
-                    except Exception as log_error:
                     return
 
                 elif video_status.status == "failed":

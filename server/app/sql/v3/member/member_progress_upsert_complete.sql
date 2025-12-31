@@ -1,16 +1,31 @@
 -- Upsert user message and run, link run to group, link system/developer messages
--- Parameters: $1=chat_id (uuid), $2=message_content (text), $3=audio (boolean - true for voice mode), $4=upload_id (uuid, nullable - for voice audio)
--- Returns: message_id (uuid as text), run_id (uuid as text), audio (boolean), chat_id (uuid as text), group_id (uuid as text)
--- 
--- This function:
--- 1. Gets or creates member agent (role='member')
--- 2. Upserts run (creates if doesn't exist, updates if exists)
--- 3. Upserts user message (creates if empty, updates if exists)
--- 4. Links run to group (atomic)
--- 5. Links system/developer messages to run (atomic)
--- 6. Handles audio flag on message (true for voice mode messages)
+-- Converted to PostgreSQL function
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+
+BEGIN;
+
+-- 1) Drop function first
+DROP FUNCTION IF EXISTS socket_member_progress_upsert_v3(uuid, text, boolean, uuid);
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION socket_member_progress_upsert_v3(
+    chat_id uuid,
+    message_content text,
+    audio boolean,
+    upload_id uuid DEFAULT NULL
+)
+RETURNS TABLE (
+    message_id text,
+    run_id text,
+    audio boolean,
+    chat_id text,
+    group_id text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
 WITH params AS (
-    SELECT $1::uuid as chat_id, $2::text as message_content, $3::boolean as audio, $4::uuid as upload_id
+    SELECT chat_id, message_content, audio, upload_id
 ),
 -- Get member agent (role='member')
 member_agent AS (
@@ -410,4 +425,6 @@ SELECT
     (SELECT audio FROM params LIMIT 1) as audio,
     (SELECT chat_id FROM params LIMIT 1)::text as chat_id,
     (SELECT group_id FROM target_group LIMIT 1)::text as group_id
+$$;
 
+COMMIT;

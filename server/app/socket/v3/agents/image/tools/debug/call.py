@@ -4,12 +4,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -59,11 +58,6 @@ async def _debug_info_impl(sid: str, data: dict[str, Any]) -> str | None:
             room=sid,
         )
         return None
-
-    # Replaced with get_db_connection() None
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         async with get_db_connection() as conn:

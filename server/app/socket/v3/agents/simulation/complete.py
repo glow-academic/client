@@ -5,14 +5,12 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
-from app.main import get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -100,7 +98,6 @@ async def _simulation_text_complete_impl(
         run_id_uuid = uuid.UUID(data.run_id)
         chat_id_str = data.chat_id
         room = f"simulation_{chat_id_uuid}"
-        # Replaced with get_db_connection()
 
         async with get_db_connection() as conn:
             if data.type == "tool_call_complete":
@@ -111,6 +108,9 @@ async def _simulation_text_complete_impl(
                 # Resolve persona_id if final_persona provided
                 persona_id_uuid = None
                 if data.final_persona:
+                    # Note: get_chat_personas.sql is a simple query - keep as is for now
+                    from utils.sql_helper import load_sql
+
                     sql_get_personas = load_sql(
                         "app/sql/v3/voice/get_chat_personas.sql"
                     )
@@ -143,6 +143,9 @@ async def _simulation_text_complete_impl(
                         persona_id_uuid = persona_match[0]
 
                 # Get message_id from tool_call via SQL query
+                # Note: These SQL files are simple queries - keep as is for now
+                from utils.sql_helper import load_sql
+
                 message_id_uuid = None
                 if data.tool_call_id:
                     # Get message from tool_call_id
@@ -178,6 +181,8 @@ async def _simulation_text_complete_impl(
                     return
 
                 # Finalize via consolidated SQL file
+                # Note: text_complete_finalize_complete.sql needs to be converted to function
+                # For now, using load_sql() - will convert to execute_sql_typed() after SQL conversion
                 sql_finalize = load_sql(
                     "app/sql/v3/simulation_text/text_complete_finalize_complete.sql"
                 )
@@ -211,6 +216,7 @@ async def _simulation_text_complete_impl(
                     )
 
                     # Emit final message update
+                    # Note: get_message_created_at.sql is a simple query - keep as is for now
                     sql_get_created_at = load_sql(
                         "app/sql/v3/messages/get_message_created_at.sql"
                     )

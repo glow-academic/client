@@ -4,12 +4,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -60,18 +58,10 @@ async def _debug_info_impl(sid: str, data: dict[str, Any]) -> str | None:
         )
         return None
 
-    # Replaced with get_db_connection() None
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
     try:
         async with get_db_connection() as conn:
-            # Load SQL for debug_info tool call
-            sql_debug_info = load_sql("app/sql/v3/tools/debug/call_complete.sql")
-
-            # Execute debug_info tool call (no-op for now, just logs)
-            # Emit complete event
+            # Note: debug_info tool call SQL file exists but is a no-op
+            # Emit complete event directly (using debug_info_complete to match complete.py)
             await internal_sio.emit(
                 "debug_info_complete",
                 {

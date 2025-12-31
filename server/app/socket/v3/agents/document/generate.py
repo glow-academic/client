@@ -1,8 +1,7 @@
 """Handler for document_generate WebSocket event."""
 
-import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from agents import (
     FunctionToolResult,
@@ -15,124 +14,163 @@ from agents import (
 )
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, ValidationError
-from utils.sql_helper import load_sql
+from pydantic import BaseModel, Field
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.documents.format_document_template_context import (
     format_document_template_context,
 )
 from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_client_event
+from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+# Types will be auto-generated from SQL introspection
+# For now, using try/except to handle missing types gracefully
+try:
+    from app.sql.types import (
+        GetDocumentRunContextAndCreateRunApiRequest,
+        GetDocumentRunContextAndCreateRunSqlParams,
+        GetDocumentRunContextAndCreateRunSqlRow,
+        GetDocumentTemplateContextSqlParams,
+        GetDocumentTemplateContextSqlRow,
+        CreateTemplateAndLinkSqlParams,
+        CreateTemplateAndLinkSqlRow,
+        DocumentGenerationCompleteApiRequest,
+        DocumentGenerationErrorApiRequest,
+        DocumentGenerationErrorSqlRow,
+        DocumentGenerationProgressApiRequest,
+    )
+except ImportError:
+    # Types not generated yet - will be created when SQL files are processed
+    # Using BaseModel as fallback for now
+    from pydantic import BaseModel
 
-internal_sio = get_internal_sio()
+    class GetDocumentRunContextAndCreateRunApiRequest(BaseModel):
+        department_id: str
+        document_id: str | None = None
+        document_name: str | None = None
+        document_description: str | None = None
+        field_ids: list[str] | None = None
+
+    class GetDocumentRunContextAndCreateRunSqlParams(BaseModel):
+        department_id: uuid.UUID
+        profile_id: uuid.UUID
+        document_id: uuid.UUID | None = None
+        document_name: str | None = None
+        document_description: str | None = None
+        field_ids: list[uuid.UUID] | None = None
+
+    class GetDocumentRunContextAndCreateRunSqlRow(BaseModel):
+        agent_id: str
+        agent_name: str
+        system_prompt: str
+        temperature: float
+        reasoning: str
+        model_id: str
+        model_name: str
+        provider: str
+        base_url: str
+        api_key: str
+        profile_id: str
+        req_per_day: int
+        runs_today_count: int
+        earliest_run_created_at: str | None
+        run_id: str
+        group_id: uuid.UUID
+        trace_id: str
+
+    class GetDocumentTemplateContextSqlParams(BaseModel):
+        field_ids: list[uuid.UUID]
+
+    class DocumentTemplateContextField(BaseModel):
+        item_name: str
+        item_description: str
+        param_name: str
+        param_description: str
+
+    class GetDocumentTemplateContextSqlRow(BaseModel):
+        fields: list[DocumentTemplateContextField]
+
+    class CreateTemplateAndLinkSqlParams(BaseModel):
+        document_id: uuid.UUID
+        upload_id: uuid.UUID
+        name: str
+        template_schema: str  # jsonb as string
+        active: bool
+        run_id: uuid.UUID
+
+    class CreateTemplateAndLinkSqlRow(BaseModel):
+        template_id: uuid.UUID
+
+    class DocumentGenerationCompleteApiRequest(BaseModel):
+        document_id: uuid.UUID | None = None
+        message: str
+        template_html: str
+        template_schema: dict[str, Any]
+        upload_id: str
+        template_mapping: dict[str, Any] | None = None
+
+    class DocumentGenerationErrorApiRequest(BaseModel):
+        document_id: uuid.UUID | None = None
+        error_message: str
+
+    class DocumentGenerationErrorSqlRow(BaseModel):
+        success: bool
+        message: str
+
+    class DocumentGenerationProgressApiRequest(BaseModel):
+        document_id: uuid.UUID | None = None
+        progress_type: str
+        message: str | None = None
 
 client_router = APIRouter()
 server_router = APIRouter()
 
+SQL_PATH = "app/sql/v3/documents/get_document_run_context_and_create_run_complete.sql"
+SQL_TEMPLATE_CONTEXT_PATH = "app/sql/v3/documents/get_document_template_context_complete.sql"
+SQL_CREATE_TEMPLATE_PATH = "app/sql/v3/documents/create_template_and_link_complete.sql"
 
-# Pydantic models for server-to-client events
-class DocumentTemplateGenerationProgressPayload(BaseModel):
-    """Response indicating progress in document template generation."""
-
-    type: str  # "start", "complete"
-    message: str | None = None
-    trace_id: str | None = None
-
-
-class DocumentTemplateGenerationCompletePayload(BaseModel):
-    """Response indicating document template generation completed successfully."""
-
-    success: bool
-    message: str
-    template_html: str
-    template_schema: dict[str, Any]  # Dynamic JSON schema for template variables
-    upload_id: str
-    template_mapping: dict[str, Any] | None = (
-        None  # Dynamic mapping of template uploads
-    )
-    trace_id: str | None = None
-
-
-class DocumentTemplateGenerationErrorPayload(BaseModel):
-    """Response indicating an error occurred in document template generation."""
-
-    success: bool
-    message: str
-    trace_id: str | None = None
-
-
-# Pydantic model for client-to-server event
-class GenerateDocumentTemplatePayload(BaseModel):
-    """Request to generate a document template."""
-
-    departmentId: str
-    profileId: str | None = None
-    documentId: str | None = None
-    documentName: str | None = None
-    documentDescription: str | None = None
-    fieldIds: list[str] | None = None
-
-
-# Emit helper functions
-async def document_template_generation_progress(
-    payload: DocumentTemplateGenerationProgressPayload, room: str
-) -> None:
-    await sio.emit(
-        "documents_generation_progress",
-        payload.model_dump(exclude_none=True),
-        room=room,
-    )
-
-
-async def document_template_generation_complete(
-    payload: DocumentTemplateGenerationCompletePayload, room: str
-) -> None:
-    await sio.emit("documents_generation_complete", payload.model_dump(), room=room)
-
-
-async def document_template_generation_error(
-    payload: DocumentTemplateGenerationErrorPayload, room: str
-) -> None:
-    await sio.emit("documents_generation_error", payload.model_dump(), room=room)
+internal_sio = get_internal_sio()
 
 
 async def _document_generate_impl(
-    sid: str, data: GenerateDocumentTemplatePayload
+    sid: str,
+    data: GetDocumentRunContextAndCreateRunApiRequest,
+    profile_id: uuid.UUID,
 ) -> None:
     """Handle document template generation requests via WebSocket."""
-    trace_id = (
-        None  # Document agent doesn't use trace_id, but we can generate one if needed
-    )
+    trace_id: str | None = None
+    group_id: uuid.UUID | None = None
 
     try:
-        # Convert string IDs to UUIDs
-        department_id = uuid.UUID(data.departmentId)
-        profile_id = uuid.UUID(data.profileId) if data.profileId else None
+        # data fields are already validated as UUIDs by GetDocumentRunContextAndCreateRunApiRequest
+        # (Pydantic auto-converts strings to UUIDs)
+        department_id = uuid.UUID(data.department_id) if isinstance(data.department_id, str) else data.department_id
+        document_id = uuid.UUID(data.document_id) if data.document_id and isinstance(data.document_id, str) else data.document_id
+        document_name = data.document_name
+        document_description = data.document_description
+        field_ids = data.field_ids
 
-        try:
-            async with get_db_connection() as conn:
-                # Emit start event
-                await document_template_generation_progress(
-                DocumentTemplateGenerationProgressPayload(
-                    type="start",
-                    message="Starting document template generation",
-                    trace_id=trace_id,
-                ),
-                room=sid,
-            )
-
+        async with get_db_connection() as conn:
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            sql_query = load_sql(
-                "app/sql/v3/documents/get_document_run_context_and_create_run.sql"
-            )
             try:
-                context_row = await conn.fetchrow(
-                    sql_query,
-                    str(department_id),
-                    str(profile_id) if profile_id else None,
+                # Use execute_sql_typed() - auto-detects function
+                params = GetDocumentRunContextAndCreateRunSqlParams(
+                    department_id=department_id,
+                    profile_id=profile_id,  # From sid lookup
+                    document_id=document_id,
+                    document_name=document_name,
+                    document_description=document_description,
+                    field_ids=[uuid.UUID(fid) for fid in field_ids] if field_ids else None,
+                )
+                result = cast(
+                    GetDocumentRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
@@ -149,55 +187,72 @@ async def _document_generate_impl(
                         if "RATE_LIMIT_EXCEEDED: " in error_msg
                         else error_msg
                     )
-                    await document_template_generation_error(
-                        DocumentTemplateGenerationErrorPayload(
-                            success=False,
-                            message=user_msg,
-                            trace_id=trace_id,
+                    await emit_to_internal(
+                        "document_error",
+                        DocumentGenerationErrorApiRequest(
+                            document_id=document_id if document_id else None,
+                            error_message=user_msg,
                         ),
-                        room=sid,
+                        sid=sid,
                     )
                     return
-                await document_template_generation_error(
-                    DocumentTemplateGenerationErrorPayload(
-                        success=False,
-                        message=f"Failed to initialize document generation: {str(e)}",
-                        trace_id=trace_id,
+                await emit_to_internal(
+                    "document_error",
+                    DocumentGenerationErrorApiRequest(
+                        document_id=document_id if document_id else None,
+                        error_message=f"Failed to initialize document generation: {str(e)}",
                     ),
-                    room=sid,
+                    sid=sid,
                 )
                 return
 
-            if not context_row:
-                await document_template_generation_error(
-                    DocumentTemplateGenerationErrorPayload(
-                        success=False,
-                        message=f"No document agent configured for department {data.departmentId}",
-                        trace_id=trace_id,
+            if not result:
+                await emit_to_internal(
+                    "document_error",
+                    DocumentGenerationErrorApiRequest(
+                        document_id=document_id if document_id else None,
+                        error_message=f"No document agent configured for department {department_id}",
                     ),
-                    room=sid,
+                    sid=sid,
                 )
                 return
+
+            # result.group_id and result.trace_id come from groups table
+            trace_id = result.trace_id  # From groups.trace_id
+            group_id = result.group_id  # Created by SQL
+
+            # Emit start event via internal bus
+            # trace_id comes from groups table via SQL, not passed in payload
+            await emit_to_internal(
+                "document_progress",
+                DocumentGenerationProgressApiRequest(
+                    document_id=document_id if document_id else None,
+                    progress_type="start",
+                    message="Starting document template generation",
+                ),
+                sid=sid,
+                group_id=str(group_id) if group_id else None,
+            )
 
             # Build context dict
             context = {
-                "agent_id": context_row["agent_id"],
-                "agent_name": context_row["agent_name"],
-                "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"])
-                if context_row["temperature"] is not None
+                "agent_id": result.agent_id,
+                "agent_name": result.agent_name,
+                "system_prompt": result.system_prompt,
+                "temperature": float(result.temperature)
+                if result.temperature is not None
                 else 0.0,
-                "reasoning": context_row["reasoning"],
-                "model_id": context_row["model_id"],
-                "model_name": context_row["model_name"],
-                "provider": context_row["provider"],
-                "base_url": context_row["base_url"],
-                "api_key": context_row["api_key"],
-                "profile_id": context_row["profile_id"],
+                "reasoning": result.reasoning,
+                "model_id": result.model_id,
+                "model_name": result.model_name,
+                "provider": result.provider,
+                "base_url": result.base_url,
+                "api_key": result.api_key,
+                "profile_id": result.profile_id,
             }
 
             # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(context_row["run_id"])
+            model_run_id = uuid.UUID(result.run_id)
 
             # Module-level storage for document generation results
             document_results: dict[str, Any] = {}
@@ -231,7 +286,6 @@ async def _document_generate_impl(
                 """Create a descriptive title for this document."""
                 document_results["title"] = title
                 document_progress["title"] = True
-                # Removed logger call - Socket.IO handles logging
                 # Emit to internal bus for title creation
                 await internal_sio.emit(
                     "document_tool_title",
@@ -239,15 +293,12 @@ async def _document_generate_impl(
                         "sid": sid,
                         "trace_id": trace_id,
                         "title": title,
-                        "document_id": data.documentId
-                        if hasattr(data, "documentId")
-                        else None,
+                        "document_id": str(document_id) if document_id else None,
                     },
                 )
                 return "Created title successfully"
 
             document_tools.append(function_tool(create_title))
-            # Removed logger call - Socket.IO handles logging
 
             # Generate template HTML tool
             html_config = tool_config_map_doc.get("generate_template_html")
@@ -265,11 +316,9 @@ async def _document_generate_impl(
                 """Generate the Jinja template HTML for the document."""
                 document_results["template_html"] = template_html
                 document_progress["template_html"] = True
-                # Removed logger call - Socket.IO handles logging
                 return "Generated template HTML successfully"
 
             document_tools.append(function_tool(generate_template_html))
-            # Removed logger call - Socket.IO handles logging
 
             # Generate template schema tool
             schema_config = tool_config_map_doc.get("generate_template_schema")
@@ -287,11 +336,9 @@ async def _document_generate_impl(
                 """Generate the TemplateSchema JSON for template context."""
                 document_results["template_schema"] = schema_json
                 document_progress["template_schema"] = True
-                # Removed logger call - Socket.IO handles logging
                 return "Generated template schema successfully"
 
             document_tools.append(function_tool(generate_template_schema))
-            # Removed logger call - Socket.IO handles logging
 
             # Create tool use behavior to wait for both tools to be called
             def tool_use_behavior(
@@ -306,8 +353,6 @@ async def _document_generate_impl(
                 return ToolsToFinalOutputResult(is_final_output=both_complete)
 
             # Build document agent inline
-            from app.infra.v3.agents.generic_agent import GenericAgent
-
             document_agent = GenericAgent(
                 agent_name=context["agent_name"],
                 system_prompt=context["system_prompt"],
@@ -324,21 +369,32 @@ async def _document_generate_impl(
 
             # Fetch fields information if fieldIds provided
             fields_data: list[dict[str, Any]] | None = None
-            if data.fieldIds and len(data.fieldIds) > 0:
-                field_ids_uuid = [uuid.UUID(fid) for fid in data.fieldIds]
-                field_ids_str = [str(fid) for fid in field_ids_uuid]
-                sql_query_fields = load_sql(
-                    "app/sql/v3/documents/get_document_template_context.sql"
-                )
-                fields_row = await conn.fetchrow(sql_query_fields, field_ids_str)
-                if fields_row and fields_row.get("fields"):
-                    fields_json = fields_row["fields"]
-                    if isinstance(fields_json, str):
-                        fields_data = json.loads(fields_json)
-                    elif isinstance(fields_json, list):
-                        fields_data = fields_json
-                    else:
-                        fields_data = []
+            if field_ids and len(field_ids) > 0:
+                field_ids_uuid = [uuid.UUID(fid) for fid in field_ids]
+                try:
+                    # Use execute_sql_typed() - returns composite type array
+                    template_context_params = GetDocumentTemplateContextSqlParams(
+                        field_ids=field_ids_uuid,
+                    )
+                    template_context_result = cast(
+                        GetDocumentTemplateContextSqlRow,
+                        await execute_sql_typed(
+                            conn, SQL_TEMPLATE_CONTEXT_PATH, params=template_context_params
+                        ),
+                    )
+                    # Convert composite type array to dict format for format_document_template_context
+                    if template_context_result.fields:
+                        fields_data = [
+                            {
+                                "item_name": getattr(field, "item_name", ""),
+                                "item_description": getattr(field, "item_description", ""),
+                                "param_name": getattr(field, "param_name", ""),
+                                "param_description": getattr(field, "param_description", ""),
+                            }
+                            for field in template_context_result.fields
+                        ]
+                except Exception:
+                    fields_data = []
 
             # Get department name
             department_name: str | None = None
@@ -352,8 +408,8 @@ async def _document_generate_impl(
 
             # Format context for agent input
             context_items = format_document_template_context(
-                document_name=data.documentName,
-                document_description=data.documentDescription,
+                document_name=document_name,
+                document_description=document_description,
                 department_name=department_name,
                 fields=fields_data,
             )
@@ -388,14 +444,14 @@ async def _document_generate_impl(
                 )
 
             # Rate limit validation and run creation are now handled in SQL
-            # (get_document_run_context_and_create_run.sql) - both happen atomically
+            # (get_document_run_context_and_create_run_complete.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
             # Run document generation with tracing
             with trace(
                 "Document Agent",
-                trace_id=None,
-                group_id=None,
+                trace_id=trace_id,  # From groups table
+                group_id=str(document_id) if document_id else None,  # Resource ID, not database group_id
             ):
                 run_result = await Runner.run(
                     document_agent.agent(),
@@ -425,7 +481,9 @@ async def _document_generate_impl(
             template_html = document_results.get("template_html", "")
             template_schema_str = document_results.get("template_schema", "{}")
 
-            # Parse schema JSON
+            # Parse schema JSON (from tool output string)
+            import json
+
             try:
                 template_schema = json.loads(template_schema_str)
             except (json.JSONDecodeError, TypeError):
@@ -435,16 +493,16 @@ async def _document_generate_impl(
             if not document_progress.get("template_html") or not document_progress.get(
                 "template_schema"
             ):
-                await document_template_generation_error(
-                    DocumentTemplateGenerationErrorPayload(
-                        success=False,
-                        message=(
+                await emit_to_internal(
+                    "document_error",
+                    DocumentGenerationErrorApiRequest(
+                        document_id=document_id if document_id else None,
+                        error_message=(
                             "Document agent did not call both required tools. "
                             "Expected: generate_template_html and generate_template_schema"
                         ),
-                        trace_id=trace_id,
                     ),
-                    room=sid,
+                    sid=sid,
                 )
                 return
 
@@ -482,46 +540,50 @@ async def _document_generate_impl(
                     upload_id = upload_id_result["id"]
 
                     # If documentId is provided, create template and link to document and run
-                    if data.documentId:
+                    if document_id:
+                        # template_schema is dynamic JSON, so we need json.dumps() for SQL function
                         template_schema_jsonb = json.dumps(template_schema)
-                        template_name = (
-                            f"Template for {data.documentName or 'Document'}"
-                        )
+                        template_name = f"Template for {document_name or 'Document'}"
 
-                        # Create template and link to document and run
-                        sql_create_template = load_sql(
-                            "app/sql/v3/documents/create_template_and_link.sql"
+                        # Create template and link to document and run using execute_sql_typed()
+                        # Note: template_schema_jsonb is passed as string, SQL function expects jsonb
+                        create_template_params = CreateTemplateAndLinkSqlParams(
+                            document_id=document_id,
+                            upload_id=uuid.UUID(upload_id),
+                            name=template_name,
+                            template_schema=template_schema_jsonb,  # jsonb parameter as string
+                            active=True,
+                            run_id=model_run_id,
                         )
-                        template_result = await conn.fetchrow(
-                            sql_create_template,
-                            data.documentId,
-                            str(uuid.UUID(upload_id)),
-                            template_name,
-                            template_schema_jsonb,
-                            True,  # active = true
-                            str(model_run_id),  # run_id
+                        template_result = cast(
+                            CreateTemplateAndLinkSqlRow,
+                            await execute_sql_typed(
+                                conn, SQL_CREATE_TEMPLATE_PATH, params=create_template_params
+                            ),
                         )
 
                         if template_result:
-                            template_id = template_result["template_id"]
+                            template_id = template_result.template_id
 
-                        # Fetch updated templates and build mapping from array (no JSONB)
+                        # Fetch updated templates and build mapping from array
                         sql_templates = load_sql(
                             "app/sql/v3/documents/get_document_templates.sql"
                         )
-                        template_rows = await conn.fetch(sql_templates, data.documentId)
+                        template_rows = await conn.fetch(sql_templates, str(document_id))
 
-                        # Build mapping from array (replacing JSONB pattern)
+                        # Build mapping from array
                         template_mapping = {}
                         for row in template_rows:
                             upload_id_str = str(row["upload_id"])
+                            # template_args is jsonb from database, convert to dict if needed
+                            template_args = row["template_args"]
+                            if isinstance(template_args, str):
+                                template_args = json.loads(template_args)
+                            elif not isinstance(template_args, dict):
+                                template_args = {}
                             template_mapping[upload_id_str] = {
                                 "template_id": str(row["template_id"]),
-                                "template_args": row["template_args"]
-                                if isinstance(row["template_args"], dict)
-                                else json.loads(row["template_args"])
-                                if isinstance(row["template_args"], str)
-                                else {},
+                                "template_args": template_args,
                                 "active": row["active"],
                                 "created_at": row["created_at"].isoformat()
                                 if row["created_at"]
@@ -531,37 +593,37 @@ async def _document_generate_impl(
                                 else None,
                             }
 
-                if data.documentId:
+                if document_id:
                     # Invalidate documents cache
                     await invalidate_tags(["documents"])
-                        upload_id,
-                    )
 
-                # Emit completion event
-                await document_template_generation_complete(
-                    DocumentTemplateGenerationCompletePayload(
-                        success=True,
+                # Emit completion event via internal bus
+                await emit_to_internal(
+                    "document_complete",
+                    DocumentGenerationCompleteApiRequest(
+                        document_id=document_id if document_id else None,
                         message="Document template created successfully",
                         template_html=template_html,
                         template_schema=template_schema,
                         upload_id=upload_id,
                         template_mapping=template_mapping,
-                        trace_id=trace_id,
                     ),
-                    room=sid,
+                    sid=sid,
+                    group_id=str(group_id),
                 )
 
             except Exception as create_error:
                 # Error creating template - emit error event
-                await document_template_generation_error(
-                    DocumentTemplateGenerationErrorPayload(
-                        success=False,
-                        message=f"Failed to create template: {str(create_error)}",
-                        trace_id=trace_id,
+                await emit_to_internal(
+                    "document_error",
+                    DocumentGenerationErrorApiRequest(
+                        document_id=document_id if document_id else None,
+                        error_message=f"Failed to create template: {str(create_error)}",
                     ),
-                    room=sid,
+                    sid=sid,
                 )
                 return
+
             # Log activity
             try:
                 await log_websocket_activity(
@@ -575,16 +637,26 @@ async def _document_generate_impl(
                     error=False,
                 )
             except Exception:
-                # Error logging activity - Socket.IO handles logging
                 pass
 
-    except Exception as e:
-        # Removed logger call - Socket.IO handles logging
-        await document_template_generation_error(
-            DocumentTemplateGenerationErrorPayload(
-                success=False, message=str(e), trace_id=trace_id
+    except RuntimeError:
+        # Pool not initialized - emit error event
+        await emit_to_internal(
+            "document_error",
+            DocumentGenerationErrorApiRequest(
+                document_id=document_id if document_id else None,
+                error_message="Database connection pool not available",
             ),
-            room=sid,
+            sid=sid,
+        )
+    except Exception as e:
+        await emit_to_internal(
+            "document_error",
+            DocumentGenerationErrorApiRequest(
+                document_id=document_id if document_id else None,
+                error_message=str(e),
+            ),
+            sid=sid,
         )
         # Log activity error
         try:
@@ -597,67 +669,33 @@ async def _document_generate_impl(
                 error=True,
             )
         except Exception:
-            # Error logging activity - Socket.IO handles logging
             pass
 
 
 @sio.event  # type: ignore
 async def document_generate(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
-    try:
-        validated = GenerateDocumentTemplatePayload(**data)
-        await _document_generate_impl(sid, validated)
-    except ValidationError as e:
-        # Removed logger call - Socket.IO handles logging
-        await document_template_generation_error(
-            DocumentTemplateGenerationErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}", trace_id=None
-            ),
-            room=sid,
-        )
-        # Log activity error
-        try:
-            await log_websocket_activity(
-                sid=sid,
-                event_key="documents.generated",
-                template="{{ actor.name }} failed to generate document template (invalid payload)",
-                context={"error": str(e)},
-                endpoint="/socket/v3/documents/generate",
-                error=True,
-            )
-        except Exception:
-            # Error logging activity - Socket.IO handles logging
-            pass
+    # Convert camelCase to snake_case for ApiRequest
+    converted_data = {
+        "department_id": data.get("departmentId"),
+        "document_id": data.get("documentId"),
+        "document_name": data.get("documentName"),
+        "document_description": data.get("documentDescription"),
+        "field_ids": data.get("fieldIds"),
+    }
+    await handle_client_event(
+        sid=sid,
+        data=converted_data,
+        request_type=GetDocumentRunContextAndCreateRunApiRequest,
+        handler=_document_generate_impl,  # type: ignore[arg-type]
+        error_event_name="documents_generation_error",
+        error_response_type=DocumentGenerationErrorSqlRow,
+    )
 
 
-# FastAPI endpoint for OpenAPI documentation
-@client_router.post("/generate", response_model=dict[str, bool])
-async def document_generate_api(
-    request: GenerateDocumentTemplatePayload,
-) -> dict[str, bool]:
-    """Client-to-server event: Generate a document template using AI."""
-    return {"success": True}
-
-
-@server_router.post("/generation_progress", response_model=dict[str, bool])
-async def document_template_generation_progress_api(
-    request: DocumentTemplateGenerationProgressPayload,
-) -> dict[str, bool]:
-    """Server-to-client event: Progress update for document template generation."""
-    return {"success": True}
-
-
-@server_router.post("/generation_complete", response_model=dict[str, bool])
-async def document_template_generation_complete_api(
-    request: DocumentTemplateGenerationCompletePayload,
-) -> dict[str, bool]:
-    """Server-to-client event: Document template generation completed successfully."""
-    return {"success": True}
-
-
-@server_router.post("/generation_error", response_model=dict[str, bool])
-async def document_template_generation_error_api(
-    request: DocumentTemplateGenerationErrorPayload,
-) -> dict[str, bool]:
-    """Server-to-client event: Error occurred during document template generation."""
-    return {"success": True}
+register_client_endpoint(
+    client_router,
+    "/generate",
+    GetDocumentRunContextAndCreateRunApiRequest,
+    "Generate document template using AI",
+)

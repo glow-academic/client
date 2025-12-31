@@ -1,9 +1,88 @@
 -- Generate hints for a simulation message - complete unit of work
--- Parameters: $1=message_id (uuid), $2=chat_id (uuid), $3=department_id (uuid)
--- This SQL file handles: context fetching, run creation (with rate limit check), and returns all needed data
--- Note: Hint storage happens in Python after agent execution
--- Returns: All context data needed for hint generation, plus run_id if created
+-- Converted to PostgreSQL function pattern
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'socket_get_hint_run_context_and_create_run_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_hint_run_context_and_create_run_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'i_get_hint_run_context_and_create_run_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.i_get_hint_run_context_and_create_run_v3_document AS (
+    document_id uuid,
+    name text,
+    file_path text,
+    mime_type text
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION socket_get_hint_run_context_and_create_run_v3(
+    message_id uuid,
+    chat_id uuid,
+    department_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    message_id text,
+    message_created_at timestamptz,
+    chat_id text,
+    attempt_id text,
+    scenario_id text,
+    trace_id text,
+    chat_title text,
+    simulation_id text,
+    problem_statement text,
+    agent_id text,
+    agent_name text,
+    system_prompt text,
+    temperature float,
+    reasoning text,
+    model_id text,
+    model_name text,
+    provider_name text,
+    base_url text,
+    api_key text,
+    provider_id text,
+    profile_id text,
+    req_per_day integer,
+    runs_today_count bigint,
+    earliest_run_created_at timestamptz,
+    documents types.i_get_hint_run_context_and_create_run_v3_document[],
+    run_id text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
 WITH target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, mc.content, m.created_at
     FROM messages m
@@ -14,7 +93,7 @@ WITH target_message AS (
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
     JOIN chats c ON c.id = cg.chat_id
-    WHERE m.id = $1::uuid AND c.id = $2::uuid
+    WHERE m.id = message_id AND c.id = chat_id
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, g.trace_id, sc.title
@@ -37,10 +116,11 @@ scenario_info AS (
     JOIN chat_info ci ON ci.scenario_id = s.id
 ),
 profile_info AS (
-    SELECT ap.profile_id
+    SELECT profile_id as profile_id
     FROM attempt_profiles ap
     JOIN attempt_info ai ON ai.id = ap.attempt_id
     WHERE ap.active = true
+      AND ap.profile_id = profile_id
     LIMIT 1
 ),
 best_agent AS (
@@ -51,13 +131,13 @@ best_agent AS (
     AND a.active = true
     AND (
         -- Include if agent is linked to the specified department
-        ad.department_id = $3::uuid
+        ad.department_id = department_id
         -- OR agent has no department links (cross-department)
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
     ORDER BY 
         -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = $3::uuid THEN 0 ELSE 1 END
+        CASE WHEN ad.department_id = department_id THEN 0 ELSE 1 END
     LIMIT 1
 ),
 profile_rate_limit AS (
@@ -66,7 +146,7 @@ profile_rate_limit AS (
         prl.requests_per_day as req_per_day
     FROM profiles p
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    WHERE p.id = (SELECT profile_id FROM profile_info)
+    WHERE p.id = profile_id
 ),
 runs_today AS (
     -- Count model runs for this profile since start of day
@@ -75,7 +155,7 @@ runs_today AS (
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT profile_id FROM profile_info)
+    WHERE mrp.profile_id = profile_id
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -146,6 +226,20 @@ active_settings AS (
             (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
 ),
+-- Document data for composite type aggregation
+document_data AS (
+    SELECT 
+        d.id as document_id,
+        d.name,
+        u.file_path,
+        u.mime_type
+    FROM scenario_info si
+    CROSS JOIN scenario_documents sd
+    JOIN documents d ON d.id = sd.document_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
+    WHERE sd.scenario_id = si.id AND sd.active = true
+),
 -- Context data with rate limit info
 context_data AS (
     SELECT 
@@ -170,28 +264,17 @@ context_data AS (
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
         p.id::text as provider_id,
-        pi.profile_id::text,
+        profile_id::text as profile_id,
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at,
+        -- Aggregate documents as composite type array
         COALESCE(
-            (
-                SELECT json_agg(
-                    json_build_object(
-                        'id', d.id::text,
-                        'name', d.name,
-                        'file_path', u.file_path,
-                        'mime_type', u.mime_type
-                    )
-                    ORDER BY d.id
-                )
-                FROM scenario_documents sd
-                JOIN documents d ON d.id = sd.document_id
-                LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-                LEFT JOIN uploads u ON u.id = du.upload_id
-                WHERE sd.scenario_id = si.id AND sd.active = true
-            ),
-            '[]'::json
+            (SELECT ARRAY_AGG(
+                (dd.document_id, dd.name, dd.file_path, dd.mime_type)::types.i_get_hint_run_context_and_create_run_v3_document
+                ORDER BY dd.document_id
+            ) FROM document_data dd),
+            '{}'::types.i_get_hint_run_context_and_create_run_v3_document[]
         ) as documents
     FROM target_message tm
     CROSS JOIN chat_info ci
@@ -202,7 +285,7 @@ context_data AS (
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     INNER JOIN agents a ON a.id = ba.agent_id
-    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = $3::uuid AND adp_prompt.active = true
+    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = department_id AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
@@ -242,10 +325,10 @@ link_model AS (
 link_profile AS (
     -- Link profile to run if provided
     INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, cd.profile_id::uuid, true
+    SELECT lm.run_id, profile_id, true
     FROM link_model lm
     CROSS JOIN context_data cd
-    WHERE cd.profile_id IS NOT NULL
+    WHERE profile_id IS NOT NULL
     RETURNING run_id
 )
 SELECT 
@@ -253,7 +336,7 @@ SELECT
     cd.message_id,
     cd.message_created_at,
     cd.chat_id,
-    cd.attempt_id as attempt_id_out,
+    cd.attempt_id,
     cd.scenario_id,
     cd.trace_id,
     cd.chat_title,
@@ -281,4 +364,6 @@ FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN link_model lm
 CROSS JOIN link_profile lp
+$$;
 
+COMMIT;

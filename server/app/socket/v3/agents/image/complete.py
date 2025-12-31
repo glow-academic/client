@@ -1,13 +1,12 @@
 """Handler for image_complete WebSocket event - ONE EVENT PER FILE."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.handler_wrapper import handle_internal_event
 from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
@@ -16,6 +15,10 @@ from app.main import get_internal_sio
 from app.socket.v3.agents.scenario.tools.image.call import (
     ImageToolCompletePayload,
     image_tool_complete,
+)
+from app.sql.types import (
+    CompleteImageGenerationSqlParams,
+    CompleteImageGenerationSqlRow,
 )
 
 internal_sio = get_internal_sio()
@@ -52,28 +55,26 @@ async def _image_generation_complete_impl(
 
     try:
         async with get_db_connection() as conn:
-            # Load SQL query at top (DHH style - one SQL file per websocket event)
-            sql = load_sql("app/sql/v3/images/complete_image_generation_complete.sql")
-
-            result = await conn.fetchrow(sql, image_id, file_path, mime_type, file_size)
+            # Use execute_sql_typed() - auto-detects function
+            params = CompleteImageGenerationSqlParams(
+                image_id=uuid.UUID(image_id),
+                file_path=file_path,
+                mime_type=mime_type,
+                file_size=file_size,
+            )
+            result = cast(
+                CompleteImageGenerationSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v3/images/complete_image_generation_complete.sql",
+                    params=params,
+                ),
+            )
 
             if not result:
                 return
 
-            upload_id = result["upload_id"]
-            # Log activity (only for client-to-server events, not internal)
-            if sid and sid != "internal":
-                try:
-                    await log_websocket_activity(
-                        sid=sid,
-                        event_key="images.completed",
-                        template="{{ actor.name }} completed image generation",
-                        context={"image_id": image_id, "upload_id": upload_id},
-                        endpoint="/socket/v3/images/complete",
-                        error=False,
-                    )
-                except Exception:
-                    pass
+            upload_id = result.upload_id
 
             # If this was triggered from scenario tool, emit completion event to client
             if room and trace_id:
