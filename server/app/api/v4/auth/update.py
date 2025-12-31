@@ -1,0 +1,110 @@
+"""Auth update endpoint - v4 API following DHH principles."""
+
+from typing import Annotated, Any, cast
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.sql_helper import execute_sql_typed
+
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
+from app.sql.types import (
+    UpdateAuthApiRequest,
+    UpdateAuthApiResponse,
+    UpdateAuthSqlParams,
+    UpdateAuthSqlRow,
+)
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v4/auth/update_auth_complete.sql"
+
+
+router = APIRouter()
+
+
+@router.post(
+    "/update",
+    response_model=UpdateAuthApiResponse,
+    dependencies=[
+        audit_activity(
+            "auth.updated", "{{ actor.name }} updated auth '{{ auth.name }}'"
+        )
+    ],
+)
+async def update_auth(
+    request: UpdateAuthApiRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> UpdateAuthApiResponse:
+    """Update an existing auth entry (replace all items)."""
+    tags = ["auth"]
+
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        async with transaction(conn):
+            # Convert API request to SQL params (add profile_id from header)
+            # Use double star pattern: **request.model_dump()
+            params = UpdateAuthSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                UpdateAuthSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            # Check if auth exists using SQL result
+            if not result.auth_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Auth {request.auth_id} not found"
+                )
+
+            # Set audit context with data from SQL query
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    auth={"name": request.name, "id": str(request.auth_id)},
+                )
+
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        # Trigger Keycloak sync (fire-and-forget)
+        await perform_keycloak_sync(department_id=None)
+
+        # Convert SQL result to API response
+        api_response = UpdateAuthApiResponse.model_validate(result.model_dump())
+        return api_response
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_auth",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )

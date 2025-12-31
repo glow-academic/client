@@ -1,0 +1,609 @@
+-- Get eval detail with status breakdown and runs list
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_eval_detail_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_eval_detail_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Note: Some types are shared with get_eval_new, so we drop all types here
+-- get_eval_new will recreate shared types if needed
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_eval_detail_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_eval_detail_v4_department AS (
+    department_id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_eval_detail_v4_agent AS (
+    agent_id uuid,
+    name text,
+    description text,
+    roles text[]
+);
+
+CREATE TYPE types.q_get_eval_detail_v4_rubric AS (
+    rubric_id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_eval_detail_v4_rubric_grade_agent AS (
+    rubric_grade_agent_id uuid,
+    rubric_id uuid,
+    rubric_name text,
+    agent_id uuid,
+    agent_name text
+);
+
+CREATE TYPE types.q_get_eval_detail_v4_model_run AS (
+    model_run_id uuid,
+    completed boolean,
+    assigned_at timestamptz,
+    status_updated_at timestamptz,
+    model_run_created_at timestamptz,
+    model_id uuid,
+    model_name text,
+    agent_id uuid,
+    agent_name text,
+    persona_id uuid,
+    persona_name text,
+    profile_id uuid,
+    profile_name text,
+    has_grade boolean,
+    grade_score int,
+    grade_passed boolean,
+    grade_created_at timestamptz,
+    rubric_grade_agents types.q_get_eval_detail_v4_rubric_grade_agent[]
+);
+
+CREATE TYPE types.q_get_eval_detail_v4_available_model_run AS (
+    model_run_id uuid,
+    created_at timestamptz,
+    model_id uuid,
+    model_name text,
+    profile_id uuid,
+    profile_name text,
+    agent_id uuid,
+    agent_name text,
+    persona_id uuid,
+    persona_name text,
+    actor_type text
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_eval_detail_v4(
+    eval_id uuid,
+    profile_id uuid,
+    available_model_runs_search text DEFAULT NULL,
+    available_model_runs_agent_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    available_model_runs_page int DEFAULT 1,
+    available_model_runs_page_size int DEFAULT 50
+)
+    RETURNS TABLE (
+    eval_exists boolean,
+    actor_name text,
+    eval_id uuid,
+    name text,
+    description text,
+    agent_ids text[],
+    active boolean,
+    dynamic boolean,
+    created_at timestamptz,
+    updated_at timestamptz,
+    department_ids text[],
+    total_runs bigint,
+    completed_runs bigint,
+    pending_runs bigint,
+    status text,
+    model_runs types.q_get_eval_detail_v4_model_run[],
+    departments types.q_get_eval_detail_v4_department[],
+    valid_department_ids text[],
+    eval_agents types.q_get_eval_detail_v4_agent[],
+    valid_eval_agent_ids text[],
+    agents types.q_get_eval_detail_v4_agent[],
+    valid_agent_ids text[],
+    rubrics types.q_get_eval_detail_v4_rubric[],
+    valid_rubric_ids text[],
+    can_edit boolean,
+    can_delete boolean,
+    available_model_runs types.q_get_eval_detail_v4_available_model_run[],
+    available_model_runs_total_count bigint,
+    available_model_runs_page int,
+    available_model_runs_page_size int,
+    available_model_runs_total_pages bigint
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT 
+        eval_id AS eval_id,
+        profile_id AS profile_id,
+        available_model_runs_search AS available_model_runs_search,
+        available_model_runs_agent_ids AS available_model_runs_agent_ids,
+        available_model_runs_page AS available_model_runs_page,
+        available_model_runs_page_size AS available_model_runs_page_size
+),
+eval_exists_check AS (
+    SELECT EXISTS(SELECT 1 FROM evals WHERE id = (SELECT eval_id FROM params))::boolean as eval_exists
+),
+resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT profile_id FROM params)::text IS NULL OR (SELECT profile_id FROM params)::text = '' THEN NULL::uuid
+            ELSE (SELECT profile_id FROM params)::uuid
+        END as resolved_profile_id
+),
+user_departments AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
+),
+eval_data AS (
+    SELECT 
+        e.id as eval_id,
+        e.name,
+        e.description,
+        e.use_groups,
+        e.active,
+        e.dynamic,
+        e.created_at,
+        e.updated_at
+    FROM params x
+    JOIN evals e ON e.id = x.eval_id
+),
+eval_agents_data AS (
+    SELECT 
+        ea.eval_id,
+        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids
+    FROM params x
+    JOIN eval_agents ea ON ea.eval_id = x.eval_id
+    GROUP BY ea.eval_id
+),
+-- Get rubric_grade_agents per run (when use_groups = false)
+runs_rubric_grade_agents_data AS (
+    SELECT 
+        errga.eval_id,
+        errga.run_id,
+        ARRAY_AGG(
+            (rga.id, rga.rubric_id, r.name, rga.grade_agent_id, a.name)::types.q_get_eval_detail_v4_rubric_grade_agent
+            ORDER BY r.name
+        ) as rubric_grade_agents
+    FROM params x
+    JOIN evals e ON e.id = x.eval_id AND e.use_groups = false
+    JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id
+    JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
+    JOIN rubrics r ON r.id = rga.rubric_id
+    JOIN agents a ON a.id = rga.grade_agent_id
+    GROUP BY errga.eval_id, errga.run_id
+),
+-- Get rubric_grade_agents per group (when use_groups = true)
+groups_rubric_grade_agents_data AS (
+    SELECT 
+        egga.eval_id,
+        egga.group_id,
+        ARRAY_AGG(
+            (rga.id, rga.rubric_id, r.name, rga.grade_agent_id, a.name)::types.q_get_eval_detail_v4_rubric_grade_agent
+            ORDER BY r.name
+        ) as rubric_grade_agents
+    FROM params x
+    JOIN evals e ON e.id = x.eval_id AND e.use_groups = true
+    JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id
+    JOIN rubric_grade_agents rga ON rga.id = egga.rubric_grade_agent_id
+    JOIN rubrics r ON r.id = rga.rubric_id
+    JOIN agents a ON a.id = rga.grade_agent_id
+    GROUP BY egga.eval_id, egga.group_id
+),
+eval_departments_data AS (
+    SELECT 
+        ed.eval_id,
+        ARRAY_AGG(ed.department_id::text ORDER BY ed.created_at) as department_ids
+    FROM params x
+    JOIN eval_departments ed ON ed.eval_id = x.eval_id AND ed.active = true
+    GROUP BY ed.eval_id
+),
+eval_status_summary AS (
+    SELECT 
+        er.eval_id,
+        COUNT(*) as total_runs,
+        COUNT(*) FILTER (WHERE er.completed = true) as completed_runs,
+        COUNT(*) FILTER (WHERE er.completed = false) as pending_runs
+    FROM params x
+    JOIN eval_runs er ON er.eval_id = x.eval_id
+    GROUP BY er.eval_id
+),
+runs_list AS (
+    SELECT 
+        er.run_id,
+        er.completed,
+        er.created_at as assigned_at,
+        er.updated_at as status_updated_at,
+        r.created_at as model_run_created_at,
+        rm.model_id,
+        m.name as model_name,
+        r.agent_id,
+        a.name as agent_name,
+        rper.persona_id,
+        per.name as persona_name,
+        rp.profile_id,
+        p.first_name || ' ' || p.last_name as profile_name,
+        CASE WHEN g.id IS NOT NULL THEN true ELSE false END as has_grade,
+        g.score as grade_score,
+        g.passed as grade_passed,
+        g.created_at as grade_created_at,
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (rga.id, rga.rubric_id, r2.name, rga.grade_agent_id, a2.name)::types.q_get_eval_detail_v4_rubric_grade_agent
+                ORDER BY r2.name
+            )
+            FROM eval_runs_rubric_grade_agents errga
+            JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
+            JOIN rubrics r2 ON r2.id = rga.rubric_id
+            JOIN agents a2 ON a2.id = rga.grade_agent_id
+            WHERE errga.eval_id = er.eval_id AND errga.run_id = er.run_id),
+            '{}'::types.q_get_eval_detail_v4_rubric_grade_agent[]
+        ) as rubric_grade_agents
+    FROM params x
+    JOIN eval_runs er ON er.eval_id = x.eval_id
+    JOIN runs r ON r.id = er.run_id
+    LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
+    LEFT JOIN models m ON m.id = rm.model_id
+    LEFT JOIN agents a ON a.id = r.agent_id
+    LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
+    LEFT JOIN personas per ON per.id = rper.persona_id
+    LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
+    LEFT JOIN profiles p ON p.id = rp.profile_id
+    LEFT JOIN grades g ON g.run_id = er.run_id 
+        AND EXISTS (
+            SELECT 1 FROM test_runs tr
+            JOIN tests t ON t.id = tr.test_id
+            JOIN attempt_tests at ON at.test_id = t.id
+            JOIN eval_attempts ea ON ea.id = at.attempt_id
+            WHERE tr.run_id = g.run_id AND ea.eval_id = er.eval_id
+        )
+    ORDER BY er.created_at DESC
+),
+model_runs_array AS (
+    SELECT COALESCE(
+        ARRAY_AGG(
+            (rl.run_id, rl.completed, rl.assigned_at, rl.status_updated_at,
+             rl.model_run_created_at, rl.model_id, rl.model_name,
+             rl.agent_id, rl.agent_name, rl.persona_id, rl.persona_name,
+             rl.profile_id, rl.profile_name, rl.has_grade,
+             rl.grade_score, rl.grade_passed, rl.grade_created_at,
+             rl.rubric_grade_agents
+            )::types.q_get_eval_detail_v4_model_run
+        ),
+        '{}'::types.q_get_eval_detail_v4_model_run[]
+    ) as model_runs
+    FROM runs_list rl
+),
+user_profile AS (
+    SELECT 
+        role,
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles ON profiles.id = x.profile_id
+),
+valid_departments_for_eval AS (
+    SELECT DISTINCT d.id, d.title as name, COALESCE(d.description, '') as description
+    FROM params x
+    JOIN departments d ON d.active = true
+    JOIN profile_departments pd ON pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true
+),
+valid_dept_ids AS (
+    SELECT ARRAY_AGG(id::text) as ids FROM valid_departments_for_eval
+),
+departments_array AS (
+    SELECT COALESCE(
+        ARRAY_AGG((vd.id, vd.name, vd.description)::types.q_get_eval_detail_v4_department),
+        '{}'::types.q_get_eval_detail_v4_department[]
+    ) as departments
+    FROM valid_departments_for_eval vd
+),
+user_departments_for_agents AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
+),
+valid_eval_agents_list AS (
+    SELECT 
+        a.id,
+        a.name,
+        COALESCE(a.description, '') as description,
+        ARRAY[a.role::text] as roles
+    FROM params x
+    JOIN agents a ON a.active = true AND a.role = 'grade'::agent_role
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    GROUP BY a.id, a.name, a.description, a.role
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+eval_agents_array AS (
+    SELECT COALESCE(
+        ARRAY_AGG((vea.id, vea.name, vea.description, vea.roles)::types.q_get_eval_detail_v4_agent),
+        '{}'::types.q_get_eval_detail_v4_agent[]
+    ) as eval_agents,
+    COALESCE(ARRAY_AGG(vea.id::text ORDER BY vea.name), ARRAY[]::text[]) as eval_agent_ids
+    FROM valid_eval_agents_list vea
+),
+valid_agents_for_eval_list AS (
+    SELECT 
+        a.id,
+        a.name,
+        COALESCE(a.description, '') as description,
+        ARRAY[a.role::text] as roles
+    FROM params x
+    JOIN agents a ON a.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    GROUP BY a.id, a.name, a.description, a.role
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+agents_array AS (
+    SELECT COALESCE(
+        ARRAY_AGG((vae.id, vae.name, vae.description, vae.roles)::types.q_get_eval_detail_v4_agent),
+        '{}'::types.q_get_eval_detail_v4_agent[]
+    ) as agents,
+    COALESCE(ARRAY_AGG(vae.id::text ORDER BY vae.name), ARRAY[]::text[]) as agent_ids
+    FROM valid_agents_for_eval_list vae
+),
+user_department_ids_for_rubrics AS (
+    SELECT ARRAY_AGG(id) as ids
+    FROM params x
+    JOIN departments d ON d.active = true
+    JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
+),
+valid_rubrics_data AS (
+    SELECT DISTINCT
+        r.id,
+        r.name,
+        COALESCE(r.description, '') as description
+    FROM params x
+    JOIN rubrics r ON r.active = true
+    LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+    CROSS JOIN user_department_ids_for_rubrics udi
+    WHERE (
+        rd.department_id = ANY(udi.ids)
+        OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+    )
+    UNION
+    SELECT DISTINCT
+        r2.id,
+        r2.name,
+        COALESCE(r2.description, '') as description
+    FROM params x
+    JOIN evals e ON e.id = x.eval_id
+    LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND e.use_groups = false
+    LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id AND e.use_groups = true
+    JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
+    JOIN rubrics r2 ON r2.id = rga.rubric_id
+    WHERE r2.active = true
+),
+rubrics_array AS (
+    SELECT COALESCE(
+        ARRAY_AGG((vr.id, vr.name, vr.description)::types.q_get_eval_detail_v4_rubric),
+        '{}'::types.q_get_eval_detail_v4_rubric[]
+    ) as rubrics,
+    COALESCE(ARRAY_AGG(vr.id::text), ARRAY[]::text[]) as rubric_ids
+    FROM valid_rubrics_data vr
+),
+-- Available model runs query (conditional based on filters)
+available_model_runs_params AS (
+    SELECT 
+        available_model_runs_search,
+        available_model_runs_agent_ids,
+        available_model_runs_page,
+        available_model_runs_page_size
+    FROM params
+),
+profile_role_check AS (
+    SELECT 
+        (SELECT profile_id FROM params) as raw_profile_id,
+        CASE 
+            WHEN (SELECT profile_id FROM params) IS NULL THEN NULL::uuid
+            WHEN (SELECT role FROM user_profile) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            ELSE (SELECT profile_id FROM params)
+        END as effective_profile_id
+),
+runs_base AS (
+    SELECT
+        r.id as run_id,
+        r.created_at,
+        rm.model_id,
+        rp.profile_id,
+        r.agent_id,
+        rper.persona_id
+    FROM runs r
+    LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
+    LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
+    LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
+    WHERE 
+        (SELECT effective_profile_id FROM profile_role_check) IS NULL
+        OR rp.profile_id = (SELECT effective_profile_id FROM profile_role_check)
+),
+runs_with_names AS (
+    SELECT
+        rb.*,
+        m.name as model_name,
+        p.first_name || ' ' || p.last_name as profile_name,
+        a.name as agent_name,
+        per.name as persona_name,
+        CASE 
+            WHEN rb.agent_id IS NOT NULL THEN 'agent'
+            WHEN rb.persona_id IS NOT NULL THEN 'persona'
+            ELSE NULL
+        END as actor_type
+    FROM runs_base rb
+    LEFT JOIN models m ON m.id = rb.model_id
+    LEFT JOIN profiles p ON p.id = rb.profile_id
+    LEFT JOIN agents a ON a.id = rb.agent_id
+    LEFT JOIN personas per ON per.id = rb.persona_id
+),
+runs_filtered AS (
+    SELECT *
+    FROM runs_with_names rwn
+    CROSS JOIN available_model_runs_params amp
+    WHERE (
+        -- Only apply filters if they are provided
+        (
+            amp.available_model_runs_search IS NULL 
+            AND (amp.available_model_runs_agent_ids IS NULL 
+                 OR COALESCE(array_length(amp.available_model_runs_agent_ids, 1), 0) = 0)
+        )
+        OR (
+            -- Apply search filter
+            amp.available_model_runs_search IS NOT NULL
+            AND amp.available_model_runs_search != ''
+            AND (
+                LOWER(COALESCE(rwn.model_name, '')) LIKE '%' || LOWER(amp.available_model_runs_search) || '%'
+                OR LOWER(COALESCE(rwn.agent_name, '')) LIKE '%' || LOWER(amp.available_model_runs_search) || '%'
+                OR LOWER(COALESCE(rwn.persona_name, '')) LIKE '%' || LOWER(amp.available_model_runs_search) || '%'
+                OR LOWER(COALESCE(rwn.profile_name, '')) LIKE '%' || LOWER(amp.available_model_runs_search) || '%'
+            )
+        )
+        OR (
+            -- Apply agent_ids filter
+            amp.available_model_runs_agent_ids IS NOT NULL
+            AND COALESCE(array_length(amp.available_model_runs_agent_ids, 1), 0) > 0
+            AND rwn.agent_id IS NOT NULL 
+            AND rwn.agent_id = ANY(amp.available_model_runs_agent_ids)
+        )
+    )
+),
+paginated_runs AS (
+    SELECT
+        rf.*,
+        COUNT(*) OVER() AS total_count
+    FROM runs_filtered rf
+    CROSS JOIN available_model_runs_params amp
+    ORDER BY rf.created_at DESC
+    LIMIT (SELECT available_model_runs_page_size FROM available_model_runs_params LIMIT 1)
+    OFFSET (SELECT (available_model_runs_page - 1) * available_model_runs_page_size FROM available_model_runs_params LIMIT 1)
+),
+available_model_runs_array AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (pr.run_id, pr.created_at, pr.model_id, pr.model_name,
+                 pr.profile_id, pr.profile_name, pr.agent_id, pr.agent_name,
+                 pr.persona_id, pr.persona_name, pr.actor_type
+                )::types.q_get_eval_detail_v4_available_model_run
+            ),
+            '{}'::types.q_get_eval_detail_v4_available_model_run[]
+        ) as available_model_runs,
+        COALESCE(MAX(pr.total_count), 0) as total_count,
+        MAX(amp.available_model_runs_page) as page,
+        MAX(amp.available_model_runs_page_size) as page_size,
+        CEIL(COALESCE(MAX(pr.total_count), 0)::float / NULLIF(MAX(amp.available_model_runs_page_size), 0)) as total_pages
+    FROM paginated_runs pr
+    CROSS JOIN available_model_runs_params amp
+    WHERE (
+        amp.available_model_runs_search IS NOT NULL 
+        AND amp.available_model_runs_search != ''
+    )
+    OR (
+        amp.available_model_runs_agent_ids IS NOT NULL
+        AND COALESCE(array_length(amp.available_model_runs_agent_ids, 1), 0) > 0
+    )
+)
+SELECT 
+    eec.eval_exists,
+    up.actor_name::text as actor_name,
+    ed.eval_id,
+    ed.name,
+    ed.description,
+    COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
+    ed.active,
+    ed.dynamic,
+    ed.created_at,
+    ed.updated_at,
+    COALESCE(edd.department_ids, ARRAY[]::text[]) as department_ids,
+    COALESCE(ess.total_runs, 0) as total_runs,
+    COALESCE(ess.completed_runs, 0) as completed_runs,
+    COALESCE(ess.pending_runs, 0) as pending_runs,
+    CASE 
+        WHEN ess.total_runs IS NULL OR ess.total_runs = 0 THEN 'pending'
+        WHEN ess.pending_runs > 0 THEN 'running'
+        WHEN ess.completed_runs = ess.total_runs THEN 'completed'
+        ELSE 'pending'
+    END as status,
+    COALESCE(mra.model_runs, '{}'::types.q_get_eval_detail_v4_model_run[]) as model_runs,
+    COALESCE(da.departments, '{}'::types.q_get_eval_detail_v4_department[]) as departments,
+    COALESCE((SELECT ids FROM valid_dept_ids), ARRAY[]::text[]) as valid_department_ids,
+    COALESCE(eaa.eval_agents, '{}'::types.q_get_eval_detail_v4_agent[]) as eval_agents,
+    COALESCE(eaa.eval_agent_ids, ARRAY[]::text[]) as valid_eval_agent_ids,
+    COALESCE(aa.agents, '{}'::types.q_get_eval_detail_v4_agent[]) as agents,
+    COALESCE(aa.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    COALESCE(ra.rubrics, '{}'::types.q_get_eval_detail_v4_rubric[]) as rubrics,
+    COALESCE(ra.rubric_ids, ARRAY[]::text[]) as valid_rubric_ids,
+    CASE WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END as can_edit,
+    CASE WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END as can_delete,
+    COALESCE(amra.available_model_runs, '{}'::types.q_get_eval_detail_v4_available_model_run[]) as available_model_runs,
+    COALESCE(amra.total_count, 0) as available_model_runs_total_count,
+    COALESCE(amra.page, 1) as available_model_runs_page,
+    COALESCE(amra.page_size, 50) as available_model_runs_page_size,
+    COALESCE(amra.total_pages, 0) as available_model_runs_total_pages
+FROM eval_exists_check eec
+CROSS JOIN params
+CROSS JOIN eval_data ed
+LEFT JOIN eval_agents_data ead ON ead.eval_id = ed.eval_id
+LEFT JOIN eval_departments_data edd ON edd.eval_id = ed.eval_id
+LEFT JOIN eval_status_summary ess ON ess.eval_id = ed.eval_id
+CROSS JOIN model_runs_array mra
+CROSS JOIN user_profile up
+CROSS JOIN departments_array da
+CROSS JOIN eval_agents_array eaa
+CROSS JOIN agents_array aa
+CROSS JOIN rubrics_array ra
+LEFT JOIN available_model_runs_array amra ON (
+    (SELECT available_model_runs_search FROM params) IS NOT NULL 
+    OR (SELECT available_model_runs_agent_ids FROM params) IS NOT NULL
+    OR COALESCE(array_length((SELECT available_model_runs_agent_ids FROM params), 1), 0) > 0
+)
+WHERE 
+    -- Filter by department access (if eval has departments, user must have access)
+    (
+        edd.department_ids IS NULL 
+        OR array_length(edd.department_ids, 1) IS NULL
+        OR EXISTS (
+            SELECT 1 FROM user_departments ud
+            WHERE ud.department_id::text = ANY(edd.department_ids)
+        )
+        OR up.role IN ('admin'::profile_role, 'superadmin'::profile_role)
+    )
+$$;
+
+COMMIT;
+

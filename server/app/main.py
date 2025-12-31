@@ -464,6 +464,32 @@ from app.socket.v3.agents.scenario.tools.video.call import \
 # Import log module to register internal_sio handler
 from app.socket.v3.log import log_run  # noqa: F401
 
+# Import v4 socket handlers to register decorators
+from app.socket.v4.agents.document.tools.title.call import \
+    document_tool_title_internal  # noqa: F401
+from app.socket.v4.agents.hint.generate import \
+    simulation_hints_generate_internal  # noqa: F401
+from app.socket.v4.agents.image.complete import \
+    image_generation_complete_internal  # noqa: F401
+from app.socket.v4.agents.image.generate import generate_image  # noqa: F401
+from app.socket.v4.agents.rubric.tools.title.call import \
+    rubric_tool_title_internal  # noqa: F401
+from app.socket.v4.agents.scenario.tools.document.call import \
+    scenario_tool_document  # noqa: F401
+from app.socket.v4.agents.scenario.tools.image.call import \
+    scenario_tool_image  # noqa: F401
+from app.socket.v4.agents.scenario.tools.objective.call import \
+    scenario_tool_objectives  # noqa: F401
+from app.socket.v4.agents.scenario.tools.question.call import \
+    scenario_tool_questions  # noqa: F401
+from app.socket.v4.agents.scenario.tools.statement.call import \
+    scenario_tool_problem_statement_internal  # noqa: F401
+from app.socket.v4.agents.scenario.tools.title.call import \
+    scenario_tool_title_internal  # noqa: F401
+from app.socket.v4.agents.scenario.tools.video.call import \
+    scenario_tool_video  # noqa: F401
+from app.socket.v4.log import log_run  # noqa: F401
+
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
 
@@ -723,10 +749,20 @@ from app.api.v3.router import router as api_v3_router  # noqa: E402
 
 fastapi_app.include_router(api_v3_router)
 
+# Include API v4 router (DHH-style)
+from app.api.v4.router import router as api_v4_router  # noqa: E402
+
+fastapi_app.include_router(api_v4_router)
+
 # Include socket v3 router (DHH-style)
 from app.socket.v3 import router as socket_router  # noqa: E402
 
 fastapi_app.include_router(socket_router)
+
+# Include socket v4 router (DHH-style)
+from app.socket.v4 import router as socket_v4_router  # noqa: E402
+
+fastapi_app.include_router(socket_v4_router)
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")

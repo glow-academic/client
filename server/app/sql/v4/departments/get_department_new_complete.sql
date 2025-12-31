@@ -1,0 +1,100 @@
+-- Get default department data for new department creation
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_department_new_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_department_new_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_department_new_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_department_new_v4_setting AS (
+    settings_id uuid,
+    created_at timestamptz,
+    active boolean,
+    department_ids uuid[]
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_department_new_v4(profile_id uuid)
+RETURNS TABLE (
+    profile_role text,
+    actor_name text,
+    settings types.q_get_department_new_v4_setting[]
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT profile_id AS profile_id
+),
+user_profile AS (
+    SELECT 
+        role,
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles ON profiles.id = x.profile_id
+),
+settings_departments_data AS (
+    -- Get department_ids for each setting
+    SELECT 
+        ds.settings_id,
+        ARRAY_AGG(ds.department_id ORDER BY ds.created_at) as department_ids
+    FROM department_settings ds
+    WHERE ds.active = true
+    GROUP BY ds.settings_id
+),
+settings_data AS (
+    SELECT DISTINCT
+        s.id as settings_id,
+        s.created_at,
+        s.active,
+        COALESCE(sdd.department_ids, ARRAY[]::uuid[]) as department_ids
+    FROM settings s
+    LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
+    WHERE s.active = true
+)
+SELECT 
+    up.role::text as profile_role,
+    up.actor_name::text as actor_name,
+    COALESCE(
+        ARRAY_AGG(
+            (sd.settings_id, sd.created_at, sd.active, sd.department_ids)::types.q_get_department_new_v4_setting
+            ORDER BY sd.created_at DESC
+        ),
+        '{}'::types.q_get_department_new_v4_setting[]
+    ) as settings
+FROM user_profile up
+CROSS JOIN settings_data sd
+GROUP BY up.role, up.actor_name
+$$;
+
+COMMIT;
+
