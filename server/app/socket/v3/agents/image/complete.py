@@ -1,18 +1,22 @@
-"""WebSocket handler for image_generation_complete event."""
+"""Handler for image_complete WebSocket event - ONE EVENT PER FILE."""
 
+import uuid
 from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_internal_event
+from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_client
+from app.main import get_internal_sio, sio
 from app.socket.v3.tools.image.call import ImageToolCompletePayload, image_tool_complete
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+server_router = APIRouter()
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -30,7 +34,10 @@ class ImageGenerationCompletePayload(BaseModel):
 
 
 async def _image_generation_complete_impl(
-    sid: str, data: ImageGenerationCompletePayload
+    sid: str,
+    data: ImageGenerationCompletePayload,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
 ) -> None:
     """Handle image generation completion request via WebSocket."""
     image_id = data.image_id
@@ -40,32 +47,17 @@ async def _image_generation_complete_impl(
     room = data.room
     trace_id = data.trace_id
 
-    pool = get_pool()
-    if not pool:
-        logger.error(f"Database pool not available for image completion {image_id}")
-        return
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             # Load SQL query at top (DHH style - one SQL file per websocket event)
             sql = load_sql("app/sql/v3/images/complete_image_generation_complete.sql")
 
-            sql_query = sql
-            sql_params = (image_id, file_path, mime_type, file_size)
-
-            result = await conn.fetchrow(sql, *sql_params)
+            result = await conn.fetchrow(sql, image_id, file_path, mime_type, file_size)
 
             if not result:
-                logger.error(f"Failed to complete image generation for {image_id}")
                 return
 
             upload_id = result["upload_id"]
-            logger.info(
-                f"✓ Image generation completed: image_id={image_id}, upload_id={upload_id}"
-            )
             # Log activity (only for client-to-server events, not internal)
             if sid and sid != "internal":
                 try:
@@ -77,17 +69,11 @@ async def _image_generation_complete_impl(
                         endpoint="/socket/v3/images/complete",
                         error=False,
                     )
-                except Exception as log_error:
-                    logger.warning(
-                        f"Error logging image completion activity: {log_error}"
-                    )
+                except Exception:
+                    pass
 
             # If this was triggered from scenario tool, emit completion event to client
             if room and trace_id:
-                logger.info(
-                    f"[image_generation_complete] Emitting scenario_tool_image_complete: "
-                    f"room={room}, trace_id={trace_id}, image_id={image_id}"
-                )
                 await image_tool_complete(
                     ImageToolCompletePayload(
                         success=True,
@@ -98,41 +84,54 @@ async def _image_generation_complete_impl(
                     room=room,
                 )
 
-    except Exception as e:
-        logger.error(
-            f"Error in image generation completion for {image_id}: {e}",
-            exc_info=True,
+            # Emit to client
+            await emit_to_client(
+                "images_generation_complete",
+                {
+                    "success": True,
+                    "image_id": image_id,
+                    "upload_id": upload_id,
+                },
+                room=sid,
+            )
+    except RuntimeError:
+        # Pool not initialized - emit error event
+        await emit_to_client(
+            "images_generation_error",
+            {
+                "success": False,
+                "image_id": image_id,
+                "message": "Database connection pool not available",
+            },
+            room=sid,
         )
+    except Exception:
+        pass
 
 
-@sio.event  # type: ignore
-async def image_generation_complete(sid: str, data: dict[str, Any]) -> None:
-    """Wrapper that validates payload before calling actual handler (client-to-server)."""
-    try:
-        payload = ImageGenerationCompletePayload(**data)
-        await _image_generation_complete_impl(sid, payload)
-    except Exception as e:
-        logger.error(
-            f"Error in image_generation_complete for {sid}: {str(e)}", exc_info=True
-        )
-
-
-@internal_sio.on("image_generation_complete")
+@internal_sio.on("image_generation_complete")  # type: ignore
 async def image_generation_complete_internal(data: dict[str, Any]) -> None:
-    """Handle image generation completion event from internal bus (server-to-server)."""
-    try:
-        payload = ImageGenerationCompletePayload(**data)
-        await _image_generation_complete_impl("internal", payload)
-    except Exception as e:
-        logger.error(
-            f"Error in image_generation_complete_internal: {str(e)}", exc_info=True
-        )
+    """Handle image_generation_complete event from internal bus (server-to-server)."""
+    await handle_internal_event(
+        data=data,
+        request_type=ImageGenerationCompletePayload,
+        handler=_image_generation_complete_impl,  # type: ignore[arg-type]
+        error_event_name="images_generation_error",
+        error_response_type=ImageGenerationErrorSqlRow,
+    )
 
 
-# FastAPI endpoint for OpenAPI documentation
-@client_router.post("/complete", response_model=dict[str, bool])
-async def image_generation_complete_api(
-    request: ImageGenerationCompletePayload,
-) -> dict[str, bool]:
-    """Client-to-server event: Complete image generation."""
-    return {"success": True}
+class ImageGenerationErrorSqlRow(BaseModel):
+    """Response indicating an error occurred in image generation."""
+
+    success: bool
+    image_id: str
+    message: str
+
+
+register_server_endpoint(
+    server_router,
+    "/generation_complete",
+    ImageGenerationCompletePayload,
+    "Image generation completed successfully",
+)

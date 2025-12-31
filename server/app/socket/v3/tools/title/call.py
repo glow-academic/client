@@ -5,13 +5,13 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.typed_emit import emit_to_client
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -62,56 +62,36 @@ class TitleToolErrorPayload(BaseModel):
 async def scenario_title_tool_complete(
     payload: TitleToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[scenario_tool_title_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, title={payload.title}"
+    await emit_to_client(
+        "scenarios_tools_title_complete", payload, room=room
     )
-    await sio.emit(
-        "scenarios_tools_title_complete", payload.model_dump(), room=room
-    )
-    logger.info(f"[scenario_tool_title_complete] Emitted to room={room}")
 
 
 async def document_title_tool_complete(
     payload: TitleToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[document_tool_title_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, title={payload.title}"
+    await emit_to_client(
+        "documents_tools_title_complete", payload, room=room
     )
-    await sio.emit(
-        "documents_tools_title_complete", payload.model_dump(), room=room
-    )
-    logger.info(f"[document_tool_title_complete] Emitted to room={room}")
 
 
 async def rubric_title_tool_complete(
     payload: TitleToolCompletePayload, room: str
 ) -> None:
-    logger.info(
-        f"[rubric_tool_title_complete] Emitting complete event: "
-        f"room={room}, trace_id={payload.trace_id}, title={payload.title}"
+    await emit_to_client(
+        "rubrics_tools_title_complete", payload, room=room
     )
-    await sio.emit(
-        "rubrics_tools_title_complete", payload.model_dump(), room=room
-    )
-    logger.info(f"[rubric_tool_title_complete] Emitted to room={room}")
 
 
 async def title_tool_error(payload: TitleToolErrorPayload, room: str) -> None:
-    await sio.emit("scenarios_tools_title_error", payload.model_dump(), room=room)
+    await emit_to_client("scenarios_tools_title_error", payload, room=room)
 
 
 async def _scenario_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for scenario title creation/update."""
-    logger.info(
-        f"[scenario_tool_title] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = ScenarioTitleToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_tool_title for {sid}: {e}")
         await title_tool_error(
             TitleToolErrorPayload(
                 success=False,
@@ -123,21 +103,9 @@ async def _scenario_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await title_tool_error(
-            TitleToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             scenario_id_uuid = (
                 uuid.UUID(validated.scenario_id) if validated.scenario_id else None
             )
@@ -172,11 +140,6 @@ async def _scenario_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            logger.info(
-                f"✓ Updated scenario title: {validated.title} "
-                f"(scenario_id={scenario_id_uuid}, trace_id={trace_id})"
-            )
-
             await scenario_title_tool_complete(
                 TitleToolCompletePayload(
                     success=True,
@@ -187,10 +150,16 @@ async def _scenario_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
                 room=sid,
             )
 
-    except Exception as e:
-        logger.error(
-            f"Error in scenario_tool_title for {sid}: {str(e)}", exc_info=True
+    except RuntimeError:
+        await title_tool_error(
+            TitleToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
+            ),
+            room=sid,
         )
+    except Exception as e:
         await title_tool_error(
             TitleToolErrorPayload(
                 success=False,
@@ -203,14 +172,9 @@ async def _scenario_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
 
 async def _document_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for document title creation/update."""
-    logger.info(
-        f"[document_tool_title] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = DocumentTitleToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in document_tool_title for {sid}: {e}")
         await title_tool_error(
             TitleToolErrorPayload(
                 success=False,
@@ -222,21 +186,9 @@ async def _document_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await title_tool_error(
-            TitleToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             document_id_uuid = (
                 uuid.UUID(validated.document_id) if validated.document_id else None
             )
@@ -271,11 +223,6 @@ async def _document_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            logger.info(
-                f"✓ Updated document title: {validated.title} "
-                f"(document_id={document_id_uuid}, trace_id={trace_id})"
-            )
-
             await document_title_tool_complete(
                 TitleToolCompletePayload(
                     success=True,
@@ -286,10 +233,16 @@ async def _document_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
                 room=sid,
             )
 
-    except Exception as e:
-        logger.error(
-            f"Error in document_tool_title for {sid}: {str(e)}", exc_info=True
+    except RuntimeError:
+        await title_tool_error(
+            TitleToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
+            ),
+            room=sid,
         )
+    except Exception as e:
         await title_tool_error(
             TitleToolErrorPayload(
                 success=False,
@@ -302,14 +255,9 @@ async def _document_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
 
 async def _rubric_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
     """Internal implementation for rubric title creation/update."""
-    logger.info(
-        f"[rubric_tool_title] Handler received event: sid={sid}, "
-        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
-    )
     try:
         validated = RubricTitleToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in rubric_tool_title for {sid}: {e}")
         await title_tool_error(
             TitleToolErrorPayload(
                 success=False,
@@ -321,21 +269,9 @@ async def _rubric_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    pool = get_pool()
-
-    if not pool:
-        await title_tool_error(
-            TitleToolErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-                trace_id=trace_id,
-            ),
-            room=sid,
-        )
-        return
 
     try:
-        async with pool.acquire() as conn:
+        async with get_db_connection() as conn:
             rubric_id_uuid = (
                 uuid.UUID(validated.rubric_id) if validated.rubric_id else None
             )
@@ -370,11 +306,6 @@ async def _rubric_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            logger.info(
-                f"✓ Updated rubric title: {validated.title} "
-                f"(rubric_id={rubric_id_uuid}, trace_id={trace_id})"
-            )
-
             await rubric_title_tool_complete(
                 TitleToolCompletePayload(
                     success=True,
@@ -385,10 +316,16 @@ async def _rubric_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
                 room=sid,
             )
 
-    except Exception as e:
-        logger.error(
-            f"Error in rubric_tool_title for {sid}: {str(e)}", exc_info=True
+    except RuntimeError:
+        await title_tool_error(
+            TitleToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
+            ),
+            room=sid,
         )
+    except Exception as e:
         await title_tool_error(
             TitleToolErrorPayload(
                 success=False,
