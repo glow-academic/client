@@ -122,6 +122,7 @@ export default function BenchmarkZone({
                 completedRuns={evalItem.completed_runs}
                 pendingRuns={evalItem.pending_runs}
                 rubricName={evalItem.rubric_name}
+                useGroups={evalItem.use_groups || false}
                 onStartEval={onStartEval}
                 {...(onStartInfiniteMode && { onStartInfiniteMode })}
                 loadingEval={loadingEval}

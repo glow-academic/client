@@ -34,7 +34,7 @@ import {
   Play,
   Table,
   User,
-  MessageSquare,
+  Infinity,
 } from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
@@ -48,6 +48,7 @@ export interface EvalCardProps {
   completedRuns: number;
   pendingRuns: number;
   rubricName: string;
+  useGroups?: boolean; // Show infinity icon if true
   onStartEval: (evalId: string) => void;
   onStartInfiniteMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
@@ -73,6 +74,7 @@ export default function EvalCard({
   completedRuns: _completedRuns,
   pendingRuns: _pendingRuns,
   rubricName: _rubricName,
+  useGroups = false,
   onStartEval,
   onStartInfiniteMode,
   loadingEval,
@@ -251,7 +253,7 @@ export default function EvalCard({
                   </>
                 )}
               </Button>
-              {onStartInfiniteMode && (
+              {onStartInfiniteMode && useGroups && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -262,7 +264,7 @@ export default function EvalCard({
                       className="flex-shrink-0 hover:scale-105 transition-all duration-300"
                       data-testid={`start-infinite-${evalId}`}
                     >
-                      <MessageSquare className="h-4 w-4 text-white" />
+                      <Infinity className="h-4 w-4 text-white" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>

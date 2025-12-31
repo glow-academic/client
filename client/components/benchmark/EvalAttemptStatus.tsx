@@ -80,12 +80,12 @@ export default function EvalAttemptStatus({
     [agentsList.agents]
   );
 
-  // Join eval room on mount for real-time updates
+    // Join benchmark room on mount for real-time updates
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    // Join eval room
-    socket.emit("eval_join", { attempt_id: attemptId });
+    // Join benchmark room
+    socket.emit("benchmark_join", { attempt_id: attemptId });
 
     // Listen for status updates
     const handleStatusUpdate = (data: {
@@ -243,28 +243,28 @@ export default function EvalAttemptStatus({
       toast.error(data.message);
     };
 
-    socket.on("evals_status_update", handleStatusUpdate);
-    socket.on("evals_run_completed", handleRunCompleted);
-    socket.on("evals_completed", handleCompleted);
-    socket.on("evals_run_started", handleRunStarted);
-    socket.on("evals_run_start_error", handleRunStartError);
-    socket.on("evals_run_stopped", handleRunStopped);
-    socket.on("evals_run_stop_error", handleRunStopError);
-    socket.on("evals_runs_start_all_started", handleRunsStartAllStarted);
-    socket.on("evals_runs_start_all_error", handleRunsStartAllError);
+    socket.on("benchmarks_status_update", handleStatusUpdate);
+    socket.on("benchmarks_run_completed", handleRunCompleted);
+    socket.on("benchmarks_completed", handleCompleted);
+    socket.on("benchmarks_run_started", handleRunStarted);
+    socket.on("benchmarks_run_start_error", handleRunStartError);
+    socket.on("benchmarks_run_stopped", handleRunStopped);
+    socket.on("benchmarks_run_stop_error", handleRunStopError);
+    socket.on("benchmarks_runs_start_all_started", handleRunsStartAllStarted);
+    socket.on("benchmarks_runs_start_all_error", handleRunsStartAllError);
 
     return () => {
-      // Leave eval room on unmount
-      socket.emit("eval_leave", { attempt_id: attemptId });
-      socket.off("evals_status_update", handleStatusUpdate);
-      socket.off("evals_run_completed", handleRunCompleted);
-      socket.off("evals_completed", handleCompleted);
-      socket.off("evals_run_started", handleRunStarted);
-      socket.off("evals_run_start_error", handleRunStartError);
-      socket.off("evals_run_stopped", handleRunStopped);
-      socket.off("evals_run_stop_error", handleRunStopError);
-      socket.off("evals_runs_start_all_started", handleRunsStartAllStarted);
-      socket.off("evals_runs_start_all_error", handleRunsStartAllError);
+      // Leave benchmark room on unmount
+      socket.emit("benchmark_leave", { attempt_id: attemptId });
+      socket.off("benchmarks_status_update", handleStatusUpdate);
+      socket.off("benchmarks_run_completed", handleRunCompleted);
+      socket.off("benchmarks_completed", handleCompleted);
+      socket.off("benchmarks_run_started", handleRunStarted);
+      socket.off("benchmarks_run_start_error", handleRunStartError);
+      socket.off("benchmarks_run_stopped", handleRunStopped);
+      socket.off("benchmarks_run_stop_error", handleRunStopError);
+      socket.off("benchmarks_runs_start_all_started", handleRunsStartAllStarted);
+      socket.off("benchmarks_runs_start_all_error", handleRunsStartAllError);
     };
   }, [socket, isConnected, attemptId]);
 
@@ -280,7 +280,10 @@ export default function EvalAttemptStatus({
       const profileIdForEmit =
         effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id);
 
-      socket.emit("eval_run_start", {
+      // TODO: These individual run start/stop events may need to be removed
+      // The new benchmark architecture orchestrates runs via benchmark_start/next/end
+      // For now, keeping for backward compatibility but updating event names
+      socket.emit("benchmark_run_start", {
         attempt_id: attemptId,
         run_id: runId,
         profile_id: profileIdForEmit || null,
@@ -298,7 +301,7 @@ export default function EvalAttemptStatus({
 
       setStoppingRunIds((prev) => new Set(prev).add(runId));
 
-      socket.emit("eval_run_stop", {
+      socket.emit("benchmark_run_stop", {
         attempt_id: attemptId,
         run_id: runId,
       });
@@ -315,7 +318,7 @@ export default function EvalAttemptStatus({
     const profileIdForEmit =
       effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id);
 
-    socket.emit("eval_runs_start_all", {
+    socket.emit("benchmark_runs_start_all", {
       attempt_id: attemptId,
       profile_id: profileIdForEmit || null,
     });

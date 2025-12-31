@@ -117,7 +117,7 @@ export default function Benchmark({
   useEffect(() => {
     if (!socket) return;
 
-    const handleEvalsStarted = (data: {
+    const handleBenchmarksStarted = (data: {
       success: boolean;
       message: string;
       attempt_id: string;
@@ -138,7 +138,7 @@ export default function Benchmark({
       }
     };
 
-    const handleEvalsStartError = (data: {
+    const handleBenchmarksStartError = (data: {
       success: boolean;
       message: string;
     }) => {
@@ -149,12 +149,12 @@ export default function Benchmark({
       window.dispatchEvent(new CustomEvent("evalError"));
     };
 
-    socket.on("evals_started", handleEvalsStarted);
-    socket.on("evals_start_error", handleEvalsStartError);
+    socket.on("benchmarks_started", handleBenchmarksStarted);
+    socket.on("benchmarks_start_error", handleBenchmarksStartError);
 
     return () => {
-      socket.off("evals_started", handleEvalsStarted);
-      socket.off("evals_start_error", handleEvalsStartError);
+      socket.off("benchmarks_started", handleBenchmarksStarted);
+      socket.off("benchmarks_start_error", handleBenchmarksStartError);
     };
   }, [socket, setStartingEvalId]);
 
@@ -196,7 +196,7 @@ export default function Benchmark({
         const profileIdForEmit =
           effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
-        socket.emit("eval_start", {
+        socket.emit("benchmark_start", {
           eval_id: evalId,
           profile_id: profileIdForEmit || null,
           infinite_mode: infiniteMode,
