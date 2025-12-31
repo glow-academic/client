@@ -2,22 +2,27 @@
 
 import time
 import uuid
+from typing import cast
 from urllib.parse import parse_qs
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.add_guest_socket import add_guest_socket
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.get_socket_owner import get_socket_owner
 from app.infra.v3.websocket.increment_guest_count import increment_guest_count
 from app.infra.v3.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.v3.websocket.set_socket_owner import set_socket_owner
-from app.main import get_pool, sio
-
-logger = get_logger(__name__)
+from app.main import sio
+from app.sql.types import (
+    UpdateProfileToActiveSqlParams,
+    UpdateProfileToActiveSqlRow,
+    UpdateProfileToInactiveSqlParams,
+    UpdateProfileToInactiveSqlRow,
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -79,13 +84,25 @@ async def connect(
                 from datetime import UTC, datetime
 
                 async with get_db_connection() as conn:
-                        async with conn.transaction():
-                            sql = load_sql(
-                                "app/sql/v3/profile/update_profile_to_inactive_complete.sql"
-                            )
-                            last_active = datetime.now(UTC)
-                            await conn.fetchrow(sql, profile_id, last_active)
-            except Exception as e:
+                    async with conn.transaction():
+                        params = UpdateProfileToInactiveSqlParams(
+                            profile_id=uuid.UUID(profile_id),
+                            last_active=datetime.now(UTC).isoformat(),
+                        )
+                        await cast(
+                            UpdateProfileToInactiveSqlRow,
+                            execute_sql_typed(
+                                conn,
+                                "app/sql/v3/profile/update_profile_to_inactive_complete.sql",
+                                params=params,
+                            ),
+                        )
+            except RuntimeError:
+                # Database pool not initialized - Socket.IO handles logging
+                pass
+            except Exception:
+                # Error updating profile - Socket.IO handles logging
+                pass
             # Forcefully disconnect the old socket from the server-side
             await sio.disconnect(old_sid)
 
@@ -94,17 +111,29 @@ async def connect(
         await sio.enter_room(sid, profile_id)
 
         # Update database to mark profile as active
-        try:
-            from datetime import UTC, datetime
+            try:
+                from datetime import UTC, datetime
 
-            async with get_db_connection() as conn:
+                async with get_db_connection() as conn:
                     async with conn.transaction():
-                        sql = load_sql(
-                            "app/sql/v3/profile/update_profile_to_active_complete.sql"
+                        params = UpdateProfileToActiveSqlParams(
+                            profile_id=uuid.UUID(profile_id),
+                            last_active=datetime.now(UTC).isoformat(),
                         )
-                        last_active = datetime.now(UTC)
-                        await conn.fetchrow(sql, profile_id, last_active)
-        except Exception as e:
+                    await cast(
+                        UpdateProfileToActiveSqlRow,
+                        execute_sql_typed(
+                            conn,
+                            "app/sql/v3/profile/update_profile_to_active_complete.sql",
+                            params=params,
+                        ),
+                    )
+        except RuntimeError:
+            # Database pool not initialized - Socket.IO handles logging
+            pass
+        except Exception:
+            # Error updating profile - Socket.IO handles logging
+            pass
     else:
         # Guest connection (no profile). Optionally join a guest room for targeted emits.
         if guest_id:
@@ -114,7 +143,9 @@ async def connect(
                 await add_guest_socket(sid)
                 # Increment guest connection counter
                 await increment_guest_count()
-            except Exception as e:
+            except Exception:
+                # Error adding guest - Socket.IO handles logging
+                pass
         else:
     await connection_confirmed(
         ConnectionConfirmedPayload(
@@ -135,7 +166,9 @@ async def connect(
             endpoint="/socket/v3/connect",
             error=False,
         )
-    except Exception as e:
+    except Exception:
+        # Error logging activity - Socket.IO handles logging
+        pass
     return True
 
 

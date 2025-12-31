@@ -8924,6 +8924,64 @@ class UpdateProfileApiResponse(BaseModel):
 
 
 
+# Generated from: update_profile_to_active
+
+class UpdateProfileToActiveSqlParams(BaseModel):
+
+    profile_id: UUID
+    last_active: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.last_active,
+        )
+
+class UpdateProfileToActiveSqlRow(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+
+class UpdateProfileToActiveApiRequest(BaseModel):
+
+    last_active: str
+
+class UpdateProfileToActiveApiResponse(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+
+
+
+# Generated from: update_profile_to_inactive
+
+class UpdateProfileToInactiveSqlParams(BaseModel):
+
+    profile_id: UUID
+    last_active: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.last_active,
+        )
+
+class UpdateProfileToInactiveSqlRow(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+
+class UpdateProfileToInactiveApiRequest(BaseModel):
+
+    last_active: str
+
+class UpdateProfileToInactiveApiResponse(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+
+
+
 # Generated from: delete_prompt
 
 class DeletePromptSqlParams(BaseModel):
@@ -11034,6 +11092,38 @@ class UpdateRubricApiResponse(BaseModel):
 
 
 
+# Generated from: update_rubric_name
+
+class UpdateRubricNameSqlParams(BaseModel):
+
+    profile_id: UUID
+    rubric_id: UUID
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.rubric_id,
+            self.name,
+        )
+
+class UpdateRubricNameSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+
+class UpdateRubricNameApiRequest(BaseModel):
+
+    rubric_id: UUID
+    name: str
+
+class UpdateRubricNameApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+
+
+
 # Generated from: standard_group_descriptions_complete
 
 class QStandardGroupDescriptionsCompleteV3Description(BaseModel):
@@ -12172,6 +12262,161 @@ class GetScenarioNewApiResponse(BaseModel):
     objectives_history: list[QGetScenarioNewV3ObjectiveWithDepartments] | None = None
     document_details: list[QGetScenarioNewV3DocumentDetail] | None = None
     parameters_detail: list[QGetScenarioNewV3ParameterDetail] | None = None
+
+
+
+# Generated from: get_scenario_run_context_and_create_run
+
+class GetScenarioRunContextAndCreateRunSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+    agent_id: UUID
+    group_id: UUID | None = None
+    persona_id: UUID | None = None
+    document_ids: list[UUID] | None = None
+    parameter_item_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+            self.agent_id,
+            self.group_id,
+            self.persona_id,
+            self.document_ids,
+            self.parameter_item_ids,
+        )
+
+class IGetScenarioRunContextAndCreateRunV3Document(BaseModel):
+
+    id: str | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+    template: bool | None
+    template_args: dict[str, Any] | None
+
+
+
+
+class IGetScenarioRunContextAndCreateRunV3DocumentTemplate(BaseModel):
+
+    document_id: str | None
+    document_name: str | None
+    document_description: str | None
+    classify_agent_id: str | None
+    document_agent_id: str | None
+    template_args: dict[str, Any] | None
+    template_upload_id: str | None
+    template_file_path: str | None
+
+
+
+
+class IGetScenarioRunContextAndCreateRunV3ParameterItem(BaseModel):
+
+    item_name: str | None
+    item_description: str | None
+    param_name: str | None
+    param_description: str | None
+
+class GetScenarioRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    persona_description: str | None = None
+    documents: list[IGetScenarioRunContextAndCreateRunV3Document] | None = None
+    document_templates: list[IGetScenarioRunContextAndCreateRunV3DocumentTemplate] | None = None
+    parameter_items: list[IGetScenarioRunContextAndCreateRunV3ParameterItem] | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+
+class GetScenarioRunContextAndCreateRunApiRequest(BaseModel):
+
+    department_id: UUID
+    agent_id: UUID
+    group_id: UUID | None = None
+    persona_id: UUID | None = None
+    document_ids: list[UUID] | None = None
+    parameter_item_ids: list[UUID] | None = None
+
+class GetScenarioRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    persona_description: str | None = None
+    documents: list[IGetScenarioRunContextAndCreateRunV3Document] | None = None
+    document_templates: list[IGetScenarioRunContextAndCreateRunV3DocumentTemplate] | None = None
+    parameter_items: list[IGetScenarioRunContextAndCreateRunV3ParameterItem] | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
 
 
 
@@ -15176,6 +15421,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateProfileApiRequest",
         "UpdateProfileApiResponse",
     ),
+    "app/sql/v3/profile/update_profile_to_active_complete.sql": (
+        "UpdateProfileToActiveSqlParams",
+        "UpdateProfileToActiveSqlRow",
+        "UpdateProfileToActiveApiRequest",
+        "UpdateProfileToActiveApiResponse",
+    ),
+    "app/sql/v3/profile/update_profile_to_inactive_complete.sql": (
+        "UpdateProfileToInactiveSqlParams",
+        "UpdateProfileToInactiveSqlRow",
+        "UpdateProfileToInactiveApiRequest",
+        "UpdateProfileToInactiveApiResponse",
+    ),
     "app/sql/v3/prompts/delete_prompt_complete.sql": (
         "DeletePromptSqlParams",
         "DeletePromptSqlRow",
@@ -15314,6 +15571,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateRubricApiRequest",
         "UpdateRubricApiResponse",
     ),
+    "app/sql/v3/rubric/update_rubric_name_complete.sql": (
+        "UpdateRubricNameSqlParams",
+        "UpdateRubricNameSqlRow",
+        "UpdateRubricNameApiRequest",
+        "UpdateRubricNameApiResponse",
+    ),
     "app/sql/v3/rubrics/standard_group_descriptions_complete_complete.sql": (
         "StandardGroupDescriptionsCompleteSqlParams",
         "StandardGroupDescriptionsCompleteSqlRow",
@@ -15367,6 +15630,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioNewSqlRow",
         "GetScenarioNewApiRequest",
         "GetScenarioNewApiResponse",
+    ),
+    "app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql": (
+        "GetScenarioRunContextAndCreateRunSqlParams",
+        "GetScenarioRunContextAndCreateRunSqlRow",
+        "GetScenarioRunContextAndCreateRunApiRequest",
+        "GetScenarioRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v3/scenario/get_scenarios_list_complete.sql": (
         "GetScenariosListSqlParams",
@@ -16148,6 +16417,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/update_profile_to_active_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/update_profile_to_inactive_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/prompts/delete_prompt_complete.sql"]
     ) -> SqlString: ...
 
@@ -16263,6 +16542,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/rubric/update_rubric_name_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/rubrics/standard_group_descriptions_complete_complete.sql"]
     ) -> SqlString: ...
 
@@ -16304,6 +16588,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/scenario/get_scenario_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

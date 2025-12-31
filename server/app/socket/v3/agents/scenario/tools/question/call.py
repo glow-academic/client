@@ -6,12 +6,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -92,7 +91,6 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    # Replaced with get_db_connection()
 
     if validated.question_timestamps and not validated.video_id:
         await scenario_questions_tool_error(
@@ -104,9 +102,6 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
         return
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         async with get_db_connection() as conn:
@@ -121,11 +116,9 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
                 questions_json = json.dumps(questions_dicts)
 
                 # Create questions and link to scenario
+                # TODO: Convert SQL to use composite types instead of JSONB to remove json.dumps()
                 sql = load_sql("app/sql/v3/questions/create_questions_with_options.sql")
-                sql_query = sql
-                sql_params = (questions_json,)
-
-                question_rows = await conn.fetch(sql, *sql_params)
+                question_rows = await conn.fetch(sql, questions_json)
 
                 if not question_rows or len(question_rows) == 0:
                     await scenario_questions_tool_error(
@@ -155,6 +148,7 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
                 # Save question timestamps if provided (requires video_id)
                 if validated.question_timestamps and video_id_uuid:
                     # Link timestamps to scenario_question_times
+                    # TODO: Convert SQL to use composite types instead of JSONB to remove json.dumps()
                     save_timestamps_sql = load_sql(
                         "app/sql/v3/scenario/save_question_timestamps.sql"
                     )
@@ -176,6 +170,15 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
                 room=sid,
             )
 
+    except RuntimeError:
+        await scenario_questions_tool_error(
+            ScenarioQuestionsToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
+            ),
+            room=sid,
+        )
     except Exception as e:
         await scenario_questions_tool_error(
             ScenarioQuestionsToolErrorPayload(

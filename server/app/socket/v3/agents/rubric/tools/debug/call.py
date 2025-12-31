@@ -1,19 +1,28 @@
 """Handler for debug_info WebSocket event."""
 
-from typing import Any
+import uuid
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
+from app.infra.v3.websocket.typed_emit import emit_to_client, emit_to_internal
+from app.main import get_internal_sio
+from app.sql.types import (
+    DebugInfoSqlParams,
+    DebugInfoSqlRow,
+)
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH = "app/sql/v3/tools/debug/call_complete.sql"
 
 
 class DebugInfoToolPayload(BaseModel):
@@ -41,9 +50,11 @@ class DebugInfoToolErrorPayload(BaseModel):
 async def debug_info_tool_complete(
     payload: DebugInfoToolCompletePayload, room: str
 ) -> None:
-    await sio.emit("debug_info_complete", payload.model_dump(), room=room)
+    await emit_to_client("debug_info_complete", payload, room=room)
+
+
 async def debug_info_tool_error(payload: DebugInfoToolErrorPayload, room: str) -> None:
-    await sio.emit("debug_info_error", payload.model_dump(), room=room)
+    await emit_to_client("debug_info_error", payload, room=room)
 
 
 async def _debug_info_impl(sid: str, data: dict[str, Any]) -> str | None:
@@ -60,29 +71,52 @@ async def _debug_info_impl(sid: str, data: dict[str, Any]) -> str | None:
         )
         return None
 
-    # Replaced with get_db_connection() None
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
+    # Get profile_id from sid lookup
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        await debug_info_tool_error(
+            DebugInfoToolErrorPayload(
+                success=False,
+                message="Profile not found for socket",
+            ),
+            room=sid,
+        )
+        return None
+    profile_id = uuid.UUID(profile_id_str)
 
     try:
         async with get_db_connection() as conn:
-            # Load SQL for debug_info tool call
-            sql_debug_info = load_sql("app/sql/v3/tools/debug/call_complete.sql")
+            # Execute debug_info tool call using execute_sql_typed()
+            params = DebugInfoSqlParams(
+                profile_id=profile_id,  # From sid lookup
+                info=validated.info,
+            )
+            result = cast(
+                DebugInfoSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
 
-            # Execute debug_info tool call (no-op for now, just logs)
-            # Emit complete event
-            await internal_sio.emit(
+            # Emit complete event via internal bus
+            await emit_to_internal(
                 "debug_info_complete",
-                {
-                    "sid": sid,
-                    "success": True,
-                    "message": "Debug information logged successfully",
-                },
+                DebugInfoToolCompletePayload(
+                    success=result.success,
+                    message=result.message,
+                ),
+                sid=sid,
             )
 
             return "success"
 
+    except RuntimeError:
+        await debug_info_tool_error(
+            DebugInfoToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+            ),
+            room=sid,
+        )
+        return None
     except Exception as e:
         await debug_info_tool_error(
             DebugInfoToolErrorPayload(
@@ -106,8 +140,6 @@ async def debug_info_internal(data: dict[str, Any]) -> None:
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _debug_info_impl(sid, payload)
 
-
-from app.infra.v3.websocket.openapi_helpers import register_server_endpoint
 
 register_server_endpoint(
     server_router,

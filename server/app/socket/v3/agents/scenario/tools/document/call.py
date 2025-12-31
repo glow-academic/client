@@ -5,12 +5,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -74,10 +73,6 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    # Replaced with get_db_connection()
-
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         async with get_db_connection() as conn:
@@ -93,8 +88,8 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
                 "app/sql/v3/documents/complete_document_creation_complete.sql"
             )
 
-            sql_query = sql
-            sql_params = (
+            result = await conn.fetchrow(
+                sql,
                 str(parent_scenario_id),
                 validated.file_path,
                 validated.mime_type,
@@ -105,8 +100,6 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
                 str(document_agent_id),
                 str(scenario_id) if scenario_id else None,
             )
-
-            result = await conn.fetchrow(sql, *sql_params)
 
             if not result:
                 raise ValueError("Failed to create document and links")
@@ -126,6 +119,15 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
                 room=sid,
             )
 
+    except RuntimeError:
+        await document_tool_error(
+            DocumentToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
+            ),
+            room=sid,
+        )
     except Exception as e:
         await document_tool_error(
             DocumentToolErrorPayload(success=False, message=str(e), trace_id=trace_id),

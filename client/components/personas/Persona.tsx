@@ -27,12 +27,13 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { ReorderableList } from "@/components/common/forms/ReorderableList";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { StepCard } from "@/components/common/forms/StepCard";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
-import { PersonaColorSection } from "@/components/personas/PersonaColorSection";
-import { PersonaContentSection } from "@/components/personas/PersonaContentSection";
-import { PersonaIconSection } from "@/components/personas/PersonaIconSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +43,7 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
+import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check, Loader2, Power } from "lucide-react";
 import { useQueryStates, type Parser } from "nuqs";
 
@@ -81,6 +83,8 @@ export default function Persona({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentExamples, setCurrentExamples] = useState<string[]>([]);
+  const [colorSearchTerm, setColorSearchTerm] = useState("");
+  const [iconSearchTerm, setIconSearchTerm] = useState("");
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -88,6 +92,205 @@ export default function Persona({
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
+
+  // Color name mapping utility
+  const getColorName = useCallback((hex: string): string => {
+    const colorMap: Record<string, string> = {
+      // Standard colors
+      "#000000": "Black",
+      "#FFFFFF": "White",
+      "#FF0000": "Red",
+      "#00FF00": "Green",
+      "#0000FF": "Blue",
+      "#FFFF00": "Yellow",
+      "#FF00FF": "Magenta",
+      "#00FFFF": "Cyan",
+      "#FFA500": "Orange",
+      "#800080": "Purple",
+      "#FFC0CB": "Pink",
+      "#A52A2A": "Brown",
+      "#808080": "Gray",
+      "#FFD700": "Gold",
+      "#C0C0C0": "Silver",
+      "#008000": "Dark Green",
+      "#000080": "Navy",
+      "#800000": "Maroon",
+      "#FF6347": "Tomato",
+      "#40E0D0": "Turquoise",
+      "#EE82EE": "Violet",
+      "#F0E68C": "Khaki",
+      "#90EE90": "Light Green",
+      "#87CEEB": "Sky Blue",
+      "#DDA0DD": "Plum",
+      "#F5DEB3": "Wheat",
+      "#FF7F50": "Coral",
+      "#6495ED": "Cornflower Blue",
+      "#DC143C": "Crimson",
+      "#00CED1": "Dark Turquoise",
+      "#FF1493": "Deep Pink",
+      "#1E90FF": "Dodger Blue",
+      "#B22222": "Fire Brick",
+      "#228B22": "Forest Green",
+      "#DAA520": "Goldenrod",
+      "#ADFF2F": "Green Yellow",
+      "#FF69B4": "Hot Pink",
+      "#CD5C5C": "Indian Red",
+      "#4B0082": "Indigo",
+      "#FFFFF0": "Ivory",
+      "#E6E6FA": "Lavender",
+      "#FFF0F5": "Lavender Blush",
+      "#7CFC00": "Lawn Green",
+      "#FFFACD": "Lemon Chiffon",
+      "#ADD8E6": "Light Blue",
+      "#F08080": "Light Coral",
+      "#E0FFFF": "Light Cyan",
+      "#FAFAD2": "Light Goldenrod Yellow",
+      "#D3D3D3": "Light Gray",
+      "#FFB6C1": "Light Pink",
+      "#FFA07A": "Light Salmon",
+      "#20B2AA": "Light Sea Green",
+      "#87CEFA": "Light Sky Blue",
+      "#778899": "Light Slate Gray",
+      "#B0C4DE": "Light Steel Blue",
+      "#FFFFE0": "Light Yellow",
+      "#32CD32": "Lime Green",
+      "#FAF0E6": "Linen",
+      "#66CDAA": "Medium Aquamarine",
+      "#0000CD": "Medium Blue",
+      "#BA55D3": "Medium Orchid",
+      "#9370DB": "Medium Purple",
+      "#3CB371": "Medium Sea Green",
+      "#7B68EE": "Medium Slate Blue",
+      "#00FA9A": "Medium Spring Green",
+      "#48D1CC": "Medium Turquoise",
+      "#C71585": "Medium Violet Red",
+      "#191970": "Midnight Blue",
+      "#F5FFFA": "Mint Cream",
+      "#FFE4E1": "Misty Rose",
+      "#FFE4B5": "Moccasin",
+      "#FFDEAD": "Navajo White",
+      "#FDF5E6": "Old Lace",
+      "#808000": "Olive",
+      "#6B8E23": "Olive Drab",
+      "#FF4500": "Orange Red",
+      "#DA70D6": "Orchid",
+      "#EEE8AA": "Pale Goldenrod",
+      "#98FB98": "Pale Green",
+      "#AFEEEE": "Pale Turquoise",
+      "#DB7093": "Pale Violet Red",
+      "#FFEFD5": "Papaya Whip",
+      "#FFDAB9": "Peach Puff",
+      "#CD853F": "Peru",
+      "#B0E0E6": "Powder Blue",
+      "#BC8F8F": "Rosy Brown",
+      "#4169E1": "Royal Blue",
+      "#8B4513": "Saddle Brown",
+      "#FA8072": "Salmon",
+      "#F4A460": "Sandy Brown",
+      "#2E8B57": "Sea Green",
+      "#FFF5EE": "Sea Shell",
+      "#A0522D": "Sienna",
+      "#6A5ACD": "Slate Blue",
+      "#708090": "Slate Gray",
+      "#FFFAFA": "Snow",
+      "#00FF7F": "Spring Green",
+      "#4682B4": "Steel Blue",
+      "#D2B48C": "Tan",
+      "#008080": "Teal",
+      "#D8BFD8": "Thistle",
+      "#F5F5F5": "White Smoke",
+      "#9ACD32": "Yellow Green",
+      // Tailwind preset colors (from server)
+      "#EF4444": "Red",
+      "#F97316": "Orange",
+      "#F59E0B": "Amber",
+      "#EAB308": "Yellow",
+      "#84CC16": "Lime",
+      "#22C55E": "Green",
+      "#10B981": "Emerald",
+      "#14B8A6": "Teal",
+      "#06B6D4": "Cyan",
+      "#0EA5E9": "Sky",
+      "#3B82F6": "Blue",
+      "#6366F1": "Indigo",
+      "#8B5CF6": "Violet",
+      "#A855F7": "Purple",
+      "#D946EF": "Fuchsia",
+      "#EC4899": "Pink",
+      "#F43F5E": "Rose",
+    };
+
+    // Normalize hex color (uppercase, ensure # prefix)
+    const normalizedHex = hex.toUpperCase().startsWith("#")
+      ? hex.toUpperCase()
+      : `#${hex.toUpperCase()}`;
+
+    return colorMap[normalizedHex] || normalizedHex;
+  }, []);
+
+  // Get preset colors and valid icons
+  const presetColors = useMemo(
+    () =>
+      (
+        personaData as PersonaDetailOut & {
+          preset_colors?: string[];
+        }
+      )?.preset_colors || [],
+    [personaData]
+  );
+
+  const suggestedIcons = useMemo(
+    () =>
+      (
+        personaData as PersonaDetailOut & {
+          suggested_icons?: string[];
+        }
+      )?.suggested_icons || [],
+    [personaData]
+  );
+
+  const validIcons = useMemo(
+    () =>
+      (
+        personaData as PersonaDetailOut & {
+          valid_icons?: string[];
+        }
+      )?.valid_icons || [],
+    [personaData]
+  );
+
+  // Combine suggested icons first, then valid icons
+  const allIcons = useMemo(() => {
+    const suggestedSet = new Set(suggestedIcons);
+    const otherIcons = validIcons.filter(
+      (iconName) => !suggestedSet.has(iconName)
+    );
+    return [...suggestedIcons, ...otherIcons];
+  }, [suggestedIcons, validIcons]);
+
+  // Filter colors based on search term
+  const filteredColors = useMemo(() => {
+    if (!colorSearchTerm.trim()) {
+      return presetColors;
+    }
+    const searchLower = colorSearchTerm.toLowerCase();
+    return presetColors.filter((colorValue) => {
+      const colorName = getColorName(colorValue).toLowerCase();
+      const colorHex = colorValue.toLowerCase();
+      return colorName.includes(searchLower) || colorHex.includes(searchLower);
+    });
+  }, [presetColors, colorSearchTerm, getColorName]);
+
+  // Filter icons based on search term
+  const filteredIcons = useMemo(() => {
+    if (!iconSearchTerm.trim()) {
+      return allIcons;
+    }
+    const searchLower = iconSearchTerm.toLowerCase();
+    return allIcons.filter((iconName) =>
+      iconName.toLowerCase().includes(searchLower)
+    );
+  }, [allIcons, iconSearchTerm]);
 
   // URL-backed state using nuqs (managed by GenericForm, but we need access for initialization)
   const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
@@ -386,15 +589,16 @@ export default function Persona({
 
     try {
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
-      const finalDepartmentIds = transformDepartmentIdsForSubmit(
-        (formData["departmentIds"] as string[] | null | undefined) || [],
-        isSuperadmin,
-        (
-          personaData as PersonaDetailOut & {
-            valid_department_ids?: string[];
-          }
-        )?.valid_department_ids || []
-      );
+      const finalDepartmentIds =
+        transformDepartmentIdsForSubmit(
+          (formData["departmentIds"] as string[] | null | undefined) || [],
+          isSuperadmin,
+          (
+            personaData as PersonaDetailOut & {
+              valid_department_ids?: string[];
+            }
+          )?.valid_department_ids || []
+        ) ?? [];
 
       // Ensure profileId exists - required for API calls
       if (!effectiveProfile?.id) {
@@ -413,10 +617,6 @@ export default function Persona({
           | string
           | null
           | undefined;
-        const parameterIds = formData["parameterIds"] as
-          | string[]
-          | null
-          | undefined;
         if (!nameValue) {
           toast.error("Persona name is required");
           setIsSubmitting(false);
@@ -425,16 +625,15 @@ export default function Persona({
         // After null check, nameValue is guaranteed to be string
         updatePersona(
           {
-            personaId: personaId!,
+            persona_id: personaId!,
             name: nameValue!,
-            description: description || null,
+            description: description || "",
             instructions: instructions || "",
             color:
               (formData["color"] as string | null | undefined) || "#000000",
             icon: (formData["icon"] as string | null | undefined) || "Zap",
             active: (formData["active"] as boolean | null | undefined) ?? true,
             department_ids: finalDepartmentIds,
-            parameter_ids: (parameterIds || []) as string[],
             example_ids: [],
             // profileId comes from X-Profile-Id header automatically
           },
@@ -459,10 +658,6 @@ export default function Persona({
           | string
           | null
           | undefined;
-        const parameterIdsValue = formData["parameterIds"] as
-          | string[]
-          | null
-          | undefined;
         if (!nameValue) {
           toast.error("Persona name is required");
           setIsSubmitting(false);
@@ -473,14 +668,13 @@ export default function Persona({
         createPersona(
           {
             name,
-            description: description || null,
+            description: description || "",
             instructions: instructions || "",
             color:
               (formData["color"] as string | null | undefined) || "#000000",
             icon: (formData["icon"] as string | null | undefined) || "Zap",
             active: (formData["active"] as boolean | null | undefined) ?? true,
             department_ids: finalDepartmentIds,
-            parameter_ids: (parameterIdsValue || []) as string[],
             example_ids: currentExamples.filter((ex) => ex.trim()),
             // profileId comes from X-Profile-Id header automatically
           },
@@ -860,86 +1054,229 @@ export default function Persona({
                     </Card>
                   );
 
-                case "color":
-                  return (
-                    <PersonaColorSection
-                      color={
-                        (stepFormData["color"] as string | null | undefined) ||
-                        "#000000"
-                      }
-                      presetColors={
-                        (
-                          personaData as PersonaDetailOut & {
-                            preset_colors?: string[];
-                          }
-                        )?.preset_colors || []
-                      }
-                      onColorChange={(color) =>
-                        setStepFormData({ color: color || null })
-                      }
-                      stepStatus={stepStatus}
-                      stepNumber={stepNumber}
-                      stepTitle={stepTitle}
-                      stepDescription={stepDescription}
-                      isReadonly={isReadonly}
-                    />
-                  );
+                case "color": {
+                  const currentColor =
+                    (stepFormData["color"] as string | null | undefined) ||
+                    "#000000";
 
-                case "icon":
+                  const handleHexInputChange = (
+                    e: React.ChangeEvent<HTMLInputElement>
+                  ) => {
+                    const value = e.target.value;
+                    // Allow any hex value (with or without #, any length)
+                    if (value === "" || /^#?[0-9A-Fa-f]*$/.test(value)) {
+                      setStepFormData({
+                        color: value.startsWith("#") ? value : `#${value}`,
+                      });
+                    }
+                  };
+
                   return (
-                    <PersonaIconSection
-                      icon={
-                        (stepFormData["icon"] as string | null | undefined) ||
-                        "Zap"
-                      }
-                      suggestedIcons={
-                        (
-                          personaData as PersonaDetailOut & {
-                            suggested_icons?: string[];
-                          }
-                        )?.suggested_icons || []
-                      }
-                      validIcons={
-                        (
-                          personaData as PersonaDetailOut & {
-                            valid_icons?: string[];
-                          }
-                        )?.valid_icons || []
-                      }
-                      onIconChange={(icon) =>
-                        setStepFormData({ icon: icon || null })
-                      }
+                    <StepCard
                       stepStatus={stepStatus}
                       stepNumber={stepNumber}
                       stepTitle={stepTitle}
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
-                    />
+                      isEditMode={isEditMode}
+                      searchTerm={colorSearchTerm}
+                      onSearchChange={setColorSearchTerm}
+                      searchPlaceholder="Search colors..."
+                    >
+                      {presetColors.length > 0 && (
+                        <SelectableGrid
+                          items={filteredColors}
+                          selectedId={currentColor}
+                          onSelect={(color) =>
+                            setStepFormData({ color: color || null })
+                          }
+                          getId={(color) => color}
+                          renderItem={(color, isSelected) => (
+                            <div
+                              className={cn(
+                                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                                "hover:shadow-md hover:bg-accent/50",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                isSelected && "ring-2 ring-primary bg-accent"
+                              )}
+                            >
+                              {/* Check icon - top right */}
+                              {isSelected && (
+                                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                                </div>
+                              )}
+
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-10 h-10 rounded-lg border-2 border-border shrink-0"
+                                  style={{ backgroundColor: color }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-medium text-sm leading-tight">
+                                    {getColorName(color)}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {color}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          emptyMessage="No colors found. Try adjusting your search."
+                          disabled={isReadonly}
+                        />
+                      )}
+
+                      {/* Hex Color Input */}
+                      <div className="space-y-2">
+                        <Label htmlFor="colorInput">Hex Color</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="colorInput"
+                            value={currentColor}
+                            onChange={handleHexInputChange}
+                            placeholder="#000000"
+                            className="flex-1"
+                            disabled={isReadonly}
+                          />
+                          <div
+                            className="w-10 h-10 rounded border"
+                            style={{ backgroundColor: currentColor }}
+                          />
+                        </div>
+                      </div>
+                    </StepCard>
                   );
+                }
+
+                case "icon": {
+                  const currentIcon =
+                    (stepFormData["icon"] as string | null | undefined) ||
+                    "Zap";
+
+                  return (
+                    <StepCard
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
+                      isEditMode={isEditMode}
+                      searchTerm={iconSearchTerm}
+                      onSearchChange={setIconSearchTerm}
+                      searchPlaceholder="Search icons..."
+                    >
+                      <SelectableGrid
+                        items={filteredIcons}
+                        selectedId={currentIcon}
+                        onSelect={(icon) =>
+                          setStepFormData({ icon: icon || null })
+                        }
+                        getId={(icon) => icon}
+                        renderItem={(iconName, isSelected) => {
+                          const IconComponent =
+                            PERSONA_ICON_MAP[
+                              iconName as keyof typeof PERSONA_ICON_MAP
+                            ];
+                          if (!IconComponent) return null;
+
+                          const isSuggested = suggestedIcons.includes(iconName);
+
+                          return (
+                            <div
+                              className={cn(
+                                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                                "hover:shadow-md hover:bg-accent/50",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                isSelected && "ring-2 ring-primary bg-accent"
+                              )}
+                            >
+                              {/* Check icon - top right */}
+                              {isSelected && (
+                                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                                </div>
+                              )}
+
+                              {/* Suggested badge - top left */}
+                              {isSuggested && !isSelected && (
+                                <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                                  Suggested
+                                </div>
+                              )}
+
+                              <div className="flex flex-col items-center gap-2">
+                                <IconComponent className="h-8 w-8 text-foreground" />
+                                <span className="text-sm font-medium text-center">
+                                  {iconName}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }}
+                        emptyMessage="No icons found. Try adjusting your search."
+                        disabled={isReadonly}
+                      />
+                    </StepCard>
+                  );
+                }
 
                 case "content":
                   return (
-                    <PersonaContentSection
-                      instructions={
-                        (stepFormData["instructions"] as
-                          | string
-                          | null
-                          | undefined) || ""
-                      }
-                      onInstructionsChange={(instructions) =>
-                        setStepFormData({
-                          instructions: instructions || null,
-                        })
-                      }
-                      exampleMessages={currentExamples}
-                      onExampleMessagesChange={setCurrentExamples}
-                      examplesHistory={examplesHistory}
+                    <StepCard
                       stepStatus={stepStatus}
                       stepNumber={stepNumber}
                       stepTitle={stepTitle}
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
-                    />
+                      isEditMode={isEditMode}
+                    >
+                      {/* Instructions */}
+                      <div className="space-y-2">
+                        <Label htmlFor="instructions">Instructions *</Label>
+                        <Textarea
+                          id="instructions"
+                          data-testid="input-instructions"
+                          value={
+                            (stepFormData["instructions"] as
+                              | string
+                              | null
+                              | undefined) || ""
+                          }
+                          onChange={(e) =>
+                            setStepFormData({
+                              instructions: e.target.value || null,
+                            })
+                          }
+                          placeholder="Instructions that define how the persona should behave and respond."
+                          rows={8}
+                          required
+                          disabled={isReadonly}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Define the persona's behavior, communication style,
+                          and response patterns
+                        </p>
+                      </div>
+
+                      {/* Examples Section */}
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-sm">Example Messages</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Add example messages to guide the persona's
+                          communication style
+                        </p>
+                        <ReorderableList
+                          items={currentExamples}
+                          onItemsChange={setCurrentExamples}
+                          suggestions={examplesHistory}
+                          maxItems={10}
+                          addButtonLabel="Add example"
+                          disabled={isReadonly}
+                        />
+                      </div>
+                    </StepCard>
                   );
 
                 default:

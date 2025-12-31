@@ -1,6 +1,5 @@
 """Handler for rubric_regenerate WebSocket event."""
 
-import json
 import uuid
 from typing import Any, cast
 
@@ -264,13 +263,27 @@ async def _rubric_regenerate_impl(
             input_items.extend(previous_messages)
 
             # Format rubric context for agent input
+            # Format standard groups manually (no JSONB)
+            standard_groups_text = "\n".join(
+                [
+                    f"  - {g.name} (ID: {g.id}, Points: {g.points}, Description: {g.description or 'N/A'})"
+                    for g in standard_groups_objects
+                ]
+            )
+            # Format standards manually (no JSONB)
+            standards_text = "\n".join(
+                [
+                    f"  - {s.name} (ID: {s.id}, Points: {s.points}, Group ID: {s.standard_group_id})"
+                    for s in standards_objects
+                ]
+            )
             rubric_context_text = f"""You are regenerating descriptions for a rubric grid. The rubric has the following structure:
 
 Standard Groups:
-{json.dumps([{"id": g.id, "name": g.name, "description": g.description, "points": g.points} for g in standard_groups_objects], indent=2)}
+{standard_groups_text if standard_groups_text else "  (none)"}
 
 Standards:
-{json.dumps([{"id": s.id, "name": s.name, "points": s.points, "standard_group_id": s.standard_group_id} for s in standards_objects], indent=2)}
+{standards_text if standards_text else "  (none)"}
 
 For each combination of standard group and standard, generate a clear, specific description (1-3 sentences) that describes what performance looks like at that level for that dimension. The description should be:
 - Specific and observable (avoid vague terms)

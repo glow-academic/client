@@ -6,11 +6,10 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -74,7 +73,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
         return
 
     trace_id = validated.trace_id
-    # Replaced with get_db_connection()
 
     try:
         import app.socket.v3.agents.scenario.tools.image as image_tool_module
@@ -190,6 +188,15 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
 
+    except RuntimeError:
+        await scenario_video_tool_error(
+            ScenarioVideoToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
+            ),
+            room=sid,
+        )
     except Exception as e:
         await scenario_video_tool_error(
             ScenarioVideoToolErrorPayload(

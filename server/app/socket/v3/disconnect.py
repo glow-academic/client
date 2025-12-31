@@ -1,17 +1,25 @@
 """Handler for disconnect WebSocket event."""
 
+import uuid
+from typing import cast
+
 from fastapi import APIRouter
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.v3.websocket.find_chats_by_socket import find_chats_by_socket
 from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.is_guest_socket import is_guest_socket
 from app.infra.v3.websocket.remove_active_connection import remove_active_connection
 from app.infra.v3.websocket.remove_guest_socket import remove_guest_socket
 from app.infra.v3.websocket.remove_socket_owner import remove_socket_owner
-from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.main import sio
+from app.sql.types import (
+    UpdateProfileToInactiveSqlParams,
+    UpdateProfileToInactiveSqlRow,
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -42,18 +50,26 @@ async def disconnect(sid: str) -> None:
         # Remove from socket ownership using Redis
         await remove_socket_owner(profile_to_cleanup)
         # Update database to mark profile as inactive
-        try:
-            from datetime import UTC, datetime
+            try:
+                from datetime import UTC, datetime
 
-            from utils.sql_helper import load_sql
-
-            async with get_db_connection() as conn:
+                async with get_db_connection() as conn:
                     async with conn.transaction():
-                        sql = load_sql(
-                            "app/sql/v3/profile/update_profile_to_inactive_complete.sql"
+                        params = UpdateProfileToInactiveSqlParams(
+                            profile_id=uuid.UUID(profile_to_cleanup),
+                            last_active=datetime.now(UTC).isoformat(),
                         )
-                        last_active = datetime.now(UTC)
-                        await conn.fetchrow(sql, profile_to_cleanup, last_active)
+                    await cast(
+                        UpdateProfileToInactiveSqlRow,
+                        execute_sql_typed(
+                            conn,
+                            "app/sql/v3/profile/update_profile_to_inactive_complete.sql",
+                            params=params,
+                        ),
+                    )
+        except RuntimeError:
+            # Database pool not initialized - Socket.IO handles logging
+            pass
         except Exception:
             # Error updating profile - Socket.IO handles logging
             pass

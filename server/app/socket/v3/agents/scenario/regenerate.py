@@ -1,8 +1,7 @@
 """Handler for regenerate_scenario WebSocket event."""
 
-import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from agents import (
     FunctionToolResult,
@@ -16,17 +15,22 @@ from agents import (
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext
 from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
+from app.sql.types import (
+    GetScenarioRegenerationRunContextAndCreateRunSqlParams,
+    GetScenarioRegenerationRunContextAndCreateRunSqlRow,
+)
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+SQL_PATH = "app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -104,28 +108,28 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
     trace_id: str | None = None
 
     try:
-        # Convert string IDs to UUIDs
-        scenario_id = uuid.UUID(data.scenarioId)
-        department_id = uuid.UUID(data.departmentId)
-        profile_id = uuid.UUID(data.profileId) if data.profileId else None
-        objectives_enabled = data.objectivesEnabled
-
-        # Validate profile_id is required
-        if not profile_id:
+        # Get profile_id from sid lookup (O(1) Redis lookup)
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
             await scenario_regeneration_error(
                 ScenarioRegenerationErrorPayload(
                     success=False,
-                    message="profileId is required",
+                    message="Profile not found. Please reconnect.",
                     trace_id=trace_id,
                 ),
                 room=sid,
             )
             return
 
-        # Get connection pool
-        # Replaced with get_db_connection()
+        profile_id = uuid.UUID(profile_id_str)
 
-        async with get_db_connection() as conn:
+        # Convert string IDs to UUIDs
+        scenario_id = uuid.UUID(data.scenarioId)
+        department_id = uuid.UUID(data.departmentId)
+        objectives_enabled = data.objectivesEnabled
+
+        try:
+            async with get_db_connection() as conn:
             # Clear previous results (now handled by storage with keys)
 
             # Emit start event
@@ -214,23 +218,20 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Get context AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            doc_ids_str = [str(d) for d in document_ids] if document_ids else []
-            param_ids_str = (
-                [str(p) for p in parameter_item_ids] if parameter_item_ids else []
-            )
-
-            sql = load_sql(
-                "app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run.sql"
-            )
             try:
-                context_row = await conn.fetchrow(
-                    sql,
-                    str(department_id),
-                    str(persona_id) if persona_id else None,
-                    doc_ids_str,
-                    param_ids_str,
-                    str(scenario_agent_id),  # agent_id (required)
-                    str(profile_id) if profile_id else None,  # profile_id (nullable)
+                # Use execute_sql_typed() - auto-detects function
+                params = GetScenarioRegenerationRunContextAndCreateRunSqlParams(
+                    department_id=department_id,
+                    profile_id=profile_id,  # From sid lookup
+                    agent_id=scenario_agent_id,
+                    group_id=None,  # NULL for new group
+                    persona_id=persona_id,
+                    document_ids=document_ids if document_ids else None,
+                    parameter_item_ids=parameter_item_ids if parameter_item_ids else None,
+                )
+                result = cast(
+                    GetScenarioRegenerationRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
@@ -256,7 +257,6 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         room=sid,
                     )
                     return
-                # Log other errors
                 await scenario_regeneration_error(
                     ScenarioRegenerationErrorPayload(
                         success=False,
@@ -267,7 +267,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 )
                 return
 
-            if not context_row:
+            if not result:
                 await scenario_regeneration_error(
                     ScenarioRegenerationErrorPayload(
                         success=False,
@@ -278,25 +278,18 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 )
                 return
 
-            # Parse JSON arrays
-            documents = (
-                json.loads(context_row["documents"])
-                if isinstance(context_row["documents"], str)
-                else context_row["documents"] or []
-            )
-            personas = (
-                json.loads(context_row["personas"])
-                if isinstance(context_row["personas"], str)
-                else context_row["personas"] or []
-            )
-            parameter_items = (
-                json.loads(context_row["parameter_items"])
-                if isinstance(context_row["parameter_items"], str)
-                else context_row["parameter_items"] or []
-            )
+            # result.group_id and result.trace_id come from groups table
+            trace_id = result.trace_id  # From groups.trace_id
+            group_id = result.group_id  # Created by SQL
+
+            # Documents, parameter_items, and document_templates are now composite type arrays
+            # No JSON parsing needed - they're already Pydantic models
+            documents = result.documents if result.documents else []
+            parameter_items = result.parameter_items if result.parameter_items else []
+            document_templates = result.document_templates if result.document_templates else []
 
             # Load agent tools from database
-            agent_id_uuid = uuid.UUID(context_row["agent_id"])
+            agent_id_uuid = uuid.UUID(result.agent_id)
             sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
@@ -306,38 +299,61 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Build context dict (same structure as generate_ai)
+            # Convert composite types to dicts for compatibility with existing code
             context = {
-                "agent_id": context_row["agent_id"],
-                "agent_name": context_row["agent_name"],
-                "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"])
-                if context_row["temperature"] is not None
+                "agent_id": result.agent_id,
+                "agent_name": result.agent_name,
+                "system_prompt": result.system_prompt,
+                "temperature": float(result.temperature)
+                if result.temperature is not None
                 else 0.0,
-                "reasoning": context_row["reasoning"],
-                "model_id": context_row["model_id"],
-                "model_name": context_row["model_name"],
-                "custom_model": context_row["custom_model"],
-                "provider_id": context_row["provider_id"],
-                "provider_name": context_row["provider_name"],
-                "base_url": context_row["base_url"],
-                "api_key": context_row["api_key"],
+                "reasoning": result.reasoning,
+                "model_id": result.model_id,
+                "model_name": result.model_name,
+                "custom_model": result.custom_model,
+                "provider_id": result.provider_id,
+                "provider_name": result.provider_name,
+                "base_url": result.base_url,
+                "api_key": result.api_key,
                 "persona": {
-                    "id": context_row["persona_id"],
-                    "name": context_row["persona_name"],
-                    "description": context_row["persona_description"],
+                    "id": result.persona_id,
+                    "name": result.persona_name,
+                    "description": result.persona_description,
                 }
-                if context_row["persona_id"]
+                if result.persona_id
                 else None,
-                "documents": documents,
-                "parameter_items": parameter_items,
-                "document_templates": (
-                    json.loads(context_row["document_templates"])
-                    if isinstance(context_row["document_templates"], str)
-                    else context_row["document_templates"] or []
-                ),
-                "req_per_day": context_row["req_per_day"],
-                "runs_today_count": context_row["runs_today_count"],
-                "earliest_run_created_at": context_row["earliest_run_created_at"],
+                "documents": [
+                    {
+                        "id": doc.id,
+                        "name": doc.name,
+                        "file_path": doc.file_path,
+                        "mime_type": doc.mime_type,
+                        "template": doc.template,
+                        "template_args": doc.template_args,
+                    }
+                    for doc in documents
+                ],
+                "parameter_items": [
+                    {
+                        "item_name": item.item_name,
+                        "item_description": item.item_description,
+                        "param_name": item.param_name,
+                        "param_description": item.param_description,
+                    }
+                    for item in parameter_items
+                ],
+                "document_templates": [
+                    {
+                        "document_id": dt.document_id,
+                        "document_name": dt.document_name,
+                        "template_args": dt.template_args,
+                        "template_upload_id": dt.template_upload_id,
+                    }
+                    for dt in document_templates
+                ],
+                "req_per_day": result.req_per_day,
+                "runs_today_count": result.runs_today_count,
+                "earliest_run_created_at": result.earliest_run_created_at,
             }
 
             # Format input items (same as generation)
@@ -624,8 +640,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # (get_scenario_regeneration_run_context_and_create_run.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
-            # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(context_row["run_id"])
+            # Extract run_id from result (created in same transaction)
+            model_run_id = uuid.UUID(result.run_id)
 
             # Run the agent
             with trace(
@@ -760,6 +776,16 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 )
             except Exception as log_error:
                 pass
+        except RuntimeError:
+            await scenario_regeneration_error(
+                ScenarioRegenerationErrorPayload(
+                    success=False,
+                    message="Database connection pool not available",
+                    trace_id=trace_id,
+                ),
+                room=sid,
+            )
+            return
     except Exception as e:
         await scenario_regeneration_error(
             ScenarioRegenerationErrorPayload(

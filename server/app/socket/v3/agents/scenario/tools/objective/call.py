@@ -5,12 +5,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -68,7 +67,6 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
         return
 
     trace_id = validated.trace_id
-    # Replaced with get_db_connection()
 
     try:
         async with get_db_connection() as conn:
@@ -118,6 +116,15 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
                 room=sid,
             )
 
+    except RuntimeError:
+        await objectives_tool_error(
+            ObjectivesToolErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
+            ),
+            room=sid,
+        )
     except Exception as e:
         await objectives_tool_error(
             ObjectivesToolErrorPayload(

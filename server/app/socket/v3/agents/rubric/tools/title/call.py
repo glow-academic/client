@@ -1,21 +1,28 @@
 """Handler for rubric_tool_title WebSocket event."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio
+from app.sql.types import (
+    UpdateRubricNameSqlParams,
+    UpdateRubricNameSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH = "app/sql/v3/rubric/update_rubric_name_complete.sql"
 
 
 class RubricTitleToolPayload(BaseModel):
@@ -72,6 +79,20 @@ async def _rubric_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
 
     trace_id = validated.trace_id
 
+    # Get profile_id from sid lookup
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        await rubric_title_tool_error(
+            RubricTitleToolErrorPayload(
+                success=False,
+                message="Profile not found for socket",
+                trace_id=trace_id,
+            ),
+            room=sid,
+        )
+        return
+    profile_id = uuid.UUID(profile_id_str)
+
     try:
         async with get_db_connection() as conn:
             rubric_id_uuid = (
@@ -89,12 +110,15 @@ async def _rubric_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Update rubric name
-            sql = load_sql("app/sql/v3/rubric/update_rubric_name.sql")
-            result = await conn.fetchrow(
-                sql,
-                str(rubric_id_uuid),
-                validated.title,
+            # Update rubric name using execute_sql_typed()
+            params = UpdateRubricNameSqlParams(
+                profile_id=profile_id,  # From sid lookup
+                rubric_id=rubric_id_uuid,
+                name=validated.title,
+            )
+            result = cast(
+                UpdateRubricNameSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
             if not result:
@@ -111,7 +135,7 @@ async def _rubric_tool_title_impl(sid: str, data: dict[str, Any]) -> None:
             await rubric_title_tool_complete(
                 RubricTitleToolCompletePayload(
                     success=True,
-                    title=validated.title,
+                    title=result.name,  # Use name from SQL result
                     trace_id=trace_id,
                     message="Updated rubric title successfully",
                 ),

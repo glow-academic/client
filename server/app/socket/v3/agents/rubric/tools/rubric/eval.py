@@ -3,12 +3,11 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
 from app.infra.v3.websocket.get_db_connection import get_db_connection
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 internal_sio = get_internal_sio()
 
@@ -44,15 +43,11 @@ async def _rubric_eval_impl(sid: str, data: RubricEvalStartPayload) -> None:
         async with get_db_connection() as conn:
             test_id_uuid = uuid.UUID(test_id)
             tool_id_uuid = uuid.UUID(tool_id)
+            # Note: group_stop check removed - inline SQL not allowed per standards
+            # If needed, create SQL function and use execute_sql_typed()
             if data.use_groups and data.group_id:
-                group_id_uuid = uuid.UUID(data.group_id)
-                in_group_stop = await conn.fetchrow(
-                    "SELECT 1 FROM group_stop WHERE group_id = $1::uuid AND tool_id = $2::uuid",
-                    group_id_uuid,
-                    tool_id_uuid,
-                )
-                if in_group_stop:
-                    pass
+                # Placeholder for future group_stop check via SQL function
+                pass
             await emit_to_internal(
                 "rubric_eval_complete",
                 RubricEvalCompletePayload(
