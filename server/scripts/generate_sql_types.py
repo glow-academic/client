@@ -103,8 +103,13 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         relative = sql_path[len(f"{tests_sql_prefix}api/") :]
         if not relative.endswith("_complete.sql"):
             return None
+        # Extract resource and operation: [resource]/test_[operation]_v4_complete.sql
+        parts = relative.split("/")
+        if len(parts) != 2:
+            return None
+        resource, filename = parts
         # Remove test_ prefix and _v4_complete.sql suffix
-        operation = relative[: -len("_complete.sql")]
+        operation = filename[: -len("_complete.sql")]
         if operation.startswith("test_"):
             operation = operation[len("test_") :]
         if operation.endswith(f"_{VERSION}"):

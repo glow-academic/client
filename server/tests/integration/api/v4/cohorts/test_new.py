@@ -1,0 +1,30 @@
+"""Route tests for POST /api/v4/cohorts/new endpoint."""
+
+import asyncpg  # type: ignore
+import httpx
+import pytest
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
+
+pytestmark = pytest.mark.asyncio
+
+
+async def test_get_cohort_new(
+    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting default cohort detail."""
+    await get_superadmin_alias(db)
+
+    # v4 routes get profile_id from router dependency
+    response = await client.post(
+        "/api/v4/cohorts/new",
+        json={},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data is not None
+    assert "title" in data or "name" in data
+    assert "description" in data
+    assert "active" in data
+
