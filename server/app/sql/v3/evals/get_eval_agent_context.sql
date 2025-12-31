@@ -12,7 +12,7 @@ WITH params AS (
 ),
 -- Get rubric_grade_agent_id from appropriate junction table
 rubric_grade_agent_from_run_or_group AS (
-    SELECT rga.grade_text_agent_id as eval_agent_id
+    SELECT rga.grade_agent_id as eval_agent_id
     FROM params p
     LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = p.eval_id AND errga.run_id = p.run_id AND p.run_id IS NOT NULL
     LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = p.eval_id AND egga.group_id = p.group_id AND p.group_id IS NOT NULL

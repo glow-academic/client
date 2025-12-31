@@ -41,10 +41,10 @@ CREATE TYPE types.q_get_simulation_detail_v3_rubric_grade_agent AS (
     rubric_grade_agent_id uuid,
     rubric_id uuid,
     rubric_name text,
-    grade_text_agent_id uuid,
-    grade_text_agent_name text,
-    grade_voice_agent_id uuid,
-    grade_voice_agent_name text
+    grade_agent_id uuid,
+    grade_agent_name text,
+    audio_agent_id uuid,
+    audio_agent_name text
 );
 
 CREATE TYPE types.q_get_simulation_detail_v3_scenario AS (
@@ -378,17 +378,17 @@ scenario_rubric_grade_agents_data AS (
         ssrga.scenario_id,
         ARRAY_AGG(
             (ssrga.rubric_grade_agent_id, rga.rubric_id, r.name, 
-             rga.grade_text_agent_id, a_text.name,
-             rgav.grade_voice_agent_id, a_voice.name)::types.q_get_simulation_detail_v3_rubric_grade_agent
+             rga.grade_agent_id, a_text.name,
+             rgav.audio_agent_id, a_voice.name)::types.q_get_simulation_detail_v3_rubric_grade_agent
             ORDER BY r.name
         ) as rubric_grade_agents
     FROM simulation_scenarios_base ssb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ssb.simulation_id AND ssrga.scenario_id = ssb.scenario_id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     JOIN rubrics r ON r.id = rga.rubric_id
-    JOIN agents a_text ON a_text.id = rga.grade_text_agent_id
-    LEFT JOIN rubric_grade_agents_voice rgav ON rgav.rubric_grade_agent_id = rga.id
-    LEFT JOIN agents a_voice ON a_voice.id = rgav.grade_voice_agent_id
+    JOIN agents a_text ON a_text.id = rga.grade_agent_id
+    LEFT JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
+    LEFT JOIN agents a_voice ON a_voice.id = rgav.audio_agent_id
     GROUP BY ssrga.scenario_id
 ),
 scenarios_data AS (
@@ -723,15 +723,15 @@ selected_agents_from_simulation AS (
     FROM simulation_base sb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-    JOIN agents a ON a.id = rga.grade_text_agent_id AND a.role IN ('grade'::agent_role)
+    JOIN agents a ON a.id = rga.grade_agent_id AND a.role IN ('grade'::agent_role)
     WHERE a.active = true
     UNION
     SELECT DISTINCT a.id, a.name, a.description, a.role
     FROM simulation_base sb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-    JOIN rubric_grade_agents_voice rgav ON rgav.rubric_grade_agent_id = rga.id
-    JOIN agents a ON a.id = rgav.grade_voice_agent_id AND a.role IN ('audio'::agent_role)
+    JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
+    JOIN agents a ON a.id = rgav.audio_agent_id AND a.role IN ('audio'::agent_role)
     WHERE a.active = true
 ),
 agents_data AS (

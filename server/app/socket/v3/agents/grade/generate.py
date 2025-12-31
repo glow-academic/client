@@ -246,7 +246,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 "req_per_day": context_row["req_per_day"],
                 "runs_today_count": context_row["runs_today_count"],
                 "earliest_run_created_at": context_row["earliest_run_created_at"],
-                "grade_voice_agent_id": context_row.get("grade_voice_agent_id"),
+                "audio_agent_id": context_row.get("audio_agent_id"),
             }
 
             # Extract data from context
@@ -319,7 +319,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # prepare conversation history from chat_id
             # Always enable message numbering for grading so agent can reference messages
             has_audio_messages = any(msg.get("audio", False) for msg in messages)
-            grade_voice_agent_id = context_row.get("grade_voice_agent_id")
+            audio_agent_id = context_row.get("audio_agent_id")
 
             # Always enable message numbering for grading (inlined from get_simulation_conversation_history)
             from datetime import datetime
@@ -853,7 +853,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 logger.info("Created message_improvement tool")
 
             # Add audio grading tool if audio messages exist and audio agent is configured
-            if has_audio_messages and grade_voice_agent_id:
+            if has_audio_messages and audio_agent_id:
                 from app.socket.v3.tools.audio.call import _grading_tool_audio_impl
 
                 grade_audio_config = tool_config_map_grading.get("create_analysis")
@@ -910,7 +910,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                                 "trace_id": context["trace_id"],
                                 "message_numbers": message_numbers,
                                 "what_to_analyze": what_to_analyze,
-                                "agent_id": grade_voice_agent_id,
+                                "agent_id": audio_agent_id,
                                 "department_id": str(department_id),
                                 "message_id_map": message_id_map,
                                 "profile_id": profile_id_str,

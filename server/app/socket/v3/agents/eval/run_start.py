@@ -176,7 +176,7 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
                     (SELECT ea.agent_id::text FROM eval_agents ea WHERE ea.eval_id = e.id ORDER BY ea.created_at LIMIT 1) as agent_id,
                     errga.rubric_grade_agent_id::text as rubric_grade_agent_id,
                     rga.rubric_id::text as rubric_id,
-                    rga.grade_text_agent_id::text as eval_agent_id,
+                    rga.grade_agent_id::text as eval_agent_id,
                     e.dynamic,
                     e.use_groups
                 FROM evals e

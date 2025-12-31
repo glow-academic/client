@@ -195,7 +195,7 @@ runs_rubric_grade_agents_data AS (
         errga.eval_id,
         errga.run_id,
         ARRAY_AGG(
-            (rga.id, rga.rubric_id, r.name, rga.grade_text_agent_id, a.name)::types.q_get_eval_detail_v3_rubric_grade_agent
+            (rga.id, rga.rubric_id, r.name, rga.grade_agent_id, a.name)::types.q_get_eval_detail_v3_rubric_grade_agent
             ORDER BY r.name
         ) as rubric_grade_agents
     FROM params x
@@ -203,7 +203,7 @@ runs_rubric_grade_agents_data AS (
     JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id
     JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
     JOIN rubrics r ON r.id = rga.rubric_id
-    JOIN agents a ON a.id = rga.grade_text_agent_id
+    JOIN agents a ON a.id = rga.grade_agent_id
     GROUP BY errga.eval_id, errga.run_id
 ),
 -- Get rubric_grade_agents per group (when use_groups = true)
@@ -212,7 +212,7 @@ groups_rubric_grade_agents_data AS (
         egga.eval_id,
         egga.group_id,
         ARRAY_AGG(
-            (rga.id, rga.rubric_id, r.name, rga.grade_text_agent_id, a.name)::types.q_get_eval_detail_v3_rubric_grade_agent
+            (rga.id, rga.rubric_id, r.name, rga.grade_agent_id, a.name)::types.q_get_eval_detail_v3_rubric_grade_agent
             ORDER BY r.name
         ) as rubric_grade_agents
     FROM params x
@@ -220,7 +220,7 @@ groups_rubric_grade_agents_data AS (
     JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id
     JOIN rubric_grade_agents rga ON rga.id = egga.rubric_grade_agent_id
     JOIN rubrics r ON r.id = rga.rubric_id
-    JOIN agents a ON a.id = rga.grade_text_agent_id
+    JOIN agents a ON a.id = rga.grade_agent_id
     GROUP BY egga.eval_id, egga.group_id
 ),
 eval_departments_data AS (
@@ -262,13 +262,13 @@ runs_list AS (
         g.created_at as grade_created_at,
         COALESCE(
             (SELECT ARRAY_AGG(
-                (rga.id, rga.rubric_id, r2.name, rga.grade_text_agent_id, a2.name)::types.q_get_eval_detail_v3_rubric_grade_agent
+                (rga.id, rga.rubric_id, r2.name, rga.grade_agent_id, a2.name)::types.q_get_eval_detail_v3_rubric_grade_agent
                 ORDER BY r2.name
             )
             FROM eval_runs_rubric_grade_agents errga
             JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
             JOIN rubrics r2 ON r2.id = rga.rubric_id
-            JOIN agents a2 ON a2.id = rga.grade_text_agent_id
+            JOIN agents a2 ON a2.id = rga.grade_agent_id
             WHERE errga.eval_id = er.eval_id AND errga.run_id = er.run_id),
             '{}'::types.q_get_eval_detail_v3_rubric_grade_agent[]
         ) as rubric_grade_agents

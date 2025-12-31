@@ -37,7 +37,7 @@ END $$;
 -- 3) Create composite types
 CREATE TYPE types.i_add_eval_runs_v3_rubric_grade_agent AS (
     rubric_id uuid,
-    grade_text_agent_id uuid
+    grade_agent_id uuid
 );
 
 CREATE TYPE types.i_add_eval_runs_v3_run AS (
@@ -89,20 +89,20 @@ link_runs AS (
 ),
 -- Create/find rubric_grade_agents entries
 create_rubric_grade_agents AS (
-    INSERT INTO rubric_grade_agents (rubric_id, grade_text_agent_id, created_at, updated_at)
+    INSERT INTO rubric_grade_agents (rubric_id, grade_agent_id, created_at, updated_at)
     SELECT DISTINCT
         (rga).rubric_id,
-        (rga).grade_text_agent_id,
+        (rga).grade_agent_id,
         NOW(),
         NOW()
     FROM params x
     CROSS JOIN UNNEST(x.runs) AS r
     CROSS JOIN UNNEST((r).rubric_grade_agents) AS rga
     WHERE (rga).rubric_id IS NOT NULL 
-      AND (rga).grade_text_agent_id IS NOT NULL
-    ON CONFLICT (rubric_id, grade_text_agent_id) DO UPDATE SET
+      AND (rga).grade_agent_id IS NOT NULL
+    ON CONFLICT (rubric_id, grade_agent_id, agent_id) DO UPDATE SET
         updated_at = NOW()
-    RETURNING id as rubric_grade_agent_id, rubric_id, grade_text_agent_id
+    RETURNING id as rubric_grade_agent_id, rubric_id, grade_agent_id
 ),
 -- Link rubric_grade_agents to runs
 link_run_rubric_grade_agents AS (
@@ -117,10 +117,10 @@ link_run_rubric_grade_agents AS (
     CROSS JOIN UNNEST(p.runs) AS r
     CROSS JOIN UNNEST((r).rubric_grade_agents) AS rga
     JOIN create_rubric_grade_agents crga ON crga.rubric_id = (rga).rubric_id 
-        AND crga.grade_text_agent_id = (rga).grade_text_agent_id
+        AND crga.grade_agent_id = (rga).grade_agent_id
     WHERE (r).run_id IS NOT NULL
       AND (rga).rubric_id IS NOT NULL 
-      AND (rga).grade_text_agent_id IS NOT NULL
+      AND (rga).grade_agent_id IS NOT NULL
     ON CONFLICT (eval_id, run_id, rubric_grade_agent_id) DO NOTHING
 )
 SELECT 

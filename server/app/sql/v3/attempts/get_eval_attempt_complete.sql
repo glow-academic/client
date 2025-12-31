@@ -200,7 +200,7 @@ eval_info AS (
          JOIN rubrics r ON r.id = rga.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_description,
-        (SELECT rga.grade_text_agent_id 
+        (SELECT rga.grade_agent_id 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga

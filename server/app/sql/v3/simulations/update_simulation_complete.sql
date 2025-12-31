@@ -26,8 +26,8 @@ DROP TYPE IF EXISTS types.i_create_simulation_v3_scenario_rubric_grade_agent CAS
 CREATE TYPE types.i_create_simulation_v3_scenario_rubric_grade_agent AS (
     scenario_id uuid,
     rubric_id uuid,
-    grade_text_agent_id uuid,
-    grade_voice_agent_id uuid
+    grade_agent_id uuid,
+    audio_agent_id uuid
 );
 
 -- 3) Recreate function
@@ -290,34 +290,34 @@ remove_existing_rubric_grade_agents AS (
 ),
 -- Create/find rubric_grade_agents entries
 create_rubric_grade_agents AS (
-    INSERT INTO rubric_grade_agents (rubric_id, grade_text_agent_id, created_at, updated_at)
+    INSERT INTO rubric_grade_agents (rubric_id, grade_agent_id, created_at, updated_at)
     SELECT DISTINCT
         (srga).rubric_id,
-        (srga).grade_text_agent_id,
+        (srga).grade_agent_id,
         NOW(),
         NOW()
     FROM params x
     CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
     WHERE (srga).rubric_id IS NOT NULL 
-      AND (srga).grade_text_agent_id IS NOT NULL
-    ON CONFLICT (rubric_id, grade_text_agent_id) DO UPDATE SET
+      AND (srga).grade_agent_id IS NOT NULL
+    ON CONFLICT (rubric_id, grade_agent_id, agent_id) DO UPDATE SET
         updated_at = NOW()
-    RETURNING id as rubric_grade_agent_id, rubric_id, grade_text_agent_id
+    RETURNING id as rubric_grade_agent_id, rubric_id, grade_agent_id
 ),
--- Link voice agents if provided
-link_voice_agents AS (
-    INSERT INTO rubric_grade_agents_voice (rubric_grade_agent_id, grade_voice_agent_id, created_at, updated_at)
+-- Link audio agents if provided
+link_audio_agents AS (
+    INSERT INTO rubric_grade_agents_audio (rubric_grade_agent_id, audio_agent_id, created_at, updated_at)
     SELECT DISTINCT
         crga.rubric_grade_agent_id,
-        (srga).grade_voice_agent_id,
+        (srga).audio_agent_id,
         NOW(),
         NOW()
     FROM params x
     CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
     JOIN create_rubric_grade_agents crga ON crga.rubric_id = (srga).rubric_id 
-        AND crga.grade_text_agent_id = (srga).grade_text_agent_id
-    WHERE (srga).grade_voice_agent_id IS NOT NULL
-    ON CONFLICT (rubric_grade_agent_id, grade_voice_agent_id) DO NOTHING
+        AND crga.grade_agent_id = (srga).grade_agent_id
+    WHERE (srga).audio_agent_id IS NOT NULL
+    ON CONFLICT (rubric_grade_agent_id, audio_agent_id) DO NOTHING
 ),
 link_scenario_rubric_grade_agents AS (
     INSERT INTO simulation_scenarios_rubric_grade_agents (simulation_id, scenario_id, rubric_grade_agent_id, created_at, updated_at)
@@ -330,13 +330,13 @@ link_scenario_rubric_grade_agents AS (
     FROM params x
     CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
     JOIN create_rubric_grade_agents crga ON crga.rubric_id = (srga).rubric_id 
-        AND crga.grade_text_agent_id = (srga).grade_text_agent_id
+        AND crga.grade_agent_id = (srga).grade_agent_id
     WHERE EXISTS (
         SELECT 1 FROM scenarios_with_order swo 
         WHERE swo.scenario_id = (srga).scenario_id
     )
       AND (srga).rubric_id IS NOT NULL 
-      AND (srga).grade_text_agent_id IS NOT NULL
+      AND (srga).grade_agent_id IS NOT NULL
     ON CONFLICT (simulation_id, scenario_id, rubric_grade_agent_id) DO NOTHING
 )
 SELECT 

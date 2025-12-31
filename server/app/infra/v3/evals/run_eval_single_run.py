@@ -349,7 +349,7 @@ async def run_eval_single_run(
             """
             SELECT 
                 rga.rubric_id::text as rubric_id,
-                rga.grade_text_agent_id::text as eval_agent_id
+                rga.grade_agent_id::text as eval_agent_id
             FROM rubric_grade_agents rga
             WHERE rga.id = $1::uuid
             """,

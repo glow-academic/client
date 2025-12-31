@@ -20,18 +20,82 @@ eval_data AS (
         e.id as eval_id,
         e.name,
         e.description,
-        e.rubric_id,
+        -- Get first rubric from junction table (runs or groups based on use_groups)
+        (SELECT rga.rubric_id 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_id,
         e.eval_agent_id::text,
         e.active,
         e.dynamic,
         e.created_at,
         e.updated_at,
-        r.name as rubric_name,
-        r.description as rubric_description,
-        r.points as rubric_points,
-        r.pass_points as rubric_pass_points
+        (SELECT r.name 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_name,
+        (SELECT r.description 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_description,
+        (SELECT r.points 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_points,
+        (SELECT r.pass_points 
+         FROM (
+             SELECT errga.rubric_grade_agent_id, errga.created_at
+             FROM eval_runs_rubric_grade_agents errga
+             WHERE errga.eval_id = e.id AND e.use_groups = false
+             UNION ALL
+             SELECT egga.rubric_grade_agent_id, egga.created_at
+             FROM eval_groups_rubric_grade_agents egga
+             WHERE egga.eval_id = e.id AND e.use_groups = true
+         ) combined
+         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
+         JOIN rubrics r ON r.id = rga.rubric_id
+         ORDER BY combined.created_at 
+         LIMIT 1) as rubric_pass_points
     FROM evals e
-    JOIN rubrics r ON r.id = e.rubric_id
     WHERE e.id = $1
 ),
 eval_departments_data AS (

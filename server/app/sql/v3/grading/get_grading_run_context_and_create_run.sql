@@ -31,12 +31,12 @@ scenario_rubric_grade_agent AS (
     SELECT 
         ssrga.rubric_grade_agent_id,
         rga.rubric_id,
-        rga.grade_text_agent_id,
-        rgav.grade_voice_agent_id
+        rga.grade_agent_id,
+        rgav.audio_agent_id
     FROM chat_info ci
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.scenario_id = ci.scenario_id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-    LEFT JOIN rubric_grade_agents_voice rgav ON rgav.rubric_grade_agent_id = rga.id
+    LEFT JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
     LIMIT 1
 ),
 simulation_info AS (
@@ -46,8 +46,8 @@ simulation_info AS (
         (SELECT sd.department_id::text FROM simulation_departments sd 
          WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as department_id,
         srga.rubric_grade_agent_id::text as rubric_grade_agent_id,
-        srga.grade_text_agent_id::text as grade_text_agent_id,
-        srga.grade_voice_agent_id::text as grade_voice_agent_id,
+        srga.grade_agent_id::text as grade_agent_id,
+        srga.audio_agent_id::text as audio_agent_id,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -60,12 +60,12 @@ simulation_info AS (
     WHERE s.id = (SELECT simulation_id FROM attempt_info)
 ),
 best_agent AS (
-    -- Use grade_text_agent_id from rubric_grade_agents (for text grading)
-    -- Voice grading handlers will override agent_id if needed
+    -- Use grade_agent_id from rubric_grade_agents (for text grading)
+    -- Audio grading handlers will override agent_id if needed
     SELECT a.id as agent_id
     FROM simulation_info si
-    JOIN agents a ON a.id = si.grade_text_agent_id::uuid
-    WHERE a.active = true AND si.grade_text_agent_id IS NOT NULL
+    JOIN agents a ON a.id = si.grade_agent_id::uuid
+    WHERE a.active = true AND si.grade_agent_id IS NOT NULL
     LIMIT 1
 ),
 profile_rate_limit AS (
@@ -192,8 +192,8 @@ context_data AS (
         si.department_id::text,
         si.time_limit,
         si.rubric_grade_agent_id::text as rubric_grade_agent_id,
-        si.grade_text_agent_id::text as grade_text_agent_id,
-        si.grade_voice_agent_id::text as grade_voice_agent_id,
+        si.grade_agent_id::text as grade_agent_id,
+        si.audio_agent_id::text as audio_agent_id,
         
         -- Rubric data
         r.id::text as rubric_id,
@@ -312,7 +312,7 @@ context_data AS (
     GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed,
              ps.problem_statement,
              ai.id, ai.simulation_id, ai.total_chats,
-             si.id, si.rubric_id, si.department_id, si.time_limit, si.rubric_grade_agent_id, si.grade_text_agent_id, si.grade_voice_agent_id,
+             si.id, si.rubric_id, si.department_id, si.time_limit, si.rubric_grade_agent_id, si.grade_agent_id, si.audio_agent_id,
              r.id, r.name, r.description, r.points, r.pass_points,
              a.id, a.name, pr_prompt.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
              m.id, m.value, p.value, me.base_url, k.key, act_s.settings_id,
@@ -362,8 +362,8 @@ SELECT
     cd.department_id,
     cd.time_limit,
     cd.rubric_grade_agent_id,
-    cd.grade_text_agent_id,
-    cd.grade_voice_agent_id,
+    cd.grade_agent_id,
+    cd.audio_agent_id,
     cd.rubric_name,
     cd.rubric_description,
     cd.rubric_points,
