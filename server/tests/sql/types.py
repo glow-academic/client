@@ -866,6 +866,195 @@ class GetPersonaByIdApiResponse(BaseModel):
 
 
 
+# Generated from: create_rubric_department_link
+
+class CreateRubricDepartmentLinkSqlParams(BaseModel):
+
+    rubric_id: UUID
+    department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.rubric_id,
+            self.department_id,
+        )
+
+class CreateRubricDepartmentLinkSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateRubricDepartmentLinkApiRequest(BaseModel):
+
+    rubric_id: UUID
+    department_id: UUID
+
+class CreateRubricDepartmentLinkApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: create_test_rubric
+
+class CreateTestRubricSqlParams(BaseModel):
+
+    rubric_name: str
+    rubric_description: str
+    rubric_points: int
+    rubric_pass_points: int
+    rubric_active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.rubric_name,
+            self.rubric_description,
+            self.rubric_points,
+            self.rubric_pass_points,
+            self.rubric_active,
+        )
+
+class CreateTestRubricSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class CreateTestRubricApiRequest(BaseModel):
+
+    rubric_name: str
+    rubric_description: str
+    rubric_points: int
+    rubric_pass_points: int
+    rubric_active: bool
+
+class CreateTestRubricApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: get_rubric_by_id
+
+class GetRubricByIdSqlParams(BaseModel):
+
+    input_rubric_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_rubric_id,
+        )
+
+class GetRubricByIdSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class GetRubricByIdApiRequest(BaseModel):
+
+    input_rubric_id: UUID
+
+class GetRubricByIdApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: get_rubric_department_link
+
+class GetRubricDepartmentLinkSqlParams(BaseModel):
+
+    input_rubric_id: UUID
+    input_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_rubric_id,
+            self.input_department_id,
+        )
+
+class GetRubricDepartmentLinkSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetRubricDepartmentLinkApiRequest(BaseModel):
+
+    input_rubric_id: UUID
+    input_department_id: UUID
+
+class GetRubricDepartmentLinkApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: get_rubric_department_links
+
+class GetRubricDepartmentLinksSqlParams(BaseModel):
+
+    input_rubric_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_rubric_id,
+        )
+
+class GetRubricDepartmentLinksSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetRubricDepartmentLinksApiRequest(BaseModel):
+
+    input_rubric_id: UUID
+
+class GetRubricDepartmentLinksApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: create_test_scenario
 
 class CreateTestScenarioSqlParams(BaseModel):
@@ -1317,6 +1506,36 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaByIdApiRequest",
         "GetPersonaByIdApiResponse",
     ),
+    "tests/sql/v4/integration/api/rubrics/test_create_rubric_department_link_v4_complete.sql": (
+        "CreateRubricDepartmentLinkSqlParams",
+        "CreateRubricDepartmentLinkSqlRow",
+        "CreateRubricDepartmentLinkApiRequest",
+        "CreateRubricDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql": (
+        "CreateTestRubricSqlParams",
+        "CreateTestRubricSqlRow",
+        "CreateTestRubricApiRequest",
+        "CreateTestRubricApiResponse",
+    ),
+    "tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql": (
+        "GetRubricByIdSqlParams",
+        "GetRubricByIdSqlRow",
+        "GetRubricByIdApiRequest",
+        "GetRubricByIdApiResponse",
+    ),
+    "tests/sql/v4/integration/api/rubrics/test_get_rubric_department_link_v4_complete.sql": (
+        "GetRubricDepartmentLinkSqlParams",
+        "GetRubricDepartmentLinkSqlRow",
+        "GetRubricDepartmentLinkApiRequest",
+        "GetRubricDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/rubrics/test_get_rubric_department_links_v4_complete.sql": (
+        "GetRubricDepartmentLinksSqlParams",
+        "GetRubricDepartmentLinksSqlRow",
+        "GetRubricDepartmentLinksApiRequest",
+        "GetRubricDepartmentLinksApiResponse",
+    ),
     "tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql": (
         "CreateTestScenarioSqlParams",
         "CreateTestScenarioSqlRow",
@@ -1556,6 +1775,31 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_rubric_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_department_links_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
