@@ -9,7 +9,8 @@ from tests.integration.socket.helpers import (
 )
 from utils.sql_helper import load_sql
 
-from app.socket.v3.evals.process_next import eval_process_next
+# TODO: eval_process_next may have been renamed to benchmark_next - verify actual location
+# from app.socket.v3.benchmark.next import benchmark_next as eval_process_next
 
 pytestmark = pytest.mark.asyncio
 

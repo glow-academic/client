@@ -4,8 +4,8 @@ import asyncpg  # type: ignore
 from typing import cast
 
 from app.sql.types import (
-    InfraActivityProfileExistsSqlParams,
-    InfraActivityProfileExistsSqlRow,
+    InfrastructureActivityProfileExistsSqlParams,
+    InfrastructureActivityProfileExistsSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -23,9 +23,9 @@ async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
         True if profile exists, False otherwise
     """
     try:
-        params = InfraActivityProfileExistsSqlParams(profile_id=profile_id)
+        params = InfrastructureActivityProfileExistsSqlParams(profile_id=profile_id)
         result = cast(
-            InfraActivityProfileExistsSqlRow,
+            InfrastructureActivityProfileExistsSqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
         return result.profile_exists if result else False

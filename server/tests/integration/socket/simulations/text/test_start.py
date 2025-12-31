@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.simulations.text.start import (
+from app.socket.v3.simulations.start import (
     simulation_text_start,
 )
 

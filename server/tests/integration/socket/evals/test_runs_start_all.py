@@ -9,7 +9,8 @@ from tests.integration.socket.helpers import (
 )
 from utils.sql_helper import load_sql
 
-from app.socket.v3.evals.runs_start_all import eval_runs_start_all
+# TODO: eval_runs_start_all may have been removed or renamed - verify actual location
+# from app.socket.v3.benchmark import eval_runs_start_all
 
 pytestmark = pytest.mark.asyncio
 

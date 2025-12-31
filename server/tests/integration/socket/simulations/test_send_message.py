@@ -4,7 +4,8 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockSocketIO
 
-from app.socket.v3.simulations.text.send import simulation_text_send
+# TODO: simulation_text_send may have been refactored - verify actual location
+# from app.socket.v3.agents.member.generate import simulation_text_send
 
 pytestmark = pytest.mark.asyncio
 

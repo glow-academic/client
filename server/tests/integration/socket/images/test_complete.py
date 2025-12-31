@@ -4,7 +4,7 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.images.complete import (
+from app.socket.v3.agents.image.complete import (
     image_generation_complete,
     image_generation_complete_internal,
 )

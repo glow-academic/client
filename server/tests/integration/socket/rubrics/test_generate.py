@@ -5,7 +5,7 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.rubrics.generate import rubric_generate
+from app.socket.v3.agents.rubric.generate import rubric_generate
 
 pytestmark = pytest.mark.asyncio
 

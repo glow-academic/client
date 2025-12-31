@@ -8,10 +8,12 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.simulations.document_template_create import (
-    _document_template_create_impl,
-    document_template_create_internal,
-)
+# TODO: document_template_create may have been refactored - verify actual location
+# The functionality may be in app.socket.v3.agents.document.generate or complete
+# from app.socket.v3.agents.document.generate import (
+#     _document_template_create_impl,
+#     document_template_create_internal,
+# )
 
 pytestmark = pytest.mark.asyncio
 

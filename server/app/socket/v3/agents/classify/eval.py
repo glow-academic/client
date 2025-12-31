@@ -12,9 +12,9 @@ from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
 from app.sql.types import (
-    ClassifyEvalStartApiRequest,
-    ClassifyEvalStartSqlParams,
-    ClassifyEvalStartSqlRow,
+    AgentsClassifyClassifyEvalStartApiRequest,
+    AgentsClassifyClassifyEvalStartSqlParams,
+    AgentsClassifyClassifyEvalStartSqlRow,
 )
 
 internal_sio = get_internal_sio()
@@ -25,20 +25,20 @@ SQL_PATH = "app/sql/v3/agents/agents_classify_classify_eval_start_complete.sql"
 
 async def _classify_eval_impl(
     sid: str,
-    data: ClassifyEvalStartApiRequest,
+    data: AgentsClassifyClassifyEvalStartApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Handle classify_eval_start requests via WebSocket."""
     try:
         async with get_db_connection() as conn:
-            params = ClassifyEvalStartSqlParams(
+            params = AgentsClassifyClassifyEvalStartSqlParams(
                 **data.model_dump(),
                 profile_id=profile_id,  # From sid lookup
                 group_id=group_id,
             )
             result = cast(
-                ClassifyEvalStartSqlRow,
+                AgentsClassifyClassifyEvalStartSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
@@ -104,7 +104,7 @@ async def classify_eval_internal(data: dict[str, Any]) -> None:
     """Handle classify_eval_start event from internal bus."""
     await handle_internal_event(
         data=data,
-        request_type=ClassifyEvalStartApiRequest,
+        request_type=AgentsClassifyClassifyEvalStartApiRequest,
         handler=_classify_eval_impl,  # type: ignore[arg-type]
         error_event_name="benchmark_error",
         error_response_type=None,  # Will be handled by benchmark_error handler
@@ -114,6 +114,6 @@ async def classify_eval_internal(data: dict[str, Any]) -> None:
 register_client_endpoint(
     server_router,
     "/eval",
-    ClassifyEvalStartApiRequest,
+    AgentsClassifyClassifyEvalStartApiRequest,
     "Execute classify agent for eval",
 )

@@ -7,8 +7,8 @@ import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
 
 from app.sql.types import (
-    InfraDebugInsertDebugInfoSqlParams,
-    InfraDebugInsertDebugInfoSqlRow,
+    InfrastructureDebugInsertDebugInfoSqlParams,
+    InfrastructureDebugInsertDebugInfoSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -45,7 +45,7 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
 
     try:
         # Insert debug info asynchronously (fire-and-forget)
-        params = InfraDebugInsertDebugInfoSqlParams(
+        params = InfrastructureDebugInsertDebugInfoSqlParams(
             run_id=run_id,
             content=content,
         )

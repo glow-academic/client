@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.scenarios.tools.video import (
+from app.socket.v3.agents.scenario.tools.video.call import (
     scenario_tool_video,
     scenario_tool_video_internal,
 )

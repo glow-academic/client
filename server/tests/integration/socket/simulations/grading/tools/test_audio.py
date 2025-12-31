@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.simulations.grading.tools.audio import (
+from app.socket.v3.agents.grade.tools.audio.call import (
     _grading_tool_audio_impl,
     grading_tool_audio,
     grading_tool_audio_internal,

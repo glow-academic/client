@@ -5,7 +5,7 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.videos.generate import video_generate
+from app.socket.v3.agents.video.generate import video_generate
 
 pytestmark = pytest.mark.asyncio
 

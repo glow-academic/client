@@ -4,7 +4,7 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.scenarios.tools.objectives import (
+from app.socket.v3.agents.scenario.tools.objective.call import (
     scenario_tool_objectives,
     scenario_tool_objectives_internal,
 )

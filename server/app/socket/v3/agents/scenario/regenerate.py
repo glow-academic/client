@@ -198,14 +198,14 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         parameter_item_ids=parameter_item_ids if parameter_item_ids else None,
                         user_instructions=data.userInstructions if data.userInstructions else None,
                     )
-                result = cast(
-                    GetScenarioRegenerationRunContextAndCreateRunSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH, params=params),
-                )
-            except Exception as e:
-                import asyncpg  # type: ignore
+                    result = cast(
+                        GetScenarioRegenerationRunContextAndCreateRunSqlRow,
+                        await execute_sql_typed(conn, SQL_PATH, params=params),
+                    )
+                except Exception as e:
+                    import asyncpg  # type: ignore
 
-                error_msg = str(e)
+                    error_msg = str(e)
                 # Check if it's a rate limit error from SQL (PostgreSQL exception)
                 if (
                     isinstance(e, asyncpg.PostgresError)

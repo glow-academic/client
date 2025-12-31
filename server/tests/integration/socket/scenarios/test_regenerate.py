@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.scenarios.regenerate import regenerate_scenario
+from app.socket.v3.agents.scenario.regenerate import regenerate_scenario
 
 pytestmark = pytest.mark.asyncio
 

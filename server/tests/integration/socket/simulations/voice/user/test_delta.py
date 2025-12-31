@@ -4,7 +4,8 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.simulations.voice.user.delta import simulation_voice_user_delta
+# TODO: simulation_voice_user_delta may have been consolidated into member agent - verify actual location
+# from app.socket.v3.agents.member.generate import simulation_voice_user_delta
 
 pytestmark = pytest.mark.asyncio
 

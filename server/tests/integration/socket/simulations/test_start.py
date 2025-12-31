@@ -5,7 +5,7 @@ import pytest
 from tests.integration.socket.conftest import MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.simulations.text.start import simulation_text_start
+from app.socket.v3.simulations.start import simulation_text_start
 
 pytestmark = pytest.mark.asyncio
 

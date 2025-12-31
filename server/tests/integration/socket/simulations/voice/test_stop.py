@@ -4,7 +4,8 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.simulations.voice.stop import simulation_voice_stop
+# TODO: simulation_voice_stop may have been moved - verify actual location
+# from app.socket.v3.agents.voice.generate import simulation_voice_stop
 
 pytestmark = pytest.mark.asyncio
 

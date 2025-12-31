@@ -4,7 +4,7 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.simulations.voice.assistant.audio import (
+from app.socket.v3.agents.voice.progress import (
     simulation_voice_assistant_audio_link,
 )
 

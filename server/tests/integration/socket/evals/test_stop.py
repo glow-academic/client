@@ -5,7 +5,7 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.evals.stop import eval_stop
+from app.socket.v3.benchmark.stop import benchmark_stop as eval_stop
 
 pytestmark = pytest.mark.asyncio
 

@@ -12,9 +12,9 @@ from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
 from app.sql.types import (
-    AudioEvalStartApiRequest,
-    AudioEvalStartSqlParams,
-    AudioEvalStartSqlRow,
+    AgentsGradeToolsAudioAudioEvalStartApiRequest,
+    AgentsGradeToolsAudioAudioEvalStartSqlParams,
+    AgentsGradeToolsAudioAudioEvalStartSqlRow,
 )
 
 internal_sio = get_internal_sio()
@@ -25,20 +25,20 @@ SQL_PATH = "app/sql/v3/agents/agents_grade_tools_audio_audio_eval_start_complete
 
 async def _audio_eval_impl(
     sid: str,
-    data: AudioEvalStartApiRequest,
+    data: AgentsGradeToolsAudioAudioEvalStartApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Handle audio_eval_start requests via WebSocket."""
     try:
         async with get_db_connection() as conn:
-            params = AudioEvalStartSqlParams(
+            params = AgentsGradeToolsAudioAudioEvalStartSqlParams(
                 **data.model_dump(),
                 profile_id=profile_id,  # From sid lookup
                 group_id=group_id,
             )
             result = cast(
-                AudioEvalStartSqlRow,
+                AgentsGradeToolsAudioAudioEvalStartSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
@@ -96,7 +96,7 @@ async def audio_eval_internal(data: dict[str, Any]) -> None:
     """Handle audio_eval_start event from internal bus."""
     await handle_internal_event(
         data=data,
-        request_type=AudioEvalStartApiRequest,
+        request_type=AgentsGradeToolsAudioAudioEvalStartApiRequest,
         handler=_audio_eval_impl,  # type: ignore[arg-type]
         error_event_name="benchmark_error",
         error_response_type=None,  # Will be handled by benchmark_error handler
@@ -106,6 +106,6 @@ async def audio_eval_internal(data: dict[str, Any]) -> None:
 register_client_endpoint(
     server_router,
     "/eval",
-    AudioEvalStartApiRequest,
+    AgentsGradeToolsAudioAudioEvalStartApiRequest,
     "Execute audio tool for eval",
 )

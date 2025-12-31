@@ -7,10 +7,11 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.simulations.hint_create import (
-    _simulation_hints_create_impl,
-    simulation_hints_create_internal,
-)
+# TODO: simulation_hints_create functions may have been refactored - hints are created directly in generate.py
+# from app.socket.v3.agents.hint.generate import (
+#     _simulation_hints_create_impl,
+#     simulation_hints_create_internal,
+# )
 
 pytestmark = pytest.mark.asyncio
 

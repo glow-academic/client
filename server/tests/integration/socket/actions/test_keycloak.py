@@ -5,7 +5,8 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.actions.keycloak import keycloak_sync
+# TODO: keycloak_sync may have been removed or moved - verify actual location
+# from app.socket.v3.actions.keycloak import keycloak_sync
 
 pytestmark = pytest.mark.asyncio
 

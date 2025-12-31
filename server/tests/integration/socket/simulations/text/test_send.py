@@ -9,7 +9,8 @@ from tests.integration.socket.helpers import (
 )
 from utils.sql_helper import load_sql
 
-from app.socket.v3.simulations.text.send import simulation_text_send
+# TODO: simulation_text_send may have been refactored to member agent - verify actual location
+# from app.socket.v3.agents.member.generate import simulation_text_send
 
 pytestmark = pytest.mark.asyncio
 

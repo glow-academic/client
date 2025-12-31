@@ -4,9 +4,8 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.simulations.voice.user.transcript import (
-    simulation_voice_user_transcript,
-)
+# TODO: simulation_voice_user_transcript may have been consolidated into member agent - verify actual location
+# from app.socket.v3.agents.member.generate import simulation_voice_user_transcript
 
 pytestmark = pytest.mark.asyncio
 

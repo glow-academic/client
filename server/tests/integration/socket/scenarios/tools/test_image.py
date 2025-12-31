@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.scenarios.tools.image import (
+from app.socket.v3.agents.scenario.tools.image.call import (
     scenario_tool_image,
     scenario_tool_image_internal,
 )

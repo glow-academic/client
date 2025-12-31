@@ -5,7 +5,7 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.simulations.grading.tools.message_strength import (
+from app.socket.v3.agents.grade.tools.strength.call import (
     _grading_tool_message_strength_impl,
     grading_tool_message_strength,
     grading_tool_message_strength_internal,

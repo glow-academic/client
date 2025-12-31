@@ -5,8 +5,8 @@ from typing import cast
 
 from app.infra.v3.activity.profile_exists import profile_exists
 from app.sql.types import (
-    InfraActivityInsertWebsocketSqlParams,
-    InfraActivityInsertWebsocketSqlRow,
+    InfrastructureActivityInsertWebsocketSqlParams,
+    InfrastructureActivityInsertWebsocketSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -38,13 +38,13 @@ async def insert_activity_websocket(
             profile_id_uuid = profile_id
         # If profile doesn't exist, profile_id_uuid remains None (NULL in database)
 
-    params = InfraActivityInsertWebsocketSqlParams(
+    params = InfrastructureActivityInsertWebsocketSqlParams(
         message=message,
         endpoint=endpoint,
         profile_id=profile_id_uuid,
         error=error,
     )
     cast(
-        InfraActivityInsertWebsocketSqlRow,
+        InfrastructureActivityInsertWebsocketSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )

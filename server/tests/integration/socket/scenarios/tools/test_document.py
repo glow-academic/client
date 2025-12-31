@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.scenarios.tools.document import (
+from app.socket.v3.agents.scenario.tools.document.call import (
     scenario_tool_document,
     scenario_tool_document_internal,
 )

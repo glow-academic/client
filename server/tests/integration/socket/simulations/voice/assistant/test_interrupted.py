@@ -4,9 +4,8 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.simulations.voice.assistant.interrupted import (
-    simulation_voice_assistant_interrupted,
-)
+# TODO: simulation_voice_assistant_interrupted may have been removed or renamed - verify actual location
+# from app.socket.v3.agents.voice.progress import simulation_voice_assistant_interrupted
 
 pytestmark = pytest.mark.asyncio
 

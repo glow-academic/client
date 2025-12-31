@@ -12,9 +12,9 @@ from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
 from app.sql.types import (
-    MemberEvalStartApiRequest,
-    MemberEvalStartSqlParams,
-    MemberEvalStartSqlRow,
+    AgentsMemberMemberEvalStartApiRequest,
+    AgentsMemberMemberEvalStartSqlParams,
+    AgentsMemberMemberEvalStartSqlRow,
 )
 
 internal_sio = get_internal_sio()
@@ -25,20 +25,20 @@ SQL_PATH = "app/sql/v3/agents/agents_member_member_eval_start_complete.sql"
 
 async def _member_eval_impl(
     sid: str,
-    data: MemberEvalStartApiRequest,
+    data: AgentsMemberMemberEvalStartApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Handle member_eval_start requests via WebSocket."""
     try:
         async with get_db_connection() as conn:
-            params = MemberEvalStartSqlParams(
+            params = AgentsMemberMemberEvalStartSqlParams(
                 **data.model_dump(),
                 profile_id=profile_id,  # From sid lookup
                 group_id=group_id,
             )
             result = cast(
-                MemberEvalStartSqlRow,
+                AgentsMemberMemberEvalStartSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
@@ -104,7 +104,7 @@ async def member_eval_internal(data: dict[str, Any]) -> None:
     """Handle member_eval_start event from internal bus."""
     await handle_internal_event(
         data=data,
-        request_type=MemberEvalStartApiRequest,
+        request_type=AgentsMemberMemberEvalStartApiRequest,
         handler=_member_eval_impl,  # type: ignore[arg-type]
         error_event_name="benchmark_error",
         error_response_type=None,  # Will be handled by benchmark_error handler
@@ -114,6 +114,6 @@ async def member_eval_internal(data: dict[str, Any]) -> None:
 register_client_endpoint(
     server_router,
     "/eval",
-    MemberEvalStartApiRequest,
+    AgentsMemberMemberEvalStartApiRequest,
     "Execute member agent for eval",
 )

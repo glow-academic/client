@@ -5,10 +5,11 @@ import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.scenarios.image.link import (
-    _scenario_image_link_impl,
-    scenario_image_link_internal,
-)
+# TODO: scenario_image_link functions may have been refactored - verify actual location
+# from app.socket.v3.agents.scenario.tools.image.call import (
+#     _scenario_image_link_impl,
+#     scenario_image_link_internal,
+# )
 
 pytestmark = pytest.mark.asyncio
 

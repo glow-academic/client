@@ -4,10 +4,11 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v3.scenarios.tools.statement import (
-    scenario_tool_problem_statement,
+from app.socket.v3.agents.scenario.tools.statement.call import (
     scenario_tool_problem_statement_internal,
 )
+# Note: scenario_tool_problem_statement doesn't exist - only internal version exists
+# Use scenario_tool_problem_statement_internal for testing
 
 pytestmark = pytest.mark.asyncio
 
@@ -29,8 +30,9 @@ async def test_scenario_tool_statement_success(
         "scenario_id": str(scenario_id),
     }
 
-    # Act
-    await scenario_tool_problem_statement(sid, data)
+    # Act - use internal version since client version doesn't exist
+    data_with_sid = {**data, "sid": sid}
+    await scenario_tool_problem_statement_internal(data_with_sid)
 
     # Assert - verify problem statement was created
     ps_row = await db.fetchrow(
@@ -87,8 +89,9 @@ async def test_scenario_tool_statement_missing_trace_id(
         "description": "This is a test problem statement description",
     }
 
-    # Act
-    await scenario_tool_problem_statement(sid, data)
+    # Act - use internal version since client version doesn't exist
+    data_with_sid = {**data, "sid": sid}
+    await scenario_tool_problem_statement_internal(data_with_sid)
 
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("scenarios_tools_statement_error")
