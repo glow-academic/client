@@ -45,8 +45,8 @@ CREATE TYPE types.i_video_regen_run_context_create_run_v3_msg AS (
 -- group_id is REQUIRED (not NULL) for regeneration - uses existing group
 CREATE OR REPLACE FUNCTION socket_get_video_regeneration_run_context_and_create_run_v3(
     video_id uuid,
-    profile_id uuid DEFAULT NULL,
     group_id uuid,  -- REQUIRED for regeneration (not NULL)
+    profile_id uuid DEFAULT NULL,
     user_instructions text DEFAULT NULL
 )
 RETURNS TABLE (

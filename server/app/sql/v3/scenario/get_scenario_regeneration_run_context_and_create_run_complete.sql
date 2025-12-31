@@ -27,11 +27,12 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    -- Drop all types matching prefix pattern (includes truncated name)
+    -- Drop all types matching prefix pattern (includes truncated name and shortened variants)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'i_get_scenario_regeneration_run_context_and_create_run_v3_%'
+        WHERE (typname LIKE 'i_get_scenario_regeneration_run_context_and_create_run_v3_%'
+           OR typname LIKE 'i_scenario_regen_run_context_create_run_v3_%')
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);

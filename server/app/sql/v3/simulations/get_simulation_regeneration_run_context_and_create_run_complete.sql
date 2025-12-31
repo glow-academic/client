@@ -5,6 +5,11 @@
 
 BEGIN;
 
+-- Drop old function with old name (if exists)
+DROP FUNCTION IF EXISTS socket_get_simulation_regeneration_run_context_and_create_run_v3 CASCADE;
+
+
+
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -14,10 +19,10 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'socket_get_simulation_regeneration_run_context_and_create_run_v3'
+        WHERE proname = 'socket_get_sim_regen_run_context_create_run_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_simulation_regeneration_run_context_and_create_run_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_sim_regen_run_context_create_run_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -31,7 +36,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'q_get_simulation_regeneration_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'q_get_sim_regen_run_context_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -39,14 +44,14 @@ BEGIN
 END $$;
 
 -- 3) Recreate types for composite structures
-CREATE TYPE types.q_get_simulation_regeneration_run_context_and_create_run_v3_document AS (
+CREATE TYPE types.q_get_sim_regen_run_context_create_run_v3_document AS (
     id text,
     name text,
     file_path text,
     mime_type text
 );
 
-CREATE TYPE types.q_get_simulation_regeneration_run_context_and_create_run_v3_msg AS (
+CREATE TYPE types.q_get_sim_regen_run_context_create_run_v3_msg AS (
     role text,
     content text
 );
@@ -56,7 +61,7 @@ CREATE TYPE types.q_get_simulation_regeneration_run_context_and_create_run_v3_ms
 -- chat_id is REQUIRED to get simulation context
 -- Gets all messages from all previous runs in the group
 -- Links existing system/developer messages to the new run
-CREATE OR REPLACE FUNCTION socket_get_simulation_regeneration_run_context_and_create_run_v3(
+CREATE OR REPLACE FUNCTION socket_get_sim_regen_run_context_create_run_v3(
     chat_id uuid,
     profile_id uuid,
     group_id uuid,  -- REQUIRED for regeneration (not NULL)
@@ -102,10 +107,10 @@ RETURNS TABLE (
     req_per_day integer,
     runs_today_count bigint,
     earliest_run_created_at timestamptz,
-    documents types.q_get_simulation_regeneration_run_context_and_create_run_v3_document[],
+    documents types.q_get_sim_regen_run_context_create_run_v3_document[],
     run_id text,
     group_id uuid,
-    previous_messages types.q_get_simulation_regeneration_run_context_and_create_run_v3_msg[]
+    previous_messages types.q_get_sim_regen_run_context_create_run_v3_msg[]
 )
 LANGUAGE sql
 VOLATILE
@@ -153,10 +158,10 @@ previous_messages_array AS (
     -- Aggregate all previous messages into composite type array
     SELECT COALESCE(
         ARRAY_AGG(
-            (role, content)::types.q_get_simulation_regeneration_run_context_and_create_run_v3_msg
+            (role, content)::types.q_get_sim_regen_run_context_create_run_v3_msg
             ORDER BY run_idx, created_at
         ),
-        '{}'::types.q_get_simulation_regeneration_run_context_and_create_run_v3_msg[]
+        '{}'::types.q_get_sim_regen_run_context_create_run_v3_msg[]
     ) as previous_messages
     FROM previous_messages_all_runs
 ),
@@ -390,19 +395,13 @@ context_data AS (
         FROM scenario_personas sp
         JOIN personas p ON p.id = sp.persona_id
         WHERE sp.scenario_id = s.id AND sp.active = true
-        ORDER BY sp.position, sp.created_at
+        ORDER BY sp.created_at
         LIMIT 1
     ) first_persona ON true
     LEFT JOIN personas p ON p.id = first_persona.persona_id
-    -- Text agent (via persona_agents junction - first agent for persona)
-    LEFT JOIN LATERAL (
-        SELECT pa.agent_id
-        FROM persona_agents pa
-        WHERE pa.persona_id = p.id AND pa.active = true
-        ORDER BY pa.position, pa.created_at
-        LIMIT 1
-    ) first_agent ON true
-    LEFT JOIN agents a ON a.id = first_agent.agent_id AND a.active = true AND a.role = 'simulation'::agent_role
+    -- Text agent (use simulation agent - fallback to persona agent if persona_text_agents table exists)
+    -- Note: For regeneration, we use simulation agent to match original run context
+    LEFT JOIN agents a ON a.id = sim.simulation_text_agent_id AND a.active = true AND a.role = 'simulation'::agent_role
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
@@ -424,16 +423,9 @@ context_data AS (
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    -- Voice agent (via persona_agents junction - first voice agent for persona)
-    LEFT JOIN LATERAL (
-        SELECT pa.agent_id
-        FROM persona_agents pa
-        JOIN agents a_voice_check ON a_voice_check.id = pa.agent_id AND a_voice_check.active = true AND a_voice_check.role = 'voice'::agent_role
-        WHERE pa.persona_id = p.id AND pa.active = true
-        ORDER BY pa.position, pa.created_at
-        LIMIT 1
-    ) first_voice_agent ON true
-    LEFT JOIN agents a_voice ON a_voice.id = first_voice_agent.agent_id AND a_voice.active = true AND a_voice.role = 'voice'::agent_role
+    -- Voice agent (use simulation voice agent - fallback to persona agent if persona_voice_agents table exists)
+    -- Note: For regeneration, we use simulation agent to match original run context
+    LEFT JOIN agents a_voice ON a_voice.id = sim.simulation_voice_agent_id AND a_voice.active = true AND a_voice.role = 'voice'::agent_role
     -- Try department-specific voice prompt first, fall back to default voice prompt
     LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id AND adp_prompt_voice.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt_voice.active = true
     LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
@@ -483,7 +475,7 @@ documents_data AS (
     SELECT 
         sc.id as chat_id,
         ARRAY_AGG(
-            (d.id::text, d.name, u.file_path, u.mime_type)::types.q_get_simulation_regeneration_run_context_and_create_run_v3_document
+            (d.id::text, d.name, u.file_path, u.mime_type)::types.q_get_sim_regen_run_context_create_run_v3_document
             ORDER BY d.id
         ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true) as documents
     FROM chats sc
@@ -595,7 +587,7 @@ SELECT
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
-    COALESCE(dd.documents, ARRAY[]::types.q_get_simulation_regeneration_run_context_and_create_run_v3_document[]) as documents,
+    COALESCE(dd.documents, ARRAY[]::types.q_get_sim_regen_run_context_create_run_v3_document[]) as documents,
     -- Run ID (created in same transaction)
     cr.id::text as run_id,
     -- Group ID and trace_id (from existing group)

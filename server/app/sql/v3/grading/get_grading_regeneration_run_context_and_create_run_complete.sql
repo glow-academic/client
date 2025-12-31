@@ -30,7 +30,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'q_get_grading_regeneration_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'q_get_grading_regen_run_context_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -38,7 +38,8 @@ BEGIN
 END $$;
 
 -- 3) Recreate types for output (standard groups and standards as composite types)
-CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group AS (
+DROP TYPE IF EXISTS types.q_get_grading_regen_run_context_create_run_v3_standard_group CASCADE;
+CREATE TYPE types.q_get_grading_regen_run_context_create_run_v3_standard_group AS (
     id text,
     name text,
     short_name text,
@@ -48,7 +49,8 @@ CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_stand
     rubric_id text
 );
 
-CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_standard AS (
+DROP TYPE IF EXISTS types.q_get_grading_regen_run_context_create_run_v3_standard CASCADE;
+CREATE TYPE types.q_get_grading_regen_run_context_create_run_v3_standard AS (
     id text,
     name text,
     description text,
@@ -56,7 +58,7 @@ CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_stand
     standard_group_id text
 );
 
-CREATE TYPE types.q_get_grading_regeneration_run_context_and_create_run_v3_msg AS (
+CREATE TYPE types.q_get_grading_regen_run_context_create_run_v3_msg AS (
     role text,
     content text
 );
@@ -101,10 +103,10 @@ RETURNS TABLE (
     rubric_points integer,
     rubric_pass_points integer,
     -- Standard groups and standards (as composite type arrays)
-    standard_groups types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group[],
-    standards types.q_get_grading_regeneration_run_context_and_create_run_v3_standard[],
+    standard_groups types.q_get_grading_regen_run_context_create_run_v3_standard_group[],
+    standards types.q_get_grading_regen_run_context_create_run_v3_standard[],
     -- Previous messages (from all previous runs in group)
-    previous_messages types.q_get_grading_regeneration_run_context_and_create_run_v3_msg[],
+    previous_messages types.q_get_grading_regen_run_context_create_run_v3_msg[],
     -- Agent data
     agent_id text,
     agent_name text,
@@ -173,10 +175,10 @@ previous_messages_array AS (
     -- Aggregate all previous messages into composite type array
     SELECT COALESCE(
         ARRAY_AGG(
-            (role, content)::types.q_get_grading_regeneration_run_context_and_create_run_v3_msg
+            (role, content)::types.q_get_grading_regen_run_context_create_run_v3_msg
             ORDER BY run_idx, created_at
         ),
-        '{}'::types.q_get_grading_regeneration_run_context_and_create_run_v3_msg[]
+        '{}'::types.q_get_grading_regen_run_context_create_run_v3_msg[]
     ) as previous_messages
     FROM previous_messages_all_runs
 ),
@@ -464,10 +466,10 @@ standard_groups_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sgd.id::text, sgd.name, sgd.short_name, COALESCE(sgd.description, ''), sgd.points, sgd.pass_points, sgd.rubric_id::text)::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group
+                (sgd.id::text, sgd.name, sgd.short_name, COALESCE(sgd.description, ''), sgd.points, sgd.pass_points, sgd.rubric_id::text)::types.q_get_grading_regen_run_context_create_run_v3_standard_group
                 ORDER BY sgd.name
             ),
-            ARRAY[]::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard_group[]
+            ARRAY[]::types.q_get_grading_regen_run_context_create_run_v3_standard_group[]
         ) as standard_groups
     FROM standard_groups_data sgd
 ),
@@ -476,10 +478,10 @@ standards_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (std.id::text, std.name, COALESCE(std.description, ''), std.points, std.standard_group_id::text)::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard
+                (std.id::text, std.name, COALESCE(std.description, ''), std.points, std.standard_group_id::text)::types.q_get_grading_regen_run_context_create_run_v3_standard
                 ORDER BY std.name
             ),
-            ARRAY[]::types.q_get_grading_regeneration_run_context_and_create_run_v3_standard[]
+            ARRAY[]::types.q_get_grading_regen_run_context_create_run_v3_standard[]
         ) as standards
     FROM standards_data std
 ),
@@ -558,6 +560,8 @@ SELECT
     -- Standard groups and standards as composite type arrays
     sga.standard_groups,
     sta.standards,
+    -- Previous messages (from all previous runs in group)
+    pma.previous_messages,
     cd.agent_id,
     cd.agent_name,
     cd.system_prompt,
@@ -573,9 +577,7 @@ SELECT
     cd.runs_today_count,
     cd.earliest_run_created_at,
     -- Run ID (created in same transaction)
-    cr.id::text as run_id,
-    -- Previous messages (from all previous runs in group)
-    pma.previous_messages
+    cr.id::text as run_id
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN group_data gd

@@ -43,11 +43,11 @@ CREATE OR REPLACE FUNCTION socket_benchmark_eval_complete_v3(
     test_id uuid,
     attempt_id uuid,
     eval_id uuid,
+    success boolean,
     run_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
     agent_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL,
-    success boolean,
     message text DEFAULT NULL
 )
 RETURNS TABLE (

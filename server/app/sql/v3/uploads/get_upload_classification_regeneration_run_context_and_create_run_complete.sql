@@ -14,10 +14,10 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'socket_get_upload_classification_regeneration_run_context_and_create_run_v3'
+        WHERE proname = 'socket_get_upload_class_regen_run_context_create_run_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_upload_classification_regeneration_run_context_and_create_run_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_upload_class_regen_run_context_create_run_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -31,7 +31,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'i_get_upload_classification_regeneration_run_context_and_create_run_v3_%'
+        WHERE typname LIKE 'i_get_upload_class_regen_run_context_create_run_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -39,7 +39,7 @@ BEGIN
 END $$;
 
 -- 3) Recreate types for composite structures
-CREATE TYPE types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg AS (
+CREATE TYPE types.i_get_upload_class_regen_run_context_create_run_v3_msg AS (
     role text,
     content text
 );
@@ -49,11 +49,11 @@ CREATE TYPE types.i_get_upload_classification_regeneration_run_context_and_creat
 -- upload_id is REQUIRED to get upload context
 -- Gets all messages from all previous runs in the group
 -- Links existing system/developer messages to the new run
-CREATE OR REPLACE FUNCTION socket_get_upload_classification_regeneration_run_context_and_create_run_v3(
+CREATE OR REPLACE FUNCTION socket_get_upload_class_regen_run_context_create_run_v3(
     upload_id uuid,
     profile_id uuid,
-    department_id uuid DEFAULT NULL,
     group_id uuid,  -- REQUIRED for regeneration (not NULL)
+    department_id uuid DEFAULT NULL,
     user_instructions text DEFAULT NULL
 )
 RETURNS TABLE (
@@ -73,7 +73,7 @@ RETURNS TABLE (
     earliest_run_created_at timestamptz,
     run_id text,
     upload_id uuid,
-    previous_messages types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg[]
+    previous_messages types.i_get_upload_class_regen_run_context_create_run_v3_msg[]
 )
 LANGUAGE sql
 VOLATILE
@@ -122,10 +122,10 @@ previous_messages_array AS (
     -- Aggregate all previous messages into composite type array
     SELECT COALESCE(
         ARRAY_AGG(
-            (role, content)::types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg
+            (role, content)::types.i_get_upload_class_regen_run_context_create_run_v3_msg
             ORDER BY run_idx, created_at
         ),
-        '{}'::types.i_get_upload_classification_regeneration_run_context_and_create_run_v3_msg[]
+        '{}'::types.i_get_upload_class_regen_run_context_create_run_v3_msg[]
     ) as previous_messages
     FROM previous_messages_all_runs
 ),

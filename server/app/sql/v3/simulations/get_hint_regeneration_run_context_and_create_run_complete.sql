@@ -176,12 +176,12 @@ scenario_info AS (
     JOIN chat_info ci ON ci.scenario_id = s.id
 ),
 profile_info AS (
-    SELECT profile_id as profile_id
+    SELECT ap.profile_id
     FROM attempt_profiles ap
     JOIN attempt_info ai ON ai.id = ap.attempt_id
-    CROSS JOIN params p
+    CROSS JOIN params p_params
     WHERE ap.active = true
-      AND ap.profile_id = p.profile_id
+      AND ap.profile_id = p_params.profile_id
     LIMIT 1
 ),
 best_agent AS (

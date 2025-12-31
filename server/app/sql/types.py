@@ -120,6 +120,2638 @@ class GetActivityListApiResponse(BaseModel):
 
 
 
+# Generated from: agents_audio_audio_eval_start
+
+class AgentsAudioAudioEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsAudioAudioEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsAudioAudioEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsAudioAudioEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_audio_tools_debug_debug_eval_start
+
+class AgentsAudioToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsAudioToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsAudioToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsAudioToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_classify_classify_eval_start
+
+class AgentsClassifyClassifyEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsClassifyClassifyEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsClassifyClassifyEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsClassifyClassifyEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_classify_tools_classification_classification_eval_start
+
+class AgentsClassifyToolsClassificationClassificationEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsClassifyToolsClassificationClassificationEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsClassifyToolsClassificationClassificationEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsClassifyToolsClassificationClassificationEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_classify_tools_debug_debug_eval_start
+
+class AgentsClassifyToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsClassifyToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsClassifyToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsClassifyToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_document_document_eval_start
+
+class AgentsDocumentDocumentEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsDocumentDocumentEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsDocumentDocumentEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsDocumentDocumentEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_document_tools_debug_debug_eval_start
+
+class AgentsDocumentToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsDocumentToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsDocumentToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsDocumentToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_document_tools_title_title_eval_start
+
+class AgentsDocumentToolsTitleTitleEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsDocumentToolsTitleTitleEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsDocumentToolsTitleTitleEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsDocumentToolsTitleTitleEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_grade_grade_eval_start
+
+class AgentsGradeGradeEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsGradeGradeEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsGradeGradeEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsGradeGradeEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_grade_tools_audio_audio_eval_start
+
+class AgentsGradeToolsAudioAudioEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsGradeToolsAudioAudioEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsGradeToolsAudioAudioEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsGradeToolsAudioAudioEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_grade_tools_debug_debug_eval_start
+
+class AgentsGradeToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsGradeToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsGradeToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsGradeToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_grade_tools_grade_grade_eval_start
+
+class AgentsGradeToolsGradeGradeEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsGradeToolsGradeGradeEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsGradeToolsGradeGradeEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsGradeToolsGradeGradeEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_grade_tools_improvement_improvement_eval_start
+
+class AgentsGradeToolsImprovementImprovementEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsGradeToolsImprovementImprovementEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsGradeToolsImprovementImprovementEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsGradeToolsImprovementImprovementEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_grade_tools_strength_strength_eval_start
+
+class AgentsGradeToolsStrengthStrengthEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsGradeToolsStrengthStrengthEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsGradeToolsStrengthStrengthEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsGradeToolsStrengthStrengthEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_hint_hint_eval_start
+
+class AgentsHintHintEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsHintHintEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsHintHintEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsHintHintEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_hint_tools_debug_debug_eval_start
+
+class AgentsHintToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsHintToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsHintToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsHintToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_hint_tools_hint_hint_eval_start
+
+class AgentsHintToolsHintHintEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsHintToolsHintHintEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsHintToolsHintHintEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsHintToolsHintHintEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_image_image_eval_start
+
+class AgentsImageImageEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsImageImageEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsImageImageEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsImageImageEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_image_tools_debug_debug_eval_start
+
+class AgentsImageToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsImageToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsImageToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsImageToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_image_tools_title_title_eval_start
+
+class AgentsImageToolsTitleTitleEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsImageToolsTitleTitleEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsImageToolsTitleTitleEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsImageToolsTitleTitleEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_member_member_eval_start
+
+class AgentsMemberMemberEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsMemberMemberEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsMemberMemberEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsMemberMemberEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_member_tools_conversation_conversation_eval_start
+
+class AgentsMemberToolsConversationConversationEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsMemberToolsConversationConversationEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsMemberToolsConversationConversationEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsMemberToolsConversationConversationEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_rubric_rubric_eval_start
+
+class AgentsRubricRubricEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsRubricRubricEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsRubricRubricEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsRubricRubricEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_rubric_tools_debug_debug_eval_start
+
+class AgentsRubricToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsRubricToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsRubricToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsRubricToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_rubric_tools_rubric_rubric_eval_start
+
+class AgentsRubricToolsRubricRubricEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsRubricToolsRubricRubricEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsRubricToolsRubricRubricEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsRubricToolsRubricRubricEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_rubric_tools_title_title_eval_start
+
+class AgentsRubricToolsTitleTitleEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsRubricToolsTitleTitleEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsRubricToolsTitleTitleEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsRubricToolsTitleTitleEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_scenario_eval_start
+
+class AgentsScenarioScenarioEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsScenarioScenarioEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioScenarioEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsScenarioScenarioEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_debug_debug_eval_start
+
+class AgentsScenarioToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_document_document_eval_start
+
+class AgentsScenarioToolsDocumentDocumentEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsDocumentDocumentEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsDocumentDocumentEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsDocumentDocumentEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_image_image_eval_start
+
+class AgentsScenarioToolsImageImageEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsImageImageEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsImageImageEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsImageImageEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_objective_objective_eval_start
+
+class AgentsScenarioToolsObjectiveObjectiveEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsObjectiveObjectiveEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsObjectiveObjectiveEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsObjectiveObjectiveEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_question_question_eval_start
+
+class AgentsScenarioToolsQuestionQuestionEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsQuestionQuestionEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsQuestionQuestionEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsQuestionQuestionEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_statement_statement_eval_start
+
+class AgentsScenarioToolsStatementStatementEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsStatementStatementEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsStatementStatementEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsStatementStatementEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_title_title_eval_start
+
+class AgentsScenarioToolsTitleTitleEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsTitleTitleEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsTitleTitleEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsTitleTitleEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_scenario_tools_video_video_eval_start
+
+class AgentsScenarioToolsVideoVideoEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsScenarioToolsVideoVideoEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsScenarioToolsVideoVideoEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsScenarioToolsVideoVideoEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_simulation_simulation_eval_start
+
+class AgentsSimulationSimulationEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsSimulationSimulationEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsSimulationSimulationEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsSimulationSimulationEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_simulation_tools_debug_debug_eval_start
+
+class AgentsSimulationToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsSimulationToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsSimulationToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsSimulationToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_simulation_tools_speak_speak_eval_start
+
+class AgentsSimulationToolsSpeakSpeakEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsSimulationToolsSpeakSpeakEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsSimulationToolsSpeakSpeakEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsSimulationToolsSpeakSpeakEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_video_tools_debug_debug_eval_start
+
+class AgentsVideoToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsVideoToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsVideoToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsVideoToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_video_tools_title_title_eval_start
+
+class AgentsVideoToolsTitleTitleEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsVideoToolsTitleTitleEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsVideoToolsTitleTitleEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsVideoToolsTitleTitleEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_video_video_eval_start
+
+class AgentsVideoVideoEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsVideoVideoEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsVideoVideoEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsVideoVideoEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_voice_tools_debug_debug_eval_start
+
+class AgentsVoiceToolsDebugDebugEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsVoiceToolsDebugDebugEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsVoiceToolsDebugDebugEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsVoiceToolsDebugDebugEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_voice_tools_speak_speak_eval_start
+
+class AgentsVoiceToolsSpeakSpeakEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.tool_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+        )
+
+class AgentsVoiceToolsSpeakSpeakEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsVoiceToolsSpeakSpeakEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    tool_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+
+class AgentsVoiceToolsSpeakSpeakEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
+# Generated from: agents_voice_voice_eval_start
+
+class AgentsVoiceVoiceEvalStartSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.agent_id,
+            self.run_id,
+            self.group_id,
+            self.use_groups,
+            self.current_cycle,
+        )
+
+class AgentsVoiceVoiceEvalStartSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+class AgentsVoiceVoiceEvalStartApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    agent_id: UUID
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    use_groups: bool | None = False
+    current_cycle: int | None = 0
+
+class AgentsVoiceVoiceEvalStartApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+
+
+
 # Generated from: create_agent
 
 class CreateAgentSqlParams(BaseModel):
@@ -1338,6 +3970,96 @@ class GetSimulationAttemptApiResponse(BaseModel):
 
 
 
+# Generated from: get_audio_regeneration_run_context_and_create_run
+
+class GetAudioRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    upload_id: UUID
+    agent_id: UUID
+    group_id: UUID
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.upload_id,
+            self.agent_id,
+            self.group_id,
+            self.profile_id,
+            self.department_id,
+            self.user_instructions,
+        )
+
+class IAudioRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetAudioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IAudioRegenRunContextCreateRunV3Msg] | None = None
+
+class GetAudioRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    upload_id: UUID
+    agent_id: UUID
+    group_id: UUID
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+class GetAudioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IAudioRegenRunContextCreateRunV3Msg] | None = None
+
+
+
 # Generated from: get_audio_run_context_and_create_run
 
 class GetAudioRunContextAndCreateRunSqlParams(BaseModel):
@@ -1951,6 +4673,75 @@ class BenchmarkErrorApiResponse(BaseModel):
     attempt_id: str | None = None
     eval_id: str | None = None
     test_id: str | None = None
+    trace_id: str | None = None
+
+
+
+# Generated from: benchmark_eval_complete
+
+class BenchmarkEvalCompleteSqlParams(BaseModel):
+
+    profile_id: UUID
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    success: bool
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    agent_id: UUID | None = None
+    tool_id: UUID | None = None
+    message: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.test_id,
+            self.attempt_id,
+            self.eval_id,
+            self.success,
+            self.run_id,
+            self.group_id,
+            self.agent_id,
+            self.tool_id,
+            self.message,
+        )
+
+class BenchmarkEvalCompleteSqlRow(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+class BenchmarkEvalCompleteApiRequest(BaseModel):
+
+    test_id: UUID
+    attempt_id: UUID
+    eval_id: UUID
+    success: bool
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    agent_id: UUID | None = None
+    tool_id: UUID | None = None
+    message: str | None = None
+
+class BenchmarkEvalCompleteApiResponse(BaseModel):
+
+    test_id: str | None = None
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    run_id: str | None = None
+    group_id: str | None = None
+    agent_id: str | None = None
+    tool_id: str | None = None
+    success: bool | None = None
+    message: str | None = None
     trace_id: str | None = None
 
 
@@ -5702,6 +8493,151 @@ class GetFeedbackTotalsForGradeApiResponse(BaseModel):
 
 
 
+# Generated from: get_grading_regeneration_run_context_and_create_run
+
+class GetGradingRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    chat_id: UUID
+    department_id: UUID
+    profile_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.department_id,
+            self.profile_id,
+            self.group_id,
+            self.user_instructions,
+        )
+
+class QGetGradingRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+
+
+
+class QGetGradingRegenRunContextCreateRunV3Standard(BaseModel):
+
+    id: str | None
+    name: str | None
+    description: str | None
+    points: int | None
+    standard_group_id: str | None
+
+
+
+
+class QGetGradingRegenRunContextCreateRunV3StandardGroup(BaseModel):
+
+    id: str | None
+    name: str | None
+    short_name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    rubric_id: str | None
+
+class GetGradingRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    chat_id: str | None = None
+    scenario_id: str | None = None
+    chat_attempt_id: str | None = None
+    title: str | None = None
+    trace_id: str | None = None
+    chat_created_at: str | None = None
+    completed: bool | None = None
+    problem_statement: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    total_chats: int | None = None
+    simulation_id_out: str | None = None
+    rubric_id_out: str | None = None
+    simulation_rubric_id: str | None = None
+    department_id_out: str | None = None
+    time_limit: int | None = None
+    rubric_grade_agent_id: str | None = None
+    grade_agent_id: str | None = None
+    audio_agent_id: str | None = None
+    rubric_name: str | None = None
+    rubric_description: str | None = None
+    rubric_points: int | None = None
+    rubric_pass_points: int | None = None
+    standard_groups: list[QGetGradingRegenRunContextCreateRunV3StandardGroup] | None = None
+    standards: list[QGetGradingRegenRunContextCreateRunV3Standard] | None = None
+    previous_messages: list[QGetGradingRegenRunContextCreateRunV3Msg] | None = None
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id_out: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+
+class GetGradingRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    chat_id: UUID
+    department_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+class GetGradingRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    chat_id: str | None = None
+    scenario_id: str | None = None
+    chat_attempt_id: str | None = None
+    title: str | None = None
+    trace_id: str | None = None
+    chat_created_at: str | None = None
+    completed: bool | None = None
+    problem_statement: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    total_chats: int | None = None
+    simulation_id_out: str | None = None
+    rubric_id_out: str | None = None
+    simulation_rubric_id: str | None = None
+    department_id_out: str | None = None
+    time_limit: int | None = None
+    rubric_grade_agent_id: str | None = None
+    grade_agent_id: str | None = None
+    audio_agent_id: str | None = None
+    rubric_name: str | None = None
+    rubric_description: str | None = None
+    rubric_points: int | None = None
+    rubric_pass_points: int | None = None
+    standard_groups: list[QGetGradingRegenRunContextCreateRunV3StandardGroup] | None = None
+    standards: list[QGetGradingRegenRunContextCreateRunV3Standard] | None = None
+    previous_messages: list[QGetGradingRegenRunContextCreateRunV3Msg] | None = None
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id_out: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+
+
+
 # Generated from: get_grading_run_context_and_create_run
 
 class GetGradingRunContextAndCreateRunSqlParams(BaseModel):
@@ -6249,6 +9185,84 @@ class GetImageGenerationContextAndCreateUploadApiResponse(BaseModel):
     earliest_run_created_at: str | None = None
     department_id: UUID | None = None
     run_id: str | None = None
+
+
+
+# Generated from: get_image_regeneration_run_context_and_create_run
+
+class GetImageRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    image_id: UUID
+    agent_id: UUID
+    group_id: UUID
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.image_id,
+            self.agent_id,
+            self.group_id,
+            self.profile_id,
+            self.department_id,
+            self.user_instructions,
+        )
+
+class IImageRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetImageRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IImageRegenRunContextCreateRunV3Msg] | None = None
+
+class GetImageRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    image_id: UUID
+    agent_id: UUID
+    group_id: UUID
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+class GetImageRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IImageRegenRunContextCreateRunV3Msg] | None = None
 
 
 
@@ -13987,6 +17001,142 @@ class GetScenarioNewApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario_regeneration_run_context_and_create_run
+
+class GetScenarioRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+    agent_id: UUID
+    group_id: UUID
+    persona_id: UUID | None = None
+    document_ids: list[UUID] | None = None
+    parameter_item_ids: list[UUID] | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+            self.agent_id,
+            self.group_id,
+            self.persona_id,
+            self.document_ids,
+            self.parameter_item_ids,
+            self.user_instructions,
+        )
+
+class IGetScenarioRegenerationRunContextAndCreateRunV3Doc(BaseModel):
+
+    id: str | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+    template: bool | None
+    template_args: dict[str, Any] | None
+
+
+
+
+class IGetScenarioRegenerationRunContextAndCreateRunV3Docum(BaseModel):
+
+    document_id: str | None
+    document_name: str | None
+    template_args: dict[str, Any] | None
+    template_upload_id: str | None
+
+
+
+
+class IGetScenarioRegenerationRunContextAndCreateRunV3Param(BaseModel):
+
+    item_name: str | None
+    item_description: str | None
+    param_name: str | None
+    param_description: str | None
+
+
+
+
+class IScenarioRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetScenarioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    persona_description: str | None = None
+    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV3Doc] | None = None
+    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV3Docum] | None = None
+    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV3Param] | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    previous_messages: list[IScenarioRegenRunContextCreateRunV3Msg] | None = None
+
+class GetScenarioRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    department_id: UUID
+    agent_id: UUID
+    group_id: UUID
+    persona_id: UUID | None = None
+    document_ids: list[UUID] | None = None
+    parameter_item_ids: list[UUID] | None = None
+    user_instructions: str | None = None
+
+class GetScenarioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    persona_description: str | None = None
+    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV3Doc] | None = None
+    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV3Docum] | None = None
+    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV3Param] | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    previous_messages: list[IScenarioRegenRunContextCreateRunV3Msg] | None = None
+
+
+
 # Generated from: get_scenario_run_context_and_create_run
 
 class GetScenarioRunContextAndCreateRunSqlParams(BaseModel):
@@ -15532,6 +18682,117 @@ class GenerateHintsApiResponse(BaseModel):
 
 
 
+# Generated from: get_hint_regeneration_run_context_and_create_run
+
+class GetHintRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    message_id: UUID
+    chat_id: UUID
+    department_id: UUID
+    profile_id: UUID
+    hint_agent_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.message_id,
+            self.chat_id,
+            self.department_id,
+            self.profile_id,
+            self.hint_agent_id,
+            self.group_id,
+            self.user_instructions,
+        )
+
+class IHintRegenRunContextCreateRunV3Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+
+
+
+
+class IHintRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetHintRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    message_id: str | None = None
+    message_created_at: str | None = None
+    chat_id: str | None = None
+    attempt_id: str | None = None
+    scenario_id: str | None = None
+    trace_id: str | None = None
+    chat_title: str | None = None
+    simulation_id: str | None = None
+    problem_statement: str | None = None
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    provider_id: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: list[IHintRegenRunContextCreateRunV3Document] | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IHintRegenRunContextCreateRunV3Msg] | None = None
+
+class GetHintRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    message_id: UUID
+    chat_id: UUID
+    department_id: UUID
+    hint_agent_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+class GetHintRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    message_id: str | None = None
+    message_created_at: str | None = None
+    chat_id: str | None = None
+    attempt_id: str | None = None
+    scenario_id: str | None = None
+    trace_id: str | None = None
+    chat_title: str | None = None
+    simulation_id: str | None = None
+    problem_statement: str | None = None
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    provider_id: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: list[IHintRegenRunContextCreateRunV3Document] | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IHintRegenRunContextCreateRunV3Msg] | None = None
+
+
+
 # Generated from: get_messages_with_audio
 
 class GetMessagesWithAudioSqlParams(BaseModel):
@@ -16053,6 +19314,138 @@ class GetSimulationNewApiResponse(BaseModel):
     agents: list[QGetSimulationNewV3Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
+
+
+
+# Generated from: get_simulation_regeneration_run_context_and_create_run
+
+class GetSimulationRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    chat_id: UUID
+    profile_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.profile_id,
+            self.group_id,
+            self.user_instructions,
+        )
+
+class QGetSimRegenRunContextCreateRunV3Document(BaseModel):
+
+    id: str | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+
+
+
+
+class QGetSimRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetSimulationRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    voice_model_id: str | None = None
+    voice_model_name: str | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    voice_api_key: str | None = None
+    voice_custom_model: str | None = None
+    voice_provider_name: str | None = None
+    voice_agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: list[QGetSimRegenRunContextCreateRunV3Document] | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[QGetSimRegenRunContextCreateRunV3Msg] | None = None
+
+class GetSimulationRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    chat_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+class GetSimulationRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    voice_model_id: str | None = None
+    voice_model_name: str | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    voice_api_key: str | None = None
+    voice_custom_model: str | None = None
+    voice_provider_name: str | None = None
+    voice_agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: list[QGetSimRegenRunContextCreateRunV3Document] | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[QGetSimRegenRunContextCreateRunV3Msg] | None = None
 
 
 
@@ -17374,6 +20767,79 @@ class GetClassificationContextApiResponse(BaseModel):
 
 
 
+# Generated from: get_upload_classification_regeneration_run_context_and_create_run
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    upload_id: UUID
+    profile_id: UUID
+    group_id: UUID
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.upload_id,
+            self.profile_id,
+            self.group_id,
+            self.department_id,
+            self.user_instructions,
+        )
+
+class IGetUploadClassRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    upload_id: UUID | None = None
+    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV3Msg] | None = None
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    upload_id: UUID
+    group_id: UUID
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    upload_id: UUID | None = None
+    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV3Msg] | None = None
+
+
+
 # Generated from: get_upload_classification_run_context_and_create_run
 
 class GetUploadClassificationRunContextAndCreateRunSqlParams(BaseModel):
@@ -17470,6 +20936,84 @@ class GetUploadFileInfoApiResponse(BaseModel):
 
 
 
+# Generated from: get_video_regeneration_run_context_and_create_run
+
+class GetVideoRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    video_id: UUID
+    group_id: UUID
+    profile_id: UUID | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.video_id,
+            self.group_id,
+            self.profile_id,
+            self.user_instructions,
+        )
+
+class IVideoRegenRunContextCreateRunV3Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetVideoRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IVideoRegenRunContextCreateRunV3Msg] | None = None
+
+class GetVideoRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    video_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+class GetVideoRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IVideoRegenRunContextCreateRunV3Msg] | None = None
+
+
+
 # Generated from: get_video_run_context_and_create_run
 
 class GetVideoRunContextAndCreateRunSqlParams(BaseModel):
@@ -17551,6 +21095,270 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetActivityListApiRequest",
         "GetActivityListApiResponse",
     ),
+    "app/sql/v3/agents/agents_audio_audio_eval_start_complete.sql": (
+        "AgentsAudioAudioEvalStartSqlParams",
+        "AgentsAudioAudioEvalStartSqlRow",
+        "AgentsAudioAudioEvalStartApiRequest",
+        "AgentsAudioAudioEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_audio_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsAudioToolsDebugDebugEvalStartSqlParams",
+        "AgentsAudioToolsDebugDebugEvalStartSqlRow",
+        "AgentsAudioToolsDebugDebugEvalStartApiRequest",
+        "AgentsAudioToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_classify_classify_eval_start_complete.sql": (
+        "AgentsClassifyClassifyEvalStartSqlParams",
+        "AgentsClassifyClassifyEvalStartSqlRow",
+        "AgentsClassifyClassifyEvalStartApiRequest",
+        "AgentsClassifyClassifyEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_classify_tools_classification_classification_eval_start_complete.sql": (
+        "AgentsClassifyToolsClassificationClassificationEvalStartSqlParams",
+        "AgentsClassifyToolsClassificationClassificationEvalStartSqlRow",
+        "AgentsClassifyToolsClassificationClassificationEvalStartApiRequest",
+        "AgentsClassifyToolsClassificationClassificationEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_classify_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsClassifyToolsDebugDebugEvalStartSqlParams",
+        "AgentsClassifyToolsDebugDebugEvalStartSqlRow",
+        "AgentsClassifyToolsDebugDebugEvalStartApiRequest",
+        "AgentsClassifyToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_document_document_eval_start_complete.sql": (
+        "AgentsDocumentDocumentEvalStartSqlParams",
+        "AgentsDocumentDocumentEvalStartSqlRow",
+        "AgentsDocumentDocumentEvalStartApiRequest",
+        "AgentsDocumentDocumentEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_document_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsDocumentToolsDebugDebugEvalStartSqlParams",
+        "AgentsDocumentToolsDebugDebugEvalStartSqlRow",
+        "AgentsDocumentToolsDebugDebugEvalStartApiRequest",
+        "AgentsDocumentToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_document_tools_title_title_eval_start_complete.sql": (
+        "AgentsDocumentToolsTitleTitleEvalStartSqlParams",
+        "AgentsDocumentToolsTitleTitleEvalStartSqlRow",
+        "AgentsDocumentToolsTitleTitleEvalStartApiRequest",
+        "AgentsDocumentToolsTitleTitleEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_grade_grade_eval_start_complete.sql": (
+        "AgentsGradeGradeEvalStartSqlParams",
+        "AgentsGradeGradeEvalStartSqlRow",
+        "AgentsGradeGradeEvalStartApiRequest",
+        "AgentsGradeGradeEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_grade_tools_audio_audio_eval_start_complete.sql": (
+        "AgentsGradeToolsAudioAudioEvalStartSqlParams",
+        "AgentsGradeToolsAudioAudioEvalStartSqlRow",
+        "AgentsGradeToolsAudioAudioEvalStartApiRequest",
+        "AgentsGradeToolsAudioAudioEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_grade_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsGradeToolsDebugDebugEvalStartSqlParams",
+        "AgentsGradeToolsDebugDebugEvalStartSqlRow",
+        "AgentsGradeToolsDebugDebugEvalStartApiRequest",
+        "AgentsGradeToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_grade_tools_grade_grade_eval_start_complete.sql": (
+        "AgentsGradeToolsGradeGradeEvalStartSqlParams",
+        "AgentsGradeToolsGradeGradeEvalStartSqlRow",
+        "AgentsGradeToolsGradeGradeEvalStartApiRequest",
+        "AgentsGradeToolsGradeGradeEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_grade_tools_improvement_improvement_eval_start_complete.sql": (
+        "AgentsGradeToolsImprovementImprovementEvalStartSqlParams",
+        "AgentsGradeToolsImprovementImprovementEvalStartSqlRow",
+        "AgentsGradeToolsImprovementImprovementEvalStartApiRequest",
+        "AgentsGradeToolsImprovementImprovementEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_grade_tools_strength_strength_eval_start_complete.sql": (
+        "AgentsGradeToolsStrengthStrengthEvalStartSqlParams",
+        "AgentsGradeToolsStrengthStrengthEvalStartSqlRow",
+        "AgentsGradeToolsStrengthStrengthEvalStartApiRequest",
+        "AgentsGradeToolsStrengthStrengthEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_hint_hint_eval_start_complete.sql": (
+        "AgentsHintHintEvalStartSqlParams",
+        "AgentsHintHintEvalStartSqlRow",
+        "AgentsHintHintEvalStartApiRequest",
+        "AgentsHintHintEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_hint_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsHintToolsDebugDebugEvalStartSqlParams",
+        "AgentsHintToolsDebugDebugEvalStartSqlRow",
+        "AgentsHintToolsDebugDebugEvalStartApiRequest",
+        "AgentsHintToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_hint_tools_hint_hint_eval_start_complete.sql": (
+        "AgentsHintToolsHintHintEvalStartSqlParams",
+        "AgentsHintToolsHintHintEvalStartSqlRow",
+        "AgentsHintToolsHintHintEvalStartApiRequest",
+        "AgentsHintToolsHintHintEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_image_image_eval_start_complete.sql": (
+        "AgentsImageImageEvalStartSqlParams",
+        "AgentsImageImageEvalStartSqlRow",
+        "AgentsImageImageEvalStartApiRequest",
+        "AgentsImageImageEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_image_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsImageToolsDebugDebugEvalStartSqlParams",
+        "AgentsImageToolsDebugDebugEvalStartSqlRow",
+        "AgentsImageToolsDebugDebugEvalStartApiRequest",
+        "AgentsImageToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_image_tools_title_title_eval_start_complete.sql": (
+        "AgentsImageToolsTitleTitleEvalStartSqlParams",
+        "AgentsImageToolsTitleTitleEvalStartSqlRow",
+        "AgentsImageToolsTitleTitleEvalStartApiRequest",
+        "AgentsImageToolsTitleTitleEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_member_member_eval_start_complete.sql": (
+        "AgentsMemberMemberEvalStartSqlParams",
+        "AgentsMemberMemberEvalStartSqlRow",
+        "AgentsMemberMemberEvalStartApiRequest",
+        "AgentsMemberMemberEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_member_tools_conversation_conversation_eval_start_complete.sql": (
+        "AgentsMemberToolsConversationConversationEvalStartSqlParams",
+        "AgentsMemberToolsConversationConversationEvalStartSqlRow",
+        "AgentsMemberToolsConversationConversationEvalStartApiRequest",
+        "AgentsMemberToolsConversationConversationEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_rubric_rubric_eval_start_complete.sql": (
+        "AgentsRubricRubricEvalStartSqlParams",
+        "AgentsRubricRubricEvalStartSqlRow",
+        "AgentsRubricRubricEvalStartApiRequest",
+        "AgentsRubricRubricEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_rubric_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsRubricToolsDebugDebugEvalStartSqlParams",
+        "AgentsRubricToolsDebugDebugEvalStartSqlRow",
+        "AgentsRubricToolsDebugDebugEvalStartApiRequest",
+        "AgentsRubricToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_rubric_tools_rubric_rubric_eval_start_complete.sql": (
+        "AgentsRubricToolsRubricRubricEvalStartSqlParams",
+        "AgentsRubricToolsRubricRubricEvalStartSqlRow",
+        "AgentsRubricToolsRubricRubricEvalStartApiRequest",
+        "AgentsRubricToolsRubricRubricEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_rubric_tools_title_title_eval_start_complete.sql": (
+        "AgentsRubricToolsTitleTitleEvalStartSqlParams",
+        "AgentsRubricToolsTitleTitleEvalStartSqlRow",
+        "AgentsRubricToolsTitleTitleEvalStartApiRequest",
+        "AgentsRubricToolsTitleTitleEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_scenario_eval_start_complete.sql": (
+        "AgentsScenarioScenarioEvalStartSqlParams",
+        "AgentsScenarioScenarioEvalStartSqlRow",
+        "AgentsScenarioScenarioEvalStartApiRequest",
+        "AgentsScenarioScenarioEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsScenarioToolsDebugDebugEvalStartSqlParams",
+        "AgentsScenarioToolsDebugDebugEvalStartSqlRow",
+        "AgentsScenarioToolsDebugDebugEvalStartApiRequest",
+        "AgentsScenarioToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_document_document_eval_start_complete.sql": (
+        "AgentsScenarioToolsDocumentDocumentEvalStartSqlParams",
+        "AgentsScenarioToolsDocumentDocumentEvalStartSqlRow",
+        "AgentsScenarioToolsDocumentDocumentEvalStartApiRequest",
+        "AgentsScenarioToolsDocumentDocumentEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_image_image_eval_start_complete.sql": (
+        "AgentsScenarioToolsImageImageEvalStartSqlParams",
+        "AgentsScenarioToolsImageImageEvalStartSqlRow",
+        "AgentsScenarioToolsImageImageEvalStartApiRequest",
+        "AgentsScenarioToolsImageImageEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_objective_objective_eval_start_complete.sql": (
+        "AgentsScenarioToolsObjectiveObjectiveEvalStartSqlParams",
+        "AgentsScenarioToolsObjectiveObjectiveEvalStartSqlRow",
+        "AgentsScenarioToolsObjectiveObjectiveEvalStartApiRequest",
+        "AgentsScenarioToolsObjectiveObjectiveEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_question_question_eval_start_complete.sql": (
+        "AgentsScenarioToolsQuestionQuestionEvalStartSqlParams",
+        "AgentsScenarioToolsQuestionQuestionEvalStartSqlRow",
+        "AgentsScenarioToolsQuestionQuestionEvalStartApiRequest",
+        "AgentsScenarioToolsQuestionQuestionEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_statement_statement_eval_start_complete.sql": (
+        "AgentsScenarioToolsStatementStatementEvalStartSqlParams",
+        "AgentsScenarioToolsStatementStatementEvalStartSqlRow",
+        "AgentsScenarioToolsStatementStatementEvalStartApiRequest",
+        "AgentsScenarioToolsStatementStatementEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_title_title_eval_start_complete.sql": (
+        "AgentsScenarioToolsTitleTitleEvalStartSqlParams",
+        "AgentsScenarioToolsTitleTitleEvalStartSqlRow",
+        "AgentsScenarioToolsTitleTitleEvalStartApiRequest",
+        "AgentsScenarioToolsTitleTitleEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_scenario_tools_video_video_eval_start_complete.sql": (
+        "AgentsScenarioToolsVideoVideoEvalStartSqlParams",
+        "AgentsScenarioToolsVideoVideoEvalStartSqlRow",
+        "AgentsScenarioToolsVideoVideoEvalStartApiRequest",
+        "AgentsScenarioToolsVideoVideoEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_simulation_simulation_eval_start_complete.sql": (
+        "AgentsSimulationSimulationEvalStartSqlParams",
+        "AgentsSimulationSimulationEvalStartSqlRow",
+        "AgentsSimulationSimulationEvalStartApiRequest",
+        "AgentsSimulationSimulationEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsSimulationToolsDebugDebugEvalStartSqlParams",
+        "AgentsSimulationToolsDebugDebugEvalStartSqlRow",
+        "AgentsSimulationToolsDebugDebugEvalStartApiRequest",
+        "AgentsSimulationToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_simulation_tools_speak_speak_eval_start_complete.sql": (
+        "AgentsSimulationToolsSpeakSpeakEvalStartSqlParams",
+        "AgentsSimulationToolsSpeakSpeakEvalStartSqlRow",
+        "AgentsSimulationToolsSpeakSpeakEvalStartApiRequest",
+        "AgentsSimulationToolsSpeakSpeakEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_video_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsVideoToolsDebugDebugEvalStartSqlParams",
+        "AgentsVideoToolsDebugDebugEvalStartSqlRow",
+        "AgentsVideoToolsDebugDebugEvalStartApiRequest",
+        "AgentsVideoToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_video_tools_title_title_eval_start_complete.sql": (
+        "AgentsVideoToolsTitleTitleEvalStartSqlParams",
+        "AgentsVideoToolsTitleTitleEvalStartSqlRow",
+        "AgentsVideoToolsTitleTitleEvalStartApiRequest",
+        "AgentsVideoToolsTitleTitleEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_video_video_eval_start_complete.sql": (
+        "AgentsVideoVideoEvalStartSqlParams",
+        "AgentsVideoVideoEvalStartSqlRow",
+        "AgentsVideoVideoEvalStartApiRequest",
+        "AgentsVideoVideoEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_voice_tools_debug_debug_eval_start_complete.sql": (
+        "AgentsVoiceToolsDebugDebugEvalStartSqlParams",
+        "AgentsVoiceToolsDebugDebugEvalStartSqlRow",
+        "AgentsVoiceToolsDebugDebugEvalStartApiRequest",
+        "AgentsVoiceToolsDebugDebugEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_voice_tools_speak_speak_eval_start_complete.sql": (
+        "AgentsVoiceToolsSpeakSpeakEvalStartSqlParams",
+        "AgentsVoiceToolsSpeakSpeakEvalStartSqlRow",
+        "AgentsVoiceToolsSpeakSpeakEvalStartApiRequest",
+        "AgentsVoiceToolsSpeakSpeakEvalStartApiResponse",
+    ),
+    "app/sql/v3/agents/agents_voice_voice_eval_start_complete.sql": (
+        "AgentsVoiceVoiceEvalStartSqlParams",
+        "AgentsVoiceVoiceEvalStartSqlRow",
+        "AgentsVoiceVoiceEvalStartApiRequest",
+        "AgentsVoiceVoiceEvalStartApiResponse",
+    ),
     "app/sql/v3/agents/create_agent_complete.sql": (
         "CreateAgentSqlParams",
         "CreateAgentSqlRow",
@@ -17629,6 +21437,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationAttemptApiRequest",
         "GetSimulationAttemptApiResponse",
     ),
+    "app/sql/v3/audio/get_audio_regeneration_run_context_and_create_run_complete.sql": (
+        "GetAudioRegenerationRunContextAndCreateRunSqlParams",
+        "GetAudioRegenerationRunContextAndCreateRunSqlRow",
+        "GetAudioRegenerationRunContextAndCreateRunApiRequest",
+        "GetAudioRegenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/audio/get_audio_run_context_and_create_run_complete.sql": (
         "GetAudioRunContextAndCreateRunSqlParams",
         "GetAudioRunContextAndCreateRunSqlRow",
@@ -17700,6 +21514,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "BenchmarkErrorSqlRow",
         "BenchmarkErrorApiRequest",
         "BenchmarkErrorApiResponse",
+    ),
+    "app/sql/v3/benchmark/benchmark_eval_complete_complete.sql": (
+        "BenchmarkEvalCompleteSqlParams",
+        "BenchmarkEvalCompleteSqlRow",
+        "BenchmarkEvalCompleteApiRequest",
+        "BenchmarkEvalCompleteApiResponse",
     ),
     "app/sql/v3/benchmark/create_eval_complete.sql": (
         "CreateEvalSqlParams",
@@ -18007,6 +21827,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFeedbackTotalsForGradeApiRequest",
         "GetFeedbackTotalsForGradeApiResponse",
     ),
+    "app/sql/v3/grading/get_grading_regeneration_run_context_and_create_run_complete.sql": (
+        "GetGradingRegenerationRunContextAndCreateRunSqlParams",
+        "GetGradingRegenerationRunContextAndCreateRunSqlRow",
+        "GetGradingRegenerationRunContextAndCreateRunApiRequest",
+        "GetGradingRegenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/grading/get_grading_run_context_and_create_run_complete.sql": (
         "GetGradingRunContextAndCreateRunSqlParams",
         "GetGradingRunContextAndCreateRunSqlRow",
@@ -18048,6 +21874,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetImageGenerationContextAndCreateUploadSqlRow",
         "GetImageGenerationContextAndCreateUploadApiRequest",
         "GetImageGenerationContextAndCreateUploadApiResponse",
+    ),
+    "app/sql/v3/images/get_image_regeneration_run_context_and_create_run_complete.sql": (
+        "GetImageRegenerationRunContextAndCreateRunSqlParams",
+        "GetImageRegenerationRunContextAndCreateRunSqlRow",
+        "GetImageRegenerationRunContextAndCreateRunApiRequest",
+        "GetImageRegenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v3/infrastructure/infrastructure_activity_insert_complete.sql": (
         "InfrastructureActivityInsertSqlParams",
@@ -18643,6 +22475,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioNewApiRequest",
         "GetScenarioNewApiResponse",
     ),
+    "app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql": (
+        "GetScenarioRegenerationRunContextAndCreateRunSqlParams",
+        "GetScenarioRegenerationRunContextAndCreateRunSqlRow",
+        "GetScenarioRegenerationRunContextAndCreateRunApiRequest",
+        "GetScenarioRegenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql": (
         "GetScenarioRunContextAndCreateRunSqlParams",
         "GetScenarioRunContextAndCreateRunSqlRow",
@@ -18745,6 +22583,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GenerateHintsApiRequest",
         "GenerateHintsApiResponse",
     ),
+    "app/sql/v3/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql": (
+        "GetHintRegenerationRunContextAndCreateRunSqlParams",
+        "GetHintRegenerationRunContextAndCreateRunSqlRow",
+        "GetHintRegenerationRunContextAndCreateRunApiRequest",
+        "GetHintRegenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/simulations/get_messages_with_audio_complete.sql": (
         "GetMessagesWithAudioSqlParams",
         "GetMessagesWithAudioSqlRow",
@@ -18768,6 +22612,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationNewSqlRow",
         "GetSimulationNewApiRequest",
         "GetSimulationNewApiResponse",
+    ),
+    "app/sql/v3/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql": (
+        "GetSimulationRegenerationRunContextAndCreateRunSqlParams",
+        "GetSimulationRegenerationRunContextAndCreateRunSqlRow",
+        "GetSimulationRegenerationRunContextAndCreateRunApiRequest",
+        "GetSimulationRegenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v3/simulations/get_simulation_run_context_and_create_run_complete.sql": (
         "GetSimulationRunContextAndCreateRunSqlParams",
@@ -18889,6 +22739,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetClassificationContextApiRequest",
         "GetClassificationContextApiResponse",
     ),
+    "app/sql/v3/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql": (
+        "GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams",
+        "GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow",
+        "GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest",
+        "GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v3/uploads/get_upload_classification_run_context_and_create_run_complete.sql": (
         "GetUploadClassificationRunContextAndCreateRunSqlParams",
         "GetUploadClassificationRunContextAndCreateRunSqlRow",
@@ -18900,6 +22756,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetUploadFileInfoSqlRow",
         "GetUploadFileInfoApiRequest",
         "GetUploadFileInfoApiResponse",
+    ),
+    "app/sql/v3/videos/get_video_regeneration_run_context_and_create_run_complete.sql": (
+        "GetVideoRegenerationRunContextAndCreateRunSqlParams",
+        "GetVideoRegenerationRunContextAndCreateRunSqlRow",
+        "GetVideoRegenerationRunContextAndCreateRunApiRequest",
+        "GetVideoRegenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v3/videos/get_video_run_context_and_create_run_complete.sql": (
         "GetVideoRunContextAndCreateRunSqlParams",
@@ -18981,6 +22843,226 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_audio_audio_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_audio_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_classify_classify_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_classify_tools_classification_classification_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_classify_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_document_document_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_document_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_document_tools_title_title_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_grade_grade_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_grade_tools_audio_audio_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_grade_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_grade_tools_grade_grade_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_grade_tools_improvement_improvement_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_grade_tools_strength_strength_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_hint_hint_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_hint_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_hint_tools_hint_hint_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_image_image_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_image_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_image_tools_title_title_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_member_member_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_member_tools_conversation_conversation_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_rubric_rubric_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_rubric_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_rubric_tools_rubric_rubric_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_rubric_tools_title_title_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_scenario_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_document_document_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_image_image_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_objective_objective_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_question_question_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_statement_statement_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_title_title_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_scenario_tools_video_video_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_simulation_simulation_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_simulation_tools_speak_speak_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_video_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_video_tools_title_title_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_video_video_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_voice_tools_debug_debug_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_voice_tools_speak_speak_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/agents_voice_voice_eval_start_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/agents/create_agent_complete.sql"]
     ) -> SqlString: ...
 
@@ -19046,6 +23128,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/audio/get_audio_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/audio/get_audio_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -19102,6 +23189,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/benchmark/benchmark_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/benchmark/benchmark_eval_complete_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -19361,6 +23453,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/get_grading_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/grading/get_grading_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -19392,6 +23489,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/images/get_image_generation_context_and_create_upload_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/images/get_image_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -19891,6 +23993,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/scenario/get_scenario_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -19976,6 +24083,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/get_messages_with_audio_complete.sql"]
     ) -> SqlString: ...
 
@@ -19992,6 +24104,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/get_simulation_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -20096,12 +24213,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/uploads/get_upload_classification_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/uploads/get_upload_file_info_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/videos/get_video_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

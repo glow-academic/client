@@ -40,9 +40,9 @@ CREATE OR REPLACE FUNCTION socket_voice_debug_eval_start_v3(
     test_id uuid,
     attempt_id uuid,
     eval_id uuid,
-    run_id uuid DEFAULT NULL,
+    tool_id uuid,run_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
-    tool_id uuid,
+    
     use_groups boolean DEFAULT false
 )
 RETURNS TABLE (

@@ -46,9 +46,9 @@ CREATE TYPE types.i_audio_regen_run_context_create_run_v3_msg AS (
 CREATE OR REPLACE FUNCTION socket_get_audio_regeneration_run_context_and_create_run_v3(
     upload_id uuid,
     agent_id uuid,
-    profile_id uuid DEFAULT NULL,
+    group_id uuid,profile_id uuid DEFAULT NULL,
     department_id uuid DEFAULT NULL,
-    group_id uuid,  -- REQUIRED for regeneration (not NULL)
+      -- REQUIRED for regeneration (not NULL)
     user_instructions text DEFAULT NULL
 )
 RETURNS TABLE (
