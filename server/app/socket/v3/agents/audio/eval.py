@@ -1,142 +1,119 @@
 """Handler for audio_eval_start WebSocket event - eval-specific logic for audio agent."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_internal_event
+from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
+from app.sql.types import (
+    AudioEvalStartApiRequest,
+    AudioEvalStartSqlParams,
+    AudioEvalStartSqlRow,
+)
 
 internal_sio = get_internal_sio()
-
 server_router = APIRouter()
 
-
-class AudioEvalStartPayload(BaseModel):
-    """Request to execute audio agent for eval."""
-
-    test_id: str
-    attempt_id: str
-    eval_id: str
-    run_id: str | None = None
-    group_id: str | None = None
-    agent_id: str
-    use_groups: bool = False
-    current_cycle: int = 0
+SQL_PATH = "app/sql/v3/agents/audio/audio_eval_start_complete.sql"
 
 
-class AudioEvalCompletePayload(BaseModel):
-    """Response indicating audio eval completed."""
-
-    test_id: str
-    agent_id: str
-    success: bool
-    message: str | None = None
-
-
-async def _audio_eval_impl(sid: str, data: AudioEvalStartPayload) -> None:
+async def _audio_eval_impl(
+    sid: str,
+    data: AudioEvalStartApiRequest,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
+) -> None:
     """Handle audio_eval_start requests via WebSocket."""
     try:
-        test_id = data.test_id
-        agent_id = data.agent_id
-        eval_id = data.eval_id
-        run_id = data.run_id
-        current_cycle = data.current_cycle
-
         async with get_db_connection() as conn:
-            test_id_uuid = uuid.UUID(test_id)
-            agent_id_uuid = uuid.UUID(agent_id)
-            eval_id_uuid = uuid.UUID(eval_id)
+            params = AudioEvalStartSqlParams(
+                **data.model_dump(),
+                profile_id=profile_id,  # From sid lookup
+                group_id=group_id,
+            )
+            result = cast(
+                AudioEvalStartSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
 
-            # Get eval dynamic flag and rubric_grade_agent info
+            # Get eval dynamic flag
+            eval_id_uuid = uuid.UUID(data.eval_id)
             eval_row = await conn.fetchrow(
                 "SELECT dynamic FROM evals WHERE id = $1::uuid",
                 eval_id_uuid,
             )
             dynamic = eval_row.get("dynamic", False) if eval_row else False
 
-            # Get rubric_grade_agent to find agent being evaluated
-            if dynamic and run_id:
-                rga_row = await conn.fetchrow(
-                    """
-                    SELECT rga.agent_id::text as agent_id, rga.grade_agent_id::text as grade_agent_id
-                    FROM rubric_grade_agents rga
-                    JOIN eval_runs_rubric_grade_agents errga ON errga.rubric_grade_agent_id = rga.id
-                    WHERE errga.eval_id = $1::uuid AND errga.run_id = $2::uuid
-                    LIMIT 1
-                    """,
-                    eval_id_uuid,
-                    uuid.UUID(run_id),
-                )
-                if rga_row:
-                    agent_being_evaluated_id = rga_row["agent_id"]
-                    # TODO: Get messages exclude last assistant, re-run agent, use output for grading
-                    # For now, placeholder
-
-            # Non-dynamic mode: Simply emit to agents/grade/generate.py
-            # TODO: Implement actual grading agent call
+            # TODO: Implement actual eval logic here
             # For now, placeholder
 
-            # Note: Cycle tracking removed - agents execute sequentially
-
-            await emit_to_internal(
-                "audio_eval_complete",
-                AudioEvalCompletePayload(
-                    test_id=test_id,
-                    agent_id=agent_id,
-                    success=True,
-                    message="Audio eval completed",
-                ),
-                sid=sid,
+            # Emit benchmark-level completion (not agent-specific)
+            await internal_sio.emit(
+                "benchmark_eval_complete",
+                {
+                    "test_id": data.test_id,
+                    "attempt_id": data.attempt_id,
+                    "eval_id": data.eval_id,
+                    "run_id": data.run_id,
+                    "group_id": data.group_id,
+                    "agent_id": data.agent_id,
+                    "tool_id": None,
+                    "success": True,
+                    "message": "Audio eval completed successfully",
+                                                        "sid": sid,
+                },
             )
     except RuntimeError:
-        await emit_to_internal(
-            "audio_eval_complete",
-            AudioEvalCompletePayload(
-                test_id=data.test_id,
-                agent_id=data.agent_id,
-                success=False,
-                message="Database connection pool not available",
-            ),
-            sid=sid,
-        )
+        # Pool not initialized - propagate to benchmark_error handler
+        await internal_sio.emit(
+                "benchmark_error",
+                {
+                "attempt_id": data.attempt_id,
+                "eval_id": data.eval_id,
+                "test_id": data.test_id,
+                "run_id": data.run_id,
+                "group_id": data.group_id,
+                "error_message": "Database connection pool not available",
+                                                    "sid": sid,
+                },
+            )
     except Exception as e:
-        await emit_to_internal(
-            "audio_eval_complete",
-            AudioEvalCompletePayload(
-                test_id=data.test_id,
-                agent_id=data.agent_id,
-                success=False,
-                message=str(e),
-            ),
-            sid=sid,
-        )
+        # Propagate to benchmark_error handler
+        await internal_sio.emit(
+                "benchmark_error",
+                {
+                "attempt_id": data.attempt_id,
+                "eval_id": data.eval_id,
+                "test_id": data.test_id,
+                "run_id": data.run_id,
+                "group_id": data.group_id,
+                "error_message": str(e),
+                                                    "sid": sid,
+                },
+            )
 
 
 @internal_sio.on("audio_eval_start")  # type: ignore
 async def audio_eval_internal(data: dict[str, Any]) -> None:
     """Handle audio_eval_start event from internal bus."""
-    try:
-        validated = AudioEvalStartPayload(**data)
-        sid = data.get("sid", "internal")
-        await _audio_eval_impl(sid, validated)
-    except ValidationError:
-        await emit_to_internal(
-            "audio_eval_complete",
-            AudioEvalCompletePayload(
-                test_id=data.get("test_id", "unknown"),
-                agent_id=data.get("agent_id", "unknown"),
-                success=False,
-                message="Invalid payload",
-            ),
-            sid=data.get("sid", "internal"),
-        )
+    await handle_internal_event(
+        data=data,
+        request_type=AudioEvalStartApiRequest,
+        handler=_audio_eval_impl,  # type: ignore[arg-type]
+        error_event_name="benchmark_error",
+        error_response_type=None,  # Will be handled by benchmark_error handler
+    )
 
 
-@server_router.post("/eval", response_model=dict[str, bool])
-async def audio_eval_api(request: AudioEvalStartPayload) -> dict[str, bool]:
-    """Internal event: Execute audio agent for eval."""
-    return {"success": True}
+register_client_endpoint(
+    server_router,
+    "/eval",
+    AudioEvalStartApiRequest,
+    "Execute audio agent for eval",
+)

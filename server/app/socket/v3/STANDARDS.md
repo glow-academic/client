@@ -122,7 +122,124 @@ For tools, use the **agent/tools/tool_name folder structure**. Each tool folder 
 
 **Note:** Tools can be shared across multiple agents. Each agent gets its own copy of shared tools with agent-specific event names (e.g., `scenario_tool_title`, `document_tool_title`, `rubric_tool_title`).
 
-### 8. No JSONB - Use Composite Types
+### 8. Eval Event Pattern - Lightweight Execution with Benchmark-Level Completion
+
+**⚠️ CRITICAL: Eval handlers are lightweight and propagate completion/errors to orchestrators**
+
+**Key Principles:**
+
+- **No individual `*_eval_complete` events**: Eval handlers do NOT emit agent/tool-specific completion events (e.g., `rubric_eval_complete`, `simulation_eval_complete`)
+- **Single benchmark-level completion**: All eval handlers emit `benchmark_eval_complete` event (not `*_eval_complete`)
+- **Error propagation**: Errors propagate to `benchmark_error` handler (centralized error handling)
+- **SQL-generated types**: Eval handlers use SQL-generated types (`*EvalStartApiRequest`, `*EvalStartSqlParams`, `*EvalStartSqlRow`), NOT manual BaseModel definitions
+- **One SQL file per eval**: Each eval operation has exactly one SQL file following the pattern `[agent/tool]_eval_start_complete.sql`
+- **Lightweight focus**: Eval handlers focus on execution logic only - completion sequencing and client communication handled by orchestrators
+
+**Completion Flow:**
+
+```
+eval.py executes (lightweight, no completion event)
+  ↓
+eval.py emits benchmark_eval_complete (single benchmark-level event)
+  ↓
+next.py listens for benchmark_eval_complete, tracks completion
+  ↓
+When all evals complete → next.py emits benchmark_advance (internal)
+  ↓
+advance.py emits benchmarks_advanced (client-facing)
+```
+
+**Error Flow:**
+
+```
+eval.py encounters error
+  ↓
+eval.py emits benchmark_error (centralized error handler)
+  ↓
+benchmark/error.py emits benchmarks_error (client-facing)
+```
+
+**Pattern for Agent eval.py Files:**
+
+```python
+from app.sql.types import (
+    SimulationEvalStartApiRequest,
+    SimulationEvalStartSqlParams,
+    SimulationEvalStartSqlRow,
+)
+
+async def _simulation_eval_impl(
+    sid: str,
+    data: SimulationEvalStartApiRequest,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
+) -> None:
+    try:
+        async with get_db_connection() as conn:
+            params = SimulationEvalStartSqlParams(
+                **data.model_dump(),
+                profile_id=profile_id,
+                group_id=group_id,
+            )
+            result = await execute_sql_typed(conn, SQL_PATH, params=params)
+            # ... eval logic ...
+            
+            # Emit benchmark-level completion (not agent-specific)
+            await emit_to_internal(
+                "benchmark_eval_complete",
+                {
+                    "test_id": data.test_id,
+                    "attempt_id": data.attempt_id,
+                    "eval_id": data.eval_id,
+                    "run_id": data.run_id,
+                    "group_id": data.group_id,
+                    "agent_id": data.agent_id,
+                    "tool_id": None,
+                    "success": True,
+                    "message": "Eval completed successfully",
+                },
+                sid=sid,
+            )
+    except Exception as e:
+        # Propagate to benchmark_error handler
+        await emit_to_internal(
+            "benchmark_error",
+            {
+                "attempt_id": data.attempt_id,
+                "eval_id": data.eval_id,
+                "test_id": data.test_id,
+                "run_id": data.run_id,
+                "group_id": data.group_id,
+                "error_message": str(e),
+            },
+            sid=sid,
+        )
+```
+
+**Pattern for Tool eval.py Files:**
+
+Similar pattern but with `tool_id` instead of `agent_id`:
+- Import SQL-generated types (`[Tool]EvalStartApiRequest`, etc.)
+- Execute eval logic
+- Emit `benchmark_eval_complete` with `tool_id` set, `agent_id=None`
+- On error, emit `benchmark_error`
+
+**Required Files:**
+
+- **`benchmark/error.py`**: Centralized error handler for all benchmark eval errors
+- **`benchmark/eval_complete.py`**: Handler for `benchmark_eval_complete` events (used by next.py for sequencing)
+- **`benchmark/next.py`**: Listens for `benchmark_eval_complete` and handles sequencing/advancement
+- **`benchmark/advance.py`**: Handles all client-facing completion events (`benchmarks_advanced`)
+
+**Benefits:**
+
+1. **Simplified Architecture**: Single completion event instead of 45+ different `*_eval_complete` events
+2. **Clear Separation**: eval.py executes, next.py sequences, advance.py communicates
+3. **Strong Typing**: All types auto-generated from SQL introspection
+4. **Consistency**: All eval.py files follow identical pattern
+5. **Maintainability**: Changes to SQL automatically update types
+
+### 9. No JSONB - Use Composite Types
 
 **⚠️ CRITICAL: JSONB is NEVER allowed, even for complex nested structures.**
 
@@ -134,28 +251,28 @@ For tools, use the **agent/tools/tool_name folder structure**. Each tool folder 
 - **No JSONB parsing**: Composite types are automatically decoded by `asyncpg` and converted to Pydantic models
 - **Lists everywhere**: All collections return as arrays of composite types, not nested JSONB structures
 
-### 9. Zero Logging Pattern
+### 10. Zero Logging Pattern
 
 - **Socket.IO handles ALL logging**: Event reception, emission, validation errors, connection issues, and framework errors are automatically logged by Socket.IO (`logger=True`, `engineio_logger=True`)
 - **ZERO logging statements**: WebSocket endpoints should have **zero** `logger.info()`, `logger.error()`, `logger.warning()`, or `logger.debug()` calls
 - **Emit error events instead**: When errors occur, emit error events via `sio.emit()` - don't log them
 - **No exceptions**: Even business logic errors should emit error events, not log - Socket.IO will log the event emission
 
-### 10. Database Connection Pattern
+### 11. Database Connection Pattern
 
 - **Use `get_db_connection()` helper**: Always use `get_db_connection()` from `app.infra.v3.websocket.get_db_connection` instead of manual pool checks
 - **No manual pool checks**: Never check `get_pool()` manually - `get_db_connection()` handles it and raises `RuntimeError` if pool unavailable
 - **Consistent with HTTP routes**: Same pattern as HTTP routes using `Depends(get_db)` - clean, consistent, and maintainable
 - **Error handling**: Catch `RuntimeError` and emit error events (don't log - Socket.IO already logs framework errors)
 
-### 11. Eliminating Cross-File Dependencies
+### 12. Eliminating Cross-File Dependencies
 
 - **No cross-file imports**: Each file is independent - never import emit functions from other event files
 - **Use `emit_to_internal()` with event name strings**: Instead of importing functions, use `emit_to_internal()` with event name strings
 - **Event chaining via internal bus**: Events chain via internal bus using typed payloads, not direct function calls
 - **Type-safe payloads**: Use auto-generated `SqlRow` types for event payloads
 
-### 12. Type-Safe Event Chaining
+### 13. Type-Safe Event Chaining
 
 When one event emits to another internal event, the payload MUST use the target event's auto-generated `{TargetEvent}ApiRequest` type or `SqlRow` type. This ensures:
 

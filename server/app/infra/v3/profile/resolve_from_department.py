@@ -23,7 +23,7 @@ async def resolve_profile_from_department(
         return None
 
     sql = load_sql(
-        "app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql"
+        "app/sql/v3/infrastructure_profile_resolve_from_department_complete.sql"
     )
     result = await conn.fetchval(sql, department_id, auth_mode)
     if result is None:

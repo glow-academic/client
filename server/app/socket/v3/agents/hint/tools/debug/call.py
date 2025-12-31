@@ -31,7 +31,7 @@ class DebugInfoSqlRow(BaseModel):
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v3/tools/debug/call_complete.sql"
+SQL_PATH = "app/sql/v3/tools_debug_call_complete.sql"
 
 
 class HintToolDebugApiRequest(BaseModel):

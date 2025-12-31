@@ -26,7 +26,7 @@ async def log_metrics_snapshot(
         memory_bytes: Memory usage in bytes
         conn: Database connection
     """
-    sql = load_sql("app/sql/v3/infrastructure/metrics/snapshot_complete.sql")
+    sql = load_sql("app/sql/v3/infrastructure_metrics_snapshot_complete.sql")
     await conn.execute(
         sql,
         ts,

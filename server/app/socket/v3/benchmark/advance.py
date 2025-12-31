@@ -8,7 +8,8 @@ from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

@@ -31,5 +31,5 @@ async def insert_activity(
             profile_id_uuid = profile_id
         # If profile doesn't exist, profile_id_uuid remains None (NULL in database)
 
-    sql = load_sql("app/sql/v3/infrastructure/activity/insert_complete.sql")
+    sql = load_sql("app/sql/v3/infrastructure_activity_insert_complete.sql")
     await conn.execute(sql, message, endpoint, profile_id_uuid, error)

@@ -1,88 +1,92 @@
 """Handler for speak_eval_start WebSocket event - eval-specific logic for speak tool."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v3.websocket.handler_wrapper import handle_internal_event
+from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v3.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
+from app.sql.types import (
+    SpeakEvalStartApiRequest,
+    SpeakEvalStartSqlParams,
+    SpeakEvalStartSqlRow,
+)
 
 internal_sio = get_internal_sio()
-
 server_router = APIRouter()
 
-
-class SpeakEvalStartPayload(BaseModel):
-    """Request to execute speak tool for eval."""
-
-    test_id: str
-    attempt_id: str
-    eval_id: str
-    run_id: str | None = None
-    group_id: str | None = None
-    tool_id: str
-    use_groups: bool = False
+SQL_PATH = "app/sql/v3/agents_voice_tools_speak_speak_eval_start_complete.sql"
 
 
-class SpeakEvalCompletePayload(BaseModel):
-    """Response indicating speak eval completed."""
-
-    test_id: str
-    tool_id: str
-    success: bool
-    message: str | None = None
-
-
-async def _speak_eval_impl(sid: str, data: SpeakEvalStartPayload) -> None:
+async def _speak_eval_impl(
+    sid: str,
+    data: SpeakEvalStartApiRequest,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
+) -> None:
     """Handle speak_eval_start requests via WebSocket."""
     try:
-        test_id = data.test_id
-        tool_id = data.tool_id
         async with get_db_connection() as conn:
-            test_id_uuid = uuid.UUID(test_id)
-            tool_id_uuid = uuid.UUID(tool_id)
-            if data.use_groups and data.group_id:
-                group_id_uuid = uuid.UUID(data.group_id)
-                in_group_stop = await conn.fetchrow(
-                    "SELECT 1 FROM group_stop WHERE group_id = $1::uuid AND tool_id = $2::uuid",
-                    group_id_uuid,
-                    tool_id_uuid,
-                )
-                if in_group_stop:
-                    pass
+            params = SpeakEvalStartSqlParams(
+                **data.model_dump(),
+                profile_id=profile_id,  # From sid lookup
+                group_id=group_id,
+            )
+            result = cast(
+                SpeakEvalStartSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            # TODO: Implement actual eval logic here
+            # For now, placeholder
+
+            # Emit benchmark-level completion (not tool-specific)
             await emit_to_internal(
-                "speak_eval_complete",
-                SpeakEvalCompletePayload(
-                    test_id=test_id,
-                    tool_id=tool_id,
-                    success=True,
-                    message="Speak eval completed",
-                ),
+                "benchmark_eval_complete",
+                {
+                    "test_id": data.test_id,
+                    "attempt_id": data.attempt_id,
+                    "eval_id": data.eval_id,
+                    "run_id": data.run_id,
+                    "group_id": data.group_id,
+                    "agent_id": None,
+                    "tool_id": data.tool_id,
+                    "success": True,
+                    "message": "Speak eval completed successfully",
+                },
                 sid=sid,
             )
     except RuntimeError:
+        # Pool not initialized - propagate to benchmark_error handler
         await emit_to_internal(
-            "speak_eval_complete",
-            SpeakEvalCompletePayload(
-                test_id=data.test_id,
-                tool_id=data.tool_id,
-                success=False,
-                message="Database connection pool not available",
-            ),
+            "benchmark_error",
+            {
+                "attempt_id": data.attempt_id,
+                "eval_id": data.eval_id,
+                "test_id": data.test_id,
+                "run_id": data.run_id,
+                "group_id": data.group_id,
+                "error_message": "Database connection pool not available",
+            },
             sid=sid,
         )
     except Exception as e:
+        # Propagate to benchmark_error handler
         await emit_to_internal(
-            "speak_eval_complete",
-            SpeakEvalCompletePayload(
-                test_id=data.test_id,
-                tool_id=data.tool_id,
-                success=False,
-                message=str(e),
-            ),
+            "benchmark_error",
+            {
+                "attempt_id": data.attempt_id,
+                "eval_id": data.eval_id,
+                "test_id": data.test_id,
+                "run_id": data.run_id,
+                "group_id": data.group_id,
+                "error_message": str(e),
+            },
             sid=sid,
         )
 
@@ -90,24 +94,18 @@ async def _speak_eval_impl(sid: str, data: SpeakEvalStartPayload) -> None:
 @internal_sio.on("speak_eval_start")  # type: ignore
 async def speak_eval_internal(data: dict[str, Any]) -> None:
     """Handle speak_eval_start event from internal bus."""
-    try:
-        validated = SpeakEvalStartPayload(**data)
-        sid = data.get("sid", "internal")
-        await _speak_eval_impl(sid, validated)
-    except ValidationError:
-        await emit_to_internal(
-            "speak_eval_complete",
-            SpeakEvalCompletePayload(
-                test_id=data.get("test_id", "unknown"),
-                tool_id=data.get("tool_id", "unknown"),
-                success=False,
-                message="Invalid payload",
-            ),
-            sid=data.get("sid", "internal"),
-        )
+    await handle_internal_event(
+        data=data,
+        request_type=SpeakEvalStartApiRequest,
+        handler=_speak_eval_impl,  # type: ignore[arg-type]
+        error_event_name="benchmark_error",
+        error_response_type=None,  # Will be handled by benchmark_error handler
+    )
 
 
-@server_router.post("/eval", response_model=dict[str, bool])
-async def speak_eval_api(request: SpeakEvalStartPayload) -> dict[str, bool]:
-    """Internal event: Execute speak tool for eval."""
-    return {"success": True}
+register_client_endpoint(
+    server_router,
+    "/eval",
+    SpeakEvalStartApiRequest,
+    "Execute speak tool for eval",
+)

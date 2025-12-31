@@ -24,5 +24,5 @@ async def log_service_health(
         error: Error message (empty string if ok)
         conn: Database connection
     """
-    sql = load_sql("app/sql/v3/infrastructure/metrics/health_complete.sql")
+    sql = load_sql("app/sql/v3/infrastructure_metrics_health_complete.sql")
     await conn.execute(sql, ts, service, ok, latency_ms, error)

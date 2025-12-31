@@ -5,13 +5,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
-from app.infra.v3.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, get_pool, sio
+from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -29,8 +27,9 @@ class BenchmarkNextPayload(BaseModel):
     use_groups: bool = False
 
 
-# State tracking for sequential execution
-_pending_completions: dict[str, dict[str, Any]] = {}
+# State tracking for eval completions
+# Key: (attempt_id, test_id), Value: {pending_count, total_count, test_id, attempt_id, eval_id, run_id, group_id, use_groups}
+_pending_eval_completions: dict[str, dict[str, Any]] = {}
 
 
 async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
@@ -136,9 +135,11 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                     for row in group_order_rows
                 ]
 
+            # Track total number of evals to wait for
+            total_evals = 0
+            eval_key = f"{attempt_id}_{test_id}"
+
             # Execute tools first (if any)
-            # Note: Sequential execution - each tool completes before next starts
-            # Completion events are handled by listeners that track pending completions
             if group_stop_tools:
                 for tool_info in sorted(
                     group_stop_tools, key=lambda x: x["position_idx"]
@@ -155,7 +156,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                             tool_row["name"].lower().replace(" ", "_").replace("-", "_")
                         )
                         # Emit to specific tool eval handler (e.g., classification_eval_start, hint_eval_start)
-                        await emit_to_internal(
+                        await internal_sio.emit(
                             f"{tool_name}_eval_start",
                             {
                                 "test_id": test_id,
@@ -165,17 +166,12 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                                 "group_id": group_id,
                                 "tool_id": tool_id,
                                 "use_groups": use_groups,
+                                "sid": sid,
                             },
-                            sid=sid,
                         )
-                        # Note: Completion is handled asynchronously via event listeners
-                        # The tool's eval.py will emit {tool_name}_eval_complete when done
-                    else:
-                        pass
-            # Note: Stopping condition logic removed - tools execute sequentially
+                        total_evals += 1
 
             # Execute agents (if not stopped)
-            # Note: Sequential execution - each agent completes before next starts
             if group_order_agents:
                 for agent_info in sorted(
                     group_order_agents, key=lambda x: x["position_idx"]
@@ -195,7 +191,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                             .replace("-", "_")
                         )
                         # Emit to specific agent eval handler (e.g., simulation_eval_start, voice_eval_start)
-                        await emit_to_internal(
+                        await internal_sio.emit(
                             f"{agent_name}_eval_start",
                             {
                                 "test_id": test_id,
@@ -206,27 +202,50 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                                 "agent_id": agent_id,
                                 "use_groups": use_groups,
                                 "current_cycle": 0,
+                                "sid": sid,
                             },
-                            sid=sid,
                         )
-                        # Note: Completion is handled asynchronously via event listeners
-                        # The agent's eval.py will emit {agent_name}_eval_complete when done
-                    else:
-                        pass
-            # After agents, emit benchmark_end to complete the test
-            # Note: Cycle counting and infinite mode logic removed
-            await emit_to_internal(
-                "benchmark_end",
-                {
+                        total_evals += 1
+
+            # If no evals to run, complete immediately
+            if total_evals == 0:
+                # Emit benchmark_advance to notify client via advance.py
+                await internal_sio.emit(
+                    "benchmark_advance",
+                    {
+                        "test_id": test_id,
+                        "attempt_id": attempt_id,
+                        "run_id": run_id,
+                        "group_id": group_id,
+                        "sid": sid,
+                    },
+                )
+                # Then emit benchmark_end to complete the test
+                await internal_sio.emit(
+                    "benchmark_end",
+                    {
+                        "test_id": test_id,
+                        "attempt_id": attempt_id,
+                        "eval_id": eval_id,
+                        "run_id": run_id,
+                        "group_id": group_id,
+                        "use_groups": use_groups,
+                        "sid": sid,
+                    },
+                )
+            else:
+                # Track pending completions - benchmark_eval_complete listener will handle completion
+                _pending_eval_completions[eval_key] = {
+                    "pending_count": total_evals,
+                    "total_count": total_evals,
                     "test_id": test_id,
                     "attempt_id": attempt_id,
                     "eval_id": eval_id,
                     "run_id": run_id,
                     "group_id": group_id,
                     "use_groups": use_groups,
-                },
-                sid=sid,
-            )
+                    "sid": sid,
+                }
 
             # Emit progress update to client
             await sio.emit(
@@ -240,9 +259,18 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             )
 
     except Exception as e:
-        await benchmark_next_error(
-            BenchmarkNextErrorPayload(success=False, message=str(e)),
-            room=sid,
+        # Propagate to benchmark_error handler
+        await internal_sio.emit(
+            "benchmark_error",
+            {
+                "attempt_id": data.attempt_id,
+                "eval_id": data.eval_id,
+                "test_id": None,
+                "run_id": data.run_id,
+                "group_id": data.group_id,
+                "error_message": str(e),
+                "sid": sid,
+            },
         )
 
 
@@ -253,8 +281,107 @@ async def benchmark_next_internal(data: dict[str, Any]) -> None:
         validated = BenchmarkNextPayload(**data)
         sid = data.get("sid", "internal")
         await _benchmark_next_impl(sid, validated)
-    except ValidationError as e:
-        pass
+    except ValidationError:
+        # Propagate to benchmark_error handler
+        await internal_sio.emit(
+            "benchmark_error",
+            {
+                "attempt_id": data.get("attempt_id", "unknown"),
+                "eval_id": data.get("eval_id", "unknown"),
+                "test_id": None,
+                "run_id": data.get("run_id"),
+                "group_id": data.get("group_id"),
+                "error_message": "Invalid payload",
+                "sid": data.get("sid", "internal"),
+            },
+        )
+
+
+@internal_sio.on("benchmark_eval_complete")  # type: ignore
+async def benchmark_eval_complete_internal(data: dict[str, Any]) -> None:
+    """Handle benchmark_eval_complete event - tracks completion and advances when all evals done."""
+    try:
+        attempt_id = data.get("attempt_id")
+        test_id = data.get("test_id")
+        success = data.get("success", True)
+
+        if not attempt_id or not test_id:
+            return
+
+        eval_key = f"{attempt_id}_{test_id}"
+
+        # Check if we're tracking this eval
+        if eval_key not in _pending_eval_completions:
+            return
+
+        completion_info = _pending_eval_completions[eval_key]
+
+        # Decrement pending count
+        completion_info["pending_count"] -= 1
+
+        # If error occurred, propagate to benchmark_error handler
+        if not success:
+            await internal_sio.emit(
+                "benchmark_error",
+                {
+                    "attempt_id": attempt_id,
+                    "eval_id": completion_info["eval_id"],
+                    "test_id": test_id,
+                    "run_id": completion_info["run_id"],
+                    "group_id": completion_info["group_id"],
+                    "error_message": data.get("message", "Eval failed"),
+                    "sid": completion_info["sid"],
+                },
+            )
+            # Remove from tracking
+            del _pending_eval_completions[eval_key]
+            return
+
+        # Check if all evals completed
+        if completion_info["pending_count"] <= 0:
+            # All evals complete - emit benchmark_advance to notify client via advance.py
+            await internal_sio.emit(
+                "benchmark_advance",
+                {
+                    "test_id": test_id,
+                    "attempt_id": attempt_id,
+                    "run_id": completion_info["run_id"],
+                    "group_id": completion_info["group_id"],
+                    "sid": completion_info["sid"],
+                },
+            )
+
+            # Then emit benchmark_end to complete the test
+            await internal_sio.emit(
+                "benchmark_end",
+                {
+                    "test_id": test_id,
+                    "attempt_id": attempt_id,
+                    "eval_id": completion_info["eval_id"],
+                    "run_id": completion_info["run_id"],
+                    "group_id": completion_info["group_id"],
+                    "use_groups": completion_info["use_groups"],
+                    "sid": completion_info["sid"],
+                },
+            )
+
+            # Remove from tracking
+            del _pending_eval_completions[eval_key]
+
+    except Exception as e:
+        # Propagate to benchmark_error handler
+        await internal_sio.emit(
+            "benchmark_error",
+            {
+                "attempt_id": data.get("attempt_id", "unknown"),
+                "eval_id": data.get("eval_id"),
+                "test_id": data.get("test_id"),
+                "run_id": data.get("run_id"),
+                "group_id": data.get("group_id"),
+                "error_message": str(e),
+                "sid": data.get("sid", "internal"),
+            },
+        )
 
 
 # FastAPI endpoint for OpenAPI documentation

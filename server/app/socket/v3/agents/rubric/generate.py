@@ -159,7 +159,7 @@ async def _rubric_generate_impl(
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
-            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents_get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
             tool_config_map_rubric: dict[str, dict[str, Any]] = {
@@ -292,7 +292,7 @@ async def _rubric_generate_impl(
             # Format standard groups manually (no JSONB)
             standard_groups_text = "\n".join(
                 [
-                    f"  - {g.name} (ID: {g.id}, Points: {g.points}, Description: {g.description or 'N/A'})"
+                    f"  - {g.name} (ID: {g.id}, Points: {g.points}, Description: {g.description or 'N_A'})"
                     for g in standard_groups_objects
                 ]
             )
