@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict T5WO45FFJJOw8oPKST88vNkBk6w8UMAVbXKF6vA2Vh8cKrmxGC2Kaqmxe77Iq7J
+\restrict v0CoJi9BYumPCbgWgFubQfqI9qLnWnk9UwdnYagBc7ZBHX48v07AnfG4s1s7juB
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -73,13 +73,11 @@ CREATE TYPE public.agent_role AS ENUM (
     'title',
     'image',
     'video',
-    'simulation-text',
-    'simulation-voice',
+    'simulation',
+    'voice',
     'eval',
-    'outline',
     'document',
-    'grade-text',
-    'grade-voice',
+    'audio',
     'member',
     'rubric'
 );
@@ -220,7 +218,12 @@ CREATE TYPE public.tool_type AS ENUM (
     'feedback_strength',
     'feedback_improvement',
     'analysis',
-    'title'
+    'title',
+    'debug',
+    'rubric',
+    'conversation',
+    'improvement',
+    'strength'
 );
 
 
@@ -994,18 +997,40 @@ CREATE TABLE public.documents (
 
 
 --
+-- Name: eval_agents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eval_agents (
+    eval_id uuid NOT NULL,
+    agent_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: eval_agents_rubric_grade_agents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eval_agents_rubric_grade_agents (
+    eval_id uuid NOT NULL,
+    agent_id uuid NOT NULL,
+    rubric_grade_agent_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: eval_attempts; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.eval_attempts (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     archived boolean DEFAULT false NOT NULL,
-    conversation_mode boolean DEFAULT false NOT NULL,
-    conversation_max_turns integer,
     id uuid DEFAULT uuidv7() CONSTRAINT eval_attempts_id_v7_not_null NOT NULL,
-    conversation_agent_id uuid,
     eval_id uuid,
-    CONSTRAINT eval_attempts_conversation_max_turns_check CHECK ((conversation_max_turns > 0))
+    infinite_mode boolean DEFAULT false NOT NULL
 );
 
 
@@ -1023,6 +1048,31 @@ CREATE TABLE public.eval_departments (
 
 
 --
+-- Name: eval_groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eval_groups (
+    eval_id uuid NOT NULL,
+    group_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: eval_groups_rubric_grade_agents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eval_groups_rubric_grade_agents (
+    eval_id uuid NOT NULL,
+    group_id uuid NOT NULL,
+    rubric_grade_agent_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: eval_runs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1032,6 +1082,19 @@ CREATE TABLE public.eval_runs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     eval_id uuid NOT NULL,
     run_id uuid NOT NULL
+);
+
+
+--
+-- Name: eval_runs_rubric_grade_agents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eval_runs_rubric_grade_agents (
+    eval_id uuid NOT NULL,
+    run_id uuid NOT NULL,
+    rubric_grade_agent_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -1047,9 +1110,8 @@ CREATE TABLE public.evals (
     active boolean DEFAULT true NOT NULL,
     dynamic boolean DEFAULT false NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL,
-    eval_agent_id uuid,
-    agent_id uuid,
-    rubric_id uuid
+    rubric_id uuid,
+    use_groups boolean DEFAULT false NOT NULL
 );
 
 
@@ -1157,7 +1219,21 @@ CREATE TABLE public.grades (
     time_taken integer NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT grades_id_v7_not_null NOT NULL,
     rubric_id uuid,
-    run_id uuid
+    run_id uuid,
+    rubric_grade_agent_id uuid
+);
+
+
+--
+-- Name: group_order; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.group_order (
+    group_id uuid NOT NULL,
+    agent_id uuid NOT NULL,
+    position_idx integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -1171,6 +1247,19 @@ CREATE TABLE public.group_runs (
     idx integer NOT NULL,
     group_id uuid NOT NULL,
     run_id uuid NOT NULL
+);
+
+
+--
+-- Name: group_stop; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.group_stop (
+    group_id uuid NOT NULL,
+    tool_id uuid NOT NULL,
+    position_idx integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -1890,6 +1979,31 @@ CREATE TABLE public.rubric_departments (
 
 
 --
+-- Name: rubric_grade_agents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rubric_grade_agents (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    rubric_id uuid NOT NULL,
+    grade_text_agent_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: rubric_grade_agents_voice; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rubric_grade_agents_voice (
+    rubric_grade_agent_id uuid NOT NULL,
+    grade_voice_agent_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: rubric_groups; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1927,7 +2041,6 @@ CREATE TABLE public.rubrics (
     points integer NOT NULL,
     pass_points integer NOT NULL,
     active boolean DEFAULT true NOT NULL,
-    agent_role public.agent_role,
     id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
     rubric_agent_id uuid
 );
@@ -2484,12 +2597,24 @@ CREATE TABLE public.simulation_scenarios (
     copy_paste_allowed boolean DEFAULT false NOT NULL,
     audio_enabled boolean DEFAULT false NOT NULL,
     text_enabled boolean DEFAULT true NOT NULL,
-    rubric_id uuid,
     scenario_id uuid NOT NULL,
     simulation_id uuid NOT NULL,
     show_problem_statement boolean DEFAULT true NOT NULL,
     show_objectives boolean DEFAULT true NOT NULL,
     show_images boolean DEFAULT true NOT NULL
+);
+
+
+--
+-- Name: simulation_scenarios_rubric_grade_agents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.simulation_scenarios_rubric_grade_agents (
+    simulation_id uuid NOT NULL,
+    scenario_id uuid NOT NULL,
+    rubric_grade_agent_id uuid CONSTRAINT simulation_scenarios_rubric_grad_rubric_grade_agent_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2504,12 +2629,10 @@ CREATE TABLE public.simulations (
     description text DEFAULT 'No description provided'::text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     practice_simulation boolean DEFAULT false NOT NULL,
-    grade_voice_agent_id uuid,
     id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
     simulation_text_agent_id uuid,
     simulation_voice_agent_id uuid,
-    hint_agent_id uuid,
-    grade_text_agent_id uuid
+    hint_agent_id uuid
 );
 
 
@@ -2993,6 +3116,22 @@ ALTER TABLE ONLY public.documents
 
 
 --
+-- Name: eval_agents eval_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_agents
+    ADD CONSTRAINT eval_agents_pkey PRIMARY KEY (eval_id, agent_id);
+
+
+--
+-- Name: eval_agents_rubric_grade_agents eval_agents_rubric_grade_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_agents_rubric_grade_agents
+    ADD CONSTRAINT eval_agents_rubric_grade_agents_pkey PRIMARY KEY (eval_id, agent_id, rubric_grade_agent_id);
+
+
+--
 -- Name: eval_attempts eval_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3009,11 +3148,35 @@ ALTER TABLE ONLY public.eval_departments
 
 
 --
+-- Name: eval_groups eval_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_groups
+    ADD CONSTRAINT eval_groups_pkey PRIMARY KEY (eval_id, group_id);
+
+
+--
+-- Name: eval_groups_rubric_grade_agents eval_groups_rubric_grade_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_groups_rubric_grade_agents
+    ADD CONSTRAINT eval_groups_rubric_grade_agents_pkey PRIMARY KEY (eval_id, group_id, rubric_grade_agent_id);
+
+
+--
 -- Name: eval_runs eval_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.eval_runs
     ADD CONSTRAINT eval_runs_pkey PRIMARY KEY (eval_id, run_id);
+
+
+--
+-- Name: eval_runs_rubric_grade_agents eval_runs_rubric_grade_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_runs_rubric_grade_agents
+    ADD CONSTRAINT eval_runs_rubric_grade_agents_pkey PRIMARY KEY (eval_id, run_id, rubric_grade_agent_id);
 
 
 --
@@ -3089,11 +3252,27 @@ ALTER TABLE ONLY public.grades
 
 
 --
+-- Name: group_order group_order_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_order
+    ADD CONSTRAINT group_order_pkey PRIMARY KEY (group_id, agent_id, position_idx);
+
+
+--
 -- Name: group_runs group_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.group_runs
     ADD CONSTRAINT group_runs_pkey PRIMARY KEY (group_id, run_id);
+
+
+--
+-- Name: group_stop group_stop_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_stop
+    ADD CONSTRAINT group_stop_pkey PRIMARY KEY (group_id, tool_id, position_idx);
 
 
 --
@@ -3441,6 +3620,30 @@ ALTER TABLE ONLY public.rubric_departments
 
 
 --
+-- Name: rubric_grade_agents rubric_grade_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_grade_agents
+    ADD CONSTRAINT rubric_grade_agents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rubric_grade_agents rubric_grade_agents_rubric_agent_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_grade_agents
+    ADD CONSTRAINT rubric_grade_agents_rubric_agent_unique UNIQUE (rubric_id, grade_text_agent_id);
+
+
+--
+-- Name: rubric_grade_agents_voice rubric_grade_agents_voice_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_grade_agents_voice
+    ADD CONSTRAINT rubric_grade_agents_voice_pkey PRIMARY KEY (rubric_grade_agent_id, grade_voice_agent_id);
+
+
+--
 -- Name: rubric_groups rubric_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3734,6 +3937,14 @@ ALTER TABLE ONLY public.simulation_departments
 
 ALTER TABLE ONLY public.simulation_scenarios
     ADD CONSTRAINT simulation_scenarios_pkey PRIMARY KEY (simulation_id, scenario_id);
+
+
+--
+-- Name: simulation_scenarios_rubric_grade_agents simulation_scenarios_rubric_grade_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_scenarios_rubric_grade_agents
+    ADD CONSTRAINT simulation_scenarios_rubric_grade_agents_pkey PRIMARY KEY (simulation_id, scenario_id, rubric_grade_agent_id);
 
 
 --
@@ -4369,6 +4580,41 @@ CREATE INDEX documents_document_agent_id_v7_idx ON public.documents USING btree 
 
 
 --
+-- Name: eval_agents_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_agents_agent_id_idx ON public.eval_agents USING btree (agent_id);
+
+
+--
+-- Name: eval_agents_eval_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_agents_eval_id_idx ON public.eval_agents USING btree (eval_id);
+
+
+--
+-- Name: eval_agents_rubric_grade_agents_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_agents_rubric_grade_agents_agent_id_idx ON public.eval_agents_rubric_grade_agents USING btree (agent_id);
+
+
+--
+-- Name: eval_agents_rubric_grade_agents_eval_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_agents_rubric_grade_agents_eval_id_idx ON public.eval_agents_rubric_grade_agents USING btree (eval_id);
+
+
+--
+-- Name: eval_agents_rubric_grade_agents_rubric_grade_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_agents_rubric_grade_agents_rubric_grade_agent_id_idx ON public.eval_agents_rubric_grade_agents USING btree (rubric_grade_agent_id);
+
+
+--
 -- Name: eval_attempts_archived_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4376,24 +4622,17 @@ CREATE INDEX eval_attempts_archived_idx ON public.eval_attempts USING btree (arc
 
 
 --
--- Name: eval_attempts_conversation_agent_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX eval_attempts_conversation_agent_id_v7_idx ON public.eval_attempts USING btree (conversation_agent_id);
-
-
---
--- Name: eval_attempts_conversation_mode_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX eval_attempts_conversation_mode_idx ON public.eval_attempts USING btree (conversation_mode);
-
-
---
 -- Name: eval_attempts_eval_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX eval_attempts_eval_id_v7_idx ON public.eval_attempts USING btree (eval_id);
+
+
+--
+-- Name: eval_attempts_infinite_mode_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_attempts_infinite_mode_idx ON public.eval_attempts USING btree (infinite_mode);
 
 
 --
@@ -4411,10 +4650,66 @@ CREATE INDEX eval_departments_eval_id_v7_idx ON public.eval_departments USING bt
 
 
 --
+-- Name: eval_groups_eval_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_groups_eval_id_idx ON public.eval_groups USING btree (eval_id);
+
+
+--
+-- Name: eval_groups_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_groups_group_id_idx ON public.eval_groups USING btree (group_id);
+
+
+--
+-- Name: eval_groups_rubric_grade_agents_eval_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_groups_rubric_grade_agents_eval_id_idx ON public.eval_groups_rubric_grade_agents USING btree (eval_id);
+
+
+--
+-- Name: eval_groups_rubric_grade_agents_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_groups_rubric_grade_agents_group_id_idx ON public.eval_groups_rubric_grade_agents USING btree (group_id);
+
+
+--
+-- Name: eval_groups_rubric_grade_agents_rubric_grade_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_groups_rubric_grade_agents_rubric_grade_agent_id_idx ON public.eval_groups_rubric_grade_agents USING btree (rubric_grade_agent_id);
+
+
+--
 -- Name: eval_runs_eval_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX eval_runs_eval_id_v7_idx ON public.eval_runs USING btree (eval_id);
+
+
+--
+-- Name: eval_runs_rubric_grade_agents_eval_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_runs_rubric_grade_agents_eval_id_idx ON public.eval_runs_rubric_grade_agents USING btree (eval_id);
+
+
+--
+-- Name: eval_runs_rubric_grade_agents_rubric_grade_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_runs_rubric_grade_agents_rubric_grade_agent_id_idx ON public.eval_runs_rubric_grade_agents USING btree (rubric_grade_agent_id);
+
+
+--
+-- Name: eval_runs_rubric_grade_agents_run_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_runs_rubric_grade_agents_run_id_idx ON public.eval_runs_rubric_grade_agents USING btree (run_id);
 
 
 --
@@ -4425,24 +4720,17 @@ CREATE INDEX eval_runs_run_id_v7_idx ON public.eval_runs USING btree (run_id);
 
 
 --
--- Name: evals_agent_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX evals_agent_id_v7_idx ON public.evals USING btree (agent_id);
-
-
---
--- Name: evals_eval_agent_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX evals_eval_agent_id_v7_idx ON public.evals USING btree (eval_agent_id);
-
-
---
 -- Name: evals_rubric_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX evals_rubric_id_v7_idx ON public.evals USING btree (rubric_id);
+
+
+--
+-- Name: evals_use_groups_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX evals_use_groups_idx ON public.evals USING btree (use_groups);
 
 
 --
@@ -4544,10 +4832,10 @@ CREATE INDEX grade_groups_group_id_v7_idx ON public.grade_groups USING btree (gr
 
 
 --
--- Name: grades_rubric_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: grades_rubric_grade_agent_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX grades_rubric_id_v7_idx ON public.grades USING btree (rubric_id);
+CREATE INDEX grades_rubric_grade_agent_id_idx ON public.grades USING btree (rubric_grade_agent_id);
 
 
 --
@@ -4569,6 +4857,27 @@ CREATE INDEX grades_run_id_v7_idx ON public.grades USING btree (run_id);
 --
 
 CREATE INDEX grades_run_rubric_created_idx ON public.grades USING btree (run_id, rubric_id, created_at DESC);
+
+
+--
+-- Name: group_order_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX group_order_agent_id_idx ON public.group_order USING btree (agent_id);
+
+
+--
+-- Name: group_order_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX group_order_group_id_idx ON public.group_order USING btree (group_id);
+
+
+--
+-- Name: group_order_group_position_uniq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX group_order_group_position_uniq ON public.group_order USING btree (group_id, position_idx);
 
 
 --
@@ -4597,6 +4906,27 @@ CREATE INDEX group_runs_run_id_idx ON public.group_runs USING btree (run_id);
 --
 
 CREATE INDEX group_runs_run_id_v7_idx ON public.group_runs USING btree (run_id);
+
+
+--
+-- Name: group_stop_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX group_stop_group_id_idx ON public.group_stop USING btree (group_id);
+
+
+--
+-- Name: group_stop_group_position_uniq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX group_stop_group_position_uniq ON public.group_stop USING btree (group_id, position_idx);
+
+
+--
+-- Name: group_stop_tool_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX group_stop_tool_id_idx ON public.group_stop USING btree (tool_id);
 
 
 --
@@ -5377,6 +5707,34 @@ CREATE INDEX rubric_departments_rubric_id_v7_idx ON public.rubric_departments US
 
 
 --
+-- Name: rubric_grade_agents_grade_text_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_grade_agents_grade_text_agent_id_idx ON public.rubric_grade_agents USING btree (grade_text_agent_id);
+
+
+--
+-- Name: rubric_grade_agents_rubric_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_grade_agents_rubric_id_idx ON public.rubric_grade_agents USING btree (rubric_id);
+
+
+--
+-- Name: rubric_grade_agents_voice_grade_voice_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_grade_agents_voice_grade_voice_agent_id_idx ON public.rubric_grade_agents_voice USING btree (grade_voice_agent_id);
+
+
+--
+-- Name: rubric_grade_agents_voice_rubric_grade_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_grade_agents_voice_rubric_grade_agent_id_idx ON public.rubric_grade_agents_voice USING btree (rubric_grade_agent_id);
+
+
+--
 -- Name: rubric_groups_group_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6049,10 +6407,24 @@ CREATE INDEX simulation_hints_simulation_message_id_v7_idx ON public.simulation_
 
 
 --
--- Name: simulation_scenarios_rubric_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: simulation_scenarios_rubric_grade_agents_rubric_grade_agent_id_; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_scenarios_rubric_id_v7_idx ON public.simulation_scenarios USING btree (rubric_id);
+CREATE INDEX simulation_scenarios_rubric_grade_agents_rubric_grade_agent_id_ ON public.simulation_scenarios_rubric_grade_agents USING btree (rubric_grade_agent_id);
+
+
+--
+-- Name: simulation_scenarios_rubric_grade_agents_scenario_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_scenarios_rubric_grade_agents_scenario_id_idx ON public.simulation_scenarios_rubric_grade_agents USING btree (scenario_id);
+
+
+--
+-- Name: simulation_scenarios_rubric_grade_agents_simulation_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_scenarios_rubric_grade_agents_simulation_id_idx ON public.simulation_scenarios_rubric_grade_agents USING btree (simulation_id);
 
 
 --
@@ -6067,20 +6439,6 @@ CREATE INDEX simulation_scenarios_scenario_id_v7_idx ON public.simulation_scenar
 --
 
 CREATE INDEX simulation_scenarios_simulation_id_v7_idx ON public.simulation_scenarios USING btree (simulation_id);
-
-
---
--- Name: simulations_grade_text_agent_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX simulations_grade_text_agent_id_v7_idx ON public.simulations USING btree (grade_text_agent_id);
-
-
---
--- Name: simulations_grade_voice_agent_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX simulations_grade_voice_agent_id_idx ON public.simulations USING btree (grade_voice_agent_id);
 
 
 --
@@ -6913,11 +7271,35 @@ ALTER TABLE ONLY public.documents
 
 
 --
--- Name: eval_attempts eval_attempts_conversation_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: eval_agents eval_agents_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.eval_attempts
-    ADD CONSTRAINT eval_attempts_conversation_agent_id_fkey FOREIGN KEY (conversation_agent_id) REFERENCES public.agents(id);
+ALTER TABLE ONLY public.eval_agents
+    ADD CONSTRAINT eval_agents_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_agents eval_agents_eval_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_agents
+    ADD CONSTRAINT eval_agents_eval_id_fkey FOREIGN KEY (eval_id) REFERENCES public.evals(id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_agents_rubric_grade_agents eval_agents_rubric_grade_agents_eval_id_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_agents_rubric_grade_agents
+    ADD CONSTRAINT eval_agents_rubric_grade_agents_eval_id_agent_id_fkey FOREIGN KEY (eval_id, agent_id) REFERENCES public.eval_agents(eval_id, agent_id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_agents_rubric_grade_agents eval_agents_rubric_grade_agents_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_agents_rubric_grade_agents
+    ADD CONSTRAINT eval_agents_rubric_grade_agents_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.rubric_grade_agents(id) ON DELETE CASCADE;
 
 
 --
@@ -6945,6 +7327,38 @@ ALTER TABLE ONLY public.eval_departments
 
 
 --
+-- Name: eval_groups eval_groups_eval_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_groups
+    ADD CONSTRAINT eval_groups_eval_id_fkey FOREIGN KEY (eval_id) REFERENCES public.evals(id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_groups eval_groups_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_groups
+    ADD CONSTRAINT eval_groups_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_groups_rubric_grade_agents eval_groups_rubric_grade_agents_eval_id_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_groups_rubric_grade_agents
+    ADD CONSTRAINT eval_groups_rubric_grade_agents_eval_id_group_id_fkey FOREIGN KEY (eval_id, group_id) REFERENCES public.eval_groups(eval_id, group_id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_groups_rubric_grade_agents eval_groups_rubric_grade_agents_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_groups_rubric_grade_agents
+    ADD CONSTRAINT eval_groups_rubric_grade_agents_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.rubric_grade_agents(id) ON DELETE CASCADE;
+
+
+--
 -- Name: eval_runs eval_runs_eval_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6953,27 +7367,27 @@ ALTER TABLE ONLY public.eval_runs
 
 
 --
+-- Name: eval_runs_rubric_grade_agents eval_runs_rubric_grade_agents_eval_id_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_runs_rubric_grade_agents
+    ADD CONSTRAINT eval_runs_rubric_grade_agents_eval_id_run_id_fkey FOREIGN KEY (eval_id, run_id) REFERENCES public.eval_runs(eval_id, run_id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_runs_rubric_grade_agents eval_runs_rubric_grade_agents_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_runs_rubric_grade_agents
+    ADD CONSTRAINT eval_runs_rubric_grade_agents_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.rubric_grade_agents(id) ON DELETE CASCADE;
+
+
+--
 -- Name: eval_runs eval_runs_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.eval_runs
     ADD CONSTRAINT eval_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
-
-
---
--- Name: evals evals_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.evals
-    ADD CONSTRAINT evals_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agents(id);
-
-
---
--- Name: evals evals_eval_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.evals
-    ADD CONSTRAINT evals_eval_agent_id_fkey FOREIGN KEY (eval_agent_id) REFERENCES public.agents(id);
 
 
 --
@@ -7057,6 +7471,14 @@ ALTER TABLE ONLY public.grade_groups
 
 
 --
+-- Name: grades grades_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.grades
+    ADD CONSTRAINT grades_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.rubric_grade_agents(id) ON DELETE SET NULL;
+
+
+--
 -- Name: grades grades_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7073,6 +7495,22 @@ ALTER TABLE ONLY public.grades
 
 
 --
+-- Name: group_order group_order_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_order
+    ADD CONSTRAINT group_order_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_order group_order_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_order
+    ADD CONSTRAINT group_order_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+
+--
 -- Name: group_runs group_runs_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7086,6 +7524,22 @@ ALTER TABLE ONLY public.group_runs
 
 ALTER TABLE ONLY public.group_runs
     ADD CONSTRAINT group_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
+
+
+--
+-- Name: group_stop group_stop_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_stop
+    ADD CONSTRAINT group_stop_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_stop group_stop_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_stop
+    ADD CONSTRAINT group_stop_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tools(id) ON DELETE CASCADE;
 
 
 --
@@ -7630,6 +8084,38 @@ ALTER TABLE ONLY public.rubric_departments
 
 ALTER TABLE ONLY public.rubric_departments
     ADD CONSTRAINT rubric_departments_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id);
+
+
+--
+-- Name: rubric_grade_agents rubric_grade_agents_grade_text_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_grade_agents
+    ADD CONSTRAINT rubric_grade_agents_grade_text_agent_id_fkey FOREIGN KEY (grade_text_agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rubric_grade_agents rubric_grade_agents_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_grade_agents
+    ADD CONSTRAINT rubric_grade_agents_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rubric_grade_agents_voice rubric_grade_agents_voice_grade_voice_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_grade_agents_voice
+    ADD CONSTRAINT rubric_grade_agents_voice_grade_voice_agent_id_fkey FOREIGN KEY (grade_voice_agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rubric_grade_agents_voice rubric_grade_agents_voice_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_grade_agents_voice
+    ADD CONSTRAINT rubric_grade_agents_voice_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.rubric_grade_agents(id) ON DELETE CASCADE;
 
 
 --
@@ -8225,11 +8711,19 @@ ALTER TABLE ONLY public.simulation_hints
 
 
 --
--- Name: simulation_scenarios simulation_scenarios_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: simulation_scenarios_rubric_grade_agents simulation_scenarios_rubric_grad_simulation_id_scenario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.simulation_scenarios
-    ADD CONSTRAINT simulation_scenarios_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id);
+ALTER TABLE ONLY public.simulation_scenarios_rubric_grade_agents
+    ADD CONSTRAINT simulation_scenarios_rubric_grad_simulation_id_scenario_id_fkey FOREIGN KEY (simulation_id, scenario_id) REFERENCES public.simulation_scenarios(simulation_id, scenario_id) ON DELETE CASCADE;
+
+
+--
+-- Name: simulation_scenarios_rubric_grade_agents simulation_scenarios_rubric_grade_ag_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_scenarios_rubric_grade_agents
+    ADD CONSTRAINT simulation_scenarios_rubric_grade_ag_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.rubric_grade_agents(id) ON DELETE CASCADE;
 
 
 --
@@ -8246,14 +8740,6 @@ ALTER TABLE ONLY public.simulation_scenarios
 
 ALTER TABLE ONLY public.simulation_scenarios
     ADD CONSTRAINT simulation_scenarios_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations(id);
-
-
---
--- Name: simulations simulations_grade_text_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulations
-    ADD CONSTRAINT simulations_grade_text_agent_id_fkey FOREIGN KEY (grade_text_agent_id) REFERENCES public.agents(id);
 
 
 --
@@ -8420,5 +8906,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict T5WO45FFJJOw8oPKST88vNkBk6w8UMAVbXKF6vA2Vh8cKrmxGC2Kaqmxe77Iq7J
+\unrestrict v0CoJi9BYumPCbgWgFubQfqI9qLnWnk9UwdnYagBc7ZBHX48v07AnfG4s1s7juB
 

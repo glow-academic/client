@@ -1,4 +1,4 @@
-"""Handler for rubric_tool_standard_group_descriptions WebSocket event - ONE EVENT PER FILE."""
+"""Handler for rubric_tool_standard_description WebSocket event - ONE EVENT PER FILE."""
 
 import uuid
 from typing import Any, cast
@@ -26,13 +26,13 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v3/rubrics/update_standard_descriptions_complete.sql"
 
 
-async def _rubric_tool_standard_group_descriptions_impl(
+async def _rubric_tool_standard_description_impl(
     sid: str,
     data: UpdateStandardDescriptionsApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Internal implementation for standard group descriptions update."""
+    """Internal implementation for standard descriptions update (replaces standard_group_descriptions)."""
     try:
         async with get_db_connection() as conn:
             params = UpdateStandardDescriptionsSqlParams(
@@ -48,7 +48,7 @@ async def _rubric_tool_standard_group_descriptions_impl(
 
             if not result or result.updated_count is None:
                 await emit_to_internal(
-                    "standard_group_descriptions_error",
+                    "standard_description_error",
                     StandardGroupDescriptionsErrorSqlRow(
                         success=False,
                         message="Failed to update standard descriptions",
@@ -65,7 +65,7 @@ async def _rubric_tool_standard_group_descriptions_impl(
 
             # Emit to internal complete event (will be handled by complete.py)
             await emit_to_internal(
-                "standard_group_descriptions_complete",
+                "standard_description_complete",
                 StandardGroupDescriptionsCompleteApiRequest(
                     success=True,
                     rubric_id=data.rubric_id,
@@ -78,7 +78,7 @@ async def _rubric_tool_standard_group_descriptions_impl(
             )
     except RuntimeError:
         await emit_to_internal(
-            "standard_group_descriptions_error",
+            "standard_description_error",
             StandardGroupDescriptionsErrorSqlRow(
                 success=False,
                 message="Database connection pool not available",
@@ -88,7 +88,7 @@ async def _rubric_tool_standard_group_descriptions_impl(
         )
     except Exception as e:
         await emit_to_internal(
-            "standard_group_descriptions_error",
+            "standard_description_error",
             StandardGroupDescriptionsErrorSqlRow(
                 success=False,
                 message=str(e),
@@ -98,23 +98,24 @@ async def _rubric_tool_standard_group_descriptions_impl(
         )
 
 
-@internal_sio.on("rubric_tool_standard_group_descriptions")  # type: ignore
-async def rubric_tool_standard_group_descriptions_internal(
+@internal_sio.on("rubric_tool_standard_description")  # type: ignore
+async def rubric_tool_standard_description_internal(
     data: dict[str, Any],
 ) -> None:
-    """Handle standard group descriptions update event from internal bus (server-to-server)."""
+    """Handle rubric_tool_standard_description event from internal bus (server-to-server)."""
     await handle_internal_event(
         data=data,
         request_type=UpdateStandardDescriptionsApiRequest,
-        handler=_rubric_tool_standard_group_descriptions_impl,  # type: ignore[arg-type]
-        error_event_name="standard_group_descriptions_error",
+        handler=_rubric_tool_standard_description_impl,  # type: ignore[arg-type]
+        error_event_name="standard_description_error",
         error_response_type=StandardGroupDescriptionsErrorSqlRow,
     )
 
 
 register_server_endpoint(
     server_router,
-    "/standard_group_descriptions",
+    "/rubric_tool_standard_description",
     UpdateStandardDescriptionsApiRequest,
-    "Update standard group descriptions from rubric generation tool",
+    "Standard description tool handler (replaces standard_group_descriptions)",
 )
+

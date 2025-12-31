@@ -18685,7 +18685,7 @@
         }
       }
     },
-    "/socket/v3/server/tools/tools/standard_group_descriptions": {
+    "/socket/v3/server/tools/tools/rubric_tool_standard_description": {
       "post": {
         "tags": [
           "socket",
@@ -18695,7 +18695,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_tools_tools_standard_group_descriptions_post",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_rubric_tool_standard_description_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18716,7 +18716,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Standard Group Descriptions Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Rubric Tool Standard Description Post"
                 }
               }
             }
@@ -18734,7 +18734,7 @@
         }
       }
     },
-    "/socket/v3/server/tools/tools/standard_group_descriptions_complete": {
+    "/socket/v3/server/tools/tools/standard_description_complete": {
       "post": {
         "tags": [
           "socket",
@@ -18744,7 +18744,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_tools_tools_standard_group_descriptions_complete_post",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_standard_description_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18765,7 +18765,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Standard Group Descriptions Complete Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Standard Description Complete Post"
                 }
               }
             }
@@ -18783,7 +18783,7 @@
         }
       }
     },
-    "/socket/v3/server/tools/tools/standard_group_descriptions_error": {
+    "/socket/v3/server/tools/tools/standard_description_error": {
       "post": {
         "tags": [
           "socket",
@@ -18793,7 +18793,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_tools_tools_standard_group_descriptions_error_post",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_standard_description_error_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18814,7 +18814,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Standard Group Descriptions Error Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Standard Description Error Post"
                 }
               }
             }
@@ -18832,7 +18832,7 @@
         }
       }
     },
-    "/socket/v3/server/tools/tools/standard_group_descriptions_progress": {
+    "/socket/v3/server/tools/tools/standard_description_progress": {
       "post": {
         "tags": [
           "socket",
@@ -18842,7 +18842,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v3_server_tools_tools_standard_group_descriptions_progress_post",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_standard_description_progress_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18863,7 +18863,203 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Standard Group Descriptions Progress Post"
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Standard Description Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/debug_info": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_debug_info_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Debug Info Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/debug_info_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_debug_info_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Debug Info Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/debug_info_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_debug_info_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Debug Info Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/debug_info_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_debug_info_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Debug Info Progress Post"
                 }
               }
             }
@@ -19452,6 +19648,202 @@
                   },
                   "type": "object",
                   "title": "Response Endpoint Handler Socket V3 Server Tools Tools Message Improvement Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/conversation_end": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_conversation_end_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Conversation End Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/conversation_end_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_conversation_end_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Conversation End Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/conversation_end_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_conversation_end_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Conversation End Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v3/server/tools/tools/conversation_end_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "endpoint_handler_socket_v3_server_tools_tools_conversation_end_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Endpoint Handler Socket V3 Server Tools Tools Conversation End Progress Post"
                 }
               }
             }

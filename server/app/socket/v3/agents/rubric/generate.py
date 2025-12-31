@@ -191,7 +191,7 @@ async def _rubric_generate_impl(
             }
 
             # Create rubric generation tool
-            async def generate_standard_group_descriptions(
+            async def standard_description(
                 descriptions: list[dict[str, Any]] = Field(
                     description="Array of descriptions for each grid cell. Each item should have standard_group_id, standard_id, and description fields."
                 ),
@@ -234,13 +234,13 @@ async def _rubric_generate_impl(
                     descriptions=description_objects,
                 )
                 await emit_to_internal(
-                    "rubric_tool_standard_group_descriptions",
+                    "rubric_tool_standard_description",
                     payload,
                     sid=sid,
                     group_id=str(group_id),
                 )
 
-                return f"Generated {len(descriptions)} standard group descriptions successfully"
+                return f"Generated {len(descriptions)} standard descriptions successfully"
 
             # Create title tool
             title_config = tool_config_map_rubric.get("create_title")
@@ -270,7 +270,7 @@ async def _rubric_generate_impl(
                 return "Created title successfully"
 
             rubric_tools = [
-                function_tool(generate_standard_group_descriptions),
+                function_tool(standard_description),
                 function_tool(create_title),
             ]
             logger.info("Created title tool for rubric agent")
@@ -304,7 +304,7 @@ For each combination of standard group and standard, generate a clear, specific 
 - Consistent with other descriptions in the same standard group
 - Appropriate for educational rubrics
 
-You must call the generate_standard_group_descriptions tool with an array of descriptions, where each description object contains:
+You must call the standard_description tool with an array of descriptions, where each description object contains:
 - standard_group_id: The UUID string of the standard group
 - standard_id: The UUID string of the standard
 - description: The generated description text for this grid cell

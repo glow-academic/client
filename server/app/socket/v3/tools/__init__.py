@@ -6,25 +6,26 @@ from .analysis import client_router as analysis_client_router
 from .analysis import server_router as analysis_server_router
 from .classification import client_router as classification_client_router
 from .classification import server_router as classification_server_router
+from .debug import server_router as debug_server_router
 from .document import client_router as document_client_router
 from .document import server_router as document_server_router
-from .end_conversation import (
-    client_router as end_conversation_client_router,
+from .conversation import (
+    client_router as conversation_client_router,
 )
-from .end_conversation import (
-    server_router as end_conversation_server_router,
+from .conversation import (
+    server_router as conversation_server_router,
 )
-from .feedback_improvement import (
-    client_router as feedback_improvement_client_router,
+from .improvement import (
+    client_router as improvement_client_router,
 )
-from .feedback_improvement import (
-    server_router as feedback_improvement_server_router,
+from .improvement import (
+    server_router as improvement_server_router,
 )
-from .feedback_strength import (
-    client_router as feedback_strength_client_router,
+from .strength import (
+    client_router as strength_client_router,
 )
-from .feedback_strength import (
-    server_router as feedback_strength_server_router,
+from .strength import (
+    server_router as strength_server_router,
 )
 from .grade import client_router as grade_client_router
 from .grade import server_router as grade_server_router
@@ -38,9 +39,7 @@ from .question import client_router as question_client_router
 from .question import server_router as question_server_router
 from .speak import client_router as speak_client_router
 from .speak import server_router as speak_server_router
-from .standard_group_descriptions import (
-    server_router as standard_group_descriptions_server_router,
-)
+from .standard_description import server_router as standard_description_server_router
 from .statement import client_router as statement_client_router
 from .statement import server_router as statement_server_router
 from .title import client_router as title_client_router
@@ -60,12 +59,12 @@ client_router.include_router(video_client_router)
 client_router.include_router(question_client_router)
 client_router.include_router(analysis_client_router)
 client_router.include_router(grade_client_router)
-client_router.include_router(feedback_strength_client_router)
-client_router.include_router(feedback_improvement_client_router)
+client_router.include_router(strength_client_router)
+client_router.include_router(improvement_client_router)
 client_router.include_router(speak_client_router)
 client_router.include_router(hint_client_router)
 client_router.include_router(classification_client_router)
-client_router.include_router(end_conversation_client_router)
+client_router.include_router(conversation_client_router)
 
 server_router.include_router(document_server_router)
 server_router.include_router(title_server_router)
@@ -74,12 +73,13 @@ server_router.include_router(objective_server_router)
 server_router.include_router(image_server_router)
 server_router.include_router(video_server_router)
 server_router.include_router(question_server_router)
-server_router.include_router(standard_group_descriptions_server_router)
+server_router.include_router(standard_description_server_router)
+server_router.include_router(debug_server_router)
 server_router.include_router(analysis_server_router)
 server_router.include_router(grade_server_router)
-server_router.include_router(feedback_strength_server_router)
-server_router.include_router(feedback_improvement_server_router)
+server_router.include_router(strength_server_router)
+server_router.include_router(improvement_server_router)
 server_router.include_router(speak_server_router)
 server_router.include_router(hint_server_router)
 server_router.include_router(classification_server_router)
-server_router.include_router(end_conversation_server_router)
+server_router.include_router(conversation_server_router)

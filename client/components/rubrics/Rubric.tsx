@@ -741,7 +741,7 @@ export default function Rubric({
             socket.off("rubrics_generation_complete", handleComplete);
             socket.off("rubrics_generation_error", handleError);
             socket.off(
-              "rubrics_tools_standard_group_descriptions_complete",
+              "rubrics_tools_standard_description_complete",
               handleDescriptionsComplete,
             );
 
@@ -765,7 +765,7 @@ export default function Rubric({
             socket.off("rubrics_generation_complete", handleComplete);
             socket.off("rubrics_generation_error", handleError);
             socket.off(
-              "rubrics_tools_standard_group_descriptions_complete",
+              "rubrics_tools_standard_description_complete",
               handleDescriptionsComplete,
             );
 
@@ -824,7 +824,7 @@ export default function Rubric({
           socket.on("rubrics_generation_complete", handleComplete);
           socket.on("rubrics_generation_error", handleError);
           socket.on(
-            "rubrics_tools_standard_group_descriptions_complete",
+            "rubrics_tools_standard_description_complete",
             handleDescriptionsComplete,
           );
 
