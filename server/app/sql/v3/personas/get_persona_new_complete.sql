@@ -70,7 +70,11 @@ CREATE TYPE types.q_get_persona_new_v3_field AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_persona_new_v3(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_persona_new_v3(
+    profile_id uuid,
+    color_search text DEFAULT NULL,
+    icon_search text DEFAULT NULL
+)
 RETURNS TABLE (
     actor_name text,
     user_role text,

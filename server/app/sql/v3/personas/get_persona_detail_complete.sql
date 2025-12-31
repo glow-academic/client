@@ -83,7 +83,9 @@ CREATE TYPE types.q_get_persona_detail_v3_example_history_item AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_persona_detail_v3(
     persona_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    color_search text DEFAULT NULL,
+    icon_search text DEFAULT NULL
 )
 RETURNS TABLE (
     persona_exists boolean,

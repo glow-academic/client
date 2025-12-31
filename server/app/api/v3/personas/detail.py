@@ -19,6 +19,7 @@ from app.sql.types import (
     GetPersonaDetailSqlRow,
     load_sql_query,
 )
+from app.utils.color_utils import filter_colors, filter_icons
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/personas/get_persona_detail_complete.sql"
@@ -68,9 +69,16 @@ async def get_persona_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Extract search params from API request
+        color_search = request.color_search
+        icon_search = request.icon_search
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetPersonaDetailSqlParams(
-            **request.model_dump(), profile_id=profile_id
+            persona_id=request.persona_id,
+            profile_id=profile_id,
+            color_search=color_search,
+            icon_search=icon_search,
         )
         sql_params = params.to_tuple()
 
@@ -106,7 +114,7 @@ async def get_persona_detail(
             )
 
         # Hardcoded metadata (keep in Python as per original)
-        preset_colors = [
+        preset_colors_raw = [
             "#ef4444",
             "#f97316",
             "#f59e0b",
@@ -126,7 +134,7 @@ async def get_persona_detail(
             "#f43f5e",
         ]
 
-        suggested_icons = [
+        suggested_icons_raw = [
             "Brain",
             "User",
             "Users",
@@ -139,7 +147,7 @@ async def get_persona_detail(
             "GraduationCap",
         ]
 
-        valid_icons = [
+        valid_icons_raw = [
             "Brain",
             "User",
             "Users",
@@ -170,6 +178,11 @@ async def get_persona_detail(
             "Video",
             "Wifi",
         ]
+
+        # Filter colors and icons using server-side utilities
+        preset_colors = filter_colors(preset_colors_raw, color_search)
+        suggested_icons = filter_icons(suggested_icons_raw, icon_search)
+        valid_icons = filter_icons(valid_icons_raw, icon_search)
 
         # Convert SQL result to API response
         # Note: preset_colors, suggested_icons, valid_icons are hardcoded in Python

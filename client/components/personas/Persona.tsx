@@ -12,6 +12,8 @@ import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { api } from "@/lib/api/client";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 
 import type {
   CreatePersonaIn,
@@ -32,7 +34,6 @@ import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -83,8 +84,10 @@ export default function Persona({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentExamples, setCurrentExamples] = useState<string[]>([]);
-  const [colorSearchTerm, setColorSearchTerm] = useState("");
-  const [iconSearchTerm, setIconSearchTerm] = useState("");
+  // State for filtered data from server (updated when search params change)
+  const [filteredPersonaData, setFilteredPersonaData] = useState<
+    PersonaDetailOut | PersonaNewOut | null
+  >(null);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -93,170 +96,126 @@ export default function Persona({
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
 
-  // Color name mapping utility
-  const getColorName = useCallback((hex: string): string => {
-    const colorMap: Record<string, string> = {
-      // Standard colors
-      "#000000": "Black",
-      "#FFFFFF": "White",
-      "#FF0000": "Red",
-      "#00FF00": "Green",
-      "#0000FF": "Blue",
-      "#FFFF00": "Yellow",
-      "#FF00FF": "Magenta",
-      "#00FFFF": "Cyan",
-      "#FFA500": "Orange",
-      "#800080": "Purple",
-      "#FFC0CB": "Pink",
-      "#A52A2A": "Brown",
-      "#808080": "Gray",
-      "#FFD700": "Gold",
-      "#C0C0C0": "Silver",
-      "#008000": "Dark Green",
-      "#000080": "Navy",
-      "#800000": "Maroon",
-      "#FF6347": "Tomato",
-      "#40E0D0": "Turquoise",
-      "#EE82EE": "Violet",
-      "#F0E68C": "Khaki",
-      "#90EE90": "Light Green",
-      "#87CEEB": "Sky Blue",
-      "#DDA0DD": "Plum",
-      "#F5DEB3": "Wheat",
-      "#FF7F50": "Coral",
-      "#6495ED": "Cornflower Blue",
-      "#DC143C": "Crimson",
-      "#00CED1": "Dark Turquoise",
-      "#FF1493": "Deep Pink",
-      "#1E90FF": "Dodger Blue",
-      "#B22222": "Fire Brick",
-      "#228B22": "Forest Green",
-      "#DAA520": "Goldenrod",
-      "#ADFF2F": "Green Yellow",
-      "#FF69B4": "Hot Pink",
-      "#CD5C5C": "Indian Red",
-      "#4B0082": "Indigo",
-      "#FFFFF0": "Ivory",
-      "#E6E6FA": "Lavender",
-      "#FFF0F5": "Lavender Blush",
-      "#7CFC00": "Lawn Green",
-      "#FFFACD": "Lemon Chiffon",
-      "#ADD8E6": "Light Blue",
-      "#F08080": "Light Coral",
-      "#E0FFFF": "Light Cyan",
-      "#FAFAD2": "Light Goldenrod Yellow",
-      "#D3D3D3": "Light Gray",
-      "#FFB6C1": "Light Pink",
-      "#FFA07A": "Light Salmon",
-      "#20B2AA": "Light Sea Green",
-      "#87CEFA": "Light Sky Blue",
-      "#778899": "Light Slate Gray",
-      "#B0C4DE": "Light Steel Blue",
-      "#FFFFE0": "Light Yellow",
-      "#32CD32": "Lime Green",
-      "#FAF0E6": "Linen",
-      "#66CDAA": "Medium Aquamarine",
-      "#0000CD": "Medium Blue",
-      "#BA55D3": "Medium Orchid",
-      "#9370DB": "Medium Purple",
-      "#3CB371": "Medium Sea Green",
-      "#7B68EE": "Medium Slate Blue",
-      "#00FA9A": "Medium Spring Green",
-      "#48D1CC": "Medium Turquoise",
-      "#C71585": "Medium Violet Red",
-      "#191970": "Midnight Blue",
-      "#F5FFFA": "Mint Cream",
-      "#FFE4E1": "Misty Rose",
-      "#FFE4B5": "Moccasin",
-      "#FFDEAD": "Navajo White",
-      "#FDF5E6": "Old Lace",
-      "#808000": "Olive",
-      "#6B8E23": "Olive Drab",
-      "#FF4500": "Orange Red",
-      "#DA70D6": "Orchid",
-      "#EEE8AA": "Pale Goldenrod",
-      "#98FB98": "Pale Green",
-      "#AFEEEE": "Pale Turquoise",
-      "#DB7093": "Pale Violet Red",
-      "#FFEFD5": "Papaya Whip",
-      "#FFDAB9": "Peach Puff",
-      "#CD853F": "Peru",
-      "#B0E0E6": "Powder Blue",
-      "#BC8F8F": "Rosy Brown",
-      "#4169E1": "Royal Blue",
-      "#8B4513": "Saddle Brown",
-      "#FA8072": "Salmon",
-      "#F4A460": "Sandy Brown",
-      "#2E8B57": "Sea Green",
-      "#FFF5EE": "Sea Shell",
-      "#A0522D": "Sienna",
-      "#6A5ACD": "Slate Blue",
-      "#708090": "Slate Gray",
-      "#FFFAFA": "Snow",
-      "#00FF7F": "Spring Green",
-      "#4682B4": "Steel Blue",
-      "#D2B48C": "Tan",
-      "#008080": "Teal",
-      "#D8BFD8": "Thistle",
-      "#F5F5F5": "White Smoke",
-      "#9ACD32": "Yellow Green",
-      // Tailwind preset colors (from server)
-      "#EF4444": "Red",
-      "#F97316": "Orange",
-      "#F59E0B": "Amber",
-      "#EAB308": "Yellow",
-      "#84CC16": "Lime",
-      "#22C55E": "Green",
-      "#10B981": "Emerald",
-      "#14B8A6": "Teal",
-      "#06B6D4": "Cyan",
-      "#0EA5E9": "Sky",
-      "#3B82F6": "Blue",
-      "#6366F1": "Indigo",
-      "#8B5CF6": "Violet",
-      "#A855F7": "Purple",
-      "#D946EF": "Fuchsia",
-      "#EC4899": "Pink",
-      "#F43F5E": "Rose",
-    };
+  // URL-backed state using nuqs (managed by GenericForm, but we need access for initialization)
+  const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
+    history: "replace",
+    shallow: false,
+  });
 
-    // Normalize hex color (uppercase, ensure # prefix)
-    const normalizedHex = hex.toUpperCase().startsWith("#")
-      ? hex.toUpperCase()
-      : `#${hex.toUpperCase()}`;
+  // Use filtered data if available (from client-side refetch), otherwise use server data
+  const activePersonaData = filteredPersonaData || personaData;
 
-    return colorMap[normalizedHex] || normalizedHex;
-  }, []);
-
-  // Get preset colors and valid icons
-  const presetColors = useMemo(
-    () =>
-      (
-        personaData as PersonaDetailOut & {
-          preset_colors?: string[];
-        }
-      )?.preset_colors || [],
-    [personaData]
+  // Debounce search terms before updating URL params
+  const debouncedColorSearch = useDebouncedSearch(
+    formData.colorSearch,
+    (term) => setFormData({ colorSearch: term || null }),
+    300
   );
+  const debouncedIconSearch = useDebouncedSearch(
+    formData.iconSearch,
+    (term) => setFormData({ iconSearch: term || null }),
+    300
+  );
+
+  // Client-side refetch when search params change (debounced)
+  useEffect(() => {
+    // Only refetch if search terms have changed (not on initial load)
+    if (debouncedColorSearch === null && debouncedIconSearch === null) {
+      return;
+    }
+
+    if (!isEditMode) {
+      // Create mode - refetch new endpoint
+      const refetchNew = async () => {
+        try {
+          const result = await api.post(
+            "/personas/new",
+            {
+              body: {
+                color_search: debouncedColorSearch || undefined,
+                icon_search: debouncedIconSearch || undefined,
+              } as any, // Type assertion needed until OpenAPI schema is regenerated
+            },
+            {
+              cache: "no-store",
+              headers: {
+                "X-Bypass-Cache": "1",
+              },
+            }
+          );
+          setFilteredPersonaData(result);
+        } catch (error) {
+          // Silently fail - keep using server data
+          console.error("Failed to refetch persona data:", error);
+        }
+      };
+      refetchNew();
+    } else if (personaId) {
+      // Edit mode - refetch detail endpoint
+      const refetchDetail = async () => {
+        try {
+          const result = await api.post(
+            "/personas/detail",
+            {
+              body: {
+                persona_id: personaId,
+                color_search: debouncedColorSearch || undefined,
+                icon_search: debouncedIconSearch || undefined,
+              } as any, // Type assertion needed until OpenAPI schema is regenerated
+            },
+            {
+              cache: "no-store",
+              headers: {
+                "X-Bypass-Cache": "1",
+              },
+            }
+          );
+          setFilteredPersonaData(result);
+        } catch (error) {
+          // Silently fail - keep using server data
+          console.error("Failed to refetch persona data:", error);
+        }
+      };
+      refetchDetail();
+    }
+  }, [debouncedColorSearch, debouncedIconSearch, personaId, isEditMode]);
+
+  // Get preset colors and valid icons from server (already filtered)
+  // Server returns colors as list of objects: [{hex: "#ef4444", name: "Red"}, ...]
+  const presetColors = useMemo(() => {
+    const colors =
+      (
+        activePersonaData as PersonaDetailOut & {
+          preset_colors?: Array<{ hex: string; name: string }> | string[];
+        }
+      )?.preset_colors || [];
+    
+    // Handle both old format (string[]) and new format (Array<{hex, name}>)
+    if (colors.length > 0 && typeof colors[0] === "string") {
+      // Old format - convert to new format (shouldn't happen after migration)
+      return (colors as string[]).map((hex) => ({ hex, name: hex }));
+    }
+    return colors as Array<{ hex: string; name: string }>;
+  }, [activePersonaData]);
 
   const suggestedIcons = useMemo(
     () =>
       (
-        personaData as PersonaDetailOut & {
+        activePersonaData as PersonaDetailOut & {
           suggested_icons?: string[];
         }
       )?.suggested_icons || [],
-    [personaData]
+    [activePersonaData]
   );
 
   const validIcons = useMemo(
     () =>
       (
-        personaData as PersonaDetailOut & {
+        activePersonaData as PersonaDetailOut & {
           valid_icons?: string[];
         }
       )?.valid_icons || [],
-    [personaData]
+    [activePersonaData]
   );
 
   // Combine suggested icons first, then valid icons
@@ -267,36 +226,6 @@ export default function Persona({
     );
     return [...suggestedIcons, ...otherIcons];
   }, [suggestedIcons, validIcons]);
-
-  // Filter colors based on search term
-  const filteredColors = useMemo(() => {
-    if (!colorSearchTerm.trim()) {
-      return presetColors;
-    }
-    const searchLower = colorSearchTerm.toLowerCase();
-    return presetColors.filter((colorValue) => {
-      const colorName = getColorName(colorValue).toLowerCase();
-      const colorHex = colorValue.toLowerCase();
-      return colorName.includes(searchLower) || colorHex.includes(searchLower);
-    });
-  }, [presetColors, colorSearchTerm, getColorName]);
-
-  // Filter icons based on search term
-  const filteredIcons = useMemo(() => {
-    if (!iconSearchTerm.trim()) {
-      return allIcons;
-    }
-    const searchLower = iconSearchTerm.toLowerCase();
-    return allIcons.filter((iconName) =>
-      iconName.toLowerCase().includes(searchLower)
-    );
-  }, [allIcons, iconSearchTerm]);
-
-  // URL-backed state using nuqs (managed by GenericForm, but we need access for initialization)
-  const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
-    history: "replace",
-    shallow: false,
-  });
 
   // Extract body types for type safety
   type CreatePersonaBody = CreatePersonaIn extends { body: infer B }
@@ -823,57 +752,44 @@ export default function Persona({
               switch (stepId) {
                 case "basic":
                   return (
-                    <Card className="transition-all">
-                      <CardContent className="pt-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
-                              stepStatus === "completed"
-                                ? "bg-green-500 text-white"
-                                : stepStatus === "active"
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-muted"
-                            )}
-                          >
-                            {stepStatus === "completed" ? (
-                              <Check className="w-4 h-4" />
-                            ) : (
-                              <span>{stepNumber}</span>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <input
-                              type="text"
-                              id="name"
-                              data-testid="input-persona-name"
-                              value={
-                                (stepFormData["name"] as
-                                  | string
-                                  | null
-                                  | undefined) || ""
-                              }
-                              onChange={(e) =>
-                                setStepFormData({
-                                  name: e.target.value || null,
-                                })
-                              }
-                              className={cn(
-                                "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
-                              )}
-                              placeholder="e.g., Enthusiastic Student"
-                              required
-                              disabled={isReadonly}
-                            />
-                            <p className="text-xs text-muted-foreground mt-1 px-2">
-                              {!stepFormData["name"]
-                                ? "Click to edit • Name is required"
-                                : "Click to edit"}
-                            </p>
-                          </div>
+                    <StepCard
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
+                      isEditMode={isEditMode}
+                    >
+                      <div className="space-y-4">
+                        {/* Name Input */}
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Name *</Label>
+                          <Input
+                            type="text"
+                            id="name"
+                            data-testid="input-persona-name"
+                            value={
+                              (stepFormData["name"] as
+                                | string
+                                | null
+                                | undefined) || ""
+                            }
+                            onChange={(e) =>
+                              setStepFormData({
+                                name: e.target.value || null,
+                              })
+                            }
+                            placeholder="e.g., Enthusiastic Student"
+                            required
+                            disabled={isReadonly}
+                            className="text-lg font-semibold"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {!stepFormData["name"]
+                              ? "Name is required"
+                              : "Enter a descriptive name for the persona"}
+                          </p>
                         </div>
-                      </CardContent>
-                      <CardContent className="pt-0 space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="description">Description *</Label>
                           <Textarea
@@ -1050,8 +966,8 @@ export default function Persona({
                             </p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </StepCard>
                   );
 
                 case "color": {
@@ -1079,18 +995,20 @@ export default function Persona({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      searchTerm={colorSearchTerm}
-                      onSearchChange={setColorSearchTerm}
+                      searchTerm={formData.colorSearch || ""}
+                      onSearchChange={(term) =>
+                        setFormData({ colorSearch: term || null })
+                      }
                       searchPlaceholder="Search colors..."
                     >
                       {presetColors.length > 0 && (
-                        <SelectableGrid
-                          items={filteredColors}
+                        <SelectableGrid<{ hex: string; name: string }>
+                          items={presetColors}
                           selectedId={currentColor}
                           onSelect={(color) =>
-                            setStepFormData({ color: color || null })
+                            setStepFormData({ color: color?.hex || null })
                           }
-                          getId={(color) => color}
+                          getId={(color) => color.hex}
                           renderItem={(color, isSelected) => (
                             <div
                               className={cn(
@@ -1110,14 +1028,14 @@ export default function Persona({
                               <div className="flex items-center gap-3">
                                 <div
                                   className="w-10 h-10 rounded-lg border-2 border-border shrink-0"
-                                  style={{ backgroundColor: color }}
+                                  style={{ backgroundColor: color.hex }}
                                 />
                                 <div className="flex-1 min-w-0">
                                   <h3 className="font-medium text-sm leading-tight">
-                                    {getColorName(color)}
+                                    {color.name}
                                   </h3>
                                   <p className="text-xs text-muted-foreground mt-0.5">
-                                    {color}
+                                    {color.hex}
                                   </p>
                                 </div>
                               </div>
@@ -1163,12 +1081,14 @@ export default function Persona({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      searchTerm={iconSearchTerm}
-                      onSearchChange={setIconSearchTerm}
+                      searchTerm={formData.iconSearch || ""}
+                      onSearchChange={(term) =>
+                        setFormData({ iconSearch: term || null })
+                      }
                       searchPlaceholder="Search icons..."
                     >
                       <SelectableGrid
-                        items={filteredIcons}
+                        items={allIcons}
                         selectedId={currentIcon}
                         onSelect={(icon) =>
                           setStepFormData({ icon: icon || null })

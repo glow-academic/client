@@ -23,5 +23,8 @@ export const personaSearchParamsClient = {
   departmentIds: parseAsArrayOf(parseAsString),
   parameterIds: parseAsArrayOf(parseAsString),
   parameterFieldIds: parseAsArrayOf(parseAsString),
+  // Search params (URL-backed)
+  colorSearch: parseAsString,
+  iconSearch: parseAsString,
 };
 

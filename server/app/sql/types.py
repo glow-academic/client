@@ -8138,11 +8138,15 @@ class GetPersonaDetailSqlParams(BaseModel):
 
     persona_id: UUID
     profile_id: UUID
+    color_search: str | None = None
+    icon_search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.persona_id,
             self.profile_id,
+            self.color_search,
+            self.icon_search,
         )
 
 class QGetPersonaDetailV3Agent(BaseModel):
@@ -8236,6 +8240,8 @@ class GetPersonaDetailSqlRow(BaseModel):
 class GetPersonaDetailApiRequest(BaseModel):
 
     persona_id: UUID
+    color_search: str | None = None
+    icon_search: str | None = None
 
 class GetPersonaDetailApiResponse(BaseModel):
 
@@ -8266,6 +8272,9 @@ class GetPersonaDetailApiResponse(BaseModel):
     fields: list[QGetPersonaDetailV3Field] | None = None
     examples: list[QGetPersonaDetailV3Example] | None = None
     examples_history: list[QGetPersonaDetailV3ExampleHistoryItem] | None = None
+    preset_colors: list[dict[str, str]] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
 
 
 
@@ -8274,10 +8283,14 @@ class GetPersonaDetailApiResponse(BaseModel):
 class GetPersonaNewSqlParams(BaseModel):
 
     profile_id: UUID
+    color_search: str | None = None
+    icon_search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.color_search,
+            self.icon_search,
         )
 
 class QGetPersonaNewV3Agent(BaseModel):
@@ -8337,7 +8350,8 @@ class GetPersonaNewSqlRow(BaseModel):
 
 class GetPersonaNewApiRequest(BaseModel):
 
-    pass
+    color_search: str | None = None
+    icon_search: str | None = None
 
 class GetPersonaNewApiResponse(BaseModel):
 
@@ -8352,6 +8366,23 @@ class GetPersonaNewApiResponse(BaseModel):
     agents: list[QGetPersonaNewV3Agent] | None = None
     parameters: list[QGetPersonaNewV3Parameter] | None = None
     fields: list[QGetPersonaNewV3Field] | None = None
+    preset_colors: list[dict[str, str]] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    active: bool | None = None
+    color: str | None = None
+    icon: str | None = None
+    instructions: str | None = None
+    text_agent_id: str | None = None
+    voice_agent_id: str | None = None
+    in_use: bool | None = None
+    scenario_count: int | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
 
 
 

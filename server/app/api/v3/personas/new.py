@@ -3,22 +3,18 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (GetPersonaNewApiRequest, GetPersonaNewApiResponse,
+                           GetPersonaNewSqlParams, GetPersonaNewSqlRow,
+                           load_sql_query)
+from app.utils.color_utils import filter_colors, filter_icons
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import execute_sql_typed
-
-from app.infra.v3.activity.audit import audit_activity, audit_set
-from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
-    GetPersonaNewApiRequest,
-    GetPersonaNewApiResponse,
-    GetPersonaNewSqlParams,
-    GetPersonaNewSqlRow,
-    load_sql_query,
-)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/personas/get_persona_new_complete.sql"
@@ -66,8 +62,16 @@ async def get_persona_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Extract search params from API request
+        color_search = request.color_search
+        icon_search = request.icon_search
+
         # Convert API request to SQL params (add profile_id from header)
-        params = GetPersonaNewSqlParams(profile_id=profile_id)
+        params = GetPersonaNewSqlParams(
+            profile_id=profile_id,
+            color_search=color_search,
+            icon_search=icon_search,
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
@@ -106,7 +110,7 @@ async def get_persona_new(
         can_edit_default = not (is_default and not is_superadmin)
 
         # Hardcoded metadata (keep in Python as per original)
-        preset_colors = [
+        preset_colors_raw = [
             "#EF4444",
             "#F97316",
             "#F59E0B",
@@ -117,9 +121,9 @@ async def get_persona_new(
             "#EC4899",
         ]
 
-        suggested_icons = ["Sparkles", "Zap", "Star", "Heart", "Users"]
+        suggested_icons_raw = ["Sparkles", "Zap", "Star", "Heart", "Users"]
 
-        valid_icons = [
+        valid_icons_raw = [
             "Activity",
             "Anchor",
             "Award",
@@ -148,6 +152,11 @@ async def get_persona_new(
             "Wifi",
         ]
 
+        # Filter colors and icons using server-side utilities
+        preset_colors_filtered = filter_colors(preset_colors_raw, color_search)
+        suggested_icons = filter_icons(suggested_icons_raw, icon_search)
+        valid_icons = filter_icons(valid_icons_raw, icon_search)
+
         # Get default text agent ID (first valid agent with simulation-text role)
         default_text_agent_id = None
         if result.agents:
@@ -169,7 +178,7 @@ async def get_persona_new(
                 "description": "",
                 "department_ids": default_department_ids,
                 "active": True,
-                "color": preset_colors[0] if preset_colors else "#3B82F6",
+                "color": preset_colors_filtered[0]["hex"] if preset_colors_filtered else "#3B82F6",
                 "icon": suggested_icons[0] if suggested_icons else "Sparkles",
                 "instructions": "",
                 "text_agent_id": default_text_agent_id,
@@ -179,7 +188,7 @@ async def get_persona_new(
                 "can_edit": can_edit_default,
                 "can_duplicate": False,
                 "can_delete": False,
-                "preset_colors": preset_colors,
+                "preset_colors": preset_colors_filtered,
                 "suggested_icons": suggested_icons,
                 "valid_icons": valid_icons,
                 "debug_info": [],
