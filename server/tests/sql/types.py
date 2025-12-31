@@ -771,6 +771,95 @@ class GetDifferentDepartmentApiResponse(BaseModel):
 
 
 
+# Generated from: create_document_department_link
+
+class CreateDocumentDepartmentLinkSqlParams(BaseModel):
+
+    document_id: UUID
+    department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+            self.department_id,
+        )
+
+class CreateDocumentDepartmentLinkSqlRow(BaseModel):
+
+    document_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class CreateDocumentDepartmentLinkApiRequest(BaseModel):
+
+    document_id: UUID
+    department_id: UUID
+
+class CreateDocumentDepartmentLinkApiResponse(BaseModel):
+
+    document_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: get_document_department_link_exists
+
+class GetDocumentDepartmentLinkExistsSqlParams(BaseModel):
+
+    input_document_id: UUID
+    input_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_document_id,
+            self.input_department_id,
+        )
+
+class GetDocumentDepartmentLinkExistsSqlRow(BaseModel):
+
+    link_exists: bool | None = None
+
+class GetDocumentDepartmentLinkExistsApiRequest(BaseModel):
+
+    input_document_id: UUID
+    input_department_id: UUID
+
+class GetDocumentDepartmentLinkExistsApiResponse(BaseModel):
+
+    link_exists: bool | None = None
+
+
+
+# Generated from: get_document_exists
+
+class GetDocumentExistsSqlParams(BaseModel):
+
+    input_document_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_document_id,
+        )
+
+class GetDocumentExistsSqlRow(BaseModel):
+
+    document_exists: bool | None = None
+
+class GetDocumentExistsApiRequest(BaseModel):
+
+    input_document_id: UUID
+
+class GetDocumentExistsApiResponse(BaseModel):
+
+    document_exists: bool | None = None
+
+
+
 # Generated from: create_test_persona
 
 class CreateTestPersonaSqlParams(BaseModel):
@@ -1494,6 +1583,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDifferentDepartmentApiRequest",
         "GetDifferentDepartmentApiResponse",
     ),
+    "tests/sql/v4/integration/api/documents/test_create_document_department_link_v4_complete.sql": (
+        "CreateDocumentDepartmentLinkSqlParams",
+        "CreateDocumentDepartmentLinkSqlRow",
+        "CreateDocumentDepartmentLinkApiRequest",
+        "CreateDocumentDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/documents/test_get_document_department_link_exists_v4_complete.sql": (
+        "GetDocumentDepartmentLinkExistsSqlParams",
+        "GetDocumentDepartmentLinkExistsSqlRow",
+        "GetDocumentDepartmentLinkExistsApiRequest",
+        "GetDocumentDepartmentLinkExistsApiResponse",
+    ),
+    "tests/sql/v4/integration/api/documents/test_get_document_exists_v4_complete.sql": (
+        "GetDocumentExistsSqlParams",
+        "GetDocumentExistsSqlRow",
+        "GetDocumentExistsApiRequest",
+        "GetDocumentExistsApiResponse",
+    ),
     "tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql": (
         "CreateTestPersonaSqlParams",
         "CreateTestPersonaSqlRow",
@@ -1765,6 +1872,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/departments/test_get_different_department_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/documents/test_create_document_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/documents/test_get_document_department_link_exists_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/documents/test_get_document_exists_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
