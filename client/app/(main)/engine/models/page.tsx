@@ -11,11 +11,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelsListOut = OutputOf<"/api/v3/models/list", "post">;
-type DuplicateModelIn = InputOf<"/api/v3/models/duplicate", "post">;
-type DuplicateModelOut = OutputOf<"/api/v3/models/duplicate", "post">;
-type DeleteModelIn = InputOf<"/api/v3/models/delete", "post">;
-type DeleteModelOut = OutputOf<"/api/v3/models/delete", "post">;
+type ModelsListOut = OutputOf<"/api/v4/models/list", "post">;
+type DuplicateModelIn = InputOf<"/api/v4/models/duplicate", "post">;
+type DuplicateModelOut = OutputOf<"/api/v4/models/duplicate", "post">;
+type DeleteModelIn = InputOf<"/api/v4/models/delete", "post">;
+type DeleteModelOut = OutputOf<"/api/v4/models/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.

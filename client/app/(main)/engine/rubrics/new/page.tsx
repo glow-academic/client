@@ -13,8 +13,8 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricNewIn = InputOf<"/api/v3/rubrics/new", "post">;
-type RubricNewOut = OutputOf<"/api/v3/rubrics/new", "post">;
+type RubricNewIn = InputOf<"/api/v4/rubrics/new", "post">;
+type RubricNewOut = OutputOf<"/api/v4/rubrics/new", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getRubricDefault = cache(

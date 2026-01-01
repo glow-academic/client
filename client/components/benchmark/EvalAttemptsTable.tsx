@@ -46,8 +46,8 @@ import {
 } from "@tanstack/react-table";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkBundleIn = InputOf<"/api/v3/benchmark/bundle", "post">;
-type BenchmarkBundleOut = OutputOf<"/api/v3/benchmark/bundle", "post">;
+type BenchmarkBundleIn = InputOf<"/api/v4/benchmark/bundle", "post">;
+type BenchmarkBundleOut = OutputOf<"/api/v4/benchmark/bundle", "post">;
 type EvalAttemptItem = BenchmarkBundleOut["attempts"][number];
 
 /** ---- Fetch benchmark bundle (includes attempts) ---- */

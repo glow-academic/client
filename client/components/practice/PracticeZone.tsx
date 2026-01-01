@@ -10,7 +10,7 @@ import type { ProfileItem } from "@/app/(main)/layout-server";
 import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
-type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
+type PracticeOverviewOut = OutputOf<"/api/v4/practice/overview", "post">;
 type PracticeSimulationItem = PracticeOverviewOut["items"][number];
 // API now returns arrays, but components expect dicts - define mapping types locally
 type StandardGroupsMapping = Record<

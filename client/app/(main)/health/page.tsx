@@ -11,8 +11,8 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/api/v3/health/bundle", "post">;
-type HealthBundleOut = OutputOf<"/api/v3/health/bundle", "post">;
+type HealthBundleIn = InputOf<"/api/v4/health/bundle", "post">;
+type HealthBundleOut = OutputOf<"/api/v4/health/bundle", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getHealthBundle = cache(

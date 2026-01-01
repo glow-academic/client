@@ -20,9 +20,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strong types from OpenAPI ---- */
-type LoginDataIn = InputOf<"/api/v3/auth/login", "post">;
-type LoginDataOut = OutputOf<"/api/v3/auth/login", "post">;
-type ProfileContextOut = OutputOf<"/api/v3/profile/context", "post">;
+type LoginDataIn = InputOf<"/api/v4/auth/login", "post">;
+type LoginDataOut = OutputOf<"/api/v4/auth/login", "post">;
+type ProfileContextOut = OutputOf<"/api/v4/profile/context", "post">;
 
 interface LoginPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

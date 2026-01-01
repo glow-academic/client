@@ -11,12 +11,12 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterNewIn = InputOf<"/api/v3/parameters/new", "post">;
-type ParameterNewOut = OutputOf<"/api/v3/parameters/new", "post">;
-type CreateParameterIn = InputOf<"/api/v3/parameters/create", "post">;
-type CreateParameterOut = OutputOf<"/api/v3/parameters/create", "post">;
-type UpdateParameterIn = InputOf<"/api/v3/parameters/update", "post">;
-type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
+type ParameterNewIn = InputOf<"/api/v4/parameters/new", "post">;
+type ParameterNewOut = OutputOf<"/api/v4/parameters/new", "post">;
+type CreateParameterIn = InputOf<"/api/v4/parameters/create", "post">;
+type CreateParameterOut = OutputOf<"/api/v4/parameters/create", "post">;
+type UpdateParameterIn = InputOf<"/api/v4/parameters/update", "post">;
+type UpdateParameterOut = OutputOf<"/api/v4/parameters/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

@@ -11,10 +11,10 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortNewIn = InputOf<"/api/v3/cohorts/new", "post">;
-type CohortNewOut = OutputOf<"/api/v3/cohorts/new", "post">;
-type CreateCohortIn = InputOf<"/api/v3/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/api/v3/cohorts/create", "post">;
+type CohortNewIn = InputOf<"/api/v4/cohorts/new", "post">;
+type CohortNewOut = OutputOf<"/api/v4/cohorts/new", "post">;
+type CreateCohortIn = InputOf<"/api/v4/cohorts/create", "post">;
+type CreateCohortOut = OutputOf<"/api/v4/cohorts/create", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */

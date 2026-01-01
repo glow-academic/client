@@ -11,10 +11,10 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelNewIn = InputOf<"/api/v3/models/new", "post">;
-type ModelNewOut = OutputOf<"/api/v3/models/new", "post">;
-type CreateModelIn = InputOf<"/api/v3/models/create", "post">;
-type CreateModelOut = OutputOf<"/api/v3/models/create", "post">;
+type ModelNewIn = InputOf<"/api/v4/models/new", "post">;
+type ModelNewOut = OutputOf<"/api/v4/models/new", "post">;
+type CreateModelIn = InputOf<"/api/v4/models/create", "post">;
+type CreateModelOut = OutputOf<"/api/v4/models/create", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (): Promise<ModelNewOut> => {

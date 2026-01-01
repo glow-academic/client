@@ -15,10 +15,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v3/practice/overview", "post">;
-type PracticeOut = OutputOf<"/api/v3/practice/overview", "post">;
-type PracticeHistoryIn = InputOf<"/api/v3/practice/history", "post">;
-type PracticeHistoryOut = OutputOf<"/api/v3/practice/history", "post">;
+type PracticeIn = InputOf<"/api/v4/practice/overview", "post">;
+type PracticeOut = OutputOf<"/api/v4/practice/overview", "post">;
+type PracticeHistoryIn = InputOf<"/api/v4/practice/history", "post">;
+type PracticeHistoryOut = OutputOf<"/api/v4/practice/history", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.

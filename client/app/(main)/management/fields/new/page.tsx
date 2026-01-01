@@ -11,10 +11,10 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldNewIn = InputOf<"/api/v3/fields/new", "post">;
-type FieldNewOut = OutputOf<"/api/v3/fields/new", "post">;
-type CreateFieldIn = InputOf<"/api/v3/fields/create", "post">;
-type CreateFieldOut = OutputOf<"/api/v3/fields/create", "post">;
+type FieldNewIn = InputOf<"/api/v4/fields/new", "post">;
+type FieldNewOut = OutputOf<"/api/v4/fields/new", "post">;
+type CreateFieldIn = InputOf<"/api/v4/fields/create", "post">;
+type CreateFieldOut = OutputOf<"/api/v4/fields/create", "post">;
 
 /** ---- Direct fetch for default field data ---- */
 const getFieldDetailDefault = async (): Promise<FieldNewOut> => {

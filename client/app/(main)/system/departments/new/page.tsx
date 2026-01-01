@@ -13,11 +13,11 @@ import { cache } from "react";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentNewIn = InputOf<"/api/v3/departments/new", "post">;
-type DepartmentNewOut = OutputOf<"/api/v3/departments/new", "post">;
+type DepartmentNewIn = InputOf<"/api/v4/departments/new", "post">;
+type DepartmentNewOut = OutputOf<"/api/v4/departments/new", "post">;
 
-type CreateDepartmentIn = InputOf<"/api/v3/departments/create", "post">;
-type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
+type CreateDepartmentIn = InputOf<"/api/v4/departments/create", "post">;
+type CreateDepartmentOut = OutputOf<"/api/v4/departments/create", "post">;
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
   async (input: DepartmentNewIn): Promise<DepartmentNewOut> => {

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
-type SimulationsListOut = OutputOf<"/api/v3/simulations/list", "post">;
+type SimulationsListOut = OutputOf<"/api/v4/simulations/list", "post">;
 type ScenarioMappingItem = SimulationsListOut["scenario_mapping"][string];
 
 export interface ScenarioCardGridProps<

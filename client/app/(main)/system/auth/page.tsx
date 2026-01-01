@@ -9,17 +9,17 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthListOut = OutputOf<"/api/v3/auth/list", "post">;
-type DuplicateAuthIn = InputOf<"/api/v3/auth/duplicate", "post">;
-type DuplicateAuthOut = OutputOf<"/api/v3/auth/duplicate", "post">;
-type DeleteAuthIn = InputOf<"/api/v3/auth/delete", "post">;
-type DeleteAuthOut = OutputOf<"/api/v3/auth/delete", "post">;
-type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
-type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
-type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
-type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
+type AuthListOut = OutputOf<"/api/v4/auth/list", "post">;
+type DuplicateAuthIn = InputOf<"/api/v4/auth/duplicate", "post">;
+type DuplicateAuthOut = OutputOf<"/api/v4/auth/duplicate", "post">;
+type DeleteAuthIn = InputOf<"/api/v4/auth/delete", "post">;
+type DeleteAuthOut = OutputOf<"/api/v4/auth/delete", "post">;
+type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
+type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
+type DecryptKeyIn = InputOf<"/api/v4/keys/decrypt", "post">;
+type DecryptKeyOut = OutputOf<"/api/v4/keys/decrypt", "post">;
+type UpdateKeyIn = InputOf<"/api/v4/keys/update", "post">;
+type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.

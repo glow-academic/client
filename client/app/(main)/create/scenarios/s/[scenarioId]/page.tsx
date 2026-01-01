@@ -18,14 +18,14 @@ import {
 } from "../../searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenarioDetailIn = InputOf<"/api/v3/scenarios/detail", "post">;
-type ScenarioDetailOut = OutputOf<"/api/v3/scenarios/detail", "post">;
-type ScenarioNewIn = InputOf<"/api/v3/scenarios/new", "post">;
-type ScenarioNewOut = OutputOf<"/api/v3/scenarios/new", "post">;
-type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
-type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
+type ScenarioDetailIn = InputOf<"/api/v4/scenarios/detail", "post">;
+type ScenarioDetailOut = OutputOf<"/api/v4/scenarios/detail", "post">;
+type ScenarioNewIn = InputOf<"/api/v4/scenarios/new", "post">;
+type ScenarioNewOut = OutputOf<"/api/v4/scenarios/new", "post">;
+type CreateScenarioIn = InputOf<"/api/v4/scenarios/create", "post">;
+type CreateScenarioOut = OutputOf<"/api/v4/scenarios/create", "post">;
+type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
+type UpdateScenarioOut = OutputOf<"/api/v4/scenarios/update", "post">;
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;

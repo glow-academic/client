@@ -12,9 +12,9 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffNewOut = OutputOf<"/api/v3/profile/new", "post">;
-type CreateStaffIn = InputOf<"/api/v3/profile/create", "post">;
-type CreateStaffOut = OutputOf<"/api/v3/profile/create", "post">;
+type StaffNewOut = OutputOf<"/api/v4/profile/new", "post">;
+type CreateStaffIn = InputOf<"/api/v4/profile/create", "post">;
+type CreateStaffOut = OutputOf<"/api/v4/profile/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getStaffNew = cache(async (): Promise<StaffNewOut> => {

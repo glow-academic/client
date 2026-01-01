@@ -12,9 +12,9 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalDetailOut = OutputOf<"/api/v3/evals/detail", "post">;
-type UpdateEvalIn = InputOf<"/api/v3/evals/update", "post">;
-type UpdateEvalOut = OutputOf<"/api/v3/evals/update", "post">;
+type EvalDetailOut = OutputOf<"/api/v4/evals/detail", "post">;
+type UpdateEvalIn = InputOf<"/api/v4/evals/update", "post">;
+type UpdateEvalOut = OutputOf<"/api/v4/evals/update", "post">;
 // Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
 
 /** ---- Direct fetch for eval detail ---- */

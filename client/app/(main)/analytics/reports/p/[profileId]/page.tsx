@@ -16,12 +16,12 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfileDetailIn = InputOf<"/api/v3/profile/detail", "post">;
-type ProfileDetailOut = OutputOf<"/api/v3/profile/detail", "post">;
-type ReportsOverviewIn = InputOf<"/api/v3/reports/overview", "post">;
-type ReportsOverviewOut = OutputOf<"/api/v3/reports/overview", "post">;
-type ReportsHistoryIn = InputOf<"/api/v3/reports/history", "post">;
-type ReportsHistoryOut = OutputOf<"/api/v3/reports/history", "post">;
+type ProfileDetailIn = InputOf<"/api/v4/profile/detail", "post">;
+type ProfileDetailOut = OutputOf<"/api/v4/profile/detail", "post">;
+type ReportsOverviewIn = InputOf<"/api/v4/reports/overview", "post">;
+type ReportsOverviewOut = OutputOf<"/api/v4/reports/overview", "post">;
+type ReportsHistoryIn = InputOf<"/api/v4/reports/history", "post">;
+type ReportsHistoryOut = OutputOf<"/api/v4/reports/history", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).

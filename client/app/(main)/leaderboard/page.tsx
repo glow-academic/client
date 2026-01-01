@@ -14,8 +14,8 @@ import type { Metadata } from "next";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type LeaderboardIn = InputOf<"/api/v3/leaderboard/bundle", "post">;
-type LeaderboardOut = OutputOf<"/api/v3/leaderboard/bundle", "post">;
+type LeaderboardIn = InputOf<"/api/v4/leaderboard/bundle", "post">;
+type LeaderboardOut = OutputOf<"/api/v4/leaderboard/bundle", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Leaderboard responses can get large and exceed Next.js 2MB cache limit.

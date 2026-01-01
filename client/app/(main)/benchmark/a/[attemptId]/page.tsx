@@ -12,9 +12,9 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalAttemptFullIn = InputOf<"/api/v3/attempts/eval", "post">;
-type EvalAttemptFullOut = OutputOf<"/api/v3/attempts/eval", "post">;
-type AgentsListOut = OutputOf<"/api/v3/agents/list", "post">;
+type EvalAttemptFullIn = InputOf<"/api/v4/attempts/eval", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/eval", "post">;
+type AgentsListOut = OutputOf<"/api/v4/agents/list", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.

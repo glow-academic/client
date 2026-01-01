@@ -11,15 +11,15 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricsListOut = OutputOf<"/api/v3/rubrics/list", "post">;
-type DuplicateRubricIn = InputOf<"/api/v3/rubrics/duplicate", "post">;
-type DuplicateRubricOut = OutputOf<"/api/v3/rubrics/duplicate", "post">;
-type DeleteRubricIn = InputOf<"/api/v3/rubrics/delete", "post">;
-type DeleteRubricOut = OutputOf<"/api/v3/rubrics/delete", "post">;
-type CreateRubricIn = InputOf<"/api/v3/rubrics/create", "post">;
-type CreateRubricOut = OutputOf<"/api/v3/rubrics/create", "post">;
-type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
-type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
+type RubricsListOut = OutputOf<"/api/v4/rubrics/list", "post">;
+type DuplicateRubricIn = InputOf<"/api/v4/rubrics/duplicate", "post">;
+type DuplicateRubricOut = OutputOf<"/api/v4/rubrics/duplicate", "post">;
+type DeleteRubricIn = InputOf<"/api/v4/rubrics/delete", "post">;
+type DeleteRubricOut = OutputOf<"/api/v4/rubrics/delete", "post">;
+type CreateRubricIn = InputOf<"/api/v4/rubrics/create", "post">;
+type CreateRubricOut = OutputOf<"/api/v4/rubrics/create", "post">;
+type UpdateRubricIn = InputOf<"/api/v4/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/api/v4/rubrics/update", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.

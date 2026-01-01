@@ -11,13 +11,13 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortsListOut = OutputOf<"/api/v3/cohorts/list", "post">;
-type DuplicateCohortIn = InputOf<"/api/v3/cohorts/duplicate", "post">;
-type DuplicateCohortOut = OutputOf<"/api/v3/cohorts/duplicate", "post">;
-type DeleteCohortIn = InputOf<"/api/v3/cohorts/delete", "post">;
-type DeleteCohortOut = OutputOf<"/api/v3/cohorts/delete", "post">;
-type LeaveCohortIn = InputOf<"/api/v3/cohorts/leave", "post">;
-type LeaveCohortOut = OutputOf<"/api/v3/cohorts/leave", "post">;
+type CohortsListOut = OutputOf<"/api/v4/cohorts/list", "post">;
+type DuplicateCohortIn = InputOf<"/api/v4/cohorts/duplicate", "post">;
+type DuplicateCohortOut = OutputOf<"/api/v4/cohorts/duplicate", "post">;
+type DeleteCohortIn = InputOf<"/api/v4/cohorts/delete", "post">;
+type DeleteCohortOut = OutputOf<"/api/v4/cohorts/delete", "post">;
+type LeaveCohortIn = InputOf<"/api/v4/cohorts/leave", "post">;
+type LeaveCohortOut = OutputOf<"/api/v4/cohorts/leave", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.

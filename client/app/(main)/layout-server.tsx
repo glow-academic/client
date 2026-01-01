@@ -10,32 +10,32 @@ import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
-type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
-type AuthorizeEmulationIn = InputOf<"/api/v3/profile/emulate", "post">;
-type AuthorizeEmulationOut = OutputOf<"/api/v3/profile/emulate", "post">;
-type CreateFeedbackIn = InputOf<"/api/v3/feedback/create", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v3/feedback/create", "post">;
-type RefreshAnalyticsIn = InputOf<"/api/v3/analytics/refresh", "post">;
-type RefreshAnalyticsOut = OutputOf<"/api/v3/analytics/refresh", "post">;
-type AttemptFullIn = InputOf<"/api/v3/attempts/simulation", "post">;
-type AttemptFullOut = OutputOf<"/api/v3/attempts/simulation", "post">;
+type LayoutContextIn = InputOf<"/api/v4/profile/context", "post">;
+type LayoutContextOut = OutputOf<"/api/v4/profile/context", "post">;
+type AuthorizeEmulationIn = InputOf<"/api/v4/profile/emulate", "post">;
+type AuthorizeEmulationOut = OutputOf<"/api/v4/profile/emulate", "post">;
+type CreateFeedbackIn = InputOf<"/api/v4/feedback/create", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v4/feedback/create", "post">;
+type RefreshAnalyticsIn = InputOf<"/api/v4/analytics/refresh", "post">;
+type RefreshAnalyticsOut = OutputOf<"/api/v4/analytics/refresh", "post">;
+type AttemptFullIn = InputOf<"/api/v4/attempts/simulation", "post">;
+type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation", "post">;
 type SearchSimulatableProfilesIn = InputOf<
-  "/api/v3/profile/simulatable",
+  "/api/v4/profile/simulatable",
   "post"
 >;
 type SearchSimulatableProfilesOut = OutputOf<
-  "/api/v3/profile/simulatable",
+  "/api/v4/profile/simulatable",
   "post"
 >;
-type SearchStaffIn = InputOf<"/api/v3/staff/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v3/staff/search", "post">;
-type CreateStaffDataIn = InputOf<"/api/v3/staff/data/create", "post">;
-type CreateStaffDataOut = OutputOf<"/api/v3/staff/data/create", "post">;
-type ProcessCSVIn = InputOf<"/api/v3/staff/csv", "post">;
-type ProcessCSVOut = OutputOf<"/api/v3/staff/csv", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v3/staff/upsert", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v3/staff/upsert", "post">;
+type SearchStaffIn = InputOf<"/api/v4/staff/search", "post">;
+type SearchStaffOut = OutputOf<"/api/v4/staff/search", "post">;
+type CreateStaffDataIn = InputOf<"/api/v4/staff/data/create", "post">;
+type CreateStaffDataOut = OutputOf<"/api/v4/staff/data/create", "post">;
+type ProcessCSVIn = InputOf<"/api/v4/staff/csv", "post">;
+type ProcessCSVOut = OutputOf<"/api/v4/staff/csv", "post">;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/staff/upsert", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/staff/upsert", "post">;
 /** ---- Client-side settings type (excludes guestProfileId) ----
  * guestProfileId is server-side only and should not be exposed to client components
  */

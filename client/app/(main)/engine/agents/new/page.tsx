@@ -11,13 +11,13 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentNewOut = OutputOf<"/api/v3/agents/new", "post">;
-type CreateAgentIn = InputOf<"/api/v3/agents/create", "post">;
-type CreateAgentOut = OutputOf<"/api/v3/agents/create", "post">;
-type UpdateAgentIn = InputOf<"/api/v3/agents/update", "post">;
-type UpdateAgentOut = OutputOf<"/api/v3/agents/update", "post">;
-type DeleteAgentPromptIn = InputOf<"/api/v3/prompts/delete", "post">;
-type DeleteAgentPromptOut = OutputOf<"/api/v3/prompts/delete", "post">;
+type AgentNewOut = OutputOf<"/api/v4/agents/new", "post">;
+type CreateAgentIn = InputOf<"/api/v4/agents/create", "post">;
+type CreateAgentOut = OutputOf<"/api/v4/agents/create", "post">;
+type UpdateAgentIn = InputOf<"/api/v4/agents/update", "post">;
+type UpdateAgentOut = OutputOf<"/api/v4/agents/update", "post">;
+type DeleteAgentPromptIn = InputOf<"/api/v4/prompts/delete", "post">;
+type DeleteAgentPromptOut = OutputOf<"/api/v4/prompts/delete", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

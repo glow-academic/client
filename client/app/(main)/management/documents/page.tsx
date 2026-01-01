@@ -12,10 +12,10 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/api/v3/documents/list", "post">;
-type DocumentsListOut = OutputOf<"/api/v3/documents/list", "post">;
-type DeleteDocumentIn = InputOf<"/api/v3/documents/delete", "post">;
-type DeleteDocumentOut = OutputOf<"/api/v3/documents/delete", "post">;
+type DocumentsListIn = InputOf<"/api/v4/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+type DeleteDocumentIn = InputOf<"/api/v4/documents/delete", "post">;
+type DeleteDocumentOut = OutputOf<"/api/v4/documents/delete", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;

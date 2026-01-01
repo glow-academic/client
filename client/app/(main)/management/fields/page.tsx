@@ -11,11 +11,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldsListOut = OutputOf<"/api/v3/fields/list", "post">;
-type DuplicateFieldIn = InputOf<"/api/v3/fields/duplicate", "post">;
-type DuplicateFieldOut = OutputOf<"/api/v3/fields/duplicate", "post">;
-type DeleteFieldIn = InputOf<"/api/v3/fields/delete", "post">;
-type DeleteFieldOut = OutputOf<"/api/v3/fields/delete", "post">;
+type FieldsListOut = OutputOf<"/api/v4/fields/list", "post">;
+type DuplicateFieldIn = InputOf<"/api/v4/fields/duplicate", "post">;
+type DuplicateFieldOut = OutputOf<"/api/v4/fields/duplicate", "post">;
+type DeleteFieldIn = InputOf<"/api/v4/fields/delete", "post">;
+type DeleteFieldOut = OutputOf<"/api/v4/fields/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getFieldsList = async (): Promise<FieldsListOut> => {

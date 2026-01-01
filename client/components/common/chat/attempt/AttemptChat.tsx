@@ -1738,7 +1738,7 @@ export default function AttemptChat({
         <div className="flex-1 bg-black flex items-center justify-center">
           {scenarioVideo?.uploadId ? (
             <video
-              src={`/api/v3/videos/${scenarioVideo.id}/stream`}
+              src={`/api/v4/videos/${scenarioVideo.id}/stream`}
               controls
               className="w-full h-full object-contain"
             />

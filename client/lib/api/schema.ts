@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v3/profile/detail": {
+    "/api/v4/profile/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -24,7 +24,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/update": {
+    "/api/v4/profile/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -44,7 +44,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/create": {
+    "/api/v4/profile/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -64,7 +64,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/delete": {
+    "/api/v4/profile/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/upsert": {
+    "/api/v4/profile/upsert": {
         parameters: {
             query?: never;
             header?: never;
@@ -104,7 +104,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/new": {
+    "/api/v4/profile/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -124,7 +124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/email": {
+    "/api/v4/profile/email": {
         parameters: {
             query?: never;
             header?: never;
@@ -144,7 +144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/context": {
+    "/api/v4/profile/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,7 +168,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/emulate": {
+    "/api/v4/profile/emulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -188,7 +188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/simulatable": {
+    "/api/v4/profile/simulatable": {
         parameters: {
             query?: never;
             header?: never;
@@ -208,7 +208,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/list": {
+    "/api/v4/scenarios/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -228,7 +228,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/detail": {
+    "/api/v4/scenarios/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -248,7 +248,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/new": {
+    "/api/v4/scenarios/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -268,7 +268,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/create": {
+    "/api/v4/scenarios/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -288,7 +288,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/update": {
+    "/api/v4/scenarios/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -308,7 +308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/duplicate": {
+    "/api/v4/scenarios/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -328,7 +328,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/delete": {
+    "/api/v4/scenarios/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -348,7 +348,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/list": {
+    "/api/v4/simulations/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -368,7 +368,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/detail": {
+    "/api/v4/simulations/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -388,7 +388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/new": {
+    "/api/v4/simulations/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -408,7 +408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/create": {
+    "/api/v4/simulations/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -428,7 +428,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/update": {
+    "/api/v4/simulations/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -448,7 +448,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/duplicate": {
+    "/api/v4/simulations/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -468,7 +468,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/delete": {
+    "/api/v4/simulations/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -488,7 +488,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/list": {
+    "/api/v4/personas/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -508,7 +508,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/detail": {
+    "/api/v4/personas/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -528,7 +528,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/new": {
+    "/api/v4/personas/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -548,7 +548,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/create": {
+    "/api/v4/personas/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -568,7 +568,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/update": {
+    "/api/v4/personas/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -588,7 +588,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/duplicate": {
+    "/api/v4/personas/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -608,7 +608,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/delete": {
+    "/api/v4/personas/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -628,7 +628,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/list": {
+    "/api/v4/auth/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -648,7 +648,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/detail": {
+    "/api/v4/auth/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -668,7 +668,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/new": {
+    "/api/v4/auth/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -688,7 +688,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/create": {
+    "/api/v4/auth/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -708,7 +708,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/update": {
+    "/api/v4/auth/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -728,7 +728,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/duplicate": {
+    "/api/v4/auth/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -748,7 +748,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/delete": {
+    "/api/v4/auth/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -768,7 +768,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/login": {
+    "/api/v4/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -788,7 +788,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/list": {
+    "/api/v4/departments/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -808,7 +808,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/detail": {
+    "/api/v4/departments/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -828,7 +828,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/new": {
+    "/api/v4/departments/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -848,7 +848,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/create": {
+    "/api/v4/departments/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -868,7 +868,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/update": {
+    "/api/v4/departments/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -888,7 +888,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/duplicate": {
+    "/api/v4/departments/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -908,7 +908,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/delete": {
+    "/api/v4/departments/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -928,7 +928,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/list": {
+    "/api/v4/cohorts/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -948,7 +948,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/detail": {
+    "/api/v4/cohorts/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -968,7 +968,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/new": {
+    "/api/v4/cohorts/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -988,7 +988,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/duplicate": {
+    "/api/v4/cohorts/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1008,7 +1008,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/leave": {
+    "/api/v4/cohorts/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -1028,7 +1028,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/create": {
+    "/api/v4/cohorts/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1048,7 +1048,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/update": {
+    "/api/v4/cohorts/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1068,7 +1068,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/delete": {
+    "/api/v4/cohorts/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1088,7 +1088,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/search": {
+    "/api/v4/cohorts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1108,7 +1108,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/list": {
+    "/api/v4/documents/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1128,7 +1128,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/detail": {
+    "/api/v4/documents/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -1148,7 +1148,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/create": {
+    "/api/v4/documents/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1168,7 +1168,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/delete": {
+    "/api/v4/documents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1188,7 +1188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/update": {
+    "/api/v4/documents/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1208,7 +1208,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/certificate": {
+    "/api/v4/documents/certificate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1228,7 +1228,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/render": {
+    "/api/v4/documents/render": {
         parameters: {
             query?: never;
             header?: never;
@@ -1248,7 +1248,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/create": {
+    "/api/v4/evals/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1268,7 +1268,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/delete": {
+    "/api/v4/evals/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1288,7 +1288,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/detail": {
+    "/api/v4/evals/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -1308,7 +1308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/list": {
+    "/api/v4/evals/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1328,7 +1328,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/new": {
+    "/api/v4/evals/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1348,7 +1348,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/update": {
+    "/api/v4/evals/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1368,7 +1368,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/list": {
+    "/api/v4/rubrics/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1388,7 +1388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/detail": {
+    "/api/v4/rubrics/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -1408,7 +1408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/new": {
+    "/api/v4/rubrics/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1428,7 +1428,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/duplicate": {
+    "/api/v4/rubrics/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1448,7 +1448,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/create": {
+    "/api/v4/rubrics/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1468,7 +1468,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/update": {
+    "/api/v4/rubrics/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1488,7 +1488,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/delete": {
+    "/api/v4/rubrics/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1508,7 +1508,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/settings/list": {
+    "/api/v4/settings/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1528,7 +1528,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/settings/detail": {
+    "/api/v4/settings/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -1548,7 +1548,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/settings/update": {
+    "/api/v4/settings/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1568,7 +1568,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/analytics/refresh": {
+    "/api/v4/analytics/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -1588,7 +1588,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/analytics/view": {
+    "/api/v4/analytics/view": {
         parameters: {
             query?: never;
             header?: never;
@@ -1608,7 +1608,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/activity/bundle": {
+    "/api/v4/activity/bundle": {
         parameters: {
             query?: never;
             header?: never;
@@ -1628,7 +1628,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/activity/list": {
+    "/api/v4/activity/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1648,7 +1648,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/dashboard/overview": {
+    "/api/v4/dashboard/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -1668,7 +1668,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/dashboard/history": {
+    "/api/v4/dashboard/history": {
         parameters: {
             query?: never;
             header?: never;
@@ -1688,7 +1688,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/reports/export": {
+    "/api/v4/reports/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1708,7 +1708,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/reports": {
+    "/api/v4/reports": {
         parameters: {
             query?: never;
             header?: never;
@@ -1728,7 +1728,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/reports/overview": {
+    "/api/v4/reports/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -1748,7 +1748,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/reports/history": {
+    "/api/v4/reports/history": {
         parameters: {
             query?: never;
             header?: never;
@@ -1768,7 +1768,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/leaderboard/bundle": {
+    "/api/v4/leaderboard/bundle": {
         parameters: {
             query?: never;
             header?: never;
@@ -1788,7 +1788,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/list": {
+    "/api/v4/agents/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1808,7 +1808,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/detail": {
+    "/api/v4/agents/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -1828,7 +1828,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/new": {
+    "/api/v4/agents/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1848,7 +1848,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/create": {
+    "/api/v4/agents/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1868,7 +1868,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/update": {
+    "/api/v4/agents/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1888,7 +1888,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/duplicate": {
+    "/api/v4/agents/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1908,7 +1908,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/delete": {
+    "/api/v4/agents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1928,7 +1928,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/list": {
+    "/api/v4/keys/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1948,7 +1948,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/detail": {
+    "/api/v4/keys/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -1968,7 +1968,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/new": {
+    "/api/v4/keys/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1988,7 +1988,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/create": {
+    "/api/v4/keys/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2008,7 +2008,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/update": {
+    "/api/v4/keys/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2028,7 +2028,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/delete": {
+    "/api/v4/keys/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2048,7 +2048,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/decrypt": {
+    "/api/v4/keys/decrypt": {
         parameters: {
             query?: never;
             header?: never;
@@ -2068,7 +2068,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/list": {
+    "/api/v4/models/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2088,7 +2088,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/detail": {
+    "/api/v4/models/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -2108,7 +2108,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/new": {
+    "/api/v4/models/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -2128,7 +2128,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/create": {
+    "/api/v4/models/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2148,7 +2148,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/update": {
+    "/api/v4/models/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2168,7 +2168,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/delete": {
+    "/api/v4/models/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2188,7 +2188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/duplicate": {
+    "/api/v4/models/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2208,7 +2208,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/list": {
+    "/api/v4/providers/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2228,7 +2228,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/detail": {
+    "/api/v4/providers/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -2248,7 +2248,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/new": {
+    "/api/v4/providers/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -2268,7 +2268,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/create": {
+    "/api/v4/providers/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2288,7 +2288,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/update": {
+    "/api/v4/providers/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2308,7 +2308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/delete": {
+    "/api/v4/providers/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2328,7 +2328,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/list": {
+    "/api/v4/parameters/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2348,7 +2348,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/detail": {
+    "/api/v4/parameters/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -2368,7 +2368,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/new": {
+    "/api/v4/parameters/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -2388,7 +2388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/create": {
+    "/api/v4/parameters/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2408,7 +2408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/update": {
+    "/api/v4/parameters/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2428,7 +2428,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/duplicate": {
+    "/api/v4/parameters/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2448,7 +2448,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/delete": {
+    "/api/v4/parameters/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2468,7 +2468,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/fields/list": {
+    "/api/v4/fields/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2488,7 +2488,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/fields/detail": {
+    "/api/v4/fields/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -2508,7 +2508,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/fields/new": {
+    "/api/v4/fields/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -2528,7 +2528,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/fields/create": {
+    "/api/v4/fields/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2548,7 +2548,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/fields/update": {
+    "/api/v4/fields/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2568,7 +2568,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/fields/duplicate": {
+    "/api/v4/fields/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2588,7 +2588,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/fields/delete": {
+    "/api/v4/fields/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2608,7 +2608,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/feedback/create": {
+    "/api/v4/feedback/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2628,7 +2628,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/feedback/list": {
+    "/api/v4/feedback/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2648,7 +2648,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/feedback/resolve": {
+    "/api/v4/feedback/resolve": {
         parameters: {
             query?: never;
             header?: never;
@@ -2668,7 +2668,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/health/bundle": {
+    "/api/v4/health/bundle": {
         parameters: {
             query?: never;
             header?: never;
@@ -2688,7 +2688,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/attempts/archive": {
+    "/api/v4/attempts/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -2708,7 +2708,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/attempts/simulation": {
+    "/api/v4/attempts/simulation": {
         parameters: {
             query?: never;
             header?: never;
@@ -2728,7 +2728,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/attempts/eval": {
+    "/api/v4/attempts/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -2748,7 +2748,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/prompts/delete": {
+    "/api/v4/prompts/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2768,7 +2768,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/list": {
+    "/api/v4/staff/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2788,7 +2788,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/detail": {
+    "/api/v4/staff/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -2808,7 +2808,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/new": {
+    "/api/v4/staff/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -2828,7 +2828,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/search": {
+    "/api/v4/staff/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2848,7 +2848,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/csv": {
+    "/api/v4/staff/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2868,7 +2868,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/data/create": {
+    "/api/v4/staff/data/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2888,7 +2888,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/create": {
+    "/api/v4/staff/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2908,7 +2908,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/update": {
+    "/api/v4/staff/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2928,7 +2928,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/delete": {
+    "/api/v4/staff/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2948,7 +2948,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/upsert": {
+    "/api/v4/staff/upsert": {
         parameters: {
             query?: never;
             header?: never;
@@ -2968,7 +2968,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/benchmark/bundle": {
+    "/api/v4/benchmark/bundle": {
         parameters: {
             query?: never;
             header?: never;
@@ -2988,7 +2988,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/home/overview": {
+    "/api/v4/home/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -3011,7 +3011,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/home/history": {
+    "/api/v4/home/history": {
         parameters: {
             query?: never;
             header?: never;
@@ -3031,7 +3031,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/practice/overview": {
+    "/api/v4/practice/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -3055,7 +3055,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/practice/history": {
+    "/api/v4/practice/history": {
         parameters: {
             query?: never;
             header?: never;
@@ -3075,7 +3075,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/pricing/analytics": {
+    "/api/v4/pricing/analytics": {
         parameters: {
             query?: never;
             header?: never;
@@ -3095,7 +3095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/pricing/runs": {
+    "/api/v4/pricing/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3115,7 +3115,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/pricing/detail": {
+    "/api/v4/pricing/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -3135,7 +3135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/uploads/upload": {
+    "/api/v4/uploads/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -3159,7 +3159,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/uploads/upload/{upload_id}": {
+    "/api/v4/uploads/upload/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3187,7 +3187,7 @@ export interface paths {
         patch: operations["tus_patch_api_v3_uploads_upload__upload_id__patch"];
         trace?: never;
     };
-    "/api/v3/uploads/upload/{upload_id}/finalize": {
+    "/api/v4/uploads/upload/{upload_id}/finalize": {
         parameters: {
             query?: never;
             header?: never;
@@ -3207,7 +3207,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/uploads/download/{upload_id}": {
+    "/api/v4/uploads/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3227,7 +3227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/connect": {
+    "/socket/v4/client/connect": {
         parameters: {
             query?: never;
             header?: never;
@@ -3247,7 +3247,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/disconnect": {
+    "/socket/v4/client/disconnect": {
         parameters: {
             query?: never;
             header?: never;
@@ -3267,7 +3267,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/log": {
+    "/socket/v4/client/log": {
         parameters: {
             query?: never;
             header?: never;
@@ -3287,7 +3287,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/simulations/start": {
+    "/socket/v4/client/agents/simulations/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -3307,7 +3307,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/simulations/debug": {
+    "/socket/v4/client/agents/simulations/debug": {
         parameters: {
             query?: never;
             header?: never;
@@ -3327,7 +3327,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/simulations/delta": {
+    "/socket/v4/client/agents/simulations/delta": {
         parameters: {
             query?: never;
             header?: never;
@@ -3347,7 +3347,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/simulations/done": {
+    "/socket/v4/client/agents/simulations/done": {
         parameters: {
             query?: never;
             header?: never;
@@ -3367,7 +3367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/simulations/audio_link": {
+    "/socket/v4/client/agents/simulations/audio_link": {
         parameters: {
             query?: never;
             header?: never;
@@ -3387,7 +3387,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/scenarios/generate": {
+    "/socket/v4/client/agents/scenarios/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3407,7 +3407,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/scenarios/randomize": {
+    "/socket/v4/client/agents/scenarios/randomize": {
         parameters: {
             query?: never;
             header?: never;
@@ -3427,7 +3427,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/scenarios/regenerate": {
+    "/socket/v4/client/agents/scenarios/regenerate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3447,7 +3447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/documents/generate": {
+    "/socket/v4/client/agents/documents/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3467,7 +3467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/videos/generate": {
+    "/socket/v4/client/agents/videos/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3487,7 +3487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/images/generate": {
+    "/socket/v4/client/agents/images/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3507,7 +3507,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/rubrics/generate": {
+    "/socket/v4/client/agents/rubrics/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3527,7 +3527,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/rubrics/regenerate": {
+    "/socket/v4/client/agents/rubrics/regenerate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3547,7 +3547,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/classify/classify": {
+    "/socket/v4/client/agents/classify/classify": {
         parameters: {
             query?: never;
             header?: never;
@@ -3567,7 +3567,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/hints/generate": {
+    "/socket/v4/client/agents/hints/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3587,7 +3587,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/grades/start": {
+    "/socket/v4/client/agents/grades/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -3607,7 +3607,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/members/generate": {
+    "/socket/v4/client/agents/members/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3627,7 +3627,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/agents/members/progress": {
+    "/socket/v4/client/agents/members/progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -3647,7 +3647,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/enter": {
+    "/socket/v4/client/simulations/enter": {
         parameters: {
             query?: never;
             header?: never;
@@ -3667,7 +3667,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/join": {
+    "/socket/v4/client/simulations/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -3687,7 +3687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/leave": {
+    "/socket/v4/client/simulations/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -3707,7 +3707,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/start": {
+    "/socket/v4/client/simulations/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -3727,7 +3727,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/end": {
+    "/socket/v4/client/simulations/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -3747,7 +3747,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/next": {
+    "/socket/v4/client/simulations/next": {
         parameters: {
             query?: never;
             header?: never;
@@ -3767,7 +3767,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/advance": {
+    "/socket/v4/client/simulations/advance": {
         parameters: {
             query?: never;
             header?: never;
@@ -3787,7 +3787,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/stop": {
+    "/socket/v4/client/simulations/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -3807,7 +3807,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/simulations/voice_stop": {
+    "/socket/v4/client/simulations/voice_stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -3827,7 +3827,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/enter": {
+    "/socket/v4/client/benchmark/enter": {
         parameters: {
             query?: never;
             header?: never;
@@ -3847,7 +3847,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/join": {
+    "/socket/v4/client/benchmark/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -3867,7 +3867,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/leave": {
+    "/socket/v4/client/benchmark/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -3887,7 +3887,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/start": {
+    "/socket/v4/client/benchmark/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -3907,7 +3907,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/advance": {
+    "/socket/v4/client/benchmark/advance": {
         parameters: {
             query?: never;
             header?: never;
@@ -3927,7 +3927,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/stop": {
+    "/socket/v4/client/benchmark/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -3947,7 +3947,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/next": {
+    "/socket/v4/client/benchmark/next": {
         parameters: {
             query?: never;
             header?: never;
@@ -3967,7 +3967,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/client/benchmark/end": {
+    "/socket/v4/client/benchmark/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -3987,7 +3987,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/connection_confirmed": {
+    "/socket/v4/server/connection_confirmed": {
         parameters: {
             query?: never;
             header?: never;
@@ -4007,7 +4007,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/simulation_text_complete": {
+    "/socket/v4/server/agents/simulations/simulation_text_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4027,7 +4027,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/simulation_text_error": {
+    "/socket/v4/server/agents/simulations/simulation_text_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4047,7 +4047,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/simulation_text_progress": {
+    "/socket/v4/server/agents/simulations/simulation_text_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4067,7 +4067,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/eval": {
+    "/socket/v4/server/agents/simulations/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -4087,7 +4087,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/debug_info": {
+    "/socket/v4/server/agents/simulations/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -4107,7 +4107,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/debug_info_complete": {
+    "/socket/v4/server/agents/simulations/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4127,7 +4127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/debug_info_error": {
+    "/socket/v4/server/agents/simulations/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4147,7 +4147,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/debug_info_progress": {
+    "/socket/v4/server/agents/simulations/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4167,7 +4167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/eval": {
+    "/socket/v4/server/agents/simulations/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -4187,7 +4187,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/speak_tool": {
+    "/socket/v4/server/agents/simulations/tools/speak_tool": {
         parameters: {
             query?: never;
             header?: never;
@@ -4207,7 +4207,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/speak_complete": {
+    "/socket/v4/server/agents/simulations/tools/speak_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4227,7 +4227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/speak_error": {
+    "/socket/v4/server/agents/simulations/tools/speak_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4247,7 +4247,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tools/speak_progress": {
+    "/socket/v4/server/agents/simulations/tools/speak_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4267,7 +4267,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/start_response": {
+    "/socket/v4/server/agents/simulations/start_response": {
         parameters: {
             query?: never;
             header?: never;
@@ -4287,7 +4287,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/start_error": {
+    "/socket/v4/server/agents/simulations/start_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4307,7 +4307,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/simulation_voice_complete": {
+    "/socket/v4/server/agents/simulations/simulation_voice_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4327,7 +4327,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/simulation_voice_error": {
+    "/socket/v4/server/agents/simulations/simulation_voice_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4347,7 +4347,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/debug_error": {
+    "/socket/v4/server/agents/simulations/debug_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4367,7 +4367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/tool_call_error": {
+    "/socket/v4/server/agents/simulations/tool_call_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4387,7 +4387,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/simulations/audio_link_error": {
+    "/socket/v4/server/agents/simulations/audio_link_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4407,7 +4407,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/generation_progress": {
+    "/socket/v4/server/agents/scenarios/generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4427,7 +4427,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/generation_complete": {
+    "/socket/v4/server/agents/scenarios/generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4447,7 +4447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/generation_error": {
+    "/socket/v4/server/agents/scenarios/generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4467,7 +4467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/scenario_complete": {
+    "/socket/v4/server/agents/scenarios/scenario_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4487,7 +4487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/scenario_error": {
+    "/socket/v4/server/agents/scenarios/scenario_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4507,7 +4507,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/scenario_progress": {
+    "/socket/v4/server/agents/scenarios/scenario_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4527,7 +4527,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/eval": {
+    "/socket/v4/server/agents/scenarios/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -4547,7 +4547,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/debug_info": {
+    "/socket/v4/server/agents/scenarios/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -4567,7 +4567,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/debug_info_complete": {
+    "/socket/v4/server/agents/scenarios/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4587,7 +4587,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/debug_info_error": {
+    "/socket/v4/server/agents/scenarios/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4607,7 +4607,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/debug_info_progress": {
+    "/socket/v4/server/agents/scenarios/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4627,7 +4627,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/eval": {
+    "/socket/v4/server/agents/scenarios/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -4647,7 +4647,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/document_complete": {
+    "/socket/v4/server/agents/scenarios/tools/document_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4667,7 +4667,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/document_error": {
+    "/socket/v4/server/agents/scenarios/tools/document_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4687,7 +4687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/document_progress": {
+    "/socket/v4/server/agents/scenarios/tools/document_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4707,7 +4707,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/image_complete": {
+    "/socket/v4/server/agents/scenarios/tools/image_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4727,7 +4727,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/image_error": {
+    "/socket/v4/server/agents/scenarios/tools/image_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4747,7 +4747,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/image_progress": {
+    "/socket/v4/server/agents/scenarios/tools/image_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4767,7 +4767,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/objectives_complete": {
+    "/socket/v4/server/agents/scenarios/tools/objectives_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4787,7 +4787,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/objectives_error": {
+    "/socket/v4/server/agents/scenarios/tools/objectives_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4807,7 +4807,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/objectives_progress": {
+    "/socket/v4/server/agents/scenarios/tools/objectives_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4827,7 +4827,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/questions_complete": {
+    "/socket/v4/server/agents/scenarios/tools/questions_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4847,7 +4847,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/questions_error": {
+    "/socket/v4/server/agents/scenarios/tools/questions_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4867,7 +4867,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/questions_progress": {
+    "/socket/v4/server/agents/scenarios/tools/questions_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4887,7 +4887,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/title_description": {
+    "/socket/v4/server/agents/scenarios/tools/title_description": {
         parameters: {
             query?: never;
             header?: never;
@@ -4907,7 +4907,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/title_description_complete": {
+    "/socket/v4/server/agents/scenarios/tools/title_description_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4927,7 +4927,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/title_description_error": {
+    "/socket/v4/server/agents/scenarios/tools/title_description_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4947,7 +4947,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/title_description_progress": {
+    "/socket/v4/server/agents/scenarios/tools/title_description_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4967,7 +4967,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/scenario_tool_title_complete": {
+    "/socket/v4/server/agents/scenarios/tools/scenario_tool_title_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4987,7 +4987,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/scenario_tool_title_error": {
+    "/socket/v4/server/agents/scenarios/tools/scenario_tool_title_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5007,7 +5007,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/scenario_tool_title_progress": {
+    "/socket/v4/server/agents/scenarios/tools/scenario_tool_title_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5027,7 +5027,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/video_complete": {
+    "/socket/v4/server/agents/scenarios/tools/video_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5047,7 +5047,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/video_error": {
+    "/socket/v4/server/agents/scenarios/tools/video_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5067,7 +5067,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/scenarios/tools/video_progress": {
+    "/socket/v4/server/agents/scenarios/tools/video_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5087,7 +5087,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/generation_progress": {
+    "/socket/v4/server/agents/documents/generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5107,7 +5107,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/generation_complete": {
+    "/socket/v4/server/agents/documents/generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5127,7 +5127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/generation_error": {
+    "/socket/v4/server/agents/documents/generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5147,7 +5147,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/document_complete": {
+    "/socket/v4/server/agents/documents/document_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5167,7 +5167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/document_error": {
+    "/socket/v4/server/agents/documents/document_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5187,7 +5187,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/document_progress": {
+    "/socket/v4/server/agents/documents/document_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5207,7 +5207,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/eval": {
+    "/socket/v4/server/agents/documents/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -5227,7 +5227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/document_tool_title_complete": {
+    "/socket/v4/server/agents/documents/tools/document_tool_title_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5247,7 +5247,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/document_tool_title_error": {
+    "/socket/v4/server/agents/documents/tools/document_tool_title_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5267,7 +5267,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/document_tool_title_progress": {
+    "/socket/v4/server/agents/documents/tools/document_tool_title_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5287,7 +5287,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/eval": {
+    "/socket/v4/server/agents/documents/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -5307,7 +5307,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/debug_info": {
+    "/socket/v4/server/agents/documents/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -5327,7 +5327,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/debug_info_complete": {
+    "/socket/v4/server/agents/documents/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5347,7 +5347,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/debug_info_error": {
+    "/socket/v4/server/agents/documents/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5367,7 +5367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/documents/tools/debug_info_progress": {
+    "/socket/v4/server/agents/documents/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5387,7 +5387,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/generation_progress": {
+    "/socket/v4/server/agents/videos/generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5407,7 +5407,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/generation_complete": {
+    "/socket/v4/server/agents/videos/generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5427,7 +5427,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/generation_error": {
+    "/socket/v4/server/agents/videos/generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5447,7 +5447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/video_complete": {
+    "/socket/v4/server/agents/videos/video_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5467,7 +5467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/video_error": {
+    "/socket/v4/server/agents/videos/video_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5487,7 +5487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/video_progress": {
+    "/socket/v4/server/agents/videos/video_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5507,7 +5507,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/eval": {
+    "/socket/v4/server/agents/videos/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -5527,7 +5527,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/video_tool_title_complete": {
+    "/socket/v4/server/agents/videos/tools/video_tool_title_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5547,7 +5547,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/video_tool_title_error": {
+    "/socket/v4/server/agents/videos/tools/video_tool_title_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5567,7 +5567,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/video_tool_title_progress": {
+    "/socket/v4/server/agents/videos/tools/video_tool_title_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5587,7 +5587,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/eval": {
+    "/socket/v4/server/agents/videos/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -5607,7 +5607,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/debug_info": {
+    "/socket/v4/server/agents/videos/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -5627,7 +5627,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/debug_info_complete": {
+    "/socket/v4/server/agents/videos/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5647,7 +5647,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/debug_info_error": {
+    "/socket/v4/server/agents/videos/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5667,7 +5667,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/videos/tools/debug_info_progress": {
+    "/socket/v4/server/agents/videos/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5687,7 +5687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/generation_complete": {
+    "/socket/v4/server/agents/images/generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5707,7 +5707,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/generation_error": {
+    "/socket/v4/server/agents/images/generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5727,7 +5727,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/generation_progress": {
+    "/socket/v4/server/agents/images/generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5747,7 +5747,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/eval": {
+    "/socket/v4/server/agents/images/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -5767,7 +5767,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/debug_info": {
+    "/socket/v4/server/agents/images/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -5787,7 +5787,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/debug_info_complete": {
+    "/socket/v4/server/agents/images/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5807,7 +5807,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/debug_info_error": {
+    "/socket/v4/server/agents/images/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5827,7 +5827,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/debug_info_progress": {
+    "/socket/v4/server/agents/images/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5847,7 +5847,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/eval": {
+    "/socket/v4/server/agents/images/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -5867,7 +5867,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/image_tool_title_complete": {
+    "/socket/v4/server/agents/images/tools/image_tool_title_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5887,7 +5887,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/image_tool_title_error": {
+    "/socket/v4/server/agents/images/tools/image_tool_title_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5907,7 +5907,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/images/tools/image_tool_title_progress": {
+    "/socket/v4/server/agents/images/tools/image_tool_title_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5927,7 +5927,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/generation_complete": {
+    "/socket/v4/server/agents/rubrics/generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5947,7 +5947,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/generation_error": {
+    "/socket/v4/server/agents/rubrics/generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5967,7 +5967,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/generation_progress": {
+    "/socket/v4/server/agents/rubrics/generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -5987,7 +5987,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/eval": {
+    "/socket/v4/server/agents/rubrics/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -6007,7 +6007,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/rubric_tool_title_complete": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6027,7 +6027,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/rubric_tool_title_error": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6047,7 +6047,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/rubric_tool_title_progress": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6067,7 +6067,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/eval": {
+    "/socket/v4/server/agents/rubrics/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -6087,7 +6087,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/debug_info": {
+    "/socket/v4/server/agents/rubrics/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -6107,7 +6107,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/debug_info_complete": {
+    "/socket/v4/server/agents/rubrics/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6127,7 +6127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/debug_info_error": {
+    "/socket/v4/server/agents/rubrics/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6147,7 +6147,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/debug_info_progress": {
+    "/socket/v4/server/agents/rubrics/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6167,7 +6167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/rubric_tool_standard_description": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_tool_standard_description": {
         parameters: {
             query?: never;
             header?: never;
@@ -6187,7 +6187,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/standard_description_complete": {
+    "/socket/v4/server/agents/rubrics/tools/standard_description_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6207,7 +6207,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/standard_description_error": {
+    "/socket/v4/server/agents/rubrics/tools/standard_description_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6227,7 +6227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/rubrics/tools/standard_description_progress": {
+    "/socket/v4/server/agents/rubrics/tools/standard_description_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6247,7 +6247,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/classification_progress": {
+    "/socket/v4/server/agents/classify/classification_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6267,7 +6267,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/classification_complete": {
+    "/socket/v4/server/agents/classify/classification_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6287,7 +6287,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/classification_error": {
+    "/socket/v4/server/agents/classify/classification_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6307,7 +6307,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/classify_complete": {
+    "/socket/v4/server/agents/classify/classify_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6327,7 +6327,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/classify_error": {
+    "/socket/v4/server/agents/classify/classify_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6347,7 +6347,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/classify_progress": {
+    "/socket/v4/server/agents/classify/classify_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6367,7 +6367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/eval": {
+    "/socket/v4/server/agents/classify/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -6387,7 +6387,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/debug_info": {
+    "/socket/v4/server/agents/classify/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -6407,7 +6407,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/debug_info_complete": {
+    "/socket/v4/server/agents/classify/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6427,7 +6427,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/debug_info_error": {
+    "/socket/v4/server/agents/classify/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6447,7 +6447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/debug_info_progress": {
+    "/socket/v4/server/agents/classify/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6467,7 +6467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/eval": {
+    "/socket/v4/server/agents/classify/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -6487,7 +6487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/classification_tool": {
+    "/socket/v4/server/agents/classify/tools/classification_tool": {
         parameters: {
             query?: never;
             header?: never;
@@ -6507,7 +6507,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/classification_complete": {
+    "/socket/v4/server/agents/classify/tools/classification_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6527,7 +6527,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/classification_error": {
+    "/socket/v4/server/agents/classify/tools/classification_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6547,7 +6547,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/classify/tools/classification_progress": {
+    "/socket/v4/server/agents/classify/tools/classification_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6567,7 +6567,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/generation_progress": {
+    "/socket/v4/server/agents/hints/generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6587,7 +6587,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/hint_complete": {
+    "/socket/v4/server/agents/hints/hint_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6607,7 +6607,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/hint_error": {
+    "/socket/v4/server/agents/hints/hint_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6627,7 +6627,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/hint_progress": {
+    "/socket/v4/server/agents/hints/hint_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6647,7 +6647,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/eval": {
+    "/socket/v4/server/agents/hints/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -6667,7 +6667,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/debug_info": {
+    "/socket/v4/server/agents/hints/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -6687,7 +6687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/debug_info_complete": {
+    "/socket/v4/server/agents/hints/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6707,7 +6707,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/debug_info_error": {
+    "/socket/v4/server/agents/hints/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6727,7 +6727,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/debug_info_progress": {
+    "/socket/v4/server/agents/hints/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6747,7 +6747,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/eval": {
+    "/socket/v4/server/agents/hints/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -6767,7 +6767,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/hint_tool": {
+    "/socket/v4/server/agents/hints/tools/hint_tool": {
         parameters: {
             query?: never;
             header?: never;
@@ -6787,7 +6787,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/hint_complete": {
+    "/socket/v4/server/agents/hints/tools/hint_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6807,7 +6807,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/hint_error": {
+    "/socket/v4/server/agents/hints/tools/hint_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6827,7 +6827,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/hints/tools/hint_progress": {
+    "/socket/v4/server/agents/hints/tools/hint_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6847,7 +6847,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/progress": {
+    "/socket/v4/server/agents/grades/progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6867,7 +6867,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/grade_text_complete": {
+    "/socket/v4/server/agents/grades/grade_text_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6887,7 +6887,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/grade_text_error": {
+    "/socket/v4/server/agents/grades/grade_text_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6907,7 +6907,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/grade_text_progress": {
+    "/socket/v4/server/agents/grades/grade_text_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6927,7 +6927,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/eval": {
+    "/socket/v4/server/agents/grades/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -6947,7 +6947,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/audio_complete": {
+    "/socket/v4/server/agents/grades/tools/audio_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6967,7 +6967,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/audio_error": {
+    "/socket/v4/server/agents/grades/tools/audio_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -6987,7 +6987,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/audio_progress": {
+    "/socket/v4/server/agents/grades/tools/audio_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7007,7 +7007,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/eval": {
+    "/socket/v4/server/agents/grades/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -7027,7 +7027,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/message_improvement_complete": {
+    "/socket/v4/server/agents/grades/tools/message_improvement_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7047,7 +7047,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/message_improvement_error": {
+    "/socket/v4/server/agents/grades/tools/message_improvement_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7067,7 +7067,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/message_improvement_progress": {
+    "/socket/v4/server/agents/grades/tools/message_improvement_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7087,7 +7087,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/message_strength_complete": {
+    "/socket/v4/server/agents/grades/tools/message_strength_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7107,7 +7107,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/message_strength_error": {
+    "/socket/v4/server/agents/grades/tools/message_strength_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7127,7 +7127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/message_strength_progress": {
+    "/socket/v4/server/agents/grades/tools/message_strength_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7147,7 +7147,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/feedback_complete": {
+    "/socket/v4/server/agents/grades/tools/feedback_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7167,7 +7167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/feedback_error": {
+    "/socket/v4/server/agents/grades/tools/feedback_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7187,7 +7187,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/feedback_progress": {
+    "/socket/v4/server/agents/grades/tools/feedback_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7207,7 +7207,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/debug_info": {
+    "/socket/v4/server/agents/grades/tools/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -7227,7 +7227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/debug_info_complete": {
+    "/socket/v4/server/agents/grades/tools/debug_info_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7247,7 +7247,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/debug_info_error": {
+    "/socket/v4/server/agents/grades/tools/debug_info_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7267,7 +7267,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/tools/debug_info_progress": {
+    "/socket/v4/server/agents/grades/tools/debug_info_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7287,7 +7287,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/audio_complete": {
+    "/socket/v4/server/agents/grades/audio_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7307,7 +7307,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/audio_error": {
+    "/socket/v4/server/agents/grades/audio_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7327,7 +7327,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/grades/audio_progress": {
+    "/socket/v4/server/agents/grades/audio_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7347,7 +7347,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/generate_error": {
+    "/socket/v4/server/agents/members/generate_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7367,7 +7367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/member_complete": {
+    "/socket/v4/server/agents/members/member_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7387,7 +7387,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/member_error": {
+    "/socket/v4/server/agents/members/member_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7407,7 +7407,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/eval": {
+    "/socket/v4/server/agents/members/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -7427,7 +7427,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/progress_error": {
+    "/socket/v4/server/agents/members/progress_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7447,7 +7447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/tools/conversation_end": {
+    "/socket/v4/server/agents/members/tools/conversation_end": {
         parameters: {
             query?: never;
             header?: never;
@@ -7467,7 +7467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/tools/conversation_end_complete": {
+    "/socket/v4/server/agents/members/tools/conversation_end_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7487,7 +7487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/tools/conversation_end_error": {
+    "/socket/v4/server/agents/members/tools/conversation_end_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7507,7 +7507,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/tools/conversation_end_progress": {
+    "/socket/v4/server/agents/members/tools/conversation_end_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7527,7 +7527,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/agents/members/tools/eval": {
+    "/socket/v4/server/agents/members/tools/eval": {
         parameters: {
             query?: never;
             header?: never;
@@ -7547,7 +7547,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/enter_response": {
+    "/socket/v4/server/simulations/enter_response": {
         parameters: {
             query?: never;
             header?: never;
@@ -7567,7 +7567,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/enter_error": {
+    "/socket/v4/server/simulations/enter_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7587,7 +7587,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/joined": {
+    "/socket/v4/server/simulations/joined": {
         parameters: {
             query?: never;
             header?: never;
@@ -7607,7 +7607,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/join_error": {
+    "/socket/v4/server/simulations/join_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7627,7 +7627,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/leave_error": {
+    "/socket/v4/server/simulations/leave_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7647,7 +7647,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/start_error": {
+    "/socket/v4/server/simulations/start_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7667,7 +7667,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/started": {
+    "/socket/v4/server/simulations/started": {
         parameters: {
             query?: never;
             header?: never;
@@ -7687,7 +7687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/end_error": {
+    "/socket/v4/server/simulations/end_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7707,7 +7707,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/ended": {
+    "/socket/v4/server/simulations/ended": {
         parameters: {
             query?: never;
             header?: never;
@@ -7727,7 +7727,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/end_all_started": {
+    "/socket/v4/server/simulations/end_all_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -7747,7 +7747,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/end_chat_started": {
+    "/socket/v4/server/simulations/end_chat_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -7767,7 +7767,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/end_all_completed": {
+    "/socket/v4/server/simulations/end_all_completed": {
         parameters: {
             query?: never;
             header?: never;
@@ -7787,7 +7787,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/next_error": {
+    "/socket/v4/server/simulations/next_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7807,7 +7807,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/advance_error": {
+    "/socket/v4/server/simulations/advance_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7827,7 +7827,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/advanced": {
+    "/socket/v4/server/simulations/advanced": {
         parameters: {
             query?: never;
             header?: never;
@@ -7847,7 +7847,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/stopped": {
+    "/socket/v4/server/simulations/stopped": {
         parameters: {
             query?: never;
             header?: never;
@@ -7867,7 +7867,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/message_cancelled": {
+    "/socket/v4/server/simulations/message_cancelled": {
         parameters: {
             query?: never;
             header?: never;
@@ -7887,7 +7887,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/stop_error": {
+    "/socket/v4/server/simulations/stop_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7907,7 +7907,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/voice_stop_response": {
+    "/socket/v4/server/simulations/voice_stop_response": {
         parameters: {
             query?: never;
             header?: never;
@@ -7927,7 +7927,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/voice_stop_error": {
+    "/socket/v4/server/simulations/voice_stop_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7947,7 +7947,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/enter_response": {
+    "/socket/v4/server/benchmark/enter_response": {
         parameters: {
             query?: never;
             header?: never;
@@ -7967,7 +7967,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/enter_error": {
+    "/socket/v4/server/benchmark/enter_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -7987,7 +7987,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/joined": {
+    "/socket/v4/server/benchmark/joined": {
         parameters: {
             query?: never;
             header?: never;
@@ -8007,7 +8007,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/join_error": {
+    "/socket/v4/server/benchmark/join_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -8027,7 +8027,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/leave_error": {
+    "/socket/v4/server/benchmark/leave_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -8047,7 +8047,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/advance_error": {
+    "/socket/v4/server/benchmark/advance_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -8067,7 +8067,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/advanced": {
+    "/socket/v4/server/benchmark/advanced": {
         parameters: {
             query?: never;
             header?: never;
@@ -8087,7 +8087,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/stopped": {
+    "/socket/v4/server/benchmark/stopped": {
         parameters: {
             query?: never;
             header?: never;
@@ -8107,7 +8107,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/stop_error": {
+    "/socket/v4/server/benchmark/stop_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -8127,7 +8127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/completed": {
+    "/socket/v4/server/benchmark/completed": {
         parameters: {
             query?: never;
             header?: never;
@@ -8147,7 +8147,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/benchmark/end_error": {
+    "/socket/v4/server/benchmark/end_error": {
         parameters: {
             query?: never;
             header?: never;

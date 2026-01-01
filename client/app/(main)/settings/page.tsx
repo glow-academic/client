@@ -8,13 +8,13 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 /** ---- Strong types from OpenAPI ---- */
-export type SettingsListOut = OutputOf<"/api/v3/settings/list", "post">;
-export type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
-export type UpdateSettingsIn = InputOf<"/api/v3/settings/update", "post">;
-export type UpdateSettingsOut = OutputOf<"/api/v3/settings/update", "post">;
-export type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
-export type StaffListOut = OutputOf<"/api/v3/staff/list", "post">;
-export type DepartmentsListOut = OutputOf<"/api/v3/departments/list", "post">;
+export type SettingsListOut = OutputOf<"/api/v4/settings/list", "post">;
+export type SettingsDetailOut = OutputOf<"/api/v4/settings/detail", "post">;
+export type UpdateSettingsIn = InputOf<"/api/v4/settings/update", "post">;
+export type UpdateSettingsOut = OutputOf<"/api/v4/settings/update", "post">;
+export type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;
+export type StaffListOut = OutputOf<"/api/v4/staff/list", "post">;
+export type DepartmentsListOut = OutputOf<"/api/v4/departments/list", "post">;
 
 /** ---- Direct fetch for settings list ---- */
 const getSettingsList = async (): Promise<SettingsListOut> => {

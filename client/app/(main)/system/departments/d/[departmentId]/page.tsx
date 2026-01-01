@@ -12,18 +12,18 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
-type UpdateDepartmentIn = InputOf<"/api/v3/departments/update", "post">;
-type UpdateDepartmentOut = OutputOf<"/api/v3/departments/update", "post">;
+type DepartmentDetailOut = OutputOf<"/api/v4/departments/detail", "post">;
+type UpdateDepartmentIn = InputOf<"/api/v4/departments/update", "post">;
+type UpdateDepartmentOut = OutputOf<"/api/v4/departments/update", "post">;
 
-type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
-type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
-type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
-type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
-type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
-type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
+type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
+type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
+type DecryptKeyIn = InputOf<"/api/v4/keys/decrypt", "post">;
+type DecryptKeyOut = OutputOf<"/api/v4/keys/decrypt", "post">;
+type UpdateKeyIn = InputOf<"/api/v4/keys/update", "post">;
+type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
+type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;
+type SettingsDetailOut = OutputOf<"/api/v4/settings/detail", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

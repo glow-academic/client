@@ -858,7 +858,7 @@ export default function Document({
             let suggestedParameterItemIds: string[] = [];
             try {
               const classifyResponse = await fetch(
-                `/api/v3/uploads/upload/${tusUploadId}/classify`,
+                `/api/v4/uploads/upload/${tusUploadId}/classify`,
                 {
                   method: "POST",
                   headers: {

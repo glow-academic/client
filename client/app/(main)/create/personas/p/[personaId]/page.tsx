@@ -13,14 +13,14 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonaDetailIn = InputOf<"/api/v3/personas/detail", "post">;
-type PersonaDetailOut = OutputOf<"/api/v3/personas/detail", "post">;
-type PersonaNewIn = InputOf<"/api/v3/personas/new", "post">;
-type PersonaNewOut = OutputOf<"/api/v3/personas/new", "post">;
-type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
-type UpdatePersonaIn = InputOf<"/api/v3/personas/update", "post">;
-type UpdatePersonaOut = OutputOf<"/api/v3/personas/update", "post">;
+type PersonaDetailIn = InputOf<"/api/v4/personas/detail", "post">;
+type PersonaDetailOut = OutputOf<"/api/v4/personas/detail", "post">;
+type PersonaNewIn = InputOf<"/api/v4/personas/new", "post">;
+type PersonaNewOut = OutputOf<"/api/v4/personas/new", "post">;
+type CreatePersonaIn = InputOf<"/api/v4/personas/create", "post">;
+type CreatePersonaOut = OutputOf<"/api/v4/personas/create", "post">;
+type UpdatePersonaIn = InputOf<"/api/v4/personas/update", "post">;
+type UpdatePersonaOut = OutputOf<"/api/v4/personas/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

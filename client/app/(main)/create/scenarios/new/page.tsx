@@ -16,12 +16,12 @@ import {
 } from "../searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenarioNewIn = InputOf<"/api/v3/scenarios/new", "post">;
-type ScenarioNewOut = OutputOf<"/api/v3/scenarios/new", "post">;
-type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
-type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
+type ScenarioNewIn = InputOf<"/api/v4/scenarios/new", "post">;
+type ScenarioNewOut = OutputOf<"/api/v4/scenarios/new", "post">;
+type CreateScenarioIn = InputOf<"/api/v4/scenarios/create", "post">;
+type CreateScenarioOut = OutputOf<"/api/v4/scenarios/create", "post">;
+type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
+type UpdateScenarioOut = OutputOf<"/api/v4/scenarios/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

@@ -74,9 +74,9 @@ import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton
 
 // Use strong server types directly (union of all history endpoint types)
 export type HistoryDataItem =
-  | OutputOf<"/api/v3/home/history", "post">["data"][number]
-  | OutputOf<"/api/v3/dashboard/history", "post">["data"][number]
-  | OutputOf<"/api/v3/practice/history", "post">["data"][number];
+  | OutputOf<"/api/v4/home/history", "post">["data"][number]
+  | OutputOf<"/api/v4/dashboard/history", "post">["data"][number]
+  | OutputOf<"/api/v4/practice/history", "post">["data"][number];
 
 // Inlined row actions component (from DataTableRowActions)
 function HistoryRowActions({ item }: { item: HistoryDataItem }) {

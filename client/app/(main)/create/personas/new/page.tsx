@@ -12,10 +12,10 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonaNewIn = InputOf<"/api/v3/personas/new", "post">;
-type PersonaNewOut = OutputOf<"/api/v3/personas/new", "post">;
-type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
+type PersonaNewIn = InputOf<"/api/v4/personas/new", "post">;
+type PersonaNewOut = OutputOf<"/api/v4/personas/new", "post">;
+type CreatePersonaIn = InputOf<"/api/v4/personas/create", "post">;
+type CreatePersonaOut = OutputOf<"/api/v4/personas/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

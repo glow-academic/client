@@ -8,7 +8,7 @@ import type { ProfileItem } from "@/app/(main)/layout-server";
 import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
-type EvalsListOut = OutputOf<"/api/v3/evals/list", "post">;
+type EvalsListOut = OutputOf<"/api/v4/evals/list", "post">;
 type EvalItem = EvalsListOut["evals"][number];
 
 // Rubric mapping types

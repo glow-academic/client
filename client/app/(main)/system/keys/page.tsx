@@ -9,9 +9,9 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
-type DeleteKeyIn = InputOf<"/api/v3/keys/delete", "post">;
-type DeleteKeyOut = OutputOf<"/api/v3/keys/delete", "post">;
+type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;
+type DeleteKeyIn = InputOf<"/api/v4/keys/delete", "post">;
+type DeleteKeyOut = OutputOf<"/api/v4/keys/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.

@@ -11,11 +11,11 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldDetailIn = InputOf<"/api/v3/fields/detail", "post">;
-type FieldDetailOut = OutputOf<"/api/v3/fields/detail", "post">;
+type FieldDetailIn = InputOf<"/api/v4/fields/detail", "post">;
+type FieldDetailOut = OutputOf<"/api/v4/fields/detail", "post">;
 
-type UpdateFieldIn = InputOf<"/api/v3/fields/update", "post">;
-type UpdateFieldOut = OutputOf<"/api/v3/fields/update", "post">;
+type UpdateFieldIn = InputOf<"/api/v4/fields/update", "post">;
+type UpdateFieldOut = OutputOf<"/api/v4/fields/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getField = async (fieldId: string): Promise<FieldDetailOut> => {

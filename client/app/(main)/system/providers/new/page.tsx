@@ -9,10 +9,10 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProviderNewIn = InputOf<"/api/v3/providers/new", "post">;
-type ProviderNewOut = OutputOf<"/api/v3/providers/new", "post">;
-type CreateProviderIn = InputOf<"/api/v3/providers/create", "post">;
-type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
+type ProviderNewIn = InputOf<"/api/v4/providers/new", "post">;
+type ProviderNewOut = OutputOf<"/api/v4/providers/new", "post">;
+type CreateProviderIn = InputOf<"/api/v4/providers/create", "post">;
+type CreateProviderOut = OutputOf<"/api/v4/providers/create", "post">;
 
 /** ---- Strongly-typed server action ---- */
 async function createProvider(

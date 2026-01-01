@@ -12,8 +12,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkBundleIn = InputOf<"/api/v3/benchmark/bundle", "post">;
-type BenchmarkBundleOut = OutputOf<"/api/v3/benchmark/bundle", "post">;
+type BenchmarkBundleIn = InputOf<"/api/v4/benchmark/bundle", "post">;
+type BenchmarkBundleOut = OutputOf<"/api/v4/benchmark/bundle", "post">;
 // For backward compatibility, extract evals list structure from bundle
 type EvalsListOut = {
   evals: BenchmarkBundleOut["evals"];

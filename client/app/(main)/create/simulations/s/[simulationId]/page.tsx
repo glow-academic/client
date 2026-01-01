@@ -12,17 +12,17 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationDetailIn = InputOf<"/api/v3/simulations/detail", "post">;
-type SimulationDetailOut = OutputOf<"/api/v3/simulations/detail", "post">;
+type SimulationDetailIn = InputOf<"/api/v4/simulations/detail", "post">;
+type SimulationDetailOut = OutputOf<"/api/v4/simulations/detail", "post">;
 
-type SimulationNewIn = InputOf<"/api/v3/simulations/new", "post">;
-type SimulationNewOut = OutputOf<"/api/v3/simulations/new", "post">;
+type SimulationNewIn = InputOf<"/api/v4/simulations/new", "post">;
+type SimulationNewOut = OutputOf<"/api/v4/simulations/new", "post">;
 
-type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
+type CreateSimulationIn = InputOf<"/api/v4/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/api/v4/simulations/create", "post">;
 
-type UpdateSimulationIn = InputOf<"/api/v3/simulations/update", "post">;
-type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
+type UpdateSimulationIn = InputOf<"/api/v4/simulations/update", "post">;
+type UpdateSimulationOut = OutputOf<"/api/v4/simulations/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

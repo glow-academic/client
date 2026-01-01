@@ -13,8 +13,8 @@ import type { Metadata } from "next";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v3/practice/overview", "post">;
-type PracticeOut = OutputOf<"/api/v3/practice/overview", "post">;
+type PracticeIn = InputOf<"/api/v4/practice/overview", "post">;
+type PracticeOut = OutputOf<"/api/v4/practice/overview", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.

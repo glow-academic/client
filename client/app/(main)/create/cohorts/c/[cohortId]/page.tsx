@@ -12,10 +12,10 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortDetailIn = InputOf<"/api/v3/cohorts/detail", "post">;
-type CohortDetailOut = OutputOf<"/api/v3/cohorts/detail", "post">;
-type UpdateCohortIn = InputOf<"/api/v3/cohorts/update", "post">;
-type UpdateCohortOut = OutputOf<"/api/v3/cohorts/update", "post">;
+type CohortDetailIn = InputOf<"/api/v4/cohorts/detail", "post">;
+type CohortDetailOut = OutputOf<"/api/v4/cohorts/detail", "post">;
+type UpdateCohortIn = InputOf<"/api/v4/cohorts/update", "post">;
+type UpdateCohortOut = OutputOf<"/api/v4/cohorts/update", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */

@@ -12,10 +12,10 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 
-type EvalNewIn = InputOf<"/api/v3/evals/new", "post">;
-type EvalNewOut = OutputOf<"/api/v3/evals/new", "post">;
-type EvalDetailIn = InputOf<"/api/v3/evals/detail", "post">;
-type EvalDetailOut = OutputOf<"/api/v3/evals/detail", "post">;
+type EvalNewIn = InputOf<"/api/v4/evals/new", "post">;
+type EvalNewOut = OutputOf<"/api/v4/evals/new", "post">;
+type EvalDetailIn = InputOf<"/api/v4/evals/detail", "post">;
+type EvalDetailOut = OutputOf<"/api/v4/evals/detail", "post">;
 
 export interface GroupCardGridProps {
   profileId: string;

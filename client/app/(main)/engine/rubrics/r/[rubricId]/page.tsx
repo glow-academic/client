@@ -12,13 +12,13 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
-type RubricDetailOut = OutputOf<"/api/v3/rubrics/detail", "post">;
+type RubricDetailIn = InputOf<"/api/v4/rubrics/detail", "post">;
+type RubricDetailOut = OutputOf<"/api/v4/rubrics/detail", "post">;
 
-type RubricNewIn = InputOf<"/api/v3/rubrics/new", "post">;
-type RubricNewOut = OutputOf<"/api/v3/rubrics/new", "post">;
-type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
-type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
+type RubricNewIn = InputOf<"/api/v4/rubrics/new", "post">;
+type RubricNewOut = OutputOf<"/api/v4/rubrics/new", "post">;
+type UpdateRubricIn = InputOf<"/api/v4/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/api/v4/rubrics/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

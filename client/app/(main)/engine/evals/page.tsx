@@ -11,9 +11,9 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalsListOut = OutputOf<"/api/v3/evals/list", "post">;
-type DeleteEvalIn = InputOf<"/api/v3/evals/delete", "post">;
-type DeleteEvalOut = OutputOf<"/api/v3/evals/delete", "post">;
+type EvalsListOut = OutputOf<"/api/v4/evals/list", "post">;
+type DeleteEvalIn = InputOf<"/api/v4/evals/delete", "post">;
+type DeleteEvalOut = OutputOf<"/api/v4/evals/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getEvalsList = async (): Promise<EvalsListOut> => {

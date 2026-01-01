@@ -10,14 +10,14 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type KeyDetailIn = InputOf<"/api/v3/keys/detail", "post">;
-type KeyDetailOut = OutputOf<"/api/v3/keys/detail", "post">;
+type KeyDetailIn = InputOf<"/api/v4/keys/detail", "post">;
+type KeyDetailOut = OutputOf<"/api/v4/keys/detail", "post">;
 
-type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
-type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
+type UpdateKeyIn = InputOf<"/api/v4/keys/update", "post">;
+type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
 
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
+type DecryptKeyIn = InputOf<"/api/v4/keys/decrypt", "post">;
+type DecryptKeyOut = OutputOf<"/api/v4/keys/decrypt", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

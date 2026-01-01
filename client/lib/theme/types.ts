@@ -5,7 +5,7 @@
 import type { OutputOf } from "@/lib/api/types";
 
 /** ---- Strong type from OpenAPI ---- */
-type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
+type SettingsActiveOut = OutputOf<"/api/v4/settings/active", "post">;
 
 /**
  * ThemeTokens type derived from SettingsActiveOut response.

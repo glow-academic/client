@@ -14,12 +14,12 @@ import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentDetailIn = InputOf<"/api/v3/documents/detail", "post">;
-type DocumentDetailOut = OutputOf<"/api/v3/documents/detail", "post">;
-type UpdateDocumentIn = InputOf<"/api/v3/documents/update", "post">;
-type UpdateDocumentOut = OutputOf<"/api/v3/documents/update", "post">;
-type RenderTemplateIn = InputOf<"/api/v3/documents/render", "post">;
-type RenderTemplateOut = OutputOf<"/api/v3/documents/render", "post">;
+type DocumentDetailIn = InputOf<"/api/v4/documents/detail", "post">;
+type DocumentDetailOut = OutputOf<"/api/v4/documents/detail", "post">;
+type UpdateDocumentIn = InputOf<"/api/v4/documents/update", "post">;
+type UpdateDocumentOut = OutputOf<"/api/v4/documents/update", "post">;
+type RenderTemplateIn = InputOf<"/api/v4/documents/render", "post">;
+type RenderTemplateOut = OutputOf<"/api/v4/documents/render", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;

@@ -1747,9 +1747,10 @@ export function ContentSection({
                   >
                     <div className="flex items-center gap-2">
                       {/* Drag Handle */}
-                      <div
-                        draggable={!isReadonly}
-                        onDragStart={(e) => handleDragStartQuestion(e, index)}
+                      {!isReadonly && (
+                        <div
+                          draggable={!isReadonly}
+                          onDragStart={(e) => handleDragStartQuestion(e, index)}
                           className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
                         >
                           <GripVertical className="h-4 w-4 text-muted-foreground" />

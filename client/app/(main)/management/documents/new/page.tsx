@@ -11,18 +11,18 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/api/v3/documents/list", "post">;
-type DocumentsListOut = OutputOf<"/api/v3/documents/list", "post">;
+type DocumentsListIn = InputOf<"/api/v4/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
 type FinalizeUploadIn = InputOf<
-  "/api/v3/uploads/upload/{upload_id}/finalize",
+  "/api/v4/uploads/upload/{upload_id}/finalize",
   "post"
 >;
 type FinalizeUploadOut = OutputOf<
-  "/api/v3/uploads/upload/{upload_id}/finalize",
+  "/api/v4/uploads/upload/{upload_id}/finalize",
   "post"
 >;
-type CreateDocumentIn = InputOf<"/api/v3/documents/create", "post">;
-type CreateDocumentOut = OutputOf<"/api/v3/documents/create", "post">;
+type CreateDocumentIn = InputOf<"/api/v4/documents/create", "post">;
+type CreateDocumentOut = OutputOf<"/api/v4/documents/create", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;

@@ -10,15 +10,15 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthDetailIn = InputOf<"/api/v3/auth/detail", "post">;
-type AuthDetailOut = OutputOf<"/api/v3/auth/detail", "post">;
+type AuthDetailIn = InputOf<"/api/v4/auth/detail", "post">;
+type AuthDetailOut = OutputOf<"/api/v4/auth/detail", "post">;
 
-type CreateAuthIn = InputOf<"/api/v3/auth/create", "post">;
-type CreateAuthOut = OutputOf<"/api/v3/auth/create", "post">;
+type CreateAuthIn = InputOf<"/api/v4/auth/create", "post">;
+type CreateAuthOut = OutputOf<"/api/v4/auth/create", "post">;
 
-type UpdateAuthIn = InputOf<"/api/v3/auth/update", "post">;
-type UpdateAuthOut = OutputOf<"/api/v3/auth/update", "post">;
-type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
+type UpdateAuthIn = InputOf<"/api/v4/auth/update", "post">;
+type UpdateAuthOut = OutputOf<"/api/v4/auth/update", "post">;
+type AuthNewOut = OutputOf<"/api/v4/auth/new", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

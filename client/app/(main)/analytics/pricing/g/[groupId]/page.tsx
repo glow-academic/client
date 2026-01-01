@@ -13,8 +13,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type PricingGroupDetailIn = InputOf<"/api/v3/pricing/detail", "post">;
-type PricingGroupDetailOut = OutputOf<"/api/v3/pricing/detail", "post">;
+type PricingGroupDetailIn = InputOf<"/api/v4/pricing/detail", "post">;
+type PricingGroupDetailOut = OutputOf<"/api/v4/pricing/detail", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.

@@ -61,7 +61,7 @@ import type { OutputOf } from "@/lib/api/types";
 type AgentModelMapping = NonNullable<AgentDetailOut["model_mapping"]>;
 // Get the proper type from the OpenAPI schema - includes all fields (input_modalities, output_modalities, temperature_levels, reasoning_options, etc.)
 type AgentModelMappingItem = OutputOf<
-  "/api/v3/agents/detail",
+  "/api/v4/agents/detail",
   "post"
 >["model_mapping"][string];
 

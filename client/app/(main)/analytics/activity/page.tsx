@@ -13,12 +13,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type ActivityBundleIn = InputOf<"/api/v3/activity/bundle", "post">;
-type ActivityBundleOut = OutputOf<"/api/v3/activity/bundle", "post">;
-type FeedbackListIn = InputOf<"/api/v3/feedback/list", "post">;
-type FeedbackListOut = OutputOf<"/api/v3/feedback/list", "post">;
-type ActivityListIn = InputOf<"/api/v3/activity/list", "post">;
-type ActivityListOut = OutputOf<"/api/v3/activity/list", "post">;
+type ActivityBundleIn = InputOf<"/api/v4/activity/bundle", "post">;
+type ActivityBundleOut = OutputOf<"/api/v4/activity/bundle", "post">;
+type FeedbackListIn = InputOf<"/api/v4/feedback/list", "post">;
+type FeedbackListOut = OutputOf<"/api/v4/feedback/list", "post">;
+type ActivityListIn = InputOf<"/api/v4/activity/list", "post">;
+type ActivityListOut = OutputOf<"/api/v4/activity/list", "post">;
 
 export type ActivityOut = {
   bundleData: ActivityBundleOut | null;

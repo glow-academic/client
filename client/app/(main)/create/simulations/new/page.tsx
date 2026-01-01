@@ -11,9 +11,9 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationNewOut = OutputOf<"/api/v3/simulations/new", "post">;
-type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
+type SimulationNewOut = OutputOf<"/api/v4/simulations/new", "post">;
+type CreateSimulationIn = InputOf<"/api/v4/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/api/v4/simulations/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

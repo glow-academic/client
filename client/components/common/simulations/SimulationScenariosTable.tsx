@@ -430,7 +430,7 @@ export function SimulationScenariosTable({
                   scenarioMapping as Record<
                     string,
                     OutputOf<
-                      "/api/v3/simulations/list",
+                      "/api/v4/simulations/list",
                       "post"
                     >["scenario_mapping"][string]
                   >

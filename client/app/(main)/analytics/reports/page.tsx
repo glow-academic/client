@@ -15,8 +15,8 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/api/v3/reports", "post">;
-type ReportsOut = OutputOf<"/api/v3/reports", "post">;
+type ReportsIn = InputOf<"/api/v4/reports", "post">;
+type ReportsOut = OutputOf<"/api/v4/reports", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).

@@ -11,10 +11,10 @@ import type { Metadata } from "next";
 import { isHardRefresh } from "@/lib/cache-utils";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalNewIn = InputOf<"/api/v3/evals/new", "post">;
-type EvalNewOut = OutputOf<"/api/v3/evals/new", "post">;
-type CreateEvalIn = InputOf<"/api/v3/evals/create", "post">;
-type CreateEvalOut = OutputOf<"/api/v3/evals/create", "post">;
+type EvalNewIn = InputOf<"/api/v4/evals/new", "post">;
+type EvalNewOut = OutputOf<"/api/v4/evals/new", "post">;
+type CreateEvalIn = InputOf<"/api/v4/evals/create", "post">;
+type CreateEvalOut = OutputOf<"/api/v4/evals/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getEvalDefault = async (): Promise<EvalNewOut> => {

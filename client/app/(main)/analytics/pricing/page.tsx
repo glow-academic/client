@@ -16,10 +16,10 @@ import type { Metadata } from "next";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PricingIn = InputOf<"/api/v3/pricing/analytics", "post">;
-type PricingOut = OutputOf<"/api/v3/pricing/analytics", "post">;
-type PricingRunsIn = InputOf<"/api/v3/pricing/runs", "post">;
-type PricingRunsOut = OutputOf<"/api/v3/pricing/runs", "post">;
+type PricingIn = InputOf<"/api/v4/pricing/analytics", "post">;
+type PricingOut = OutputOf<"/api/v4/pricing/analytics", "post">;
+type PricingRunsIn = InputOf<"/api/v4/pricing/runs", "post">;
+type PricingRunsOut = OutputOf<"/api/v4/pricing/runs", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Pricing analytics responses can get large and exceed Next.js 2MB cache limit (~9MB).

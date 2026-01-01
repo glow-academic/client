@@ -5,7 +5,7 @@ import type { Version } from "./config";
 type M = "get" | "post" | "put" | "patch" | "delete";
 export type PathKey = Extract<keyof paths, string>;
 
-// Version-aware full path union: "/api/v3/..."
+// Version-aware full path union: "/api/v4/..."
 export type VersionedPath<V extends Version> = Extract<
   PathKey,
   `/api/${V}/${string}`

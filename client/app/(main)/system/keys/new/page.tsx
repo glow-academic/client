@@ -9,13 +9,13 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type KeyNewIn = InputOf<"/api/v3/keys/new", "post">;
-type KeyNewOut = OutputOf<"/api/v3/keys/new", "post">;
-type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
-type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
+type KeyNewIn = InputOf<"/api/v4/keys/new", "post">;
+type KeyNewOut = OutputOf<"/api/v4/keys/new", "post">;
+type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
+type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
 
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
+type DecryptKeyIn = InputOf<"/api/v4/keys/decrypt", "post">;
+type DecryptKeyOut = OutputOf<"/api/v4/keys/decrypt", "post">;
 
 /** ---- Strongly-typed server actions ---- */
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {

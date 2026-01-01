@@ -16,10 +16,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/api/v3/home/overview", "post">;
-type HomeOut = OutputOf<"/api/v3/home/overview", "post">;
-type HomeHistoryIn = InputOf<"/api/v3/home/history", "post">;
-type HomeHistoryOut = OutputOf<"/api/v3/home/history", "post">;
+type HomeIn = InputOf<"/api/v4/home/overview", "post">;
+type HomeOut = OutputOf<"/api/v4/home/overview", "post">;
+type HomeHistoryIn = InputOf<"/api/v4/home/history", "post">;
+type HomeHistoryOut = OutputOf<"/api/v4/home/history", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Home overview responses can get large and exceed Next.js 2MB cache limit.

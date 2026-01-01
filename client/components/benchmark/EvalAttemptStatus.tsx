@@ -37,7 +37,7 @@ import type {
   AgentsListOut,
 } from "@/app/(main)/benchmark/a/[attemptId]/page";
 
-type EvalAttemptFullOut = OutputOf<"/api/v3/attempts/eval", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/eval", "post">;
 
 export interface EvalAttemptStatusProps {
   attemptId: string;

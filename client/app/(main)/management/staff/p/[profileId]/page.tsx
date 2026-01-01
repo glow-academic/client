@@ -12,10 +12,10 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffDetailIn = InputOf<"/api/v3/profile/detail", "post">;
-type StaffDetailOut = OutputOf<"/api/v3/profile/detail", "post">;
-type UpdateStaffIn = InputOf<"/api/v3/profile/update", "post">;
-type UpdateStaffOut = OutputOf<"/api/v3/profile/update", "post">;
+type StaffDetailIn = InputOf<"/api/v4/profile/detail", "post">;
+type StaffDetailOut = OutputOf<"/api/v4/profile/detail", "post">;
+type UpdateStaffIn = InputOf<"/api/v4/profile/update", "post">;
+type UpdateStaffOut = OutputOf<"/api/v4/profile/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
