@@ -526,15 +526,64 @@ export default function Persona({
     return false;
   }, [isEditMode, personaData]);
 
-  // Extract examples from example_mapping
+  // Extract examples from example_mapping or convert from examples array
   const exampleMapping = useMemo(() => {
-    return (
+    // Check if example_mapping already exists (backward compatibility)
+    if (
+      personaData &&
+      "example_mapping" in personaData &&
       (
         personaData as PersonaDetailOut & {
           example_mapping?: Record<string, { name: string }>;
         }
-      )?.example_mapping || {}
-    );
+      ).example_mapping
+    ) {
+      return (
+        (
+          personaData as PersonaDetailOut & {
+            example_mapping?: Record<string, { name: string }>;
+          }
+        ).example_mapping || {}
+      );
+    }
+    // Convert examples array to mapping (current pattern)
+    if (
+      personaData &&
+      "examples" in personaData &&
+      Array.isArray(
+        (
+          personaData as PersonaDetailOut & {
+            examples?: Array<{
+              example_id: string | null;
+              name: string | null;
+              description?: string | null;
+            }>;
+          }
+        ).examples
+      )
+    ) {
+      const examples =
+        (
+          personaData as PersonaDetailOut & {
+            examples?: Array<{
+              example_id: string | null;
+              name: string | null;
+              description?: string | null;
+            }>;
+          }
+        ).examples || [];
+      const mapping: Record<string, { name: string }> = {};
+      examples.forEach((ex) => {
+        if (ex.example_id) {
+          // Convert UUID to string for mapping key
+          mapping[String(ex.example_id)] = {
+            name: ex.name || "",
+          };
+        }
+      });
+      return mapping;
+    }
+    return {};
   }, [personaData]);
 
   // Extract examples from example_ids and example_mapping
@@ -617,23 +666,27 @@ export default function Persona({
   const hasInitializedRef = React.useRef(false);
 
   useEffect(() => {
-    if (!personaData || hasInitializedRef.current) return;
+    if (!personaData || hasInitializedRef.current) {
+      return;
+    }
 
-    // Check if URL has any form field params (if so, URL is source of truth, don't initialize)
+    // Check if URL has any actual form field values (not filter/search params)
+    // Filter params (colorSearch, iconSearch, colorShowSelected, iconShowSelected) should NOT prevent initialization
+    // Only check for meaningful form field values - empty strings or undefined should not prevent initialization
     const hasUrlFormData =
-      formData["name"] ||
-      formData["description"] ||
-      formData["color"] ||
-      formData["icon"] ||
-      formData["active"] !== undefined ||
-      formData["instructions"] ||
-      formData["departmentIds"] ||
-      formData["parameterIds"] ||
-      formData["parameterFieldIds"] ||
-      formData["examples"];
+      (formData["name"] && typeof formData["name"] === "string" && formData["name"].trim() !== "") ||
+      (formData["description"] && typeof formData["description"] === "string" && formData["description"].trim() !== "") ||
+      (formData["color"] && typeof formData["color"] === "string" && formData["color"].trim() !== "") ||
+      (formData["icon"] && typeof formData["icon"] === "string" && formData["icon"].trim() !== "") ||
+      (formData["active"] !== undefined && formData["active"] !== null && typeof formData["active"] === "boolean") ||
+      (formData["instructions"] && typeof formData["instructions"] === "string" && formData["instructions"].trim() !== "") ||
+      (Array.isArray(formData["departmentIds"]) && formData["departmentIds"].length > 0) ||
+      (Array.isArray(formData["parameterIds"]) && formData["parameterIds"].length > 0) ||
+      (Array.isArray(formData["parameterFieldIds"]) && formData["parameterFieldIds"].length > 0) ||
+      (Array.isArray(formData["examples"]) && formData["examples"].length > 0);
 
     if (hasUrlFormData) {
-      // URL params exist - they are the source of truth, don't override
+      // URL params exist with actual form field values - they are the source of truth, don't override
       hasInitializedRef.current = true;
       return;
     }
@@ -643,9 +696,12 @@ export default function Persona({
     if (isEditMode && "department_ids" in personaData) {
       const personaDetail = personaData as PersonaDetailOut;
       const deptIds = personaDetail.department_ids || [];
-      const exampleIds =
-        (personaDetail as PersonaDetailOut & { example_ids?: string[] })
-          ?.example_ids || [];
+      const exampleIdsRaw =
+        (personaDetail as PersonaDetailOut & {
+          example_ids?: Array<string | { toString(): string }>;
+        })?.example_ids || [];
+      // Convert example_ids to strings for mapping lookup (UUIDs may come as objects or strings)
+      const exampleIds = exampleIdsRaw.map((id) => String(id));
       const examples = getExamplesFromMapping(exampleIds, exampleMapping);
 
       // Only set fields that have values (don't write nulls/empty strings to URL)
@@ -1206,10 +1262,17 @@ export default function Persona({
                     | string
                     | null
                     | undefined;
-                  const currentColor =
+                  const currentColorRaw =
                     colorValue !== undefined
                       ? colorValue
                       : (personaData as { color?: string })?.color || "#000000";
+                  
+                  // Normalize currentColor to match preset color format (lowercase) for SelectableGrid comparison
+                  const currentColor = currentColorRaw
+                    ? currentColorRaw.toLowerCase().startsWith("#")
+                      ? currentColorRaw.toLowerCase()
+                      : `#${currentColorRaw.toLowerCase()}`
+                    : "#000000";
 
                   const colorShowSelected =
                     (formData.colorShowSelected as
@@ -1263,11 +1326,16 @@ export default function Persona({
                               | string
                               | null
                               | undefined;
+                            const normalizedCurrent = current
+                              ? current.toLowerCase().startsWith("#")
+                                ? current.toLowerCase()
+                                : `#${current.toLowerCase()}`
+                              : null;
                             setStepFormData({
-                              color: colorHex === current ? null : colorHex,
+                              color: colorHex === normalizedCurrent ? null : colorHex,
                             });
                           }}
-                          getId={(color) => color.hex}
+                          getId={(color) => color.hex.toLowerCase()}
                           renderItem={(color, isSelected) => (
                             <div
                               className={cn(
@@ -1311,7 +1379,7 @@ export default function Persona({
                         <div className="flex gap-2">
                           <Input
                             id="colorInput"
-                            value={currentColor || ""}
+                            value={currentColorRaw || ""}
                             onChange={(e) => {
                               const value = e.target.value;
                               // Allow any hex value (with or without #, any length)
@@ -1333,7 +1401,7 @@ export default function Persona({
                           <div
                             className="w-10 h-10 rounded border shrink-0"
                             style={{
-                              backgroundColor: currentColor || "#000000",
+                              backgroundColor: currentColorRaw || "#000000",
                             }}
                           />
                         </div>

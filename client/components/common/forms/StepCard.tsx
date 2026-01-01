@@ -172,7 +172,7 @@ export function StepCard({
                       editableTitle.onChange(editableTitle.defaultName);
                     }
                   }}
-                  className="w-full text-lg font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                  className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20 min-w-[300px]"
                   placeholder={editableTitle.placeholder || stepTitle}
                   required={editableTitle.required}
                   disabled={isReadonly}
