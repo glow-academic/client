@@ -96,25 +96,6 @@ export function AgentModelSection({
 
   const handleSelect = (selectedModelId: string) => {
     if (isReadonly) return;
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "AgentModelSection.tsx:99",
-        message: "handleSelect called",
-        data: {
-          selectedModelId,
-          currentModelId: modelId,
-          willDeselect: selectedModelId === modelId,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "C",
-      }),
-    }).catch(() => {});
-    // #endregion
     // Allow unselecting by clicking the same model again
     if (selectedModelId === modelId) {
       onModelChange("");

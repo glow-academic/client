@@ -274,9 +274,7 @@ export function ProfileProviderClient({
       // Listen for simulations_started event (used by start.py)
       socket.on(
         "simulations_started",
-        (
-          data: Parameters<ServerToClientEvents["simulations_started"]>[0]
-        ) => {
+        (data: Parameters<ServerToClientEvents["simulations_started"]>[0]) => {
           setStartingSimulationId(null);
           if (data.success) {
             toast.success(data.message);
@@ -463,34 +461,6 @@ export function ProfileProviderClient({
     },
     [isConnected]
   );
-
-  // #region agent log
-  React.useEffect(() => {
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "profile-context.tsx:416",
-        message: "Profile context value computed",
-        data: {
-          hasInitial: !!initial,
-          hasEffectiveProfile: !!effectiveProfile,
-          hasResolvedActiveProfile: !!resolvedActiveProfile,
-          effectiveProfileId: effectiveProfile?.id,
-          resolvedActiveProfileId: resolvedActiveProfile?.id,
-          bootstrapProfileId: bootstrapProfile?.id,
-          initialKeys: initial ? Object.keys(initial).filter(k => k.includes('section') || k.includes('redirect') || k.includes('scoped')) : [],
-          availableSectionsCamel: (initial as any)?.availableSections,
-          availableSectionsSnake: (initial as any)?.available_sections,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run9",
-        hypothesisId: "L",
-      }),
-    }).catch(() => {});
-  }, [initial, effectiveProfile, resolvedActiveProfile, bootstrapProfile]);
-  // #endregion
 
   const value: ProfileContextType = {
     // Profile data

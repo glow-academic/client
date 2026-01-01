@@ -22,6 +22,7 @@ export interface ReorderableListProps<T extends string = string> {
   maxItems?: number;
   addButtonLabel?: string;
   disabled?: boolean;
+  itemPlaceholder?: string;
 }
 
 // Component for item input with autocomplete
@@ -169,6 +170,7 @@ export function ReorderableList<T extends string>({
   maxItems = 10,
   addButtonLabel = "Add item",
   disabled = false,
+  itemPlaceholder = "Item",
 }: ReorderableListProps<T>) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -216,7 +218,7 @@ export function ReorderableList<T extends string>({
       index={index}
       value={item || ""}
       onChange={(value) => updateItem(index, value)}
-      placeholder={`Item ${index + 1}`}
+      placeholder={`${itemPlaceholder} ${index + 1}`}
       suggestions={suggestions}
       disabled={disabled}
       draggedIndex={draggedIndex}

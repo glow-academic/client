@@ -462,25 +462,6 @@ export function UnifiedSidebar({
       return filteredMenu;
     }
 
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "UnifiedSidebar.tsx:531",
-        message: "navMain built",
-        data: {
-          menuLength: menu.length,
-          menuSections: menu.map((m) => m.title),
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run8",
-        hypothesisId: "K",
-      }),
-    }).catch(() => {});
-    // #endregion
-
     return menu;
   }, [effectiveProfile, searchTerm, availableSections]);
 

@@ -56,6 +56,53 @@ import {
   type Parser,
 } from "nuqs";
 
+// Color name mapping for common hex colors (similar to Settings)
+const getColorName = (hex: string): string => {
+  const colorMap: Record<string, string> = {
+    "#000000": "Black",
+    "#FFFFFF": "White",
+    "#FF0000": "Red",
+    "#00FF00": "Green",
+    "#0000FF": "Blue",
+    "#FFFF00": "Yellow",
+    "#FF00FF": "Magenta",
+    "#00FFFF": "Cyan",
+    "#FFA500": "Orange",
+    "#800080": "Purple",
+    "#FFC0CB": "Pink",
+    "#A52A2A": "Brown",
+    "#808080": "Gray",
+    "#FFD700": "Gold",
+    "#C0C0C0": "Silver",
+    "#008000": "Dark Green",
+    "#000080": "Navy",
+    "#800000": "Maroon",
+    "#EF4444": "Red",
+    "#F97316": "Orange",
+    "#F59E0B": "Amber",
+    "#EAB308": "Yellow",
+    "#84CC16": "Lime",
+    "#22C55E": "Green",
+    "#10B981": "Emerald",
+    "#14B8A6": "Teal",
+    "#06B6D4": "Cyan",
+    "#0EA5E9": "Sky",
+    "#3B82F6": "Blue",
+    "#6366F1": "Indigo",
+    "#8B5CF6": "Violet",
+    "#A855F7": "Purple",
+    "#D946EF": "Fuchsia",
+    "#EC4899": "Pink",
+    "#F43F5E": "Rose",
+  };
+
+  const normalizedHex = hex.toUpperCase().startsWith("#")
+    ? hex.toUpperCase()
+    : `#${hex.toUpperCase()}`;
+
+  return colorMap[normalizedHex] || "Custom";
+};
+
 export interface PersonaProps {
   personaId?: string;
   mode?: "create" | "edit";
@@ -318,17 +365,52 @@ export default function Persona({
   }, [personaData]);
 
   // Filter colors client-side based on local search state
+  // Also include custom colors that aren't in the preset list
   const presetColors = useMemo(() => {
+    // Get current color from form data or default
+    const colorValue = formData["color"] as string | null | undefined;
+    const currentColor =
+      colorValue !== undefined
+        ? colorValue
+        : (personaData as { color?: string })?.color || null;
+
+    // Normalize current color for comparison
+    const normalizedCurrentColor = currentColor
+      ? currentColor.toUpperCase().startsWith("#")
+        ? currentColor.toUpperCase()
+        : `#${currentColor.toUpperCase()}`
+      : null;
+
+    // Check if current color is custom (not in preset list)
+    const isCustomColor =
+      normalizedCurrentColor &&
+      !presetColorsAll.some(
+        (c) => c.hex.toUpperCase() === normalizedCurrentColor
+      );
+
+    // Build colors list: custom color first (if exists), then preset colors
+    let colors = [...presetColorsAll];
+    if (isCustomColor && normalizedCurrentColor) {
+      colors = [
+        {
+          hex: normalizedCurrentColor,
+          name: getColorName(normalizedCurrentColor),
+        },
+        ...presetColorsAll,
+      ];
+    }
+
+    // Filter by search term if present
     if (!localColorSearch.trim()) {
-      return presetColorsAll;
+      return colors;
     }
     const searchLower = localColorSearch.toLowerCase();
-    return presetColorsAll.filter(
+    return colors.filter(
       (color) =>
         color.name.toLowerCase().includes(searchLower) ||
         color.hex.toLowerCase().includes(searchLower)
     );
-  }, [presetColorsAll, localColorSearch]);
+  }, [presetColorsAll, localColorSearch, formData, personaData]);
 
   const suggestedIconsAll = useMemo(
     () =>
@@ -1124,18 +1206,6 @@ export default function Persona({
                       ? colorValue
                       : (personaData as { color?: string })?.color || "#000000";
 
-                  const handleHexInputChange = (
-                    e: React.ChangeEvent<HTMLInputElement>
-                  ) => {
-                    const value = e.target.value;
-                    // Allow any hex value (with or without #, any length)
-                    if (value === "" || /^#?[0-9A-Fa-f]*$/.test(value)) {
-                      setStepFormData({
-                        color: value.startsWith("#") ? value : `#${value}`,
-                      });
-                    }
-                  };
-
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1215,20 +1285,33 @@ export default function Persona({
                         />
                       )}
 
-                      {/* Hex Color Input */}
+                      {/* Hex Input */}
                       <div className="space-y-2">
                         <Label htmlFor="colorInput">Hex Color</Label>
                         <div className="flex gap-2">
                           <Input
                             id="colorInput"
                             value={currentColor || ""}
-                            onChange={handleHexInputChange}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // Allow any hex value (with or without #, any length)
+                              if (
+                                value === "" ||
+                                /^#?[0-9A-Fa-f]*$/.test(value)
+                              ) {
+                                setStepFormData({
+                                  color: value.startsWith("#")
+                                    ? value
+                                    : `#${value}`,
+                                });
+                              }
+                            }}
                             placeholder="#000000"
                             className="flex-1"
                             disabled={isReadonly}
                           />
                           <div
-                            className="w-10 h-10 rounded border"
+                            className="w-10 h-10 rounded border shrink-0"
                             style={{
                               backgroundColor: currentColor || "#000000",
                             }}
@@ -1418,6 +1501,7 @@ export default function Persona({
                           maxItems={10}
                           addButtonLabel="Add example"
                           disabled={isReadonly}
+                          itemPlaceholder="Message"
                         />
                       </div>
                     </StepCard>
