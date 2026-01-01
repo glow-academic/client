@@ -19,7 +19,7 @@ from app.sql.types import (
 )
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/rubrics/create_rubric_complete.sql"
+SQL_PATH = "app/sql/v4/rubric/create_rubric_complete.sql"
 
 
 router = APIRouter()

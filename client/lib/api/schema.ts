@@ -144,7 +144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profile_context": {
+    "/api/v4/profile/context": {
         parameters: {
             query?: never;
             header?: never;

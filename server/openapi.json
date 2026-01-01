@@ -573,7 +573,7 @@
         ]
       }
     },
-    "/api/v4/profile_context": {
+    "/api/v4/profile/context": {
       "post": {
         "tags": [
           "v4",
