@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
-import { api } from "@/lib/api/client";
 
 import type {
   CreatePersonaIn,
@@ -89,10 +88,6 @@ export default function Persona({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentExamples, setCurrentExamples] = useState<string[]>([]);
-  // State for filtered data from server (updated when search params change)
-  const [filteredPersonaData, setFilteredPersonaData] = useState<
-    PersonaDetailOut | PersonaNewOut | null
-  >(null);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -123,92 +118,24 @@ export default function Persona({
     shallow: false,
   });
 
-  // Use filtered data if available (from client-side refetch), otherwise use server data
-  const activePersonaData = filteredPersonaData || personaData;
-
-  // Debounce search terms before updating URL params
-  const debouncedColorSearch = useDebouncedSearch(
+  // Debounce search terms before updating URL params (triggers server-side re-fetch via Next.js)
+  useDebouncedSearch(
     formData.colorSearch,
     (term) => setFormData({ colorSearch: term || null }),
     300
   );
-  const debouncedIconSearch = useDebouncedSearch(
+  useDebouncedSearch(
     formData.iconSearch,
     (term) => setFormData({ iconSearch: term || null }),
     300
   );
-
-  // Client-side refetch when search params change (debounced)
-  useEffect(() => {
-    // Only refetch if search terms have changed (not on initial load)
-    if (debouncedColorSearch === null && debouncedIconSearch === null) {
-      return;
-    }
-
-    if (!isEditMode) {
-      // Create mode - refetch new endpoint
-      const refetchNew = async () => {
-        try {
-          const result = await api.post(
-            "/personas/new",
-            {
-              body: {
-                color_search: debouncedColorSearch || undefined,
-                icon_search: debouncedIconSearch || undefined,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              } as any, // Type assertion needed until OpenAPI schema is regenerated
-            },
-            {
-              cache: "no-store",
-              headers: {
-                "X-Bypass-Cache": "1",
-              },
-            }
-          );
-          setFilteredPersonaData(result);
-        } catch (error) {
-          // Silently fail - keep using server data
-          console.error("Failed to refetch persona data:", error);
-        }
-      };
-      refetchNew();
-    } else if (personaId) {
-      // Edit mode - refetch detail endpoint
-      const refetchDetail = async () => {
-        try {
-          const result = await api.post(
-            "/personas/detail",
-            {
-              body: {
-                persona_id: personaId,
-                color_search: debouncedColorSearch || undefined,
-                icon_search: debouncedIconSearch || undefined,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              } as any, // Type assertion needed until OpenAPI schema is regenerated
-            },
-            {
-              cache: "no-store",
-              headers: {
-                "X-Bypass-Cache": "1",
-              },
-            }
-          );
-          setFilteredPersonaData(result);
-        } catch (error) {
-          // Silently fail - keep using server data
-          console.error("Failed to refetch persona data:", error);
-        }
-      };
-      refetchDetail();
-    }
-  }, [debouncedColorSearch, debouncedIconSearch, personaId, isEditMode]);
 
   // Get preset colors and valid icons from server (already filtered)
   // Server returns colors as list of objects: [{hex: "#ef4444", name: "Red"}, ...]
   const presetColors = useMemo(() => {
     const colors =
       (
-        activePersonaData as PersonaDetailOut & {
+        personaData as PersonaDetailOut & {
           preset_colors?: Array<{ hex: string; name: string }> | string[];
         }
       )?.preset_colors || [];
@@ -219,26 +146,26 @@ export default function Persona({
       return (colors as string[]).map((hex) => ({ hex, name: hex }));
     }
     return colors as Array<{ hex: string; name: string }>;
-  }, [activePersonaData]);
+  }, [personaData]);
 
   const suggestedIcons = useMemo(
     () =>
       (
-        activePersonaData as PersonaDetailOut & {
+        personaData as PersonaDetailOut & {
           suggested_icons?: string[];
         }
       )?.suggested_icons || [],
-    [activePersonaData]
+    [personaData]
   );
 
   const validIcons = useMemo(
     () =>
       (
-        activePersonaData as PersonaDetailOut & {
+        personaData as PersonaDetailOut & {
           valid_icons?: string[];
         }
       )?.valid_icons || [],
-    [activePersonaData]
+    [personaData]
   );
 
   // Combine suggested icons first, then valid icons

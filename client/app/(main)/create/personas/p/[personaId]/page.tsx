@@ -5,13 +5,15 @@
  * 06/08/2025
  */
 
-import Persona from "@/components/personas/Persona";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
+type PersonaDetailIn = InputOf<"/api/v3/personas/detail", "post">;
 type PersonaDetailOut = OutputOf<"/api/v3/personas/detail", "post">;
 type PersonaNewIn = InputOf<"/api/v3/personas/new", "post">;
 type PersonaNewOut = OutputOf<"/api/v3/personas/new", "post">;
@@ -24,29 +26,32 @@ type UpdatePersonaOut = OutputOf<"/api/v3/personas/update", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getPersona = async (
-  personaId: string,
+  input: PersonaDetailIn
 ): Promise<PersonaDetailOut> => {
-  return api.post(
-    "/personas/detail",
-    { body: { personaId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
+  return api.post("/personas/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
     },
-  );
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ personaId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { personaId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const persona = await getPersona(personaId);
+    const input: PersonaDetailIn = {
+      body: {
+        persona_id: personaId,
+        color_search: null,
+        icon_search: null,
+      } as PersonaDetailIn["body"],
+    };
+    const persona = await getPersona(input);
     return {
       title: `${persona?.name || "Persona"} Persona`,
       description: `${persona?.name ? `${persona.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description ? ` ${persona.description}` : ""}`,
@@ -64,7 +69,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createPersona(
-  input: CreatePersonaIn,
+  input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
@@ -73,7 +78,7 @@ async function createPersona(
 }
 
 async function updatePersona(
-  input: UpdatePersonaIn,
+  input: UpdatePersonaIn
 ): Promise<UpdatePersonaOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
@@ -84,15 +89,46 @@ async function updatePersona(
 /** ---- Server renders client with typed data and actions ---- */
 export default async function PersonaEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ personaId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { personaId } = await params;
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch persona detail (always fresh - source of truth)
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for persona search params
+  const personaSearchParams = {
+    colorSearch: parseAsString,
+    iconSearch: parseAsString,
+  };
+  const loadPersonaSearchParams = createLoader(personaSearchParams);
+  const q = loadPersonaSearchParams(searchParamsObj);
+
+  // Fetch persona detail (always fresh - source of truth) with filter params
+  // Note: OpenAPI schema may need regeneration to include color_search/icon_search
   try {
-    const personaDetail = await getPersona(personaId);
+    const input: PersonaDetailIn = {
+      body: {
+        persona_id: personaId,
+        color_search: q.colorSearch ?? null,
+        icon_search: q.iconSearch ?? null,
+      } as PersonaDetailIn["body"],
+    };
+    const personaDetail = await getPersona(input);
 
     return (
       <div
@@ -134,9 +170,10 @@ export default async function PersonaEditPage({
 export type {
   CreatePersonaIn,
   CreatePersonaOut,
+  PersonaDetailIn,
+  PersonaDetailOut,
   PersonaNewIn,
   PersonaNewOut,
-  PersonaDetailOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
 };
