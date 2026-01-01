@@ -172,15 +172,15 @@ async def check_tus_workflow() -> ServiceCheckResult:
     """Check TUS upload workflow via HTTP canary upload.
 
     Full TUS workflow check via HTTP:
-    - POST /api/v3/uploads/upload (creation-with-upload)
-    - HEAD /api/v3/uploads/upload/{id} to verify
+    - POST /api/v4/uploads/upload (creation-with-upload)
+    - HEAD /api/v4/uploads/upload/{id} to verify
 
     Returns:
         ServiceCheckResult with ok status, latency, and error message
     """
     start = time.perf_counter()
     base_url = os.getenv("HEALTH_BASE_URL", "http://localhost:8000").rstrip("/")
-    url = f"{base_url}/api/v3/uploads/upload"
+    url = f"{base_url}/api/v4/uploads/upload"
 
     # tiny "file"
     body = b"healthcheck"
@@ -201,7 +201,7 @@ async def check_tus_workflow() -> ServiceCheckResult:
                 return ServiceCheckResult(
                     False,
                     latency,
-                    f"POST /api/v3/uploads/upload -> {r.status_code}",
+                    f"POST /api/v4/uploads/upload -> {r.status_code}",
                 )
 
             location = r.headers.get("Location")

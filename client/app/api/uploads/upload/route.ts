@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         // Rewrite backend location to BFF location
         // Handle both with and without app prefix: /api/v4/uploads/upload/... or /prefix/api/v4/uploads/upload/...
         const location = value.replace(
-          /\/api\/v3\/uploads\/upload\//,
+          /\/api\/v4\/uploads\/upload\//,
           "/api/uploads/upload/",
         );
         headers.set(key, location);
