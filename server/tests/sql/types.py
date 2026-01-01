@@ -1055,13 +1055,6 @@ class CreateTestRubricSqlParams(BaseModel):
 class CreateTestRubricSqlRow(BaseModel):
 
     rubric_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    points: int | None = None
-    pass_points: int | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestRubricApiRequest(BaseModel):
 
@@ -1074,13 +1067,6 @@ class CreateTestRubricApiRequest(BaseModel):
 class CreateTestRubricApiResponse(BaseModel):
 
     rubric_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    points: int | None = None
-    pass_points: int | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1192,35 +1178,24 @@ class GetRubricDepartmentLinksApiResponse(BaseModel):
 
 class CreateTestScenarioSqlParams(BaseModel):
 
-    scenario_name: str | None = None
-    scenario_problem_statement: str | None = None
+    name: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.scenario_name,
-            self.scenario_problem_statement,
+            self.name,
         )
 
 class CreateTestScenarioSqlRow(BaseModel):
 
     scenario_id: UUID | None = None
-    name: str | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
 
 class CreateTestScenarioApiRequest(BaseModel):
 
-    scenario_name: str | None = None
-    scenario_problem_statement: str | None = None
+    name: str | None = None
 
 class CreateTestScenarioApiResponse(BaseModel):
 
     scenario_id: UUID | None = None
-    name: str | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
 
 
 
@@ -1480,6 +1455,436 @@ class GetSuperadminAliasApiResponse(BaseModel):
     profile_id: UUID | None = None
     email: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: test_get_activity_by_message_and_endpoint_v4_complete
+
+class TestGetActivityByMessageAndEndpointV4CompleteSqlParams(BaseModel):
+
+    p_message: str
+    p_endpoint: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_message,
+            self.p_endpoint,
+        )
+
+class TestGetActivityByMessageAndEndpointV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+    message: str | None = None
+    endpoint: str | None = None
+    profile_id: UUID | None = None
+    error: bool | None = None
+    created_at: str | None = None
+
+class TestGetActivityByMessageAndEndpointV4CompleteApiRequest(BaseModel):
+
+    p_message: str
+    p_endpoint: str
+
+class TestGetActivityByMessageAndEndpointV4CompleteApiResponse(BaseModel):
+
+    id: UUID | None = None
+    message: str | None = None
+    endpoint: str | None = None
+    profile_id: UUID | None = None
+    error: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: test_get_activity_by_message_v4_complete
+
+class TestGetActivityByMessageV4CompleteSqlParams(BaseModel):
+
+    p_message: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_message,
+        )
+
+class TestGetActivityByMessageV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+    message: str | None = None
+    endpoint: str | None = None
+    profile_id: UUID | None = None
+    error: bool | None = None
+    created_at: str | None = None
+
+class TestGetActivityByMessageV4CompleteApiRequest(BaseModel):
+
+    p_message: str
+
+class TestGetActivityByMessageV4CompleteApiResponse(BaseModel):
+
+    id: UUID | None = None
+    message: str | None = None
+    endpoint: str | None = None
+    profile_id: UUID | None = None
+    error: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: helpers/test_create_test_benchmark_attempt_v4_complete
+
+class Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlParams(BaseModel):
+
+    eval_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+        )
+
+class Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlRow(BaseModel):
+
+    attempt_id: UUID | None = None
+
+class Helpers/testCreateTestBenchmarkAttemptV4CompleteApiRequest(BaseModel):
+
+    eval_id: UUID
+
+class Helpers/testCreateTestBenchmarkAttemptV4CompleteApiResponse(BaseModel):
+
+    attempt_id: UUID | None = None
+
+
+
+# Generated from: helpers/test_create_test_guest_profile_v4_complete
+
+class Helpers/testCreateTestGuestProfileV4CompleteSqlParams(BaseModel):
+
+    email: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.email,
+        )
+
+class Helpers/testCreateTestGuestProfileV4CompleteSqlRow(BaseModel):
+
+    guest_id: UUID | None = None
+    email: str | None = None
+
+class Helpers/testCreateTestGuestProfileV4CompleteApiRequest(BaseModel):
+
+    email: str | None = None
+
+class Helpers/testCreateTestGuestProfileV4CompleteApiResponse(BaseModel):
+
+    guest_id: UUID | None = None
+    email: str | None = None
+
+
+
+# Generated from: helpers/test_create_test_rubric_v4_complete
+
+class Helpers/testCreateTestRubricV4CompleteSqlParams(BaseModel):
+
+    name: str | None = None
+    description: str | None = None
+    points: int | None = 100
+    pass_points: int | None = 70
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.points,
+            self.pass_points,
+        )
+
+class Helpers/testCreateTestRubricV4CompleteSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+
+class Helpers/testCreateTestRubricV4CompleteApiRequest(BaseModel):
+
+    name: str | None = None
+    description: str | None = None
+    points: int | None = 100
+    pass_points: int | None = 70
+
+class Helpers/testCreateTestRubricV4CompleteApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+
+
+
+# Generated from: helpers/test_create_test_run_v4_complete
+
+class Helpers/testCreateTestRunV4CompleteSqlParams(BaseModel):
+
+    department_id: UUID
+    model_id: UUID
+    agent_id: UUID | None = None
+    entity_type: str | None = None
+    profile_id: UUID | None = None
+    entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.model_id,
+            self.agent_id,
+            self.entity_type,
+            self.profile_id,
+            self.entity_id,
+        )
+
+class Helpers/testCreateTestRunV4CompleteSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    department_id: UUID | None = None
+    model_id: UUID | None = None
+    agent_id: UUID | None = None
+
+class Helpers/testCreateTestRunV4CompleteApiRequest(BaseModel):
+
+    department_id: UUID
+    model_id: UUID
+    agent_id: UUID | None = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
+
+class Helpers/testCreateTestRunV4CompleteApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    department_id: UUID | None = None
+    model_id: UUID | None = None
+    agent_id: UUID | None = None
+
+
+
+# Generated from: helpers/test_create_test_scenario_v4_complete
+
+class Helpers/testCreateTestScenarioV4CompleteSqlParams(BaseModel):
+
+    name: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+        )
+
+class Helpers/testCreateTestScenarioV4CompleteSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+
+class Helpers/testCreateTestScenarioV4CompleteApiRequest(BaseModel):
+
+    name: str | None = None
+
+class Helpers/testCreateTestScenarioV4CompleteApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+
+
+
+# Generated from: helpers/test_create_test_test_v4_complete
+
+class Helpers/testCreateTestTestV4CompleteSqlParams(BaseModel):
+
+    title: str | None = None
+    run_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.title,
+            self.run_id,
+        )
+
+class Helpers/testCreateTestTestV4CompleteSqlRow(BaseModel):
+
+    test_id: UUID | None = None
+
+class Helpers/testCreateTestTestV4CompleteApiRequest(BaseModel):
+
+    title: str | None = None
+    run_id: UUID | None = None
+
+class Helpers/testCreateTestTestV4CompleteApiResponse(BaseModel):
+
+    test_id: UUID | None = None
+
+
+
+# Generated from: helpers/test_get_chat_by_id_v4_complete
+
+class Helpers/testGetChatByIdV4CompleteSqlParams(BaseModel):
+
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+        )
+
+class Helpers/testGetChatByIdV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+    completed: bool | None = None
+    created_at: str | None = None
+
+class Helpers/testGetChatByIdV4CompleteApiRequest(BaseModel):
+
+    chat_id: UUID
+
+class Helpers/testGetChatByIdV4CompleteApiResponse(BaseModel):
+
+    id: UUID | None = None
+    completed: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: helpers/test_get_developer_messages_by_run_v4_complete
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteSqlRow(BaseModel):
+
+    message_count: int | None = None
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteApiRequest(BaseModel):
+
+    run_id: UUID
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteApiResponse(BaseModel):
+
+    message_count: int | None = None
+
+
+
+# Generated from: helpers/test_get_eval_by_active_v4_complete
+
+class Helpers/testGetEvalByActiveV4CompleteSqlParams(BaseModel):
+
+    pass
+
+class Helpers/testGetEvalByActiveV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class Helpers/testGetEvalByActiveV4CompleteApiRequest(BaseModel):
+
+    pass
+
+class Helpers/testGetEvalByActiveV4CompleteApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
+# Generated from: helpers/test_get_profile_activity_v4_complete
+
+class Helpers/testGetProfileActivityV4CompleteSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class Helpers/testGetProfileActivityV4CompleteSqlRow(BaseModel):
+
+    last_active: str | None = None
+
+class Helpers/testGetProfileActivityV4CompleteApiRequest(BaseModel):
+
+    pass
+
+class Helpers/testGetProfileActivityV4CompleteApiResponse(BaseModel):
+
+    last_active: str | None = None
+
+
+
+# Generated from: helpers/test_get_profile_by_id_v4_complete
+
+class Helpers/testGetProfileByIdV4CompleteSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class Helpers/testGetProfileByIdV4CompleteSqlRow(BaseModel):
+
+    active: bool | None = None
+
+class Helpers/testGetProfileByIdV4CompleteApiRequest(BaseModel):
+
+    pass
+
+class Helpers/testGetProfileByIdV4CompleteApiResponse(BaseModel):
+
+    active: bool | None = None
+
+
+
+# Generated from: helpers/test_get_run_by_id_v4_complete
+
+class Helpers/testGetRunByIdV4CompleteSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class Helpers/testGetRunByIdV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+
+class Helpers/testGetRunByIdV4CompleteApiRequest(BaseModel):
+
+    run_id: UUID
+
+class Helpers/testGetRunByIdV4CompleteApiResponse(BaseModel):
+
+    id: UUID | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+
+
+
+# Generated from: helpers/test_get_simulation_by_active_v4_complete
+
+class Helpers/testGetSimulationByActiveV4CompleteSqlParams(BaseModel):
+
+    pass
+
+class Helpers/testGetSimulationByActiveV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class Helpers/testGetSimulationByActiveV4CompleteApiRequest(BaseModel):
+
+    pass
+
+class Helpers/testGetSimulationByActiveV4CompleteApiResponse(BaseModel):
+
+    id: UUID | None = None
 
 
 
@@ -1746,6 +2151,96 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSuperadminAliasSqlRow",
         "GetSuperadminAliasApiRequest",
         "GetSuperadminAliasApiResponse",
+    ),
+    "tests/sql/v4/integration/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql": (
+        "TestGetActivityByMessageAndEndpointV4CompleteSqlParams",
+        "TestGetActivityByMessageAndEndpointV4CompleteSqlRow",
+        "TestGetActivityByMessageAndEndpointV4CompleteApiRequest",
+        "TestGetActivityByMessageAndEndpointV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql": (
+        "TestGetActivityByMessageV4CompleteSqlParams",
+        "TestGetActivityByMessageV4CompleteSqlRow",
+        "TestGetActivityByMessageV4CompleteApiRequest",
+        "TestGetActivityByMessageV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql": (
+        "Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlParams",
+        "Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlRow",
+        "Helpers/testCreateTestBenchmarkAttemptV4CompleteApiRequest",
+        "Helpers/testCreateTestBenchmarkAttemptV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_guest_profile_v4_complete.sql": (
+        "Helpers/testCreateTestGuestProfileV4CompleteSqlParams",
+        "Helpers/testCreateTestGuestProfileV4CompleteSqlRow",
+        "Helpers/testCreateTestGuestProfileV4CompleteApiRequest",
+        "Helpers/testCreateTestGuestProfileV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_rubric_v4_complete.sql": (
+        "Helpers/testCreateTestRubricV4CompleteSqlParams",
+        "Helpers/testCreateTestRubricV4CompleteSqlRow",
+        "Helpers/testCreateTestRubricV4CompleteApiRequest",
+        "Helpers/testCreateTestRubricV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql": (
+        "Helpers/testCreateTestRunV4CompleteSqlParams",
+        "Helpers/testCreateTestRunV4CompleteSqlRow",
+        "Helpers/testCreateTestRunV4CompleteApiRequest",
+        "Helpers/testCreateTestRunV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql": (
+        "Helpers/testCreateTestScenarioV4CompleteSqlParams",
+        "Helpers/testCreateTestScenarioV4CompleteSqlRow",
+        "Helpers/testCreateTestScenarioV4CompleteApiRequest",
+        "Helpers/testCreateTestScenarioV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_test_v4_complete.sql": (
+        "Helpers/testCreateTestTestV4CompleteSqlParams",
+        "Helpers/testCreateTestTestV4CompleteSqlRow",
+        "Helpers/testCreateTestTestV4CompleteApiRequest",
+        "Helpers/testCreateTestTestV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql": (
+        "Helpers/testGetChatByIdV4CompleteSqlParams",
+        "Helpers/testGetChatByIdV4CompleteSqlRow",
+        "Helpers/testGetChatByIdV4CompleteApiRequest",
+        "Helpers/testGetChatByIdV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql": (
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteSqlParams",
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteSqlRow",
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteApiRequest",
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_eval_by_active_v4_complete.sql": (
+        "Helpers/testGetEvalByActiveV4CompleteSqlParams",
+        "Helpers/testGetEvalByActiveV4CompleteSqlRow",
+        "Helpers/testGetEvalByActiveV4CompleteApiRequest",
+        "Helpers/testGetEvalByActiveV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql": (
+        "Helpers/testGetProfileActivityV4CompleteSqlParams",
+        "Helpers/testGetProfileActivityV4CompleteSqlRow",
+        "Helpers/testGetProfileActivityV4CompleteApiRequest",
+        "Helpers/testGetProfileActivityV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql": (
+        "Helpers/testGetProfileByIdV4CompleteSqlParams",
+        "Helpers/testGetProfileByIdV4CompleteSqlRow",
+        "Helpers/testGetProfileByIdV4CompleteApiRequest",
+        "Helpers/testGetProfileByIdV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_run_by_id_v4_complete.sql": (
+        "Helpers/testGetRunByIdV4CompleteSqlParams",
+        "Helpers/testGetRunByIdV4CompleteSqlRow",
+        "Helpers/testGetRunByIdV4CompleteApiRequest",
+        "Helpers/testGetRunByIdV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_simulation_by_active_v4_complete.sql": (
+        "Helpers/testGetSimulationByActiveV4CompleteSqlParams",
+        "Helpers/testGetSimulationByActiveV4CompleteSqlRow",
+        "Helpers/testGetSimulationByActiveV4CompleteApiRequest",
+        "Helpers/testGetSimulationByActiveV4CompleteApiResponse",
     ),
 }
 
@@ -2022,6 +2517,81 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/helpers/test_get_superadmin_alias_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_guest_profile_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_rubric_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_test_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_eval_by_active_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_run_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_simulation_by_active_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
