@@ -275,12 +275,15 @@ export default function Login({
   const redirectPath =
     redirectPathProp || searchParams.get("redirectPath") || null;
 
+  // Extract tokens for dependency tracking
+  const themeTokens = activeSettings?.["tokens"];
+
   // Apply theme tokens from activeSettings (client-side only)
   useEffect(() => {
-    if (activeSettings?.tokens) {
-      applyThemeTokens(activeSettings.tokens);
+    if (themeTokens) {
+      applyThemeTokens(themeTokens);
     }
-  }, [activeSettings?.tokens]);
+  }, [themeTokens]);
 
   // Animation variants matching Info.tsx
   const fadeInUp = {
@@ -419,7 +422,7 @@ export default function Login({
 
   const handleDefaultAccountLogin = async () => {
     try {
-      if (!activeSettings?.defaultAccountProfileId) {
+      if (!activeSettings?.["default_account_profile_id"]) {
         toast.error("Default account not configured");
         return;
       }
@@ -742,9 +745,9 @@ export default function Login({
                 </motion.div>
               ))}
 
-              {/* Default Account Button - only show if show_default_account is true and defaultAccountProfileId exists */}
+              {/* Default Account Button - only show if show_default_account is true and default_account_profile_id exists */}
               {_show_default_account &&
-                activeSettings?.defaultAccountProfileId && (
+                activeSettings?.["default_account_profile_id"] && (
                   <motion.div variants={cardVariants} whileHover="hover">
                     <Button
                       type="button"
@@ -794,7 +797,7 @@ export default function Login({
               {providers.length > 0 &&
                 (guest_login_enabled ||
                   (_show_default_account &&
-                    activeSettings?.defaultAccountProfileId)) && (
+                    activeSettings?.["default_account_profile_id"])) && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

@@ -38,11 +38,57 @@ type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/staff/upsert", "post">;
 type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/staff/upsert", "post">;
 /** ---- Client-side settings type (excludes guestProfileId) ----
  * guestProfileId is server-side only and should not be exposed to client components
+ *
+ * Transforms flat settings_* fields from API response into nested settings object
+ * Uses inferred types from LayoutContextOut to ensure type safety
  */
-export type SettingsActiveClient = Omit<
-  LayoutContextOut["settings"],
-  "guestProfileId"
+type SettingsFields = Pick<
+  LayoutContextOut,
+  | "settings_id"
+  | "settings_created_at"
+  | "settings_active"
+  | "settings_name"
+  | "settings_description"
+  | "settings_primary_color"
+  | "settings_accent"
+  | "settings_background"
+  | "settings_surface"
+  | "settings_success"
+  | "settings_warning"
+  | "settings_error"
+  | "settings_sidebar_background"
+  | "settings_sidebar_primary"
+  | "settings_chart1"
+  | "settings_chart2"
+  | "settings_chart3"
+  | "settings_chart4"
+  | "settings_chart5"
+  | "settings_guest_login_enabled"
+  | "settings_success_threshold"
+  | "settings_warning_threshold"
+  | "settings_danger_threshold"
+  | "settings_auth_ids"
+  | "settings_auths"
+  | "settings_provider_ids"
+  | "settings_providers"
+  | "settings_default_guest_profile_id"
+  | "settings_default_account_profile_id"
+  | "settings_tokens"
 >;
+
+// Transform settings_* fields to nested structure (remove settings_ prefix)
+type TransformSettings<T> = {
+  [K in keyof T as K extends `settings_${infer Rest}` ? Rest : never]: T[K];
+};
+
+type SettingsTransformed = TransformSettings<SettingsFields>;
+
+// Add guestProfileId for server-side use, then omit it for client
+type SettingsWithGuest = SettingsTransformed & {
+  guestProfileId?: string | null; // Server-side only
+};
+
+export type SettingsActiveClient = Omit<SettingsWithGuest, "guestProfileId">;
 
 /** ---- Cached fetch ---- */
 export const getLayoutContext = cache(
@@ -131,15 +177,13 @@ export async function getValidatedProfileId(session?: Session | null): Promise<{
       // Call profile context endpoint - headers will be null (cookie-based auth)
       // Server will read cookies and resolve profile from department settings
       const initial = await getLayoutContext({
-        body: {
-          pathname: "/",
-        },
+        body: {},
       });
 
-      if (initial?.effectiveProfile?.id && initial?.actualProfile?.id) {
+      if (initial?.id && initial?.actual_id) {
         return {
-          actualProfileId: initial.actualProfile.id,
-          effectiveProfileId: initial.effectiveProfile.id,
+          actualProfileId: initial.actual_id,
+          effectiveProfileId: initial.id,
         };
       }
     }
@@ -152,7 +196,24 @@ export async function getValidatedProfileId(session?: Session | null): Promise<{
 }
 
 // Export ProfileItem type derived from server response
-export type ProfileItem = LayoutContextResponse["actualProfile"];
+// Extracts profile fields from LayoutContextOut (effective profile fields: id, first_name, etc.)
+// Uses inferred types to ensure type safety
+export type ProfileItem = Pick<
+  LayoutContextOut,
+  | "id"
+  | "first_name"
+  | "last_name"
+  | "emails"
+  | "primary_email"
+  | "role"
+  | "active"
+  | "req_per_day"
+  | "last_login"
+  | "last_active"
+  | "created_at"
+  | "updated_at"
+  | "primary_department_id"
+>;
 
 export type SafeSessionSnapshot = {
   effectiveProfileId: string | null;
@@ -210,21 +271,19 @@ export async function getLayoutContextData(session?: Session | null) {
         // Server will read cookies and resolve profile from department settings
         try {
           initial = await getLayoutContext({
-            body: {
-              pathname: "/",
-            },
+            body: {},
           });
           // eslint-disable-next-line no-console
           console.log("Profile context resolved:", {
             hasInitial: !!initial,
-            effectiveProfileId: initial?.effectiveProfile?.id,
-            actualProfileId: initial?.actualProfile?.id,
-            effectiveProfileRole: initial?.effectiveProfile?.role,
+            effectiveProfileId: initial?.id,
+            actualProfileId: initial?.actual_id,
+            effectiveProfileRole: initial?.role,
           });
           // Extract resolved profile IDs from context response
-          if (initial?.effectiveProfile?.id && initial?.actualProfile?.id) {
-            effectiveProfileId = initial.effectiveProfile.id;
-            actualProfileId = initial.actualProfile.id;
+          if (initial?.id && initial?.actual_id) {
+            effectiveProfileId = initial.id;
+            actualProfileId = initial.actual_id;
           } else {
             // Profile context returned but IDs are missing - invalid response
             // eslint-disable-next-line no-console
@@ -252,18 +311,16 @@ export async function getLayoutContextData(session?: Session | null) {
     // Authenticated user: fetch profile context with session profile IDs
     try {
       initial = await getLayoutContext({
-        body: {
-          pathname: "/", // layout-level; pages can still supply their own on demand
-        },
+        body: {},
       });
       // Verify profile IDs match what we expect
       if (
-        initial?.effectiveProfile?.id &&
-        initial?.actualProfile?.id &&
-        initial.effectiveProfile.id !== effectiveProfileId
+        initial?.id &&
+        initial?.actual_id &&
+        initial.id !== effectiveProfileId
       ) {
         // Update effectiveProfileId if it changed (emulation case)
-        effectiveProfileId = initial.effectiveProfile.id;
+        effectiveProfileId = initial.id;
       }
     } catch {
       // If context fetch fails (e.g., 403/404), return null
@@ -275,24 +332,24 @@ export async function getLayoutContextData(session?: Session | null) {
   // Ensure we have profile IDs - use from initial if extraction failed
   // This handles the case where initial exists but IDs weren't extracted earlier
   if (initial) {
-    if (!effectiveProfileId && initial.effectiveProfile?.id) {
-      effectiveProfileId = initial.effectiveProfile.id;
+    if (!effectiveProfileId && initial.id) {
+      effectiveProfileId = initial.id;
     }
-    if (!actualProfileId && initial.actualProfile?.id) {
-      actualProfileId = initial.actualProfile.id;
+    if (!actualProfileId && initial.actual_id) {
+      actualProfileId = initial.actual_id;
     }
   }
 
   // Early return if no valid profile context (user not logged in or invalid session)
   // Only return null if we truly don't have valid profile data
-  if (!initial || !initial.effectiveProfile?.id || !initial.actualProfile?.id) {
+  if (!initial || !initial.id || !initial.actual_id) {
     // eslint-disable-next-line no-console
     console.log("Returning null initial:", {
       hasInitial: !!initial,
       effectiveProfileId,
       actualProfileId,
-      initialEffectiveId: initial?.effectiveProfile?.id,
-      initialActualId: initial?.actualProfile?.id,
+      initialEffectiveId: initial?.id,
+      initialActualId: initial?.actual_id,
     });
     return {
       initial: null,
@@ -327,10 +384,44 @@ export async function getLayoutContextData(session?: Session | null) {
   }
 
   // Extract settings from profile context response
+  // Transform flat settings_* fields into nested settings object
   // Extract guestProfileId before passing to client (server-side only)
-  const { guestProfileId: _, ...settingsWithoutGuest } = initial.settings || {};
-  const activeSettingsClient: SettingsActiveClient | null = initial.settings
-    ? (settingsWithoutGuest as SettingsActiveClient)
+  const activeSettingsClient: SettingsActiveClient | null = initial.settings_id
+    ? {
+        id: initial.settings_id ?? null,
+        created_at: initial.settings_created_at ?? null,
+        active: initial.settings_active ?? null,
+        name: initial.settings_name ?? null,
+        description: initial.settings_description ?? null,
+        primary_color: initial.settings_primary_color ?? null,
+        accent: initial.settings_accent ?? null,
+        background: initial.settings_background ?? null,
+        surface: initial.settings_surface ?? null,
+        success: initial.settings_success ?? null,
+        warning: initial.settings_warning ?? null,
+        error: initial.settings_error ?? null,
+        sidebar_background: initial.settings_sidebar_background ?? null,
+        sidebar_primary: initial.settings_sidebar_primary ?? null,
+        chart1: initial.settings_chart1 ?? null,
+        chart2: initial.settings_chart2 ?? null,
+        chart3: initial.settings_chart3 ?? null,
+        chart4: initial.settings_chart4 ?? null,
+        chart5: initial.settings_chart5 ?? null,
+        guest_login_enabled: initial.settings_guest_login_enabled ?? null,
+        success_threshold: initial.settings_success_threshold ?? null,
+        warning_threshold: initial.settings_warning_threshold ?? null,
+        danger_threshold: initial.settings_danger_threshold ?? null,
+        auth_ids: initial.settings_auth_ids ?? null,
+        auths: initial.settings_auths ?? null,
+        provider_ids: initial.settings_provider_ids ?? null,
+        providers: initial.settings_providers ?? null,
+        default_guest_profile_id:
+          initial.settings_default_guest_profile_id ?? null,
+        default_account_profile_id:
+          initial.settings_default_account_profile_id ?? null,
+        tokens: initial.settings_tokens ?? null,
+        // guestProfileId is excluded (server-side only)
+      }
     : null;
 
   return {
@@ -378,8 +469,8 @@ export async function switchEffectiveProfile(
     if (!isSelf) {
       const res = await authorizeEmulation({
         body: {
-          requesterProfileId: session.user.profileId,
-          targetProfileId: input.targetProfileId,
+          requester_profile_id: session.user.profileId,
+          target_profile_id: input.targetProfileId,
         },
       });
 

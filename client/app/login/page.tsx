@@ -33,12 +33,10 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
   try {
     const input: LoginDataIn = {
       body: {
-        departmentId: departmentId || null,
+        department_id: departmentId || null,
       },
     };
-    // Type assertion needed - TypeScript can't infer generic return type from api.post
-    // The schema is correct, but the type system needs help resolving the generic types
-    return (await api.post("/auth/login", input)) as LoginDataOut;
+    return api.post("/auth/login", input);
   } catch {
     // Return empty arrays and defaults if endpoint fails
     return {
@@ -86,12 +84,10 @@ async function getProfileContext(
       .filter(Boolean)
       .join("; ");
 
-    return (await api.post(
+    return api.post(
       "/profile/context",
       {
-        body: {
-          pathname: "/",
-        },
+        body: {},
       },
       cookieHeader
         ? {
@@ -107,7 +103,7 @@ async function getProfileContext(
               "X-Bypass-Cache": "1",
             },
           }
-    )) as ProfileContextOut;
+    );
   } catch {
     // If profile context fetch fails, return null - theme will use defaults
     return null;
@@ -135,13 +131,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const departmentIdForApi =
     departmentIdFromQuery ||
     loginDataWithoutDept.default_department_id ||
-    (loginDataWithoutDept.departments.length > 0
-      ? loginDataWithoutDept.departments[0]?.id
+    (loginDataWithoutDept.departments &&
+    loginDataWithoutDept.departments.length > 0
+      ? (loginDataWithoutDept.departments[0]?.id ?? undefined)
       : undefined);
 
   // Fetch login data with the determined department ID to get correct providers
   // This ensures we always filter providers by department, even if default (not in URL)
-  const loginData: LoginDataOut = await getLoginData(departmentIdForApi);
+  const loginData: LoginDataOut = await getLoginData(
+    departmentIdForApi ?? undefined
+  );
 
   // Fetch settings via profile context endpoint
   // Uses department-id query parameter (if provided) for dynamic settings changes
@@ -152,14 +151,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const profileContext = await getProfileContext(departmentIdFromQuery);
   // Extract settings from profile context (SettingsData is compatible with SettingsActiveOut)
   const activeSettings: ProfileContextOut["settings_tokens"] | null =
-    profileContext?.settings_tokens
-      ? (profileContext.settings_tokens as ProfileContextOut["settings_tokens"])
-      : null;
+    profileContext?.settings_tokens ?? null;
 
   // Business logic: Validate department_id from query param exists in departments list
   const validDepartmentId =
     departmentIdFromQuery &&
-    loginData.departments.some((d) => d.id === departmentIdFromQuery)
+    loginData.departments?.some((d) => d.id === departmentIdFromQuery)
       ? departmentIdFromQuery
       : undefined;
 
@@ -168,24 +165,75 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const initialDepartmentId =
     validDepartmentId ||
     (loginData.default_department_id &&
-    loginData.departments.some((d) => d.id === loginData.default_department_id)
+    loginData.departments?.some((d) => d.id === loginData.default_department_id)
       ? loginData.default_department_id
       : undefined) ||
-    (loginData.departments.length > 0
-      ? loginData.departments[0]?.id
+    (loginData.departments && loginData.departments.length > 0
+      ? (loginData.departments[0]?.id ?? undefined)
       : undefined);
 
-  return (
-    <Login
-      providers={loginData.providers}
-      guest_login_enabled={loginData.guest_login_enabled}
-      show_default_account={loginData.show_default_account || false}
-      departments={loginData.departments}
-      initialDepartmentId={initialDepartmentId}
-      activeSettings={activeSettings}
-      defaultDepartmentId={loginData.default_department_id || null}
-      realmName={loginData.realm_name || "master"}
-      {...(redirectPath && { redirectPath })}
-    />
-  );
+  // Filter and transform providers to match component types (filter out items with null IDs)
+  const providers = (loginData.providers ?? [])
+    .filter(
+      (p): p is NonNullable<typeof p> =>
+        p !== null && p.id !== null && p.name !== null
+    )
+    .map((p) => {
+      const provider: {
+        id: string;
+        name: string;
+        icon: string | null;
+        is_default?: boolean;
+      } = {
+        id: p.id!,
+        name: p.name!,
+        icon: p.icon,
+      };
+      if (p.is_default !== null && p.is_default !== undefined) {
+        provider.is_default = p.is_default;
+      }
+      return provider;
+    });
+
+  // Filter and transform departments to match component types (filter out items with null IDs)
+  const departments = (loginData.departments ?? [])
+    .filter(
+      (d): d is NonNullable<typeof d> =>
+        d !== null &&
+        d.id !== null &&
+        d.title !== null &&
+        d.description !== null
+    )
+    .map((d) => ({
+      id: d.id!,
+      title: d.title!,
+      description: d.description!,
+    }));
+
+  // Build Login props with proper null handling for exactOptionalPropertyTypes
+  const loginProps: {
+    providers: typeof providers;
+    guest_login_enabled: boolean;
+    show_default_account: boolean;
+    departments: typeof departments;
+    initialDepartmentId: string | undefined;
+    activeSettings: typeof activeSettings;
+    defaultDepartmentId: string | null;
+    realmName: string;
+    redirectPath?: string;
+  } = {
+    providers,
+    guest_login_enabled: loginData.guest_login_enabled ?? true,
+    show_default_account: loginData.show_default_account ?? false,
+    departments,
+    initialDepartmentId,
+    activeSettings,
+    defaultDepartmentId: loginData.default_department_id ?? null,
+    realmName: loginData.realm_name ?? "master",
+  };
+  if (redirectPath) {
+    loginProps.redirectPath = redirectPath;
+  }
+
+  return <Login {...loginProps} />;
 }

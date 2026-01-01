@@ -328,10 +328,10 @@ function MainLayoutContent({
   // Check if we should show SimulationControls
   // Only show if we have attemptData, attemptId, and the attempt belongs to the active profile
   const shouldShowSimulationControls = useMemo(() => {
-    if (!attemptData || !attemptId || !activeProfile) {
+    if (!attemptData || !attemptId || !activeProfile || !attemptData.attempt) {
       return false;
     }
-    return attemptData.attempt.profileId === activeProfile.id;
+    return attemptData.attempt.profile_id === activeProfile.id;
   }, [attemptData, attemptId, activeProfile]);
 
   return (
