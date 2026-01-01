@@ -57,6 +57,7 @@ export interface StepCardProps {
     onChange: (value: string) => void;
     placeholder?: string;
     defaultName?: string;
+    required?: boolean;
   };
   children: React.ReactNode;
 }
@@ -173,6 +174,7 @@ export function StepCard({
                   }}
                   className="w-full text-lg font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
                   placeholder={editableTitle.placeholder || stepTitle}
+                  required={editableTitle.required}
                   disabled={isReadonly}
                 />
                 <p className="text-xs text-muted-foreground mt-1 px-2">

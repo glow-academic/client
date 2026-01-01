@@ -35,14 +35,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
-import { Check, Loader2, Power } from "lucide-react";
+import { Check, Loader2, Power, RotateCcw } from "lucide-react";
 import {
   parseAsArrayOf,
   parseAsBoolean,
@@ -238,6 +243,60 @@ export default function Persona({
   const handleIconSearchChange = (term: string) => {
     setLocalIconSearch(term);
     debouncedUpdateIconSearch(term);
+  };
+
+  // Reset handlers for each card
+  const handleResetColor = () => {
+    try {
+      setFormData({
+        color: null,
+        colorSearch: null,
+      });
+      setLocalColorSearch("");
+      toast.success("Color reset");
+    } catch {
+      toast.error("Failed to reset color");
+    }
+  };
+
+  const handleResetIcon = () => {
+    try {
+      setFormData({
+        icon: null,
+        iconSearch: null,
+      });
+      setLocalIconSearch("");
+      toast.success("Icon reset");
+    } catch {
+      toast.error("Failed to reset icon");
+    }
+  };
+
+  const handleResetContent = () => {
+    try {
+      setFormData({
+        instructions: null,
+        examples: null,
+      });
+      toast.success("Content reset");
+    } catch {
+      toast.error("Failed to reset content");
+    }
+  };
+
+  const handleResetBasic = () => {
+    try {
+      setFormData({
+        name: null,
+        description: null,
+        departmentIds: null,
+        parameterFieldIds: null,
+        active: null, // Clear from URL to use default value (true)
+      });
+      toast.success("Basic information reset");
+    } catch {
+      toast.error("Failed to reset basic information");
+    }
   };
 
   // Get preset colors and valid icons from server (all colors/icons, filtered client-side)
@@ -860,11 +919,28 @@ export default function Persona({
                           setStepFormData({ name: value || null }),
                         placeholder: "e.g., Enthusiastic Student",
                         defaultName: "New Persona",
+                        required: true,
                       }}
+                      actions={
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleResetBasic}
+                              disabled={isReadonly}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Reset</TooltipContent>
+                        </Tooltip>
+                      }
                     >
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="description">Description *</Label>
+                          <Label htmlFor="description">Description</Label>
                           <Textarea
                             id="description"
                             data-testid="input-persona-description"
@@ -881,7 +957,6 @@ export default function Persona({
                             }
                             placeholder="Detailed behavior description and personality traits"
                             rows={4}
-                            required
                             disabled={isReadonly}
                           />
                         </div>
@@ -1072,6 +1147,22 @@ export default function Persona({
                       searchTerm={localColorSearch}
                       onSearchChange={handleColorSearchChange}
                       searchPlaceholder="Search colors..."
+                      actions={
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleResetColor}
+                              disabled={isReadonly}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Reset</TooltipContent>
+                        </Tooltip>
+                      }
                     >
                       {presetColors.length > 0 && (
                         <SelectableGrid<{ hex: string; name: string }>
@@ -1171,6 +1262,22 @@ export default function Persona({
                       searchTerm={localIconSearch}
                       onSearchChange={handleIconSearchChange}
                       searchPlaceholder="Search icons..."
+                      actions={
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleResetIcon}
+                              disabled={isReadonly}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Reset</TooltipContent>
+                        </Tooltip>
+                      }
                     >
                       <SelectableGrid
                         items={allIcons}
@@ -1243,6 +1350,22 @@ export default function Persona({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
+                      actions={
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleResetContent}
+                              disabled={isReadonly}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Reset</TooltipContent>
+                        </Tooltip>
+                      }
                     >
                       {/* Instructions */}
                       <div className="space-y-2">
@@ -1275,17 +1398,22 @@ export default function Persona({
                       {/* Examples Section */}
                       <div className="space-y-2 pt-2">
                         <Label className="text-sm">Example Messages</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Add example messages to guide the persona's
-                          communication style
-                        </p>
                         <ReorderableList
-                          items={formData.examples || []}
-                          onItemsChange={(items) =>
-                            setFormData({
-                              examples: items.length > 0 ? items : null,
-                            })
+                          items={
+                            formData.examples && formData.examples.length > 0
+                              ? formData.examples
+                              : [""]
                           }
+                          onItemsChange={(items) => {
+                            // Save items as-is (including empty strings for editing)
+                            // This allows ReorderableList to work properly when adding new items
+                            // Empty strings will be filtered when submitting the form
+                            if (items.length === 0) {
+                              setFormData({ examples: null });
+                            } else {
+                              setFormData({ examples: items });
+                            }
+                          }}
                           suggestions={examplesHistory}
                           maxItems={10}
                           addButtonLabel="Add example"
