@@ -7,7 +7,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -105,7 +105,7 @@ export interface PersonaProps {
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
 }
 
-export default function Persona({
+function PersonaComponent({
   personaId,
   mode = personaId ? "edit" : "create",
   personaDetail: serverPersonaDetail,
@@ -120,12 +120,171 @@ export default function Persona({
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
-  // Use server-provided data directly (no fallback needed - server pages always provide data)
-  const personaDetail = serverPersonaDetail;
-  const personaDetailDefault = serverPersonaDetailDefault;
+  // Stabilize server props to prevent unnecessary re-renders from object reference changes
+  // Generate stable ID from server props content (same logic as in GenericForm)
+  const stabilizeServerProp = React.useCallback(
+    (
+      data: typeof serverPersonaDetail | typeof serverPersonaDetailDefault
+    ): string | null => {
+      if (!data) return null;
+      if (typeof data === "object" && data !== null) {
+        if ("persona_id" in data && data.persona_id) {
+          return `persona_id:${String(data.persona_id)}`;
+        }
+        const keyFields: Record<string, unknown> = {};
+        if ("preset_colors" in data) {
+          keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
+            ? data["preset_colors"].length
+            : data["preset_colors"];
+        }
+        if ("valid_icons" in data) {
+          keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
+            ? data["valid_icons"].length
+            : data["valid_icons"];
+        }
+        if ("suggested_icons" in data) {
+          keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
+            ? data["suggested_icons"].length
+            : data["suggested_icons"];
+        }
+        if ("valid_department_ids" in data) {
+          keyFields["valid_department_ids"] = Array.isArray(
+            data["valid_department_ids"]
+          )
+            ? data["valid_department_ids"].sort().join(",")
+            : data["valid_department_ids"];
+        }
+        const sortedKeys = Object.keys(keyFields).sort();
+        const hash = sortedKeys
+          .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+          .join("|");
+        return `new:${hash.length}:${hash.slice(0, 100)}`;
+      }
+      return String(data);
+    },
+    []
+  );
+
+  const personaDetailId = React.useMemo(
+    () => stabilizeServerProp(serverPersonaDetail),
+    [serverPersonaDetail, stabilizeServerProp]
+  );
+  const personaDetailDefaultId = React.useMemo(
+    () => stabilizeServerProp(serverPersonaDetailDefault),
+    [serverPersonaDetailDefault, stabilizeServerProp]
+  );
+
+  // Use refs to track latest server props (for effect access) and stable props (for render)
+  const latestServerPersonaDetailRef = React.useRef(serverPersonaDetail);
+  const latestServerPersonaDetailDefaultRef = React.useRef(
+    serverPersonaDetailDefault
+  );
+
+  // Update latest refs on every render (no effect needed - just sync)
+  latestServerPersonaDetailRef.current = serverPersonaDetail;
+  latestServerPersonaDetailDefaultRef.current = serverPersonaDetailDefault;
+
+  // Use refs to track stable server props - only update when ID changes
+  const stablePersonaDetailRef = React.useRef<{
+    data: typeof serverPersonaDetail;
+    id: string | null;
+  }>({
+    data: serverPersonaDetail,
+    id: personaDetailId,
+  });
+  const stablePersonaDetailDefaultRef = React.useRef<{
+    data: typeof serverPersonaDetailDefault;
+    id: string | null;
+  }>({
+    data: serverPersonaDetailDefault,
+    id: personaDetailDefaultId,
+  });
+
+  React.useEffect(() => {
+    // Only update when ID actually changes, use latest ref for data
+    if (stablePersonaDetailRef.current.id !== personaDetailId) {
+      stablePersonaDetailRef.current = {
+        data: latestServerPersonaDetailRef.current,
+        id: personaDetailId,
+      };
+    }
+  }, [personaDetailId]); // Only depend on ID, not object reference
+
+  React.useEffect(() => {
+    // Only update when ID actually changes, use latest ref for data
+    if (stablePersonaDetailDefaultRef.current.id !== personaDetailDefaultId) {
+      stablePersonaDetailDefaultRef.current = {
+        data: latestServerPersonaDetailDefaultRef.current,
+        id: personaDetailDefaultId,
+      };
+    }
+  }, [personaDetailDefaultId]); // Only depend on ID, not object reference
+
+  // Use stable references
+  const personaDetail = stablePersonaDetailRef.current.data;
+  const personaDetailDefault = stablePersonaDetailDefaultRef.current.data;
 
   // Use edit detail when editing, default detail when creating
-  const personaData = isEditMode ? personaDetail : personaDetailDefault;
+  // Stabilize based on content ID, not object reference, to prevent unnecessary re-renders
+  const personaDataId = React.useMemo(() => {
+    const data = isEditMode ? personaDetail : personaDetailDefault;
+    if (!data) return null;
+    if (typeof data === "object" && data !== null) {
+      if ("persona_id" in data && data.persona_id) {
+        return `persona_id:${String(data.persona_id)}`;
+      }
+      // For new personas, create stable hash from immutable fields
+      const keyFields: Record<string, unknown> = {};
+      if ("preset_colors" in data) {
+        keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
+          ? data["preset_colors"].length
+          : data["preset_colors"];
+      }
+      if ("valid_icons" in data) {
+        keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
+          ? data["valid_icons"].length
+          : data["valid_icons"];
+      }
+      if ("suggested_icons" in data) {
+        keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
+          ? data["suggested_icons"].length
+          : data["suggested_icons"];
+      }
+      if ("valid_department_ids" in data) {
+        keyFields["valid_department_ids"] = Array.isArray(
+          data["valid_department_ids"]
+        )
+          ? data["valid_department_ids"].sort().join(",")
+          : data["valid_department_ids"];
+      }
+      const sortedKeys = Object.keys(keyFields).sort();
+      const hash = sortedKeys
+        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+        .join("|");
+      return `new:${hash.length}:${hash.slice(0, 100)}`;
+    }
+    return String(data);
+  }, [isEditMode, personaDetail, personaDetailDefault]);
+
+  // Use ref to track stable personaData - only update when ID changes
+  const stablePersonaDataRef = React.useRef<{
+    data: typeof personaDetail | typeof personaDetailDefault;
+    id: string | null;
+  }>({
+    data: isEditMode ? personaDetail : personaDetailDefault,
+    id: personaDataId,
+  });
+
+  React.useEffect(() => {
+    if (stablePersonaDataRef.current.id !== personaDataId) {
+      stablePersonaDataRef.current = {
+        data: isEditMode ? personaDetail : personaDetailDefault,
+        id: personaDataId,
+      };
+    }
+  }, [isEditMode, personaDetail, personaDetailDefault, personaDataId]);
+
+  const personaData = stablePersonaDataRef.current.data;
 
   // Convert departments array to department_mapping Record (for GenericPicker)
   const departmentMapping = useMemo(() => {
@@ -214,8 +373,8 @@ export default function Persona({
     iconShowSelected: parseAsBoolean,
   } as const;
 
-  // URL-backed state using nuqs (managed by GenericForm, but we need access for computations)
-  const [formData] = useQueryStates(personaSearchParamsClient, {
+  // URL-backed state using nuqs (shared with GenericForm to avoid duplicate useQueryStates calls)
+  const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
     history: "replace",
     shallow: false,
   });
@@ -238,11 +397,17 @@ export default function Persona({
     return colors as Array<{ hex: string; name: string }>;
   }, [personaData]);
 
+  // Extract specific form values to avoid re-renders when formData object reference changes
+  const colorValue = formData["color"] as string | null | undefined;
+  const colorSearch =
+    (formData["colorSearch"] as string | null | undefined) || "";
+  const iconSearch =
+    (formData["iconSearch"] as string | null | undefined) || "";
+
   // Filter colors client-side based on search state from URL
   // Also include custom colors that aren't in the preset list
   const presetColors = useMemo(() => {
     // Get current color from form data or default
-    const colorValue = formData["color"] as string | null | undefined;
     const currentColor =
       colorValue !== undefined
         ? colorValue
@@ -275,8 +440,6 @@ export default function Persona({
     }
 
     // Filter by search term if present (from URL-backed state)
-    const colorSearch =
-      (formData["colorSearch"] as string | null | undefined) || "";
     if (!colorSearch.trim()) {
       return colors;
     }
@@ -286,7 +449,7 @@ export default function Persona({
         color.name.toLowerCase().includes(searchLower) ||
         color.hex.toLowerCase().includes(searchLower)
     );
-  }, [presetColorsAll, formData, personaData]);
+  }, [presetColorsAll, colorValue, colorSearch, personaData]);
 
   const suggestedIconsAll = useMemo(
     () =>
@@ -321,8 +484,6 @@ export default function Persona({
 
   // Filter icons client-side based on search state from URL
   const allIcons = useMemo(() => {
-    const iconSearch =
-      (formData["iconSearch"] as string | null | undefined) || "";
     if (!iconSearch.trim()) {
       return allIconsAll;
     }
@@ -330,7 +491,7 @@ export default function Persona({
     return allIconsAll.filter((icon) =>
       icon.toLowerCase().includes(searchLower)
     );
-  }, [allIconsAll, formData]);
+  }, [allIconsAll, iconSearch]);
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
@@ -480,8 +641,13 @@ export default function Persona({
 
   // Form initialization function for GenericForm
   const initializeForm = useCallback(
-    (serverData: PersonaDetailOut | PersonaNewOut, editMode: boolean) => {
-      if (!editMode || !("department_ids" in serverData)) {
+    (serverData: unknown, editMode: boolean) => {
+      if (
+        !editMode ||
+        !serverData ||
+        typeof serverData !== "object" ||
+        !("department_ids" in serverData)
+      ) {
         return {};
       }
 
@@ -772,6 +938,602 @@ export default function Persona({
     []
   );
 
+  // Memoize formFieldKeys to prevent re-initialization loops
+  const formFieldKeys = useMemo(
+    () => [
+      "name",
+      "description",
+      "color",
+      "icon",
+      "instructions",
+      "active",
+      "departmentIds",
+      "parameterIds",
+      "parameterFieldIds",
+      "examples",
+    ],
+    []
+  );
+
+  // Memoize resetSuccessMessage to prevent GenericForm re-renders
+  const resetSuccessMessage = useCallback((stepId: string) => {
+    switch (stepId) {
+      case "basic":
+        return "Basic information reset";
+      case "color":
+        return "Color reset";
+      case "icon":
+        return "Icon reset";
+      case "content":
+        return "Content reset";
+      default:
+        return "Reset";
+    }
+  }, []);
+
+  // Memoize submitButton to prevent GenericForm re-renders
+  const submitButton = useMemo(
+    () => ({
+      backUrl: "/create/personas",
+      backLabel: "Back",
+      createLabel: "Create Persona",
+      updateLabel: "Update Persona",
+    }),
+    []
+  );
+
+  // Memoize renderStep to prevent GenericForm re-renders
+  const renderStep = useCallback(
+    ({
+      stepId,
+      stepStatus,
+      stepTitle,
+      stepDescription,
+      stepNumber,
+      formData: stepFormData,
+      setFormData: setStepFormData,
+      onReset,
+    }: {
+      stepId: string;
+      stepTitle: string;
+      stepDescription: string;
+      stepNumber: number;
+      stepStatus: StepStatus;
+      isOptional: boolean;
+      formData: Record<string, unknown>;
+      setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      filters?: Array<{
+        key: string;
+        label: string;
+        value: boolean;
+        onChange: (value: boolean) => void;
+      }>;
+      onReset?: () => void;
+    }) => {
+      switch (stepId) {
+        case "basic":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              editableTitle={{
+                value:
+                  (stepFormData["name"] as string | null | undefined) ?? "",
+                onChange: (value) => setStepFormData({ name: value || null }),
+                placeholder: "e.g., Enthusiastic Student",
+                defaultName: "New Persona",
+                required: true,
+              }}
+              resetFields={[
+                "name",
+                "description",
+                "departmentIds",
+                "parameterFieldIds",
+                "active",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    data-testid="input-persona-description"
+                    value={
+                      (stepFormData["description"] as
+                        | string
+                        | null
+                        | undefined) || ""
+                    }
+                    onChange={(e) =>
+                      setStepFormData({
+                        description: e.target.value || null,
+                      })
+                    }
+                    placeholder="Detailed behavior description and personality traits"
+                    rows={4}
+                    disabled={isReadonly}
+                  />
+                </div>
+
+                {/* Department Selection */}
+                {personaData?.valid_department_ids &&
+                personaData.valid_department_ids.length > 1 ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <GenericPicker
+                      items={departmentMapping}
+                      itemIds={
+                        (
+                          personaData as PersonaDetailOut & {
+                            valid_department_ids?: string[];
+                          }
+                        )?.valid_department_ids || []
+                      }
+                      selectedIds={
+                        (stepFormData["departmentIds"] as
+                          | string[]
+                          | null
+                          | undefined) || []
+                      }
+                      onSelect={(ids) =>
+                        setStepFormData({
+                          departmentIds: ids.length > 0 ? ids : null,
+                        })
+                      }
+                      getId={(dept) => (dept as { id: string }).id}
+                      getLabel={(dept) => (dept as { name: string }).name || ""}
+                      getSearchText={(dept) =>
+                        `${(dept as { name: string }).name} ${(dept as { description?: string }).description || ""}`
+                      }
+                      placeholder="All Departments"
+                      disabled={isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                    />
+                  </div>
+                ) : null}
+
+                {/* Required Parameters */}
+                {personaData &&
+                "linked_parameter_ids" in personaData &&
+                (
+                  personaData as PersonaDetailOut & {
+                    linked_parameter_ids?: string[];
+                  }
+                ).linked_parameter_ids &&
+                (
+                  personaData as PersonaDetailOut & {
+                    linked_parameter_ids?: string[];
+                  }
+                ).linked_parameter_ids!.length > 0 ? (
+                  <div className="space-y-4">
+                    <Label>Required Parameters</Label>
+                    <ParameterSelector
+                      parameterMapping={
+                        (
+                          personaData as PersonaDetailOut & {
+                            parameter_mapping?: Record<
+                              string,
+                              {
+                                name: string;
+                                description: string;
+                                numerical: boolean;
+                                document_parameter: boolean;
+                                persona_parameter: boolean;
+                              }
+                            >;
+                          }
+                        ).parameter_mapping || {}
+                      }
+                      fieldMapping={
+                        (
+                          personaData as PersonaDetailOut & {
+                            field_mapping?: Record<
+                              string,
+                              {
+                                name: string;
+                                description: string;
+                                parameter_id: string;
+                                parameter_name: string;
+                                value: string;
+                              }
+                            >;
+                          }
+                        ).field_mapping || {}
+                      }
+                      validParameterItemIds={
+                        (
+                          personaData as PersonaDetailOut & {
+                            valid_parameter_item_ids?: string[];
+                          }
+                        ).valid_parameter_item_ids || []
+                      }
+                      selectedParameterItemIds={
+                        (stepFormData["parameterFieldIds"] as
+                          | string[]
+                          | null
+                          | undefined) || []
+                      }
+                      onParameterItemIdsChange={(ids) =>
+                        setStepFormData({
+                          parameterFieldIds: ids.length > 0 ? ids : null,
+                        })
+                      }
+                      disabled={isReadonly}
+                    />
+                  </div>
+                ) : null}
+
+                {/* Active Switch */}
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="active"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                        Active
+                      </Label>
+                      <Switch
+                        id="active"
+                        checked={
+                          (stepFormData["active"] as
+                            | boolean
+                            | null
+                            | undefined) ??
+                          (personaData as { active?: boolean })?.active ??
+                          true
+                        }
+                        onCheckedChange={(checked) =>
+                          setStepFormData({ active: checked })
+                        }
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Inactive personas will not be available for scenarios
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </StepCard>
+          );
+
+        case "color": {
+          // Use URL param if present, otherwise use API default
+          // Check if explicitly set (even if null) vs undefined (not set yet)
+          const colorValue = stepFormData["color"] as string | null | undefined;
+          const currentColorRaw =
+            colorValue !== undefined
+              ? colorValue
+              : (personaData as { color?: string })?.color || "#000000";
+
+          // Normalize currentColor to match preset color format (lowercase) for SelectableGrid comparison
+          const currentColor = currentColorRaw
+            ? currentColorRaw.toLowerCase().startsWith("#")
+              ? currentColorRaw.toLowerCase()
+              : `#${currentColorRaw.toLowerCase()}`
+            : "#000000";
+
+          const colorShowSelected =
+            (stepFormData["colorShowSelected"] as boolean | null | undefined) ??
+            false;
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={
+                (stepFormData["colorSearch"] as string | null | undefined) || ""
+              }
+              onSearchChange={(term: string) =>
+                setStepFormData({ colorSearch: term || null })
+              }
+              searchPlaceholder="Search colors..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: colorShowSelected,
+                  onChange: (value) =>
+                    setStepFormData({ colorShowSelected: value || null }),
+                },
+              ]}
+              resetFields={["color", "colorSearch", "colorShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              {presetColors.length > 0 && (
+                <SelectableGrid<{ hex: string; name: string }>
+                  items={presetColors}
+                  selectedId={currentColor}
+                  onSelect={(colorHex) => {
+                    const current = stepFormData["color"] as
+                      | string
+                      | null
+                      | undefined;
+                    const normalizedCurrent = current
+                      ? current.toLowerCase().startsWith("#")
+                        ? current.toLowerCase()
+                        : `#${current.toLowerCase()}`
+                      : null;
+                    setStepFormData({
+                      color: colorHex === normalizedCurrent ? null : colorHex,
+                    });
+                  }}
+                  getId={(color) => color.hex.toLowerCase()}
+                  renderItem={(color, isSelected) => (
+                    <div
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                        "hover:shadow-md hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        isSelected && "ring-2 ring-primary bg-accent"
+                      )}
+                    >
+                      {/* Check icon - top right */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-lg border-2 border-border shrink-0"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight">
+                            {color.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {color.hex}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  emptyMessage="No colors found. Try adjusting your search."
+                  disabled={isReadonly}
+                />
+              )}
+
+              {/* Hex Input */}
+              <div className="space-y-2">
+                <Label htmlFor="colorInput">Hex Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="colorInput"
+                    value={currentColorRaw || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow any hex value (with or without #, any length)
+                      if (value === "" || /^#?[0-9A-Fa-f]*$/.test(value)) {
+                        setStepFormData({
+                          color: value.startsWith("#") ? value : `#${value}`,
+                        });
+                      }
+                    }}
+                    placeholder="#000000"
+                    className="flex-1"
+                    disabled={isReadonly}
+                  />
+                  <div
+                    className="w-10 h-10 rounded border shrink-0"
+                    style={{
+                      backgroundColor: currentColorRaw || "#000000",
+                    }}
+                  />
+                </div>
+              </div>
+            </StepCard>
+          );
+        }
+
+        case "icon": {
+          // Use URL param if present, otherwise use API default
+          // Check if explicitly set (even if null) vs undefined (not set yet)
+          const iconValue = stepFormData["icon"] as string | null | undefined;
+          const currentIcon =
+            iconValue !== undefined
+              ? iconValue
+              : (personaData as { icon?: string })?.icon || "Zap";
+
+          const iconShowSelected =
+            (stepFormData["iconShowSelected"] as boolean | null | undefined) ??
+            false;
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={
+                (stepFormData["iconSearch"] as string | null | undefined) || ""
+              }
+              onSearchChange={(term: string) =>
+                setStepFormData({ iconSearch: term || null })
+              }
+              searchPlaceholder="Search icons..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: iconShowSelected,
+                  onChange: (value) =>
+                    setStepFormData({ iconShowSelected: value || null }),
+                },
+              ]}
+              resetFields={["icon", "iconSearch", "iconShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <SelectableGrid
+                items={allIcons}
+                selectedId={currentIcon}
+                onSelect={(icon) => {
+                  const current = stepFormData["icon"] as
+                    | string
+                    | null
+                    | undefined;
+                  setStepFormData({
+                    icon: icon === current ? null : icon,
+                  });
+                }}
+                getId={(icon) => icon}
+                renderItem={(iconName, isSelected) => {
+                  const IconComponent =
+                    PERSONA_ICON_MAP[iconName as keyof typeof PERSONA_ICON_MAP];
+                  if (!IconComponent) return null;
+
+                  const isSuggested = suggestedIconsAll.includes(iconName);
+
+                  return (
+                    <div
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                        "hover:shadow-md hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        isSelected && "ring-2 ring-primary bg-accent"
+                      )}
+                    >
+                      {/* Check icon - top right */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+                      )}
+
+                      {/* Suggested badge - top left */}
+                      {isSuggested && !isSelected && (
+                        <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                          Suggested
+                        </div>
+                      )}
+
+                      <div className="flex flex-col items-center gap-2">
+                        <IconComponent className="h-8 w-8 text-foreground" />
+                        <span className="text-sm font-medium text-center">
+                          {iconName}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }}
+                emptyMessage="No icons found. Try adjusting your search."
+                disabled={isReadonly}
+              />
+            </StepCard>
+          );
+        }
+
+        case "content":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              resetFields={["instructions", "examples"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              {/* Instructions */}
+              <div className="space-y-2">
+                <Label htmlFor="instructions">Instructions *</Label>
+                <Textarea
+                  id="instructions"
+                  data-testid="input-instructions"
+                  value={
+                    (stepFormData["instructions"] as
+                      | string
+                      | null
+                      | undefined) || ""
+                  }
+                  onChange={(e) =>
+                    setStepFormData({
+                      instructions: e.target.value || null,
+                    })
+                  }
+                  placeholder="Instructions that define how the persona should behave and respond."
+                  rows={8}
+                  required
+                  disabled={isReadonly}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Define the persona's behavior, communication style, and
+                  response patterns
+                </p>
+              </div>
+
+              {/* Examples Section */}
+              <div className="space-y-2 pt-2">
+                <Label className="text-sm">Example Messages</Label>
+                <ReorderableList
+                  items={
+                    (stepFormData["examples"] as string[] | null | undefined) &&
+                    (stepFormData["examples"] as string[]).length > 0
+                      ? (stepFormData["examples"] as string[])
+                      : [""]
+                  }
+                  onItemsChange={(items) => {
+                    // Save items as-is (including empty strings for editing)
+                    // This allows ReorderableList to work properly when adding new items
+                    // Empty strings will be filtered when submitting the form
+                    if (items.length === 0) {
+                      setStepFormData({ examples: null });
+                    } else {
+                      setStepFormData({ examples: items });
+                    }
+                  }}
+                  suggestions={getExamplesHistory(
+                    stepFormData["departmentIds"] as string[] | null | undefined
+                  )}
+                  maxItems={10}
+                  addButtonLabel="Add example"
+                  disabled={isReadonly}
+                  itemPlaceholder="Message"
+                />
+              </div>
+            </StepCard>
+          );
+
+        default:
+          return null;
+      }
+    },
+    [
+      personaData,
+      departmentMapping,
+      isReadonly,
+      isEditMode,
+      presetColors,
+      allIcons,
+      suggestedIconsAll,
+      getExamplesHistory,
+    ]
+  );
+
   return (
     <TooltipProvider>
       <div
@@ -817,603 +1579,88 @@ export default function Persona({
           }
           steps={steps}
           getStepStatus={getStepStatus}
+          formData={formData}
+          setFormData={setFormData}
           serverData={personaData}
           initializeForm={initializeForm}
-          formFieldKeys={[
-            "name",
-            "description",
-            "color",
-            "icon",
-            "instructions",
-            "active",
-            "departmentIds",
-            "parameterIds",
-            "parameterFieldIds",
-            "examples",
-          ]}
-          resetSuccessMessage={(stepId) => {
-            switch (stepId) {
-              case "basic":
-                return "Basic information reset";
-              case "color":
-                return "Color reset";
-              case "icon":
-                return "Icon reset";
-              case "content":
-                return "Content reset";
-              default:
-                return "Reset";
-            }
-          }}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={resetSuccessMessage}
           onSubmit={handleSubmit}
-          submitButton={{
-            backUrl: "/create/personas",
-            backLabel: "Back",
-            createLabel: "Create Persona",
-            updateLabel: "Update Persona",
-          }}
+          submitButton={submitButton}
           isReadonly={isReadonly}
           isEditMode={isEditMode}
-          renderStep={({
-            stepId,
-            stepStatus,
-            stepTitle,
-            stepDescription,
-            stepNumber,
-            formData: stepFormData,
-            setFormData: setStepFormData,
-            onReset,
-          }) => {
-            switch (stepId) {
-              case "basic":
-                return (
-                  <StepCard
-                    stepStatus={stepStatus}
-                    stepNumber={stepNumber}
-                    stepTitle={stepTitle}
-                    stepDescription={stepDescription}
-                    isReadonly={isReadonly}
-                    isEditMode={isEditMode}
-                    editableTitle={{
-                      value:
-                        (stepFormData["name"] as string | null | undefined) ??
-                        "",
-                      onChange: (value) =>
-                        setStepFormData({ name: value || null }),
-                      placeholder: "e.g., Enthusiastic Student",
-                      defaultName: "New Persona",
-                      required: true,
-                    }}
-                    resetFields={[
-                      "name",
-                      "description",
-                      "departmentIds",
-                      "parameterFieldIds",
-                      "active",
-                    ]}
-                    {...(onReset ? { onReset } : {})}
-                    resetLabel="Reset"
-                  >
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          data-testid="input-persona-description"
-                          value={
-                            (stepFormData["description"] as
-                              | string
-                              | null
-                              | undefined) || ""
-                          }
-                          onChange={(e) =>
-                            setStepFormData({
-                              description: e.target.value || null,
-                            })
-                          }
-                          placeholder="Detailed behavior description and personality traits"
-                          rows={4}
-                          disabled={isReadonly}
-                        />
-                      </div>
-
-                      {/* Department Selection */}
-                      {personaData?.valid_department_ids &&
-                      personaData.valid_department_ids.length > 1 ? (
-                        <div className="space-y-2">
-                          <Label htmlFor="department">Department</Label>
-                          <GenericPicker
-                            items={departmentMapping}
-                            itemIds={
-                              (
-                                personaData as PersonaDetailOut & {
-                                  valid_department_ids?: string[];
-                                }
-                              )?.valid_department_ids || []
-                            }
-                            selectedIds={
-                              (stepFormData["departmentIds"] as
-                                | string[]
-                                | null
-                                | undefined) || []
-                            }
-                            onSelect={(ids) =>
-                              setStepFormData({
-                                departmentIds: ids.length > 0 ? ids : null,
-                              })
-                            }
-                            getId={(dept) => (dept as { id: string }).id}
-                            getLabel={(dept) =>
-                              (dept as { name: string }).name || ""
-                            }
-                            getSearchText={(dept) =>
-                              `${(dept as { name: string }).name} ${(dept as { description?: string }).description || ""}`
-                            }
-                            placeholder="All Departments"
-                            disabled={isReadonly}
-                            multiSelect={true}
-                            hideSelectedChips={true}
-                            buttonClassName="w-full"
-                          />
-                        </div>
-                      ) : null}
-
-                      {/* Required Parameters */}
-                      {personaData &&
-                      "linked_parameter_ids" in personaData &&
-                      (
-                        personaData as PersonaDetailOut & {
-                          linked_parameter_ids?: string[];
-                        }
-                      ).linked_parameter_ids &&
-                      (
-                        personaData as PersonaDetailOut & {
-                          linked_parameter_ids?: string[];
-                        }
-                      ).linked_parameter_ids!.length > 0 ? (
-                        <div className="space-y-4">
-                          <Label>Required Parameters</Label>
-                          <ParameterSelector
-                            parameterMapping={
-                              (
-                                personaData as PersonaDetailOut & {
-                                  parameter_mapping?: Record<
-                                    string,
-                                    {
-                                      name: string;
-                                      description: string;
-                                      numerical: boolean;
-                                      document_parameter: boolean;
-                                      persona_parameter: boolean;
-                                    }
-                                  >;
-                                }
-                              ).parameter_mapping || {}
-                            }
-                            fieldMapping={
-                              (
-                                personaData as PersonaDetailOut & {
-                                  field_mapping?: Record<
-                                    string,
-                                    {
-                                      name: string;
-                                      description: string;
-                                      parameter_id: string;
-                                      parameter_name: string;
-                                      value: string;
-                                    }
-                                  >;
-                                }
-                              ).field_mapping || {}
-                            }
-                            validParameterItemIds={
-                              (
-                                personaData as PersonaDetailOut & {
-                                  valid_parameter_item_ids?: string[];
-                                }
-                              ).valid_parameter_item_ids || []
-                            }
-                            selectedParameterItemIds={
-                              (stepFormData["parameterFieldIds"] as
-                                | string[]
-                                | null
-                                | undefined) || []
-                            }
-                            onParameterItemIdsChange={(ids) =>
-                              setStepFormData({
-                                parameterFieldIds: ids.length > 0 ? ids : null,
-                              })
-                            }
-                            disabled={isReadonly}
-                          />
-                        </div>
-                      ) : null}
-
-                      {/* Active Switch */}
-                      <div className="space-y-2 pt-2">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Label
-                              htmlFor="active"
-                              className="text-sm flex items-center gap-1.5"
-                            >
-                              <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                              Active
-                            </Label>
-                            <Switch
-                              id="active"
-                              checked={
-                                (stepFormData["active"] as
-                                  | boolean
-                                  | null
-                                  | undefined) ??
-                                (personaData as { active?: boolean })?.active ??
-                                true
-                              }
-                              onCheckedChange={(checked) =>
-                                setStepFormData({ active: checked })
-                              }
-                              disabled={isReadonly}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground pl-5">
-                            Inactive personas will not be available for
-                            scenarios
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </StepCard>
-                );
-
-              case "color": {
-                // Use URL param if present, otherwise use API default
-                // Check if explicitly set (even if null) vs undefined (not set yet)
-                const colorValue = stepFormData["color"] as
-                  | string
-                  | null
-                  | undefined;
-                const currentColorRaw =
-                  colorValue !== undefined
-                    ? colorValue
-                    : (personaData as { color?: string })?.color || "#000000";
-
-                // Normalize currentColor to match preset color format (lowercase) for SelectableGrid comparison
-                const currentColor = currentColorRaw
-                  ? currentColorRaw.toLowerCase().startsWith("#")
-                    ? currentColorRaw.toLowerCase()
-                    : `#${currentColorRaw.toLowerCase()}`
-                  : "#000000";
-
-                const colorShowSelected =
-                  (stepFormData["colorShowSelected"] as
-                    | boolean
-                    | null
-                    | undefined) ?? false;
-
-                return (
-                  <StepCard
-                    stepStatus={stepStatus}
-                    stepNumber={stepNumber}
-                    stepTitle={stepTitle}
-                    stepDescription={stepDescription}
-                    isReadonly={isReadonly}
-                    isEditMode={isEditMode}
-                    searchTerm={
-                      (stepFormData["colorSearch"] as
-                        | string
-                        | null
-                        | undefined) || ""
-                    }
-                    onSearchChange={(term: string) =>
-                      setStepFormData({ colorSearch: term || null })
-                    }
-                    searchPlaceholder="Search colors..."
-                    debounceMs={300}
-                    filters={[
-                      {
-                        key: "showSelected",
-                        label: "Show selected",
-                        value: colorShowSelected,
-                        onChange: (value) =>
-                          setStepFormData({ colorShowSelected: value || null }),
-                      },
-                    ]}
-                    resetFields={["color", "colorSearch", "colorShowSelected"]}
-                    {...(onReset ? { onReset } : {})}
-                    resetLabel="Reset"
-                  >
-                    {presetColors.length > 0 && (
-                      <SelectableGrid<{ hex: string; name: string }>
-                        items={presetColors}
-                        selectedId={currentColor}
-                        onSelect={(colorHex) => {
-                          const current = stepFormData["color"] as
-                            | string
-                            | null
-                            | undefined;
-                          const normalizedCurrent = current
-                            ? current.toLowerCase().startsWith("#")
-                              ? current.toLowerCase()
-                              : `#${current.toLowerCase()}`
-                            : null;
-                          setStepFormData({
-                            color:
-                              colorHex === normalizedCurrent ? null : colorHex,
-                          });
-                        }}
-                        getId={(color) => color.hex.toLowerCase()}
-                        renderItem={(color, isSelected) => (
-                          <div
-                            className={cn(
-                              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                              "hover:shadow-md hover:bg-accent/50",
-                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                              isSelected && "ring-2 ring-primary bg-accent"
-                            )}
-                          >
-                            {/* Check icon - top right */}
-                            {isSelected && (
-                              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-10 h-10 rounded-lg border-2 border-border shrink-0"
-                                style={{ backgroundColor: color.hex }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-medium text-sm leading-tight">
-                                  {color.name}
-                                </h3>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {color.hex}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        emptyMessage="No colors found. Try adjusting your search."
-                        disabled={isReadonly}
-                      />
-                    )}
-
-                    {/* Hex Input */}
-                    <div className="space-y-2">
-                      <Label htmlFor="colorInput">Hex Color</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="colorInput"
-                          value={currentColorRaw || ""}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Allow any hex value (with or without #, any length)
-                            if (
-                              value === "" ||
-                              /^#?[0-9A-Fa-f]*$/.test(value)
-                            ) {
-                              setStepFormData({
-                                color: value.startsWith("#")
-                                  ? value
-                                  : `#${value}`,
-                              });
-                            }
-                          }}
-                          placeholder="#000000"
-                          className="flex-1"
-                          disabled={isReadonly}
-                        />
-                        <div
-                          className="w-10 h-10 rounded border shrink-0"
-                          style={{
-                            backgroundColor: currentColorRaw || "#000000",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </StepCard>
-                );
-              }
-
-              case "icon": {
-                // Use URL param if present, otherwise use API default
-                // Check if explicitly set (even if null) vs undefined (not set yet)
-                const iconValue = stepFormData["icon"] as
-                  | string
-                  | null
-                  | undefined;
-                const currentIcon =
-                  iconValue !== undefined
-                    ? iconValue
-                    : (personaData as { icon?: string })?.icon || "Zap";
-
-                const iconShowSelected =
-                  (stepFormData["iconShowSelected"] as
-                    | boolean
-                    | null
-                    | undefined) ?? false;
-
-                return (
-                  <StepCard
-                    stepStatus={stepStatus}
-                    stepNumber={stepNumber}
-                    stepTitle={stepTitle}
-                    stepDescription={stepDescription}
-                    isReadonly={isReadonly}
-                    isEditMode={isEditMode}
-                    searchTerm={
-                      (stepFormData["iconSearch"] as
-                        | string
-                        | null
-                        | undefined) || ""
-                    }
-                    onSearchChange={(term: string) =>
-                      setStepFormData({ iconSearch: term || null })
-                    }
-                    searchPlaceholder="Search icons..."
-                    debounceMs={300}
-                    filters={[
-                      {
-                        key: "showSelected",
-                        label: "Show selected",
-                        value: iconShowSelected,
-                        onChange: (value) =>
-                          setStepFormData({ iconShowSelected: value || null }),
-                      },
-                    ]}
-                    resetFields={["icon", "iconSearch", "iconShowSelected"]}
-                    {...(onReset ? { onReset } : {})}
-                    resetLabel="Reset"
-                  >
-                    <SelectableGrid
-                      items={allIcons}
-                      selectedId={currentIcon}
-                      onSelect={(icon) => {
-                        const current = stepFormData["icon"] as
-                          | string
-                          | null
-                          | undefined;
-                        setStepFormData({
-                          icon: icon === current ? null : icon,
-                        });
-                      }}
-                      getId={(icon) => icon}
-                      renderItem={(iconName, isSelected) => {
-                        const IconComponent =
-                          PERSONA_ICON_MAP[
-                            iconName as keyof typeof PERSONA_ICON_MAP
-                          ];
-                        if (!IconComponent) return null;
-
-                        const isSuggested =
-                          suggestedIconsAll.includes(iconName);
-
-                        return (
-                          <div
-                            className={cn(
-                              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                              "hover:shadow-md hover:bg-accent/50",
-                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                              isSelected && "ring-2 ring-primary bg-accent"
-                            )}
-                          >
-                            {/* Check icon - top right */}
-                            {isSelected && (
-                              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                              </div>
-                            )}
-
-                            {/* Suggested badge - top left */}
-                            {isSuggested && !isSelected && (
-                              <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                                Suggested
-                              </div>
-                            )}
-
-                            <div className="flex flex-col items-center gap-2">
-                              <IconComponent className="h-8 w-8 text-foreground" />
-                              <span className="text-sm font-medium text-center">
-                                {iconName}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      }}
-                      emptyMessage="No icons found. Try adjusting your search."
-                      disabled={isReadonly}
-                    />
-                  </StepCard>
-                );
-              }
-
-              case "content":
-                return (
-                  <StepCard
-                    stepStatus={stepStatus}
-                    stepNumber={stepNumber}
-                    stepTitle={stepTitle}
-                    stepDescription={stepDescription}
-                    isReadonly={isReadonly}
-                    isEditMode={isEditMode}
-                    resetFields={["instructions", "examples"]}
-                    {...(onReset ? { onReset } : {})}
-                    resetLabel="Reset"
-                  >
-                    {/* Instructions */}
-                    <div className="space-y-2">
-                      <Label htmlFor="instructions">Instructions *</Label>
-                      <Textarea
-                        id="instructions"
-                        data-testid="input-instructions"
-                        value={
-                          (stepFormData["instructions"] as
-                            | string
-                            | null
-                            | undefined) || ""
-                        }
-                        onChange={(e) =>
-                          setStepFormData({
-                            instructions: e.target.value || null,
-                          })
-                        }
-                        placeholder="Instructions that define how the persona should behave and respond."
-                        rows={8}
-                        required
-                        disabled={isReadonly}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Define the persona's behavior, communication style, and
-                        response patterns
-                      </p>
-                    </div>
-
-                    {/* Examples Section */}
-                    <div className="space-y-2 pt-2">
-                      <Label className="text-sm">Example Messages</Label>
-                      <ReorderableList
-                        items={
-                          (stepFormData["examples"] as
-                            | string[]
-                            | null
-                            | undefined) &&
-                          (stepFormData["examples"] as string[]).length > 0
-                            ? (stepFormData["examples"] as string[])
-                            : [""]
-                        }
-                        onItemsChange={(items) => {
-                          // Save items as-is (including empty strings for editing)
-                          // This allows ReorderableList to work properly when adding new items
-                          // Empty strings will be filtered when submitting the form
-                          if (items.length === 0) {
-                            setStepFormData({ examples: null });
-                          } else {
-                            setStepFormData({ examples: items });
-                          }
-                        }}
-                        suggestions={getExamplesHistory(
-                          stepFormData["departmentIds"] as
-                            | string[]
-                            | null
-                            | undefined
-                        )}
-                        maxItems={10}
-                        addButtonLabel="Add example"
-                        disabled={isReadonly}
-                        itemPlaceholder="Message"
-                      />
-                    </div>
-                  </StepCard>
-                );
-
-              default:
-                return null;
-            }
-          }}
+          renderStep={renderStep}
         />
       </div>
     </TooltipProvider>
   );
 }
+
+// Helper function to generate stable ID from server prop (same logic as inside component)
+function getStableServerPropId(
+  data: PersonaDetailOut | PersonaNewOut | undefined
+): string | null {
+  if (!data) return null;
+  if (typeof data === "object" && data !== null) {
+    if ("persona_id" in data && data.persona_id) {
+      return `persona_id:${String(data.persona_id)}`;
+    }
+    const keyFields: Record<string, unknown> = {};
+    if ("preset_colors" in data) {
+      keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
+        ? data["preset_colors"].length
+        : data["preset_colors"];
+    }
+    if ("valid_icons" in data) {
+      keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
+        ? data["valid_icons"].length
+        : data["valid_icons"];
+    }
+    if ("suggested_icons" in data) {
+      keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
+        ? data["suggested_icons"].length
+        : data["suggested_icons"];
+    }
+    if ("valid_department_ids" in data) {
+      keyFields["valid_department_ids"] = Array.isArray(
+        data["valid_department_ids"]
+      )
+        ? data["valid_department_ids"].sort().join(",")
+        : data["valid_department_ids"];
+    }
+    const sortedKeys = Object.keys(keyFields).sort();
+    const hash = sortedKeys
+      .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+      .join("|");
+    return `new:${hash.length}:${hash.slice(0, 100)}`;
+  }
+  return String(data);
+}
+
+// Memoize component to prevent re-renders when only prop references change (content is same)
+export default React.memo(PersonaComponent, (prevProps, nextProps) => {
+  const prevDetailId = getStableServerPropId(prevProps.personaDetail);
+  const nextDetailId = getStableServerPropId(nextProps.personaDetail);
+  const prevDefaultId = getStableServerPropId(prevProps.personaDetailDefault);
+  const nextDefaultId = getStableServerPropId(nextProps.personaDetailDefault);
+
+  // Compare primitive props (exclude server actions - they may be new references but functionally equivalent)
+  if (
+    prevProps.personaId !== nextProps.personaId ||
+    prevProps.mode !== nextProps.mode
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare server props by content ID, not reference
+  if (prevDetailId !== nextDetailId) {
+    return false; // Content changed, re-render
+  }
+
+  if (prevDefaultId !== nextDefaultId) {
+    return false; // Content changed, re-render
+  }
+
+  // All props are equivalent (same content), skip re-render
+  return true;
+});

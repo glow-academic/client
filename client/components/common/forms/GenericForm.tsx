@@ -6,18 +6,20 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { Parser } from "nuqs";
 import { useQueryStates, type Values } from "nuqs";
-import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 
 export type StepStatus = "pending" | "active" | "completed";
 
-export interface GenericFormStep {
+export interface GenericFormStep<
+  T extends Record<string, Parser<unknown>> = Record<string, Parser<unknown>>,
+> {
   id: string;
   title: string;
   description: string;
@@ -27,7 +29,7 @@ export interface GenericFormStep {
     label: string;
   }>;
   // Reset fields for this step
-  resetFields?: (keyof Values<any>)[];
+  resetFields?: (keyof Values<T>)[];
 }
 
 export interface GenericFormProps<T extends Record<string, Parser<unknown>>> {
@@ -35,7 +37,7 @@ export interface GenericFormProps<T extends Record<string, Parser<unknown>>> {
   nuqsParsers: T;
 
   // Steps configuration
-  steps: GenericFormStep[];
+  steps: GenericFormStep<T>[];
 
   // Step status calculation function
   getStepStatus: (stepId: string, formData: Values<T>) => StepStatus;
@@ -66,8 +68,11 @@ export interface GenericFormProps<T extends Record<string, Parser<unknown>>> {
   ) => void;
 
   // Form initialization from server data
-  serverData?: any;
-  initializeForm?: (serverData: any, isEditMode: boolean) => Partial<Values<T>>;
+  serverData?: unknown;
+  initializeForm?: (
+    serverData: unknown,
+    isEditMode: boolean
+  ) => Partial<Values<T>>;
   formFieldKeys?: (keyof Values<T>)[];
 
   // Reset handlers
@@ -110,23 +115,99 @@ function useFormInitialization<T extends Record<string, Parser<unknown>>>({
   initializeForm,
   setFormData,
 }: {
-  serverData: any;
+  serverData: unknown;
   isEditMode: boolean;
   formData: Values<T>;
   formFieldKeys?: (keyof Values<T>)[];
-  initializeForm?: (serverData: any, isEditMode: boolean) => Partial<Values<T>>;
+  initializeForm?: (
+    serverData: unknown,
+    isEditMode: boolean
+  ) => Partial<Values<T>>;
   setFormData: (updates: Partial<Values<T>>) => void;
 }) {
   const hasInitializedRef = React.useRef(false);
+  const initializeFormRef = React.useRef(initializeForm);
+  const setFormDataRef = React.useRef(setFormData);
+  const serverDataIdRef = React.useRef<string | null>(null);
+
+  // Update refs when they change
+  React.useEffect(() => {
+    initializeFormRef.current = initializeForm;
+  }, [initializeForm]);
 
   React.useEffect(() => {
-    if (!serverData || hasInitializedRef.current || !initializeForm) {
+    setFormDataRef.current = setFormData;
+  }, [setFormData]);
+
+  // Generate stable ID from serverData content (not object reference)
+  // This ID should only change when the actual data content changes, not when object reference changes
+  const serverDataId = React.useMemo(() => {
+    if (!serverData) return null;
+    // Try to find a stable identifier
+    if (typeof serverData === "object" && serverData !== null) {
+      // For edit mode (PersonaDetailOut), use persona_id
+      if ("persona_id" in serverData && serverData.persona_id) {
+        return `persona_id:${String(serverData.persona_id)}`;
+      }
+      // For create mode (PersonaNewOut), there's no ID
+      // Use a stable hash of immutable fields that represent the data identity
+      // These fields come from the server and shouldn't change between renders
+      const keyFields: Record<string, unknown> = {};
+      if ("preset_colors" in serverData) {
+        keyFields["preset_colors"] = Array.isArray(serverData["preset_colors"])
+          ? serverData["preset_colors"].length
+          : serverData["preset_colors"];
+      }
+      if ("valid_icons" in serverData) {
+        keyFields["valid_icons"] = Array.isArray(serverData["valid_icons"])
+          ? serverData["valid_icons"].length
+          : serverData["valid_icons"];
+      }
+      if ("suggested_icons" in serverData) {
+        keyFields["suggested_icons"] = Array.isArray(
+          serverData["suggested_icons"]
+        )
+          ? serverData["suggested_icons"].length
+          : serverData["suggested_icons"];
+      }
+      if ("valid_department_ids" in serverData) {
+        keyFields["valid_department_ids"] = Array.isArray(
+          serverData["valid_department_ids"]
+        )
+          ? serverData["valid_department_ids"].sort().join(",")
+          : serverData["valid_department_ids"];
+      }
+      // Create a stable hash from sorted keys and values
+      const sortedKeys = Object.keys(keyFields).sort();
+      const hash = sortedKeys
+        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+        .join("|");
+      return `new:${hash.length}:${hash.slice(0, 100)}`;
+    }
+    return String(serverData);
+  }, [serverData]);
+
+  React.useEffect(() => {
+    setFormDataRef.current = setFormData;
+
+    // Reset initialization flag only if serverData content actually changed (by ID, not reference)
+    if (serverDataIdRef.current !== serverDataId) {
+      hasInitializedRef.current = false;
+      serverDataIdRef.current = serverDataId;
+    }
+
+    if (
+      !serverData ||
+      hasInitializedRef.current ||
+      !initializeFormRef.current
+    ) {
       return;
     }
 
-    // Check if URL has any actual form field values
+    // Check if URL has any actual form field values (only check once on mount/serverData change)
     // Only check for meaningful form field values - empty strings or undefined should not prevent initialization
-    const keysToCheck = formFieldKeys || (Object.keys(formData) as (keyof Values<T>)[]);
+    const keysToCheck =
+      formFieldKeys || (Object.keys(formData) as (keyof Values<T>)[]);
     const hasUrlFormData = keysToCheck.some((key) => {
       const value = formData[key];
       if (value === undefined || value === null) return false;
@@ -143,30 +224,36 @@ function useFormInitialization<T extends Record<string, Parser<unknown>>>({
     }
 
     // URL is clean - initialize from server data
-    const updates = initializeForm(serverData, isEditMode);
-    
+    const updates = initializeFormRef.current(serverData, isEditMode);
+
     // Only set fields that have values (don't write nulls/empty strings to URL)
     const filteredUpdates: Partial<Values<T>> = {};
     Object.entries(updates).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (typeof value === "string" && value.trim() !== "") {
-          filteredUpdates[key as keyof Values<T>] = value as Values<T>[keyof Values<T>];
+          filteredUpdates[key as keyof Values<T>] =
+            value as Values<T>[keyof Values<T>];
         } else if (typeof value !== "string") {
-          filteredUpdates[key as keyof Values<T>] = value as Values<T>[keyof Values<T>];
+          filteredUpdates[key as keyof Values<T>] =
+            value as Values<T>[keyof Values<T>];
         }
       }
     });
 
     // Only update if we have fields to set
     if (Object.keys(filteredUpdates).length > 0) {
-      setFormData(filteredUpdates);
+      setFormDataRef.current(filteredUpdates);
     }
 
     hasInitializedRef.current = true;
-  }, [serverData, isEditMode, formData, formFieldKeys, initializeForm, setFormData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverDataId, isEditMode, formFieldKeys]);
+  // Note: formData, initializeForm, and setFormData are intentionally excluded from dependencies to prevent infinite loops
+  // formData is checked once when serverData changes, initializeForm and setFormData are stored in refs
+  // serverDataId is used instead of serverData to detect actual content changes, not object reference changes
 }
 
-export function GenericForm<T extends Record<string, Parser<unknown>>>({
+function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
   nuqsParsers,
   steps,
   getStepStatus,
@@ -198,13 +285,71 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
   const formData = externalFormData ?? internalFormData;
   const setFormData = externalSetFormData ?? internalSetFormData;
 
-  // Form initialization from server data
+  // Stabilize serverData prop reference to prevent unnecessary re-renders
+  // Generate stable ID from serverData content (same logic as in useFormInitialization)
+  const serverDataId = React.useMemo(() => {
+    if (!serverData) return null;
+    if (typeof serverData === "object" && serverData !== null) {
+      if ("persona_id" in serverData && serverData.persona_id) {
+        return `persona_id:${String(serverData.persona_id)}`;
+      }
+      const keyFields: Record<string, unknown> = {};
+      if ("preset_colors" in serverData) {
+        keyFields["preset_colors"] = Array.isArray(serverData["preset_colors"])
+          ? serverData["preset_colors"].length
+          : serverData["preset_colors"];
+      }
+      if ("valid_icons" in serverData) {
+        keyFields["valid_icons"] = Array.isArray(serverData["valid_icons"])
+          ? serverData["valid_icons"].length
+          : serverData["valid_icons"];
+      }
+      if ("suggested_icons" in serverData) {
+        keyFields["suggested_icons"] = Array.isArray(
+          serverData["suggested_icons"]
+        )
+          ? serverData["suggested_icons"].length
+          : serverData["suggested_icons"];
+      }
+      if ("valid_department_ids" in serverData) {
+        keyFields["valid_department_ids"] = Array.isArray(
+          serverData["valid_department_ids"]
+        )
+          ? serverData["valid_department_ids"].sort().join(",")
+          : serverData["valid_department_ids"];
+      }
+      const sortedKeys = Object.keys(keyFields).sort();
+      const hash = sortedKeys
+        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+        .join("|");
+      return `new:${hash.length}:${hash.slice(0, 100)}`;
+    }
+    return String(serverData);
+  }, [serverData]);
+
+  // Use ref to track stable serverData - only update when ID changes
+  const stableServerDataRef = React.useRef<{
+    data: typeof serverData;
+    id: string | null;
+  }>({ data: serverData, id: serverDataId });
+
+  // Update ref when ID changes (in effect to avoid render-time mutations)
+  React.useEffect(() => {
+    if (stableServerDataRef.current.id !== serverDataId) {
+      stableServerDataRef.current = { data: serverData, id: serverDataId };
+    }
+  }, [serverData, serverDataId]);
+
+  // Return stable reference - only changes when ID changes (via ref update)
+  const stableServerData = stableServerDataRef.current.data;
+
+  // Form initialization from server data (use stable reference to prevent re-renders)
   useFormInitialization({
-    serverData,
+    serverData: stableServerData,
     isEditMode: _isEditMode,
     formData,
-    formFieldKeys,
-    initializeForm,
+    ...(formFieldKeys ? { formFieldKeys } : {}),
+    ...(initializeForm ? { initializeForm } : {}),
     setFormData,
   });
 
@@ -237,7 +382,7 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
       const fieldsToReset = step.resetFields as (keyof Values<T>)[];
       const resetUpdates: Partial<Values<T>> = {};
       fieldsToReset.forEach((field) => {
-        resetUpdates[field] = null as any;
+        resetUpdates[field] = undefined as Values<T>[typeof field];
       });
 
       handleSetFormData(resetUpdates);
@@ -265,9 +410,7 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
         await onSubmit(formData);
       } catch (error) {
         toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to submit form"
+          error instanceof Error ? error.message : "Failed to submit form"
         );
       } finally {
         setIsSubmitting(false);
@@ -278,11 +421,14 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
 
   // Build ordered steps with content sections
   const orderedSteps = React.useMemo(() => {
-    const result: Array<{ type: "step"; step: GenericFormStep; index: number } | { type: "content"; content: NonNullable<typeof contentSections>[0] }> = [];
-    
+    const result: Array<
+      | { type: "step"; step: GenericFormStep<T>; index: number }
+      | { type: "content"; content: NonNullable<typeof contentSections>[0] }
+    > = [];
+
     steps.forEach((step, index) => {
       result.push({ type: "step", step, index });
-      
+
       // Insert content sections after this step
       if (contentSections) {
         contentSections.forEach((content) => {
@@ -298,7 +444,7 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
 
   return (
     <form onSubmit={handleSubmit} className={cn("space-y-8", className)}>
-      {orderedSteps.map((item, idx) => {
+      {orderedSteps.map((item, _idx) => {
         if (item.type === "content") {
           return (
             <React.Fragment key={item.content.id}>
@@ -348,7 +494,9 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
               formData,
               setFormData: handleSetFormData,
               ...(filterProps ? { filters: filterProps } : {}),
-              onReset: step.resetFields ? () => handleReset(step.id) : undefined,
+              ...(step.resetFields
+                ? { onReset: () => handleReset(step.id) }
+                : {}),
             })}
           </React.Fragment>
         );
@@ -381,14 +529,82 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {_isEditMode ? "Updating..." : "Creating..."}
               </>
-            ) : submitButton.label
-            ? submitButton.label
-            : _isEditMode
-            ? submitButton.updateLabel || "Update"
-            : submitButton.createLabel || "Create"}
+            ) : submitButton.label ? (
+              submitButton.label
+            ) : _isEditMode ? (
+              submitButton.updateLabel || "Update"
+            ) : (
+              submitButton.createLabel || "Create"
+            )}
           </Button>
         </div>
       )}
     </form>
   );
 }
+
+// Memoize GenericForm to prevent re-renders when props haven't changed
+// This is critical because GenericForm receives many props that might have new references
+// even if their content is the same (e.g., renderStep, onSubmit, etc.)
+export const GenericForm = React.memo(
+  GenericFormComponent,
+  (prevProps, nextProps) => {
+    // Shallow comparison for primitive props
+    if (
+      prevProps.isReadonly !== nextProps.isReadonly ||
+      prevProps.isEditMode !== nextProps.isEditMode ||
+      prevProps.className !== nextProps.className
+    ) {
+      return false; // Props changed, re-render
+    }
+
+    // Compare formData by reference (it's from nuqs and should be stable)
+    if (prevProps.formData !== nextProps.formData) {
+      return false; // FormData changed, re-render
+    }
+
+    // Compare steps array by reference (should be memoized in parent)
+    if (prevProps.steps !== nextProps.steps) {
+      return false; // Steps changed, re-render
+    }
+
+    // Compare serverData by stable ID (same logic as in useFormInitialization)
+    const prevServerDataId = prevProps.serverData
+      ? typeof prevProps.serverData === "object" &&
+        prevProps.serverData !== null
+        ? "persona_id" in prevProps.serverData &&
+          prevProps.serverData.persona_id
+          ? `persona_id:${String(prevProps.serverData.persona_id)}`
+          : "new"
+        : String(prevProps.serverData)
+      : null;
+    const nextServerDataId = nextProps.serverData
+      ? typeof nextProps.serverData === "object" &&
+        nextProps.serverData !== null
+        ? "persona_id" in nextProps.serverData &&
+          nextProps.serverData.persona_id
+          ? `persona_id:${String(nextProps.serverData.persona_id)}`
+          : "new"
+        : String(nextProps.serverData)
+      : null;
+
+    if (prevServerDataId !== nextServerDataId) {
+      return false; // ServerData content changed, re-render
+    }
+
+    // For function props, compare by reference (they should be memoized in parent)
+    // If they're new references but functionally equivalent, we still need to re-render
+    // because React can't know they're equivalent without calling them
+    if (
+      prevProps.getStepStatus !== nextProps.getStepStatus ||
+      prevProps.renderStep !== nextProps.renderStep ||
+      prevProps.onSubmit !== nextProps.onSubmit ||
+      prevProps.setFormData !== nextProps.setFormData
+    ) {
+      return false; // Function props changed, re-render
+    }
+
+    // All props are equivalent, skip re-render
+    return true;
+  }
+) as typeof GenericFormComponent;
