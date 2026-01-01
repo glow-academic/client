@@ -144,7 +144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profile/context": {
+    "/api/v4/profile_context": {
         parameters: {
             query?: never;
             header?: never;
@@ -1228,7 +1228,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/render": {
+    "/api/v4/documents_render": {
         parameters: {
             query?: never;
             header?: never;
@@ -3240,7 +3240,7 @@ export interface paths {
          * Connect Api
          * @description Client-to-server lifecycle event: Establish WebSocket connection.
          */
-        post: operations["connect_api_socket_v3_client_connect_post"];
+        post: operations["connect_api_socket_v4_client_connect_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3260,7 +3260,7 @@ export interface paths {
          * Disconnect Api
          * @description Client-to-server lifecycle event: Close WebSocket connection.
          */
-        post: operations["disconnect_api_socket_v3_client_disconnect_post"];
+        post: operations["disconnect_api_socket_v4_client_disconnect_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3280,7 +3280,7 @@ export interface paths {
          * Log Run Api
          * @description Client-to-server event: Log run pricing and metrics (async, non-blocking).
          */
-        post: operations["log_run_api_socket_v3_client_log_post"];
+        post: operations["log_run_api_socket_v4_client_log_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3300,7 +3300,7 @@ export interface paths {
          * Simulation Voice Start Api
          * @description Client-to-server event: Start a voice simulation session.
          */
-        post: operations["simulation_voice_start_api_socket_v3_client_agents_simulations_start_post"];
+        post: operations["simulation_voice_start_api_socket_v4_client_agents_simulations_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3320,7 +3320,7 @@ export interface paths {
          * Simulation Voice Debug Info Api
          * @description Client-to-server event: Send debug information from voice simulation.
          */
-        post: operations["simulation_voice_debug_info_api_socket_v3_client_agents_simulations_debug_post"];
+        post: operations["simulation_voice_debug_info_api_socket_v4_client_agents_simulations_debug_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3340,7 +3340,7 @@ export interface paths {
          * Simulation Voice Assistant Delta Api
          * @description Client-to-server event: Send incremental assistant tool call delta in voice simulation.
          */
-        post: operations["simulation_voice_assistant_delta_api_socket_v3_client_agents_simulations_delta_post"];
+        post: operations["simulation_voice_assistant_delta_api_socket_v4_client_agents_simulations_delta_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3360,7 +3360,7 @@ export interface paths {
          * Simulation Voice Assistant Done Api
          * @description Client-to-server event: Signal that assistant tool call is done in voice simulation.
          */
-        post: operations["simulation_voice_assistant_done_api_socket_v3_client_agents_simulations_done_post"];
+        post: operations["simulation_voice_assistant_done_api_socket_v4_client_agents_simulations_done_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3380,7 +3380,7 @@ export interface paths {
          * Simulation Voice Assistant Audio Link Api
          * @description Client-to-server event: Link audio upload to assistant message.
          */
-        post: operations["simulation_voice_assistant_audio_link_api_socket_v3_client_agents_simulations_audio_link_post"];
+        post: operations["simulation_voice_assistant_audio_link_api_socket_v4_client_agents_simulations_audio_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3400,7 +3400,7 @@ export interface paths {
          * Generate Scenario Api
          * @description Client-to-server event: Generate a new scenario using AI.
          */
-        post: operations["generate_scenario_api_socket_v3_client_agents_scenarios_generate_post"];
+        post: operations["generate_scenario_api_socket_v4_client_agents_scenarios_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3420,7 +3420,7 @@ export interface paths {
          * Scenario Randomize Api
          * @description Client-to-server event: Randomize scenario selections.
          */
-        post: operations["scenario_randomize_api_socket_v3_client_agents_scenarios_randomize_post"];
+        post: operations["scenario_randomize_api_socket_v4_client_agents_scenarios_randomize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3440,7 +3440,7 @@ export interface paths {
          * Regenerate Scenario Api
          * @description Client-to-server event: Regenerate a scenario with new attributes.
          */
-        post: operations["regenerate_scenario_api_socket_v3_client_agents_scenarios_regenerate_post"];
+        post: operations["regenerate_scenario_api_socket_v4_client_agents_scenarios_regenerate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3457,10 +3457,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Document Generate Api
-         * @description Client-to-server event: Generate a document template using AI.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["document_generate_api_socket_v3_client_agents_documents_generate_post"];
+        post: operations["endpoint_handler_socket_v4_client_agents_documents_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3480,7 +3480,7 @@ export interface paths {
          * Video Generate Api
          * @description Client-to-server event: Generate a video using AI.
          */
-        post: operations["video_generate_api_socket_v3_client_agents_videos_generate_post"];
+        post: operations["video_generate_api_socket_v4_client_agents_videos_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3500,7 +3500,7 @@ export interface paths {
          * Generate Image Api
          * @description Client-to-server event: Generate an image.
          */
-        post: operations["generate_image_api_socket_v3_client_agents_images_generate_post"];
+        post: operations["generate_image_api_socket_v4_client_agents_images_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3520,7 +3520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_client_agents_rubrics_generate_post"];
+        post: operations["endpoint_handler_socket_v4_client_agents_rubrics_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3540,7 +3540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_client_agents_rubrics_regenerate_post"];
+        post: operations["endpoint_handler_socket_v4_client_agents_rubrics_regenerate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3560,7 +3560,7 @@ export interface paths {
          * Classify Upload Api
          * @description Client-to-server event: Classify an uploaded file.
          */
-        post: operations["classify_upload_api_socket_v3_client_agents_classify_classify_post"];
+        post: operations["classify_upload_api_socket_v4_client_agents_classify_classify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3577,10 +3577,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Hints Generate Api
-         * @description Client-to-server event: Generate hints for a simulation message.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["simulation_hints_generate_api_socket_v3_client_agents_hints_generate_post"];
+        post: operations["endpoint_handler_socket_v4_client_agents_hints_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3597,10 +3597,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Grading Start Api
-         * @description Client-to-server event: Start grading for a simulation chat.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["simulation_grading_start_api_socket_v3_client_agents_grades_start_post"];
+        post: operations["endpoint_handler_socket_v4_client_agents_grades_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/agents/grades/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audio Generate Api
+         * @description Client-to-server event: Generate audio using AI.
+         */
+        post: operations["audio_generate_api_socket_v4_client_agents_grades_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3617,10 +3637,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
+         * Member Generate Api
+         * @description Client-to-server event: Generate member agent response.
          */
-        post: operations["endpoint_handler_socket_v3_client_agents_members_generate_post"];
+        post: operations["member_generate_api_socket_v4_client_agents_members_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3640,7 +3660,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_client_agents_members_progress_post"];
+        post: operations["endpoint_handler_socket_v4_client_agents_members_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3660,7 +3680,7 @@ export interface paths {
          * Simulation Enter Api
          * @description Client-to-server event: Update chat created_at timestamp when entering a chat.
          */
-        post: operations["simulation_enter_api_socket_v3_client_simulations_enter_post"];
+        post: operations["simulation_enter_api_socket_v4_client_simulations_enter_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3680,7 +3700,7 @@ export interface paths {
          * Simulation Join Api
          * @description Client-to-server event: Join a simulation chat room for real-time updates.
          */
-        post: operations["simulation_join_api_socket_v3_client_simulations_join_post"];
+        post: operations["simulation_join_api_socket_v4_client_simulations_join_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3700,7 +3720,7 @@ export interface paths {
          * Simulation Leave Api
          * @description Client-to-server event: Leave a simulation chat room.
          */
-        post: operations["simulation_leave_api_socket_v3_client_simulations_leave_post"];
+        post: operations["simulation_leave_api_socket_v4_client_simulations_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3720,7 +3740,7 @@ export interface paths {
          * Simulation Start Api
          * @description Client-to-server event: Start simulation attempt.
          */
-        post: operations["simulation_start_api_socket_v3_client_simulations_start_post"];
+        post: operations["simulation_start_api_socket_v4_client_simulations_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3740,7 +3760,7 @@ export interface paths {
          * Simulation Text End Api
          * @description Client-to-server event: End simulation chat.
          */
-        post: operations["simulation_text_end_api_socket_v3_client_simulations_end_post"];
+        post: operations["simulation_text_end_api_socket_v4_client_simulations_end_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3760,7 +3780,7 @@ export interface paths {
          * Simulation Next Api
          * @description Internal event: Create next scenario for attempt.
          */
-        post: operations["simulation_next_api_socket_v3_client_simulations_next_post"];
+        post: operations["simulation_next_api_socket_v4_client_simulations_next_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3780,7 +3800,7 @@ export interface paths {
          * Simulation Advance Api
          * @description Internal event: Attach scenario to simulation.
          */
-        post: operations["simulation_advance_api_socket_v3_client_simulations_advance_post"];
+        post: operations["simulation_advance_api_socket_v4_client_simulations_advance_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3800,7 +3820,7 @@ export interface paths {
          * Simulation Text Stop Api
          * @description Client-to-server event: Stop an active simulation run.
          */
-        post: operations["simulation_text_stop_api_socket_v3_client_simulations_stop_post"];
+        post: operations["simulation_text_stop_api_socket_v4_client_simulations_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3820,7 +3840,7 @@ export interface paths {
          * Simulation Voice Stop Api
          * @description Client-to-server event: Stop a voice simulation session.
          */
-        post: operations["simulation_voice_stop_api_socket_v3_client_simulations_voice_stop_post"];
+        post: operations["simulation_voice_stop_api_socket_v4_client_simulations_voice_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3840,7 +3860,7 @@ export interface paths {
          * Benchmark Enter Api
          * @description Client-to-server event: Update test created_at timestamp when entering a test.
          */
-        post: operations["benchmark_enter_api_socket_v3_client_benchmark_enter_post"];
+        post: operations["benchmark_enter_api_socket_v4_client_benchmark_enter_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3860,7 +3880,7 @@ export interface paths {
          * Benchmark Join Api
          * @description Client-to-server event: Join a benchmark room for real-time updates.
          */
-        post: operations["benchmark_join_api_socket_v3_client_benchmark_join_post"];
+        post: operations["benchmark_join_api_socket_v4_client_benchmark_join_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3880,7 +3900,7 @@ export interface paths {
          * Benchmark Leave Api
          * @description Client-to-server event: Leave a benchmark room.
          */
-        post: operations["benchmark_leave_api_socket_v3_client_benchmark_leave_post"];
+        post: operations["benchmark_leave_api_socket_v4_client_benchmark_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3900,7 +3920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_client_benchmark_start_post"];
+        post: operations["endpoint_handler_socket_v4_client_benchmark_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3920,7 +3940,7 @@ export interface paths {
          * Benchmark Advance Api
          * @description Internal event: Update client with test/run status.
          */
-        post: operations["benchmark_advance_api_socket_v3_client_benchmark_advance_post"];
+        post: operations["benchmark_advance_api_socket_v4_client_benchmark_advance_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3940,7 +3960,7 @@ export interface paths {
          * Benchmark Stop Api
          * @description Client-to-server event: Stop a benchmark attempt.
          */
-        post: operations["benchmark_stop_api_socket_v3_client_benchmark_stop_post"];
+        post: operations["benchmark_stop_api_socket_v4_client_benchmark_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3960,7 +3980,7 @@ export interface paths {
          * Benchmark Next Api
          * @description Internal event: Process next run/group for benchmark attempt.
          */
-        post: operations["benchmark_next_api_socket_v3_client_benchmark_next_post"];
+        post: operations["benchmark_next_api_socket_v4_client_benchmark_next_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3980,7 +4000,7 @@ export interface paths {
          * Benchmark End Api
          * @description Internal event: End benchmark test and run grading.
          */
-        post: operations["benchmark_end_api_socket_v3_client_benchmark_end_post"];
+        post: operations["benchmark_end_api_socket_v4_client_benchmark_end_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4000,7 +4020,7 @@ export interface paths {
          * Connection Confirmed Api
          * @description Server-to-client event: Connection confirmed after WebSocket establishment.
          */
-        post: operations["connection_confirmed_api_socket_v3_server_connection_confirmed_post"];
+        post: operations["connection_confirmed_api_socket_v4_server_connection_confirmed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4020,7 +4040,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_simulation_text_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_text_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4040,7 +4060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_simulation_text_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_text_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4060,7 +4080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_simulation_text_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_text_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4077,10 +4097,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Voice Eval Api
-         * @description Internal event: Execute voice agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["voice_eval_api_socket_v3_server_agents_simulations_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4100,7 +4120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4120,7 +4140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4140,7 +4160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4160,7 +4180,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4177,10 +4197,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Speak Eval Api
-         * @description Internal event: Execute speak tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["speak_eval_api_socket_v3_server_agents_simulations_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4200,7 +4220,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_speak_tool_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_tool_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4220,7 +4240,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_speak_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4240,7 +4260,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_speak_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4260,7 +4280,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_tools_speak_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4280,7 +4300,7 @@ export interface paths {
          * Simulation Voice Start Response Api
          * @description Server-to-client event: Voice simulation start response.
          */
-        post: operations["simulation_voice_start_response_api_socket_v3_server_agents_simulations_start_response_post"];
+        post: operations["simulation_voice_start_response_api_socket_v4_server_agents_simulations_start_response_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4300,7 +4320,7 @@ export interface paths {
          * Simulation Voice Start Error Api
          * @description Server-to-client event: Error occurred while starting voice simulation.
          */
-        post: operations["simulation_voice_start_error_api_socket_v3_server_agents_simulations_start_error_post"];
+        post: operations["simulation_voice_start_error_api_socket_v4_server_agents_simulations_start_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4320,7 +4340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_simulation_voice_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4340,7 +4360,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_simulations_simulation_voice_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4360,7 +4380,7 @@ export interface paths {
          * Simulation Voice Debug Info Error Api
          * @description Server-to-client event: Error occurred while processing debug info in voice simulation.
          */
-        post: operations["simulation_voice_debug_info_error_api_socket_v3_server_agents_simulations_debug_error_post"];
+        post: operations["simulation_voice_debug_info_error_api_socket_v4_server_agents_simulations_debug_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4380,7 +4400,7 @@ export interface paths {
          * Voice Tool Call Error Api
          * @description Server-to-client event: Error occurred in voice tool call.
          */
-        post: operations["voice_tool_call_error_api_socket_v3_server_agents_simulations_tool_call_error_post"];
+        post: operations["voice_tool_call_error_api_socket_v4_server_agents_simulations_tool_call_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4400,7 +4420,7 @@ export interface paths {
          * Voice Assistant Audio Link Error Api
          * @description Server-to-client event: Error occurred linking audio.
          */
-        post: operations["voice_assistant_audio_link_error_api_socket_v3_server_agents_simulations_audio_link_error_post"];
+        post: operations["voice_assistant_audio_link_error_api_socket_v4_server_agents_simulations_audio_link_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4420,7 +4440,7 @@ export interface paths {
          * Scenario Generation Progress Api
          * @description Server-to-client event: Scenario generation progress update.
          */
-        post: operations["scenario_generation_progress_api_socket_v3_server_agents_scenarios_generation_progress_post"];
+        post: operations["scenario_generation_progress_api_socket_v4_server_agents_scenarios_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4440,7 +4460,7 @@ export interface paths {
          * Scenario Generation Complete Api
          * @description Server-to-client event: Scenario generation completed successfully.
          */
-        post: operations["scenario_generation_complete_api_socket_v3_server_agents_scenarios_generation_complete_post"];
+        post: operations["scenario_generation_complete_api_socket_v4_server_agents_scenarios_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4460,7 +4480,7 @@ export interface paths {
          * Scenario Generation Error Api
          * @description Server-to-client event: Error occurred during scenario generation.
          */
-        post: operations["scenario_generation_error_api_socket_v3_server_agents_scenarios_generation_error_post"];
+        post: operations["scenario_generation_error_api_socket_v4_server_agents_scenarios_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4480,7 +4500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_scenario_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_scenario_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4500,7 +4520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_scenario_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_scenario_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4520,7 +4540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_scenario_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_scenario_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4537,10 +4557,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Scenario Eval Api
-         * @description Internal event: Execute scenario agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["scenario_eval_api_socket_v3_server_agents_scenarios_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4560,7 +4580,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4580,7 +4600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4600,7 +4620,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4620,7 +4640,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4637,10 +4657,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Video Eval Api
-         * @description Internal event: Execute video tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["video_eval_api_socket_v3_server_agents_scenarios_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4660,7 +4680,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_document_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_document_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4680,7 +4700,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_document_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_document_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4700,7 +4720,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_document_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_document_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4720,7 +4740,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_image_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_image_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4740,7 +4760,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_image_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_image_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4760,7 +4780,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_image_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_image_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4780,7 +4800,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_objectives_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4800,7 +4820,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_objectives_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4820,7 +4840,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_objectives_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4840,7 +4860,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_questions_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4860,7 +4880,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_questions_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4880,7 +4900,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_questions_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4900,7 +4920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4920,7 +4940,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4940,7 +4960,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4960,7 +4980,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4980,7 +5000,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_scenario_tool_title_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5000,7 +5020,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_scenario_tool_title_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5020,7 +5040,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_scenario_tool_title_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5040,7 +5060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_video_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_video_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5060,7 +5080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_video_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_video_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5080,67 +5100,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_scenarios_tools_video_progress_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/documents/generation_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Document Template Generation Progress Api
-         * @description Server-to-client event: Progress update for document template generation.
-         */
-        post: operations["document_template_generation_progress_api_socket_v3_server_agents_documents_generation_progress_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/documents/generation_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Document Template Generation Complete Api
-         * @description Server-to-client event: Document template generation completed successfully.
-         */
-        post: operations["document_template_generation_complete_api_socket_v3_server_agents_documents_generation_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/documents/generation_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Document Template Generation Error Api
-         * @description Server-to-client event: Error occurred during document template generation.
-         */
-        post: operations["document_template_generation_error_api_socket_v3_server_agents_documents_generation_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_video_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5160,7 +5120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_document_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_document_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5180,7 +5140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_document_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_document_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5200,7 +5160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_document_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_document_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5217,10 +5177,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Document Eval Api
-         * @description Internal event: Execute document agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["document_eval_api_socket_v3_server_agents_documents_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5240,7 +5200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_tools_document_tool_title_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5260,7 +5220,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_tools_document_tool_title_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5280,7 +5240,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_tools_document_tool_title_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5297,17 +5257,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Debug Eval Api
-         * @description Internal event: Execute debug tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["debug_eval_api_socket_v3_server_agents_documents_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/documents/tools/debug_info": {
+    "/socket/v4/server/agents/documents/tools/document_tool_debug": {
         parameters: {
             query?: never;
             header?: never;
@@ -5320,7 +5280,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_debug_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5340,7 +5300,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5360,7 +5320,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5380,7 +5340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5400,7 +5360,7 @@ export interface paths {
          * Video Generation Progress Api
          * @description Server-to-client event: Progress update for video generation.
          */
-        post: operations["video_generation_progress_api_socket_v3_server_agents_videos_generation_progress_post"];
+        post: operations["video_generation_progress_api_socket_v4_server_agents_videos_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5420,7 +5380,7 @@ export interface paths {
          * Video Generation Complete Api
          * @description Server-to-client event: Video generation completed successfully.
          */
-        post: operations["video_generation_complete_api_socket_v3_server_agents_videos_generation_complete_post"];
+        post: operations["video_generation_complete_api_socket_v4_server_agents_videos_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5440,7 +5400,7 @@ export interface paths {
          * Video Generation Error Api
          * @description Server-to-client event: Error occurred during video generation.
          */
-        post: operations["video_generation_error_api_socket_v3_server_agents_videos_generation_error_post"];
+        post: operations["video_generation_error_api_socket_v4_server_agents_videos_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5460,7 +5420,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_video_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_video_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5480,7 +5440,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_video_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_video_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5500,7 +5460,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_video_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_video_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5517,10 +5477,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Video Eval Api
-         * @description Internal event: Execute video agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["video_eval_api_socket_v3_server_agents_videos_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5540,7 +5500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_tools_video_tool_title_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5560,7 +5520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_tools_video_tool_title_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5580,7 +5540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_tools_video_tool_title_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5597,10 +5557,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Debug Eval Api
-         * @description Internal event: Execute debug tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["debug_eval_api_socket_v3_server_agents_videos_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5620,7 +5580,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5640,7 +5600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5660,7 +5620,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5680,7 +5640,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5700,7 +5660,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_generation_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5720,7 +5680,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_generation_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5740,7 +5700,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_generation_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5757,10 +5717,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Image Eval Api
-         * @description Internal event: Execute image agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["image_eval_api_socket_v3_server_agents_images_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5780,7 +5740,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5800,7 +5760,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5820,7 +5780,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5840,7 +5800,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5857,10 +5817,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Title Eval Api
-         * @description Internal event: Execute title tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["title_eval_api_socket_v3_server_agents_images_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5880,7 +5840,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_tools_image_tool_title_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5900,7 +5860,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_tools_image_tool_title_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5920,7 +5880,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_images_tools_image_tool_title_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5940,7 +5900,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_generation_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5960,7 +5920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_generation_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5980,7 +5940,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_generation_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5997,10 +5957,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rubric Eval Api
-         * @description Internal event: Execute rubric agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["rubric_eval_api_socket_v3_server_agents_rubrics_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6020,7 +5980,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_title_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6040,7 +6000,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_title_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6060,7 +6020,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_title_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6077,10 +6037,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rubric Eval Api
-         * @description Internal event: Execute rubric tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["rubric_eval_api_socket_v3_server_agents_rubrics_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6100,7 +6060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6120,7 +6080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6140,7 +6100,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6160,7 +6120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6180,7 +6140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_standard_description_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_standard_description_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6200,7 +6160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_standard_description_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6220,7 +6180,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_standard_description_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6240,7 +6200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_rubrics_tools_standard_description_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6260,7 +6220,7 @@ export interface paths {
          * Classify Upload Progress Api
          * @description Server-to-client event: Upload classification progress update.
          */
-        post: operations["classify_upload_progress_api_socket_v3_server_agents_classify_classification_progress_post"];
+        post: operations["classify_upload_progress_api_socket_v4_server_agents_classify_classification_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6280,7 +6240,7 @@ export interface paths {
          * Classify Upload Complete Api
          * @description Server-to-client event: Upload classification completed successfully.
          */
-        post: operations["classify_upload_complete_api_socket_v3_server_agents_classify_classification_complete_post"];
+        post: operations["classify_upload_complete_api_socket_v4_server_agents_classify_classification_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6300,7 +6260,7 @@ export interface paths {
          * Classify Upload Error Api
          * @description Server-to-client event: Error occurred during upload classification.
          */
-        post: operations["classify_upload_error_api_socket_v3_server_agents_classify_classification_error_post"];
+        post: operations["classify_upload_error_api_socket_v4_server_agents_classify_classification_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6320,7 +6280,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_classify_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_classify_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6340,7 +6300,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_classify_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_classify_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6360,7 +6320,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_classify_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_classify_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6377,10 +6337,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Classify Eval Api
-         * @description Internal event: Execute classify agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["classify_eval_api_socket_v3_server_agents_classify_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6400,7 +6360,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6420,7 +6380,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6440,7 +6400,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6460,7 +6420,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6477,10 +6437,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Classification Eval Api
-         * @description Internal event: Execute classification tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["classification_eval_api_socket_v3_server_agents_classify_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6500,7 +6460,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_classification_tool_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_tool_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6520,7 +6480,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_classification_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6540,7 +6500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_classification_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6560,7 +6520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_classify_tools_classification_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6577,10 +6537,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Hint Generation Progress Api
-         * @description Server-to-client event: Hint generation progress update.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["hint_generation_progress_api_socket_v3_server_agents_hints_generation_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6600,7 +6560,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_hint_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_hint_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6620,7 +6580,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_hint_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_hint_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6640,7 +6600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_hint_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_hint_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6657,17 +6617,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Hint Eval Api
-         * @description Internal event: Execute hint agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["hint_eval_api_socket_v3_server_agents_hints_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/hints/tools/debug_info": {
+    "/socket/v4/server/agents/hints/tools/hint_tool_debug": {
         parameters: {
             query?: never;
             header?: never;
@@ -6680,7 +6640,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_debug_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6700,7 +6660,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6720,7 +6680,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6740,7 +6700,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6757,10 +6717,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Hint Eval Api
-         * @description Internal event: Execute hint tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["hint_eval_api_socket_v3_server_agents_hints_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6780,7 +6740,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_hint_tool_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6800,7 +6760,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_hint_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6820,7 +6780,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_hint_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6840,7 +6800,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_hints_tools_hint_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6857,10 +6817,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Grading Progress Api
-         * @description Server-to-client event: Simulation grading progress update.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["simulation_grading_progress_api_socket_v3_server_agents_grades_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6880,7 +6840,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_grade_text_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_grade_text_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6900,7 +6860,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_grade_text_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_grade_text_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6920,7 +6880,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_grade_text_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_grade_text_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6937,10 +6897,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Audio Eval Api
-         * @description Internal event: Execute audio agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["audio_eval_api_socket_v3_server_agents_grades_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6960,7 +6920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_audio_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_audio_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6980,7 +6940,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_audio_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_audio_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7000,7 +6960,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_audio_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_audio_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7017,10 +6977,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Debug Eval Api
-         * @description Internal event: Execute debug tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["debug_eval_api_socket_v3_server_agents_grades_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7040,7 +7000,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_message_improvement_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7060,7 +7020,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_message_improvement_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7080,7 +7040,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_message_improvement_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7100,7 +7060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_message_strength_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7120,7 +7080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_message_strength_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7140,7 +7100,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_message_strength_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7160,7 +7120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_feedback_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_feedback_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7180,7 +7140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_feedback_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_feedback_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7200,7 +7160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_feedback_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_feedback_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7220,7 +7180,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7240,7 +7200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7260,7 +7220,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7280,7 +7240,67 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/grades/generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audio Generation Progress Api
+         * @description Server-to-client event: Progress update for audio generation.
+         */
+        post: operations["audio_generation_progress_api_socket_v4_server_agents_grades_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/grades/generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audio Generation Complete Api
+         * @description Server-to-client event: Audio generation completed successfully.
+         */
+        post: operations["audio_generation_complete_api_socket_v4_server_agents_grades_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/grades/generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audio Generation Error Api
+         * @description Server-to-client event: Error occurred during audio generation.
+         */
+        post: operations["audio_generation_error_api_socket_v4_server_agents_grades_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7300,7 +7320,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_audio_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_audio_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7320,7 +7340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_audio_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_audio_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7340,7 +7360,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_grades_audio_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_grades_audio_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7360,7 +7380,7 @@ export interface paths {
          * Member Generate Error Api
          * @description Server-to-client event: Error occurred in member generation.
          */
-        post: operations["member_generate_error_api_socket_v3_server_agents_members_generate_error_post"];
+        post: operations["member_generate_error_api_socket_v4_server_agents_members_generate_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7380,7 +7400,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_members_member_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_member_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7400,7 +7420,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_members_member_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_member_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7417,10 +7437,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Member Eval Api
-         * @description Internal event: Execute member agent for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["member_eval_api_socket_v3_server_agents_members_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7440,7 +7460,7 @@ export interface paths {
          * Member Progress Error Api
          * @description Server-to-client event: Error occurred in member progress.
          */
-        post: operations["member_progress_error_api_socket_v3_server_agents_members_progress_error_post"];
+        post: operations["member_progress_error_api_socket_v4_server_agents_members_progress_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7460,7 +7480,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7480,7 +7500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_complete_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7500,7 +7520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_error_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7520,7 +7540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_progress_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7537,10 +7557,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Conversation Eval Api
-         * @description Internal event: Execute conversation tool for eval.
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
          */
-        post: operations["conversation_eval_api_socket_v3_server_agents_members_tools_eval_post"];
+        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7560,7 +7580,7 @@ export interface paths {
          * Simulation Enter Response Api
          * @description Server-to-client event: Successfully updated chat created_at timestamp.
          */
-        post: operations["simulation_enter_response_api_socket_v3_server_simulations_enter_response_post"];
+        post: operations["simulation_enter_response_api_socket_v4_server_simulations_enter_response_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7580,7 +7600,7 @@ export interface paths {
          * Simulation Enter Error Api
          * @description Server-to-client event: Error occurred while updating chat created_at timestamp.
          */
-        post: operations["simulation_enter_error_api_socket_v3_server_simulations_enter_error_post"];
+        post: operations["simulation_enter_error_api_socket_v4_server_simulations_enter_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7600,7 +7620,7 @@ export interface paths {
          * Simulation Joined Api
          * @description Server-to-client event: Successfully joined simulation chat room.
          */
-        post: operations["simulation_joined_api_socket_v3_server_simulations_joined_post"];
+        post: operations["simulation_joined_api_socket_v4_server_simulations_joined_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7620,7 +7640,7 @@ export interface paths {
          * Simulation Join Error Api
          * @description Server-to-client event: Error occurred while joining simulation chat room.
          */
-        post: operations["simulation_join_error_api_socket_v3_server_simulations_join_error_post"];
+        post: operations["simulation_join_error_api_socket_v4_server_simulations_join_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7640,7 +7660,7 @@ export interface paths {
          * Simulation Leave Error Api
          * @description Server-to-client event: Error occurred while leaving simulation chat room.
          */
-        post: operations["simulation_leave_error_api_socket_v3_server_simulations_leave_error_post"];
+        post: operations["simulation_leave_error_api_socket_v4_server_simulations_leave_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7660,7 +7680,7 @@ export interface paths {
          * Simulation Start Error Api
          * @description Server-to-client event: Error occurred while starting simulation.
          */
-        post: operations["simulation_start_error_api_socket_v3_server_simulations_start_error_post"];
+        post: operations["simulation_start_error_api_socket_v4_server_simulations_start_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7680,7 +7700,7 @@ export interface paths {
          * Simulation Started Api
          * @description Server-to-client event: Simulation started successfully.
          */
-        post: operations["simulation_started_api_socket_v3_server_simulations_started_post"];
+        post: operations["simulation_started_api_socket_v4_server_simulations_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7700,7 +7720,7 @@ export interface paths {
          * Simulation Text End Error Api
          * @description Server-to-client event: Error occurred while ending simulation.
          */
-        post: operations["simulation_text_end_error_api_socket_v3_server_simulations_end_error_post"];
+        post: operations["simulation_text_end_error_api_socket_v4_server_simulations_end_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7720,7 +7740,7 @@ export interface paths {
          * Simulation Ended Api
          * @description Server-to-client event: Simulation ended successfully.
          */
-        post: operations["simulation_ended_api_socket_v3_server_simulations_ended_post"];
+        post: operations["simulation_ended_api_socket_v4_server_simulations_ended_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7740,7 +7760,7 @@ export interface paths {
          * End All Started Api
          * @description Server-to-client event: Ending all chats started.
          */
-        post: operations["end_all_started_api_socket_v3_server_simulations_end_all_started_post"];
+        post: operations["end_all_started_api_socket_v4_server_simulations_end_all_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7760,7 +7780,7 @@ export interface paths {
          * End Chat Started Api
          * @description Server-to-client event: Ending chat started.
          */
-        post: operations["end_chat_started_api_socket_v3_server_simulations_end_chat_started_post"];
+        post: operations["end_chat_started_api_socket_v4_server_simulations_end_chat_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7780,7 +7800,7 @@ export interface paths {
          * End All Completed Api
          * @description Server-to-client event: Ending all chats completed.
          */
-        post: operations["end_all_completed_api_socket_v3_server_simulations_end_all_completed_post"];
+        post: operations["end_all_completed_api_socket_v4_server_simulations_end_all_completed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7800,7 +7820,7 @@ export interface paths {
          * Simulation Next Error Api
          * @description Server-to-client event: Error occurred in simulation next.
          */
-        post: operations["simulation_next_error_api_socket_v3_server_simulations_next_error_post"];
+        post: operations["simulation_next_error_api_socket_v4_server_simulations_next_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7820,7 +7840,7 @@ export interface paths {
          * Simulation Advance Error Api
          * @description Server-to-client event: Error occurred in simulation advance.
          */
-        post: operations["simulation_advance_error_api_socket_v3_server_simulations_advance_error_post"];
+        post: operations["simulation_advance_error_api_socket_v4_server_simulations_advance_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7840,7 +7860,7 @@ export interface paths {
          * Simulation Advanced Api
          * @description Server-to-client event: Simulation advanced successfully.
          */
-        post: operations["simulation_advanced_api_socket_v3_server_simulations_advanced_post"];
+        post: operations["simulation_advanced_api_socket_v4_server_simulations_advanced_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7860,7 +7880,7 @@ export interface paths {
          * Simulation Stopped Api
          * @description Server-to-client event: Simulation stopped successfully.
          */
-        post: operations["simulation_stopped_api_socket_v3_server_simulations_stopped_post"];
+        post: operations["simulation_stopped_api_socket_v4_server_simulations_stopped_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7880,7 +7900,7 @@ export interface paths {
          * Simulation Message Cancelled Api
          * @description Server-to-client event: Simulation message was cancelled.
          */
-        post: operations["simulation_message_cancelled_api_socket_v3_server_simulations_message_cancelled_post"];
+        post: operations["simulation_message_cancelled_api_socket_v4_server_simulations_message_cancelled_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7900,7 +7920,7 @@ export interface paths {
          * Simulation Text Stop Error Api
          * @description Server-to-client event: Error occurred while stopping simulation.
          */
-        post: operations["simulation_text_stop_error_api_socket_v3_server_simulations_stop_error_post"];
+        post: operations["simulation_text_stop_error_api_socket_v4_server_simulations_stop_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7920,7 +7940,7 @@ export interface paths {
          * Simulation Voice Stop Response Api
          * @description Server-to-client event: Voice simulation stop response.
          */
-        post: operations["simulation_voice_stop_response_api_socket_v3_server_simulations_voice_stop_response_post"];
+        post: operations["simulation_voice_stop_response_api_socket_v4_server_simulations_voice_stop_response_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7940,7 +7960,7 @@ export interface paths {
          * Simulation Voice Stop Error Api
          * @description Server-to-client event: Error occurred while stopping voice simulation.
          */
-        post: operations["simulation_voice_stop_error_api_socket_v3_server_simulations_voice_stop_error_post"];
+        post: operations["simulation_voice_stop_error_api_socket_v4_server_simulations_voice_stop_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7960,7 +7980,7 @@ export interface paths {
          * Benchmark Enter Response Api
          * @description Server-to-client event: Successfully updated test created_at timestamp.
          */
-        post: operations["benchmark_enter_response_api_socket_v3_server_benchmark_enter_response_post"];
+        post: operations["benchmark_enter_response_api_socket_v4_server_benchmark_enter_response_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7980,7 +8000,7 @@ export interface paths {
          * Benchmark Enter Error Api
          * @description Server-to-client event: Error occurred while updating test created_at timestamp.
          */
-        post: operations["benchmark_enter_error_api_socket_v3_server_benchmark_enter_error_post"];
+        post: operations["benchmark_enter_error_api_socket_v4_server_benchmark_enter_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8000,7 +8020,7 @@ export interface paths {
          * Benchmark Joined Api
          * @description Server-to-client event: Successfully joined benchmark room.
          */
-        post: operations["benchmark_joined_api_socket_v3_server_benchmark_joined_post"];
+        post: operations["benchmark_joined_api_socket_v4_server_benchmark_joined_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8020,7 +8040,7 @@ export interface paths {
          * Benchmark Join Error Api
          * @description Server-to-client event: Error occurred while joining benchmark room.
          */
-        post: operations["benchmark_join_error_api_socket_v3_server_benchmark_join_error_post"];
+        post: operations["benchmark_join_error_api_socket_v4_server_benchmark_join_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8040,7 +8060,7 @@ export interface paths {
          * Benchmark Leave Error Api
          * @description Server-to-client event: Error occurred while leaving benchmark room.
          */
-        post: operations["benchmark_leave_error_api_socket_v3_server_benchmark_leave_error_post"];
+        post: operations["benchmark_leave_error_api_socket_v4_server_benchmark_leave_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8060,7 +8080,7 @@ export interface paths {
          * Benchmark Advance Error Api
          * @description Server-to-client event: Error occurred in benchmark advance.
          */
-        post: operations["benchmark_advance_error_api_socket_v3_server_benchmark_advance_error_post"];
+        post: operations["benchmark_advance_error_api_socket_v4_server_benchmark_advance_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8080,7 +8100,7 @@ export interface paths {
          * Benchmark Advanced Api
          * @description Server-to-client event: Benchmark advanced successfully.
          */
-        post: operations["benchmark_advanced_api_socket_v3_server_benchmark_advanced_post"];
+        post: operations["benchmark_advanced_api_socket_v4_server_benchmark_advanced_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8100,7 +8120,7 @@ export interface paths {
          * Benchmark Stopped Api
          * @description Server-to-client event: Benchmark stopped successfully.
          */
-        post: operations["benchmark_stopped_api_socket_v3_server_benchmark_stopped_post"];
+        post: operations["benchmark_stopped_api_socket_v4_server_benchmark_stopped_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8120,7 +8140,7 @@ export interface paths {
          * Benchmark Stop Error Api
          * @description Server-to-client event: Error occurred while stopping benchmark.
          */
-        post: operations["benchmark_stop_error_api_socket_v3_server_benchmark_stop_error_post"];
+        post: operations["benchmark_stop_error_api_socket_v4_server_benchmark_stop_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8140,7 +8160,7 @@ export interface paths {
          * Benchmark Completed Api
          * @description Server-to-client event: Benchmark completed successfully.
          */
-        post: operations["benchmark_completed_api_socket_v3_server_benchmark_completed_post"];
+        post: operations["benchmark_completed_api_socket_v4_server_benchmark_completed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8160,7 +8180,7 @@ export interface paths {
          * Benchmark End Error Api
          * @description Server-to-client event: Error occurred in benchmark end.
          */
-        post: operations["benchmark_end_error_api_socket_v3_server_benchmark_end_error_post"];
+        post: operations["benchmark_end_error_api_socket_v4_server_benchmark_end_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8238,34 +8258,46 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * AudioToolCompletePayload
-         * @description Response indicating audio tool completed successfully.
+         * AudioGenerationCompletePayload
+         * @description Response indicating audio generation completed successfully.
          */
-        AudioToolCompletePayload: {
+        AudioGenerationCompletePayload: {
             /** Success */
             success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
-            /** Analysis */
-            analysis: string;
-            /** Message */
-            message?: string | null;
-        };
-        /**
-         * AudioToolErrorPayload
-         * @description Response indicating an error occurred in audio tool.
-         */
-        AudioToolErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
             /** Message */
             message: string;
+            /** Audiourl */
+            audioUrl?: string | null;
+            /** Uploadid */
+            uploadId?: string | null;
+        };
+        /**
+         * AudioGenerationErrorPayload
+         * @description Response indicating an error occurred in audio generation.
+         */
+        AudioGenerationErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Upload Id */
+            upload_id?: string | null;
+        };
+        /**
+         * AudioGenerationProgressPayload
+         * @description Response indicating progress in audio generation.
+         */
+        AudioGenerationProgressPayload: {
+            /** Type */
+            type: string;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Progress */
+            progress?: number | null;
+            /** Upload Id */
+            upload_id?: string | null;
         };
         /** AuthorizeEmulationApiRequest */
         AuthorizeEmulationApiRequest: {
@@ -8544,7 +8576,7 @@ export interface components {
         /** BulkCreateStaffApiRequest */
         BulkCreateStaffApiRequest: {
             /** Profiles */
-            profiles: components["schemas"]["IBulkCreateStaffV3Profile"][];
+            profiles: components["schemas"]["IBulkCreateStaffV4Profile"][];
         };
         /** BulkCreateStaffApiResponse */
         BulkCreateStaffApiResponse: {
@@ -8588,57 +8620,6 @@ export interface components {
             actor_name?: string | null;
         };
         /**
-         * ClassificationEvalStartPayload
-         * @description Request to execute classification tool for eval.
-         */
-        ClassificationEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * ClassifyEvalStartPayload
-         * @description Request to execute classify agent for eval.
-         */
-        ClassifyEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
          * ClassifyUploadCompletePayload
          * @description Response indicating upload classification completed successfully.
          */
@@ -8669,8 +8650,6 @@ export interface components {
         ClassifyUploadPayload: {
             /** Uploadid */
             uploadId: string;
-            /** Profileid */
-            profileId: string;
             /** Parameterids */
             parameterIds?: string[] | null;
         };
@@ -8697,29 +8676,6 @@ export interface components {
             guest_id: string | null;
             /** Server Time */
             server_time: number;
-        };
-        /**
-         * ConversationEvalStartPayload
-         * @description Request to execute conversation tool for eval.
-         */
-        ConversationEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
         };
         /** CreateAgentApiRequest */
         CreateAgentApiRequest: {
@@ -8782,7 +8738,7 @@ export interface components {
             /** Slug */
             slug: string;
             /** Auth Items */
-            auth_items?: components["schemas"]["ICreateAuthV3AuthItem"][] | null;
+            auth_items?: components["schemas"]["ICreateAuthV4AuthItem"][] | null;
         };
         /** CreateAuthApiResponse */
         CreateAuthApiResponse: {
@@ -8973,9 +8929,9 @@ export interface components {
             department_ids?: string[] | null;
             /** Base Url */
             base_url?: string | null;
-            temperature_bounds?: components["schemas"]["ICreateModelV3TemperatureBounds"] | null;
+            temperature_bounds?: components["schemas"]["ICreateModelV4TemperatureBounds"] | null;
             /** Pricing */
-            pricing?: components["schemas"]["ICreateModelV3Pricing"][] | null;
+            pricing?: components["schemas"]["ICreateModelV4Pricing"][] | null;
             /** Input Modalities */
             input_modalities?: string[] | null;
             /** Output Modalities */
@@ -9056,7 +9012,7 @@ export interface components {
             /** Department Ids */
             department_ids: string[];
             /** Field Connections */
-            field_connections: components["schemas"]["ICreateParameterV3FieldConnection"][];
+            field_connections: components["schemas"]["ICreateParameterV4FieldConnection"][];
         };
         /** CreateParameterApiResponse */
         CreateParameterApiResponse: {
@@ -9168,7 +9124,7 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["ICreateRubricV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["ICreateRubricV4StandardGroup"][] | null;
             /** Rubric Agent Id */
             rubric_agent_id?: string | null;
         };
@@ -9202,7 +9158,7 @@ export interface components {
             /** Objective Ids */
             objective_ids: string[];
             /** Parameters */
-            parameters: components["schemas"]["QCreateScenarioV3Parameter"][];
+            parameters: components["schemas"]["QCreateScenarioV4Parameter"][];
             /** Description */
             description?: string | null;
             /** Video Agent Id */
@@ -9228,7 +9184,7 @@ export interface components {
             /** Question Ids */
             question_ids?: string[] | null;
             /** Question Timestamps */
-            question_timestamps?: components["schemas"]["QCreateScenarioV3QuestionTimestamp"][] | null;
+            question_timestamps?: components["schemas"]["QCreateScenarioV4QuestionTimestamp"][] | null;
             /** Run Id */
             run_id?: string | null;
         };
@@ -9264,7 +9220,7 @@ export interface components {
             /** Scenario Text Enabled */
             scenario_text_enabled: boolean[];
             /** Scenario Rubric Grade Agents */
-            scenario_rubric_grade_agents: components["schemas"]["ICreateSimulationV3ScenarioRubricGradeAgent"][];
+            scenario_rubric_grade_agents: components["schemas"]["ICreateSimulationV4ScenarioRubricGradeAgent"][];
             /**
              * Simulation Text Agent Id
              * Format: uuid
@@ -9282,29 +9238,6 @@ export interface components {
             simulation_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /**
-         * DebugEvalStartPayload
-         * @description Request to execute debug tool for eval.
-         */
-        DebugEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
         };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
@@ -9656,77 +9589,6 @@ export interface components {
             title?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /**
-         * DocumentTemplateGenerationCompletePayload
-         * @description Response indicating document template generation completed successfully.
-         */
-        DocumentTemplateGenerationCompletePayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Template Html */
-            template_html: string;
-            /** Template Schema */
-            template_schema: {
-                [key: string]: unknown;
-            };
-            /** Upload Id */
-            upload_id: string;
-            /** Template Mapping */
-            template_mapping?: {
-                [key: string]: unknown;
-            } | null;
-            /** Trace Id */
-            trace_id?: string | null;
-        };
-        /**
-         * DocumentTemplateGenerationErrorPayload
-         * @description Response indicating an error occurred in document template generation.
-         */
-        DocumentTemplateGenerationErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Trace Id */
-            trace_id?: string | null;
-        };
-        /**
-         * DocumentTemplateGenerationProgressPayload
-         * @description Response indicating progress in document template generation.
-         */
-        DocumentTemplateGenerationProgressPayload: {
-            /** Type */
-            type: string;
-            /** Message */
-            message?: string | null;
-            /** Trace Id */
-            trace_id?: string | null;
-        };
-        /**
-         * DocumentTitleEvalStartPayload
-         * @description Request to execute title tool for eval.
-         */
-        DocumentTitleEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
         };
         /**
          * DocumentToolCompletePayload
@@ -10110,36 +9972,6 @@ export interface components {
             /** Feedback */
             feedback: components["schemas"]["FeedbackItem"][];
         };
-        /**
-         * FeedbackToolCompletePayload
-         * @description Response indicating feedback tool completed successfully.
-         */
-        FeedbackToolCompletePayload: {
-            /** Success */
-            success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
-            /** Feedback Id */
-            feedback_id: string;
-            /** Message */
-            message?: string | null;
-        };
-        /**
-         * FeedbackToolErrorPayload
-         * @description Response indicating an error occurred in feedback tool.
-         */
-        FeedbackToolErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
-            /** Message */
-            message: string;
-        };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
             /** Upload Id */
@@ -10154,34 +9986,18 @@ export interface components {
             status?: string | null;
         };
         /**
-         * GenerateDocumentTemplatePayload
-         * @description Request to generate a document template.
+         * GenerateAudioPayload
+         * @description Request to generate audio.
          */
-        GenerateDocumentTemplatePayload: {
+        GenerateAudioPayload: {
+            /** Uploadid */
+            uploadId: string;
+            /** Prompt */
+            prompt: string;
+            /** Agentid */
+            agentId: string;
             /** Departmentid */
-            departmentId: string;
-            /** Profileid */
-            profileId?: string | null;
-            /** Documentid */
-            documentId?: string | null;
-            /** Documentname */
-            documentName?: string | null;
-            /** Documentdescription */
-            documentDescription?: string | null;
-            /** Fieldids */
-            fieldIds?: string[] | null;
-        };
-        /**
-         * GenerateHintsPayload
-         * @description Request to generate hints for a simulation message.
-         */
-        GenerateHintsPayload: {
-            /** Chat Id */
-            chat_id: string;
-            /** Message Id */
-            message_id: string;
-            /** Department Id */
-            department_id: string;
+            departmentId?: string | null;
         };
         /**
          * GenerateImagePayload
@@ -10293,7 +10109,7 @@ export interface components {
             /** Total Errors Count */
             total_errors_count?: number | null;
             /** Chart Data */
-            chart_data?: components["schemas"]["QGetActivityBundleV3ChartDataPoint"][] | null;
+            chart_data?: components["schemas"]["QGetActivityBundleV4ChartDataPoint"][] | null;
         };
         /** GetActivityListApiRequest */
         GetActivityListApiRequest: {
@@ -10315,7 +10131,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Activities */
-            activities?: components["schemas"]["QGetActivityListV3Activity"][] | null;
+            activities?: components["schemas"]["QGetActivityListV4Activity"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -10380,21 +10196,21 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Departments */
-            departments?: components["schemas"]["QGetAgentDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetAgentDetailV4Department"][] | null;
             /** Prompts */
-            prompts?: components["schemas"]["QGetAgentDetailV3Prompt"][] | null;
+            prompts?: components["schemas"]["QGetAgentDetailV4Prompt"][] | null;
             /** Department Prompt Links */
-            department_prompt_links?: components["schemas"]["QGetAgentDetailV3DepartmentPromptLink"][] | null;
+            department_prompt_links?: components["schemas"]["QGetAgentDetailV4DepartmentPromptLink"][] | null;
             /** Debug Info */
-            debug_info?: components["schemas"]["QGetAgentDetailV3DebugInfo"][] | null;
+            debug_info?: components["schemas"]["QGetAgentDetailV4DebugInfo"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetAgentDetailV3Model"][] | null;
+            models?: components["schemas"]["QGetAgentDetailV4Model"][] | null;
             /** Reasoning Options */
-            reasoning_options?: components["schemas"]["QGetAgentDetailV3ReasoningOption"][] | null;
+            reasoning_options?: components["schemas"]["QGetAgentDetailV4ReasoningOption"][] | null;
             /** Temperature Levels */
-            temperature_levels?: components["schemas"]["QGetAgentDetailV3TemperatureLevel"][] | null;
+            temperature_levels?: components["schemas"]["QGetAgentDetailV4TemperatureLevel"][] | null;
             /** Available Voices */
-            available_voices?: components["schemas"]["QGetAgentDetailV3AvailableVoice"][] | null;
+            available_voices?: components["schemas"]["QGetAgentDetailV4AvailableVoice"][] | null;
         };
         /** GetAgentNewApiRequest */
         GetAgentNewApiRequest: Record<string, never>;
@@ -10411,9 +10227,9 @@ export interface components {
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Models */
-            models?: components["schemas"]["QGetAgentNewV3Model"][] | null;
+            models?: components["schemas"]["QGetAgentNewV4Model"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetAgentNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetAgentNewV4Department"][] | null;
         };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;
@@ -10422,7 +10238,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Agents */
-            agents?: components["schemas"]["QListAgentsV3Agent"][] | null;
+            agents?: components["schemas"]["QListAgentsV4Agent"][] | null;
         };
         /** GetAuthDetailApiRequest */
         GetAuthDetailApiRequest: {
@@ -10445,7 +10261,7 @@ export interface components {
             /** Can Edit */
             can_edit?: boolean | null;
             /** Auth Items */
-            auth_items?: components["schemas"]["QGetAuthDetailV3AuthItem"][] | null;
+            auth_items?: components["schemas"]["QGetAuthDetailV4AuthItem"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -10456,7 +10272,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Auths */
-            auths?: components["schemas"]["QGetAuthListV3Auth"][] | null;
+            auths?: components["schemas"]["QGetAuthListV4Auth"][] | null;
         };
         /** GetAuthNewApiRequest */
         GetAuthNewApiRequest: Record<string, never>;
@@ -10471,7 +10287,7 @@ export interface components {
             /** Can Edit */
             can_edit?: boolean | null;
             /** Auth Items */
-            auth_items?: components["schemas"]["QGetAuthNewV3AuthItem"][] | null;
+            auth_items?: components["schemas"]["QGetAuthNewV4AuthItem"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -10501,27 +10317,27 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Evals */
-            evals?: components["schemas"]["QGetBenchmarkBundleV3Eval"][] | null;
+            evals?: components["schemas"]["QGetBenchmarkBundleV4Eval"][] | null;
             /** Attempts */
-            attempts?: components["schemas"]["QGetBenchmarkBundleV3EvalAttempt"][] | null;
+            attempts?: components["schemas"]["QGetBenchmarkBundleV4EvalAttempt"][] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QGetBenchmarkBundleV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QGetBenchmarkBundleV4Rubric"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetBenchmarkBundleV3Department"][] | null;
+            departments?: components["schemas"]["QGetBenchmarkBundleV4Department"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetBenchmarkBundleV3Agent"][] | null;
+            agents?: components["schemas"]["QGetBenchmarkBundleV4Agent"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetBenchmarkBundleV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["QGetBenchmarkBundleV4StandardGroup"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QGetBenchmarkBundleV3Standard"][] | null;
+            standards?: components["schemas"]["QGetBenchmarkBundleV4Standard"][] | null;
             /** Rubric Standard Groups */
-            rubric_standard_groups?: components["schemas"]["QGetBenchmarkBundleV3RubricStandardGroup"][] | null;
+            rubric_standard_groups?: components["schemas"]["QGetBenchmarkBundleV4RubricStandardGroup"][] | null;
             /** Rubric Options */
-            rubric_options?: components["schemas"]["QGetBenchmarkBundleV3RubricOption"][] | null;
+            rubric_options?: components["schemas"]["QGetBenchmarkBundleV4RubricOption"][] | null;
             /** Department Options */
-            department_options?: components["schemas"]["QGetBenchmarkBundleV3DepartmentOption"][] | null;
+            department_options?: components["schemas"]["QGetBenchmarkBundleV4DepartmentOption"][] | null;
             /** Agent Options */
-            agent_options?: components["schemas"]["QGetBenchmarkBundleV3AgentOption"][] | null;
+            agent_options?: components["schemas"]["QGetBenchmarkBundleV4AgentOption"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -10566,11 +10382,11 @@ export interface components {
             /** Valid Simulation Ids */
             valid_simulation_ids?: string[] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetCohortDetailV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetCohortDetailV4Simulation"][] | null;
             /** Simulations For Picker */
-            simulations_for_picker?: components["schemas"]["QGetCohortDetailV3SimulationForPicker"][] | null;
+            simulations_for_picker?: components["schemas"]["QGetCohortDetailV4SimulationForPicker"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetCohortDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetCohortDetailV4Department"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -10599,19 +10415,19 @@ export interface components {
             /** Valid Profile Ids */
             valid_profile_ids?: string[] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetCohortDetailV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetCohortDetailV4Simulation"][] | null;
             /** Simulations For Picker */
-            simulations_for_picker?: components["schemas"]["QGetCohortDetailV3SimulationForPicker"][] | null;
+            simulations_for_picker?: components["schemas"]["QGetCohortDetailV4SimulationForPicker"][] | null;
             /** Profiles */
-            profiles?: components["schemas"]["QGetCohortNewV3Profile"][] | null;
+            profiles?: components["schemas"]["QGetCohortNewV4Profile"][] | null;
             /** Staff */
-            staff?: components["schemas"]["QGetCohortNewV3StaffItem"][] | null;
+            staff?: components["schemas"]["QGetCohortNewV4StaffItem"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetCohortNewV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetCohortNewV4Cohort"][] | null;
             /** Departments For Staff */
-            departments_for_staff?: components["schemas"]["QGetCohortNewV3DepartmentForStaff"][] | null;
+            departments_for_staff?: components["schemas"]["QGetCohortNewV4DepartmentForStaff"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetCohortNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetCohortNewV4Department"][] | null;
             /** Primary Department Id */
             primary_department_id?: string | null;
             /** Actor Name */
@@ -10639,11 +10455,11 @@ export interface components {
         /** GetCohortSearchApiResponse */
         GetCohortSearchApiResponse: {
             /** Staff */
-            staff?: components["schemas"]["QGetCohortNewV3StaffItem"][] | null;
+            staff?: components["schemas"]["QGetCohortNewV4StaffItem"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetCohortSearchV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetCohortSearchV4Cohort"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetCohortSearchV3Department"][] | null;
+            departments?: components["schemas"]["QGetCohortSearchV4Department"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -10654,19 +10470,19 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QListCohortsV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QListCohortsV4Cohort"][] | null;
             /** Profiles */
-            profiles?: components["schemas"]["QListCohortsV3Profile"][] | null;
+            profiles?: components["schemas"]["QListCohortsV4Profile"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QListCohortsV3Simulation"][] | null;
+            simulations?: components["schemas"]["QListCohortsV4Simulation"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QListCohortsV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QListCohortsV4Scenario"][] | null;
             /** Simulation Scenario Mapping */
             simulation_scenario_mapping?: {
                 [key: string]: unknown;
             } | null;
             /** Departments */
-            departments?: components["schemas"]["QListCohortsV3Department"][] | null;
+            departments?: components["schemas"]["QListCohortsV4Department"][] | null;
         };
         /** GetCreateStaffDataApiRequest */
         GetCreateStaffDataApiRequest: {
@@ -10678,11 +10494,11 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Staff */
-            staff?: components["schemas"]["QGetCreateStaffDataV3Staff"][] | null;
+            staff?: components["schemas"]["QGetCreateStaffDataV4Staff"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetCreateStaffDataV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetCreateStaffDataV4Cohort"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetCreateStaffDataV3Department"][] | null;
+            departments?: components["schemas"]["QGetCreateStaffDataV4Department"][] | null;
             /** Role Options */
             role_options?: string[] | null;
         };
@@ -10705,22 +10521,22 @@ export interface components {
         GetDashboardBundleApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            header_metrics?: components["schemas"]["QGetDashboardBundleV3HeaderMetrics"] | null;
-            primary_metrics?: components["schemas"]["QGetDashboardBundleV3PrimaryMetrics"] | null;
-            secondary_metrics?: components["schemas"]["QGetDashboardBundleV3SecondaryMetrics"] | null;
-            footer_metrics?: components["schemas"]["QGetDashboardBundleV3FooterMetrics"] | null;
+            header_metrics?: components["schemas"]["QGetDashboardBundleV4HeaderMetrics"] | null;
+            primary_metrics?: components["schemas"]["QGetDashboardBundleV4PrimaryMetrics"] | null;
+            secondary_metrics?: components["schemas"]["QGetDashboardBundleV4SecondaryMetrics"] | null;
+            footer_metrics?: components["schemas"]["QGetDashboardBundleV4FooterMetrics"] | null;
             /** History */
-            history?: components["schemas"]["QGetDashboardBundleV3AttemptHistoryRow"][] | null;
-            insights?: components["schemas"]["QGetDashboardBundleV3Insights"] | null;
-            thresholds?: components["schemas"]["QGetDashboardBundleV3Thresholds"] | null;
+            history?: components["schemas"]["QGetDashboardBundleV4AttemptHistoryRow"][] | null;
+            insights?: components["schemas"]["QGetDashboardBundleV4Insights"] | null;
+            thresholds?: components["schemas"]["QGetDashboardBundleV4Thresholds"] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetDashboardBundleV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetDashboardBundleV4Simulation"][] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QGetDashboardBundleV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QGetDashboardBundleV4Rubric"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetDashboardBundleV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetDashboardBundleV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetDashboardBundleV3Field"][] | null;
+            fields?: components["schemas"]["QGetDashboardBundleV4Field"][] | null;
         };
         /** GetDashboardHistoryApiRequest */
         GetDashboardHistoryApiRequest: {
@@ -10761,7 +10577,7 @@ export interface components {
         /** GetDashboardHistoryApiResponse */
         GetDashboardHistoryApiResponse: {
             /** Data */
-            data?: components["schemas"]["QGetDashboardHistoryV3AttemptHistoryRow"][] | null;
+            data?: components["schemas"]["QGetDashboardHistoryV4AttemptHistoryRow"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Archived Count */
@@ -10769,11 +10585,11 @@ export interface components {
             /** Unarchived Count */
             unarchived_count?: number | null;
             /** Profile Options */
-            profile_options?: components["schemas"]["QGetDashboardHistoryV3ProfileOption"][] | null;
+            profile_options?: components["schemas"]["QGetDashboardHistoryV4ProfileOption"][] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetDashboardHistoryV3SimulationOption"][] | null;
+            simulation_options?: components["schemas"]["QGetDashboardHistoryV4SimulationOption"][] | null;
             /** Scenario Options */
-            scenario_options?: components["schemas"]["QGetDashboardHistoryV3ScenarioOption"][] | null;
+            scenario_options?: components["schemas"]["QGetDashboardHistoryV4ScenarioOption"][] | null;
         };
         /** GetDepartmentDetailApiRequest */
         GetDepartmentDetailApiRequest: {
@@ -10818,17 +10634,17 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Settings */
-            settings?: components["schemas"]["QGetDepartmentDetailV3Setting"][] | null;
+            settings?: components["schemas"]["QGetDepartmentDetailV4Setting"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetDepartmentDetailV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetDepartmentDetailV4Cohort"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetDepartmentDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetDepartmentDetailV4Department"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetDepartmentDetailV3Model"][] | null;
+            models?: components["schemas"]["QGetDepartmentDetailV4Model"][] | null;
             /** Keys */
-            keys?: components["schemas"]["QGetDepartmentDetailV3Key"][] | null;
+            keys?: components["schemas"]["QGetDepartmentDetailV4Key"][] | null;
             /** Model Keys */
-            model_keys?: components["schemas"]["QGetDepartmentDetailV3ModelKey"][] | null;
+            model_keys?: components["schemas"]["QGetDepartmentDetailV4ModelKey"][] | null;
         };
         /** GetDepartmentNewApiRequest */
         GetDepartmentNewApiRequest: Record<string, never>;
@@ -10839,7 +10655,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Settings */
-            settings?: components["schemas"]["QGetDepartmentNewV3Setting"][] | null;
+            settings?: components["schemas"]["QGetDepartmentNewV4Setting"][] | null;
         };
         /** GetDepartmentsListApiRequest */
         GetDepartmentsListApiRequest: Record<string, never>;
@@ -10848,11 +10664,11 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Departments */
-            departments?: components["schemas"]["QListDepartmentsV3Department"][] | null;
+            departments?: components["schemas"]["QListDepartmentsV4Department"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QListDepartmentsV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QListDepartmentsV4Cohort"][] | null;
             /** Profiles */
-            profiles?: components["schemas"]["QListDepartmentsV3Profile"][] | null;
+            profiles?: components["schemas"]["QListDepartmentsV4Profile"][] | null;
         };
         /** GetDocumentDetailApiRequest */
         GetDocumentDetailApiRequest: {
@@ -10895,23 +10711,23 @@ export interface components {
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetDocumentDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetDocumentDetailV4Department"][] | null;
             /** Field Ids */
             field_ids?: string[] | null;
             /** Valid Field Ids */
             valid_field_ids?: string[] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetDocumentDetailV3Field"][] | null;
+            fields?: components["schemas"]["QGetDocumentDetailV4Field"][] | null;
             /** Linked Parameter Ids */
             linked_parameter_ids?: string[] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetDocumentDetailV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetDocumentDetailV4Parameter"][] | null;
             /** Classify Agent Id */
             classify_agent_id?: string | null;
             /** Document Agent Id */
             document_agent_id?: string | null;
             /** Agents */
-            agents?: components["schemas"]["QGetDocumentDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetDocumentDetailV4Agent"][] | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Template */
@@ -10929,7 +10745,7 @@ export interface components {
             /** Template Html */
             template_html?: string | null;
             /** Templates */
-            templates?: components["schemas"]["QGetDocumentDetailV3Template"][] | null;
+            templates?: components["schemas"]["QGetDocumentDetailV4Template"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -10940,19 +10756,19 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Documents */
-            documents?: components["schemas"]["QListDocumentsV3Document"][] | null;
+            documents?: components["schemas"]["QListDocumentsV4Document"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QListDocumentsV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QListDocumentsV4Scenario"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QListDocumentsV3Field"][] | null;
+            fields?: components["schemas"]["QListDocumentsV4Field"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListDocumentsV3Department"][] | null;
+            departments?: components["schemas"]["QListDocumentsV4Department"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QListDocumentsV3Parameter"][] | null;
+            parameters?: components["schemas"]["QListDocumentsV4Parameter"][] | null;
             /** Scenario Options */
-            scenario_options?: components["schemas"]["QListDocumentsV3ScenarioOption"][] | null;
+            scenario_options?: components["schemas"]["QListDocumentsV4ScenarioOption"][] | null;
             /** Department Options */
-            department_options?: components["schemas"]["QListDocumentsV3DepartmentOption"][] | null;
+            department_options?: components["schemas"]["QListDocumentsV4DepartmentOption"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Document Type Options */
@@ -10972,11 +10788,11 @@ export interface components {
             attempt_exists?: boolean | null;
             /** Actor Name */
             actor_name?: string | null;
-            attempt?: components["schemas"]["QGetEvalAttemptV3Attempt"] | null;
-            eval?: components["schemas"]["QGetEvalAttemptV3Eval"] | null;
+            attempt?: components["schemas"]["QGetEvalAttemptV4Attempt"] | null;
+            eval?: components["schemas"]["QGetEvalAttemptV4Eval"] | null;
             /** Runs */
-            runs?: components["schemas"]["QGetEvalAttemptV3Run"][] | null;
-            status_summary?: components["schemas"]["QGetEvalAttemptV3StatusSummary"] | null;
+            runs?: components["schemas"]["QGetEvalAttemptV4Run"][] | null;
+            status_summary?: components["schemas"]["QGetEvalAttemptV4StatusSummary"] | null;
         };
         /** GetEvalDetailApiRequest */
         GetEvalDetailApiRequest: {
@@ -11033,21 +10849,21 @@ export interface components {
             /** Status */
             status?: string | null;
             /** Model Runs */
-            model_runs?: components["schemas"]["QGetEvalDetailV3ModelRun"][] | null;
+            model_runs?: components["schemas"]["QGetEvalDetailV4ModelRun"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetEvalDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetEvalDetailV4Department"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Eval Agents */
-            eval_agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            eval_agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
             /** Valid Eval Agent Ids */
             valid_eval_agent_ids?: string[] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QGetEvalDetailV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QGetEvalDetailV4Rubric"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids?: string[] | null;
             /** Can Edit */
@@ -11055,7 +10871,7 @@ export interface components {
             /** Can Delete */
             can_delete?: boolean | null;
             /** Available Model Runs */
-            available_model_runs?: components["schemas"]["QGetEvalDetailV3AvailableModelRun"][] | null;
+            available_model_runs?: components["schemas"]["QGetEvalDetailV4AvailableModelRun"][] | null;
             /** Available Model Runs Total Count */
             available_model_runs_total_count?: number | null;
             /** Available Model Runs Page */
@@ -11105,17 +10921,17 @@ export interface components {
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetEvalDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetEvalDetailV4Department"][] | null;
             /** Eval Agents */
-            eval_agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            eval_agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
             /** Valid Eval Agent Ids */
             valid_eval_agent_ids?: string[] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QGetEvalDetailV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QGetEvalDetailV4Rubric"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids?: string[] | null;
             /** Use Groups */
@@ -11125,7 +10941,7 @@ export interface components {
             /** Can Delete */
             can_delete?: boolean | null;
             /** Available Model Runs */
-            available_model_runs?: components["schemas"]["QGetEvalDetailV3AvailableModelRun"][] | null;
+            available_model_runs?: components["schemas"]["QGetEvalDetailV4AvailableModelRun"][] | null;
             /** Available Model Runs Total Count */
             available_model_runs_total_count?: number | null;
             /** Available Model Runs Page */
@@ -11142,25 +10958,25 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Evals */
-            evals?: components["schemas"]["QListEvalsV3Eval"][] | null;
+            evals?: components["schemas"]["QListEvalsV4Eval"][] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QListEvalsV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QListEvalsV4Rubric"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListEvalsV3Department"][] | null;
+            departments?: components["schemas"]["QListEvalsV4Department"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QListEvalsV3Agent"][] | null;
+            agents?: components["schemas"]["QListEvalsV4Agent"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QListEvalsV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["QListEvalsV4StandardGroup"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QListEvalsV3Standard"][] | null;
+            standards?: components["schemas"]["QListEvalsV4Standard"][] | null;
             /** Rubric Standard Groups */
-            rubric_standard_groups?: components["schemas"]["QListEvalsV3RubricStandardGroup"][] | null;
+            rubric_standard_groups?: components["schemas"]["QListEvalsV4RubricStandardGroup"][] | null;
             /** Rubric Options */
-            rubric_options?: components["schemas"]["QListEvalsV3Option"][] | null;
+            rubric_options?: components["schemas"]["QListEvalsV4Option"][] | null;
             /** Department Options */
-            department_options?: components["schemas"]["QListEvalsV3Option"][] | null;
+            department_options?: components["schemas"]["QListEvalsV4Option"][] | null;
             /** Agent Options */
-            agent_options?: components["schemas"]["QListEvalsV3Option"][] | null;
+            agent_options?: components["schemas"]["QListEvalsV4Option"][] | null;
         };
         /** GetFieldDetailApiRequest */
         GetFieldDetailApiRequest: {
@@ -11189,11 +11005,11 @@ export interface components {
             /** Conditional Parameter Ids */
             conditional_parameter_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetFieldDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetFieldDetailV4Department"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetFieldDetailV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetFieldDetailV4Parameter"][] | null;
             /** Valid Parameter Ids */
             valid_parameter_ids?: string[] | null;
             /** Can Edit */
@@ -11208,11 +11024,11 @@ export interface components {
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetFieldNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetFieldNewV4Department"][] | null;
             /** Valid Parameter Ids */
             valid_parameter_ids?: string[] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetFieldNewV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetFieldNewV4Parameter"][] | null;
             /** User Role */
             user_role?: string | null;
             /** Primary Department Id */
@@ -11227,15 +11043,15 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Fields */
-            fields?: components["schemas"]["QListFieldsV3Field"][] | null;
+            fields?: components["schemas"]["QListFieldsV4Field"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QListFieldsV3Parameter"][] | null;
+            parameters?: components["schemas"]["QListFieldsV4Parameter"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListFieldsV3Department"][] | null;
+            departments?: components["schemas"]["QListFieldsV4Department"][] | null;
             /** Parameter Options */
-            parameter_options?: components["schemas"]["QListFieldsV3Option"][] | null;
+            parameter_options?: components["schemas"]["QListFieldsV4Option"][] | null;
             /** Department Options */
-            department_options?: components["schemas"]["QListFieldsV3Option"][] | null;
+            department_options?: components["schemas"]["QListFieldsV4Option"][] | null;
         };
         /** GetHealthBundleApiRequest */
         GetHealthBundleApiRequest: Record<string, never>;
@@ -11243,9 +11059,9 @@ export interface components {
         GetHealthBundleApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            health_kpis?: components["schemas"]["QGetHealthBundleV3HealthKpis"] | null;
+            health_kpis?: components["schemas"]["QGetHealthBundleV4HealthKpis"] | null;
             /** Metrics */
-            metrics?: components["schemas"]["QGetHealthBundleV3MetricsDataPoint"][] | null;
+            metrics?: components["schemas"]["QGetHealthBundleV4MetricsDataPoint"][] | null;
         };
         /** GetHomeHistoryApiRequest */
         GetHomeHistoryApiRequest: {
@@ -11291,7 +11107,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Data */
-            data?: components["schemas"]["QGetHomeHistoryV3AttemptHistoryRow"][] | null;
+            data?: components["schemas"]["QGetHomeHistoryV4AttemptHistoryRow"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -11301,11 +11117,11 @@ export interface components {
             /** Total Pages */
             total_pages?: number | null;
             /** Profile Options */
-            profile_options?: components["schemas"]["QGetHomeHistoryV3Option"][] | null;
+            profile_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetHomeHistoryV3Option"][] | null;
+            simulation_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
             /** Scenario Options */
-            scenario_options?: components["schemas"]["QGetHomeHistoryV3Option"][] | null;
+            scenario_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
         };
         /** GetHomeOverviewApiRequest */
         GetHomeOverviewApiRequest: {
@@ -11327,13 +11143,13 @@ export interface components {
             /** Has Data */
             has_data?: boolean | null;
             /** Items */
-            items?: components["schemas"]["QGetHomeOverviewV3SimulationItem"][] | null;
+            items?: components["schemas"]["QGetHomeOverviewV4SimulationItem"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetHomeOverviewV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["QGetHomeOverviewV4StandardGroup"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QGetHomeOverviewV3Standard"][] | null;
+            standards?: components["schemas"]["QGetHomeOverviewV4Standard"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetHomeOverviewV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetHomeOverviewV4Simulation"][] | null;
         };
         /** GetKeyDetailApiRequest */
         GetKeyDetailApiRequest: {
@@ -11372,9 +11188,9 @@ export interface components {
             /** Can Edit */
             can_edit?: boolean | null;
             /** Departments */
-            departments?: components["schemas"]["QGetKeyDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetKeyDetailV4Department"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetKeyDetailV3Model"][] | null;
+            models?: components["schemas"]["QGetKeyDetailV4Model"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -11422,9 +11238,9 @@ export interface components {
             /** Can Edit */
             can_edit?: boolean | null;
             /** Departments */
-            departments?: components["schemas"]["QGetKeyNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetKeyNewV4Department"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetKeyNewV3Model"][] | null;
+            models?: components["schemas"]["QGetKeyNewV4Model"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -11435,15 +11251,15 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Keys */
-            keys?: components["schemas"]["QGetKeysListV3Key"][] | null;
+            keys?: components["schemas"]["QGetKeysListV4Key"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetKeysListV3Department"][] | null;
+            departments?: components["schemas"]["QGetKeysListV4Department"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetKeysListV3Model"][] | null;
+            models?: components["schemas"]["QGetKeysListV4Model"][] | null;
             /** Department Options */
-            department_options?: components["schemas"]["QGetKeysListV3DepartmentOption"][] | null;
+            department_options?: components["schemas"]["QGetKeysListV4DepartmentOption"][] | null;
             /** Model Options */
-            model_options?: components["schemas"]["QGetKeysListV3ModelOption"][] | null;
+            model_options?: components["schemas"]["QGetKeysListV4ModelOption"][] | null;
         };
         /** GetLeaderboardBundleApiRequest */
         GetLeaderboardBundleApiRequest: {
@@ -11465,11 +11281,11 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Data */
-            data?: components["schemas"]["QGetLeaderboardBundleV3Row"][] | null;
+            data?: components["schemas"]["QGetLeaderboardBundleV4Row"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetLeaderboardBundleV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetLeaderboardBundleV4Simulation"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QGetLeaderboardBundleV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QGetLeaderboardBundleV4Scenario"][] | null;
             /** Primary Color */
             primary_color?: string | null;
             /** Accent Color */
@@ -11483,9 +11299,9 @@ export interface components {
         /** GetLoginDataApiResponse */
         GetLoginDataApiResponse: {
             /** Providers */
-            providers?: components["schemas"]["QGetLoginDataV3Provider"][] | null;
+            providers?: components["schemas"]["QGetLoginDataV4Provider"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetLoginDataV3Department"][] | null;
+            departments?: components["schemas"]["QGetLoginDataV4Department"][] | null;
             /** Guest Login Enabled */
             guest_login_enabled?: boolean | null;
             /** Show Default Account */
@@ -11528,17 +11344,17 @@ export interface components {
             /** Valid Provider Ids */
             valid_provider_ids?: string[] | null;
             /** Providers */
-            providers?: components["schemas"]["QGetModelDetailV3Provider"][] | null;
+            providers?: components["schemas"]["QGetModelDetailV4Provider"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetModelDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetModelDetailV4Department"][] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Valid Key Ids */
             valid_key_ids?: string[] | null;
             /** Keys */
-            keys?: components["schemas"]["QGetModelDetailV3Key"][] | null;
+            keys?: components["schemas"]["QGetModelDetailV4Key"][] | null;
             /** Default Key Id */
             default_key_id?: string | null;
             /** Temperature Lower */
@@ -11548,16 +11364,16 @@ export interface components {
             /** Temperature Values */
             temperature_values?: string[] | null;
             /** Pricing */
-            pricing?: components["schemas"]["QGetModelDetailV3Pricing"][] | null;
-            modalities?: components["schemas"]["QGetModelDetailV3Modalities"] | null;
+            pricing?: components["schemas"]["QGetModelDetailV4Pricing"][] | null;
+            modalities?: components["schemas"]["QGetModelDetailV4Modalities"] | null;
             /** Reasoning Levels */
             reasoning_levels?: string[] | null;
             /** Voices */
-            voices?: components["schemas"]["QGetModelDetailV3Voice"][] | null;
+            voices?: components["schemas"]["QGetModelDetailV4Voice"][] | null;
             /** Qualities */
             qualities?: string[] | null;
             /** Units */
-            units?: components["schemas"]["QGetModelDetailV3Unit"][] | null;
+            units?: components["schemas"]["QGetModelDetailV4Unit"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -11568,21 +11384,21 @@ export interface components {
             /** Valid Provider Ids */
             valid_provider_ids?: string[] | null;
             /** Providers */
-            providers?: components["schemas"]["QGetModelNewV3Provider"][] | null;
+            providers?: components["schemas"]["QGetModelNewV4Provider"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetModelNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetModelNewV4Department"][] | null;
             /** Valid Model Ids */
             valid_model_ids?: string[] | null;
             /** Models */
-            models?: components["schemas"]["QGetModelNewV3Model"][] | null;
+            models?: components["schemas"]["QGetModelNewV4Model"][] | null;
             /** Valid Key Ids */
             valid_key_ids?: string[] | null;
             /** Keys */
-            keys?: components["schemas"]["QGetModelNewV3Key"][] | null;
+            keys?: components["schemas"]["QGetModelNewV4Key"][] | null;
             /** Units */
-            units?: components["schemas"]["QGetModelNewV3Unit"][] | null;
+            units?: components["schemas"]["QGetModelNewV4Unit"][] | null;
             /** User Role */
             user_role?: string | null;
             /** Primary Department Id */
@@ -11625,23 +11441,23 @@ export interface components {
             /** Document Ids */
             document_ids?: string[] | null;
             /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetParameterDetailV3Item"][] | null;
+            parameter_items?: components["schemas"]["QGetParameterDetailV4Item"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetParameterDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetParameterDetailV4Department"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetParameterDetailV3Field"][] | null;
+            fields?: components["schemas"]["QGetParameterDetailV4Field"][] | null;
             /** Valid Field Ids */
             valid_field_ids?: string[] | null;
             /** Field Connections */
-            field_connections?: components["schemas"]["QGetParameterDetailV3FieldConnection"][] | null;
+            field_connections?: components["schemas"]["QGetParameterDetailV4FieldConnection"][] | null;
             /** Personas */
-            personas?: components["schemas"]["QGetParameterDetailV3Persona"][] | null;
+            personas?: components["schemas"]["QGetParameterDetailV4Persona"][] | null;
             /** Valid Persona Ids */
             valid_persona_ids?: string[] | null;
             /** Documents */
-            documents?: components["schemas"]["QGetParameterDetailV3Document"][] | null;
+            documents?: components["schemas"]["QGetParameterDetailV4Document"][] | null;
             /** Valid Document Ids */
             valid_document_ids?: string[] | null;
             /** Can Edit */
@@ -11678,27 +11494,27 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
             /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetParameterNewV3Item"][] | null;
+            parameter_items?: components["schemas"]["QGetParameterNewV4Item"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetParameterNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetParameterNewV4Department"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetParameterNewV3Field"][] | null;
+            fields?: components["schemas"]["QGetParameterNewV4Field"][] | null;
             /** Valid Field Ids */
             valid_field_ids?: string[] | null;
             /** Field Connections */
-            field_connections?: components["schemas"]["QGetParameterNewV3FieldConnection"][] | null;
+            field_connections?: components["schemas"]["QGetParameterNewV4FieldConnection"][] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
             /** Personas */
-            personas?: components["schemas"]["QGetParameterNewV3Persona"][] | null;
+            personas?: components["schemas"]["QGetParameterNewV4Persona"][] | null;
             /** Valid Persona Ids */
             valid_persona_ids?: string[] | null;
             /** Document Ids */
             document_ids?: string[] | null;
             /** Documents */
-            documents?: components["schemas"]["QGetParameterNewV3Document"][] | null;
+            documents?: components["schemas"]["QGetParameterNewV4Document"][] | null;
             /** Valid Document Ids */
             valid_document_ids?: string[] | null;
             /** Can Edit */
@@ -11711,17 +11527,17 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Parameters */
-            parameters?: components["schemas"]["QListParametersV3Parameter"][] | null;
+            parameters?: components["schemas"]["QListParametersV4Parameter"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QListParametersV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QListParametersV4Scenario"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListParametersV3Department"][] | null;
+            departments?: components["schemas"]["QListParametersV4Department"][] | null;
             /** Documents */
-            documents?: components["schemas"]["QListParametersV3Document"][] | null;
+            documents?: components["schemas"]["QListParametersV4Document"][] | null;
             /** Scenario Options */
-            scenario_options?: components["schemas"]["QListParametersV3ScenarioOption"][] | null;
+            scenario_options?: components["schemas"]["QListParametersV4ScenarioOption"][] | null;
             /** Document Options */
-            document_options?: components["schemas"]["QListParametersV3DocumentOption"][] | null;
+            document_options?: components["schemas"]["QListParametersV4DocumentOption"][] | null;
         };
         /** GetPersonaDetailApiRequest */
         GetPersonaDetailApiRequest: {
@@ -11730,6 +11546,10 @@ export interface components {
              * Format: uuid
              */
             persona_id: string;
+            /** Color Search */
+            color_search?: string | null;
+            /** Icon Search */
+            icon_search?: string | null;
         };
         /** GetPersonaDetailApiResponse */
         GetPersonaDetailApiResponse: {
@@ -11776,20 +11596,25 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Departments */
-            departments?: components["schemas"]["QGetPersonaDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetPersonaDetailV4Department"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetPersonaDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetPersonaDetailV4Agent"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetPersonaDetailV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetPersonaDetailV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetPersonaDetailV3Field"][] | null;
+            fields?: components["schemas"]["QGetPersonaDetailV4Field"][] | null;
             /** Examples */
-            examples?: components["schemas"]["QGetPersonaDetailV3Example"][] | null;
+            examples?: components["schemas"]["QGetPersonaDetailV4Example"][] | null;
             /** Examples History */
-            examples_history?: components["schemas"]["QGetPersonaDetailV3ExampleHistoryItem"][] | null;
+            examples_history?: components["schemas"]["QGetPersonaDetailV4ExampleHistoryItem"][] | null;
         };
         /** GetPersonaNewApiRequest */
-        GetPersonaNewApiRequest: Record<string, never>;
+        GetPersonaNewApiRequest: {
+            /** Color Search */
+            color_search?: string | null;
+            /** Icon Search */
+            icon_search?: string | null;
+        };
         /** GetPersonaNewApiResponse */
         GetPersonaNewApiResponse: {
             /** Actor Name */
@@ -11807,13 +11632,13 @@ export interface components {
             /** Valid Parameter Item Ids */
             valid_parameter_item_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetPersonaNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetPersonaNewV4Department"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetPersonaNewV3Agent"][] | null;
+            agents?: components["schemas"]["QGetPersonaNewV4Agent"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetPersonaNewV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetPersonaNewV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetPersonaNewV3Field"][] | null;
+            fields?: components["schemas"]["QGetPersonaNewV4Field"][] | null;
         };
         /** GetPersonasListApiRequest */
         GetPersonasListApiRequest: Record<string, never>;
@@ -11822,13 +11647,13 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Personas */
-            personas?: components["schemas"]["QListPersonasV3Persona"][] | null;
+            personas?: components["schemas"]["QListPersonasV4Persona"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QListPersonasV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QListPersonasV4Scenario"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QListPersonasV3Agent"][] | null;
+            agents?: components["schemas"]["QListPersonasV4Agent"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListPersonasV3Department"][] | null;
+            departments?: components["schemas"]["QListPersonasV4Department"][] | null;
         };
         /** GetPracticeHistoryApiRequest */
         GetPracticeHistoryApiRequest: {
@@ -11862,7 +11687,7 @@ export interface components {
         /** GetPracticeHistoryApiResponse */
         GetPracticeHistoryApiResponse: {
             /** Data */
-            data?: components["schemas"]["QGetPracticeHistoryV3Attempt"][] | null;
+            data?: components["schemas"]["QGetPracticeHistoryV4Attempt"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -11872,11 +11697,11 @@ export interface components {
             /** Total Pages */
             total_pages?: number | null;
             /** Profile Options */
-            profile_options?: components["schemas"]["QGetPracticeHistoryV3ProfileOption"][] | null;
+            profile_options?: components["schemas"]["QGetPracticeHistoryV4ProfileOption"][] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetPracticeHistoryV3SimulationOption"][] | null;
+            simulation_options?: components["schemas"]["QGetPracticeHistoryV4SimulationOption"][] | null;
             /** Scenario Options */
-            scenario_options?: components["schemas"]["QGetPracticeHistoryV3ScenarioOption"][] | null;
+            scenario_options?: components["schemas"]["QGetPracticeHistoryV4ScenarioOption"][] | null;
         };
         /** GetPracticeOverviewApiRequest */
         GetPracticeOverviewApiRequest: {
@@ -11892,23 +11717,23 @@ export interface components {
             /** Has Data */
             has_data?: boolean | null;
             /** Items */
-            items?: components["schemas"]["QGetPracticeOverviewV3PracticeSimulation"][] | null;
+            items?: components["schemas"]["QGetPracticeOverviewV4PracticeSimulation"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetPracticeOverviewV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["QGetPracticeOverviewV4StandardGroup"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QGetPracticeOverviewV3Standard"][] | null;
+            standards?: components["schemas"]["QGetPracticeOverviewV4Standard"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetPracticeOverviewV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetPracticeOverviewV4Simulation"][] | null;
             /** Personas */
-            personas?: components["schemas"]["QGetPracticeOverviewV3Persona"][] | null;
+            personas?: components["schemas"]["QGetPracticeOverviewV4Persona"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QGetPracticeOverviewV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QGetPracticeOverviewV4Scenario"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetPracticeOverviewV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetPracticeOverviewV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetPracticeOverviewV3Field"][] | null;
+            fields?: components["schemas"]["QGetPracticeOverviewV4Field"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetPracticeOverviewV3Department"][] | null;
+            departments?: components["schemas"]["QGetPracticeOverviewV4Department"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
         };
@@ -11932,15 +11757,15 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Model Runs */
-            model_runs?: components["schemas"]["QGetPricingAnalyticsV3ModelRun"][] | null;
+            model_runs?: components["schemas"]["QGetPricingAnalyticsV4ModelRun"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetPricingAnalyticsV3Model"][] | null;
+            models?: components["schemas"]["QGetPricingAnalyticsV4Model"][] | null;
             /** Profiles */
-            profiles?: components["schemas"]["QGetPricingAnalyticsV3Profile"][] | null;
+            profiles?: components["schemas"]["QGetPricingAnalyticsV4Profile"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetPricingAnalyticsV3Agent"][] | null;
+            agents?: components["schemas"]["QGetPricingAnalyticsV4Agent"][] | null;
             /** Personas */
-            personas?: components["schemas"]["QGetPricingAnalyticsV3Persona"][] | null;
+            personas?: components["schemas"]["QGetPricingAnalyticsV4Persona"][] | null;
         };
         /** GetPricingGroupDetailApiRequest */
         GetPricingGroupDetailApiRequest: {
@@ -11959,13 +11784,13 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Runs */
-            runs?: components["schemas"]["QGetPricingGroupDetailV3RunWithMessages"][] | null;
+            runs?: components["schemas"]["QGetPricingGroupDetailV4RunWithMessages"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetPricingGroupDetailV3Model"][] | null;
+            models?: components["schemas"]["QGetPricingGroupDetailV4Model"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetPricingGroupDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetPricingGroupDetailV4Agent"][] | null;
             /** Profiles */
-            profiles?: components["schemas"]["QGetPricingGroupDetailV3Profile"][] | null;
+            profiles?: components["schemas"]["QGetPricingGroupDetailV4Profile"][] | null;
         };
         /** GetPricingRunsApiRequest */
         GetPricingRunsApiRequest: {
@@ -12003,7 +11828,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Group Runs */
-            group_runs?: components["schemas"]["QGetPricingRunsV3GroupRun"][] | null;
+            group_runs?: components["schemas"]["QGetPricingRunsV4GroupRun"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -12013,19 +11838,19 @@ export interface components {
             /** Total Pages */
             total_pages?: number | null;
             /** Model Options */
-            model_options?: components["schemas"]["QGetPricingRunsV3FilterOption"][] | null;
+            model_options?: components["schemas"]["QGetPricingRunsV4FilterOption"][] | null;
             /** Profile Options */
-            profile_options?: components["schemas"]["QGetPricingRunsV3FilterOption"][] | null;
+            profile_options?: components["schemas"]["QGetPricingRunsV4FilterOption"][] | null;
             /** Actor Options */
-            actor_options?: components["schemas"]["QGetPricingRunsV3FilterOption"][] | null;
+            actor_options?: components["schemas"]["QGetPricingRunsV4FilterOption"][] | null;
             /** Models */
-            models?: components["schemas"]["QGetPricingRunsV3Model"][] | null;
+            models?: components["schemas"]["QGetPricingRunsV4Model"][] | null;
             /** Profiles */
-            profiles?: components["schemas"]["QGetPricingRunsV3Profile"][] | null;
+            profiles?: components["schemas"]["QGetPricingRunsV4Profile"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetPricingRunsV3Agent"][] | null;
+            agents?: components["schemas"]["QGetPricingRunsV4Agent"][] | null;
             /** Personas */
-            personas?: components["schemas"]["QGetPricingRunsV3Persona"][] | null;
+            personas?: components["schemas"]["QGetPricingRunsV4Persona"][] | null;
         };
         /** GetProfileByEmailApiRequest */
         GetProfileByEmailApiRequest: {
@@ -12143,11 +11968,11 @@ export interface components {
             /** Primary Department Id */
             primary_department_id?: string | null;
             /** Departments */
-            departments?: components["schemas"]["QGetProfileContextV3Department"][] | null;
+            departments?: components["schemas"]["QGetProfileContextV4Department"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetProfileContextV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetProfileContextV4Cohort"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetProfileContextV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetProfileContextV4Simulation"][] | null;
             /** Earliest Attempt Date */
             earliest_attempt_date?: string | null;
             /** Scoped Roles */
@@ -12201,11 +12026,11 @@ export interface components {
             /** Settings Auth Ids */
             settings_auth_ids?: string[] | null;
             /** Settings Auths */
-            settings_auths?: components["schemas"]["QGetProfileContextV3Auth"][] | null;
+            settings_auths?: components["schemas"]["QGetProfileContextV4Auth"][] | null;
             /** Settings Provider Ids */
             settings_provider_ids?: string[] | null;
             /** Settings Providers */
-            settings_providers?: components["schemas"]["QGetProfileContextV3Provider"][] | null;
+            settings_providers?: components["schemas"]["QGetProfileContextV4Provider"][] | null;
             /** Settings Default Guest Profile Id */
             settings_default_guest_profile_id?: string | null;
             /** Settings Default Account Profile Id */
@@ -12220,7 +12045,7 @@ export interface components {
             cohort_ids?: string[] | null;
             /** Simulation Ids */
             simulation_ids?: string[] | null;
-            settings_tokens?: components["schemas"]["QGetProfileContextV3ThemeTokens"] | null;
+            settings_tokens?: components["schemas"]["QGetProfileContextV4ThemeTokens"] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -12267,9 +12092,9 @@ export interface components {
             /** Valid Cohort Ids */
             valid_cohort_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetProfileDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetProfileDetailV4Department"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetProfileDetailV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetProfileDetailV4Cohort"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -12300,9 +12125,9 @@ export interface components {
             /** Role Options */
             role_options?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetProfileNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetProfileNewV4Department"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetProfileNewV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetProfileNewV4Cohort"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -12375,11 +12200,11 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Providers */
-            providers?: components["schemas"]["QListProvidersV3Provider"][] | null;
+            providers?: components["schemas"]["QListProvidersV4Provider"][] | null;
             /** Provider Options */
-            provider_options?: components["schemas"]["QListProvidersV3ProviderOption"][] | null;
+            provider_options?: components["schemas"]["QListProvidersV4ProviderOption"][] | null;
             /** Status Options */
-            status_options?: components["schemas"]["QListProvidersV3StatusOption"][] | null;
+            status_options?: components["schemas"]["QListProvidersV4StatusOption"][] | null;
         };
         /** GetReportsBundleApiRequest */
         GetReportsBundleApiRequest: {
@@ -12423,7 +12248,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Data */
-            data?: components["schemas"]["QReportsBundleV3Profile"][] | null;
+            data?: components["schemas"]["QReportsBundleV4Profile"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -12433,15 +12258,15 @@ export interface components {
             /** Total Pages */
             total_pages?: number | null;
             /** Profile Options */
-            profile_options?: components["schemas"]["QReportsBundleV3FilterOption"][] | null;
+            profile_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["QReportsBundleV3FilterOption"][] | null;
+            simulation_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
             /** Scenario Options */
-            scenario_options?: components["schemas"]["QReportsBundleV3FilterOption"][] | null;
+            scenario_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QReportsBundleV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QReportsBundleV4Scenario"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QReportsBundleV3Simulation"][] | null;
+            simulations?: components["schemas"]["QReportsBundleV4Simulation"][] | null;
         };
         /** GetReportsHistoryApiRequest */
         GetReportsHistoryApiRequest: {
@@ -12487,7 +12312,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Data */
-            data?: components["schemas"]["QReportsHistoryV3AttemptHistoryRow"][] | null;
+            data?: components["schemas"]["QReportsHistoryV4AttemptHistoryRow"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Archived Count */
@@ -12501,11 +12326,11 @@ export interface components {
             /** Total Pages */
             total_pages?: number | null;
             /** Profile Options */
-            profile_options?: components["schemas"]["QReportsHistoryV3FilterOption"][] | null;
+            profile_options?: components["schemas"]["QReportsHistoryV4FilterOption"][] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["QReportsHistoryV3FilterOption"][] | null;
+            simulation_options?: components["schemas"]["QReportsHistoryV4FilterOption"][] | null;
             /** Scenario Options */
-            scenario_options?: components["schemas"]["QReportsHistoryV3FilterOption"][] | null;
+            scenario_options?: components["schemas"]["QReportsHistoryV4FilterOption"][] | null;
         };
         /** GetReportsOverviewApiRequest */
         GetReportsOverviewApiRequest: {
@@ -12526,22 +12351,22 @@ export interface components {
         GetReportsOverviewApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            header_metrics?: components["schemas"]["QReportsOverviewV3HeaderMetrics"] | null;
-            primary_metrics?: components["schemas"]["QReportsOverviewV3PrimaryMetrics"] | null;
-            secondary_metrics?: components["schemas"]["QReportsOverviewV3SecondaryMetrics"] | null;
-            footer_metrics?: components["schemas"]["QReportsOverviewV3FooterMetrics"] | null;
+            header_metrics?: components["schemas"]["QReportsOverviewV4HeaderMetrics"] | null;
+            primary_metrics?: components["schemas"]["QReportsOverviewV4PrimaryMetrics"] | null;
+            secondary_metrics?: components["schemas"]["QReportsOverviewV4SecondaryMetrics"] | null;
+            footer_metrics?: components["schemas"]["QReportsOverviewV4FooterMetrics"] | null;
             /** History */
-            history?: components["schemas"]["QReportsOverviewV3AttemptHistoryRow"][] | null;
-            insights?: components["schemas"]["QReportsOverviewV3Insights"] | null;
-            thresholds?: components["schemas"]["QReportsOverviewV3Thresholds"] | null;
+            history?: components["schemas"]["QReportsOverviewV4AttemptHistoryRow"][] | null;
+            insights?: components["schemas"]["QReportsOverviewV4Insights"] | null;
+            thresholds?: components["schemas"]["QReportsOverviewV4Thresholds"] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QReportsOverviewV3Simulation"][] | null;
+            simulations?: components["schemas"]["QReportsOverviewV4Simulation"][] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QReportsOverviewV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QReportsOverviewV4Rubric"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QReportsOverviewV3Parameter"][] | null;
+            parameters?: components["schemas"]["QReportsOverviewV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QReportsOverviewV3Field"][] | null;
+            fields?: components["schemas"]["QReportsOverviewV4Field"][] | null;
         };
         /** GetRubricDetailApiRequest */
         GetRubricDetailApiRequest: {
@@ -12582,13 +12407,13 @@ export interface components {
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetRubricDetailV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["QGetRubricDetailV4StandardGroup"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QGetRubricDetailV3Standard"][] | null;
+            standards?: components["schemas"]["QGetRubricDetailV4Standard"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetRubricDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetRubricDetailV4Department"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetRubricDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetRubricDetailV4Agent"][] | null;
         };
         /** GetRubricNewApiRequest */
         GetRubricNewApiRequest: Record<string, never>;
@@ -12623,13 +12448,13 @@ export interface components {
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetRubricNewV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["QGetRubricNewV4StandardGroup"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QGetRubricNewV3Standard"][] | null;
+            standards?: components["schemas"]["QGetRubricNewV4Standard"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetRubricNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetRubricNewV4Department"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetRubricNewV3Agent"][] | null;
+            agents?: components["schemas"]["QGetRubricNewV4Agent"][] | null;
         };
         /** GetRubricsListApiRequest */
         GetRubricsListApiRequest: Record<string, never>;
@@ -12638,17 +12463,17 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QGetRubricsListV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QGetRubricsListV4Rubric"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetRubricsListV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["QGetRubricsListV4StandardGroup"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QGetRubricsListV3Standard"][] | null;
+            standards?: components["schemas"]["QGetRubricsListV4Standard"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetRubricsListV3Department"][] | null;
+            departments?: components["schemas"]["QGetRubricsListV4Department"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetRubricsListV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetRubricsListV3Simulation"][] | null;
+            simulation_options?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
         };
         /** GetScenarioDetailApiRequest */
         GetScenarioDetailApiRequest: {
@@ -12692,7 +12517,7 @@ export interface components {
             /** Parameter Show Selected */
             parameter_show_selected?: boolean | null;
             /** Field Show Selected By Param */
-            field_show_selected_by_param?: components["schemas"]["QGetScenarioDetailV3FieldParamFilter"][] | null;
+            field_show_selected_by_param?: components["schemas"]["QGetScenarioDetailV4FieldParamFilter"][] | null;
         };
         /** GetScenarioDetailApiResponse */
         GetScenarioDetailApiResponse: {
@@ -12783,37 +12608,37 @@ export interface components {
             /** Can Delete */
             can_delete?: boolean | null;
             /** Field Ranges */
-            field_ranges?: components["schemas"]["QGetScenarioDetailV3FieldRange"][] | null;
+            field_ranges?: components["schemas"]["QGetScenarioDetailV4FieldRange"][] | null;
             /** Personas */
-            personas?: components["schemas"]["QGetScenarioDetailV3Persona"][] | null;
+            personas?: components["schemas"]["QGetScenarioDetailV4Persona"][] | null;
             /** Documents */
-            documents?: components["schemas"]["QGetScenarioDetailV3Document"][] | null;
+            documents?: components["schemas"]["QGetScenarioDetailV4Document"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetScenarioDetailV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetScenarioDetailV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetScenarioDetailV3Field"][] | null;
+            fields?: components["schemas"]["QGetScenarioDetailV4Field"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetScenarioDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetScenarioDetailV4Department"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetScenarioDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetScenarioDetailV4Agent"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetScenarioDetailV3Simulation"][] | null;
+            simulations?: components["schemas"]["QGetScenarioDetailV4Simulation"][] | null;
             /** Objectives */
-            objectives?: components["schemas"]["QGetScenarioDetailV3Objective"][] | null;
+            objectives?: components["schemas"]["QGetScenarioDetailV4Objective"][] | null;
             /** Problem Statements */
-            problem_statements?: components["schemas"]["QGetScenarioDetailV3ProblemStatement"][] | null;
+            problem_statements?: components["schemas"]["QGetScenarioDetailV4ProblemStatement"][] | null;
             /** Scenario Images */
-            scenario_images?: components["schemas"]["QGetScenarioDetailV3ScenarioImage"][] | null;
+            scenario_images?: components["schemas"]["QGetScenarioDetailV4ScenarioImage"][] | null;
             /** Scenario Videos */
-            scenario_videos?: components["schemas"]["QGetScenarioDetailV3ScenarioVideo"][] | null;
+            scenario_videos?: components["schemas"]["QGetScenarioDetailV4ScenarioVideo"][] | null;
             /** Questions */
-            questions?: components["schemas"]["QGetScenarioDetailV3Question"][] | null;
+            questions?: components["schemas"]["QGetScenarioDetailV4Question"][] | null;
             /** Objectives History */
-            objectives_history?: components["schemas"]["QGetScenarioDetailV3ObjectiveWithDepartments"][] | null;
+            objectives_history?: components["schemas"]["QGetScenarioDetailV4ObjectiveWithDepartments"][] | null;
             /** Document Details */
-            document_details?: components["schemas"]["QGetScenarioDetailV3DocumentDetail"][] | null;
+            document_details?: components["schemas"]["QGetScenarioDetailV4DocumentDetail"][] | null;
             /** Parameters Detail */
-            parameters_detail?: components["schemas"]["QGetScenarioDetailV3ParameterDetail"][] | null;
+            parameters_detail?: components["schemas"]["QGetScenarioDetailV4ParameterDetail"][] | null;
         };
         /** GetScenarioNewApiRequest */
         GetScenarioNewApiRequest: {
@@ -12856,7 +12681,7 @@ export interface components {
             /** Parameter Show Selected */
             parameter_show_selected?: boolean | null;
             /** Field Show Selected By Param */
-            field_show_selected_by_param?: components["schemas"]["QGetScenarioNewV3FieldParamFilter"][] | null;
+            field_show_selected_by_param?: components["schemas"]["QGetScenarioNewV4FieldParamFilter"][] | null;
         };
         /** GetScenarioNewApiResponse */
         GetScenarioNewApiResponse: {
@@ -12905,33 +12730,33 @@ export interface components {
             /** Question Ids */
             question_ids?: string[] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetScenarioNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetScenarioNewV4Department"][] | null;
             /** Personas */
-            personas?: components["schemas"]["QGetScenarioNewV3Persona"][] | null;
+            personas?: components["schemas"]["QGetScenarioNewV4Persona"][] | null;
             /** Documents */
-            documents?: components["schemas"]["QGetScenarioNewV3Document"][] | null;
+            documents?: components["schemas"]["QGetScenarioNewV4Document"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetScenarioNewV3Parameter"][] | null;
+            parameters?: components["schemas"]["QGetScenarioNewV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetScenarioNewV3Field"][] | null;
+            fields?: components["schemas"]["QGetScenarioNewV4Field"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetScenarioNewV3Agent"][] | null;
+            agents?: components["schemas"]["QGetScenarioNewV4Agent"][] | null;
             /** Objectives */
-            objectives?: components["schemas"]["QGetScenarioNewV3Objective"][] | null;
+            objectives?: components["schemas"]["QGetScenarioNewV4Objective"][] | null;
             /** Problem Statements */
-            problem_statements?: components["schemas"]["QGetScenarioNewV3ProblemStatement"][] | null;
+            problem_statements?: components["schemas"]["QGetScenarioNewV4ProblemStatement"][] | null;
             /** Scenario Images */
-            scenario_images?: components["schemas"]["QGetScenarioNewV3ScenarioImage"][] | null;
+            scenario_images?: components["schemas"]["QGetScenarioNewV4ScenarioImage"][] | null;
             /** Scenario Videos */
-            scenario_videos?: components["schemas"]["QGetScenarioNewV3ScenarioVideo"][] | null;
+            scenario_videos?: components["schemas"]["QGetScenarioNewV4ScenarioVideo"][] | null;
             /** Questions */
-            questions?: components["schemas"]["QGetScenarioNewV3Question"][] | null;
+            questions?: components["schemas"]["QGetScenarioNewV4Question"][] | null;
             /** Objectives History */
-            objectives_history?: components["schemas"]["QGetScenarioNewV3ObjectiveWithDepartments"][] | null;
+            objectives_history?: components["schemas"]["QGetScenarioNewV4ObjectiveWithDepartments"][] | null;
             /** Document Details */
-            document_details?: components["schemas"]["QGetScenarioNewV3DocumentDetail"][] | null;
+            document_details?: components["schemas"]["QGetScenarioNewV4DocumentDetail"][] | null;
             /** Parameters Detail */
-            parameters_detail?: components["schemas"]["QGetScenarioNewV3ParameterDetail"][] | null;
+            parameters_detail?: components["schemas"]["QGetScenarioNewV4ParameterDetail"][] | null;
         };
         /** GetScenariosListApiRequest */
         GetScenariosListApiRequest: Record<string, never>;
@@ -12940,25 +12765,25 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QListScenariosV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QListScenariosV4Scenario"][] | null;
             /** Objectives */
-            objectives?: components["schemas"]["QListScenariosV3Objective"][] | null;
+            objectives?: components["schemas"]["QListScenariosV4Objective"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QListScenariosV3Field"][] | null;
+            fields?: components["schemas"]["QListScenariosV4Field"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QListScenariosV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QListScenariosV4Cohort"][] | null;
             /** Personas */
-            personas?: components["schemas"]["QListScenariosV3Persona"][] | null;
+            personas?: components["schemas"]["QListScenariosV4Persona"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QListScenariosV3Simulation"][] | null;
+            simulations?: components["schemas"]["QListScenariosV4Simulation"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListScenariosV3Department"][] | null;
+            departments?: components["schemas"]["QListScenariosV4Department"][] | null;
             /** Persona Options */
-            persona_options?: components["schemas"]["QListScenariosV3Option"][] | null;
+            persona_options?: components["schemas"]["QListScenariosV4Option"][] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["QListScenariosV3Option"][] | null;
+            simulation_options?: components["schemas"]["QListScenariosV4Option"][] | null;
             /** Department Options */
-            department_options?: components["schemas"]["QListScenariosV3Option"][] | null;
+            department_options?: components["schemas"]["QListScenariosV4Option"][] | null;
         };
         /** GetSettingsDetailApiRequest */
         GetSettingsDetailApiRequest: {
@@ -13021,21 +12846,21 @@ export interface components {
             /** Auth Ids */
             auth_ids?: string[] | null;
             /** Auths */
-            auths?: components["schemas"]["QGetSettingsDetailV3Auth"][] | null;
+            auths?: components["schemas"]["QGetSettingsDetailV4Auth"][] | null;
             /** Provider Ids */
             provider_ids?: string[] | null;
             /** Providers */
-            providers?: components["schemas"]["QGetSettingsDetailV3Provider"][] | null;
+            providers?: components["schemas"]["QGetSettingsDetailV4Provider"][] | null;
             /** Provider Keys */
-            provider_keys?: components["schemas"]["QGetSettingsDetailV3ProviderKey"][] | null;
+            provider_keys?: components["schemas"]["QGetSettingsDetailV4ProviderKey"][] | null;
             /** Auth Keys */
-            auth_keys?: components["schemas"]["QGetSettingsDetailV3AuthKey"][] | null;
+            auth_keys?: components["schemas"]["QGetSettingsDetailV4AuthKey"][] | null;
             /** Auth Values */
-            auth_values?: components["schemas"]["QGetSettingsDetailV3AuthValue"][] | null;
+            auth_values?: components["schemas"]["QGetSettingsDetailV4AuthValue"][] | null;
             /** All Providers */
-            all_providers?: components["schemas"]["QGetSettingsDetailV3Provider"][] | null;
+            all_providers?: components["schemas"]["QGetSettingsDetailV4Provider"][] | null;
             /** All Auths */
-            all_auths?: components["schemas"]["QGetSettingsDetailV3Auth"][] | null;
+            all_auths?: components["schemas"]["QGetSettingsDetailV4Auth"][] | null;
             /** Default Admin Profile Id */
             default_admin_profile_id?: string | null;
             /** Default Admin Name */
@@ -13056,7 +12881,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Settings */
-            settings?: components["schemas"]["QGetSettingsListV3Setting"][] | null;
+            settings?: components["schemas"]["QGetSettingsListV4Setting"][] | null;
         };
         /** GetSimulationAttemptApiRequest */
         GetSimulationAttemptApiRequest: {
@@ -13074,16 +12899,16 @@ export interface components {
             actor_name?: string | null;
             /** Access Denied */
             access_denied?: boolean | null;
-            attempt?: components["schemas"]["QGetSimulationAttemptV3Attempt"] | null;
-            simulation?: components["schemas"]["QGetSimulationAttemptV3Simulation"] | null;
+            attempt?: components["schemas"]["QGetSimulationAttemptV4Attempt"] | null;
+            simulation?: components["schemas"]["QGetSimulationAttemptV4Simulation"] | null;
             /** Attempt Profiles */
-            attempt_profiles?: components["schemas"]["QGetSimulationAttemptV3AttemptProfile"][] | null;
+            attempt_profiles?: components["schemas"]["QGetSimulationAttemptV4AttemptProfile"][] | null;
             /** Chats */
-            chats?: components["schemas"]["QGetSimulationAttemptV3ChatData"][] | null;
+            chats?: components["schemas"]["QGetSimulationAttemptV4ChatData"][] | null;
             /** Scenario Documents */
-            scenario_documents?: components["schemas"]["QGetSimulationAttemptV3ScenarioDocument"][] | null;
-            aggregated_results?: components["schemas"]["QGetSimulationAttemptV3AggregatedResults"] | null;
-            timer?: components["schemas"]["QGetSimulationAttemptV3Timer"] | null;
+            scenario_documents?: components["schemas"]["QGetSimulationAttemptV4ScenarioDocument"][] | null;
+            aggregated_results?: components["schemas"]["QGetSimulationAttemptV4AggregatedResults"] | null;
+            timer?: components["schemas"]["QGetSimulationAttemptV4Timer"] | null;
             /** Current Chat Index */
             current_chat_index?: number | null;
             /** Expected Chat Count */
@@ -13104,10 +12929,10 @@ export interface components {
             can_pick_multiple_alternatives?: boolean | null;
             /** Is Active */
             is_active?: boolean | null;
-            rubric_structure?: components["schemas"]["QGetSimulationAttemptV3RubricStructure"] | null;
+            rubric_structure?: components["schemas"]["QGetSimulationAttemptV4RubricStructure"] | null;
             /** All Simulation Scenarios */
-            all_simulation_scenarios?: components["schemas"]["QGetSimulationAttemptV3AllSimulationScenario"][] | null;
-            available_continuation_options?: components["schemas"]["QGetSimulationAttemptV3AvailableContinuationOptions"] | null;
+            all_simulation_scenarios?: components["schemas"]["QGetSimulationAttemptV4AllSimulationScenario"][] | null;
+            available_continuation_options?: components["schemas"]["QGetSimulationAttemptV4AvailableContinuationOptions"] | null;
         };
         /** GetSimulationDetailApiRequest */
         GetSimulationDetailApiRequest: {
@@ -13164,23 +12989,23 @@ export interface components {
             /** Cohort Count */
             cohort_count?: number | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QGetSimulationDetailV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QGetSimulationDetailV4Scenario"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetSimulationDetailV3ParameterItem"][] | null;
+            parameters?: components["schemas"]["QGetSimulationDetailV4ParameterItem"][] | null;
             /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetSimulationDetailV3ParameterItemDetail"][] | null;
+            parameter_items?: components["schemas"]["QGetSimulationDetailV4ParameterItemDetail"][] | null;
             /** Scenarios Full */
-            scenarios_full?: components["schemas"]["QGetSimulationDetailV3ScenarioFull"][] | null;
+            scenarios_full?: components["schemas"]["QGetSimulationDetailV4ScenarioFull"][] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QGetSimulationDetailV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QGetSimulationDetailV4Rubric"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetSimulationDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetSimulationDetailV4Department"][] | null;
             /** Parameters Full */
-            parameters_full?: components["schemas"]["QGetSimulationDetailV3Parameter"][] | null;
+            parameters_full?: components["schemas"]["QGetSimulationDetailV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetSimulationDetailV3Field"][] | null;
+            fields?: components["schemas"]["QGetSimulationDetailV4Field"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetSimulationDetailV3Agent"][] | null;
+            agents?: components["schemas"]["QGetSimulationDetailV4Agent"][] | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
         };
@@ -13233,25 +13058,25 @@ export interface components {
             /** Cohort Count */
             cohort_count?: number | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QGetSimulationNewV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QGetSimulationNewV4Scenario"][] | null;
             /** Videos */
-            videos?: components["schemas"]["QGetSimulationNewV3Video"][] | null;
+            videos?: components["schemas"]["QGetSimulationNewV4Video"][] | null;
             /** Parameters */
-            parameters?: components["schemas"]["QGetSimulationNewV3ParameterItem"][] | null;
+            parameters?: components["schemas"]["QGetSimulationNewV4ParameterItem"][] | null;
             /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetSimulationNewV3ParameterItemDetail"][] | null;
+            parameter_items?: components["schemas"]["QGetSimulationNewV4ParameterItemDetail"][] | null;
             /** Scenarios Full */
-            scenarios_full?: components["schemas"]["QGetSimulationNewV3ScenarioFull"][] | null;
+            scenarios_full?: components["schemas"]["QGetSimulationNewV4ScenarioFull"][] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QGetSimulationNewV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QGetSimulationNewV4Rubric"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetSimulationNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetSimulationNewV4Department"][] | null;
             /** Parameters Full */
-            parameters_full?: components["schemas"]["QGetSimulationNewV3Parameter"][] | null;
+            parameters_full?: components["schemas"]["QGetSimulationNewV4Parameter"][] | null;
             /** Fields */
-            fields?: components["schemas"]["QGetSimulationNewV3Field"][] | null;
+            fields?: components["schemas"]["QGetSimulationNewV4Field"][] | null;
             /** Agents */
-            agents?: components["schemas"]["QGetSimulationNewV3Agent"][] | null;
+            agents?: components["schemas"]["QGetSimulationNewV4Agent"][] | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Primary Department Id */
@@ -13264,21 +13089,21 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Simulations */
-            simulations?: components["schemas"]["QListSimulationsV3Simulation"][] | null;
+            simulations?: components["schemas"]["QListSimulationsV4Simulation"][] | null;
             /** Scenarios */
-            scenarios?: components["schemas"]["QListSimulationsV3Scenario"][] | null;
+            scenarios?: components["schemas"]["QListSimulationsV4Scenario"][] | null;
             /** Rubrics */
-            rubrics?: components["schemas"]["QListSimulationsV3Rubric"][] | null;
+            rubrics?: components["schemas"]["QListSimulationsV4Rubric"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListSimulationsV3Department"][] | null;
+            departments?: components["schemas"]["QListSimulationsV4Department"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QListSimulationsV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QListSimulationsV4Cohort"][] | null;
             /** Rubric Options */
-            rubric_options?: components["schemas"]["QListSimulationsV3Option"][] | null;
+            rubric_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Cohort Options */
-            cohort_options?: components["schemas"]["QListSimulationsV3Option"][] | null;
+            cohort_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Department Options */
-            department_options?: components["schemas"]["QListSimulationsV3Option"][] | null;
+            department_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
         };
         /** GetStaffDetailApiRequest */
         GetStaffDetailApiRequest: {
@@ -13325,9 +13150,9 @@ export interface components {
             /** Valid Cohort Ids */
             valid_cohort_ids?: string[] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetStaffDetailV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetStaffDetailV4Cohort"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetStaffDetailV3Department"][] | null;
+            departments?: components["schemas"]["QGetStaffDetailV4Department"][] | null;
         };
         /** GetStaffListApiRequest */
         GetStaffListApiRequest: Record<string, never>;
@@ -13338,21 +13163,21 @@ export interface components {
             /** Current User Role */
             current_user_role?: string | null;
             /** Staff */
-            staff?: components["schemas"]["QListStaffV3Staff"][] | null;
+            staff?: components["schemas"]["QListStaffV4Staff"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QListStaffV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QListStaffV4Cohort"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QListStaffV3Department"][] | null;
+            departments?: components["schemas"]["QListStaffV4Department"][] | null;
             /** Trend Data Active */
-            trend_data_active?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            trend_data_active?: components["schemas"]["QListStaffV4TrendData"][] | null;
             /** Trend Data Admin */
-            trend_data_admin?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            trend_data_admin?: components["schemas"]["QListStaffV4TrendData"][] | null;
             /** Trend Data Instructional */
-            trend_data_instructional?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            trend_data_instructional?: components["schemas"]["QListStaffV4TrendData"][] | null;
             /** Trend Data Member */
-            trend_data_member?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            trend_data_member?: components["schemas"]["QListStaffV4TrendData"][] | null;
             /** Trend Data Total Requests */
-            trend_data_total_requests?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            trend_data_total_requests?: components["schemas"]["QListStaffV4TrendData"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
             /** Role Options */
@@ -13379,9 +13204,9 @@ export interface components {
             /** Role Options */
             role_options?: string[] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QGetStaffNewV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QGetStaffNewV4Cohort"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QGetStaffNewV3Department"][] | null;
+            departments?: components["schemas"]["QGetStaffNewV4Department"][] | null;
         };
         /** GetStaffSearchApiRequest */
         GetStaffSearchApiRequest: {
@@ -13402,51 +13227,19 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Staff */
-            staff?: components["schemas"]["QSearchStaffV3Staff"][] | null;
+            staff?: components["schemas"]["QSearchStaffV4Staff"][] | null;
             /** Cohorts */
-            cohorts?: components["schemas"]["QSearchStaffV3Cohort"][] | null;
+            cohorts?: components["schemas"]["QSearchStaffV4Cohort"][] | null;
             /** Departments */
-            departments?: components["schemas"]["QSearchStaffV3Department"][] | null;
+            departments?: components["schemas"]["QSearchStaffV4Department"][] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /**
-         * HintGenerationProgressPayload
-         * @description Response indicating progress in hint generation.
-         */
-        HintGenerationProgressPayload: {
-            /** Type */
-            type: string;
-            /** Message */
-            message?: string | null;
-            /** Error */
-            error?: string | null;
-            /** Chat Id */
-            chat_id: string;
-            /** Message Id */
-            message_id: string;
-            /** Hint Ids */
-            hint_ids?: string[] | null;
-            /** Hints Count */
-            hints_count?: number | null;
-            /** Hints */
-            hints?: components["schemas"]["HintItem"][] | null;
-        };
-        /**
-         * HintItem
-         * @description Individual hint item with index and text.
-         */
-        HintItem: {
-            /** Idx */
-            idx: number;
-            /** Hint */
-            hint: string;
-        };
-        /** IBulkCreateStaffV3Profile */
-        IBulkCreateStaffV3Profile: {
+        /** IBulkCreateStaffV4Profile */
+        IBulkCreateStaffV4Profile: {
             /** First Name */
             first_name: string | null;
             /** Last Name */
@@ -13462,8 +13255,8 @@ export interface components {
             /** Primary Department Index */
             primary_department_index: number | null;
         };
-        /** ICreateAuthV3AuthItem */
-        ICreateAuthV3AuthItem: {
+        /** ICreateAuthV4AuthItem */
+        ICreateAuthV4AuthItem: {
             /** Name */
             name: string | null;
             /** Description */
@@ -13477,8 +13270,8 @@ export interface components {
             /** Key Id */
             key_id: string | null;
         };
-        /** ICreateModelV3Pricing */
-        ICreateModelV3Pricing: {
+        /** ICreateModelV4Pricing */
+        ICreateModelV4Pricing: {
             /** Pricing Type */
             pricing_type: string | null;
             /** Unit Id */
@@ -13486,8 +13279,8 @@ export interface components {
             /** Price */
             price: number | null;
         };
-        /** ICreateModelV3TemperatureBounds */
-        ICreateModelV3TemperatureBounds: {
+        /** ICreateModelV4TemperatureBounds */
+        ICreateModelV4TemperatureBounds: {
             /** Bounds Type */
             bounds_type: string | null;
             /** Lower Bound */
@@ -13497,8 +13290,8 @@ export interface components {
             /** Values Array */
             values_array: number[] | null;
         };
-        /** ICreateParameterV3FieldConnection */
-        ICreateParameterV3FieldConnection: {
+        /** ICreateParameterV4FieldConnection */
+        ICreateParameterV4FieldConnection: {
             /** Field Id */
             field_id: string | null;
             /** Default */
@@ -13506,8 +13299,8 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** ICreateRubricV3Standard */
-        ICreateRubricV3Standard: {
+        /** ICreateRubricV4Standard */
+        ICreateRubricV4Standard: {
             /** Name */
             name: string | null;
             /** Description */
@@ -13515,8 +13308,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** ICreateRubricV3StandardGroup */
-        ICreateRubricV3StandardGroup: {
+        /** ICreateRubricV4StandardGroup */
+        ICreateRubricV4StandardGroup: {
             /** Name */
             name: string | null;
             /** Short Name */
@@ -13532,10 +13325,10 @@ export interface components {
             /** Active */
             active: boolean | null;
             /** Standards */
-            standards: components["schemas"]["ICreateRubricV3Standard"][] | null;
+            standards: components["schemas"]["ICreateRubricV4Standard"][] | null;
         };
-        /** ICreateSimulationV3ScenarioRubricGradeAgent */
-        ICreateSimulationV3ScenarioRubricGradeAgent: {
+        /** ICreateSimulationV4ScenarioRubricGradeAgent */
+        ICreateSimulationV4ScenarioRubricGradeAgent: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Rubric Id */
@@ -13545,15 +13338,15 @@ export interface components {
             /** Audio Agent Id */
             audio_agent_id: string | null;
         };
-        /** IProcessCsvV3ColumnMapping */
-        IProcessCsvV3ColumnMapping: {
+        /** IProcessCsvV4ColumnMapping */
+        IProcessCsvV4ColumnMapping: {
             /** Csv Column */
             csv_column: string | null;
             /** Target Field */
             target_field: string | null;
         };
-        /** IUpdateAuthV3AuthItem */
-        IUpdateAuthV3AuthItem: {
+        /** IUpdateAuthV4AuthItem */
+        IUpdateAuthV4AuthItem: {
             /** Name */
             name: string | null;
             /** Description */
@@ -13567,8 +13360,8 @@ export interface components {
             /** Key Id */
             key_id: string | null;
         };
-        /** IUpdateModelV3Pricing */
-        IUpdateModelV3Pricing: {
+        /** IUpdateModelV4Pricing */
+        IUpdateModelV4Pricing: {
             /** Pricing Type */
             pricing_type: string | null;
             /** Unit Id */
@@ -13576,8 +13369,8 @@ export interface components {
             /** Price */
             price: number | null;
         };
-        /** IUpdateModelV3TemperatureBounds */
-        IUpdateModelV3TemperatureBounds: {
+        /** IUpdateModelV4TemperatureBounds */
+        IUpdateModelV4TemperatureBounds: {
             /** Bounds Type */
             bounds_type: string | null;
             /** Lower Bound */
@@ -13587,8 +13380,8 @@ export interface components {
             /** Values Array */
             values_array: number[] | null;
         };
-        /** IUpdateParameterV3FieldConnection */
-        IUpdateParameterV3FieldConnection: {
+        /** IUpdateParameterV4FieldConnection */
+        IUpdateParameterV4FieldConnection: {
             /** Field Id */
             field_id: string | null;
             /** Default */
@@ -13596,8 +13389,8 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** IUpdateRubricV3Standard */
-        IUpdateRubricV3Standard: {
+        /** IUpdateRubricV4Standard */
+        IUpdateRubricV4Standard: {
             /** Name */
             name: string | null;
             /** Description */
@@ -13605,8 +13398,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** IUpdateRubricV3StandardGroup */
-        IUpdateRubricV3StandardGroup: {
+        /** IUpdateRubricV4StandardGroup */
+        IUpdateRubricV4StandardGroup: {
             /** Name */
             name: string | null;
             /** Short Name */
@@ -13622,59 +13415,59 @@ export interface components {
             /** Active */
             active: boolean | null;
             /** Standards */
-            standards: components["schemas"]["IUpdateRubricV3Standard"][] | null;
+            standards: components["schemas"]["IUpdateRubricV4Standard"][] | null;
         };
-        /** IUpdateSettingsV3AuthEnabled */
-        IUpdateSettingsV3AuthEnabled: {
+        /** IUpdateSettingsV4AuthEnabled */
+        IUpdateSettingsV4AuthEnabled: {
             /** Auth Id */
             auth_id: string | null;
             /** Enabled */
             enabled: boolean | null;
         };
-        /** IUpdateSettingsV3AuthKey */
-        IUpdateSettingsV3AuthKey: {
+        /** IUpdateSettingsV4AuthKey */
+        IUpdateSettingsV4AuthKey: {
             /** Auth Id */
             auth_id: string | null;
             /** Items */
-            items: components["schemas"]["IUpdateSettingsV3AuthKeyItem"][] | null;
+            items: components["schemas"]["IUpdateSettingsV4AuthKeyItem"][] | null;
         };
-        /** IUpdateSettingsV3AuthKeyItem */
-        IUpdateSettingsV3AuthKeyItem: {
+        /** IUpdateSettingsV4AuthKeyItem */
+        IUpdateSettingsV4AuthKeyItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Key Id */
             key_id: string | null;
         };
-        /** IUpdateSettingsV3AuthValue */
-        IUpdateSettingsV3AuthValue: {
+        /** IUpdateSettingsV4AuthValue */
+        IUpdateSettingsV4AuthValue: {
             /** Auth Id */
             auth_id: string | null;
             /** Items */
-            items: components["schemas"]["IUpdateSettingsV3AuthValueItem"][] | null;
+            items: components["schemas"]["IUpdateSettingsV4AuthValueItem"][] | null;
         };
-        /** IUpdateSettingsV3AuthValueItem */
-        IUpdateSettingsV3AuthValueItem: {
+        /** IUpdateSettingsV4AuthValueItem */
+        IUpdateSettingsV4AuthValueItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Value */
             value: string | null;
         };
-        /** IUpdateSettingsV3ProviderEnabled */
-        IUpdateSettingsV3ProviderEnabled: {
+        /** IUpdateSettingsV4ProviderEnabled */
+        IUpdateSettingsV4ProviderEnabled: {
             /** Provider Id */
             provider_id: string | null;
             /** Enabled */
             enabled: boolean | null;
         };
-        /** IUpdateSettingsV3ProviderKey */
-        IUpdateSettingsV3ProviderKey: {
+        /** IUpdateSettingsV4ProviderKey */
+        IUpdateSettingsV4ProviderKey: {
             /** Provider Id */
             provider_id: string | null;
             /** Key Id */
             key_id: string | null;
         };
-        /** IUpsertStaffV3Profile */
-        IUpsertStaffV3Profile: {
+        /** IUpsertStaffV4Profile */
+        IUpsertStaffV4Profile: {
             /** First Name */
             first_name: string | null;
             /** Last Name */
@@ -13693,29 +13486,6 @@ export interface components {
             cohort_ids: string[] | null;
         };
         /**
-         * ImageTitleEvalStartPayload
-         * @description Request to execute title tool for eval.
-         */
-        ImageTitleEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
          * ImageToolCompletePayload
          * @description Response indicating image tool completed successfully.
          */
@@ -13728,29 +13498,6 @@ export interface components {
             trace_id: string;
             /** Message */
             message?: string | null;
-        };
-        /**
-         * ImprovementEvalStartPayload
-         * @description Request to execute improvement tool for eval.
-         */
-        ImprovementEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
         };
         /** LeaveCohortApiRequest */
         LeaveCohortApiRequest: {
@@ -13774,11 +13521,11 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Models */
-            models?: components["schemas"]["QListModelsV3Model"][] | null;
+            models?: components["schemas"]["QListModelsV4Model"][] | null;
             /** Provider Options */
-            provider_options?: components["schemas"]["QListModelsV3ProviderOption"][] | null;
+            provider_options?: components["schemas"]["QListModelsV4ProviderOption"][] | null;
             /** Status Options */
-            status_options?: components["schemas"]["QListModelsV3StatusOption"][] | null;
+            status_options?: components["schemas"]["QListModelsV4StatusOption"][] | null;
         };
         /**
          * LogRunPayload
@@ -13813,34 +13560,6 @@ export interface components {
             departmentId?: string | null;
         };
         /**
-         * MemberEvalStartPayload
-         * @description Request to execute member agent for eval.
-         */
-        MemberEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
          * MemberGenerateErrorPayload
          * @description Response indicating an error occurred in member generation.
          */
@@ -13857,13 +13576,8 @@ export interface components {
         MemberGeneratePayload: {
             /** Chat Id */
             chat_id: string;
-            /** Message */
-            message: string;
-            /**
-             * Voice Mode
-             * @default false
-             */
-            voice_mode: boolean;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * MemberProgressErrorPayload
@@ -13891,89 +13605,6 @@ export interface components {
             voice_mode: boolean;
             /** Upload Id */
             upload_id?: string | null;
-        };
-        /**
-         * MessageImprovementToolCompletePayload
-         * @description Response indicating message improvement tool completed successfully.
-         */
-        MessageImprovementToolCompletePayload: {
-            /** Success */
-            success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
-            /** Message Feedback Id */
-            message_feedback_id: string;
-            /** Message */
-            message?: string | null;
-        };
-        /**
-         * MessageImprovementToolErrorPayload
-         * @description Response indicating an error occurred in message improvement tool.
-         */
-        MessageImprovementToolErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * MessageStrengthToolCompletePayload
-         * @description Response indicating message strength tool completed successfully.
-         */
-        MessageStrengthToolCompletePayload: {
-            /** Success */
-            success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
-            /** Message Feedback Id */
-            message_feedback_id: string;
-            /** Message */
-            message?: string | null;
-        };
-        /**
-         * MessageStrengthToolErrorPayload
-         * @description Response indicating an error occurred in message strength tool.
-         */
-        MessageStrengthToolErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Chat Id */
-            chat_id: string;
-            /** Trace Id */
-            trace_id: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * ObjectiveEvalStartPayload
-         * @description Request to execute objective tool for eval.
-         */
-        ObjectiveEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
         };
         /**
          * ObjectivesToolCompletePayload
@@ -14016,7 +13647,7 @@ export interface components {
             /** Csv Content */
             csv_content: string;
             /** Column Mappings */
-            column_mappings: components["schemas"]["IProcessCsvV3ColumnMapping"][];
+            column_mappings: components["schemas"]["IProcessCsvV4ColumnMapping"][];
         };
         /** ProcessCsvApiResponse */
         ProcessCsvApiResponse: {
@@ -14025,19 +13656,19 @@ export interface components {
             /** Headers */
             headers?: string[] | null;
             /** Rows */
-            rows?: components["schemas"]["QProcessCsvV3ProcessedRow"][] | null;
+            rows?: components["schemas"]["QProcessCsvV4ProcessedRow"][] | null;
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** QCreateScenarioV3Parameter */
-        QCreateScenarioV3Parameter: {
+        /** QCreateScenarioV4Parameter */
+        QCreateScenarioV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Field Ids */
             field_ids: string[] | null;
         };
-        /** QCreateScenarioV3QuestionTimestamp */
-        QCreateScenarioV3QuestionTimestamp: {
+        /** QCreateScenarioV4QuestionTimestamp */
+        QCreateScenarioV4QuestionTimestamp: {
             /** Question Id */
             question_id: string | null;
             /** Video Id */
@@ -14045,8 +13676,8 @@ export interface components {
             /** Timestamps */
             timestamps: number[] | null;
         };
-        /** QGetActivityBundleV3ChartDataPoint */
-        QGetActivityBundleV3ChartDataPoint: {
+        /** QGetActivityBundleV4ChartDataPoint */
+        QGetActivityBundleV4ChartDataPoint: {
             /** Date */
             date: string | null;
             /** Active Profiles */
@@ -14058,8 +13689,8 @@ export interface components {
             /** Errors */
             errors: number | null;
         };
-        /** QGetActivityListV3Activity */
-        QGetActivityListV3Activity: {
+        /** QGetActivityListV4Activity */
+        QGetActivityListV4Activity: {
             /** Activity Id */
             activity_id: string | null;
             /** Created At */
@@ -14073,15 +13704,15 @@ export interface components {
             /** Profile Id */
             profile_id: string | null;
         };
-        /** QGetAgentDetailV3AvailableVoice */
-        QGetAgentDetailV3AvailableVoice: {
+        /** QGetAgentDetailV4AvailableVoice */
+        QGetAgentDetailV4AvailableVoice: {
             /** Id */
             id: string | null;
             /** Voice */
             voice: string | null;
         };
-        /** QGetAgentDetailV3DebugInfo */
-        QGetAgentDetailV3DebugInfo: {
+        /** QGetAgentDetailV4DebugInfo */
+        QGetAgentDetailV4DebugInfo: {
             /** Created At */
             created_at: string | null;
             /** Model Id */
@@ -14089,8 +13720,8 @@ export interface components {
             /** Content */
             content: string | null;
         };
-        /** QGetAgentDetailV3Department */
-        QGetAgentDetailV3Department: {
+        /** QGetAgentDetailV4Department */
+        QGetAgentDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14098,15 +13729,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetAgentDetailV3DepartmentPromptLink */
-        QGetAgentDetailV3DepartmentPromptLink: {
+        /** QGetAgentDetailV4DepartmentPromptLink */
+        QGetAgentDetailV4DepartmentPromptLink: {
             /** Department Id */
             department_id: string | null;
             /** Prompt Id */
             prompt_id: string | null;
         };
-        /** QGetAgentDetailV3Model */
-        QGetAgentDetailV3Model: {
+        /** QGetAgentDetailV4Model */
+        QGetAgentDetailV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -14134,8 +13765,8 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** QGetAgentDetailV3Prompt */
-        QGetAgentDetailV3Prompt: {
+        /** QGetAgentDetailV4Prompt */
+        QGetAgentDetailV4Prompt: {
             /** Prompt Id */
             prompt_id: string | null;
             /** System Prompt */
@@ -14153,15 +13784,15 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QGetAgentDetailV3ReasoningOption */
-        QGetAgentDetailV3ReasoningOption: {
+        /** QGetAgentDetailV4ReasoningOption */
+        QGetAgentDetailV4ReasoningOption: {
             /** Id */
             id: string | null;
             /** Reasoning Level */
             reasoning_level: string | null;
         };
-        /** QGetAgentDetailV3TemperatureLevel */
-        QGetAgentDetailV3TemperatureLevel: {
+        /** QGetAgentDetailV4TemperatureLevel */
+        QGetAgentDetailV4TemperatureLevel: {
             /** Id */
             id: string | null;
             /** Temperature */
@@ -14169,8 +13800,8 @@ export interface components {
             /** Is Upper */
             is_upper: boolean | null;
         };
-        /** QGetAgentNewV3Department */
-        QGetAgentNewV3Department: {
+        /** QGetAgentNewV4Department */
+        QGetAgentNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14178,8 +13809,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetAgentNewV3Model */
-        QGetAgentNewV3Model: {
+        /** QGetAgentNewV4Model */
+        QGetAgentNewV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -14209,8 +13840,8 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** QGetAuthDetailV3AuthItem */
-        QGetAuthDetailV3AuthItem: {
+        /** QGetAuthDetailV4AuthItem */
+        QGetAuthDetailV4AuthItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Name */
@@ -14228,8 +13859,8 @@ export interface components {
             /** Encrypted */
             encrypted: boolean | null;
         };
-        /** QGetAuthListV3Auth */
-        QGetAuthListV3Auth: {
+        /** QGetAuthListV4Auth */
+        QGetAuthListV4Auth: {
             /** Auth Id */
             auth_id: string | null;
             /** Name */
@@ -14243,7 +13874,7 @@ export interface components {
             /** Num Items */
             num_items: number | null;
             /** Sample Items */
-            sample_items: components["schemas"]["QGetAuthListV3AuthItem"][] | null;
+            sample_items: components["schemas"]["QGetAuthListV4AuthItem"][] | null;
             /** Can Edit */
             can_edit: boolean | null;
             /** Can Delete */
@@ -14251,8 +13882,8 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean | null;
         };
-        /** QGetAuthListV3AuthItem */
-        QGetAuthListV3AuthItem: {
+        /** QGetAuthListV4AuthItem */
+        QGetAuthListV4AuthItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Name */
@@ -14260,8 +13891,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetAuthNewV3AuthItem */
-        QGetAuthNewV3AuthItem: {
+        /** QGetAuthNewV4AuthItem */
+        QGetAuthNewV4AuthItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Name */
@@ -14279,8 +13910,8 @@ export interface components {
             /** Encrypted */
             encrypted: boolean | null;
         };
-        /** QGetBenchmarkBundleV3Agent */
-        QGetBenchmarkBundleV3Agent: {
+        /** QGetBenchmarkBundleV4Agent */
+        QGetBenchmarkBundleV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -14288,15 +13919,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetBenchmarkBundleV3AgentOption */
-        QGetBenchmarkBundleV3AgentOption: {
+        /** QGetBenchmarkBundleV4AgentOption */
+        QGetBenchmarkBundleV4AgentOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetBenchmarkBundleV3Department */
-        QGetBenchmarkBundleV3Department: {
+        /** QGetBenchmarkBundleV4Department */
+        QGetBenchmarkBundleV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14304,15 +13935,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetBenchmarkBundleV3DepartmentOption */
-        QGetBenchmarkBundleV3DepartmentOption: {
+        /** QGetBenchmarkBundleV4DepartmentOption */
+        QGetBenchmarkBundleV4DepartmentOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetBenchmarkBundleV3Eval */
-        QGetBenchmarkBundleV3Eval: {
+        /** QGetBenchmarkBundleV4Eval */
+        QGetBenchmarkBundleV4Eval: {
             /** Eval Id */
             eval_id: string | null;
             /** Name */
@@ -14348,8 +13979,8 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QGetBenchmarkBundleV3EvalAttempt */
-        QGetBenchmarkBundleV3EvalAttempt: {
+        /** QGetBenchmarkBundleV4EvalAttempt */
+        QGetBenchmarkBundleV4EvalAttempt: {
             /** Attempt Id */
             attempt_id: string | null;
             /** Eval Id */
@@ -14375,8 +14006,8 @@ export interface components {
             /** Pending Runs */
             pending_runs: number | null;
         };
-        /** QGetBenchmarkBundleV3Rubric */
-        QGetBenchmarkBundleV3Rubric: {
+        /** QGetBenchmarkBundleV4Rubric */
+        QGetBenchmarkBundleV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -14388,15 +14019,15 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetBenchmarkBundleV3RubricOption */
-        QGetBenchmarkBundleV3RubricOption: {
+        /** QGetBenchmarkBundleV4RubricOption */
+        QGetBenchmarkBundleV4RubricOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetBenchmarkBundleV3RubricStandardGroup */
-        QGetBenchmarkBundleV3RubricStandardGroup: {
+        /** QGetBenchmarkBundleV4RubricStandardGroup */
+        QGetBenchmarkBundleV4RubricStandardGroup: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Standard Group Id */
@@ -14404,8 +14035,8 @@ export interface components {
             /** Standard Ids */
             standard_ids: string[] | null;
         };
-        /** QGetBenchmarkBundleV3Standard */
-        QGetBenchmarkBundleV3Standard: {
+        /** QGetBenchmarkBundleV4Standard */
+        QGetBenchmarkBundleV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Name */
@@ -14415,8 +14046,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetBenchmarkBundleV3StandardGroup */
-        QGetBenchmarkBundleV3StandardGroup: {
+        /** QGetBenchmarkBundleV4StandardGroup */
+        QGetBenchmarkBundleV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -14428,8 +14059,8 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetCohortDetailV3Department */
-        QGetCohortDetailV3Department: {
+        /** QGetCohortDetailV4Department */
+        QGetCohortDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14439,8 +14070,8 @@ export interface components {
             /** Simulation Ids */
             simulation_ids: string[] | null;
         };
-        /** QGetCohortDetailV3Simulation */
-        QGetCohortDetailV3Simulation: {
+        /** QGetCohortDetailV4Simulation */
+        QGetCohortDetailV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -14462,8 +14093,8 @@ export interface components {
             /** Can Remove */
             can_remove: boolean | null;
         };
-        /** QGetCohortDetailV3SimulationForPicker */
-        QGetCohortDetailV3SimulationForPicker: {
+        /** QGetCohortDetailV4SimulationForPicker */
+        QGetCohortDetailV4SimulationForPicker: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -14475,8 +14106,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetCohortNewV3Cohort */
-        QGetCohortNewV3Cohort: {
+        /** QGetCohortNewV4Cohort */
+        QGetCohortNewV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -14484,8 +14115,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetCohortNewV3Department */
-        QGetCohortNewV3Department: {
+        /** QGetCohortNewV4Department */
+        QGetCohortNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14497,8 +14128,8 @@ export interface components {
             /** Staff Ids */
             staff_ids: string[] | null;
         };
-        /** QGetCohortNewV3DepartmentForStaff */
-        QGetCohortNewV3DepartmentForStaff: {
+        /** QGetCohortNewV4DepartmentForStaff */
+        QGetCohortNewV4DepartmentForStaff: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14506,8 +14137,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetCohortNewV3Profile */
-        QGetCohortNewV3Profile: {
+        /** QGetCohortNewV4Profile */
+        QGetCohortNewV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** Name */
@@ -14515,8 +14146,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetCohortNewV3StaffItem */
-        QGetCohortNewV3StaffItem: {
+        /** QGetCohortNewV4StaffItem */
+        QGetCohortNewV4StaffItem: {
             /** Profile Id */
             profile_id: string | null;
             /** First Name */
@@ -14556,8 +14187,8 @@ export interface components {
             /** Can Remove */
             can_remove: boolean | null;
         };
-        /** QGetCohortSearchV3Cohort */
-        QGetCohortSearchV3Cohort: {
+        /** QGetCohortSearchV4Cohort */
+        QGetCohortSearchV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -14565,8 +14196,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetCohortSearchV3Department */
-        QGetCohortSearchV3Department: {
+        /** QGetCohortSearchV4Department */
+        QGetCohortSearchV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14574,8 +14205,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetCreateStaffDataV3Cohort */
-        QGetCreateStaffDataV3Cohort: {
+        /** QGetCreateStaffDataV4Cohort */
+        QGetCreateStaffDataV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -14583,8 +14214,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetCreateStaffDataV3Department */
-        QGetCreateStaffDataV3Department: {
+        /** QGetCreateStaffDataV4Department */
+        QGetCreateStaffDataV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -14592,8 +14223,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetCreateStaffDataV3Staff */
-        QGetCreateStaffDataV3Staff: {
+        /** QGetCreateStaffDataV4Staff */
+        QGetCreateStaffDataV4Staff: {
             /** Profile Id */
             profile_id: string | null;
             /** First Name */
@@ -14625,8 +14256,8 @@ export interface components {
             /** Requests In Last Day */
             requests_in_last_day: number | null;
         };
-        /** QGetDashboardBundleV3AttemptHistoryRow */
-        QGetDashboardBundleV3AttemptHistoryRow: {
+        /** QGetDashboardBundleV4AttemptHistoryRow */
+        QGetDashboardBundleV4AttemptHistoryRow: {
             /** Attempt Id */
             attempt_id: string | null;
             /** Date */
@@ -14676,8 +14307,8 @@ export interface components {
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
-        /** QGetDashboardBundleV3AttemptImprovementData */
-        QGetDashboardBundleV3AttemptImprovementData: {
+        /** QGetDashboardBundleV4AttemptImprovementData */
+        QGetDashboardBundleV4AttemptImprovementData: {
             /** Attempt */
             attempt: string | null;
             /** Average Score */
@@ -14687,8 +14318,8 @@ export interface components {
             /** Pass Rate */
             pass_rate: number | null;
         };
-        /** QGetDashboardBundleV3AttemptImprovementFact */
-        QGetDashboardBundleV3AttemptImprovementFact: {
+        /** QGetDashboardBundleV4AttemptImprovementFact */
+        QGetDashboardBundleV4AttemptImprovementFact: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Attempt No */
@@ -14700,19 +14331,19 @@ export interface components {
             /** Pass Rate */
             pass_rate: number | null;
         };
-        /** QGetDashboardBundleV3AttemptImprovementResponse */
-        QGetDashboardBundleV3AttemptImprovementResponse: {
+        /** QGetDashboardBundleV4AttemptImprovementResponse */
+        QGetDashboardBundleV4AttemptImprovementResponse: {
             /** Chart Data */
-            chart_data: components["schemas"]["QGetDashboardBundleV3AttemptImprovementData"][] | null;
+            chart_data: components["schemas"]["QGetDashboardBundleV4AttemptImprovementData"][] | null;
             /** Facts */
-            facts: components["schemas"]["QGetDashboardBundleV3AttemptImprovementFact"][] | null;
+            facts: components["schemas"]["QGetDashboardBundleV4AttemptImprovementFact"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3CohortDailyFact */
-        QGetDashboardBundleV3CohortDailyFact: {
+        /** QGetDashboardBundleV4CohortDailyFact */
+        QGetDashboardBundleV4CohortDailyFact: {
             /** Date */
             date: string | null;
             /** Simulation Id */
@@ -14720,8 +14351,8 @@ export interface components {
             /** Avg Score */
             avg_score: number | null;
         };
-        /** QGetDashboardBundleV3CohortData */
-        QGetDashboardBundleV3CohortData: {
+        /** QGetDashboardBundleV4CohortData */
+        QGetDashboardBundleV4CohortData: {
             /** Id */
             id: string | null;
             /** Name */
@@ -14745,8 +14376,8 @@ export interface components {
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3CohortFact */
-        QGetDashboardBundleV3CohortFact: {
+        /** QGetDashboardBundleV4CohortFact */
+        QGetDashboardBundleV4CohortFact: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Simulation Id */
@@ -14758,30 +14389,30 @@ export interface components {
             /** Attempts */
             attempts: number | null;
         };
-        /** QGetDashboardBundleV3CohortInsight */
-        QGetDashboardBundleV3CohortInsight: {
+        /** QGetDashboardBundleV4CohortInsight */
+        QGetDashboardBundleV4CohortInsight: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Insight */
             insight: string | null;
         };
-        /** QGetDashboardBundleV3CohortPerformanceResponse */
-        QGetDashboardBundleV3CohortPerformanceResponse: {
+        /** QGetDashboardBundleV4CohortPerformanceResponse */
+        QGetDashboardBundleV4CohortPerformanceResponse: {
             /** Cohort Data */
-            cohort_data: components["schemas"]["QGetDashboardBundleV3CohortData"][] | null;
+            cohort_data: components["schemas"]["QGetDashboardBundleV4CohortData"][] | null;
             /** Daily Data */
-            daily_data: components["schemas"]["QGetDashboardBundleV3DailyData"][] | null;
+            daily_data: components["schemas"]["QGetDashboardBundleV4DailyData"][] | null;
             /** Cohort Facts */
-            cohort_facts: components["schemas"]["QGetDashboardBundleV3CohortFact"][] | null;
+            cohort_facts: components["schemas"]["QGetDashboardBundleV4CohortFact"][] | null;
             /** Daily Facts */
-            daily_facts: components["schemas"]["QGetDashboardBundleV3CohortDailyFact"][] | null;
+            daily_facts: components["schemas"]["QGetDashboardBundleV4CohortDailyFact"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3DailyData */
-        QGetDashboardBundleV3DailyData: {
+        /** QGetDashboardBundleV4DailyData */
+        QGetDashboardBundleV4DailyData: {
             /** Date */
             date: string | null;
             /** Avg Score */
@@ -14789,8 +14420,8 @@ export interface components {
             /** Cohort Id */
             cohort_id: string | null;
         };
-        /** QGetDashboardBundleV3DataPoint */
-        QGetDashboardBundleV3DataPoint: {
+        /** QGetDashboardBundleV4DataPoint */
+        QGetDashboardBundleV4DataPoint: {
             /** Profile Id */
             profile_id: string | null;
             /** Date */
@@ -14806,8 +14437,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetDashboardBundleV3Field */
-        QGetDashboardBundleV3Field: {
+        /** QGetDashboardBundleV4Field */
+        QGetDashboardBundleV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -14819,15 +14450,15 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetDashboardBundleV3FooterMetrics */
-        QGetDashboardBundleV3FooterMetrics: {
-            scenario_performance: components["schemas"]["QGetDashboardBundleV3ScenarioPerformanceResponse"] | null;
-            scenario_stats: components["schemas"]["QGetDashboardBundleV3ScenarioStatsResponse"] | null;
-            simulation_performance: components["schemas"]["QGetDashboardBundleV3SimulationPerformanceResponse"] | null;
-            simulation_composition: components["schemas"]["QGetDashboardBundleV3SimulationCompositionResponse"] | null;
+        /** QGetDashboardBundleV4FooterMetrics */
+        QGetDashboardBundleV4FooterMetrics: {
+            scenario_performance: components["schemas"]["QGetDashboardBundleV4ScenarioPerformanceResponse"] | null;
+            scenario_stats: components["schemas"]["QGetDashboardBundleV4ScenarioStatsResponse"] | null;
+            simulation_performance: components["schemas"]["QGetDashboardBundleV4SimulationPerformanceResponse"] | null;
+            simulation_composition: components["schemas"]["QGetDashboardBundleV4SimulationCompositionResponse"] | null;
         };
-        /** QGetDashboardBundleV3GrowthDataPoint */
-        QGetDashboardBundleV3GrowthDataPoint: {
+        /** QGetDashboardBundleV4GrowthDataPoint */
+        QGetDashboardBundleV4GrowthDataPoint: {
             /** Date */
             date: string | null;
             /** Average Score */
@@ -14841,18 +14472,18 @@ export interface components {
             /** Stagnation Rate */
             stagnation_rate: number | null;
         };
-        /** QGetDashboardBundleV3GrowthDataResponse */
-        QGetDashboardBundleV3GrowthDataResponse: {
+        /** QGetDashboardBundleV4GrowthDataResponse */
+        QGetDashboardBundleV4GrowthDataResponse: {
             /** Chart Data */
-            chart_data: components["schemas"]["QGetDashboardBundleV3GrowthDataPoint"][] | null;
+            chart_data: components["schemas"]["QGetDashboardBundleV4GrowthDataPoint"][] | null;
             /** Available Metrics */
-            available_metrics: components["schemas"]["QGetDashboardBundleV3GrowthMetric"][] | null;
-            window_averages: components["schemas"]["QGetDashboardBundleV3GrowthWindowAverages"] | null;
+            available_metrics: components["schemas"]["QGetDashboardBundleV4GrowthMetric"][] | null;
+            window_averages: components["schemas"]["QGetDashboardBundleV4GrowthWindowAverages"] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3GrowthMetric */
-        QGetDashboardBundleV3GrowthMetric: {
+        /** QGetDashboardBundleV4GrowthMetric */
+        QGetDashboardBundleV4GrowthMetric: {
             /** Id */
             id: string | null;
             /** Name */
@@ -14866,8 +14497,8 @@ export interface components {
             /** Formatter Id */
             formatter_id: string | null;
         };
-        /** QGetDashboardBundleV3GrowthWindowAverage */
-        QGetDashboardBundleV3GrowthWindowAverage: {
+        /** QGetDashboardBundleV4GrowthWindowAverage */
+        QGetDashboardBundleV4GrowthWindowAverage: {
             /** N */
             n: number | null;
             /** Last */
@@ -14875,35 +14506,35 @@ export interface components {
             /** Prev */
             prev: number | null;
         };
-        /** QGetDashboardBundleV3GrowthWindowAverages */
-        QGetDashboardBundleV3GrowthWindowAverages: {
-            average_score: components["schemas"]["QGetDashboardBundleV3GrowthWindowAverage"] | null;
+        /** QGetDashboardBundleV4GrowthWindowAverages */
+        QGetDashboardBundleV4GrowthWindowAverages: {
+            average_score: components["schemas"]["QGetDashboardBundleV4GrowthWindowAverage"] | null;
         };
-        /** QGetDashboardBundleV3HeaderMetrics */
-        QGetDashboardBundleV3HeaderMetrics: {
-            average_score: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            completion_percentage: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            first_attempt_pass_rate: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            highest_score: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            messages_per_session: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            persona_response_times: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            session_efficiency: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            stagnation_rate: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            time_spent: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
-            total_attempts: components["schemas"]["QGetDashboardBundleV3MetricResponse"] | null;
+        /** QGetDashboardBundleV4HeaderMetrics */
+        QGetDashboardBundleV4HeaderMetrics: {
+            average_score: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            completion_percentage: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            first_attempt_pass_rate: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            highest_score: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            messages_per_session: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            persona_response_times: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            session_efficiency: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            stagnation_rate: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            time_spent: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
+            total_attempts: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
         };
-        /** QGetDashboardBundleV3Insights */
-        QGetDashboardBundleV3Insights: {
+        /** QGetDashboardBundleV4Insights */
+        QGetDashboardBundleV4Insights: {
             /** Growth */
             growth: string | null;
             /** Persona */
-            persona: components["schemas"]["QGetDashboardBundleV3PersonaInsight"][] | null;
+            persona: components["schemas"]["QGetDashboardBundleV4PersonaInsight"][] | null;
             /** Rubric Heatmap */
             rubric_heatmap: string | null;
             /** Attempt Improvement */
             attempt_improvement: string | null;
             /** Cohort */
-            cohort: components["schemas"]["QGetDashboardBundleV3CohortInsight"][] | null;
+            cohort: components["schemas"]["QGetDashboardBundleV4CohortInsight"][] | null;
             /** Skill Performance */
             skill_performance: string | null;
             /** Scenario Performance */
@@ -14915,8 +14546,8 @@ export interface components {
             /** Simulation Composition */
             simulation_composition: string | null;
         };
-        /** QGetDashboardBundleV3MetricResponse */
-        QGetDashboardBundleV3MetricResponse: {
+        /** QGetDashboardBundleV4MetricResponse */
+        QGetDashboardBundleV4MetricResponse: {
             /** Has Data */
             has_data: boolean | null;
             /** Method */
@@ -14932,12 +14563,12 @@ export interface components {
             /** Key Field */
             key_field: string | null;
             /** Trend Data */
-            trend_data: components["schemas"]["QGetDashboardBundleV3TrendData"][] | null;
+            trend_data: components["schemas"]["QGetDashboardBundleV4TrendData"][] | null;
             /** Data Points */
-            data_points: components["schemas"]["QGetDashboardBundleV3DataPoint"][] | null;
+            data_points: components["schemas"]["QGetDashboardBundleV4DataPoint"][] | null;
         };
-        /** QGetDashboardBundleV3NumericAttemptFact */
-        QGetDashboardBundleV3NumericAttemptFact: {
+        /** QGetDashboardBundleV4NumericAttemptFact */
+        QGetDashboardBundleV4NumericAttemptFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Level Label */
@@ -14949,8 +14580,8 @@ export interface components {
             /** Attempts */
             attempts: number | null;
         };
-        /** QGetDashboardBundleV3NumericScenarioFact */
-        QGetDashboardBundleV3NumericScenarioFact: {
+        /** QGetDashboardBundleV4NumericScenarioFact */
+        QGetDashboardBundleV4NumericScenarioFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Scenario Id */
@@ -14960,8 +14591,8 @@ export interface components {
             /** Level Value */
             level_value: number | null;
         };
-        /** QGetDashboardBundleV3Parameter */
-        QGetDashboardBundleV3Parameter: {
+        /** QGetDashboardBundleV4Parameter */
+        QGetDashboardBundleV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -14975,22 +14606,22 @@ export interface components {
             /** Persona Parameter */
             persona_parameter: boolean | null;
         };
-        /** QGetDashboardBundleV3PersonaColor */
-        QGetDashboardBundleV3PersonaColor: {
+        /** QGetDashboardBundleV4PersonaColor */
+        QGetDashboardBundleV4PersonaColor: {
             /** Persona Name */
             persona_name: string | null;
             /** Color */
             color: string | null;
         };
-        /** QGetDashboardBundleV3PersonaInsight */
-        QGetDashboardBundleV3PersonaInsight: {
+        /** QGetDashboardBundleV4PersonaInsight */
+        QGetDashboardBundleV4PersonaInsight: {
             /** Persona Name */
             persona_name: string | null;
             /** Insight */
             insight: string | null;
         };
-        /** QGetDashboardBundleV3PersonaPerformanceData */
-        QGetDashboardBundleV3PersonaPerformanceData: {
+        /** QGetDashboardBundleV4PersonaPerformanceData */
+        QGetDashboardBundleV4PersonaPerformanceData: {
             /** Name */
             name: string | null;
             /** Score */
@@ -15002,21 +14633,21 @@ export interface components {
             /** Simulation Ids */
             simulation_ids: string[] | null;
             /** Trend Data */
-            trend_data: components["schemas"]["QGetDashboardBundleV3PersonaTrendData"][] | null;
+            trend_data: components["schemas"]["QGetDashboardBundleV4PersonaTrendData"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3PersonaPerformanceResponse */
-        QGetDashboardBundleV3PersonaPerformanceResponse: {
+        /** QGetDashboardBundleV4PersonaPerformanceResponse */
+        QGetDashboardBundleV4PersonaPerformanceResponse: {
             /** Chart Data */
-            chart_data: components["schemas"]["QGetDashboardBundleV3PersonaPerformanceData"][] | null;
+            chart_data: components["schemas"]["QGetDashboardBundleV4PersonaPerformanceData"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Persona Colors */
-            persona_colors: components["schemas"]["QGetDashboardBundleV3PersonaColor"][] | null;
+            persona_colors: components["schemas"]["QGetDashboardBundleV4PersonaColor"][] | null;
         };
-        /** QGetDashboardBundleV3PersonaTrendData */
-        QGetDashboardBundleV3PersonaTrendData: {
+        /** QGetDashboardBundleV4PersonaTrendData */
+        QGetDashboardBundleV4PersonaTrendData: {
             /** Date */
             date: string | null;
             /** Score */
@@ -15026,14 +14657,14 @@ export interface components {
             /** Simulation Id */
             simulation_id: string | null;
         };
-        /** QGetDashboardBundleV3PrimaryMetrics */
-        QGetDashboardBundleV3PrimaryMetrics: {
-            growth_data: components["schemas"]["QGetDashboardBundleV3GrowthDataResponse"] | null;
-            persona_performance: components["schemas"]["QGetDashboardBundleV3PersonaPerformanceResponse"] | null;
-            rubric_heatmap: components["schemas"]["QGetDashboardBundleV3RubricHeatmapResponse"] | null;
+        /** QGetDashboardBundleV4PrimaryMetrics */
+        QGetDashboardBundleV4PrimaryMetrics: {
+            growth_data: components["schemas"]["QGetDashboardBundleV4GrowthDataResponse"] | null;
+            persona_performance: components["schemas"]["QGetDashboardBundleV4PersonaPerformanceResponse"] | null;
+            rubric_heatmap: components["schemas"]["QGetDashboardBundleV4RubricHeatmapResponse"] | null;
         };
-        /** QGetDashboardBundleV3Rubric */
-        QGetDashboardBundleV3Rubric: {
+        /** QGetDashboardBundleV4Rubric */
+        QGetDashboardBundleV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -15041,8 +14672,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetDashboardBundleV3RubricHeatmapCell */
-        QGetDashboardBundleV3RubricHeatmapCell: {
+        /** QGetDashboardBundleV4RubricHeatmapCell */
+        QGetDashboardBundleV4RubricHeatmapCell: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Correlation */
@@ -15056,30 +14687,30 @@ export interface components {
             /** Data Points */
             data_points: number | null;
         };
-        /** QGetDashboardBundleV3RubricHeatmapResponse */
-        QGetDashboardBundleV3RubricHeatmapResponse: {
+        /** QGetDashboardBundleV4RubricHeatmapResponse */
+        QGetDashboardBundleV4RubricHeatmapResponse: {
             /** Matrices */
-            matrices: components["schemas"]["QGetDashboardBundleV3RubricMatrixPackage"][] | null;
+            matrices: components["schemas"]["QGetDashboardBundleV4RubricMatrixPackage"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3RubricMatrixPackage */
-        QGetDashboardBundleV3RubricMatrixPackage: {
+        /** QGetDashboardBundleV4RubricMatrixPackage */
+        QGetDashboardBundleV4RubricMatrixPackage: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Standard Groups */
-            standard_groups: components["schemas"]["QGetDashboardBundleV3StandardGroup"][] | null;
+            standard_groups: components["schemas"]["QGetDashboardBundleV4StandardGroup"][] | null;
             /** Matrix */
-            matrix: components["schemas"]["QGetDashboardBundleV3RubricHeatmapCell"][] | null;
+            matrix: components["schemas"]["QGetDashboardBundleV4RubricHeatmapCell"][] | null;
             /** Insights */
             insights: string | null;
             /** Has Data */
             has_data: boolean | null;
         };
-        /** QGetDashboardBundleV3ScenarioAttributeAttemptFact */
-        QGetDashboardBundleV3ScenarioAttributeAttemptFact: {
+        /** QGetDashboardBundleV4ScenarioAttributeAttemptFact */
+        QGetDashboardBundleV4ScenarioAttributeAttemptFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Parameter Item Id */
@@ -15095,8 +14726,8 @@ export interface components {
             /** Passed Attempts */
             passed_attempts: number | null;
         };
-        /** QGetDashboardBundleV3ScenarioAttributeScenarioFact */
-        QGetDashboardBundleV3ScenarioAttributeScenarioFact: {
+        /** QGetDashboardBundleV4ScenarioAttributeScenarioFact */
+        QGetDashboardBundleV4ScenarioAttributeScenarioFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Parameter Item Id */
@@ -15104,8 +14735,8 @@ export interface components {
             /** Scenario Id */
             scenario_id: string | null;
         };
-        /** QGetDashboardBundleV3ScenarioFact */
-        QGetDashboardBundleV3ScenarioFact: {
+        /** QGetDashboardBundleV4ScenarioFact */
+        QGetDashboardBundleV4ScenarioFact: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Scenario Id */
@@ -15121,36 +14752,36 @@ export interface components {
             /** Completed Attempts */
             completed_attempts: number | null;
         };
-        /** QGetDashboardBundleV3ScenarioPerformanceResponse */
-        QGetDashboardBundleV3ScenarioPerformanceResponse: {
+        /** QGetDashboardBundleV4ScenarioPerformanceResponse */
+        QGetDashboardBundleV4ScenarioPerformanceResponse: {
             /** Valid Parameter Ids */
             valid_parameter_ids: string[] | null;
             /** Attribute Attempt Facts */
-            attribute_attempt_facts: components["schemas"]["QGetDashboardBundleV3ScenarioAttributeAttemptFact"][] | null;
+            attribute_attempt_facts: components["schemas"]["QGetDashboardBundleV4ScenarioAttributeAttemptFact"][] | null;
             /** Attribute Scenario Facts */
-            attribute_scenario_facts: components["schemas"]["QGetDashboardBundleV3ScenarioAttributeScenarioFact"][] | null;
+            attribute_scenario_facts: components["schemas"]["QGetDashboardBundleV4ScenarioAttributeScenarioFact"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3ScenarioStatsResponse */
-        QGetDashboardBundleV3ScenarioStatsResponse: {
+        /** QGetDashboardBundleV4ScenarioStatsResponse */
+        QGetDashboardBundleV4ScenarioStatsResponse: {
             /** Valid Numeric Parameter Ids */
             valid_numeric_parameter_ids: string[] | null;
             /** Numeric Attempt Facts */
-            numeric_attempt_facts: components["schemas"]["QGetDashboardBundleV3NumericAttemptFact"][] | null;
+            numeric_attempt_facts: components["schemas"]["QGetDashboardBundleV4NumericAttemptFact"][] | null;
             /** Numeric Scenario Facts */
-            numeric_scenario_facts: components["schemas"]["QGetDashboardBundleV3NumericScenarioFact"][] | null;
+            numeric_scenario_facts: components["schemas"]["QGetDashboardBundleV4NumericScenarioFact"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3SecondaryMetrics */
-        QGetDashboardBundleV3SecondaryMetrics: {
-            attempt_improvement: components["schemas"]["QGetDashboardBundleV3AttemptImprovementResponse"] | null;
-            cohort_performance: components["schemas"]["QGetDashboardBundleV3CohortPerformanceResponse"] | null;
-            skill_performance: components["schemas"]["QGetDashboardBundleV3SkillPerformanceResponse"] | null;
+        /** QGetDashboardBundleV4SecondaryMetrics */
+        QGetDashboardBundleV4SecondaryMetrics: {
+            attempt_improvement: components["schemas"]["QGetDashboardBundleV4AttemptImprovementResponse"] | null;
+            cohort_performance: components["schemas"]["QGetDashboardBundleV4CohortPerformanceResponse"] | null;
+            skill_performance: components["schemas"]["QGetDashboardBundleV4SkillPerformanceResponse"] | null;
         };
-        /** QGetDashboardBundleV3Simulation */
-        QGetDashboardBundleV3Simulation: {
+        /** QGetDashboardBundleV4Simulation */
+        QGetDashboardBundleV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -15162,23 +14793,23 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetDashboardBundleV3SimulationCompositionResponse */
-        QGetDashboardBundleV3SimulationCompositionResponse: {
+        /** QGetDashboardBundleV4SimulationCompositionResponse */
+        QGetDashboardBundleV4SimulationCompositionResponse: {
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Simulation Facts */
-            simulation_facts: components["schemas"]["QGetDashboardBundleV3SimulationFact"][] | null;
+            simulation_facts: components["schemas"]["QGetDashboardBundleV4SimulationFact"][] | null;
             /** Simulation Parameter Facts Categorical */
-            simulation_parameter_facts_categorical: components["schemas"]["QGetDashboardBundleV3SimulationParameterFactCategorical"][] | null;
+            simulation_parameter_facts_categorical: components["schemas"]["QGetDashboardBundleV4SimulationParameterFactCategorical"][] | null;
             /** Simulation Parameter Facts Numeric */
-            simulation_parameter_facts_numeric: components["schemas"]["QGetDashboardBundleV3SimulationParameterFactNumeric"][] | null;
+            simulation_parameter_facts_numeric: components["schemas"]["QGetDashboardBundleV4SimulationParameterFactNumeric"][] | null;
             /** Has Data */
             has_data: boolean | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3SimulationFact */
-        QGetDashboardBundleV3SimulationFact: {
+        /** QGetDashboardBundleV4SimulationFact */
+        QGetDashboardBundleV4SimulationFact: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Title */
@@ -15192,8 +14823,8 @@ export interface components {
             /** Scenario Count */
             scenario_count: number | null;
         };
-        /** QGetDashboardBundleV3SimulationParameterFactCategorical */
-        QGetDashboardBundleV3SimulationParameterFactCategorical: {
+        /** QGetDashboardBundleV4SimulationParameterFactCategorical */
+        QGetDashboardBundleV4SimulationParameterFactCategorical: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Parameter Id */
@@ -15203,8 +14834,8 @@ export interface components {
             /** Scenario Count */
             scenario_count: number | null;
         };
-        /** QGetDashboardBundleV3SimulationParameterFactNumeric */
-        QGetDashboardBundleV3SimulationParameterFactNumeric: {
+        /** QGetDashboardBundleV4SimulationParameterFactNumeric */
+        QGetDashboardBundleV4SimulationParameterFactNumeric: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Parameter Id */
@@ -15216,35 +14847,35 @@ export interface components {
             /** Scenario Count */
             scenario_count: number | null;
         };
-        /** QGetDashboardBundleV3SimulationPerformanceResponse */
-        QGetDashboardBundleV3SimulationPerformanceResponse: {
+        /** QGetDashboardBundleV4SimulationPerformanceResponse */
+        QGetDashboardBundleV4SimulationPerformanceResponse: {
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Scenario Facts */
-            scenario_facts: components["schemas"]["QGetDashboardBundleV3ScenarioFact"][] | null;
+            scenario_facts: components["schemas"]["QGetDashboardBundleV4ScenarioFact"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3SkillPackage */
-        QGetDashboardBundleV3SkillPackage: {
+        /** QGetDashboardBundleV4SkillPackage */
+        QGetDashboardBundleV4SkillPackage: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Radar Data */
-            radar_data: components["schemas"]["QGetDashboardBundleV3SkillRadarData"][] | null;
+            radar_data: components["schemas"]["QGetDashboardBundleV4SkillRadarData"][] | null;
             /** Group Facts */
-            group_facts: components["schemas"]["QGetDashboardBundleV3SkillStandardFact"][] | null;
+            group_facts: components["schemas"]["QGetDashboardBundleV4SkillStandardFact"][] | null;
         };
-        /** QGetDashboardBundleV3SkillPerformanceResponse */
-        QGetDashboardBundleV3SkillPerformanceResponse: {
+        /** QGetDashboardBundleV4SkillPerformanceResponse */
+        QGetDashboardBundleV4SkillPerformanceResponse: {
             /** Packages */
-            packages: components["schemas"]["QGetDashboardBundleV3SkillPackage"][] | null;
+            packages: components["schemas"]["QGetDashboardBundleV4SkillPackage"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QGetDashboardBundleV3SkillRadarData */
-        QGetDashboardBundleV3SkillRadarData: {
+        /** QGetDashboardBundleV4SkillRadarData */
+        QGetDashboardBundleV4SkillRadarData: {
             /** Metric */
             metric: string | null;
             /** Description */
@@ -15254,8 +14885,8 @@ export interface components {
             /** Full Mark */
             full_mark: number | null;
         };
-        /** QGetDashboardBundleV3SkillStandardFact */
-        QGetDashboardBundleV3SkillStandardFact: {
+        /** QGetDashboardBundleV4SkillStandardFact */
+        QGetDashboardBundleV4SkillStandardFact: {
             /** Group Id */
             group_id: string | null;
             /** Group Name */
@@ -15271,8 +14902,8 @@ export interface components {
             /** Avg Pct */
             avg_pct: number | null;
         };
-        /** QGetDashboardBundleV3StandardGroup */
-        QGetDashboardBundleV3StandardGroup: {
+        /** QGetDashboardBundleV4StandardGroup */
+        QGetDashboardBundleV4StandardGroup: {
             /** Id */
             id: string | null;
             /** Name */
@@ -15282,8 +14913,8 @@ export interface components {
             /** Rubric Id */
             rubric_id: string | null;
         };
-        /** QGetDashboardBundleV3Thresholds */
-        QGetDashboardBundleV3Thresholds: {
+        /** QGetDashboardBundleV4Thresholds */
+        QGetDashboardBundleV4Thresholds: {
             /** Success */
             success: number | null;
             /** Warning */
@@ -15291,8 +14922,8 @@ export interface components {
             /** Danger */
             danger: number | null;
         };
-        /** QGetDashboardBundleV3TrendData */
-        QGetDashboardBundleV3TrendData: {
+        /** QGetDashboardBundleV4TrendData */
+        QGetDashboardBundleV4TrendData: {
             /** Date */
             date: string | null;
             /** Value */
@@ -15300,8 +14931,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetDashboardHistoryV3AttemptHistoryRow */
-        QGetDashboardHistoryV3AttemptHistoryRow: {
+        /** QGetDashboardHistoryV4AttemptHistoryRow */
+        QGetDashboardHistoryV4AttemptHistoryRow: {
             /** Attempt Id */
             attempt_id: string | null;
             /** Date */
@@ -15351,8 +14982,8 @@ export interface components {
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
-        /** QGetDashboardHistoryV3ProfileOption */
-        QGetDashboardHistoryV3ProfileOption: {
+        /** QGetDashboardHistoryV4ProfileOption */
+        QGetDashboardHistoryV4ProfileOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -15360,8 +14991,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetDashboardHistoryV3ScenarioOption */
-        QGetDashboardHistoryV3ScenarioOption: {
+        /** QGetDashboardHistoryV4ScenarioOption */
+        QGetDashboardHistoryV4ScenarioOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -15369,8 +15000,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetDashboardHistoryV3SimulationOption */
-        QGetDashboardHistoryV3SimulationOption: {
+        /** QGetDashboardHistoryV4SimulationOption */
+        QGetDashboardHistoryV4SimulationOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -15378,8 +15009,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetDepartmentDetailV3Cohort */
-        QGetDepartmentDetailV3Cohort: {
+        /** QGetDepartmentDetailV4Cohort */
+        QGetDepartmentDetailV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -15387,8 +15018,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetDepartmentDetailV3Department */
-        QGetDepartmentDetailV3Department: {
+        /** QGetDepartmentDetailV4Department */
+        QGetDepartmentDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15396,8 +15027,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetDepartmentDetailV3Key */
-        QGetDepartmentDetailV3Key: {
+        /** QGetDepartmentDetailV4Key */
+        QGetDepartmentDetailV4Key: {
             /** Key Id */
             key_id: string | null;
             /** Name */
@@ -15409,8 +15040,8 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetDepartmentDetailV3Model */
-        QGetDepartmentDetailV3Model: {
+        /** QGetDepartmentDetailV4Model */
+        QGetDepartmentDetailV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -15418,15 +15049,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetDepartmentDetailV3ModelKey */
-        QGetDepartmentDetailV3ModelKey: {
+        /** QGetDepartmentDetailV4ModelKey */
+        QGetDepartmentDetailV4ModelKey: {
             /** Model Id */
             model_id: string | null;
             /** Key Id */
             key_id: string | null;
         };
-        /** QGetDepartmentDetailV3Setting */
-        QGetDepartmentDetailV3Setting: {
+        /** QGetDepartmentDetailV4Setting */
+        QGetDepartmentDetailV4Setting: {
             /** Settings Id */
             settings_id: string | null;
             /** Created At */
@@ -15436,8 +15067,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetDepartmentNewV3Setting */
-        QGetDepartmentNewV3Setting: {
+        /** QGetDepartmentNewV4Setting */
+        QGetDepartmentNewV4Setting: {
             /** Settings Id */
             settings_id: string | null;
             /** Created At */
@@ -15447,8 +15078,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetDocumentDetailV3Agent */
-        QGetDocumentDetailV3Agent: {
+        /** QGetDocumentDetailV4Agent */
+        QGetDocumentDetailV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -15458,8 +15089,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetDocumentDetailV3Department */
-        QGetDocumentDetailV3Department: {
+        /** QGetDocumentDetailV4Department */
+        QGetDocumentDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15469,8 +15100,8 @@ export interface components {
             /** Parameter Ids */
             parameter_ids: string[] | null;
         };
-        /** QGetDocumentDetailV3Field */
-        QGetDocumentDetailV3Field: {
+        /** QGetDocumentDetailV4Field */
+        QGetDocumentDetailV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -15482,8 +15113,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetDocumentDetailV3Parameter */
-        QGetDocumentDetailV3Parameter: {
+        /** QGetDocumentDetailV4Parameter */
+        QGetDocumentDetailV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -15499,8 +15130,8 @@ export interface components {
             /** Video Parameter */
             video_parameter: boolean | null;
         };
-        /** QGetDocumentDetailV3Template */
-        QGetDocumentDetailV3Template: {
+        /** QGetDocumentDetailV4Template */
+        QGetDocumentDetailV4Template: {
             /** Template Id */
             template_id: string | null;
             /** Template Args */
@@ -15514,8 +15145,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QGetEvalAttemptV3Attempt */
-        QGetEvalAttemptV3Attempt: {
+        /** QGetEvalAttemptV4Attempt */
+        QGetEvalAttemptV4Attempt: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -15527,8 +15158,8 @@ export interface components {
             /** Infinite Mode */
             infinite_mode: boolean | null;
         };
-        /** QGetEvalAttemptV3Eval */
-        QGetEvalAttemptV3Eval: {
+        /** QGetEvalAttemptV4Eval */
+        QGetEvalAttemptV4Eval: {
             /** Eval Id */
             eval_id: string | null;
             /** Name */
@@ -15550,8 +15181,8 @@ export interface components {
             /** System Prompt */
             system_prompt: string | null;
         };
-        /** QGetEvalAttemptV3Run */
-        QGetEvalAttemptV3Run: {
+        /** QGetEvalAttemptV4Run */
+        QGetEvalAttemptV4Run: {
             /** Run Id */
             run_id: string | null;
             /** Status */
@@ -15589,8 +15220,8 @@ export interface components {
             /** Grade Created At */
             grade_created_at: string | null;
         };
-        /** QGetEvalAttemptV3StatusSummary */
-        QGetEvalAttemptV3StatusSummary: {
+        /** QGetEvalAttemptV4StatusSummary */
+        QGetEvalAttemptV4StatusSummary: {
             /** Not Started */
             not_started: number | null;
             /** In Progress */
@@ -15600,8 +15231,8 @@ export interface components {
             /** Total */
             total: number | null;
         };
-        /** QGetEvalDetailV3Agent */
-        QGetEvalDetailV3Agent: {
+        /** QGetEvalDetailV4Agent */
+        QGetEvalDetailV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -15611,8 +15242,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetEvalDetailV3AvailableModelRun */
-        QGetEvalDetailV3AvailableModelRun: {
+        /** QGetEvalDetailV4AvailableModelRun */
+        QGetEvalDetailV4AvailableModelRun: {
             /** Model Run Id */
             model_run_id: string | null;
             /** Created At */
@@ -15636,8 +15267,8 @@ export interface components {
             /** Actor Type */
             actor_type: string | null;
         };
-        /** QGetEvalDetailV3Department */
-        QGetEvalDetailV3Department: {
+        /** QGetEvalDetailV4Department */
+        QGetEvalDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15645,8 +15276,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetEvalDetailV3ModelRun */
-        QGetEvalDetailV3ModelRun: {
+        /** QGetEvalDetailV4ModelRun */
+        QGetEvalDetailV4ModelRun: {
             /** Model Run Id */
             model_run_id: string | null;
             /** Completed */
@@ -15682,10 +15313,10 @@ export interface components {
             /** Grade Created At */
             grade_created_at: string | null;
             /** Rubric Grade Agents */
-            rubric_grade_agents: components["schemas"]["QGetEvalDetailV3RubricGradeAgent"][] | null;
+            rubric_grade_agents: components["schemas"]["QGetEvalDetailV4RubricGradeAgent"][] | null;
         };
-        /** QGetEvalDetailV3Rubric */
-        QGetEvalDetailV3Rubric: {
+        /** QGetEvalDetailV4Rubric */
+        QGetEvalDetailV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -15693,8 +15324,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetEvalDetailV3RubricGradeAgent */
-        QGetEvalDetailV3RubricGradeAgent: {
+        /** QGetEvalDetailV4RubricGradeAgent */
+        QGetEvalDetailV4RubricGradeAgent: {
             /** Rubric Grade Agent Id */
             rubric_grade_agent_id: string | null;
             /** Rubric Id */
@@ -15706,8 +15337,8 @@ export interface components {
             /** Agent Name */
             agent_name: string | null;
         };
-        /** QGetFieldDetailV3Department */
-        QGetFieldDetailV3Department: {
+        /** QGetFieldDetailV4Department */
+        QGetFieldDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15715,8 +15346,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetFieldDetailV3Parameter */
-        QGetFieldDetailV3Parameter: {
+        /** QGetFieldDetailV4Parameter */
+        QGetFieldDetailV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -15724,8 +15355,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetFieldNewV3Department */
-        QGetFieldNewV3Department: {
+        /** QGetFieldNewV4Department */
+        QGetFieldNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15733,8 +15364,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetFieldNewV3Parameter */
-        QGetFieldNewV3Parameter: {
+        /** QGetFieldNewV4Parameter */
+        QGetFieldNewV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -15742,8 +15373,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetHealthBundleV3HealthKpi */
-        QGetHealthBundleV3HealthKpi: {
+        /** QGetHealthBundleV4HealthKpi */
+        QGetHealthBundleV4HealthKpi: {
             /** Ok */
             ok: boolean | null;
             /** Latency Ms */
@@ -15751,18 +15382,18 @@ export interface components {
             /** Error */
             error: string | null;
             /** Trend */
-            trend: components["schemas"]["QGetHealthBundleV3TrendData"][] | null;
+            trend: components["schemas"]["QGetHealthBundleV4TrendData"][] | null;
         };
-        /** QGetHealthBundleV3HealthKpis */
-        QGetHealthBundleV3HealthKpis: {
-            websocket: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
-            redis: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
-            document: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
-            database: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
-            authentication: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
+        /** QGetHealthBundleV4HealthKpis */
+        QGetHealthBundleV4HealthKpis: {
+            websocket: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
+            redis: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
+            document: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
+            database: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
+            authentication: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
         };
-        /** QGetHealthBundleV3MetricsDataPoint */
-        QGetHealthBundleV3MetricsDataPoint: {
+        /** QGetHealthBundleV4MetricsDataPoint */
+        QGetHealthBundleV4MetricsDataPoint: {
             /** Date */
             date: string | null;
             /** Cpu Percent */
@@ -15778,8 +15409,8 @@ export interface components {
             /** Sample Count */
             sample_count: number | null;
         };
-        /** QGetHealthBundleV3TrendData */
-        QGetHealthBundleV3TrendData: {
+        /** QGetHealthBundleV4TrendData */
+        QGetHealthBundleV4TrendData: {
             /** Date */
             date: string | null;
             /** Value */
@@ -15789,8 +15420,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetHomeHistoryV3AttemptHistoryRow */
-        QGetHomeHistoryV3AttemptHistoryRow: {
+        /** QGetHomeHistoryV4AttemptHistoryRow */
+        QGetHomeHistoryV4AttemptHistoryRow: {
             /** Attempt Id */
             attempt_id: string | null;
             /** Date */
@@ -15840,8 +15471,8 @@ export interface components {
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
-        /** QGetHomeHistoryV3Option */
-        QGetHomeHistoryV3Option: {
+        /** QGetHomeHistoryV4Option */
+        QGetHomeHistoryV4Option: {
             /** Value */
             value: string | null;
             /** Label */
@@ -15849,8 +15480,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetHomeOverviewV3Simulation */
-        QGetHomeOverviewV3Simulation: {
+        /** QGetHomeOverviewV4Simulation */
+        QGetHomeOverviewV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -15862,8 +15493,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetHomeOverviewV3SimulationItem */
-        QGetHomeOverviewV3SimulationItem: {
+        /** QGetHomeOverviewV4SimulationItem */
+        QGetHomeOverviewV4SimulationItem: {
             /** View Mode */
             view_mode: string | null;
             /** Simulation Id */
@@ -15907,8 +15538,8 @@ export interface components {
             /** Cohort Names */
             cohort_names: string | null;
         };
-        /** QGetHomeOverviewV3Standard */
-        QGetHomeOverviewV3Standard: {
+        /** QGetHomeOverviewV4Standard */
+        QGetHomeOverviewV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Standard Group Id */
@@ -15920,8 +15551,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetHomeOverviewV3StandardGroup */
-        QGetHomeOverviewV3StandardGroup: {
+        /** QGetHomeOverviewV4StandardGroup */
+        QGetHomeOverviewV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -15933,8 +15564,8 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetKeyDetailV3Department */
-        QGetKeyDetailV3Department: {
+        /** QGetKeyDetailV4Department */
+        QGetKeyDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15942,8 +15573,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetKeyDetailV3Model */
-        QGetKeyDetailV3Model: {
+        /** QGetKeyDetailV4Model */
+        QGetKeyDetailV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -15955,8 +15586,8 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetKeyNewV3Department */
-        QGetKeyNewV3Department: {
+        /** QGetKeyNewV4Department */
+        QGetKeyNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15964,8 +15595,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetKeyNewV3Model */
-        QGetKeyNewV3Model: {
+        /** QGetKeyNewV4Model */
+        QGetKeyNewV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -15977,8 +15608,8 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetKeysListV3Department */
-        QGetKeysListV3Department: {
+        /** QGetKeysListV4Department */
+        QGetKeysListV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -15986,15 +15617,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetKeysListV3DepartmentOption */
-        QGetKeysListV3DepartmentOption: {
+        /** QGetKeysListV4DepartmentOption */
+        QGetKeysListV4DepartmentOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetKeysListV3Key */
-        QGetKeysListV3Key: {
+        /** QGetKeysListV4Key */
+        QGetKeysListV4Key: {
             /** Key Id */
             key_id: string | null;
             /** Name */
@@ -16020,8 +15651,8 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean | null;
         };
-        /** QGetKeysListV3Model */
-        QGetKeysListV3Model: {
+        /** QGetKeysListV4Model */
+        QGetKeysListV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -16033,15 +15664,15 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetKeysListV3ModelOption */
-        QGetKeysListV3ModelOption: {
+        /** QGetKeysListV4ModelOption */
+        QGetKeysListV4ModelOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetLeaderboardBundleV3Metric */
-        QGetLeaderboardBundleV3Metric: {
+        /** QGetLeaderboardBundleV4Metric */
+        QGetLeaderboardBundleV4Metric: {
             /** Has Data */
             has_data: boolean | null;
             /** Method */
@@ -16057,19 +15688,19 @@ export interface components {
             /** Hover */
             hover: string | null;
         };
-        /** QGetLeaderboardBundleV3Metrics */
-        QGetLeaderboardBundleV3Metrics: {
-            total_attempts: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
-            highest_score_avg: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
-            messages_per_session: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
-            persona_response_seconds: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
-            time_spent_minutes: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
-            improvement_rate_per_day: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
-            perfect_score_count: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
-            quickest_pass_minutes: components["schemas"]["QGetLeaderboardBundleV3Metric"] | null;
+        /** QGetLeaderboardBundleV4Metrics */
+        QGetLeaderboardBundleV4Metrics: {
+            total_attempts: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
+            highest_score_avg: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
+            messages_per_session: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
+            persona_response_seconds: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
+            time_spent_minutes: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
+            improvement_rate_per_day: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
+            perfect_score_count: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
+            quickest_pass_minutes: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
         };
-        /** QGetLeaderboardBundleV3Row */
-        QGetLeaderboardBundleV3Row: {
+        /** QGetLeaderboardBundleV4Row */
+        QGetLeaderboardBundleV4Row: {
             /** Profile Id */
             profile_id: string | null;
             /** First Name */
@@ -16080,10 +15711,10 @@ export interface components {
             simulation_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            metrics: components["schemas"]["QGetLeaderboardBundleV3Metrics"] | null;
+            metrics: components["schemas"]["QGetLeaderboardBundleV4Metrics"] | null;
         };
-        /** QGetLeaderboardBundleV3Scenario */
-        QGetLeaderboardBundleV3Scenario: {
+        /** QGetLeaderboardBundleV4Scenario */
+        QGetLeaderboardBundleV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -16091,8 +15722,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetLeaderboardBundleV3Simulation */
-        QGetLeaderboardBundleV3Simulation: {
+        /** QGetLeaderboardBundleV4Simulation */
+        QGetLeaderboardBundleV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -16104,8 +15735,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetLoginDataV3Department */
-        QGetLoginDataV3Department: {
+        /** QGetLoginDataV4Department */
+        QGetLoginDataV4Department: {
             /** Id */
             id: string | null;
             /** Title */
@@ -16113,8 +15744,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetLoginDataV3Provider */
-        QGetLoginDataV3Provider: {
+        /** QGetLoginDataV4Provider */
+        QGetLoginDataV4Provider: {
             /** Id */
             id: string | null;
             /** Name */
@@ -16124,8 +15755,8 @@ export interface components {
             /** Is Default */
             is_default: boolean | null;
         };
-        /** QGetModelDetailV3Department */
-        QGetModelDetailV3Department: {
+        /** QGetModelDetailV4Department */
+        QGetModelDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16133,8 +15764,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetModelDetailV3Key */
-        QGetModelDetailV3Key: {
+        /** QGetModelDetailV4Key */
+        QGetModelDetailV4Key: {
             /** Key Id */
             key_id: string | null;
             /** Name */
@@ -16148,15 +15779,15 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetModelDetailV3Modalities */
-        QGetModelDetailV3Modalities: {
+        /** QGetModelDetailV4Modalities */
+        QGetModelDetailV4Modalities: {
             /** Input */
             input: string[] | null;
             /** Output */
             output: string[] | null;
         };
-        /** QGetModelDetailV3Pricing */
-        QGetModelDetailV3Pricing: {
+        /** QGetModelDetailV4Pricing */
+        QGetModelDetailV4Pricing: {
             /** Pricing Type */
             pricing_type: string | null;
             /** Unit Id */
@@ -16168,8 +15799,8 @@ export interface components {
             /** Price */
             price: number | null;
         };
-        /** QGetModelDetailV3Provider */
-        QGetModelDetailV3Provider: {
+        /** QGetModelDetailV4Provider */
+        QGetModelDetailV4Provider: {
             /** Provider Id */
             provider_id: string | null;
             /** Name */
@@ -16177,8 +15808,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetModelDetailV3Unit */
-        QGetModelDetailV3Unit: {
+        /** QGetModelDetailV4Unit */
+        QGetModelDetailV4Unit: {
             /** Unit Id */
             unit_id: string | null;
             /** Name */
@@ -16188,15 +15819,15 @@ export interface components {
             /** Value */
             value: number | null;
         };
-        /** QGetModelDetailV3Voice */
-        QGetModelDetailV3Voice: {
+        /** QGetModelDetailV4Voice */
+        QGetModelDetailV4Voice: {
             /** Voice Id */
             voice_id: string | null;
             /** Voice */
             voice: string | null;
         };
-        /** QGetModelNewV3Department */
-        QGetModelNewV3Department: {
+        /** QGetModelNewV4Department */
+        QGetModelNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16204,8 +15835,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetModelNewV3Key */
-        QGetModelNewV3Key: {
+        /** QGetModelNewV4Key */
+        QGetModelNewV4Key: {
             /** Key Id */
             key_id: string | null;
             /** Name */
@@ -16219,8 +15850,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetModelNewV3Model */
-        QGetModelNewV3Model: {
+        /** QGetModelNewV4Model */
+        QGetModelNewV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -16228,8 +15859,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetModelNewV3Provider */
-        QGetModelNewV3Provider: {
+        /** QGetModelNewV4Provider */
+        QGetModelNewV4Provider: {
             /** Provider Id */
             provider_id: string | null;
             /** Name */
@@ -16237,8 +15868,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetModelNewV3Unit */
-        QGetModelNewV3Unit: {
+        /** QGetModelNewV4Unit */
+        QGetModelNewV4Unit: {
             /** Unit Id */
             unit_id: string | null;
             /** Name */
@@ -16248,8 +15879,8 @@ export interface components {
             /** Value */
             value: number | null;
         };
-        /** QGetParameterDetailV3Department */
-        QGetParameterDetailV3Department: {
+        /** QGetParameterDetailV4Department */
+        QGetParameterDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16257,8 +15888,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetParameterDetailV3Document */
-        QGetParameterDetailV3Document: {
+        /** QGetParameterDetailV4Document */
+        QGetParameterDetailV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -16266,8 +15897,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetParameterDetailV3Field */
-        QGetParameterDetailV3Field: {
+        /** QGetParameterDetailV4Field */
+        QGetParameterDetailV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -16279,8 +15910,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetParameterDetailV3FieldConnection */
-        QGetParameterDetailV3FieldConnection: {
+        /** QGetParameterDetailV4FieldConnection */
+        QGetParameterDetailV4FieldConnection: {
             /** Field Id */
             field_id: string | null;
             /** Default */
@@ -16288,8 +15919,8 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetParameterDetailV3Item */
-        QGetParameterDetailV3Item: {
+        /** QGetParameterDetailV4Item */
+        QGetParameterDetailV4Item: {
             /** Parameter Item Id */
             parameter_item_id: string | null;
             /** Name */
@@ -16303,8 +15934,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetParameterDetailV3Persona */
-        QGetParameterDetailV3Persona: {
+        /** QGetParameterDetailV4Persona */
+        QGetParameterDetailV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -16312,8 +15943,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetParameterNewV3Department */
-        QGetParameterNewV3Department: {
+        /** QGetParameterNewV4Department */
+        QGetParameterNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16321,8 +15952,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetParameterNewV3Document */
-        QGetParameterNewV3Document: {
+        /** QGetParameterNewV4Document */
+        QGetParameterNewV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -16330,8 +15961,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetParameterNewV3Field */
-        QGetParameterNewV3Field: {
+        /** QGetParameterNewV4Field */
+        QGetParameterNewV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -16343,8 +15974,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetParameterNewV3FieldConnection */
-        QGetParameterNewV3FieldConnection: {
+        /** QGetParameterNewV4FieldConnection */
+        QGetParameterNewV4FieldConnection: {
             /** Field Id */
             field_id: string | null;
             /** Default */
@@ -16352,8 +15983,8 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetParameterNewV3Item */
-        QGetParameterNewV3Item: {
+        /** QGetParameterNewV4Item */
+        QGetParameterNewV4Item: {
             /** Parameter Item Id */
             parameter_item_id: string | null;
             /** Name */
@@ -16367,8 +15998,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetParameterNewV3Persona */
-        QGetParameterNewV3Persona: {
+        /** QGetParameterNewV4Persona */
+        QGetParameterNewV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -16376,8 +16007,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetPersonaDetailV3Agent */
-        QGetPersonaDetailV3Agent: {
+        /** QGetPersonaDetailV4Agent */
+        QGetPersonaDetailV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -16387,8 +16018,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetPersonaDetailV3Department */
-        QGetPersonaDetailV3Department: {
+        /** QGetPersonaDetailV4Department */
+        QGetPersonaDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16396,8 +16027,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetPersonaDetailV3Example */
-        QGetPersonaDetailV3Example: {
+        /** QGetPersonaDetailV4Example */
+        QGetPersonaDetailV4Example: {
             /** Example Id */
             example_id: string | null;
             /** Name */
@@ -16405,15 +16036,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetPersonaDetailV3ExampleHistoryItem */
-        QGetPersonaDetailV3ExampleHistoryItem: {
+        /** QGetPersonaDetailV4ExampleHistoryItem */
+        QGetPersonaDetailV4ExampleHistoryItem: {
             /** Example */
             example: string | null;
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetPersonaDetailV3Field */
-        QGetPersonaDetailV3Field: {
+        /** QGetPersonaDetailV4Field */
+        QGetPersonaDetailV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -16425,8 +16056,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetPersonaDetailV3Parameter */
-        QGetPersonaDetailV3Parameter: {
+        /** QGetPersonaDetailV4Parameter */
+        QGetPersonaDetailV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -16444,8 +16075,8 @@ export interface components {
             /** Video Parameter */
             video_parameter: boolean | null;
         };
-        /** QGetPersonaNewV3Agent */
-        QGetPersonaNewV3Agent: {
+        /** QGetPersonaNewV4Agent */
+        QGetPersonaNewV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -16455,8 +16086,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetPersonaNewV3Department */
-        QGetPersonaNewV3Department: {
+        /** QGetPersonaNewV4Department */
+        QGetPersonaNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16464,8 +16095,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetPersonaNewV3Field */
-        QGetPersonaNewV3Field: {
+        /** QGetPersonaNewV4Field */
+        QGetPersonaNewV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -16477,8 +16108,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetPersonaNewV3Parameter */
-        QGetPersonaNewV3Parameter: {
+        /** QGetPersonaNewV4Parameter */
+        QGetPersonaNewV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -16496,8 +16127,8 @@ export interface components {
             /** Video Parameter */
             video_parameter: boolean | null;
         };
-        /** QGetPracticeHistoryV3Attempt */
-        QGetPracticeHistoryV3Attempt: {
+        /** QGetPracticeHistoryV4Attempt */
+        QGetPracticeHistoryV4Attempt: {
             /** Attempt Id */
             attempt_id: string | null;
             /** Date */
@@ -16547,8 +16178,8 @@ export interface components {
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
-        /** QGetPracticeHistoryV3ProfileOption */
-        QGetPracticeHistoryV3ProfileOption: {
+        /** QGetPracticeHistoryV4ProfileOption */
+        QGetPracticeHistoryV4ProfileOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -16556,8 +16187,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetPracticeHistoryV3ScenarioOption */
-        QGetPracticeHistoryV3ScenarioOption: {
+        /** QGetPracticeHistoryV4ScenarioOption */
+        QGetPracticeHistoryV4ScenarioOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -16565,8 +16196,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetPracticeHistoryV3SimulationOption */
-        QGetPracticeHistoryV3SimulationOption: {
+        /** QGetPracticeHistoryV4SimulationOption */
+        QGetPracticeHistoryV4SimulationOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -16574,8 +16205,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetPracticeOverviewV3Department */
-        QGetPracticeOverviewV3Department: {
+        /** QGetPracticeOverviewV4Department */
+        QGetPracticeOverviewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16583,8 +16214,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetPracticeOverviewV3Field */
-        QGetPracticeOverviewV3Field: {
+        /** QGetPracticeOverviewV4Field */
+        QGetPracticeOverviewV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -16596,8 +16227,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetPracticeOverviewV3Parameter */
-        QGetPracticeOverviewV3Parameter: {
+        /** QGetPracticeOverviewV4Parameter */
+        QGetPracticeOverviewV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -16609,8 +16240,8 @@ export interface components {
             /** Persona Parameter */
             persona_parameter: boolean | null;
         };
-        /** QGetPracticeOverviewV3Persona */
-        QGetPracticeOverviewV3Persona: {
+        /** QGetPracticeOverviewV4Persona */
+        QGetPracticeOverviewV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -16622,8 +16253,8 @@ export interface components {
             /** Icon */
             icon: string | null;
         };
-        /** QGetPracticeOverviewV3PracticeSimulation */
-        QGetPracticeOverviewV3PracticeSimulation: {
+        /** QGetPracticeOverviewV4PracticeSimulation */
+        QGetPracticeOverviewV4PracticeSimulation: {
             /** View Mode */
             view_mode: string | null;
             /** Simulation Id */
@@ -16673,8 +16304,8 @@ export interface components {
             /** Standard Groups */
             standard_groups: string[] | null;
         };
-        /** QGetPracticeOverviewV3Scenario */
-        QGetPracticeOverviewV3Scenario: {
+        /** QGetPracticeOverviewV4Scenario */
+        QGetPracticeOverviewV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -16684,8 +16315,8 @@ export interface components {
             /** Persona Ids */
             persona_ids: string[] | null;
         };
-        /** QGetPracticeOverviewV3Simulation */
-        QGetPracticeOverviewV3Simulation: {
+        /** QGetPracticeOverviewV4Simulation */
+        QGetPracticeOverviewV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -16697,8 +16328,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetPracticeOverviewV3Standard */
-        QGetPracticeOverviewV3Standard: {
+        /** QGetPracticeOverviewV4Standard */
+        QGetPracticeOverviewV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Name */
@@ -16708,8 +16339,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetPracticeOverviewV3StandardGroup */
-        QGetPracticeOverviewV3StandardGroup: {
+        /** QGetPracticeOverviewV4StandardGroup */
+        QGetPracticeOverviewV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -16721,15 +16352,15 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetPricingAnalyticsV3Agent */
-        QGetPricingAnalyticsV3Agent: {
+        /** QGetPricingAnalyticsV4Agent */
+        QGetPricingAnalyticsV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingAnalyticsV3DebugInfo */
-        QGetPricingAnalyticsV3DebugInfo: {
+        /** QGetPricingAnalyticsV4DebugInfo */
+        QGetPricingAnalyticsV4DebugInfo: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -16737,8 +16368,8 @@ export interface components {
             /** Content */
             content: string | null;
         };
-        /** QGetPricingAnalyticsV3Model */
-        QGetPricingAnalyticsV3Model: {
+        /** QGetPricingAnalyticsV4Model */
+        QGetPricingAnalyticsV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -16750,8 +16381,8 @@ export interface components {
             /** Output Ppm */
             output_ppm: number | null;
         };
-        /** QGetPricingAnalyticsV3ModelRun */
-        QGetPricingAnalyticsV3ModelRun: {
+        /** QGetPricingAnalyticsV4ModelRun */
+        QGetPricingAnalyticsV4ModelRun: {
             /** Run Id */
             run_id: string | null;
             /** Created At */
@@ -16769,31 +16400,31 @@ export interface components {
             /** Persona Id */
             persona_id: string | null;
             /** Debug Info */
-            debug_info: components["schemas"]["QGetPricingAnalyticsV3DebugInfo"][] | null;
+            debug_info: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
         };
-        /** QGetPricingAnalyticsV3Persona */
-        QGetPricingAnalyticsV3Persona: {
+        /** QGetPricingAnalyticsV4Persona */
+        QGetPricingAnalyticsV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingAnalyticsV3Profile */
-        QGetPricingAnalyticsV3Profile: {
+        /** QGetPricingAnalyticsV4Profile */
+        QGetPricingAnalyticsV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingGroupDetailV3Agent */
-        QGetPricingGroupDetailV3Agent: {
+        /** QGetPricingGroupDetailV4Agent */
+        QGetPricingGroupDetailV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingGroupDetailV3Content */
-        QGetPricingGroupDetailV3Content: {
+        /** QGetPricingGroupDetailV4Content */
+        QGetPricingGroupDetailV4Content: {
             /** Idx */
             idx: number | null;
             /** Content */
@@ -16803,14 +16434,14 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QGetPricingGroupDetailV3Message */
-        QGetPricingGroupDetailV3Message: {
+        /** QGetPricingGroupDetailV4Message */
+        QGetPricingGroupDetailV4Message: {
             /** Id */
             id: string | null;
             /** Role */
             role: string | null;
             /** Contents */
-            contents: components["schemas"]["QGetPricingGroupDetailV3Content"][] | null;
+            contents: components["schemas"]["QGetPricingGroupDetailV4Content"][] | null;
             /** Created At */
             created_at: string | null;
             /** Updated At */
@@ -16822,8 +16453,8 @@ export interface components {
             /** Depth */
             depth: number | null;
         };
-        /** QGetPricingGroupDetailV3Model */
-        QGetPricingGroupDetailV3Model: {
+        /** QGetPricingGroupDetailV4Model */
+        QGetPricingGroupDetailV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -16831,15 +16462,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetPricingGroupDetailV3Profile */
-        QGetPricingGroupDetailV3Profile: {
+        /** QGetPricingGroupDetailV4Profile */
+        QGetPricingGroupDetailV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingGroupDetailV3RunMetadata */
-        QGetPricingGroupDetailV3RunMetadata: {
+        /** QGetPricingGroupDetailV4RunMetadata */
+        QGetPricingGroupDetailV4RunMetadata: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -16861,23 +16492,23 @@ export interface components {
             /** Persona Id */
             persona_id: string | null;
         };
-        /** QGetPricingGroupDetailV3RunWithMessages */
-        QGetPricingGroupDetailV3RunWithMessages: {
-            run: components["schemas"]["QGetPricingGroupDetailV3RunMetadata"] | null;
+        /** QGetPricingGroupDetailV4RunWithMessages */
+        QGetPricingGroupDetailV4RunWithMessages: {
+            run: components["schemas"]["QGetPricingGroupDetailV4RunMetadata"] | null;
             /** Messages */
-            messages: components["schemas"]["QGetPricingGroupDetailV3Message"][] | null;
+            messages: components["schemas"]["QGetPricingGroupDetailV4Message"][] | null;
             /** Previous Context Start Index */
             previous_context_start_index: number | null;
         };
-        /** QGetPricingRunsV3Agent */
-        QGetPricingRunsV3Agent: {
+        /** QGetPricingRunsV4Agent */
+        QGetPricingRunsV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingRunsV3DebugInfo */
-        QGetPricingRunsV3DebugInfo: {
+        /** QGetPricingRunsV4DebugInfo */
+        QGetPricingRunsV4DebugInfo: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -16885,8 +16516,8 @@ export interface components {
             /** Content */
             content: string | null;
         };
-        /** QGetPricingRunsV3FilterOption */
-        QGetPricingRunsV3FilterOption: {
+        /** QGetPricingRunsV4FilterOption */
+        QGetPricingRunsV4FilterOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -16894,8 +16525,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetPricingRunsV3GroupRun */
-        QGetPricingRunsV3GroupRun: {
+        /** QGetPricingRunsV4GroupRun */
+        QGetPricingRunsV4GroupRun: {
             /** Group Id */
             group_id: string | null;
             /** Created At */
@@ -16909,10 +16540,10 @@ export interface components {
             /** Total Cost */
             total_cost: number | null;
             /** Runs */
-            runs: components["schemas"]["QGetPricingRunsV3RunSummary"][] | null;
+            runs: components["schemas"]["QGetPricingRunsV4RunSummary"][] | null;
         };
-        /** QGetPricingRunsV3Model */
-        QGetPricingRunsV3Model: {
+        /** QGetPricingRunsV4Model */
+        QGetPricingRunsV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -16924,22 +16555,22 @@ export interface components {
             /** Output Ppm */
             output_ppm: number | null;
         };
-        /** QGetPricingRunsV3Persona */
-        QGetPricingRunsV3Persona: {
+        /** QGetPricingRunsV4Persona */
+        QGetPricingRunsV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingRunsV3Profile */
-        QGetPricingRunsV3Profile: {
+        /** QGetPricingRunsV4Profile */
+        QGetPricingRunsV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPricingRunsV3RunSummary */
-        QGetPricingRunsV3RunSummary: {
+        /** QGetPricingRunsV4RunSummary */
+        QGetPricingRunsV4RunSummary: {
             /** Run Id */
             run_id: string | null;
             /** Created At */
@@ -16959,10 +16590,10 @@ export interface components {
             /** Persona Id */
             persona_id: string | null;
             /** Debug Info */
-            debug_info: components["schemas"]["QGetPricingRunsV3DebugInfo"][] | null;
+            debug_info: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
         };
-        /** QGetProfileContextV3Auth */
-        QGetProfileContextV3Auth: {
+        /** QGetProfileContextV4Auth */
+        QGetProfileContextV4Auth: {
             /** Auth Id */
             auth_id: string | null;
             /** Name */
@@ -16972,8 +16603,8 @@ export interface components {
             /** Slug */
             slug: string | null;
         };
-        /** QGetProfileContextV3Cohort */
-        QGetProfileContextV3Cohort: {
+        /** QGetProfileContextV4Cohort */
+        QGetProfileContextV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Title */
@@ -16985,8 +16616,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetProfileContextV3Department */
-        QGetProfileContextV3Department: {
+        /** QGetProfileContextV4Department */
+        QGetProfileContextV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Title */
@@ -16998,8 +16629,8 @@ export interface components {
             /** Is Primary */
             is_primary: boolean | null;
         };
-        /** QGetProfileContextV3Provider */
-        QGetProfileContextV3Provider: {
+        /** QGetProfileContextV4Provider */
+        QGetProfileContextV4Provider: {
             /** Provider Id */
             provider_id: string | null;
             /** Name */
@@ -17009,8 +16640,8 @@ export interface components {
             /** Value */
             value: string | null;
         };
-        /** QGetProfileContextV3Simulation */
-        QGetProfileContextV3Simulation: {
+        /** QGetProfileContextV4Simulation */
+        QGetProfileContextV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Title */
@@ -17026,8 +16657,8 @@ export interface components {
             /** Practice Simulation */
             practice_simulation: boolean | null;
         };
-        /** QGetProfileContextV3ThemeTokens */
-        QGetProfileContextV3ThemeTokens: {
+        /** QGetProfileContextV4ThemeTokens */
+        QGetProfileContextV4ThemeTokens: {
             /** Background */
             background: string | null;
             /** Foreground */
@@ -17103,8 +16734,8 @@ export interface components {
             /** Sidebar Ring */
             sidebar_ring: string | null;
         };
-        /** QGetProfileDetailV3Cohort */
-        QGetProfileDetailV3Cohort: {
+        /** QGetProfileDetailV4Cohort */
+        QGetProfileDetailV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -17112,8 +16743,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetProfileDetailV3Department */
-        QGetProfileDetailV3Department: {
+        /** QGetProfileDetailV4Department */
+        QGetProfileDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -17121,8 +16752,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetProfileNewV3Cohort */
-        QGetProfileNewV3Cohort: {
+        /** QGetProfileNewV4Cohort */
+        QGetProfileNewV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -17130,8 +16761,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetProfileNewV3Department */
-        QGetProfileNewV3Department: {
+        /** QGetProfileNewV4Department */
+        QGetProfileNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -17139,8 +16770,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetRubricDetailV3Agent */
-        QGetRubricDetailV3Agent: {
+        /** QGetRubricDetailV4Agent */
+        QGetRubricDetailV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -17150,8 +16781,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetRubricDetailV3Department */
-        QGetRubricDetailV3Department: {
+        /** QGetRubricDetailV4Department */
+        QGetRubricDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -17159,8 +16790,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetRubricDetailV3Standard */
-        QGetRubricDetailV3Standard: {
+        /** QGetRubricDetailV4Standard */
+        QGetRubricDetailV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Name */
@@ -17170,8 +16801,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetRubricDetailV3StandardGroup */
-        QGetRubricDetailV3StandardGroup: {
+        /** QGetRubricDetailV4StandardGroup */
+        QGetRubricDetailV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -17189,8 +16820,8 @@ export interface components {
             /** Standard Ids */
             standard_ids: string[] | null;
         };
-        /** QGetRubricNewV3Agent */
-        QGetRubricNewV3Agent: {
+        /** QGetRubricNewV4Agent */
+        QGetRubricNewV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -17200,8 +16831,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetRubricNewV3Department */
-        QGetRubricNewV3Department: {
+        /** QGetRubricNewV4Department */
+        QGetRubricNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -17209,8 +16840,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetRubricNewV3Standard */
-        QGetRubricNewV3Standard: {
+        /** QGetRubricNewV4Standard */
+        QGetRubricNewV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Name */
@@ -17220,8 +16851,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetRubricNewV3StandardGroup */
-        QGetRubricNewV3StandardGroup: {
+        /** QGetRubricNewV4StandardGroup */
+        QGetRubricNewV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -17239,8 +16870,8 @@ export interface components {
             /** Standard Ids */
             standard_ids: string[] | null;
         };
-        /** QGetRubricsListV3Department */
-        QGetRubricsListV3Department: {
+        /** QGetRubricsListV4Department */
+        QGetRubricsListV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -17248,8 +16879,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetRubricsListV3Rubric */
-        QGetRubricsListV3Rubric: {
+        /** QGetRubricsListV4Rubric */
+        QGetRubricsListV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -17279,8 +16910,8 @@ export interface components {
             /** Standard Group Ids */
             standard_group_ids: string[] | null;
         };
-        /** QGetRubricsListV3Simulation */
-        QGetRubricsListV3Simulation: {
+        /** QGetRubricsListV4Simulation */
+        QGetRubricsListV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -17290,8 +16921,8 @@ export interface components {
             /** Time Limit */
             time_limit: number | null;
         };
-        /** QGetRubricsListV3Standard */
-        QGetRubricsListV3Standard: {
+        /** QGetRubricsListV4Standard */
+        QGetRubricsListV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Standard Group Id */
@@ -17303,8 +16934,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetRubricsListV3StandardGroup */
-        QGetRubricsListV3StandardGroup: {
+        /** QGetRubricsListV4StandardGroup */
+        QGetRubricsListV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Rubric Id */
@@ -17318,8 +16949,8 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetScenarioDetailV3Agent */
-        QGetScenarioDetailV3Agent: {
+        /** QGetScenarioDetailV4Agent */
+        QGetScenarioDetailV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -17329,8 +16960,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetScenarioDetailV3Department */
-        QGetScenarioDetailV3Department: {
+        /** QGetScenarioDetailV4Department */
+        QGetScenarioDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -17346,8 +16977,8 @@ export interface components {
             /** Field Ids */
             field_ids: string[] | null;
         };
-        /** QGetScenarioDetailV3Document */
-        QGetScenarioDetailV3Document: {
+        /** QGetScenarioDetailV4Document */
+        QGetScenarioDetailV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -17365,8 +16996,8 @@ export interface components {
             /** Parent Document Id */
             parent_document_id: string | null;
         };
-        /** QGetScenarioDetailV3DocumentDetail */
-        QGetScenarioDetailV3DocumentDetail: {
+        /** QGetScenarioDetailV4DocumentDetail */
+        QGetScenarioDetailV4DocumentDetail: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -17398,8 +17029,8 @@ export interface components {
             /** Parent Document Id */
             parent_document_id: string | null;
         };
-        /** QGetScenarioDetailV3Field */
-        QGetScenarioDetailV3Field: {
+        /** QGetScenarioDetailV4Field */
+        QGetScenarioDetailV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -17413,15 +17044,15 @@ export interface components {
             /** Conditional Parameter Ids */
             conditional_parameter_ids: string[] | null;
         };
-        /** QGetScenarioDetailV3FieldParamFilter */
-        QGetScenarioDetailV3FieldParamFilter: {
+        /** QGetScenarioDetailV4FieldParamFilter */
+        QGetScenarioDetailV4FieldParamFilter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Show Selected */
             show_selected: boolean | null;
         };
-        /** QGetScenarioDetailV3FieldRange */
-        QGetScenarioDetailV3FieldRange: {
+        /** QGetScenarioDetailV4FieldRange */
+        QGetScenarioDetailV4FieldRange: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Min Count */
@@ -17429,8 +17060,8 @@ export interface components {
             /** Max Count */
             max_count: number | null;
         };
-        /** QGetScenarioDetailV3Objective */
-        QGetScenarioDetailV3Objective: {
+        /** QGetScenarioDetailV4Objective */
+        QGetScenarioDetailV4Objective: {
             /** Objective Id */
             objective_id: string | null;
             /** Name */
@@ -17438,15 +17069,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetScenarioDetailV3ObjectiveWithDepartments */
-        QGetScenarioDetailV3ObjectiveWithDepartments: {
+        /** QGetScenarioDetailV4ObjectiveWithDepartments */
+        QGetScenarioDetailV4ObjectiveWithDepartments: {
             /** Objective */
             objective: string | null;
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetScenarioDetailV3Parameter */
-        QGetScenarioDetailV3Parameter: {
+        /** QGetScenarioDetailV4Parameter */
+        QGetScenarioDetailV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -17462,8 +17093,8 @@ export interface components {
             /** Video Parameter */
             video_parameter: boolean | null;
         };
-        /** QGetScenarioDetailV3ParameterDetail */
-        QGetScenarioDetailV3ParameterDetail: {
+        /** QGetScenarioDetailV4ParameterDetail */
+        QGetScenarioDetailV4ParameterDetail: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Field Ids */
@@ -17471,8 +17102,8 @@ export interface components {
             /** Valid Field Ids */
             valid_field_ids: string[] | null;
         };
-        /** QGetScenarioDetailV3Persona */
-        QGetScenarioDetailV3Persona: {
+        /** QGetScenarioDetailV4Persona */
+        QGetScenarioDetailV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -17492,8 +17123,8 @@ export interface components {
             /** Example */
             example: string | null;
         };
-        /** QGetScenarioDetailV3ProblemStatement */
-        QGetScenarioDetailV3ProblemStatement: {
+        /** QGetScenarioDetailV4ProblemStatement */
+        QGetScenarioDetailV4ProblemStatement: {
             /** Problem Statement Id */
             problem_statement_id: string | null;
             /** Name */
@@ -17505,8 +17136,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QGetScenarioDetailV3Question */
-        QGetScenarioDetailV3Question: {
+        /** QGetScenarioDetailV4Question */
+        QGetScenarioDetailV4Question: {
             /** Id */
             id: string | null;
             /** Question Text */
@@ -17516,12 +17147,12 @@ export interface components {
             /** Active */
             active: boolean | null;
             /** Options */
-            options: components["schemas"]["QGetScenarioDetailV3QuestionOption"][] | null;
+            options: components["schemas"]["QGetScenarioDetailV4QuestionOption"][] | null;
             /** Times */
             times: number[] | null;
         };
-        /** QGetScenarioDetailV3QuestionOption */
-        QGetScenarioDetailV3QuestionOption: {
+        /** QGetScenarioDetailV4QuestionOption */
+        QGetScenarioDetailV4QuestionOption: {
             /** Id */
             id: string | null;
             /** Option Text */
@@ -17531,8 +17162,8 @@ export interface components {
             /** Is Correct */
             is_correct: boolean | null;
         };
-        /** QGetScenarioDetailV3ScenarioImage */
-        QGetScenarioDetailV3ScenarioImage: {
+        /** QGetScenarioDetailV4ScenarioImage */
+        QGetScenarioDetailV4ScenarioImage: {
             /** Upload Id */
             upload_id: string | null;
             /** Name */
@@ -17548,8 +17179,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QGetScenarioDetailV3ScenarioVideo */
-        QGetScenarioDetailV3ScenarioVideo: {
+        /** QGetScenarioDetailV4ScenarioVideo */
+        QGetScenarioDetailV4ScenarioVideo: {
             /** Id */
             id: string | null;
             /** Name */
@@ -17569,8 +17200,8 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
-        /** QGetScenarioDetailV3Simulation */
-        QGetScenarioDetailV3Simulation: {
+        /** QGetScenarioDetailV4Simulation */
+        QGetScenarioDetailV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -17582,8 +17213,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetScenarioNewV3Agent */
-        QGetScenarioNewV3Agent: {
+        /** QGetScenarioNewV4Agent */
+        QGetScenarioNewV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -17593,8 +17224,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetScenarioNewV3Department */
-        QGetScenarioNewV3Department: {
+        /** QGetScenarioNewV4Department */
+        QGetScenarioNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -17610,8 +17241,8 @@ export interface components {
             /** Field Ids */
             field_ids: string[] | null;
         };
-        /** QGetScenarioNewV3Document */
-        QGetScenarioNewV3Document: {
+        /** QGetScenarioNewV4Document */
+        QGetScenarioNewV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -17629,8 +17260,8 @@ export interface components {
             /** Parent Document Id */
             parent_document_id: string | null;
         };
-        /** QGetScenarioNewV3DocumentDetail */
-        QGetScenarioNewV3DocumentDetail: {
+        /** QGetScenarioNewV4DocumentDetail */
+        QGetScenarioNewV4DocumentDetail: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -17662,8 +17293,8 @@ export interface components {
             /** Parent Document Id */
             parent_document_id: string | null;
         };
-        /** QGetScenarioNewV3Field */
-        QGetScenarioNewV3Field: {
+        /** QGetScenarioNewV4Field */
+        QGetScenarioNewV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -17677,15 +17308,15 @@ export interface components {
             /** Conditional Parameter Ids */
             conditional_parameter_ids: string[] | null;
         };
-        /** QGetScenarioNewV3FieldParamFilter */
-        QGetScenarioNewV3FieldParamFilter: {
+        /** QGetScenarioNewV4FieldParamFilter */
+        QGetScenarioNewV4FieldParamFilter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Show Selected */
             show_selected: boolean | null;
         };
-        /** QGetScenarioNewV3Objective */
-        QGetScenarioNewV3Objective: {
+        /** QGetScenarioNewV4Objective */
+        QGetScenarioNewV4Objective: {
             /** Objective Id */
             objective_id: string | null;
             /** Name */
@@ -17693,15 +17324,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetScenarioNewV3ObjectiveWithDepartments */
-        QGetScenarioNewV3ObjectiveWithDepartments: {
+        /** QGetScenarioNewV4ObjectiveWithDepartments */
+        QGetScenarioNewV4ObjectiveWithDepartments: {
             /** Objective */
             objective: string | null;
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetScenarioNewV3Parameter */
-        QGetScenarioNewV3Parameter: {
+        /** QGetScenarioNewV4Parameter */
+        QGetScenarioNewV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -17719,8 +17350,8 @@ export interface components {
             /** Numerical */
             numerical: boolean | null;
         };
-        /** QGetScenarioNewV3ParameterDetail */
-        QGetScenarioNewV3ParameterDetail: {
+        /** QGetScenarioNewV4ParameterDetail */
+        QGetScenarioNewV4ParameterDetail: {
             /** Param Id */
             param_id: string | null;
             /** Selected Items */
@@ -17728,8 +17359,8 @@ export interface components {
             /** Valid Items */
             valid_items: string[] | null;
         };
-        /** QGetScenarioNewV3Persona */
-        QGetScenarioNewV3Persona: {
+        /** QGetScenarioNewV4Persona */
+        QGetScenarioNewV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -17749,8 +17380,8 @@ export interface components {
             /** Example */
             example: string | null;
         };
-        /** QGetScenarioNewV3ProblemStatement */
-        QGetScenarioNewV3ProblemStatement: {
+        /** QGetScenarioNewV4ProblemStatement */
+        QGetScenarioNewV4ProblemStatement: {
             /** Problem Statement Id */
             problem_statement_id: string | null;
             /** Name */
@@ -17762,8 +17393,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QGetScenarioNewV3Question */
-        QGetScenarioNewV3Question: {
+        /** QGetScenarioNewV4Question */
+        QGetScenarioNewV4Question: {
             /** Id */
             id: string | null;
             /** Question Text */
@@ -17773,12 +17404,12 @@ export interface components {
             /** Active */
             active: boolean | null;
             /** Options */
-            options: components["schemas"]["QGetScenarioNewV3QuestionOption"][] | null;
+            options: components["schemas"]["QGetScenarioNewV4QuestionOption"][] | null;
             /** Times */
             times: number[] | null;
         };
-        /** QGetScenarioNewV3QuestionOption */
-        QGetScenarioNewV3QuestionOption: {
+        /** QGetScenarioNewV4QuestionOption */
+        QGetScenarioNewV4QuestionOption: {
             /** Id */
             id: string | null;
             /** Option Text */
@@ -17788,8 +17419,8 @@ export interface components {
             /** Is Correct */
             is_correct: boolean | null;
         };
-        /** QGetScenarioNewV3ScenarioImage */
-        QGetScenarioNewV3ScenarioImage: {
+        /** QGetScenarioNewV4ScenarioImage */
+        QGetScenarioNewV4ScenarioImage: {
             /** Upload Id */
             upload_id: string | null;
             /** Name */
@@ -17805,8 +17436,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QGetScenarioNewV3ScenarioVideo */
-        QGetScenarioNewV3ScenarioVideo: {
+        /** QGetScenarioNewV4ScenarioVideo */
+        QGetScenarioNewV4ScenarioVideo: {
             /** Id */
             id: string | null;
             /** Name */
@@ -17826,8 +17457,8 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
-        /** QGetSettingsDetailV3Auth */
-        QGetSettingsDetailV3Auth: {
+        /** QGetSettingsDetailV4Auth */
+        QGetSettingsDetailV4Auth: {
             /** Auth Id */
             auth_id: string | null;
             /** Name */
@@ -17839,10 +17470,10 @@ export interface components {
             /** Active */
             active: boolean | null;
             /** Auth Items */
-            auth_items: components["schemas"]["QGetSettingsDetailV3AuthItem"][] | null;
+            auth_items: components["schemas"]["QGetSettingsDetailV4AuthItem"][] | null;
         };
-        /** QGetSettingsDetailV3AuthItem */
-        QGetSettingsDetailV3AuthItem: {
+        /** QGetSettingsDetailV4AuthItem */
+        QGetSettingsDetailV4AuthItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Name */
@@ -17852,36 +17483,36 @@ export interface components {
             /** Encrypted */
             encrypted: boolean | null;
         };
-        /** QGetSettingsDetailV3AuthKey */
-        QGetSettingsDetailV3AuthKey: {
+        /** QGetSettingsDetailV4AuthKey */
+        QGetSettingsDetailV4AuthKey: {
             /** Auth Id */
             auth_id: string | null;
             /** Items */
-            items: components["schemas"]["QGetSettingsDetailV3AuthKeyItem"][] | null;
+            items: components["schemas"]["QGetSettingsDetailV4AuthKeyItem"][] | null;
         };
-        /** QGetSettingsDetailV3AuthKeyItem */
-        QGetSettingsDetailV3AuthKeyItem: {
+        /** QGetSettingsDetailV4AuthKeyItem */
+        QGetSettingsDetailV4AuthKeyItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Key Id */
             key_id: string | null;
         };
-        /** QGetSettingsDetailV3AuthValue */
-        QGetSettingsDetailV3AuthValue: {
+        /** QGetSettingsDetailV4AuthValue */
+        QGetSettingsDetailV4AuthValue: {
             /** Auth Id */
             auth_id: string | null;
             /** Items */
-            items: components["schemas"]["QGetSettingsDetailV3AuthValueItem"][] | null;
+            items: components["schemas"]["QGetSettingsDetailV4AuthValueItem"][] | null;
         };
-        /** QGetSettingsDetailV3AuthValueItem */
-        QGetSettingsDetailV3AuthValueItem: {
+        /** QGetSettingsDetailV4AuthValueItem */
+        QGetSettingsDetailV4AuthValueItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Value */
             value: string | null;
         };
-        /** QGetSettingsDetailV3Provider */
-        QGetSettingsDetailV3Provider: {
+        /** QGetSettingsDetailV4Provider */
+        QGetSettingsDetailV4Provider: {
             /** Provider Id */
             provider_id: string | null;
             /** Name */
@@ -17893,15 +17524,15 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetSettingsDetailV3ProviderKey */
-        QGetSettingsDetailV3ProviderKey: {
+        /** QGetSettingsDetailV4ProviderKey */
+        QGetSettingsDetailV4ProviderKey: {
             /** Provider Id */
             provider_id: string | null;
             /** Key Id */
             key_id: string | null;
         };
-        /** QGetSettingsListV3Setting */
-        QGetSettingsListV3Setting: {
+        /** QGetSettingsListV4Setting */
+        QGetSettingsListV4Setting: {
             /** Settings Id */
             settings_id: string | null;
             /** Created At */
@@ -17915,8 +17546,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetSimulationAttemptV3AggregatedResults */
-        QGetSimulationAttemptV3AggregatedResults: {
+        /** QGetSimulationAttemptV4AggregatedResults */
+        QGetSimulationAttemptV4AggregatedResults: {
             /** Total Score */
             total_score: number | null;
             /** Total Possible Points */
@@ -17930,8 +17561,8 @@ export interface components {
             /** Total Chats */
             total_chats: number | null;
         };
-        /** QGetSimulationAttemptV3AllSimulationScenario */
-        QGetSimulationAttemptV3AllSimulationScenario: {
+        /** QGetSimulationAttemptV4AllSimulationScenario */
+        QGetSimulationAttemptV4AllSimulationScenario: {
             /** Id */
             id: string | null;
             /** Name */
@@ -17975,10 +17606,10 @@ export interface components {
             /** Objectives */
             objectives: string[] | null;
             /** Previous Chats */
-            previous_chats: components["schemas"]["QGetSimulationAttemptV3PreviousChat"][] | null;
+            previous_chats: components["schemas"]["QGetSimulationAttemptV4PreviousChat"][] | null;
         };
-        /** QGetSimulationAttemptV3Attempt */
-        QGetSimulationAttemptV3Attempt: {
+        /** QGetSimulationAttemptV4Attempt */
+        QGetSimulationAttemptV4Attempt: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -17992,8 +17623,8 @@ export interface components {
             /** Profile Id */
             profile_id: string | null;
         };
-        /** QGetSimulationAttemptV3AttemptProfile */
-        QGetSimulationAttemptV3AttemptProfile: {
+        /** QGetSimulationAttemptV4AttemptProfile */
+        QGetSimulationAttemptV4AttemptProfile: {
             /** Profile Id */
             profile_id: string | null;
             /** Attempt Id */
@@ -18001,15 +17632,15 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QGetSimulationAttemptV3AvailableContinuationOptions */
-        QGetSimulationAttemptV3AvailableContinuationOptions: {
+        /** QGetSimulationAttemptV4AvailableContinuationOptions */
+        QGetSimulationAttemptV4AvailableContinuationOptions: {
             /** Next Sequential Options */
-            next_sequential_options: components["schemas"]["QGetSimulationAttemptV3ContinuationOption"][] | null;
+            next_sequential_options: components["schemas"]["QGetSimulationAttemptV4ContinuationOption"][] | null;
             /** Has Options */
             has_options: boolean | null;
         };
-        /** QGetSimulationAttemptV3Chat */
-        QGetSimulationAttemptV3Chat: {
+        /** QGetSimulationAttemptV4Chat */
+        QGetSimulationAttemptV4Chat: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -18033,28 +17664,28 @@ export interface components {
             /** Document Ids */
             document_ids: string[] | null;
         };
-        /** QGetSimulationAttemptV3ChatData */
-        QGetSimulationAttemptV3ChatData: {
-            chat: components["schemas"]["QGetSimulationAttemptV3Chat"] | null;
-            scenario: components["schemas"]["QGetSimulationAttemptV3Scenario"] | null;
+        /** QGetSimulationAttemptV4ChatData */
+        QGetSimulationAttemptV4ChatData: {
+            chat: components["schemas"]["QGetSimulationAttemptV4Chat"] | null;
+            scenario: components["schemas"]["QGetSimulationAttemptV4Scenario"] | null;
             /** Messages */
-            messages: components["schemas"]["QGetSimulationAttemptV3Message"][] | null;
+            messages: components["schemas"]["QGetSimulationAttemptV4Message"][] | null;
             /** Hints */
-            hints: components["schemas"]["QGetSimulationAttemptV3HintsByMessage"][] | null;
-            grade: components["schemas"]["QGetSimulationAttemptV3Grade"] | null;
-            grading_state: components["schemas"]["QGetSimulationAttemptV3GradingState"] | null;
-            dynamic_rubric: components["schemas"]["QGetSimulationAttemptV3DynamicRubric"] | null;
+            hints: components["schemas"]["QGetSimulationAttemptV4HintsByMessage"][] | null;
+            grade: components["schemas"]["QGetSimulationAttemptV4Grade"] | null;
+            grading_state: components["schemas"]["QGetSimulationAttemptV4GradingState"] | null;
+            dynamic_rubric: components["schemas"]["QGetSimulationAttemptV4DynamicRubric"] | null;
             /** Previous Chats */
-            previous_chats: components["schemas"]["QGetSimulationAttemptV3PreviousChat"][] | null;
+            previous_chats: components["schemas"]["QGetSimulationAttemptV4PreviousChat"][] | null;
             /** Personas */
-            personas: components["schemas"]["QGetSimulationAttemptV3Persona"][] | null;
+            personas: components["schemas"]["QGetSimulationAttemptV4Persona"][] | null;
             /** Content Type */
             content_type: string | null;
-            video: components["schemas"]["QGetSimulationAttemptV3Video"] | null;
-            quiz: components["schemas"]["QGetSimulationAttemptV3Quiz"] | null;
+            video: components["schemas"]["QGetSimulationAttemptV4Video"] | null;
+            quiz: components["schemas"]["QGetSimulationAttemptV4Quiz"] | null;
         };
-        /** QGetSimulationAttemptV3ContinuationOption */
-        QGetSimulationAttemptV3ContinuationOption: {
+        /** QGetSimulationAttemptV4ContinuationOption */
+        QGetSimulationAttemptV4ContinuationOption: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Position */
@@ -18072,8 +17703,8 @@ export interface components {
             /** Time Taken */
             time_taken: number | null;
         };
-        /** QGetSimulationAttemptV3DynamicRubric */
-        QGetSimulationAttemptV3DynamicRubric: {
+        /** QGetSimulationAttemptV4DynamicRubric */
+        QGetSimulationAttemptV4DynamicRubric: {
             /** Chat Id */
             chat_id: string | null;
             /** Score */
@@ -18083,14 +17714,14 @@ export interface components {
             /** Time Taken */
             time_taken: number | null;
             /** Skill Scores */
-            skill_scores: components["schemas"]["QGetSimulationAttemptV3SkillScore"][] | null;
+            skill_scores: components["schemas"]["QGetSimulationAttemptV4SkillScore"][] | null;
             /** Skill Feedbacks */
-            skill_feedbacks: components["schemas"]["QGetSimulationAttemptV3SkillFeedback"][] | null;
+            skill_feedbacks: components["schemas"]["QGetSimulationAttemptV4SkillFeedback"][] | null;
             /** Total Possible Points */
             total_possible_points: number | null;
         };
-        /** QGetSimulationAttemptV3Grade */
-        QGetSimulationAttemptV3Grade: {
+        /** QGetSimulationAttemptV4Grade */
+        QGetSimulationAttemptV4Grade: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -18108,19 +17739,19 @@ export interface components {
             /** Time Taken */
             time_taken: number | null;
         };
-        /** QGetSimulationAttemptV3GradingState */
-        QGetSimulationAttemptV3GradingState: {
+        /** QGetSimulationAttemptV4GradingState */
+        QGetSimulationAttemptV4GradingState: {
             /** Achieved Standards */
-            achieved_standards: components["schemas"]["QGetSimulationAttemptV3StandardAchievement"][] | null;
+            achieved_standards: components["schemas"]["QGetSimulationAttemptV4StandardAchievement"][] | null;
             /** Passed Standards */
-            passed_standards: components["schemas"]["QGetSimulationAttemptV3StandardPass"][] | null;
+            passed_standards: components["schemas"]["QGetSimulationAttemptV4StandardPass"][] | null;
             /** Grade Description */
             grade_description: string | null;
             /** Feedback By Standard Id */
-            feedback_by_standard_id: components["schemas"]["QGetSimulationAttemptV3StandardFeedback"][] | null;
+            feedback_by_standard_id: components["schemas"]["QGetSimulationAttemptV4StandardFeedback"][] | null;
         };
-        /** QGetSimulationAttemptV3Hint */
-        QGetSimulationAttemptV3Hint: {
+        /** QGetSimulationAttemptV4Hint */
+        QGetSimulationAttemptV4Hint: {
             /** Simulation Message Id */
             simulation_message_id: string | null;
             /** Hint */
@@ -18130,15 +17761,15 @@ export interface components {
             /** Created At */
             created_at: string | null;
         };
-        /** QGetSimulationAttemptV3HintsByMessage */
-        QGetSimulationAttemptV3HintsByMessage: {
+        /** QGetSimulationAttemptV4HintsByMessage */
+        QGetSimulationAttemptV4HintsByMessage: {
             /** Message Id */
             message_id: string | null;
             /** Hints */
-            hints: components["schemas"]["QGetSimulationAttemptV3Hint"][] | null;
+            hints: components["schemas"]["QGetSimulationAttemptV4Hint"][] | null;
         };
-        /** QGetSimulationAttemptV3Message */
-        QGetSimulationAttemptV3Message: {
+        /** QGetSimulationAttemptV4Message */
+        QGetSimulationAttemptV4Message: {
             /** Id */
             id: string | null;
             /** Created At */
@@ -18156,10 +17787,10 @@ export interface components {
             /** Persona Id */
             persona_id: string | null;
             /** Feedbacks */
-            feedbacks: components["schemas"]["QGetSimulationAttemptV3MessageFeedback"][] | null;
+            feedbacks: components["schemas"]["QGetSimulationAttemptV4MessageFeedback"][] | null;
         };
-        /** QGetSimulationAttemptV3MessageFeedback */
-        QGetSimulationAttemptV3MessageFeedback: {
+        /** QGetSimulationAttemptV4MessageFeedback */
+        QGetSimulationAttemptV4MessageFeedback: {
             /** Id */
             id: string | null;
             /** Name */
@@ -18169,24 +17800,24 @@ export interface components {
             /** Type */
             type: string | null;
             /** Replaces */
-            replaces: components["schemas"]["QGetSimulationAttemptV3MessageFeedbackReplace"][] | null;
+            replaces: components["schemas"]["QGetSimulationAttemptV4MessageFeedbackReplace"][] | null;
             /** Highlights */
-            highlights: components["schemas"]["QGetSimulationAttemptV3MessageFeedbackHighlight"][] | null;
+            highlights: components["schemas"]["QGetSimulationAttemptV4MessageFeedbackHighlight"][] | null;
         };
-        /** QGetSimulationAttemptV3MessageFeedbackHighlight */
-        QGetSimulationAttemptV3MessageFeedbackHighlight: {
+        /** QGetSimulationAttemptV4MessageFeedbackHighlight */
+        QGetSimulationAttemptV4MessageFeedbackHighlight: {
             /** Section */
             section: string | null;
         };
-        /** QGetSimulationAttemptV3MessageFeedbackReplace */
-        QGetSimulationAttemptV3MessageFeedbackReplace: {
+        /** QGetSimulationAttemptV4MessageFeedbackReplace */
+        QGetSimulationAttemptV4MessageFeedbackReplace: {
             /** Section */
             section: string | null;
             /** Replace */
             replace: string | null;
         };
-        /** QGetSimulationAttemptV3Option */
-        QGetSimulationAttemptV3Option: {
+        /** QGetSimulationAttemptV4Option */
+        QGetSimulationAttemptV4Option: {
             /** Id */
             id: string | null;
             /** Option Text */
@@ -18196,8 +17827,8 @@ export interface components {
             /** Is Correct */
             is_correct: boolean | null;
         };
-        /** QGetSimulationAttemptV3Persona */
-        QGetSimulationAttemptV3Persona: {
+        /** QGetSimulationAttemptV4Persona */
+        QGetSimulationAttemptV4Persona: {
             /** Id */
             id: string | null;
             /** Name */
@@ -18207,8 +17838,8 @@ export interface components {
             /** Color */
             color: string | null;
         };
-        /** QGetSimulationAttemptV3PreviousChat */
-        QGetSimulationAttemptV3PreviousChat: {
+        /** QGetSimulationAttemptV4PreviousChat */
+        QGetSimulationAttemptV4PreviousChat: {
             /** Chat Id */
             chat_id: string | null;
             /** Attempt Id */
@@ -18228,8 +17859,8 @@ export interface components {
             /** Percentage */
             percentage: number | null;
         };
-        /** QGetSimulationAttemptV3Question */
-        QGetSimulationAttemptV3Question: {
+        /** QGetSimulationAttemptV4Question */
+        QGetSimulationAttemptV4Question: {
             /** Id */
             id: string | null;
             /** Question Text */
@@ -18241,19 +17872,19 @@ export interface components {
             /** Times */
             times: number[] | null;
             /** Options */
-            options: components["schemas"]["QGetSimulationAttemptV3Option"][] | null;
+            options: components["schemas"]["QGetSimulationAttemptV4Option"][] | null;
         };
-        /** QGetSimulationAttemptV3Quiz */
-        QGetSimulationAttemptV3Quiz: {
+        /** QGetSimulationAttemptV4Quiz */
+        QGetSimulationAttemptV4Quiz: {
             /** Id */
             id: string | null;
             /** Completed */
             completed: boolean | null;
             /** Responses */
-            responses: components["schemas"]["QGetSimulationAttemptV3QuizResponse"][] | null;
+            responses: components["schemas"]["QGetSimulationAttemptV4QuizResponse"][] | null;
         };
-        /** QGetSimulationAttemptV3QuizResponse */
-        QGetSimulationAttemptV3QuizResponse: {
+        /** QGetSimulationAttemptV4QuizResponse */
+        QGetSimulationAttemptV4QuizResponse: {
             /** Question Id */
             question_id: string | null;
             /** Option Id */
@@ -18263,17 +17894,17 @@ export interface components {
             /** Created At */
             created_at: string | null;
         };
-        /** QGetSimulationAttemptV3RubricStructure */
-        QGetSimulationAttemptV3RubricStructure: {
+        /** QGetSimulationAttemptV4RubricStructure */
+        QGetSimulationAttemptV4RubricStructure: {
             /** Standard Groups */
-            standard_groups: components["schemas"]["QGetSimulationAttemptV3StandardGroupStandards"][] | null;
+            standard_groups: components["schemas"]["QGetSimulationAttemptV4StandardGroupStandards"][] | null;
             /** Standard Groups Mapping */
-            standard_groups_mapping: components["schemas"]["QGetSimulationAttemptV3StandardGroupMapping"][] | null;
+            standard_groups_mapping: components["schemas"]["QGetSimulationAttemptV4StandardGroupMapping"][] | null;
             /** Standards Mapping */
-            standards_mapping: components["schemas"]["QGetSimulationAttemptV3StandardMapping"][] | null;
+            standards_mapping: components["schemas"]["QGetSimulationAttemptV4StandardMapping"][] | null;
         };
-        /** QGetSimulationAttemptV3Scenario */
-        QGetSimulationAttemptV3Scenario: {
+        /** QGetSimulationAttemptV4Scenario */
+        QGetSimulationAttemptV4Scenario: {
             /** Id */
             id: string | null;
             /** Name */
@@ -18317,8 +17948,8 @@ export interface components {
             /** Objectives */
             objectives: string[] | null;
         };
-        /** QGetSimulationAttemptV3ScenarioDocument */
-        QGetSimulationAttemptV3ScenarioDocument: {
+        /** QGetSimulationAttemptV4ScenarioDocument */
+        QGetSimulationAttemptV4ScenarioDocument: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -18348,8 +17979,8 @@ export interface components {
             /** Field Ids */
             field_ids: string[] | null;
         };
-        /** QGetSimulationAttemptV3Simulation */
-        QGetSimulationAttemptV3Simulation: {
+        /** QGetSimulationAttemptV4Simulation */
+        QGetSimulationAttemptV4Simulation: {
             /** Id */
             id: string | null;
             /** Title */
@@ -18385,36 +18016,36 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QGetSimulationAttemptV3SkillFeedback */
-        QGetSimulationAttemptV3SkillFeedback: {
+        /** QGetSimulationAttemptV4SkillFeedback */
+        QGetSimulationAttemptV4SkillFeedback: {
             /** Skill Name */
             skill_name: string | null;
             /** Feedback */
             feedback: string | null;
         };
-        /** QGetSimulationAttemptV3SkillScore */
-        QGetSimulationAttemptV3SkillScore: {
+        /** QGetSimulationAttemptV4SkillScore */
+        QGetSimulationAttemptV4SkillScore: {
             /** Skill Name */
             skill_name: string | null;
             /** Score */
             score: number | null;
         };
-        /** QGetSimulationAttemptV3StandardAchievement */
-        QGetSimulationAttemptV3StandardAchievement: {
+        /** QGetSimulationAttemptV4StandardAchievement */
+        QGetSimulationAttemptV4StandardAchievement: {
             /** Standard Id */
             standard_id: string | null;
             /** Achieved */
             achieved: boolean | null;
         };
-        /** QGetSimulationAttemptV3StandardFeedback */
-        QGetSimulationAttemptV3StandardFeedback: {
+        /** QGetSimulationAttemptV4StandardFeedback */
+        QGetSimulationAttemptV4StandardFeedback: {
             /** Standard Id */
             standard_id: string | null;
             /** Feedback */
             feedback: string | null;
         };
-        /** QGetSimulationAttemptV3StandardGroupMapping */
-        QGetSimulationAttemptV3StandardGroupMapping: {
+        /** QGetSimulationAttemptV4StandardGroupMapping */
+        QGetSimulationAttemptV4StandardGroupMapping: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -18426,15 +18057,15 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetSimulationAttemptV3StandardGroupStandards */
-        QGetSimulationAttemptV3StandardGroupStandards: {
+        /** QGetSimulationAttemptV4StandardGroupStandards */
+        QGetSimulationAttemptV4StandardGroupStandards: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Standard Ids */
             standard_ids: string[] | null;
         };
-        /** QGetSimulationAttemptV3StandardMapping */
-        QGetSimulationAttemptV3StandardMapping: {
+        /** QGetSimulationAttemptV4StandardMapping */
+        QGetSimulationAttemptV4StandardMapping: {
             /** Standard Id */
             standard_id: string | null;
             /** Name */
@@ -18444,15 +18075,15 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetSimulationAttemptV3StandardPass */
-        QGetSimulationAttemptV3StandardPass: {
+        /** QGetSimulationAttemptV4StandardPass */
+        QGetSimulationAttemptV4StandardPass: {
             /** Standard Id */
             standard_id: string | null;
             /** Passed */
             passed: boolean | null;
         };
-        /** QGetSimulationAttemptV3Timer */
-        QGetSimulationAttemptV3Timer: {
+        /** QGetSimulationAttemptV4Timer */
+        QGetSimulationAttemptV4Timer: {
             /** Elapsed */
             elapsed: number | null;
             /** Limit */
@@ -18462,8 +18093,8 @@ export interface components {
             /** Formatted */
             formatted: string | null;
         };
-        /** QGetSimulationAttemptV3Video */
-        QGetSimulationAttemptV3Video: {
+        /** QGetSimulationAttemptV4Video */
+        QGetSimulationAttemptV4Video: {
             /** Id */
             id: string | null;
             /** Title */
@@ -18473,14 +18104,14 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
             /** Video Documents */
-            video_documents: components["schemas"]["QGetSimulationAttemptV3VideoDocument"][] | null;
+            video_documents: components["schemas"]["QGetSimulationAttemptV4VideoDocument"][] | null;
             /** Questions */
-            questions: components["schemas"]["QGetSimulationAttemptV3Question"][] | null;
+            questions: components["schemas"]["QGetSimulationAttemptV4Question"][] | null;
             /** Show Image */
             show_image: boolean | null;
         };
-        /** QGetSimulationAttemptV3VideoDocument */
-        QGetSimulationAttemptV3VideoDocument: {
+        /** QGetSimulationAttemptV4VideoDocument */
+        QGetSimulationAttemptV4VideoDocument: {
             /** Id */
             id: string | null;
             /** Name */
@@ -18496,8 +18127,8 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
-        /** QGetSimulationDetailV3Agent */
-        QGetSimulationDetailV3Agent: {
+        /** QGetSimulationDetailV4Agent */
+        QGetSimulationDetailV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -18507,8 +18138,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetSimulationDetailV3Department */
-        QGetSimulationDetailV3Department: {
+        /** QGetSimulationDetailV4Department */
+        QGetSimulationDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -18522,8 +18153,8 @@ export interface components {
             /** Cohort Ids */
             cohort_ids: string[] | null;
         };
-        /** QGetSimulationDetailV3Document */
-        QGetSimulationDetailV3Document: {
+        /** QGetSimulationDetailV4Document */
+        QGetSimulationDetailV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -18531,8 +18162,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationDetailV3Field */
-        QGetSimulationDetailV3Field: {
+        /** QGetSimulationDetailV4Field */
+        QGetSimulationDetailV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -18544,8 +18175,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetSimulationDetailV3Parameter */
-        QGetSimulationDetailV3Parameter: {
+        /** QGetSimulationDetailV4Parameter */
+        QGetSimulationDetailV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -18557,8 +18188,8 @@ export interface components {
             /** Persona Parameter */
             persona_parameter: boolean | null;
         };
-        /** QGetSimulationDetailV3ParameterItem */
-        QGetSimulationDetailV3ParameterItem: {
+        /** QGetSimulationDetailV4ParameterItem */
+        QGetSimulationDetailV4ParameterItem: {
             /** Id */
             id: string | null;
             /** Parameter Id */
@@ -18568,8 +18199,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationDetailV3ParameterItemDetail */
-        QGetSimulationDetailV3ParameterItemDetail: {
+        /** QGetSimulationDetailV4ParameterItemDetail */
+        QGetSimulationDetailV4ParameterItemDetail: {
             /** Id */
             id: string | null;
             /** Name */
@@ -18579,8 +18210,8 @@ export interface components {
             /** Parameter Id */
             parameter_id: string | null;
         };
-        /** QGetSimulationDetailV3Persona */
-        QGetSimulationDetailV3Persona: {
+        /** QGetSimulationDetailV4Persona */
+        QGetSimulationDetailV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -18594,8 +18225,8 @@ export interface components {
             /** Image Model */
             image_model: boolean | null;
         };
-        /** QGetSimulationDetailV3Rubric */
-        QGetSimulationDetailV3Rubric: {
+        /** QGetSimulationDetailV4Rubric */
+        QGetSimulationDetailV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -18603,8 +18234,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationDetailV3RubricGradeAgent */
-        QGetSimulationDetailV3RubricGradeAgent: {
+        /** QGetSimulationDetailV4RubricGradeAgent */
+        QGetSimulationDetailV4RubricGradeAgent: {
             /** Rubric Grade Agent Id */
             rubric_grade_agent_id: string | null;
             /** Rubric Id */
@@ -18620,8 +18251,8 @@ export interface components {
             /** Audio Agent Name */
             audio_agent_name: string | null;
         };
-        /** QGetSimulationDetailV3Scenario */
-        QGetSimulationDetailV3Scenario: {
+        /** QGetSimulationDetailV4Scenario */
+        QGetSimulationDetailV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Title */
@@ -18655,10 +18286,10 @@ export interface components {
             /** Has Active Video */
             has_active_video: boolean | null;
             /** Rubric Grade Agents */
-            rubric_grade_agents: components["schemas"]["QGetSimulationDetailV3RubricGradeAgent"][] | null;
+            rubric_grade_agents: components["schemas"]["QGetSimulationDetailV4RubricGradeAgent"][] | null;
         };
-        /** QGetSimulationDetailV3ScenarioFull */
-        QGetSimulationDetailV3ScenarioFull: {
+        /** QGetSimulationDetailV4ScenarioFull */
+        QGetSimulationDetailV4ScenarioFull: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -18668,18 +18299,18 @@ export interface components {
             /** Persona Ids */
             persona_ids: string[] | null;
             /** Persona Mapping */
-            persona_mapping: components["schemas"]["QGetSimulationDetailV3Persona"][] | null;
+            persona_mapping: components["schemas"]["QGetSimulationDetailV4Persona"][] | null;
             /** Document Mapping */
-            document_mapping: components["schemas"]["QGetSimulationDetailV3Document"][] | null;
+            document_mapping: components["schemas"]["QGetSimulationDetailV4Document"][] | null;
             /** Parameter Item Mapping */
-            parameter_item_mapping: components["schemas"]["QGetSimulationDetailV3Field"][] | null;
+            parameter_item_mapping: components["schemas"]["QGetSimulationDetailV4Field"][] | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
             /** Document Ids */
             document_ids: string[] | null;
         };
-        /** QGetSimulationNewV3Agent */
-        QGetSimulationNewV3Agent: {
+        /** QGetSimulationNewV4Agent */
+        QGetSimulationNewV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -18689,8 +18320,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetSimulationNewV3Department */
-        QGetSimulationNewV3Department: {
+        /** QGetSimulationNewV4Department */
+        QGetSimulationNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -18704,8 +18335,8 @@ export interface components {
             /** Cohort Ids */
             cohort_ids: string[] | null;
         };
-        /** QGetSimulationNewV3Document */
-        QGetSimulationNewV3Document: {
+        /** QGetSimulationNewV4Document */
+        QGetSimulationNewV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -18713,8 +18344,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationNewV3Field */
-        QGetSimulationNewV3Field: {
+        /** QGetSimulationNewV4Field */
+        QGetSimulationNewV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -18726,8 +18357,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetSimulationNewV3Parameter */
-        QGetSimulationNewV3Parameter: {
+        /** QGetSimulationNewV4Parameter */
+        QGetSimulationNewV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -18739,8 +18370,8 @@ export interface components {
             /** Persona Parameter */
             persona_parameter: boolean | null;
         };
-        /** QGetSimulationNewV3ParameterItem */
-        QGetSimulationNewV3ParameterItem: {
+        /** QGetSimulationNewV4ParameterItem */
+        QGetSimulationNewV4ParameterItem: {
             /** Id */
             id: string | null;
             /** Parameter Id */
@@ -18750,8 +18381,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationNewV3ParameterItemDetail */
-        QGetSimulationNewV3ParameterItemDetail: {
+        /** QGetSimulationNewV4ParameterItemDetail */
+        QGetSimulationNewV4ParameterItemDetail: {
             /** Id */
             id: string | null;
             /** Name */
@@ -18761,8 +18392,8 @@ export interface components {
             /** Parameter Id */
             parameter_id: string | null;
         };
-        /** QGetSimulationNewV3Persona */
-        QGetSimulationNewV3Persona: {
+        /** QGetSimulationNewV4Persona */
+        QGetSimulationNewV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -18776,8 +18407,8 @@ export interface components {
             /** Image Model */
             image_model: boolean | null;
         };
-        /** QGetSimulationNewV3Rubric */
-        QGetSimulationNewV3Rubric: {
+        /** QGetSimulationNewV4Rubric */
+        QGetSimulationNewV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -18785,8 +18416,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationNewV3Scenario */
-        QGetSimulationNewV3Scenario: {
+        /** QGetSimulationNewV4Scenario */
+        QGetSimulationNewV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Title */
@@ -18820,8 +18451,8 @@ export interface components {
             /** Has Active Video */
             has_active_video: boolean | null;
         };
-        /** QGetSimulationNewV3ScenarioFull */
-        QGetSimulationNewV3ScenarioFull: {
+        /** QGetSimulationNewV4ScenarioFull */
+        QGetSimulationNewV4ScenarioFull: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -18831,18 +18462,18 @@ export interface components {
             /** Persona Ids */
             persona_ids: string[] | null;
             /** Persona Mapping */
-            persona_mapping: components["schemas"]["QGetSimulationNewV3Persona"][] | null;
+            persona_mapping: components["schemas"]["QGetSimulationNewV4Persona"][] | null;
             /** Document Mapping */
-            document_mapping: components["schemas"]["QGetSimulationNewV3Document"][] | null;
+            document_mapping: components["schemas"]["QGetSimulationNewV4Document"][] | null;
             /** Parameter Item Mapping */
-            parameter_item_mapping: components["schemas"]["QGetSimulationNewV3Field"][] | null;
+            parameter_item_mapping: components["schemas"]["QGetSimulationNewV4Field"][] | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
             /** Document Ids */
             document_ids: string[] | null;
         };
-        /** QGetSimulationNewV3Video */
-        QGetSimulationNewV3Video: {
+        /** QGetSimulationNewV4Video */
+        QGetSimulationNewV4Video: {
             /** Video Id */
             video_id: string | null;
             /** Name */
@@ -18852,8 +18483,8 @@ export interface components {
             /** Length Seconds */
             length_seconds: number | null;
         };
-        /** QGetStaffDetailV3Cohort */
-        QGetStaffDetailV3Cohort: {
+        /** QGetStaffDetailV4Cohort */
+        QGetStaffDetailV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -18861,8 +18492,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetStaffDetailV3Department */
-        QGetStaffDetailV3Department: {
+        /** QGetStaffDetailV4Department */
+        QGetStaffDetailV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -18870,8 +18501,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetStaffNewV3Cohort */
-        QGetStaffNewV3Cohort: {
+        /** QGetStaffNewV4Cohort */
+        QGetStaffNewV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -18879,8 +18510,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetStaffNewV3Department */
-        QGetStaffNewV3Department: {
+        /** QGetStaffNewV4Department */
+        QGetStaffNewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -18888,8 +18519,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListAgentsV3Agent */
-        QListAgentsV3Agent: {
+        /** QListAgentsV4Agent */
+        QListAgentsV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -18921,8 +18552,8 @@ export interface components {
             /** Actor Name */
             actor_name: string | null;
         };
-        /** QListCohortsV3Cohort */
-        QListCohortsV3Cohort: {
+        /** QListCohortsV4Cohort */
+        QListCohortsV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -18952,8 +18583,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QListCohortsV3Department */
-        QListCohortsV3Department: {
+        /** QListCohortsV4Department */
+        QListCohortsV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -18961,8 +18592,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListCohortsV3Profile */
-        QListCohortsV3Profile: {
+        /** QListCohortsV4Profile */
+        QListCohortsV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** Name */
@@ -18970,8 +18601,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListCohortsV3Scenario */
-        QListCohortsV3Scenario: {
+        /** QListCohortsV4Scenario */
+        QListCohortsV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -18987,8 +18618,8 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** QListCohortsV3Simulation */
-        QListCohortsV3Simulation: {
+        /** QListCohortsV4Simulation */
+        QListCohortsV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -19002,8 +18633,8 @@ export interface components {
             /** Scenario Ids */
             scenario_ids: string[] | null;
         };
-        /** QListDepartmentsV3Cohort */
-        QListDepartmentsV3Cohort: {
+        /** QListDepartmentsV4Cohort */
+        QListDepartmentsV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -19011,8 +18642,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListDepartmentsV3Department */
-        QListDepartmentsV3Department: {
+        /** QListDepartmentsV4Department */
+        QListDepartmentsV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Title */
@@ -19038,8 +18669,8 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean | null;
         };
-        /** QListDepartmentsV3Profile */
-        QListDepartmentsV3Profile: {
+        /** QListDepartmentsV4Profile */
+        QListDepartmentsV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** Name */
@@ -19047,8 +18678,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListDocumentsV3Department */
-        QListDocumentsV3Department: {
+        /** QListDocumentsV4Department */
+        QListDocumentsV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19060,15 +18691,15 @@ export interface components {
             /** Field Ids */
             field_ids: string[] | null;
         };
-        /** QListDocumentsV3DepartmentOption */
-        QListDocumentsV3DepartmentOption: {
+        /** QListDocumentsV4DepartmentOption */
+        QListDocumentsV4DepartmentOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListDocumentsV3Document */
-        QListDocumentsV3Document: {
+        /** QListDocumentsV4Document */
+        QListDocumentsV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -19098,8 +18729,8 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QListDocumentsV3Field */
-        QListDocumentsV3Field: {
+        /** QListDocumentsV4Field */
+        QListDocumentsV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -19111,8 +18742,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QListDocumentsV3Parameter */
-        QListDocumentsV3Parameter: {
+        /** QListDocumentsV4Parameter */
+        QListDocumentsV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -19128,8 +18759,8 @@ export interface components {
             /** Video Parameter */
             video_parameter: boolean | null;
         };
-        /** QListDocumentsV3Scenario */
-        QListDocumentsV3Scenario: {
+        /** QListDocumentsV4Scenario */
+        QListDocumentsV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -19139,15 +18770,15 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QListDocumentsV3ScenarioOption */
-        QListDocumentsV3ScenarioOption: {
+        /** QListDocumentsV4ScenarioOption */
+        QListDocumentsV4ScenarioOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListEvalsV3Agent */
-        QListEvalsV3Agent: {
+        /** QListEvalsV4Agent */
+        QListEvalsV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -19155,8 +18786,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListEvalsV3Department */
-        QListEvalsV3Department: {
+        /** QListEvalsV4Department */
+        QListEvalsV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19164,8 +18795,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListEvalsV3Eval */
-        QListEvalsV3Eval: {
+        /** QListEvalsV4Eval */
+        QListEvalsV4Eval: {
             /** Eval Id */
             eval_id: string | null;
             /** Name */
@@ -19201,15 +18832,15 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QListEvalsV3Option */
-        QListEvalsV3Option: {
+        /** QListEvalsV4Option */
+        QListEvalsV4Option: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListEvalsV3Rubric */
-        QListEvalsV3Rubric: {
+        /** QListEvalsV4Rubric */
+        QListEvalsV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -19221,8 +18852,8 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QListEvalsV3RubricStandardGroup */
-        QListEvalsV3RubricStandardGroup: {
+        /** QListEvalsV4RubricStandardGroup */
+        QListEvalsV4RubricStandardGroup: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Standard Group Id */
@@ -19230,8 +18861,8 @@ export interface components {
             /** Standard Ids */
             standard_ids: string[] | null;
         };
-        /** QListEvalsV3Standard */
-        QListEvalsV3Standard: {
+        /** QListEvalsV4Standard */
+        QListEvalsV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Name */
@@ -19241,8 +18872,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QListEvalsV3StandardGroup */
-        QListEvalsV3StandardGroup: {
+        /** QListEvalsV4StandardGroup */
+        QListEvalsV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -19254,8 +18885,8 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QListFieldsV3Department */
-        QListFieldsV3Department: {
+        /** QListFieldsV4Department */
+        QListFieldsV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19263,8 +18894,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListFieldsV3Field */
-        QListFieldsV3Field: {
+        /** QListFieldsV4Field */
+        QListFieldsV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -19290,15 +18921,15 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean | null;
         };
-        /** QListFieldsV3Option */
-        QListFieldsV3Option: {
+        /** QListFieldsV4Option */
+        QListFieldsV4Option: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListFieldsV3Parameter */
-        QListFieldsV3Parameter: {
+        /** QListFieldsV4Parameter */
+        QListFieldsV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -19306,8 +18937,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListModelsV3Model */
-        QListModelsV3Model: {
+        /** QListModelsV4Model */
+        QListModelsV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -19333,22 +18964,22 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QListModelsV3ProviderOption */
-        QListModelsV3ProviderOption: {
+        /** QListModelsV4ProviderOption */
+        QListModelsV4ProviderOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListModelsV3StatusOption */
-        QListModelsV3StatusOption: {
+        /** QListModelsV4StatusOption */
+        QListModelsV4StatusOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListParametersV3Department */
-        QListParametersV3Department: {
+        /** QListParametersV4Department */
+        QListParametersV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19356,8 +18987,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListParametersV3Document */
-        QListParametersV3Document: {
+        /** QListParametersV4Document */
+        QListParametersV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -19365,15 +18996,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListParametersV3DocumentOption */
-        QListParametersV3DocumentOption: {
+        /** QListParametersV4DocumentOption */
+        QListParametersV4DocumentOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListParametersV3Parameter */
-        QListParametersV3Parameter: {
+        /** QListParametersV4Parameter */
+        QListParametersV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -19393,7 +19024,7 @@ export interface components {
             /** Num Items */
             num_items: number | null;
             /** Sample Items */
-            sample_items: components["schemas"]["QListParametersV3SampleItem"][] | null;
+            sample_items: components["schemas"]["QListParametersV4SampleItem"][] | null;
             /** Can Edit */
             can_edit: boolean | null;
             /** Can Delete */
@@ -19401,8 +19032,8 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean | null;
         };
-        /** QListParametersV3SampleItem */
-        QListParametersV3SampleItem: {
+        /** QListParametersV4SampleItem */
+        QListParametersV4SampleItem: {
             /** Parameter Item Id */
             parameter_item_id: string | null;
             /** Name */
@@ -19410,8 +19041,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListParametersV3Scenario */
-        QListParametersV3Scenario: {
+        /** QListParametersV4Scenario */
+        QListParametersV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -19421,15 +19052,15 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
-        /** QListParametersV3ScenarioOption */
-        QListParametersV3ScenarioOption: {
+        /** QListParametersV4ScenarioOption */
+        QListParametersV4ScenarioOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListPersonasV3Agent */
-        QListPersonasV3Agent: {
+        /** QListPersonasV4Agent */
+        QListPersonasV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -19439,8 +19070,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QListPersonasV3Department */
-        QListPersonasV3Department: {
+        /** QListPersonasV4Department */
+        QListPersonasV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19448,8 +19079,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListPersonasV3Persona */
-        QListPersonasV3Persona: {
+        /** QListPersonasV4Persona */
+        QListPersonasV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -19493,8 +19124,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QListPersonasV3Scenario */
-        QListPersonasV3Scenario: {
+        /** QListPersonasV4Scenario */
+        QListPersonasV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -19510,8 +19141,8 @@ export interface components {
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
         };
-        /** QListProvidersV3Provider */
-        QListProvidersV3Provider: {
+        /** QListProvidersV4Provider */
+        QListProvidersV4Provider: {
             /** Provider Id */
             provider_id: string | null;
             /** Name */
@@ -19535,22 +19166,22 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean | null;
         };
-        /** QListProvidersV3ProviderOption */
-        QListProvidersV3ProviderOption: {
+        /** QListProvidersV4ProviderOption */
+        QListProvidersV4ProviderOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListProvidersV3StatusOption */
-        QListProvidersV3StatusOption: {
+        /** QListProvidersV4StatusOption */
+        QListProvidersV4StatusOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListScenariosV3Cohort */
-        QListScenariosV3Cohort: {
+        /** QListScenariosV4Cohort */
+        QListScenariosV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -19558,8 +19189,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListScenariosV3Department */
-        QListScenariosV3Department: {
+        /** QListScenariosV4Department */
+        QListScenariosV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19567,8 +19198,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListScenariosV3Field */
-        QListScenariosV3Field: {
+        /** QListScenariosV4Field */
+        QListScenariosV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -19580,8 +19211,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QListScenariosV3Objective */
-        QListScenariosV3Objective: {
+        /** QListScenariosV4Objective */
+        QListScenariosV4Objective: {
             /** Objective Id */
             objective_id: string | null;
             /** Name */
@@ -19589,15 +19220,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListScenariosV3Option */
-        QListScenariosV3Option: {
+        /** QListScenariosV4Option */
+        QListScenariosV4Option: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListScenariosV3Persona */
-        QListScenariosV3Persona: {
+        /** QListScenariosV4Persona */
+        QListScenariosV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -19611,8 +19242,8 @@ export interface components {
             /** Image Model */
             image_model: boolean | null;
         };
-        /** QListScenariosV3Scenario */
-        QListScenariosV3Scenario: {
+        /** QListScenariosV4Scenario */
+        QListScenariosV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Title */
@@ -19648,8 +19279,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QListScenariosV3Simulation */
-        QListScenariosV3Simulation: {
+        /** QListScenariosV4Simulation */
+        QListScenariosV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -19661,8 +19292,8 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QListSimulationsV3Cohort */
-        QListSimulationsV3Cohort: {
+        /** QListSimulationsV4Cohort */
+        QListSimulationsV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -19670,8 +19301,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListSimulationsV3Department */
-        QListSimulationsV3Department: {
+        /** QListSimulationsV4Department */
+        QListSimulationsV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19679,8 +19310,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListSimulationsV3Document */
-        QListSimulationsV3Document: {
+        /** QListSimulationsV4Document */
+        QListSimulationsV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -19688,8 +19319,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListSimulationsV3Field */
-        QListSimulationsV3Field: {
+        /** QListSimulationsV4Field */
+        QListSimulationsV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -19701,15 +19332,15 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QListSimulationsV3Option */
-        QListSimulationsV3Option: {
+        /** QListSimulationsV4Option */
+        QListSimulationsV4Option: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QListSimulationsV3Persona */
-        QListSimulationsV3Persona: {
+        /** QListSimulationsV4Persona */
+        QListSimulationsV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -19723,8 +19354,8 @@ export interface components {
             /** Image Model */
             image_model: boolean | null;
         };
-        /** QListSimulationsV3Rubric */
-        QListSimulationsV3Rubric: {
+        /** QListSimulationsV4Rubric */
+        QListSimulationsV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -19732,8 +19363,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListSimulationsV3Scenario */
-        QListSimulationsV3Scenario: {
+        /** QListSimulationsV4Scenario */
+        QListSimulationsV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -19745,18 +19376,18 @@ export interface components {
             /** Persona Ids */
             persona_ids: string[] | null;
             /** Persona Mapping */
-            persona_mapping: components["schemas"]["QListSimulationsV3Persona"][] | null;
+            persona_mapping: components["schemas"]["QListSimulationsV4Persona"][] | null;
             /** Document Mapping */
-            document_mapping: components["schemas"]["QListSimulationsV3Document"][] | null;
+            document_mapping: components["schemas"]["QListSimulationsV4Document"][] | null;
             /** Parameter Item Mapping */
-            parameter_item_mapping: components["schemas"]["QListSimulationsV3Field"][] | null;
+            parameter_item_mapping: components["schemas"]["QListSimulationsV4Field"][] | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
             /** Document Ids */
             document_ids: string[] | null;
         };
-        /** QListSimulationsV3Simulation */
-        QListSimulationsV3Simulation: {
+        /** QListSimulationsV4Simulation */
+        QListSimulationsV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -19788,8 +19419,8 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QListStaffV3Cohort */
-        QListStaffV3Cohort: {
+        /** QListStaffV4Cohort */
+        QListStaffV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -19797,8 +19428,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListStaffV3Department */
-        QListStaffV3Department: {
+        /** QListStaffV4Department */
+        QListStaffV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -19806,8 +19437,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QListStaffV3Staff */
-        QListStaffV3Staff: {
+        /** QListStaffV4Staff */
+        QListStaffV4Staff: {
             /** Profile Id */
             profile_id: string | null;
             /** First Name */
@@ -19845,8 +19476,8 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QListStaffV3TrendData */
-        QListStaffV3TrendData: {
+        /** QListStaffV4TrendData */
+        QListStaffV4TrendData: {
             /** Date */
             date: string | null;
             /** Value */
@@ -19854,8 +19485,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QProcessCsvV3CsvRowError */
-        QProcessCsvV3CsvRowError: {
+        /** QProcessCsvV4CsvRowError */
+        QProcessCsvV4CsvRowError: {
             /** Row Index */
             row_index: number | null;
             /** Field */
@@ -19863,8 +19494,8 @@ export interface components {
             /** Message */
             message: string | null;
         };
-        /** QProcessCsvV3ProcessedRow */
-        QProcessCsvV3ProcessedRow: {
+        /** QProcessCsvV4ProcessedRow */
+        QProcessCsvV4ProcessedRow: {
             /** Row Index */
             row_index: number | null;
             /** First Name */
@@ -19882,10 +19513,10 @@ export interface components {
             /** Cohort Ids */
             cohort_ids: string[] | null;
             /** Errors */
-            errors: components["schemas"]["QProcessCsvV3CsvRowError"][] | null;
+            errors: components["schemas"]["QProcessCsvV4CsvRowError"][] | null;
         };
-        /** QReportsBundleV3DataPoint */
-        QReportsBundleV3DataPoint: {
+        /** QReportsBundleV4DataPoint */
+        QReportsBundleV4DataPoint: {
             /** Profile Id */
             profile_id: string | null;
             /** Date */
@@ -19899,8 +19530,8 @@ export interface components {
             /** Attempt Id */
             attempt_id: string | null;
         };
-        /** QReportsBundleV3FilterOption */
-        QReportsBundleV3FilterOption: {
+        /** QReportsBundleV4FilterOption */
+        QReportsBundleV4FilterOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -19908,8 +19539,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QReportsBundleV3Hover */
-        QReportsBundleV3Hover: {
+        /** QReportsBundleV4Hover */
+        QReportsBundleV4Hover: {
             /** Mean */
             mean: number | null;
             /** Median */
@@ -19955,8 +19586,8 @@ export interface components {
             /** Per Simulation Mean */
             per_simulation_mean: number | null;
         };
-        /** QReportsBundleV3Metric */
-        QReportsBundleV3Metric: {
+        /** QReportsBundleV4Metric */
+        QReportsBundleV4Metric: {
             /** Has Data */
             has_data: boolean | null;
             /** Method */
@@ -19964,13 +19595,13 @@ export interface components {
             /** Current Value */
             current_value: number | null;
             /** Data Points */
-            data_points: components["schemas"]["QReportsBundleV3DataPoint"][] | null;
-            hover: components["schemas"]["QReportsBundleV3Hover"] | null;
+            data_points: components["schemas"]["QReportsBundleV4DataPoint"][] | null;
+            hover: components["schemas"]["QReportsBundleV4Hover"] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsBundleV3Profile */
-        QReportsBundleV3Profile: {
+        /** QReportsBundleV4Profile */
+        QReportsBundleV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** First Name */
@@ -19987,23 +19618,23 @@ export interface components {
             simulation_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            metrics: components["schemas"]["QReportsBundleV3ProfileMetrics"] | null;
+            metrics: components["schemas"]["QReportsBundleV4ProfileMetrics"] | null;
         };
-        /** QReportsBundleV3ProfileMetrics */
-        QReportsBundleV3ProfileMetrics: {
-            average_score: components["schemas"]["QReportsBundleV3Metric"] | null;
-            completion_percentage: components["schemas"]["QReportsBundleV3Metric"] | null;
-            first_attempt_pass_rate: components["schemas"]["QReportsBundleV3Metric"] | null;
-            highest_score: components["schemas"]["QReportsBundleV3Metric"] | null;
-            messages_per_session: components["schemas"]["QReportsBundleV3Metric"] | null;
-            persona_response_times: components["schemas"]["QReportsBundleV3Metric"] | null;
-            session_efficiency: components["schemas"]["QReportsBundleV3Metric"] | null;
-            stagnation_rate: components["schemas"]["QReportsBundleV3Metric"] | null;
-            time_spent: components["schemas"]["QReportsBundleV3Metric"] | null;
-            total_attempts: components["schemas"]["QReportsBundleV3Metric"] | null;
+        /** QReportsBundleV4ProfileMetrics */
+        QReportsBundleV4ProfileMetrics: {
+            average_score: components["schemas"]["QReportsBundleV4Metric"] | null;
+            completion_percentage: components["schemas"]["QReportsBundleV4Metric"] | null;
+            first_attempt_pass_rate: components["schemas"]["QReportsBundleV4Metric"] | null;
+            highest_score: components["schemas"]["QReportsBundleV4Metric"] | null;
+            messages_per_session: components["schemas"]["QReportsBundleV4Metric"] | null;
+            persona_response_times: components["schemas"]["QReportsBundleV4Metric"] | null;
+            session_efficiency: components["schemas"]["QReportsBundleV4Metric"] | null;
+            stagnation_rate: components["schemas"]["QReportsBundleV4Metric"] | null;
+            time_spent: components["schemas"]["QReportsBundleV4Metric"] | null;
+            total_attempts: components["schemas"]["QReportsBundleV4Metric"] | null;
         };
-        /** QReportsBundleV3Scenario */
-        QReportsBundleV3Scenario: {
+        /** QReportsBundleV4Scenario */
+        QReportsBundleV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -20011,8 +19642,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QReportsBundleV3Simulation */
-        QReportsBundleV3Simulation: {
+        /** QReportsBundleV4Simulation */
+        QReportsBundleV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -20026,8 +19657,8 @@ export interface components {
             /** Rubric Pass Points */
             rubric_pass_points: number | null;
         };
-        /** QReportsHistoryV3AttemptHistoryRow */
-        QReportsHistoryV3AttemptHistoryRow: {
+        /** QReportsHistoryV4AttemptHistoryRow */
+        QReportsHistoryV4AttemptHistoryRow: {
             /** Attempt Id */
             attempt_id: string | null;
             /** Date */
@@ -20077,8 +19708,8 @@ export interface components {
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
-        /** QReportsHistoryV3FilterOption */
-        QReportsHistoryV3FilterOption: {
+        /** QReportsHistoryV4FilterOption */
+        QReportsHistoryV4FilterOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -20086,8 +19717,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QReportsOverviewV3AttemptHistoryRow */
-        QReportsOverviewV3AttemptHistoryRow: {
+        /** QReportsOverviewV4AttemptHistoryRow */
+        QReportsOverviewV4AttemptHistoryRow: {
             /** Attempt Id */
             attempt_id: string | null;
             /** Date */
@@ -20137,8 +19768,8 @@ export interface components {
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
-        /** QReportsOverviewV3AttemptImprovementData */
-        QReportsOverviewV3AttemptImprovementData: {
+        /** QReportsOverviewV4AttemptImprovementData */
+        QReportsOverviewV4AttemptImprovementData: {
             /** Attempt */
             attempt: string | null;
             /** Average Score */
@@ -20148,8 +19779,8 @@ export interface components {
             /** Pass Rate */
             pass_rate: number | null;
         };
-        /** QReportsOverviewV3AttemptImprovementFact */
-        QReportsOverviewV3AttemptImprovementFact: {
+        /** QReportsOverviewV4AttemptImprovementFact */
+        QReportsOverviewV4AttemptImprovementFact: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Attempt No */
@@ -20161,19 +19792,19 @@ export interface components {
             /** Pass Rate */
             pass_rate: number | null;
         };
-        /** QReportsOverviewV3AttemptImprovementResponse */
-        QReportsOverviewV3AttemptImprovementResponse: {
+        /** QReportsOverviewV4AttemptImprovementResponse */
+        QReportsOverviewV4AttemptImprovementResponse: {
             /** Chart Data */
-            chart_data: components["schemas"]["QReportsOverviewV3AttemptImprovementData"][] | null;
+            chart_data: components["schemas"]["QReportsOverviewV4AttemptImprovementData"][] | null;
             /** Facts */
-            facts: components["schemas"]["QReportsOverviewV3AttemptImprovementFact"][] | null;
+            facts: components["schemas"]["QReportsOverviewV4AttemptImprovementFact"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3CohortDailyFact */
-        QReportsOverviewV3CohortDailyFact: {
+        /** QReportsOverviewV4CohortDailyFact */
+        QReportsOverviewV4CohortDailyFact: {
             /** Date */
             date: string | null;
             /** Simulation Id */
@@ -20181,8 +19812,8 @@ export interface components {
             /** Avg Score */
             avg_score: number | null;
         };
-        /** QReportsOverviewV3CohortData */
-        QReportsOverviewV3CohortData: {
+        /** QReportsOverviewV4CohortData */
+        QReportsOverviewV4CohortData: {
             /** Id */
             id: string | null;
             /** Name */
@@ -20206,8 +19837,8 @@ export interface components {
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3CohortFact */
-        QReportsOverviewV3CohortFact: {
+        /** QReportsOverviewV4CohortFact */
+        QReportsOverviewV4CohortFact: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Simulation Id */
@@ -20219,30 +19850,30 @@ export interface components {
             /** Attempts */
             attempts: number | null;
         };
-        /** QReportsOverviewV3CohortInsight */
-        QReportsOverviewV3CohortInsight: {
+        /** QReportsOverviewV4CohortInsight */
+        QReportsOverviewV4CohortInsight: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Insight */
             insight: string | null;
         };
-        /** QReportsOverviewV3CohortPerformanceResponse */
-        QReportsOverviewV3CohortPerformanceResponse: {
+        /** QReportsOverviewV4CohortPerformanceResponse */
+        QReportsOverviewV4CohortPerformanceResponse: {
             /** Cohort Data */
-            cohort_data: components["schemas"]["QReportsOverviewV3CohortData"][] | null;
+            cohort_data: components["schemas"]["QReportsOverviewV4CohortData"][] | null;
             /** Daily Data */
-            daily_data: components["schemas"]["QReportsOverviewV3DailyData"][] | null;
+            daily_data: components["schemas"]["QReportsOverviewV4DailyData"][] | null;
             /** Cohort Facts */
-            cohort_facts: components["schemas"]["QReportsOverviewV3CohortFact"][] | null;
+            cohort_facts: components["schemas"]["QReportsOverviewV4CohortFact"][] | null;
             /** Daily Facts */
-            daily_facts: components["schemas"]["QReportsOverviewV3CohortDailyFact"][] | null;
+            daily_facts: components["schemas"]["QReportsOverviewV4CohortDailyFact"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3DailyData */
-        QReportsOverviewV3DailyData: {
+        /** QReportsOverviewV4DailyData */
+        QReportsOverviewV4DailyData: {
             /** Date */
             date: string | null;
             /** Avg Score */
@@ -20250,8 +19881,8 @@ export interface components {
             /** Cohort Id */
             cohort_id: string | null;
         };
-        /** QReportsOverviewV3DataPoint */
-        QReportsOverviewV3DataPoint: {
+        /** QReportsOverviewV4DataPoint */
+        QReportsOverviewV4DataPoint: {
             /** Profile Id */
             profile_id: string | null;
             /** Date */
@@ -20267,8 +19898,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QReportsOverviewV3Field */
-        QReportsOverviewV3Field: {
+        /** QReportsOverviewV4Field */
+        QReportsOverviewV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -20280,15 +19911,15 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QReportsOverviewV3FooterMetrics */
-        QReportsOverviewV3FooterMetrics: {
-            scenario_performance: components["schemas"]["QReportsOverviewV3ScenarioPerformanceResponse"] | null;
-            scenario_stats: components["schemas"]["QReportsOverviewV3ScenarioStatsResponse"] | null;
-            simulation_performance: components["schemas"]["QReportsOverviewV3SimulationPerformanceResponse"] | null;
-            simulation_composition: components["schemas"]["QReportsOverviewV3SimulationCompositionResponse"] | null;
+        /** QReportsOverviewV4FooterMetrics */
+        QReportsOverviewV4FooterMetrics: {
+            scenario_performance: components["schemas"]["QReportsOverviewV4ScenarioPerformanceResponse"] | null;
+            scenario_stats: components["schemas"]["QReportsOverviewV4ScenarioStatsResponse"] | null;
+            simulation_performance: components["schemas"]["QReportsOverviewV4SimulationPerformanceResponse"] | null;
+            simulation_composition: components["schemas"]["QReportsOverviewV4SimulationCompositionResponse"] | null;
         };
-        /** QReportsOverviewV3GrowthDataPoint */
-        QReportsOverviewV3GrowthDataPoint: {
+        /** QReportsOverviewV4GrowthDataPoint */
+        QReportsOverviewV4GrowthDataPoint: {
             /** Date */
             date: string | null;
             /** Average Score */
@@ -20302,18 +19933,18 @@ export interface components {
             /** Stagnation Rate */
             stagnation_rate: number | null;
         };
-        /** QReportsOverviewV3GrowthDataResponse */
-        QReportsOverviewV3GrowthDataResponse: {
+        /** QReportsOverviewV4GrowthDataResponse */
+        QReportsOverviewV4GrowthDataResponse: {
             /** Chart Data */
-            chart_data: components["schemas"]["QReportsOverviewV3GrowthDataPoint"][] | null;
+            chart_data: components["schemas"]["QReportsOverviewV4GrowthDataPoint"][] | null;
             /** Available Metrics */
-            available_metrics: components["schemas"]["QReportsOverviewV3GrowthMetric"][] | null;
-            window_averages: components["schemas"]["QReportsOverviewV3GrowthWindowAverages"] | null;
+            available_metrics: components["schemas"]["QReportsOverviewV4GrowthMetric"][] | null;
+            window_averages: components["schemas"]["QReportsOverviewV4GrowthWindowAverages"] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3GrowthMetric */
-        QReportsOverviewV3GrowthMetric: {
+        /** QReportsOverviewV4GrowthMetric */
+        QReportsOverviewV4GrowthMetric: {
             /** Id */
             id: string | null;
             /** Name */
@@ -20327,8 +19958,8 @@ export interface components {
             /** Formatter Id */
             formatter_id: string | null;
         };
-        /** QReportsOverviewV3GrowthWindowAverage */
-        QReportsOverviewV3GrowthWindowAverage: {
+        /** QReportsOverviewV4GrowthWindowAverage */
+        QReportsOverviewV4GrowthWindowAverage: {
             /** N */
             n: number | null;
             /** Last */
@@ -20336,35 +19967,35 @@ export interface components {
             /** Prev */
             prev: number | null;
         };
-        /** QReportsOverviewV3GrowthWindowAverages */
-        QReportsOverviewV3GrowthWindowAverages: {
-            average_score: components["schemas"]["QReportsOverviewV3GrowthWindowAverage"] | null;
+        /** QReportsOverviewV4GrowthWindowAverages */
+        QReportsOverviewV4GrowthWindowAverages: {
+            average_score: components["schemas"]["QReportsOverviewV4GrowthWindowAverage"] | null;
         };
-        /** QReportsOverviewV3HeaderMetrics */
-        QReportsOverviewV3HeaderMetrics: {
-            average_score: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            completion_percentage: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            first_attempt_pass_rate: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            highest_score: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            messages_per_session: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            persona_response_times: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            session_efficiency: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            stagnation_rate: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            time_spent: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
-            total_attempts: components["schemas"]["QReportsOverviewV3MetricResponse"] | null;
+        /** QReportsOverviewV4HeaderMetrics */
+        QReportsOverviewV4HeaderMetrics: {
+            average_score: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            completion_percentage: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            first_attempt_pass_rate: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            highest_score: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            messages_per_session: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            persona_response_times: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            session_efficiency: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            stagnation_rate: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            time_spent: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
+            total_attempts: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
         };
-        /** QReportsOverviewV3Insights */
-        QReportsOverviewV3Insights: {
+        /** QReportsOverviewV4Insights */
+        QReportsOverviewV4Insights: {
             /** Growth */
             growth: string | null;
             /** Persona */
-            persona: components["schemas"]["QReportsOverviewV3PersonaInsight"][] | null;
+            persona: components["schemas"]["QReportsOverviewV4PersonaInsight"][] | null;
             /** Rubric Heatmap */
             rubric_heatmap: string | null;
             /** Attempt Improvement */
             attempt_improvement: string | null;
             /** Cohort */
-            cohort: components["schemas"]["QReportsOverviewV3CohortInsight"][] | null;
+            cohort: components["schemas"]["QReportsOverviewV4CohortInsight"][] | null;
             /** Skill Performance */
             skill_performance: string | null;
             /** Scenario Performance */
@@ -20376,8 +20007,8 @@ export interface components {
             /** Simulation Composition */
             simulation_composition: string | null;
         };
-        /** QReportsOverviewV3MetricResponse */
-        QReportsOverviewV3MetricResponse: {
+        /** QReportsOverviewV4MetricResponse */
+        QReportsOverviewV4MetricResponse: {
             /** Has Data */
             has_data: boolean | null;
             /** Method */
@@ -20393,12 +20024,12 @@ export interface components {
             /** Key Field */
             key_field: string | null;
             /** Trend Data */
-            trend_data: components["schemas"]["QReportsOverviewV3TrendData"][] | null;
+            trend_data: components["schemas"]["QReportsOverviewV4TrendData"][] | null;
             /** Data Points */
-            data_points: components["schemas"]["QReportsOverviewV3DataPoint"][] | null;
+            data_points: components["schemas"]["QReportsOverviewV4DataPoint"][] | null;
         };
-        /** QReportsOverviewV3NumericAttemptFact */
-        QReportsOverviewV3NumericAttemptFact: {
+        /** QReportsOverviewV4NumericAttemptFact */
+        QReportsOverviewV4NumericAttemptFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Level Label */
@@ -20410,8 +20041,8 @@ export interface components {
             /** Attempts */
             attempts: number | null;
         };
-        /** QReportsOverviewV3NumericScenarioFact */
-        QReportsOverviewV3NumericScenarioFact: {
+        /** QReportsOverviewV4NumericScenarioFact */
+        QReportsOverviewV4NumericScenarioFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Scenario Id */
@@ -20421,8 +20052,8 @@ export interface components {
             /** Level Value */
             level_value: number | null;
         };
-        /** QReportsOverviewV3Parameter */
-        QReportsOverviewV3Parameter: {
+        /** QReportsOverviewV4Parameter */
+        QReportsOverviewV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -20436,22 +20067,22 @@ export interface components {
             /** Persona Parameter */
             persona_parameter: boolean | null;
         };
-        /** QReportsOverviewV3PersonaColor */
-        QReportsOverviewV3PersonaColor: {
+        /** QReportsOverviewV4PersonaColor */
+        QReportsOverviewV4PersonaColor: {
             /** Persona Name */
             persona_name: string | null;
             /** Color */
             color: string | null;
         };
-        /** QReportsOverviewV3PersonaInsight */
-        QReportsOverviewV3PersonaInsight: {
+        /** QReportsOverviewV4PersonaInsight */
+        QReportsOverviewV4PersonaInsight: {
             /** Persona Name */
             persona_name: string | null;
             /** Insight */
             insight: string | null;
         };
-        /** QReportsOverviewV3PersonaPerformanceData */
-        QReportsOverviewV3PersonaPerformanceData: {
+        /** QReportsOverviewV4PersonaPerformanceData */
+        QReportsOverviewV4PersonaPerformanceData: {
             /** Name */
             name: string | null;
             /** Score */
@@ -20463,21 +20094,21 @@ export interface components {
             /** Simulation Ids */
             simulation_ids: string[] | null;
             /** Trend Data */
-            trend_data: components["schemas"]["QReportsOverviewV3PersonaTrendData"][] | null;
+            trend_data: components["schemas"]["QReportsOverviewV4PersonaTrendData"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3PersonaPerformanceResponse */
-        QReportsOverviewV3PersonaPerformanceResponse: {
+        /** QReportsOverviewV4PersonaPerformanceResponse */
+        QReportsOverviewV4PersonaPerformanceResponse: {
             /** Chart Data */
-            chart_data: components["schemas"]["QReportsOverviewV3PersonaPerformanceData"][] | null;
+            chart_data: components["schemas"]["QReportsOverviewV4PersonaPerformanceData"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Persona Colors */
-            persona_colors: components["schemas"]["QReportsOverviewV3PersonaColor"][] | null;
+            persona_colors: components["schemas"]["QReportsOverviewV4PersonaColor"][] | null;
         };
-        /** QReportsOverviewV3PersonaTrendData */
-        QReportsOverviewV3PersonaTrendData: {
+        /** QReportsOverviewV4PersonaTrendData */
+        QReportsOverviewV4PersonaTrendData: {
             /** Date */
             date: string | null;
             /** Score */
@@ -20487,14 +20118,14 @@ export interface components {
             /** Simulation Id */
             simulation_id: string | null;
         };
-        /** QReportsOverviewV3PrimaryMetrics */
-        QReportsOverviewV3PrimaryMetrics: {
-            growth_data: components["schemas"]["QReportsOverviewV3GrowthDataResponse"] | null;
-            persona_performance: components["schemas"]["QReportsOverviewV3PersonaPerformanceResponse"] | null;
-            rubric_heatmap: components["schemas"]["QReportsOverviewV3RubricHeatmapResponse"] | null;
+        /** QReportsOverviewV4PrimaryMetrics */
+        QReportsOverviewV4PrimaryMetrics: {
+            growth_data: components["schemas"]["QReportsOverviewV4GrowthDataResponse"] | null;
+            persona_performance: components["schemas"]["QReportsOverviewV4PersonaPerformanceResponse"] | null;
+            rubric_heatmap: components["schemas"]["QReportsOverviewV4RubricHeatmapResponse"] | null;
         };
-        /** QReportsOverviewV3Rubric */
-        QReportsOverviewV3Rubric: {
+        /** QReportsOverviewV4Rubric */
+        QReportsOverviewV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -20502,8 +20133,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QReportsOverviewV3RubricHeatmapCell */
-        QReportsOverviewV3RubricHeatmapCell: {
+        /** QReportsOverviewV4RubricHeatmapCell */
+        QReportsOverviewV4RubricHeatmapCell: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Correlation */
@@ -20517,30 +20148,30 @@ export interface components {
             /** Data Points */
             data_points: number | null;
         };
-        /** QReportsOverviewV3RubricHeatmapResponse */
-        QReportsOverviewV3RubricHeatmapResponse: {
+        /** QReportsOverviewV4RubricHeatmapResponse */
+        QReportsOverviewV4RubricHeatmapResponse: {
             /** Matrices */
-            matrices: components["schemas"]["QReportsOverviewV3RubricMatrixPackage"][] | null;
+            matrices: components["schemas"]["QReportsOverviewV4RubricMatrixPackage"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3RubricMatrixPackage */
-        QReportsOverviewV3RubricMatrixPackage: {
+        /** QReportsOverviewV4RubricMatrixPackage */
+        QReportsOverviewV4RubricMatrixPackage: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Standard Groups */
-            standard_groups: components["schemas"]["QReportsOverviewV3StandardGroup"][] | null;
+            standard_groups: components["schemas"]["QReportsOverviewV4StandardGroup"][] | null;
             /** Matrix */
-            matrix: components["schemas"]["QReportsOverviewV3RubricHeatmapCell"][] | null;
+            matrix: components["schemas"]["QReportsOverviewV4RubricHeatmapCell"][] | null;
             /** Insights */
             insights: string | null;
             /** Has Data */
             has_data: boolean | null;
         };
-        /** QReportsOverviewV3ScenarioAttributeAttemptFact */
-        QReportsOverviewV3ScenarioAttributeAttemptFact: {
+        /** QReportsOverviewV4ScenarioAttributeAttemptFact */
+        QReportsOverviewV4ScenarioAttributeAttemptFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Parameter Item Id */
@@ -20556,8 +20187,8 @@ export interface components {
             /** Passed Attempts */
             passed_attempts: number | null;
         };
-        /** QReportsOverviewV3ScenarioAttributeScenarioFact */
-        QReportsOverviewV3ScenarioAttributeScenarioFact: {
+        /** QReportsOverviewV4ScenarioAttributeScenarioFact */
+        QReportsOverviewV4ScenarioAttributeScenarioFact: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Parameter Item Id */
@@ -20565,8 +20196,8 @@ export interface components {
             /** Scenario Id */
             scenario_id: string | null;
         };
-        /** QReportsOverviewV3ScenarioFact */
-        QReportsOverviewV3ScenarioFact: {
+        /** QReportsOverviewV4ScenarioFact */
+        QReportsOverviewV4ScenarioFact: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Scenario Id */
@@ -20582,36 +20213,36 @@ export interface components {
             /** Completed Attempts */
             completed_attempts: number | null;
         };
-        /** QReportsOverviewV3ScenarioPerformanceResponse */
-        QReportsOverviewV3ScenarioPerformanceResponse: {
+        /** QReportsOverviewV4ScenarioPerformanceResponse */
+        QReportsOverviewV4ScenarioPerformanceResponse: {
             /** Valid Parameter Ids */
             valid_parameter_ids: string[] | null;
             /** Attribute Attempt Facts */
-            attribute_attempt_facts: components["schemas"]["QReportsOverviewV3ScenarioAttributeAttemptFact"][] | null;
+            attribute_attempt_facts: components["schemas"]["QReportsOverviewV4ScenarioAttributeAttemptFact"][] | null;
             /** Attribute Scenario Facts */
-            attribute_scenario_facts: components["schemas"]["QReportsOverviewV3ScenarioAttributeScenarioFact"][] | null;
+            attribute_scenario_facts: components["schemas"]["QReportsOverviewV4ScenarioAttributeScenarioFact"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3ScenarioStatsResponse */
-        QReportsOverviewV3ScenarioStatsResponse: {
+        /** QReportsOverviewV4ScenarioStatsResponse */
+        QReportsOverviewV4ScenarioStatsResponse: {
             /** Valid Numeric Parameter Ids */
             valid_numeric_parameter_ids: string[] | null;
             /** Numeric Attempt Facts */
-            numeric_attempt_facts: components["schemas"]["QReportsOverviewV3NumericAttemptFact"][] | null;
+            numeric_attempt_facts: components["schemas"]["QReportsOverviewV4NumericAttemptFact"][] | null;
             /** Numeric Scenario Facts */
-            numeric_scenario_facts: components["schemas"]["QReportsOverviewV3NumericScenarioFact"][] | null;
+            numeric_scenario_facts: components["schemas"]["QReportsOverviewV4NumericScenarioFact"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3SecondaryMetrics */
-        QReportsOverviewV3SecondaryMetrics: {
-            attempt_improvement: components["schemas"]["QReportsOverviewV3AttemptImprovementResponse"] | null;
-            cohort_performance: components["schemas"]["QReportsOverviewV3CohortPerformanceResponse"] | null;
-            skill_performance: components["schemas"]["QReportsOverviewV3SkillPerformanceResponse"] | null;
+        /** QReportsOverviewV4SecondaryMetrics */
+        QReportsOverviewV4SecondaryMetrics: {
+            attempt_improvement: components["schemas"]["QReportsOverviewV4AttemptImprovementResponse"] | null;
+            cohort_performance: components["schemas"]["QReportsOverviewV4CohortPerformanceResponse"] | null;
+            skill_performance: components["schemas"]["QReportsOverviewV4SkillPerformanceResponse"] | null;
         };
-        /** QReportsOverviewV3Simulation */
-        QReportsOverviewV3Simulation: {
+        /** QReportsOverviewV4Simulation */
+        QReportsOverviewV4Simulation: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Name */
@@ -20623,23 +20254,23 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QReportsOverviewV3SimulationCompositionResponse */
-        QReportsOverviewV3SimulationCompositionResponse: {
+        /** QReportsOverviewV4SimulationCompositionResponse */
+        QReportsOverviewV4SimulationCompositionResponse: {
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Simulation Facts */
-            simulation_facts: components["schemas"]["QReportsOverviewV3SimulationFact"][] | null;
+            simulation_facts: components["schemas"]["QReportsOverviewV4SimulationFact"][] | null;
             /** Simulation Parameter Facts Categorical */
-            simulation_parameter_facts_categorical: components["schemas"]["QReportsOverviewV3SimulationParameterFactCategorical"][] | null;
+            simulation_parameter_facts_categorical: components["schemas"]["QReportsOverviewV4SimulationParameterFactCategorical"][] | null;
             /** Simulation Parameter Facts Numeric */
-            simulation_parameter_facts_numeric: components["schemas"]["QReportsOverviewV3SimulationParameterFactNumeric"][] | null;
+            simulation_parameter_facts_numeric: components["schemas"]["QReportsOverviewV4SimulationParameterFactNumeric"][] | null;
             /** Has Data */
             has_data: boolean | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3SimulationFact */
-        QReportsOverviewV3SimulationFact: {
+        /** QReportsOverviewV4SimulationFact */
+        QReportsOverviewV4SimulationFact: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Title */
@@ -20653,8 +20284,8 @@ export interface components {
             /** Scenario Count */
             scenario_count: number | null;
         };
-        /** QReportsOverviewV3SimulationParameterFactCategorical */
-        QReportsOverviewV3SimulationParameterFactCategorical: {
+        /** QReportsOverviewV4SimulationParameterFactCategorical */
+        QReportsOverviewV4SimulationParameterFactCategorical: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Parameter Id */
@@ -20664,8 +20295,8 @@ export interface components {
             /** Scenario Count */
             scenario_count: number | null;
         };
-        /** QReportsOverviewV3SimulationParameterFactNumeric */
-        QReportsOverviewV3SimulationParameterFactNumeric: {
+        /** QReportsOverviewV4SimulationParameterFactNumeric */
+        QReportsOverviewV4SimulationParameterFactNumeric: {
             /** Simulation Id */
             simulation_id: string | null;
             /** Parameter Id */
@@ -20677,35 +20308,35 @@ export interface components {
             /** Scenario Count */
             scenario_count: number | null;
         };
-        /** QReportsOverviewV3SimulationPerformanceResponse */
-        QReportsOverviewV3SimulationPerformanceResponse: {
+        /** QReportsOverviewV4SimulationPerformanceResponse */
+        QReportsOverviewV4SimulationPerformanceResponse: {
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
             /** Scenario Facts */
-            scenario_facts: components["schemas"]["QReportsOverviewV3ScenarioFact"][] | null;
+            scenario_facts: components["schemas"]["QReportsOverviewV4ScenarioFact"][] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3SkillPackage */
-        QReportsOverviewV3SkillPackage: {
+        /** QReportsOverviewV4SkillPackage */
+        QReportsOverviewV4SkillPackage: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Radar Data */
-            radar_data: components["schemas"]["QReportsOverviewV3SkillRadarData"][] | null;
+            radar_data: components["schemas"]["QReportsOverviewV4SkillRadarData"][] | null;
             /** Group Facts */
-            group_facts: components["schemas"]["QReportsOverviewV3SkillStandardFact"][] | null;
+            group_facts: components["schemas"]["QReportsOverviewV4SkillStandardFact"][] | null;
         };
-        /** QReportsOverviewV3SkillPerformanceResponse */
-        QReportsOverviewV3SkillPerformanceResponse: {
+        /** QReportsOverviewV4SkillPerformanceResponse */
+        QReportsOverviewV4SkillPerformanceResponse: {
             /** Packages */
-            packages: components["schemas"]["QReportsOverviewV3SkillPackage"][] | null;
+            packages: components["schemas"]["QReportsOverviewV4SkillPackage"][] | null;
             /** Valid Rubric Ids */
             valid_rubric_ids: string[] | null;
             /** Status */
             status: string | null;
         };
-        /** QReportsOverviewV3SkillRadarData */
-        QReportsOverviewV3SkillRadarData: {
+        /** QReportsOverviewV4SkillRadarData */
+        QReportsOverviewV4SkillRadarData: {
             /** Metric */
             metric: string | null;
             /** Description */
@@ -20715,8 +20346,8 @@ export interface components {
             /** Full Mark */
             full_mark: number | null;
         };
-        /** QReportsOverviewV3SkillStandardFact */
-        QReportsOverviewV3SkillStandardFact: {
+        /** QReportsOverviewV4SkillStandardFact */
+        QReportsOverviewV4SkillStandardFact: {
             /** Group Id */
             group_id: string | null;
             /** Group Name */
@@ -20732,8 +20363,8 @@ export interface components {
             /** Avg Pct */
             avg_pct: number | null;
         };
-        /** QReportsOverviewV3StandardGroup */
-        QReportsOverviewV3StandardGroup: {
+        /** QReportsOverviewV4StandardGroup */
+        QReportsOverviewV4StandardGroup: {
             /** Id */
             id: string | null;
             /** Name */
@@ -20743,8 +20374,8 @@ export interface components {
             /** Rubric Id */
             rubric_id: string | null;
         };
-        /** QReportsOverviewV3Thresholds */
-        QReportsOverviewV3Thresholds: {
+        /** QReportsOverviewV4Thresholds */
+        QReportsOverviewV4Thresholds: {
             /** Success */
             success: number | null;
             /** Warning */
@@ -20752,8 +20383,8 @@ export interface components {
             /** Danger */
             danger: number | null;
         };
-        /** QReportsOverviewV3TrendData */
-        QReportsOverviewV3TrendData: {
+        /** QReportsOverviewV4TrendData */
+        QReportsOverviewV4TrendData: {
             /** Date */
             date: string | null;
             /** Value */
@@ -20761,8 +20392,8 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QSearchSimulatableProfilesV3Profile */
-        QSearchSimulatableProfilesV3Profile: {
+        /** QSearchSimulatableProfilesV4Profile */
+        QSearchSimulatableProfilesV4Profile: {
             /** Profile Id */
             profile_id: string | null;
             /** First Name */
@@ -20790,8 +20421,8 @@ export interface components {
             /** Primary Department Id */
             primary_department_id: string | null;
         };
-        /** QSearchStaffV3Cohort */
-        QSearchStaffV3Cohort: {
+        /** QSearchStaffV4Cohort */
+        QSearchStaffV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
@@ -20799,8 +20430,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QSearchStaffV3Department */
-        QSearchStaffV3Department: {
+        /** QSearchStaffV4Department */
+        QSearchStaffV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -20808,8 +20439,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QSearchStaffV3Staff */
-        QSearchStaffV3Staff: {
+        /** QSearchStaffV4Staff */
+        QSearchStaffV4Staff: {
             /** Profile Id */
             profile_id: string | null;
             /** First Name */
@@ -20847,44 +20478,21 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QUpdateScenarioV3Parameter */
-        QUpdateScenarioV3Parameter: {
+        /** QUpdateScenarioV4Parameter */
+        QUpdateScenarioV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Field Ids */
             field_ids: string[] | null;
         };
-        /** QUpdateScenarioV3QuestionTimestamp */
-        QUpdateScenarioV3QuestionTimestamp: {
+        /** QUpdateScenarioV4QuestionTimestamp */
+        QUpdateScenarioV4QuestionTimestamp: {
             /** Question Id */
             question_id: string | null;
             /** Video Id */
             video_id: string | null;
             /** Timestamps */
             timestamps: number[] | null;
-        };
-        /**
-         * QuestionEvalStartPayload
-         * @description Request to execute question tool for eval.
-         */
-        QuestionEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
         };
         /**
          * RandomizeScenarioPayload
@@ -20992,6 +20600,8 @@ export interface components {
             userInstructions: string;
             /** Departmentid */
             departmentId: string;
+            /** Groupid */
+            groupId: string;
             /** Profileid */
             profileId?: string | null;
             /**
@@ -21043,57 +20653,6 @@ export interface components {
             content: string | {
                 [key: string]: unknown;
             }[];
-        };
-        /**
-         * RubricTitleEvalStartPayload
-         * @description Request to execute title tool for eval.
-         */
-        RubricTitleEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * ScenarioEvalStartPayload
-         * @description Request to execute scenario agent for eval.
-         */
-        ScenarioEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
         };
         /**
          * ScenarioGenerationCompletePayload
@@ -21160,29 +20719,6 @@ export interface components {
             trace_id: string;
         };
         /**
-         * ScenarioTitleEvalStartPayload
-         * @description Request to execute scenario title tool for eval.
-         */
-        ScenarioTitleEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
          * ScenarioVideoToolCompletePayload
          * @description Response indicating video tool completed successfully.
          */
@@ -21222,7 +20758,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             /** Profiles */
-            profiles?: components["schemas"]["QSearchSimulatableProfilesV3Profile"][] | null;
+            profiles?: components["schemas"]["QSearchSimulatableProfilesV4Profile"][] | null;
         };
         /**
          * SimulationAdvanceErrorPayload
@@ -21313,90 +20849,6 @@ export interface components {
             message: string;
             /** Chat Id */
             chat_id: string;
-        };
-        /**
-         * SimulationEvalStartPayload
-         * @description Request to execute simulation agent for eval.
-         */
-        SimulationEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
-         * SimulationGradingProgressPayload
-         * @description Response indicating progress in simulation grading.
-         */
-        SimulationGradingProgressPayload: {
-            /** Type */
-            type: string;
-            /** Chat Id */
-            chat_id: string;
-            /** Message */
-            message?: string | null;
-            /** Error */
-            error?: string | null;
-            /** Rubric Name */
-            rubric_name?: string | null;
-            /** Standards Count */
-            standards_count?: number | null;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Total Score */
-            total_score?: number | null;
-            /** Passed */
-            passed?: boolean | null;
-            /** Standards Graded */
-            standards_graded?: number | null;
-            /** Time Taken */
-            time_taken?: number | null;
-            /** Summary */
-            summary?: string | null;
-            /** Standard Group Name */
-            standard_group_name?: string | null;
-            /** Standard Group Short Name */
-            standard_group_short_name?: string | null;
-            /** Score */
-            score?: number | null;
-            /** Feedback Preview */
-            feedback_preview?: string | null;
-            /** Completed Count */
-            completed_count?: number | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Summary Preview */
-            summary_preview?: string | null;
-        };
-        /**
-         * SimulationGradingStartPayload
-         * @description Request to start grading for a simulation chat.
-         */
-        SimulationGradingStartPayload: {
-            /** Chat Id */
-            chat_id: string;
-            /** Department Id */
-            department_id: string;
-            /** Sid */
-            sid?: string | null;
         };
         /**
          * SimulationJoinErrorPayload
@@ -21515,29 +20967,6 @@ export interface components {
             message: string;
         };
         /**
-         * SpeakEvalStartPayload
-         * @description Request to execute speak tool for eval.
-         */
-        SpeakEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
          * StartSimulationErrorPayload
          * @description Response indicating an error occurred while starting simulation.
          */
@@ -21554,8 +20983,6 @@ export interface components {
         StartSimulationPayload: {
             /** Simulation Id */
             simulation_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
             /** Scenario Id */
             scenario_id?: string | null;
             /**
@@ -21627,29 +21054,6 @@ export interface components {
             history?: components["schemas"]["RealtimeItem"][];
         };
         /**
-         * StatementEvalStartPayload
-         * @description Request to execute statement tool for eval.
-         */
-        StatementEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
          * StopSimulationErrorPayload
          * @description Response indicating an error occurred while stopping simulation.
          */
@@ -21694,29 +21098,6 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
-        };
-        /**
-         * StrengthEvalStartPayload
-         * @description Request to execute strength tool for eval.
-         */
-        StrengthEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
         };
         /** UpdateAgentApiRequest */
         UpdateAgentApiRequest: {
@@ -21778,7 +21159,7 @@ export interface components {
             /** Slug */
             slug: string;
             /** Auth Items */
-            auth_items?: components["schemas"]["IUpdateAuthV3AuthItem"][] | null;
+            auth_items?: components["schemas"]["IUpdateAuthV4AuthItem"][] | null;
         };
         /** UpdateAuthApiResponse */
         UpdateAuthApiResponse: {
@@ -22008,9 +21389,9 @@ export interface components {
             department_ids?: string[] | null;
             /** Base Url */
             base_url?: string | null;
-            temperature_bounds?: components["schemas"]["IUpdateModelV3TemperatureBounds"] | null;
+            temperature_bounds?: components["schemas"]["IUpdateModelV4TemperatureBounds"] | null;
             /** Pricing */
-            pricing?: components["schemas"]["IUpdateModelV3Pricing"][] | null;
+            pricing?: components["schemas"]["IUpdateModelV4Pricing"][] | null;
             /** Input Modalities */
             input_modalities?: string[] | null;
             /** Output Modalities */
@@ -22057,7 +21438,7 @@ export interface components {
             /** Department Ids */
             department_ids: string[];
             /** Field Connections */
-            field_connections: components["schemas"]["IUpdateParameterV3FieldConnection"][];
+            field_connections: components["schemas"]["IUpdateParameterV4FieldConnection"][];
         };
         /** UpdateParameterApiResponse */
         UpdateParameterApiResponse: {
@@ -22193,7 +21574,7 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["IUpdateRubricV3StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["IUpdateRubricV4StandardGroup"][] | null;
             /** Rubric Agent Id */
             rubric_agent_id?: string | null;
         };
@@ -22234,7 +21615,7 @@ export interface components {
             /** Objective Ids */
             objective_ids: string[];
             /** Parameters */
-            parameters: components["schemas"]["QUpdateScenarioV3Parameter"][];
+            parameters: components["schemas"]["QUpdateScenarioV4Parameter"][];
             /** Description */
             description?: string | null;
             /** Video Agent Id */
@@ -22258,7 +21639,7 @@ export interface components {
             /** Question Ids */
             question_ids?: string[] | null;
             /** Question Timestamps */
-            question_timestamps?: components["schemas"]["QUpdateScenarioV3QuestionTimestamp"][] | null;
+            question_timestamps?: components["schemas"]["QUpdateScenarioV4QuestionTimestamp"][] | null;
             /** Scenario Agent Id */
             scenario_agent_id?: string | null;
             /** Image Agent Id */
@@ -22318,19 +21699,19 @@ export interface components {
             /** Danger Threshold */
             danger_threshold: number;
             /** Provider Keys */
-            provider_keys?: components["schemas"]["IUpdateSettingsV3ProviderKey"][] | null;
+            provider_keys?: components["schemas"]["IUpdateSettingsV4ProviderKey"][] | null;
             /** Auth Keys */
-            auth_keys?: components["schemas"]["IUpdateSettingsV3AuthKey"][] | null;
+            auth_keys?: components["schemas"]["IUpdateSettingsV4AuthKey"][] | null;
             /** Default Admin Profile Id */
             default_admin_profile_id?: string | null;
             /** Default Guest Profile Id */
             default_guest_profile_id?: string | null;
             /** Provider Enabled */
-            provider_enabled?: components["schemas"]["IUpdateSettingsV3ProviderEnabled"][] | null;
+            provider_enabled?: components["schemas"]["IUpdateSettingsV4ProviderEnabled"][] | null;
             /** Auth Enabled */
-            auth_enabled?: components["schemas"]["IUpdateSettingsV3AuthEnabled"][] | null;
+            auth_enabled?: components["schemas"]["IUpdateSettingsV4AuthEnabled"][] | null;
             /** Auth Values */
-            auth_values?: components["schemas"]["IUpdateSettingsV3AuthValue"][] | null;
+            auth_values?: components["schemas"]["IUpdateSettingsV4AuthValue"][] | null;
             /** Department Ids */
             department_ids?: string[] | null;
         };
@@ -22377,7 +21758,7 @@ export interface components {
             /** Scenario Text Enabled */
             scenario_text_enabled: boolean[];
             /** Scenario Rubric Grade Agents */
-            scenario_rubric_grade_agents: components["schemas"]["ICreateSimulationV3ScenarioRubricGradeAgent"][];
+            scenario_rubric_grade_agents: components["schemas"]["ICreateSimulationV4ScenarioRubricGradeAgent"][];
             /** Video Show Problem Statement */
             video_show_problem_statement: boolean[];
             /** Video Show Objectives */
@@ -22408,7 +21789,7 @@ export interface components {
         /** UpsertStaffApiRequest */
         UpsertStaffApiRequest: {
             /** Profiles */
-            profiles: components["schemas"]["IUpsertStaffV3Profile"][];
+            profiles: components["schemas"]["IUpsertStaffV4Profile"][];
             /**
              * Current Profile Id
              * Format: uuid
@@ -22478,29 +21859,6 @@ export interface components {
             video_id?: string | null;
         };
         /**
-         * VideoTitleEvalStartPayload
-         * @description Request to execute title tool for eval.
-         */
-        VideoTitleEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
          * VoiceAssistantAudioLinkPayload
          * @description Request to link audio upload to assistant message.
          */
@@ -22565,34 +21923,6 @@ export interface components {
             content: string;
         };
         /**
-         * VoiceEvalStartPayload
-         * @description Request to execute voice agent for eval.
-         */
-        VoiceEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
          * VoiceProgressErrorPayload
          * @description Response indicating an error occurred in voice progress.
          */
@@ -22601,363 +21931,6 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
-        };
-        /**
-         * AudioEvalStartPayload
-         * @description Request to execute audio agent for eval.
-         */
-        app__socket__v3__agents__audio__eval__AudioEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
-         * DocumentEvalStartPayload
-         * @description Request to execute document agent for eval.
-         */
-        app__socket__v3__agents__document__eval__DocumentEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
-         * GradeEvalStartPayload
-         * @description Request to execute grade agent for eval.
-         */
-        app__socket__v3__agents__grade__eval__GradeEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
-         * AudioEvalStartPayload
-         * @description Request to execute audio tool for eval.
-         */
-        app__socket__v3__agents__grade__tools__audio__eval__AudioEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * GradeEvalStartPayload
-         * @description Request to execute grade tool for eval.
-         */
-        app__socket__v3__agents__grade__tools__grade__eval__GradeEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * HintEvalStartPayload
-         * @description Request to execute hint agent for eval.
-         */
-        app__socket__v3__agents__hint__eval__HintEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
-         * HintEvalStartPayload
-         * @description Request to execute hint tool for eval.
-         */
-        app__socket__v3__agents__hint__tools__hint__eval__HintEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * ImageEvalStartPayload
-         * @description Request to execute image agent for eval.
-         */
-        app__socket__v3__agents__image__eval__ImageEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
-         * RubricEvalStartPayload
-         * @description Request to execute rubric agent for eval.
-         */
-        app__socket__v3__agents__rubric__eval__RubricEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
-        };
-        /**
-         * RubricEvalStartPayload
-         * @description Request to execute rubric tool for eval.
-         */
-        app__socket__v3__agents__rubric__tools__rubric__eval__RubricEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * DocumentEvalStartPayload
-         * @description Request to execute document tool for eval.
-         */
-        app__socket__v3__agents__scenario__tools__document__eval__DocumentEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * ImageEvalStartPayload
-         * @description Request to execute image tool for eval.
-         */
-        app__socket__v3__agents__scenario__tools__image__eval__ImageEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * VideoEvalStartPayload
-         * @description Request to execute video tool for eval.
-         */
-        app__socket__v3__agents__scenario__tools__video__eval__VideoEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * VideoEvalStartPayload
-         * @description Request to execute video agent for eval.
-         */
-        app__socket__v3__agents__video__eval__VideoEvalStartPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id: string;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Current Cycle
-             * @default 0
-             */
-            current_cycle: number;
         };
     };
     responses: never;
@@ -28823,7 +27796,7 @@ export interface operations {
             };
         };
     };
-    connect_api_socket_v3_client_connect_post: {
+    connect_api_socket_v4_client_connect_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28845,7 +27818,7 @@ export interface operations {
             };
         };
     };
-    disconnect_api_socket_v3_client_disconnect_post: {
+    disconnect_api_socket_v4_client_disconnect_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28867,7 +27840,7 @@ export interface operations {
             };
         };
     };
-    log_run_api_socket_v3_client_log_post: {
+    log_run_api_socket_v4_client_log_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28902,7 +27875,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_start_api_socket_v3_client_agents_simulations_start_post: {
+    simulation_voice_start_api_socket_v4_client_agents_simulations_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28937,7 +27910,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_debug_info_api_socket_v3_client_agents_simulations_debug_post: {
+    simulation_voice_debug_info_api_socket_v4_client_agents_simulations_debug_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -28972,7 +27945,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_assistant_delta_api_socket_v3_client_agents_simulations_delta_post: {
+    simulation_voice_assistant_delta_api_socket_v4_client_agents_simulations_delta_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29007,7 +27980,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_assistant_done_api_socket_v3_client_agents_simulations_done_post: {
+    simulation_voice_assistant_done_api_socket_v4_client_agents_simulations_done_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29042,7 +28015,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_assistant_audio_link_api_socket_v3_client_agents_simulations_audio_link_post: {
+    simulation_voice_assistant_audio_link_api_socket_v4_client_agents_simulations_audio_link_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29077,7 +28050,7 @@ export interface operations {
             };
         };
     };
-    generate_scenario_api_socket_v3_client_agents_scenarios_generate_post: {
+    generate_scenario_api_socket_v4_client_agents_scenarios_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29112,7 +28085,7 @@ export interface operations {
             };
         };
     };
-    scenario_randomize_api_socket_v3_client_agents_scenarios_randomize_post: {
+    scenario_randomize_api_socket_v4_client_agents_scenarios_randomize_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29147,7 +28120,7 @@ export interface operations {
             };
         };
     };
-    regenerate_scenario_api_socket_v3_client_agents_scenarios_regenerate_post: {
+    regenerate_scenario_api_socket_v4_client_agents_scenarios_regenerate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29182,7 +28155,7 @@ export interface operations {
             };
         };
     };
-    document_generate_api_socket_v3_client_agents_documents_generate_post: {
+    endpoint_handler_socket_v4_client_agents_documents_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29191,7 +28164,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GenerateDocumentTemplatePayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -29217,7 +28190,7 @@ export interface operations {
             };
         };
     };
-    video_generate_api_socket_v3_client_agents_videos_generate_post: {
+    video_generate_api_socket_v4_client_agents_videos_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29252,7 +28225,7 @@ export interface operations {
             };
         };
     };
-    generate_image_api_socket_v3_client_agents_images_generate_post: {
+    generate_image_api_socket_v4_client_agents_images_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29287,7 +28260,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_client_agents_rubrics_generate_post: {
+    endpoint_handler_socket_v4_client_agents_rubrics_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29322,7 +28295,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_client_agents_rubrics_regenerate_post: {
+    endpoint_handler_socket_v4_client_agents_rubrics_regenerate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29357,7 +28330,7 @@ export interface operations {
             };
         };
     };
-    classify_upload_api_socket_v3_client_agents_classify_classify_post: {
+    classify_upload_api_socket_v4_client_agents_classify_classify_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29392,77 +28365,7 @@ export interface operations {
             };
         };
     };
-    simulation_hints_generate_api_socket_v3_client_agents_hints_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerateHintsPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_grading_start_api_socket_v3_client_agents_grades_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationGradingStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_client_agents_members_generate_post: {
+    endpoint_handler_socket_v4_client_agents_hints_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29497,7 +28400,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_client_agents_members_progress_post: {
+    endpoint_handler_socket_v4_client_agents_grades_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29532,7 +28435,112 @@ export interface operations {
             };
         };
     };
-    simulation_enter_api_socket_v3_client_simulations_enter_post: {
+    audio_generate_api_socket_v4_client_agents_grades_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateAudioPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    member_generate_api_socket_v4_client_agents_members_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberGeneratePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_client_agents_members_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_enter_api_socket_v4_client_simulations_enter_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29567,7 +28575,7 @@ export interface operations {
             };
         };
     };
-    simulation_join_api_socket_v3_client_simulations_join_post: {
+    simulation_join_api_socket_v4_client_simulations_join_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29602,7 +28610,7 @@ export interface operations {
             };
         };
     };
-    simulation_leave_api_socket_v3_client_simulations_leave_post: {
+    simulation_leave_api_socket_v4_client_simulations_leave_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29637,7 +28645,7 @@ export interface operations {
             };
         };
     };
-    simulation_start_api_socket_v3_client_simulations_start_post: {
+    simulation_start_api_socket_v4_client_simulations_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29672,7 +28680,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_end_api_socket_v3_client_simulations_end_post: {
+    simulation_text_end_api_socket_v4_client_simulations_end_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29707,7 +28715,7 @@ export interface operations {
             };
         };
     };
-    simulation_next_api_socket_v3_client_simulations_next_post: {
+    simulation_next_api_socket_v4_client_simulations_next_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29742,7 +28750,7 @@ export interface operations {
             };
         };
     };
-    simulation_advance_api_socket_v3_client_simulations_advance_post: {
+    simulation_advance_api_socket_v4_client_simulations_advance_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29777,7 +28785,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_stop_api_socket_v3_client_simulations_stop_post: {
+    simulation_text_stop_api_socket_v4_client_simulations_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29812,7 +28820,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_stop_api_socket_v3_client_simulations_voice_stop_post: {
+    simulation_voice_stop_api_socket_v4_client_simulations_voice_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29847,7 +28855,7 @@ export interface operations {
             };
         };
     };
-    benchmark_enter_api_socket_v3_client_benchmark_enter_post: {
+    benchmark_enter_api_socket_v4_client_benchmark_enter_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29882,7 +28890,7 @@ export interface operations {
             };
         };
     };
-    benchmark_join_api_socket_v3_client_benchmark_join_post: {
+    benchmark_join_api_socket_v4_client_benchmark_join_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29917,7 +28925,7 @@ export interface operations {
             };
         };
     };
-    benchmark_leave_api_socket_v3_client_benchmark_leave_post: {
+    benchmark_leave_api_socket_v4_client_benchmark_leave_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29952,7 +28960,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_client_benchmark_start_post: {
+    endpoint_handler_socket_v4_client_benchmark_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29987,7 +28995,7 @@ export interface operations {
             };
         };
     };
-    benchmark_advance_api_socket_v3_client_benchmark_advance_post: {
+    benchmark_advance_api_socket_v4_client_benchmark_advance_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30022,7 +29030,7 @@ export interface operations {
             };
         };
     };
-    benchmark_stop_api_socket_v3_client_benchmark_stop_post: {
+    benchmark_stop_api_socket_v4_client_benchmark_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30057,7 +29065,7 @@ export interface operations {
             };
         };
     };
-    benchmark_next_api_socket_v3_client_benchmark_next_post: {
+    benchmark_next_api_socket_v4_client_benchmark_next_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30092,7 +29100,7 @@ export interface operations {
             };
         };
     };
-    benchmark_end_api_socket_v3_client_benchmark_end_post: {
+    benchmark_end_api_socket_v4_client_benchmark_end_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30127,7 +29135,7 @@ export interface operations {
             };
         };
     };
-    connection_confirmed_api_socket_v3_server_connection_confirmed_post: {
+    connection_confirmed_api_socket_v4_server_connection_confirmed_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30162,7 +29170,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_simulation_text_complete_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_simulation_text_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30197,7 +29205,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_simulation_text_error_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_simulation_text_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30232,7 +29240,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_simulation_text_progress_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_simulation_text_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30267,42 +29275,7 @@ export interface operations {
             };
         };
     };
-    voice_eval_api_socket_v3_server_agents_simulations_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VoiceEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30337,7 +29310,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30372,7 +29345,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30407,7 +29380,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30442,42 +29415,7 @@ export interface operations {
             };
         };
     };
-    speak_eval_api_socket_v3_server_agents_simulations_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SpeakEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_speak_tool_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30512,7 +29450,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_speak_complete_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30547,7 +29485,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_speak_error_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_tool_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30582,7 +29520,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_tools_speak_progress_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30617,7 +29555,77 @@ export interface operations {
             };
         };
     };
-    simulation_voice_start_response_api_socket_v3_server_agents_simulations_start_response_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_start_response_api_socket_v4_server_agents_simulations_start_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30652,7 +29660,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_start_error_api_socket_v3_server_agents_simulations_start_error_post: {
+    simulation_voice_start_error_api_socket_v4_server_agents_simulations_start_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30687,7 +29695,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_simulation_voice_complete_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30722,7 +29730,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_simulations_simulation_voice_error_post: {
+    endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30757,7 +29765,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_debug_info_error_api_socket_v3_server_agents_simulations_debug_error_post: {
+    simulation_voice_debug_info_error_api_socket_v4_server_agents_simulations_debug_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30792,7 +29800,7 @@ export interface operations {
             };
         };
     };
-    voice_tool_call_error_api_socket_v3_server_agents_simulations_tool_call_error_post: {
+    voice_tool_call_error_api_socket_v4_server_agents_simulations_tool_call_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30827,7 +29835,7 @@ export interface operations {
             };
         };
     };
-    voice_assistant_audio_link_error_api_socket_v3_server_agents_simulations_audio_link_error_post: {
+    voice_assistant_audio_link_error_api_socket_v4_server_agents_simulations_audio_link_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30862,7 +29870,7 @@ export interface operations {
             };
         };
     };
-    scenario_generation_progress_api_socket_v3_server_agents_scenarios_generation_progress_post: {
+    scenario_generation_progress_api_socket_v4_server_agents_scenarios_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30897,7 +29905,7 @@ export interface operations {
             };
         };
     };
-    scenario_generation_complete_api_socket_v3_server_agents_scenarios_generation_complete_post: {
+    scenario_generation_complete_api_socket_v4_server_agents_scenarios_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30932,7 +29940,7 @@ export interface operations {
             };
         };
     };
-    scenario_generation_error_api_socket_v3_server_agents_scenarios_generation_error_post: {
+    scenario_generation_error_api_socket_v4_server_agents_scenarios_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30967,7 +29975,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_scenario_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_scenario_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31002,7 +30010,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_scenario_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_scenario_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31037,7 +30045,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_scenario_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_scenario_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31072,42 +30080,7 @@ export interface operations {
             };
         };
     };
-    scenario_eval_api_socket_v3_server_agents_scenarios_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31142,7 +30115,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31177,7 +30150,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31212,7 +30185,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31247,42 +30220,7 @@ export interface operations {
             };
         };
     };
-    video_eval_api_socket_v3_server_agents_scenarios_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__scenario__tools__video__eval__VideoEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_document_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31317,7 +30255,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_document_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31352,7 +30290,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_document_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_document_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31387,7 +30325,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_image_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_document_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31422,7 +30360,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_image_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_document_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31457,7 +30395,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_image_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_image_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31492,7 +30430,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_objectives_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_image_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31527,7 +30465,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_objectives_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_image_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31562,7 +30500,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_objectives_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31597,7 +30535,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_questions_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31632,7 +30570,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_questions_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31667,7 +30605,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_questions_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31702,7 +30640,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31737,7 +30675,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31772,7 +30710,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31807,7 +30745,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_title_description_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31842,7 +30780,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_scenario_tool_title_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31877,7 +30815,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_scenario_tool_title_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31912,7 +30850,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_scenario_tool_title_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31947,7 +30885,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_video_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31982,7 +30920,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_video_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32017,7 +30955,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_scenarios_tools_video_progress_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_video_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32052,112 +30990,7 @@ export interface operations {
             };
         };
     };
-    document_template_generation_progress_api_socket_v3_server_agents_documents_generation_progress_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocumentTemplateGenerationProgressPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    document_template_generation_complete_api_socket_v3_server_agents_documents_generation_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocumentTemplateGenerationCompletePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    document_template_generation_error_api_socket_v3_server_agents_documents_generation_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocumentTemplateGenerationErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_documents_document_complete_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_video_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32192,7 +31025,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_documents_document_error_post: {
+    endpoint_handler_socket_v4_server_agents_scenarios_tools_video_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32227,7 +31060,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_documents_document_progress_post: {
+    endpoint_handler_socket_v4_server_agents_documents_document_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32262,42 +31095,7 @@ export interface operations {
             };
         };
     };
-    document_eval_api_socket_v3_server_agents_documents_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__document__eval__DocumentEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_documents_tools_document_tool_title_complete_post: {
+    endpoint_handler_socket_v4_server_agents_documents_document_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32332,7 +31130,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_documents_tools_document_tool_title_error_post: {
+    endpoint_handler_socket_v4_server_agents_documents_document_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32367,7 +31165,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_documents_tools_document_tool_title_progress_post: {
+    endpoint_handler_socket_v4_server_agents_documents_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32402,42 +31200,7 @@ export interface operations {
             };
         };
     };
-    debug_eval_api_socket_v3_server_agents_documents_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DebugEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32472,7 +31235,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32507,7 +31270,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32542,7 +31305,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_documents_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_documents_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32577,7 +31340,147 @@ export interface operations {
             };
         };
     };
-    video_generation_progress_api_socket_v3_server_agents_videos_generation_progress_post: {
+    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_debug_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    video_generation_progress_api_socket_v4_server_agents_videos_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32612,7 +31515,7 @@ export interface operations {
             };
         };
     };
-    video_generation_complete_api_socket_v3_server_agents_videos_generation_complete_post: {
+    video_generation_complete_api_socket_v4_server_agents_videos_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32647,7 +31550,7 @@ export interface operations {
             };
         };
     };
-    video_generation_error_api_socket_v3_server_agents_videos_generation_error_post: {
+    video_generation_error_api_socket_v4_server_agents_videos_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32682,7 +31585,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_video_complete_post: {
+    endpoint_handler_socket_v4_server_agents_videos_video_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32717,7 +31620,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_video_error_post: {
+    endpoint_handler_socket_v4_server_agents_videos_video_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32752,7 +31655,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_video_progress_post: {
+    endpoint_handler_socket_v4_server_agents_videos_video_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32787,42 +31690,7 @@ export interface operations {
             };
         };
     };
-    video_eval_api_socket_v3_server_agents_videos_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__video__eval__VideoEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_videos_tools_video_tool_title_complete_post: {
+    endpoint_handler_socket_v4_server_agents_videos_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32857,7 +31725,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_tools_video_tool_title_error_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32892,7 +31760,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_tools_video_tool_title_progress_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32927,42 +31795,7 @@ export interface operations {
             };
         };
     };
-    debug_eval_api_socket_v3_server_agents_videos_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DebugEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -32997,7 +31830,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33032,7 +31865,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33067,7 +31900,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_videos_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33102,7 +31935,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_generation_complete_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33137,7 +31970,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_generation_error_post: {
+    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33172,7 +32005,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_generation_progress_post: {
+    endpoint_handler_socket_v4_server_agents_images_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33207,42 +32040,7 @@ export interface operations {
             };
         };
     };
-    image_eval_api_socket_v3_server_agents_images_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__image__eval__ImageEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_images_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_images_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33277,7 +32075,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_images_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33312,7 +32110,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_images_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33347,7 +32145,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33382,42 +32180,7 @@ export interface operations {
             };
         };
     };
-    title_eval_api_socket_v3_server_agents_images_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImageTitleEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_images_tools_image_tool_title_complete_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33452,7 +32215,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_tools_image_tool_title_error_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33487,7 +32250,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_images_tools_image_tool_title_progress_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33522,7 +32285,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_generation_complete_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33557,7 +32320,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_generation_error_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33592,7 +32355,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_generation_progress_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33627,42 +32390,7 @@ export interface operations {
             };
         };
     };
-    rubric_eval_api_socket_v3_server_agents_rubrics_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__rubric__eval__RubricEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_title_complete_post: {
+    endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33697,7 +32425,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_title_error_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33732,7 +32460,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_title_progress_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33767,42 +32495,7 @@ export interface operations {
             };
         };
     };
-    rubric_eval_api_socket_v3_server_agents_rubrics_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__rubric__tools__rubric__eval__RubricEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33837,7 +32530,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33872,7 +32565,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33907,7 +32600,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33942,7 +32635,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_rubric_tool_standard_description_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -33977,7 +32670,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_standard_description_complete_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34012,7 +32705,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_standard_description_error_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34047,7 +32740,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_rubrics_tools_standard_description_progress_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34082,7 +32775,217 @@ export interface operations {
             };
         };
     };
-    classify_upload_progress_api_socket_v3_server_agents_classify_classification_progress_post: {
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_standard_description_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    classify_upload_progress_api_socket_v4_server_agents_classify_classification_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34117,7 +33020,7 @@ export interface operations {
             };
         };
     };
-    classify_upload_complete_api_socket_v3_server_agents_classify_classification_complete_post: {
+    classify_upload_complete_api_socket_v4_server_agents_classify_classification_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34152,7 +33055,7 @@ export interface operations {
             };
         };
     };
-    classify_upload_error_api_socket_v3_server_agents_classify_classification_error_post: {
+    classify_upload_error_api_socket_v4_server_agents_classify_classification_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34187,7 +33090,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_classify_complete_post: {
+    endpoint_handler_socket_v4_server_agents_classify_classify_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34222,7 +33125,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_classify_error_post: {
+    endpoint_handler_socket_v4_server_agents_classify_classify_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34257,7 +33160,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_classify_progress_post: {
+    endpoint_handler_socket_v4_server_agents_classify_classify_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34292,42 +33195,7 @@ export interface operations {
             };
         };
     };
-    classify_eval_api_socket_v3_server_agents_classify_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClassifyEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_classify_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34362,7 +33230,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34397,7 +33265,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34432,7 +33300,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34467,42 +33335,7 @@ export interface operations {
             };
         };
     };
-    classification_eval_api_socket_v3_server_agents_classify_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClassificationEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_classify_tools_classification_tool_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34537,7 +33370,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_tools_classification_complete_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34572,7 +33405,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_tools_classification_error_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_classification_tool_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34607,7 +33440,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_classify_tools_classification_progress_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_classification_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34642,42 +33475,7 @@ export interface operations {
             };
         };
     };
-    hint_generation_progress_api_socket_v3_server_agents_hints_generation_progress_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HintGenerationProgressPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_hints_hint_complete_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_classification_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34712,7 +33510,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_hint_error_post: {
+    endpoint_handler_socket_v4_server_agents_classify_tools_classification_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34747,7 +33545,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_hint_progress_post: {
+    endpoint_handler_socket_v4_server_agents_hints_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34782,42 +33580,7 @@ export interface operations {
             };
         };
     };
-    hint_eval_api_socket_v3_server_agents_hints_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__hint__eval__HintEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_hints_hint_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34852,7 +33615,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_hints_hint_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34887,7 +33650,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_hints_hint_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34922,7 +33685,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_hints_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -34957,42 +33720,7 @@ export interface operations {
             };
         };
     };
-    hint_eval_api_socket_v3_server_agents_hints_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__hint__tools__hint__eval__HintEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_hints_tools_hint_tool_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_debug_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35027,7 +33755,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_tools_hint_complete_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35062,7 +33790,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_tools_hint_error_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35097,7 +33825,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_hints_tools_hint_progress_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35132,42 +33860,7 @@ export interface operations {
             };
         };
     };
-    simulation_grading_progress_api_socket_v3_server_agents_grades_progress_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationGradingProgressPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_grades_grade_text_complete_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35202,7 +33895,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_grade_text_error_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35237,7 +33930,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_grade_text_progress_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_hint_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35272,42 +33965,7 @@ export interface operations {
             };
         };
     };
-    audio_eval_api_socket_v3_server_agents_grades_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__socket__v3__agents__audio__eval__AudioEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_grades_tools_audio_complete_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_hint_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35342,7 +34000,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_audio_error_post: {
+    endpoint_handler_socket_v4_server_agents_hints_tools_hint_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35377,7 +34035,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_audio_progress_post: {
+    endpoint_handler_socket_v4_server_agents_grades_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35412,42 +34070,7 @@ export interface operations {
             };
         };
     };
-    debug_eval_api_socket_v3_server_agents_grades_tools_eval_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DebugEvalStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    endpoint_handler_socket_v3_server_agents_grades_tools_message_improvement_complete_post: {
+    endpoint_handler_socket_v4_server_agents_grades_grade_text_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35482,7 +34105,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_message_improvement_error_post: {
+    endpoint_handler_socket_v4_server_agents_grades_grade_text_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35517,7 +34140,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_message_improvement_progress_post: {
+    endpoint_handler_socket_v4_server_agents_grades_grade_text_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35552,7 +34175,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_message_strength_complete_post: {
+    endpoint_handler_socket_v4_server_agents_grades_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35587,7 +34210,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_message_strength_error_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_audio_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35622,7 +34245,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_message_strength_progress_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_audio_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35657,7 +34280,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_feedback_complete_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_audio_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35692,7 +34315,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_feedback_error_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35727,7 +34350,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_feedback_progress_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35762,7 +34385,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35797,7 +34420,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_complete_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35832,7 +34455,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_error_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35867,7 +34490,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_tools_debug_info_progress_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35902,7 +34525,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_audio_complete_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35937,7 +34560,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_audio_error_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_feedback_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -35972,7 +34595,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_grades_audio_progress_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_feedback_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36007,7 +34630,392 @@ export interface operations {
             };
         };
     };
-    member_generate_error_api_socket_v3_server_agents_members_generate_error_post: {
+    endpoint_handler_socket_v4_server_agents_grades_tools_feedback_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audio_generation_progress_api_socket_v4_server_agents_grades_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioGenerationProgressPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audio_generation_complete_api_socket_v4_server_agents_grades_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioGenerationCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audio_generation_error_api_socket_v4_server_agents_grades_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioGenerationErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_grades_audio_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_grades_audio_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_handler_socket_v4_server_agents_grades_audio_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    member_generate_error_api_socket_v4_server_agents_members_generate_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36042,7 +35050,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_members_member_complete_post: {
+    endpoint_handler_socket_v4_server_agents_members_member_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36077,7 +35085,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_members_member_error_post: {
+    endpoint_handler_socket_v4_server_agents_members_member_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36112,7 +35120,7 @@ export interface operations {
             };
         };
     };
-    member_eval_api_socket_v3_server_agents_members_eval_post: {
+    endpoint_handler_socket_v4_server_agents_members_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36121,7 +35129,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MemberEvalStartPayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -36147,7 +35155,7 @@ export interface operations {
             };
         };
     };
-    member_progress_error_api_socket_v3_server_agents_members_progress_error_post: {
+    member_progress_error_api_socket_v4_server_agents_members_progress_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36182,7 +35190,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_post: {
+    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36217,7 +35225,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_complete_post: {
+    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36252,7 +35260,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_error_post: {
+    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36287,7 +35295,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v3_server_agents_members_tools_conversation_end_progress_post: {
+    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36322,7 +35330,7 @@ export interface operations {
             };
         };
     };
-    conversation_eval_api_socket_v3_server_agents_members_tools_eval_post: {
+    endpoint_handler_socket_v4_server_agents_members_tools_eval_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36331,7 +35339,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ConversationEvalStartPayload"];
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -36357,7 +35365,7 @@ export interface operations {
             };
         };
     };
-    simulation_enter_response_api_socket_v3_server_simulations_enter_response_post: {
+    simulation_enter_response_api_socket_v4_server_simulations_enter_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36392,7 +35400,7 @@ export interface operations {
             };
         };
     };
-    simulation_enter_error_api_socket_v3_server_simulations_enter_error_post: {
+    simulation_enter_error_api_socket_v4_server_simulations_enter_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36427,7 +35435,7 @@ export interface operations {
             };
         };
     };
-    simulation_joined_api_socket_v3_server_simulations_joined_post: {
+    simulation_joined_api_socket_v4_server_simulations_joined_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36462,7 +35470,7 @@ export interface operations {
             };
         };
     };
-    simulation_join_error_api_socket_v3_server_simulations_join_error_post: {
+    simulation_join_error_api_socket_v4_server_simulations_join_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36497,7 +35505,7 @@ export interface operations {
             };
         };
     };
-    simulation_leave_error_api_socket_v3_server_simulations_leave_error_post: {
+    simulation_leave_error_api_socket_v4_server_simulations_leave_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36532,7 +35540,7 @@ export interface operations {
             };
         };
     };
-    simulation_start_error_api_socket_v3_server_simulations_start_error_post: {
+    simulation_start_error_api_socket_v4_server_simulations_start_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36567,7 +35575,7 @@ export interface operations {
             };
         };
     };
-    simulation_started_api_socket_v3_server_simulations_started_post: {
+    simulation_started_api_socket_v4_server_simulations_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36602,7 +35610,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_end_error_api_socket_v3_server_simulations_end_error_post: {
+    simulation_text_end_error_api_socket_v4_server_simulations_end_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36637,7 +35645,7 @@ export interface operations {
             };
         };
     };
-    simulation_ended_api_socket_v3_server_simulations_ended_post: {
+    simulation_ended_api_socket_v4_server_simulations_ended_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36672,7 +35680,7 @@ export interface operations {
             };
         };
     };
-    end_all_started_api_socket_v3_server_simulations_end_all_started_post: {
+    end_all_started_api_socket_v4_server_simulations_end_all_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36707,7 +35715,7 @@ export interface operations {
             };
         };
     };
-    end_chat_started_api_socket_v3_server_simulations_end_chat_started_post: {
+    end_chat_started_api_socket_v4_server_simulations_end_chat_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36742,7 +35750,7 @@ export interface operations {
             };
         };
     };
-    end_all_completed_api_socket_v3_server_simulations_end_all_completed_post: {
+    end_all_completed_api_socket_v4_server_simulations_end_all_completed_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36777,7 +35785,7 @@ export interface operations {
             };
         };
     };
-    simulation_next_error_api_socket_v3_server_simulations_next_error_post: {
+    simulation_next_error_api_socket_v4_server_simulations_next_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36812,7 +35820,7 @@ export interface operations {
             };
         };
     };
-    simulation_advance_error_api_socket_v3_server_simulations_advance_error_post: {
+    simulation_advance_error_api_socket_v4_server_simulations_advance_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36847,7 +35855,7 @@ export interface operations {
             };
         };
     };
-    simulation_advanced_api_socket_v3_server_simulations_advanced_post: {
+    simulation_advanced_api_socket_v4_server_simulations_advanced_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36882,7 +35890,7 @@ export interface operations {
             };
         };
     };
-    simulation_stopped_api_socket_v3_server_simulations_stopped_post: {
+    simulation_stopped_api_socket_v4_server_simulations_stopped_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36917,7 +35925,7 @@ export interface operations {
             };
         };
     };
-    simulation_message_cancelled_api_socket_v3_server_simulations_message_cancelled_post: {
+    simulation_message_cancelled_api_socket_v4_server_simulations_message_cancelled_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36952,7 +35960,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_stop_error_api_socket_v3_server_simulations_stop_error_post: {
+    simulation_text_stop_error_api_socket_v4_server_simulations_stop_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36987,7 +35995,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_stop_response_api_socket_v3_server_simulations_voice_stop_response_post: {
+    simulation_voice_stop_response_api_socket_v4_server_simulations_voice_stop_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37022,7 +36030,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_stop_error_api_socket_v3_server_simulations_voice_stop_error_post: {
+    simulation_voice_stop_error_api_socket_v4_server_simulations_voice_stop_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37057,7 +36065,7 @@ export interface operations {
             };
         };
     };
-    benchmark_enter_response_api_socket_v3_server_benchmark_enter_response_post: {
+    benchmark_enter_response_api_socket_v4_server_benchmark_enter_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37092,7 +36100,7 @@ export interface operations {
             };
         };
     };
-    benchmark_enter_error_api_socket_v3_server_benchmark_enter_error_post: {
+    benchmark_enter_error_api_socket_v4_server_benchmark_enter_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37127,7 +36135,7 @@ export interface operations {
             };
         };
     };
-    benchmark_joined_api_socket_v3_server_benchmark_joined_post: {
+    benchmark_joined_api_socket_v4_server_benchmark_joined_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37162,7 +36170,7 @@ export interface operations {
             };
         };
     };
-    benchmark_join_error_api_socket_v3_server_benchmark_join_error_post: {
+    benchmark_join_error_api_socket_v4_server_benchmark_join_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37197,7 +36205,7 @@ export interface operations {
             };
         };
     };
-    benchmark_leave_error_api_socket_v3_server_benchmark_leave_error_post: {
+    benchmark_leave_error_api_socket_v4_server_benchmark_leave_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37232,7 +36240,7 @@ export interface operations {
             };
         };
     };
-    benchmark_advance_error_api_socket_v3_server_benchmark_advance_error_post: {
+    benchmark_advance_error_api_socket_v4_server_benchmark_advance_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37267,7 +36275,7 @@ export interface operations {
             };
         };
     };
-    benchmark_advanced_api_socket_v3_server_benchmark_advanced_post: {
+    benchmark_advanced_api_socket_v4_server_benchmark_advanced_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37302,7 +36310,7 @@ export interface operations {
             };
         };
     };
-    benchmark_stopped_api_socket_v3_server_benchmark_stopped_post: {
+    benchmark_stopped_api_socket_v4_server_benchmark_stopped_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37337,7 +36345,7 @@ export interface operations {
             };
         };
     };
-    benchmark_stop_error_api_socket_v3_server_benchmark_stop_error_post: {
+    benchmark_stop_error_api_socket_v4_server_benchmark_stop_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37372,7 +36380,7 @@ export interface operations {
             };
         };
     };
-    benchmark_completed_api_socket_v3_server_benchmark_completed_post: {
+    benchmark_completed_api_socket_v4_server_benchmark_completed_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37407,7 +36415,7 @@ export interface operations {
             };
         };
     };
-    benchmark_end_error_api_socket_v3_server_benchmark_end_error_post: {
+    benchmark_end_error_api_socket_v4_server_benchmark_end_error_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -6,8 +6,8 @@ import asyncpg  # type: ignore
 from typing import cast
 
 from app.sql.types import (
-    InfraHealthMetricsSqlParams,
-    InfraHealthMetricsSqlRow,
+    InfrastructureMetricsHealthSqlParams,
+    InfrastructureMetricsHealthSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -32,14 +32,14 @@ async def log_service_health(
         error: Error message (empty string if ok)
         conn: Database connection
     """
-    params = InfraHealthMetricsSqlParams(
-        ts=ts,
+    params = InfrastructureMetricsHealthSqlParams(
+        ts=ts.isoformat(),
         service=service,
         ok=ok,
         latency_ms=latency_ms,
         error=error,
     )
     cast(
-        InfraHealthMetricsSqlRow,
+        InfrastructureMetricsHealthSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )

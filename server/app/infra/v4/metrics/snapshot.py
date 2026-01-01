@@ -6,8 +6,8 @@ import asyncpg  # type: ignore
 from typing import cast
 
 from app.sql.types import (
-    InfraSnapshotMetricsSqlParams,
-    InfraSnapshotMetricsSqlRow,
+    InfrastructureMetricsSnapshotSqlParams,
+    InfrastructureMetricsSnapshotSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -34,8 +34,8 @@ async def log_metrics_snapshot(
         memory_bytes: Memory usage in bytes
         conn: Database connection
     """
-    params = InfraSnapshotMetricsSqlParams(
-        ts=ts,
+    params = InfrastructureMetricsSnapshotSqlParams(
+        ts=ts.isoformat(),
         requests_total=requests_total,
         errors_total=errors_total,
         avg_latency_ms=avg_latency_ms,
@@ -43,6 +43,6 @@ async def log_metrics_snapshot(
         memory_bytes=memory_bytes,
     )
     cast(
-        InfraSnapshotMetricsSqlRow,
+        InfrastructureMetricsSnapshotSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
