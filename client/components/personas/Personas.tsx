@@ -34,7 +34,6 @@ import type {
 } from "@/app/(main)/create/personas/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
-import { useProfile } from "@/contexts/profile-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +53,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -81,7 +81,7 @@ export interface PersonasProps {
   listData: PersonasListOut;
   // Server actions (replaces useMutation)
   duplicatePersonaAction?: (
-    input: DuplicatePersonaIn,
+    input: DuplicatePersonaIn
   ) => Promise<DuplicatePersonaOut>;
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
 }
@@ -115,11 +115,10 @@ export default function Personas({
   // Extract data from response
   const personas = personasData?.personas || [];
 
-  // Derive options from full arrays (like cohorts pattern)
+  // Derive options from full arrays (server always returns arrays)
   const scenarioOptions = useMemo(() => {
     const scenarios = personasData?.scenarios || [];
-    const scenariosArray = Array.isArray(scenarios) ? scenarios : Object.values(scenarios);
-    return scenariosArray
+    return scenarios
       .map((item) => ({
         value: String(item.scenario_id || ""),
         label: item.name || "",
@@ -129,8 +128,7 @@ export default function Personas({
 
   const agentOptions = useMemo(() => {
     const agents = personasData?.agents || [];
-    const agentsArray = Array.isArray(agents) ? agents : Object.values(agents);
-    return agentsArray
+    return agents
       .map((item) => ({
         value: String(item.agent_id || ""),
         label: item.name || "",
@@ -140,8 +138,7 @@ export default function Personas({
 
   const departmentOptions = useMemo(() => {
     const departments = personasData?.departments || [];
-    const departmentsArray = Array.isArray(departments) ? departments : Object.values(departments);
-    return departmentsArray
+    return departments
       .map((item) => ({
         value: String(item.department_id || ""),
         label: item.name || "",
@@ -264,7 +261,11 @@ export default function Personas({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
-          const date = new Date(row.original.updated_at);
+          const updatedAt = row.original.updated_at;
+          if (!updatedAt) {
+            return <div className="text-sm text-muted-foreground">—</div>;
+          }
+          const date = new Date(updatedAt);
           return (
             <div className="text-sm text-muted-foreground">
               {date.toLocaleDateString()}
@@ -339,7 +340,7 @@ export default function Personas({
     try {
       await deletePersonaAction({
         body: {
-          personaId: deleteItem.id,
+          persona_id: deleteItem.id,
         },
       });
       // profileId comes from X-Profile-Id header automatically
@@ -368,7 +369,7 @@ export default function Personas({
     try {
       await duplicatePersonaAction({
         body: {
-          personaId,
+          persona_id: personaId,
         },
       });
       // profileId comes from X-Profile-Id header automatically
@@ -397,7 +398,7 @@ export default function Personas({
 
   const renderPersonaCard = (persona: (typeof personas)[0]) => {
     // Get the icon component from the persona's stored icon name
-    const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
+    const IconComponent = getPersonaIconComponent(persona.icon || "") || Brain;
 
     // Use the hex color directly with CSS custom properties
     const hexColor = persona.color || "#64748b"; // Default to slate if no color
@@ -478,10 +479,14 @@ export default function Personas({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleEdit(persona.persona_id)}
-                  aria-label={`Edit persona ${persona.name}`}
+                  onClick={() => {
+                    if (persona.persona_id) {
+                      handleEdit(persona.persona_id);
+                    }
+                  }}
+                  aria-label={`Edit persona ${persona.name || "Unnamed"}`}
                   data-testid="btn-edit-persona"
-                  title={`Edit persona ${persona.name}`}
+                  title={`Edit persona ${persona.name || "Unnamed"}`}
                   className="h-9 px-3"
                 >
                   <Edit className="h-4 w-4 md:mr-0 mr-2" />
@@ -491,30 +496,39 @@ export default function Personas({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleView(persona.persona_id)}
-                  aria-label={`View persona ${persona.name}`}
+                  onClick={() => {
+                    if (persona.persona_id) {
+                      handleView(persona.persona_id);
+                    }
+                  }}
+                  aria-label={`View persona ${persona.name || "Unnamed"}`}
                   data-testid="btn-view-persona"
-                  title={`View persona ${persona.name}`}
+                  title={`View persona ${persona.name || "Unnamed"}`}
                   className="h-9 px-3"
                 >
                   <Eye className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">View</span>
                 </Button>
               )}
-              {persona.can_duplicate && (
+              {persona.can_duplicate && persona.persona_id && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    handleDuplicate(persona.persona_id, persona.name)
-                  }
+                  onClick={() => {
+                    if (persona.persona_id) {
+                      handleDuplicate(
+                        persona.persona_id,
+                        persona.name || "Unnamed Persona"
+                      );
+                    }
+                  }}
                   disabled={isDuplicating === persona.persona_id}
                   aria-busy={
                     isDuplicating === persona.persona_id ? true : undefined
                   }
-                  aria-label={`Duplicate persona ${persona.name}`}
+                  aria-label={`Duplicate persona ${persona.name || "Unnamed"}`}
                   data-testid="btn-duplicate-persona"
-                  title={`Duplicate persona ${persona.name}`}
+                  title={`Duplicate persona ${persona.name || "Unnamed"}`}
                   className="h-9 px-3"
                 >
                   {isDuplicating === persona.persona_id ? (
@@ -529,19 +543,21 @@ export default function Personas({
                   </span>
                 </Button>
               )}
-              {persona.can_delete && (
+              {persona.can_delete && persona.persona_id && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    handleDeleteClick(
-                      persona.persona_id,
-                      persona.name || "Unnamed Persona",
-                    )
-                  }
-                  aria-label={`Delete persona ${persona.name}`}
+                  onClick={() => {
+                    if (persona.persona_id) {
+                      handleDeleteClick(
+                        persona.persona_id,
+                        persona.name || "Unnamed Persona"
+                      );
+                    }
+                  }}
+                  aria-label={`Delete persona ${persona.name || "Unnamed"}`}
                   data-testid="btn-delete-persona"
-                  title={`Delete persona ${persona.name}`}
+                  title={`Delete persona ${persona.name || "Unnamed"}`}
                   className="h-9 px-3"
                 >
                   <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
