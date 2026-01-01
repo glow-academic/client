@@ -37,7 +37,7 @@ class TestFormat_Document_Info:
 
         # Mock UPLOAD_FOLDER
         monkeypatch.setattr(
-            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+            "app.infra.v4.documents.format_document_info.UPLOAD_FOLDER", tmp_path
         )
 
         documents = [
@@ -74,7 +74,7 @@ class TestFormat_Document_Info:
         test_file.write_bytes(b"fake pdf content")
 
         monkeypatch.setattr(
-            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+            "app.infra.v4.documents.format_document_info.UPLOAD_FOLDER", tmp_path
         )
 
         # Mock pypdf
@@ -95,7 +95,7 @@ class TestFormat_Document_Info:
         with (
             patch("pypdf.PdfReader", return_value=mock_reader),
             patch(
-                "app.utils.document.format_document_info.pdf_pages_to_image_data_urls",
+                "app.infra.v4.documents.format_document_info.pdf_pages_to_image_data_urls",
                 return_value=[],
             ),
         ):
@@ -118,7 +118,7 @@ class TestFormat_Document_Info:
         test_file.write_bytes(b"fake pdf content")
 
         monkeypatch.setattr(
-            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+            "app.infra.v4.documents.format_document_info.UPLOAD_FOLDER", tmp_path
         )
 
         # Mock pypdf
@@ -142,7 +142,7 @@ class TestFormat_Document_Info:
         with (
             patch("pypdf.PdfReader", return_value=mock_reader),
             patch(
-                "app.utils.document.format_document_info.pdf_pages_to_image_data_urls",
+                "app.infra.v4.documents.format_document_info.pdf_pages_to_image_data_urls",
                 return_value=image_urls,
             ),
         ):
@@ -168,7 +168,7 @@ class TestFormat_Document_Info:
         test_file.write_bytes(png_header + b"fake png content")
 
         monkeypatch.setattr(
-            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+            "app.infra.v4.documents.format_document_info.UPLOAD_FOLDER", tmp_path
         )
 
         documents = [
@@ -205,7 +205,7 @@ class TestFormat_Document_Info:
         test_file.write_bytes(b"fake png content")
 
         monkeypatch.setattr(
-            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+            "app.infra.v4.documents.format_document_info.UPLOAD_FOLDER", tmp_path
         )
 
         documents = [
@@ -234,7 +234,7 @@ class TestFormat_Document_Info:
             format_document_info
 
         monkeypatch.setattr(
-            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+            "app.infra.v4.documents.format_document_info.UPLOAD_FOLDER", tmp_path
         )
 
         documents = [

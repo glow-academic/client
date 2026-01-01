@@ -1,15 +1,69 @@
-"""
-Tests for app.utils.agents.generic_agent
-"""
+"""Unit tests for app.infra.v4.agents.generic_agent."""
+
+from unittest.mock import MagicMock, patch
+
+from app.infra.v4.agents.generic_agent import GenericAgent
 
 
-class TestGeneric_Agent:
+class TestGenericAgent:
     """Tests for GenericAgent class."""
 
-    def test_generic_agent_structure(self) -> None:
-        """Test that GenericAgent class exists and has expected structure."""
-        from utils.agents.generic_agent import GenericAgent
+    def test_generic_agent_initialization(self) -> None:
+        """Test GenericAgent initialization."""
+        # Arrange & Act
+        agent = GenericAgent(
+            agent_name="test_agent",
+            system_prompt="Test prompt",
+            temperature=0.7,
+            model_name="gpt-4",
+            provider="openai",
+            api_key="test_key",
+            base_url=None,
+            reasoning=None,
+        )
 
-        assert GenericAgent is not None
-        # Basic structure test - GenericAgent is a complex class
-        # Full testing would require extensive mocking
+        # Assert
+        assert agent.agent_name == "test_agent"
+        assert agent.system_prompt == "Test prompt"
+        assert agent.temperature == 0.7
+        assert agent.model_name == "gpt-4"
+        assert agent.provider == "openai"
+
+    def test_generic_agent_with_tools(self) -> None:
+        """Test GenericAgent initialization with tools."""
+        # Arrange
+        mock_tool = MagicMock()
+
+        # Act
+        agent = GenericAgent(
+            agent_name="test_agent",
+            system_prompt="Test prompt",
+            temperature=0.7,
+            model_name="gpt-4",
+            provider="openai",
+            api_key="test_key",
+            base_url=None,
+            reasoning=None,
+            tools=[mock_tool],
+        )
+
+        # Assert
+        assert agent.tools is not None
+        assert len(agent.tools) == 1
+
+    def test_generic_agent_with_reasoning(self) -> None:
+        """Test GenericAgent initialization with reasoning."""
+        # Arrange & Act
+        agent = GenericAgent(
+            agent_name="test_agent",
+            system_prompt="Test prompt",
+            temperature=0.7,
+            model_name="gpt-4",
+            provider="openai",
+            api_key="test_key",
+            base_url=None,
+            reasoning="high",
+        )
+
+        # Assert
+        assert agent.reasoning == "high"
