@@ -210,8 +210,7 @@ department_mapping_data AS (
         COALESCE(d.description, '') as description
     FROM params x
     JOIN departments d ON d.active = true
-    JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = x.profile_id
+    JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 valid_department_ids_data AS (
     SELECT ARRAY_AGG(department_id ORDER BY name) as valid_department_ids
