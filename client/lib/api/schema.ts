@@ -11663,6 +11663,36 @@ export interface components {
             parameters?: components["schemas"]["QGetPersonaNewV4Parameter"][] | null;
             /** Fields */
             fields?: components["schemas"]["QGetPersonaNewV4Field"][] | null;
+            /** Preset Colors */
+            preset_colors?: components["schemas"]["QGetPersonaNewV4Color"][] | null;
+            /** Suggested Icons */
+            suggested_icons?: string[] | null;
+            /** Valid Icons */
+            valid_icons?: string[] | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Instructions */
+            instructions?: string | null;
+            /** In Use */
+            in_use?: boolean | null;
+            /** Scenario Count */
+            scenario_count?: number | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
         };
         /** GetPersonasListApiRequest */
         GetPersonasListApiRequest: Record<string, never>;
@@ -16109,6 +16139,13 @@ export interface components {
             description: string | null;
             /** Roles */
             roles: string[] | null;
+        };
+        /** QGetPersonaNewV4Color */
+        QGetPersonaNewV4Color: {
+            /** Hex */
+            hex: string | null;
+            /** Name */
+            name: string | null;
         };
         /** QGetPersonaNewV4Department */
         QGetPersonaNewV4Department: {

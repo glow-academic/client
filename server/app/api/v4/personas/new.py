@@ -93,105 +93,42 @@ async def get_persona_new(
                 status_code=400, detail="No accessible departments found for user"
             )
 
-        # Get user role and primary department for default behavior
-        user_role = str(result.user_role or "").lower()
-        is_superadmin = user_role == "superadmin"
-        primary_department_id = result.primary_department_id
+        # Get preset colors, icons from SQL result
+        # preset_colors is list[QGetPersonaNewV4Color] (Pydantic models from composite type)
+        preset_colors_from_sql = result.preset_colors or []
+        suggested_icons_from_sql = result.suggested_icons or []
+        valid_icons_from_sql = result.valid_icons or []
 
-        # Set default department_ids based on role
-        if is_superadmin:
-            default_department_ids = None
+        # Convert Pydantic color models to dicts for easier manipulation
+        preset_colors_dicts = [
+            {"hex": color.hex or "", "name": color.name or ""}
+            for color in preset_colors_from_sql
+        ]
+
+        # Filter colors and icons using server-side utilities if search params provided
+        if color_search:
+            # Extract hex values for filtering
+            preset_colors_hex_list = [color["hex"] for color in preset_colors_dicts if color.get("hex")]
+            preset_colors_filtered = filter_colors(preset_colors_hex_list, color_search)
         else:
-            default_department_ids = (
-                [str(primary_department_id)] if primary_department_id else []
-            )
+            # No filtering needed, use colors from SQL
+            preset_colors_filtered = preset_colors_dicts
 
-        is_default = default_department_ids is None or len(default_department_ids) == 0
-        can_edit_default = not (is_default and not is_superadmin)
+        if icon_search:
+            suggested_icons = filter_icons(suggested_icons_from_sql, icon_search)
+            valid_icons = filter_icons(valid_icons_from_sql, icon_search)
+        else:
+            # No filtering needed, use icons from SQL
+            suggested_icons = suggested_icons_from_sql
+            valid_icons = valid_icons_from_sql
 
-        # Hardcoded metadata (keep in Python as per original)
-        preset_colors_raw = [
-            "#EF4444",
-            "#F97316",
-            "#F59E0B",
-            "#10B981",
-            "#3B82F6",
-            "#6366F1",
-            "#8B5CF6",
-            "#EC4899",
-        ]
-
-        suggested_icons_raw = ["Sparkles", "Zap", "Star", "Heart", "Users"]
-
-        valid_icons_raw = [
-            "Activity",
-            "Anchor",
-            "Award",
-            "Bell",
-            "Book",
-            "Briefcase",
-            "Calendar",
-            "Camera",
-            "ChevronRight",
-            "Clock",
-            "Cloud",
-            "Code",
-            "Compass",
-            "Database",
-            "FileText",
-            "Globe",
-            "Mail",
-            "Mic",
-            "Monitor",
-            "Phone",
-            "Radio",
-            "Search",
-            "Settings",
-            "Shield",
-            "Video",
-            "Wifi",
-        ]
-
-        # Filter colors and icons using server-side utilities
-        preset_colors_filtered = filter_colors(preset_colors_raw, color_search)
-        suggested_icons = filter_icons(suggested_icons_raw, icon_search)
-        valid_icons = filter_icons(valid_icons_raw, icon_search)
-
-        # Get default text agent ID (first valid agent with simulation-text role)
-        default_text_agent_id = None
-        if result.agents:
-            for agent in result.agents:
-                if agent.roles and "simulation-text" in agent.roles:
-                    default_text_agent_id = str(agent.agent_id)
-                    break
-
-        if not default_text_agent_id:
-            raise HTTPException(
-                status_code=400, detail="No valid simulation-text agents found"
-            )
-
-        # Convert SQL result to API response with defaults
+        # Convert SQL result to API response (all fields now come from SQL)
         response_data = GetPersonaNewApiResponse.model_validate(
             {
                 **result.model_dump(),
-                "name": "",
-                "description": "",
-                "department_ids": default_department_ids,
-                "active": True,
-                "color": preset_colors_filtered[0]["hex"] if preset_colors_filtered else "#3B82F6",
-                "icon": suggested_icons[0] if suggested_icons else "Sparkles",
-                "instructions": "",
-                "text_agent_id": default_text_agent_id,
-                "voice_agent_id": None,
-                "in_use": False,
-                "scenario_count": 0,
-                "can_edit": can_edit_default,
-                "can_duplicate": False,
-                "can_delete": False,
                 "preset_colors": preset_colors_filtered,
                 "suggested_icons": suggested_icons,
                 "valid_icons": valid_icons,
-                "debug_info": [],
             }
         )
 

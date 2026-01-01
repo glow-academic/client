@@ -6,6 +6,7 @@
 
 "use client";
 
+import { cn } from "@/lib/utils";
 import type { Parser } from "nuqs";
 import { useQueryStates, type Values } from "nuqs";
 import * as React from "react";
@@ -105,7 +106,7 @@ export function GenericForm<T extends Record<string, Parser<unknown>>>({
   );
 
   return (
-    <div className={className}>
+    <div className={cn("space-y-8", className)}>
       {steps.map((step, index) => {
         const stepNumber = index + 1;
         const stepStatus = stepStatuses[step.id] || "pending";

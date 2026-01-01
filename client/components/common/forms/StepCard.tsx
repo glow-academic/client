@@ -51,6 +51,13 @@ export interface StepCardProps {
     value: boolean;
     onChange: (value: boolean) => void;
   }>;
+  // Optional editable title (replaces static stepTitle)
+  editableTitle?: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    defaultName?: string;
+  };
   children: React.ReactNode;
 }
 
@@ -67,6 +74,7 @@ export function StepCard({
   onSearchChange,
   searchPlaceholder,
   filters,
+  editableTitle,
   children,
 }: StepCardProps) {
   // Local temporary state for filter values (until Apply is clicked)
@@ -139,9 +147,47 @@ export function StepCard({
               <span>{stepNumber}</span>
             )}
           </div>
-          <div>
-            <CardTitle className="text-lg">{stepTitle}</CardTitle>
-            <CardDescription>{stepDescription}</CardDescription>
+          <div className="flex-1">
+            {editableTitle ? (
+              <>
+                <input
+                  type="text"
+                  value={editableTitle.value || ""}
+                  onChange={(e) => editableTitle.onChange(e.target.value)}
+                  onFocus={(e) => {
+                    if (
+                      editableTitle.defaultName &&
+                      e.target.value === editableTitle.defaultName
+                    ) {
+                      e.target.select();
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // If empty on blur, revert to default name
+                    if (
+                      editableTitle.defaultName &&
+                      (!e.target.value || e.target.value.trim() === "")
+                    ) {
+                      editableTitle.onChange(editableTitle.defaultName);
+                    }
+                  }}
+                  className="w-full text-lg font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                  placeholder={editableTitle.placeholder || stepTitle}
+                  disabled={isReadonly}
+                />
+                <p className="text-xs text-muted-foreground mt-1 px-2">
+                  {editableTitle.value === editableTitle.defaultName ||
+                  !editableTitle.value
+                    ? "Click to edit"
+                    : "Click to edit"}
+                </p>
+              </>
+            ) : (
+              <>
+                <CardTitle className="text-lg">{stepTitle}</CardTitle>
+                <CardDescription>{stepDescription}</CardDescription>
+              </>
+            )}
           </div>
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}

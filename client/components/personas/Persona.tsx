@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 
 import type {
   CreatePersonaIn,
@@ -81,13 +80,12 @@ export default function Persona({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primary_department_id || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primary_department_id]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentExamples, setCurrentExamples] = useState<string[]>([]);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -95,6 +93,77 @@ export default function Persona({
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
+
+  // Convert departments array to department_mapping Record (for GenericPicker)
+  const departmentMapping = useMemo(() => {
+    // Check if department_mapping already exists (edit mode)
+    if (
+      personaData &&
+      "department_mapping" in personaData &&
+      (
+        personaData as PersonaDetailOut & {
+          department_mapping?: Record<string, unknown>;
+        }
+      ).department_mapping
+    ) {
+      return (
+        (
+          personaData as PersonaDetailOut & {
+            department_mapping?: Record<
+              string,
+              { id: string; name: string; description?: string }
+            >;
+          }
+        ).department_mapping || {}
+      );
+    }
+    // Convert departments array to mapping (new mode)
+    if (
+      personaData &&
+      "departments" in personaData &&
+      Array.isArray(
+        (
+          personaData as PersonaNewOut & {
+            departments?: Array<{
+              department_id: string;
+              name: string;
+              description?: string;
+            }>;
+          }
+        ).departments
+      )
+    ) {
+      const departments =
+        (
+          personaData as PersonaNewOut & {
+            departments?: Array<{
+              department_id: string;
+              name: string;
+              description?: string;
+            }>;
+          }
+        ).departments || [];
+      const mapping: Record<
+        string,
+        { id: string; name: string; description?: string }
+      > = {};
+      departments.forEach((dept) => {
+        if (dept.department_id) {
+          mapping[dept.department_id] = {
+            id: dept.department_id,
+            name: dept.name || "",
+            ...(dept.description ? { description: dept.description } : {}),
+          };
+        }
+      });
+      return mapping;
+    }
+    return {};
+  }, [personaData]);
+
+  // Local state for search inputs (for immediate filtering, debounced updates to URL)
+  const [localColorSearch, setLocalColorSearch] = useState<string>("");
+  const [localIconSearch, setLocalIconSearch] = useState<string>("");
 
   // Inline parsers for URL-backed state (client-side only - no server-side parsing needed)
   const personaSearchParamsClient = {
@@ -107,7 +176,8 @@ export default function Persona({
     departmentIds: parseAsArrayOf(parseAsString),
     parameterIds: parseAsArrayOf(parseAsString),
     parameterFieldIds: parseAsArrayOf(parseAsString),
-    // Search params (URL-backed)
+    examples: parseAsArrayOf(parseAsString),
+    // Search params (URL-backed, updated via debounced callback)
     colorSearch: parseAsString,
     iconSearch: parseAsString,
   } as const;
@@ -118,21 +188,61 @@ export default function Persona({
     shallow: false,
   });
 
-  // Debounce search terms before updating URL params (triggers server-side re-fetch via Next.js)
-  useDebouncedSearch(
-    formData.colorSearch,
-    (term) => setFormData({ colorSearch: term || null }),
-    300
-  );
-  useDebouncedSearch(
-    formData.iconSearch,
-    (term) => setFormData({ iconSearch: term || null }),
-    300
+  // Sync local search state with URL params (for browser back/forward navigation)
+  useEffect(() => {
+    if (formData.colorSearch !== undefined) {
+      setLocalColorSearch(formData.colorSearch || "");
+    }
+  }, [formData.colorSearch]);
+
+  useEffect(() => {
+    if (formData.iconSearch !== undefined) {
+      setLocalIconSearch(formData.iconSearch || "");
+    }
+  }, [formData.iconSearch]);
+
+  // Debounced callbacks to update URL params (prevents infinite loops)
+  const colorSearchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const iconSearchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedUpdateColorSearch = useCallback(
+    (term: string) => {
+      if (colorSearchTimeoutRef.current) {
+        clearTimeout(colorSearchTimeoutRef.current);
+      }
+      colorSearchTimeoutRef.current = setTimeout(() => {
+        setFormData({ colorSearch: term || null });
+      }, 300);
+    },
+    [setFormData]
   );
 
-  // Get preset colors and valid icons from server (already filtered)
+  const debouncedUpdateIconSearch = useCallback(
+    (term: string) => {
+      if (iconSearchTimeoutRef.current) {
+        clearTimeout(iconSearchTimeoutRef.current);
+      }
+      iconSearchTimeoutRef.current = setTimeout(() => {
+        setFormData({ iconSearch: term || null });
+      }, 300);
+    },
+    [setFormData]
+  );
+
+  // Handle search changes (immediate local update + debounced URL update)
+  const handleColorSearchChange = (term: string) => {
+    setLocalColorSearch(term);
+    debouncedUpdateColorSearch(term);
+  };
+
+  const handleIconSearchChange = (term: string) => {
+    setLocalIconSearch(term);
+    debouncedUpdateIconSearch(term);
+  };
+
+  // Get preset colors and valid icons from server (all colors/icons, filtered client-side)
   // Server returns colors as list of objects: [{hex: "#ef4444", name: "Red"}, ...]
-  const presetColors = useMemo(() => {
+  const presetColorsAll = useMemo(() => {
     const colors =
       (
         personaData as PersonaDetailOut & {
@@ -148,7 +258,20 @@ export default function Persona({
     return colors as Array<{ hex: string; name: string }>;
   }, [personaData]);
 
-  const suggestedIcons = useMemo(
+  // Filter colors client-side based on local search state
+  const presetColors = useMemo(() => {
+    if (!localColorSearch.trim()) {
+      return presetColorsAll;
+    }
+    const searchLower = localColorSearch.toLowerCase();
+    return presetColorsAll.filter(
+      (color) =>
+        color.name.toLowerCase().includes(searchLower) ||
+        color.hex.toLowerCase().includes(searchLower)
+    );
+  }, [presetColorsAll, localColorSearch]);
+
+  const suggestedIconsAll = useMemo(
     () =>
       (
         personaData as PersonaDetailOut & {
@@ -158,7 +281,7 @@ export default function Persona({
     [personaData]
   );
 
-  const validIcons = useMemo(
+  const validIconsAll = useMemo(
     () =>
       (
         personaData as PersonaDetailOut & {
@@ -169,13 +292,26 @@ export default function Persona({
   );
 
   // Combine suggested icons first, then valid icons
-  const allIcons = useMemo(() => {
-    const suggestedSet = new Set(suggestedIcons);
-    const otherIcons = validIcons.filter(
+  const allIconsAll = useMemo(() => {
+    const suggestedSet = new Set(suggestedIconsAll);
+    const otherIcons = validIconsAll.filter(
       (iconName) => !suggestedSet.has(iconName)
     );
-    return [...suggestedIcons, ...otherIcons];
-  }, [suggestedIcons, validIcons]);
+    return [...suggestedIconsAll, ...otherIcons].filter(
+      (iconName) => iconName in PERSONA_ICON_MAP
+    );
+  }, [suggestedIconsAll, validIconsAll]);
+
+  // Filter icons client-side based on local search state
+  const allIcons = useMemo(() => {
+    if (!localIconSearch.trim()) {
+      return allIconsAll;
+    }
+    const searchLower = localIconSearch.toLowerCase();
+    return allIconsAll.filter((icon) =>
+      icon.toLowerCase().includes(searchLower)
+    );
+  }, [allIconsAll, localIconSearch]);
 
   // Extract body types for type safety
   type CreatePersonaBody = CreatePersonaIn extends { body: infer B }
@@ -337,14 +473,27 @@ export default function Persona({
   useEffect(() => {
     if (!personaData || hasInitializedRef.current) return;
 
-    // Only initialize if formData is empty (no URL params set)
-    const hasUrlData =
-      formData["name"] || formData["description"] || formData["color"];
-    if (hasUrlData) {
+    // Check if URL has any form field params (if so, URL is source of truth, don't initialize)
+    const hasUrlFormData =
+      formData["name"] ||
+      formData["description"] ||
+      formData["color"] ||
+      formData["icon"] ||
+      formData["active"] !== undefined ||
+      formData["instructions"] ||
+      formData["departmentIds"] ||
+      formData["parameterIds"] ||
+      formData["parameterFieldIds"] ||
+      formData["examples"];
+
+    if (hasUrlFormData) {
+      // URL params exist - they are the source of truth, don't override
       hasInitializedRef.current = true;
       return;
     }
 
+    // URL is clean - initialize from server data, but only set fields that aren't already in URL
+    // This prevents writing defaults to URL when URL is clean
     if (isEditMode && "department_ids" in personaData) {
       const personaDetail = personaData as PersonaDetailOut;
       const deptIds = personaDetail.department_ids || [];
@@ -353,67 +502,61 @@ export default function Persona({
           ?.example_ids || [];
       const examples = getExamplesFromMapping(exampleIds, exampleMapping);
 
-      setFormData({
-        name: personaDetail.name || null,
-        description: personaDetail.description || null,
-        instructions: personaDetail.instructions || null,
-        color: personaDetail.color || "#000000",
-        icon: personaDetail.icon || "Zap",
-        active: personaDetail.active ?? true,
-        departmentIds: deptIds.length > 0 ? deptIds : null,
-        parameterIds:
-          (
-            personaDetail as PersonaDetailOut & {
-              linked_parameter_ids?: string[];
-            }
-          ).linked_parameter_ids &&
-          (
-            personaDetail as PersonaDetailOut & {
-              linked_parameter_ids?: string[];
-            }
-          ).linked_parameter_ids!.length > 0
-            ? (
-                personaDetail as PersonaDetailOut & {
-                  linked_parameter_ids?: string[];
-                }
-              ).linked_parameter_ids!
-            : null,
-        parameterFieldIds:
-          (
-            personaDetail as PersonaDetailOut & {
-              parameter_field_ids?: string[];
-            }
-          ).parameter_field_ids &&
-          (
-            personaDetail as PersonaDetailOut & {
-              parameter_field_ids?: string[];
-            }
-          ).parameter_field_ids!.length > 0
-            ? (
-                personaDetail as PersonaDetailOut & {
-                  parameter_field_ids?: string[];
-                }
-              ).parameter_field_ids!
-            : null,
-      });
-      setCurrentExamples(examples);
+      // Only set fields that have values (don't write nulls/empty strings to URL)
+      const updates: Record<string, unknown> = {};
+      if (personaDetail.name) updates["name"] = personaDetail.name;
+      if (personaDetail.description)
+        updates["description"] = personaDetail.description;
+      if (personaDetail.instructions)
+        updates["instructions"] = personaDetail.instructions;
+      if (personaDetail.color) updates["color"] = personaDetail.color;
+      if (personaDetail.icon) updates["icon"] = personaDetail.icon;
+      if (personaDetail.active !== undefined)
+        updates["active"] = personaDetail.active;
+      if (deptIds.length > 0) updates["departmentIds"] = deptIds;
+      if (
+        (
+          personaDetail as PersonaDetailOut & {
+            linked_parameter_ids?: string[];
+          }
+        )?.linked_parameter_ids &&
+        (
+          personaDetail as PersonaDetailOut & {
+            linked_parameter_ids?: string[];
+          }
+        ).linked_parameter_ids!.length > 0
+      ) {
+        updates["parameterIds"] = (
+          personaDetail as PersonaDetailOut & {
+            linked_parameter_ids?: string[];
+          }
+        ).linked_parameter_ids!;
+      }
+      if (
+        (personaDetail as PersonaDetailOut & { parameter_field_ids?: string[] })
+          ?.parameter_field_ids &&
+        (
+          personaDetail as PersonaDetailOut & {
+            parameter_field_ids?: string[];
+          }
+        ).parameter_field_ids!.length > 0
+      ) {
+        updates["parameterFieldIds"] = (
+          personaDetail as PersonaDetailOut & {
+            parameter_field_ids?: string[];
+          }
+        ).parameter_field_ids!;
+      }
+      if (examples.length > 0) updates["examples"] = examples;
+
+      // Only update if we have fields to set
+      if (Object.keys(updates).length > 0) {
+        setFormData(updates);
+      }
     } else {
-      // For create mode, use defaults from the API response
-      const personaNew = personaData as PersonaNewOut;
-      setFormData({
-        name: null,
-        description: null,
-        instructions:
-          (personaNew as { instructions?: string }).instructions || null,
-        color: (personaNew as { color?: string }).color || "#000000",
-        icon: (personaNew as { icon?: string }).icon || "Zap",
-        active: true,
-        departmentIds:
-          defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
-        parameterIds: null,
-        parameterFieldIds: null,
-      });
-      setCurrentExamples([]);
+      // For create mode, don't write defaults to URL - let API defaults be used internally
+      // Only set fields if user explicitly changes them (which will write to URL)
+      // This keeps URL clean when visiting /create/personas/new
     }
 
     hasInitializedRef.current = true;
@@ -554,7 +697,7 @@ export default function Persona({
             icon: (formData["icon"] as string | null | undefined) || "Zap",
             active: (formData["active"] as boolean | null | undefined) ?? true,
             department_ids: finalDepartmentIds,
-            example_ids: currentExamples.filter((ex) => ex.trim()),
+            example_ids: (formData.examples || []).filter((ex) => ex.trim()),
             // profileId comes from X-Profile-Id header automatically
           },
           {
@@ -709,37 +852,17 @@ export default function Persona({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
+                      editableTitle={{
+                        value:
+                          (stepFormData["name"] as string | null | undefined) ??
+                          "",
+                        onChange: (value) =>
+                          setStepFormData({ name: value || null }),
+                        placeholder: "e.g., Enthusiastic Student",
+                        defaultName: "New Persona",
+                      }}
                     >
                       <div className="space-y-4">
-                        {/* Name Input */}
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Name *</Label>
-                          <Input
-                            type="text"
-                            id="name"
-                            data-testid="input-persona-name"
-                            value={
-                              (stepFormData["name"] as
-                                | string
-                                | null
-                                | undefined) || ""
-                            }
-                            onChange={(e) =>
-                              setStepFormData({
-                                name: e.target.value || null,
-                              })
-                            }
-                            placeholder="e.g., Enthusiastic Student"
-                            required
-                            disabled={isReadonly}
-                            className="text-lg font-semibold"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            {!stepFormData["name"]
-                              ? "Name is required"
-                              : "Enter a descriptive name for the persona"}
-                          </p>
-                        </div>
                         <div className="space-y-2">
                           <Label htmlFor="description">Description *</Label>
                           <Textarea
@@ -769,16 +892,7 @@ export default function Persona({
                           <div className="space-y-2">
                             <Label htmlFor="department">Department</Label>
                             <GenericPicker
-                              items={
-                                (
-                                  personaData as PersonaDetailOut & {
-                                    department_mapping?: Record<
-                                      string,
-                                      unknown
-                                    >;
-                                  }
-                                )?.department_mapping || {}
-                              }
+                              items={departmentMapping}
                               itemIds={
                                 (
                                   personaData as PersonaDetailOut & {
@@ -902,10 +1016,13 @@ export default function Persona({
                                   (stepFormData["active"] as
                                     | boolean
                                     | null
-                                    | undefined) ?? true
+                                    | undefined) ??
+                                  (personaData as { active?: boolean })
+                                    ?.active ??
+                                  true
                                 }
                                 onCheckedChange={(checked) =>
-                                  setStepFormData({ active: checked || null })
+                                  setStepFormData({ active: checked })
                                 }
                                 disabled={isReadonly}
                               />
@@ -921,9 +1038,16 @@ export default function Persona({
                   );
 
                 case "color": {
+                  // Use URL param if present, otherwise use API default
+                  // Check if explicitly set (even if null) vs undefined (not set yet)
+                  const colorValue = stepFormData["color"] as
+                    | string
+                    | null
+                    | undefined;
                   const currentColor =
-                    (stepFormData["color"] as string | null | undefined) ||
-                    "#000000";
+                    colorValue !== undefined
+                      ? colorValue
+                      : (personaData as { color?: string })?.color || "#000000";
 
                   const handleHexInputChange = (
                     e: React.ChangeEvent<HTMLInputElement>
@@ -945,19 +1069,23 @@ export default function Persona({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      searchTerm={formData.colorSearch || ""}
-                      onSearchChange={(term) =>
-                        setFormData({ colorSearch: term || null })
-                      }
+                      searchTerm={localColorSearch}
+                      onSearchChange={handleColorSearchChange}
                       searchPlaceholder="Search colors..."
                     >
                       {presetColors.length > 0 && (
                         <SelectableGrid<{ hex: string; name: string }>
                           items={presetColors}
                           selectedId={currentColor}
-                          onSelect={(colorHex) =>
-                            setStepFormData({ color: colorHex || null })
-                          }
+                          onSelect={(colorHex) => {
+                            const current = stepFormData["color"] as
+                              | string
+                              | null
+                              | undefined;
+                            setStepFormData({
+                              color: colorHex === current ? null : colorHex,
+                            });
+                          }}
                           getId={(color) => color.hex}
                           renderItem={(color, isSelected) => (
                             <div
@@ -1002,7 +1130,7 @@ export default function Persona({
                         <div className="flex gap-2">
                           <Input
                             id="colorInput"
-                            value={currentColor}
+                            value={currentColor || ""}
                             onChange={handleHexInputChange}
                             placeholder="#000000"
                             className="flex-1"
@@ -1010,7 +1138,9 @@ export default function Persona({
                           />
                           <div
                             className="w-10 h-10 rounded border"
-                            style={{ backgroundColor: currentColor }}
+                            style={{
+                              backgroundColor: currentColor || "#000000",
+                            }}
                           />
                         </div>
                       </div>
@@ -1019,9 +1149,16 @@ export default function Persona({
                 }
 
                 case "icon": {
+                  // Use URL param if present, otherwise use API default
+                  // Check if explicitly set (even if null) vs undefined (not set yet)
+                  const iconValue = stepFormData["icon"] as
+                    | string
+                    | null
+                    | undefined;
                   const currentIcon =
-                    (stepFormData["icon"] as string | null | undefined) ||
-                    "Zap";
+                    iconValue !== undefined
+                      ? iconValue
+                      : (personaData as { icon?: string })?.icon || "Zap";
 
                   return (
                     <StepCard
@@ -1031,18 +1168,22 @@ export default function Persona({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      searchTerm={formData.iconSearch || ""}
-                      onSearchChange={(term) =>
-                        setFormData({ iconSearch: term || null })
-                      }
+                      searchTerm={localIconSearch}
+                      onSearchChange={handleIconSearchChange}
                       searchPlaceholder="Search icons..."
                     >
                       <SelectableGrid
                         items={allIcons}
                         selectedId={currentIcon}
-                        onSelect={(icon) =>
-                          setStepFormData({ icon: icon || null })
-                        }
+                        onSelect={(icon) => {
+                          const current = stepFormData["icon"] as
+                            | string
+                            | null
+                            | undefined;
+                          setStepFormData({
+                            icon: icon === current ? null : icon,
+                          });
+                        }}
                         getId={(icon) => icon}
                         renderItem={(iconName, isSelected) => {
                           const IconComponent =
@@ -1051,7 +1192,8 @@ export default function Persona({
                             ];
                           if (!IconComponent) return null;
 
-                          const isSuggested = suggestedIcons.includes(iconName);
+                          const isSuggested =
+                            suggestedIconsAll.includes(iconName);
 
                           return (
                             <div
@@ -1138,8 +1280,12 @@ export default function Persona({
                           communication style
                         </p>
                         <ReorderableList
-                          items={currentExamples}
-                          onItemsChange={setCurrentExamples}
+                          items={formData.examples || []}
+                          onItemsChange={(items) =>
+                            setFormData({
+                              examples: items.length > 0 ? items : null,
+                            })
+                          }
                           suggestions={examplesHistory}
                           maxItems={10}
                           addButtonLabel="Add example"

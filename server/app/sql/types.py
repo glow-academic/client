@@ -11787,6 +11787,14 @@ class QGetPersonaNewV4Agent(BaseModel):
 
 
 
+class QGetPersonaNewV4Color(BaseModel):
+
+    hex: str | None
+    name: str | None
+
+
+
+
 class QGetPersonaNewV4Department(BaseModel):
 
     department_id: UUID | None
@@ -11831,6 +11839,21 @@ class GetPersonaNewSqlRow(BaseModel):
     agents: list[QGetPersonaNewV4Agent] | None = None
     parameters: list[QGetPersonaNewV4Parameter] | None = None
     fields: list[QGetPersonaNewV4Field] | None = None
+    preset_colors: list[QGetPersonaNewV4Color] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    active: bool | None = None
+    color: str | None = None
+    icon: str | None = None
+    instructions: str | None = None
+    in_use: bool | None = None
+    scenario_count: int | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
 
 class GetPersonaNewApiRequest(BaseModel):
 
@@ -11850,6 +11873,21 @@ class GetPersonaNewApiResponse(BaseModel):
     agents: list[QGetPersonaNewV4Agent] | None = None
     parameters: list[QGetPersonaNewV4Parameter] | None = None
     fields: list[QGetPersonaNewV4Field] | None = None
+    preset_colors: list[QGetPersonaNewV4Color] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    active: bool | None = None
+    color: str | None = None
+    icon: str | None = None
+    instructions: str | None = None
+    in_use: bool | None = None
+    scenario_count: int | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
 
 
 

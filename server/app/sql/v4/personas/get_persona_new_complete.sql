@@ -69,6 +69,11 @@ CREATE TYPE types.q_get_persona_new_v4_field AS (
     parameter_name text
 );
 
+CREATE TYPE types.q_get_persona_new_v4_color AS (
+    hex text,
+    name text
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_persona_new_v4(
     profile_id uuid,
@@ -86,7 +91,22 @@ RETURNS TABLE (
     departments types.q_get_persona_new_v4_department[],
     agents types.q_get_persona_new_v4_agent[],
     parameters types.q_get_persona_new_v4_parameter[],
-    fields types.q_get_persona_new_v4_field[]
+    fields types.q_get_persona_new_v4_field[],
+    preset_colors types.q_get_persona_new_v4_color[],
+    suggested_icons text[],
+    valid_icons text[],
+    name text,
+    description text,
+    department_ids uuid[],
+    active boolean,
+    color text,
+    icon text,
+    instructions text,
+    in_use boolean,
+    scenario_count int,
+    can_edit boolean,
+    can_duplicate boolean,
+    can_delete boolean
 )
 LANGUAGE sql
 STABLE
@@ -112,7 +132,7 @@ department_mapping_data AS (
         d.title as name,
         COALESCE(d.description, '') as description
     FROM params x
-    JOIN departments d ON d.active = true
+    JOIN departments d ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = x.profile_id
 ),
@@ -218,7 +238,47 @@ SELECT
             ORDER BY fmd.name
         ) FROM field_mapping_data fmd),
         '{}'::types.q_get_persona_new_v4_field[]
-    ) as fields
+    ) as fields,
+    -- Hardcoded preset colors (all colors, filtering happens client-side or in Python)
+    ARRAY[
+        ('#EF4444', 'Red')::types.q_get_persona_new_v4_color,
+        ('#F97316', 'Orange')::types.q_get_persona_new_v4_color,
+        ('#F59E0B', 'Amber')::types.q_get_persona_new_v4_color,
+        ('#10B981', 'Emerald')::types.q_get_persona_new_v4_color,
+        ('#3B82F6', 'Blue')::types.q_get_persona_new_v4_color,
+        ('#6366F1', 'Indigo')::types.q_get_persona_new_v4_color,
+        ('#8B5CF6', 'Violet')::types.q_get_persona_new_v4_color,
+        ('#EC4899', 'Pink')::types.q_get_persona_new_v4_color
+    ]::types.q_get_persona_new_v4_color[] as preset_colors,
+    -- Hardcoded suggested icons
+    ARRAY['Sparkles', 'Zap', 'Star', 'Heart', 'Users']::text[] as suggested_icons,
+    -- Hardcoded valid icons
+    ARRAY[
+        'Activity', 'Anchor', 'Award', 'Bell', 'Book', 'Briefcase', 'Calendar', 'Camera',
+        'ChevronRight', 'Clock', 'Cloud', 'Code', 'Compass', 'Database', 'FileText', 'Globe',
+        'Mail', 'Mic', 'Monitor', 'Phone', 'Radio', 'Search', 'Settings', 'Shield', 'Video', 'Wifi'
+    ]::text[] as valid_icons,
+    -- Default values for new persona
+    ''::text as name,
+    ''::text as description,
+    CASE 
+        WHEN up.user_role = 'superadmin' THEN NULL::uuid[]
+        ELSE COALESCE(ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
+    END as department_ids,
+    true::boolean as active,
+    '#3B82F6'::text as color,
+    'Sparkles'::text as icon,
+    ''::text as instructions,
+    false::boolean as in_use,
+    0::int as scenario_count,
+    -- can_edit: true for superadmin, or if default_department_ids is not empty
+    CASE 
+        WHEN up.user_role = 'superadmin' THEN true
+        WHEN (SELECT department_id FROM primary_department_id_data) IS NOT NULL THEN true
+        ELSE false
+    END::boolean as can_edit,
+    false::boolean as can_duplicate,
+    false::boolean as can_delete
 FROM user_profile up
 CROSS JOIN valid_department_ids_data vdid
 CROSS JOIN valid_agent_ids_data vaid

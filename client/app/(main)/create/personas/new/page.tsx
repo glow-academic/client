@@ -9,7 +9,12 @@ import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsString } from "nuqs/server";
+import {
+  createLoader,
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+} from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonaNewIn = InputOf<"/api/v4/personas/new", "post">;
@@ -69,8 +74,20 @@ export default async function NewPersonaPage({
     }
   });
 
-  // Inline server-side parsers for persona search params
+  // Inline server-side parsers for persona search params (matches client-side parsers)
   const personaSearchParams = {
+    // Form fields (read from URL if present)
+    name: parseAsString,
+    description: parseAsString,
+    color: parseAsString,
+    icon: parseAsString,
+    instructions: parseAsString,
+    active: parseAsBoolean,
+    departmentIds: parseAsArrayOf(parseAsString),
+    parameterIds: parseAsArrayOf(parseAsString),
+    parameterFieldIds: parseAsArrayOf(parseAsString),
+    examples: parseAsArrayOf(parseAsString),
+    // Search/filter params
     colorSearch: parseAsString,
     iconSearch: parseAsString,
   };
@@ -78,14 +95,23 @@ export default async function NewPersonaPage({
   const q = loadPersonaSearchParams(searchParamsObj);
 
   // Fetch default persona detail server-side with filter params
-  // Note: OpenAPI schema may need regeneration to include color_search/icon_search
-  const input: PersonaNewIn = {
+  // Note: OpenAPI schema needs regeneration to include body type for this endpoint
+  const input = {
     body: {
       color_search: q.colorSearch ?? null,
       icon_search: q.iconSearch ?? null,
-    } as PersonaNewIn["body"],
+    },
+  } as unknown as PersonaNewIn;
+  const personaDetailDefaultRaw = await getPersonaDefault(input);
+
+  // Override API defaults with URL params if present (URL params take precedence)
+  // Create a new object to avoid mutating the read-only response
+  const personaDetailDefault = {
+    ...personaDetailDefaultRaw,
+    ...(q.color && { color: q.color }),
+    ...(q.icon && { icon: q.icon }),
+    ...(q.active !== null && q.active !== undefined && { active: q.active }),
   };
-  const personaDetailDefault = await getPersonaDefault(input);
 
   return (
     <div
