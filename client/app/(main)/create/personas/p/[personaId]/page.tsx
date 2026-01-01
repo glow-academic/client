@@ -10,7 +10,7 @@ import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonaDetailIn = InputOf<"/api/v4/personas/detail", "post">;
@@ -114,18 +114,26 @@ export default async function PersonaEditPage({
   const personaSearchParams = {
     colorSearch: parseAsString,
     iconSearch: parseAsString,
+    colorShowSelected: parseAsBoolean,
+    iconShowSelected: parseAsBoolean,
+    color: parseAsString,
+    icon: parseAsString,
   };
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
 
   // Fetch persona detail (always fresh - source of truth) with filter params
-  // Note: OpenAPI schema may need regeneration to include color_search/icon_search
+  // Note: OpenAPI schema may need regeneration to include new filter params
   try {
     const input: PersonaDetailIn = {
       body: {
         persona_id: personaId,
         color_search: q.colorSearch ?? null,
         icon_search: q.iconSearch ?? null,
+        color_show_selected: q.colorShowSelected ?? null,
+        icon_show_selected: q.iconShowSelected ?? null,
+        current_color: q.color ?? null,
+        current_icon: q.icon ?? null,
       } as PersonaDetailIn["body"],
     };
     const personaDetail = await getPersona(input);

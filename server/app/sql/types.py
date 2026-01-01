@@ -11627,6 +11627,10 @@ class GetPersonaDetailSqlParams(BaseModel):
     profile_id: UUID
     color_search: str | None = None
     icon_search: str | None = None
+    color_show_selected: bool | None = None
+    icon_show_selected: bool | None = None
+    current_color: str | None = None
+    current_icon: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11634,6 +11638,10 @@ class GetPersonaDetailSqlParams(BaseModel):
             self.profile_id,
             self.color_search,
             self.icon_search,
+            self.color_show_selected,
+            self.icon_show_selected,
+            self.current_color,
+            self.current_icon,
         )
 
 class QGetPersonaDetailV4Agent(BaseModel):
@@ -11642,6 +11650,14 @@ class QGetPersonaDetailV4Agent(BaseModel):
     name: str | None
     description: str | None
     roles: list[str] | None
+
+
+
+
+class QGetPersonaDetailV4Color(BaseModel):
+
+    hex: str | None
+    name: str | None
 
 
 
@@ -11723,12 +11739,19 @@ class GetPersonaDetailSqlRow(BaseModel):
     fields: list[QGetPersonaDetailV4Field] | None = None
     examples: list[QGetPersonaDetailV4Example] | None = None
     examples_history: list[QGetPersonaDetailV4ExampleHistoryItem] | None = None
+    preset_colors: list[QGetPersonaDetailV4Color] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
 
 class GetPersonaDetailApiRequest(BaseModel):
 
     persona_id: UUID
     color_search: str | None = None
     icon_search: str | None = None
+    color_show_selected: bool | None = None
+    icon_show_selected: bool | None = None
+    current_color: str | None = None
+    current_icon: str | None = None
 
 class GetPersonaDetailApiResponse(BaseModel):
 
@@ -11759,6 +11782,9 @@ class GetPersonaDetailApiResponse(BaseModel):
     fields: list[QGetPersonaDetailV4Field] | None = None
     examples: list[QGetPersonaDetailV4Example] | None = None
     examples_history: list[QGetPersonaDetailV4ExampleHistoryItem] | None = None
+    preset_colors: list[QGetPersonaDetailV4Color] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
 
 
 
@@ -11769,12 +11795,20 @@ class GetPersonaNewSqlParams(BaseModel):
     profile_id: UUID
     color_search: str | None = None
     icon_search: str | None = None
+    color_show_selected: bool | None = None
+    icon_show_selected: bool | None = None
+    current_color: str | None = None
+    current_icon: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.color_search,
             self.icon_search,
+            self.color_show_selected,
+            self.icon_show_selected,
+            self.current_color,
+            self.current_icon,
         )
 
 class QGetPersonaNewV4Agent(BaseModel):
@@ -11859,6 +11893,10 @@ class GetPersonaNewApiRequest(BaseModel):
 
     color_search: str | None = None
     icon_search: str | None = None
+    color_show_selected: bool | None = None
+    icon_show_selected: bool | None = None
+    current_color: str | None = None
+    current_icon: str | None = None
 
 class GetPersonaNewApiResponse(BaseModel):
 

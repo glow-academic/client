@@ -40634,6 +40634,50 @@
               }
             ],
             "title": "Icon Search"
+          },
+          "color_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Show Selected"
+          },
+          "icon_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Show Selected"
+          },
+          "current_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Color"
+          },
+          "current_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Icon"
           }
         },
         "type": "object",
@@ -40990,6 +41034,48 @@
               }
             ],
             "title": "Examples History"
+          },
+          "preset_colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaDetailV4Color"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Colors"
+          },
+          "suggested_icons": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Icons"
+          },
+          "valid_icons": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Icons"
           }
         },
         "type": "object",
@@ -41018,6 +41104,50 @@
               }
             ],
             "title": "Icon Search"
+          },
+          "color_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Show Selected"
+          },
+          "icon_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Show Selected"
+          },
+          "current_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Color"
+          },
+          "current_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Icon"
           }
         },
         "type": "object",
@@ -64903,6 +65033,38 @@
           "roles"
         ],
         "title": "QGetPersonaDetailV4Agent"
+      },
+      "QGetPersonaDetailV4Color": {
+        "properties": {
+          "hex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hex"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hex",
+          "name"
+        ],
+        "title": "QGetPersonaDetailV4Color"
       },
       "QGetPersonaDetailV4Department": {
         "properties": {

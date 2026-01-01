@@ -232,6 +232,9 @@ export default function Persona({
     // Search params (URL-backed, updated via debounced callback)
     colorSearch: parseAsString,
     iconSearch: parseAsString,
+    // Filter params (URL-backed)
+    colorShowSelected: parseAsBoolean,
+    iconShowSelected: parseAsBoolean,
   } as const;
 
   // URL-backed state using nuqs (managed by GenericForm, but we need access for initialization)
@@ -1206,6 +1209,12 @@ export default function Persona({
                       ? colorValue
                       : (personaData as { color?: string })?.color || "#000000";
 
+                  const colorShowSelected =
+                    (formData.colorShowSelected as
+                      | boolean
+                      | null
+                      | undefined) ?? false;
+
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1217,6 +1226,15 @@ export default function Persona({
                       searchTerm={localColorSearch}
                       onSearchChange={handleColorSearchChange}
                       searchPlaceholder="Search colors..."
+                      filters={[
+                        {
+                          key: "showSelected",
+                          label: "Show selected",
+                          value: colorShowSelected,
+                          onChange: (value) =>
+                            setFormData({ colorShowSelected: value || null }),
+                        },
+                      ]}
                       actions={
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1334,6 +1352,10 @@ export default function Persona({
                       ? iconValue
                       : (personaData as { icon?: string })?.icon || "Zap";
 
+                  const iconShowSelected =
+                    (formData.iconShowSelected as boolean | null | undefined) ??
+                    false;
+
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1345,6 +1367,15 @@ export default function Persona({
                       searchTerm={localIconSearch}
                       onSearchChange={handleIconSearchChange}
                       searchPlaceholder="Search icons..."
+                      filters={[
+                        {
+                          key: "showSelected",
+                          label: "Show selected",
+                          value: iconShowSelected,
+                          onChange: (value) =>
+                            setFormData({ iconShowSelected: value || null }),
+                        },
+                      ]}
                       actions={
                         <Tooltip>
                           <TooltipTrigger asChild>

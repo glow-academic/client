@@ -90,16 +90,24 @@ export default async function NewPersonaPage({
     // Search/filter params
     colorSearch: parseAsString,
     iconSearch: parseAsString,
+    colorShowSelected: parseAsBoolean,
+    iconShowSelected: parseAsBoolean,
+    color: parseAsString,
+    icon: parseAsString,
   };
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
 
   // Fetch default persona detail server-side with filter params
-  // Note: OpenAPI schema needs regeneration to include body type for this endpoint
+  // Note: OpenAPI schema needs regeneration to include new filter params
   const input = {
     body: {
       color_search: q.colorSearch ?? null,
       icon_search: q.iconSearch ?? null,
+      color_show_selected: q.colorShowSelected ?? null,
+      icon_show_selected: q.iconShowSelected ?? null,
+      current_color: q.color ?? null,
+      current_icon: q.icon ?? null,
     },
   } as unknown as PersonaNewIn;
   const personaDetailDefaultRaw = await getPersonaDefault(input);

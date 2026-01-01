@@ -80,12 +80,21 @@ CREATE TYPE types.q_get_persona_detail_v4_example_history_item AS (
     department_ids text[]
 );
 
+CREATE TYPE types.q_get_persona_detail_v4_color AS (
+    hex text,
+    name text
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_persona_detail_v4(
     persona_id uuid,
     profile_id uuid,
     color_search text DEFAULT NULL,
-    icon_search text DEFAULT NULL
+    icon_search text DEFAULT NULL,
+    color_show_selected boolean DEFAULT NULL,
+    icon_show_selected boolean DEFAULT NULL,
+    current_color text DEFAULT NULL,
+    current_icon text DEFAULT NULL
 )
 RETURNS TABLE (
     persona_exists boolean,
@@ -114,14 +123,24 @@ RETURNS TABLE (
     parameters types.q_get_persona_detail_v4_parameter[],
     fields types.q_get_persona_detail_v4_field[],
     examples types.q_get_persona_detail_v4_example[],
-    examples_history types.q_get_persona_detail_v4_example_history_item[]
+    examples_history types.q_get_persona_detail_v4_example_history_item[],
+    preset_colors types.q_get_persona_detail_v4_color[],
+    suggested_icons text[],
+    valid_icons text[]
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT persona_id AS persona_id,
-           profile_id AS profile_id
+    SELECT 
+        persona_id AS persona_id,
+        profile_id AS profile_id,
+        color_search AS color_search,
+        icon_search AS icon_search,
+        COALESCE(color_show_selected, false) AS color_show_selected,
+        COALESCE(icon_show_selected, false) AS icon_show_selected,
+        current_color AS current_color,
+        current_icon AS current_icon
 ),
 persona_exists_check AS (
     SELECT EXISTS(
@@ -347,6 +366,89 @@ permissions_data AS (
     FROM persona_data pd
     CROSS JOIN usage_data ud
     CROSS JOIN user_profile up
+),
+-- All preset colors (hardcoded - matches detail.py)
+all_preset_colors AS (
+    SELECT * FROM (VALUES
+        ('#ef4444', 'Red'),
+        ('#f97316', 'Orange'),
+        ('#f59e0b', 'Amber'),
+        ('#eab308', 'Yellow'),
+        ('#84cc16', 'Lime'),
+        ('#22c55e', 'Green'),
+        ('#10b981', 'Emerald'),
+        ('#14b8a6', 'Teal'),
+        ('#06b6d4', 'Cyan'),
+        ('#0ea5e9', 'Sky'),
+        ('#3b82f6', 'Blue'),
+        ('#6366f1', 'Indigo'),
+        ('#8b5cf6', 'Violet'),
+        ('#a855f7', 'Purple'),
+        ('#d946ef', 'Fuchsia'),
+        ('#ec4899', 'Pink'),
+        ('#f43f5e', 'Rose')
+    ) AS t(hex, name)
+),
+-- Filtered preset colors based on search and show_selected
+preset_colors_filtered AS (
+    SELECT apc.hex, apc.name
+    FROM all_preset_colors apc
+    CROSS JOIN params p
+    WHERE 
+        -- Search filter: if color_search provided, match name or hex
+        (p.color_search IS NULL OR p.color_search = '' OR
+         LOWER(apc.name) LIKE '%' || LOWER(p.color_search) || '%' OR
+         LOWER(apc.hex) LIKE '%' || LOWER(p.color_search) || '%')
+        -- Show selected filter: if enabled and current_color provided, only show current color
+        AND (
+            NOT p.color_show_selected OR
+            p.current_color IS NULL OR
+            UPPER(apc.hex) = UPPER(COALESCE(p.current_color, ''))
+        )
+),
+-- All suggested icons (hardcoded - matches detail.py)
+all_suggested_icons AS (
+    SELECT unnest(ARRAY['Brain', 'User', 'Users', 'Sparkles', 'Zap', 'Heart', 'Star', 'MessageSquare', 'Bot', 'GraduationCap']) AS icon_name
+),
+-- Filtered suggested icons based on search and show_selected
+suggested_icons_filtered AS (
+    SELECT asi.icon_name
+    FROM all_suggested_icons asi
+    CROSS JOIN params p
+    WHERE 
+        -- Search filter: if icon_search provided, match name
+        (p.icon_search IS NULL OR p.icon_search = '' OR
+         LOWER(asi.icon_name) LIKE '%' || LOWER(p.icon_search) || '%')
+        -- Show selected filter: if enabled and current_icon provided, only show current icon
+        AND (
+            NOT p.icon_show_selected OR
+            p.current_icon IS NULL OR
+            LOWER(asi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
+        )
+),
+-- All valid icons (hardcoded - matches detail.py)
+all_valid_icons AS (
+    SELECT unnest(ARRAY[
+        'Brain', 'User', 'Users', 'Sparkles', 'Zap', 'Heart', 'Star', 'MessageSquare', 'Bot', 'GraduationCap',
+        'Lightbulb', 'Target', 'Award', 'BookOpen', 'Code', 'Cpu', 'Database', 'FileText', 'Globe',
+        'Mail', 'Mic', 'Monitor', 'Phone', 'Radio', 'Search', 'Settings', 'Shield', 'Video', 'Wifi'
+    ]) AS icon_name
+),
+-- Filtered valid icons based on search and show_selected
+valid_icons_filtered AS (
+    SELECT avi.icon_name
+    FROM all_valid_icons avi
+    CROSS JOIN params p
+    WHERE 
+        -- Search filter: if icon_search provided, match name
+        (p.icon_search IS NULL OR p.icon_search = '' OR
+         LOWER(avi.icon_name) LIKE '%' || LOWER(p.icon_search) || '%')
+        -- Show selected filter: if enabled and current_icon provided, only show current icon
+        AND (
+            NOT p.icon_show_selected OR
+            p.current_icon IS NULL OR
+            LOWER(avi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
+        )
 )
 SELECT 
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
@@ -411,7 +513,22 @@ SELECT
         ) FROM example_mapping_data emd),
         '{}'::types.q_get_persona_detail_v4_example[]
     ) as examples,
-    COALESCE((SELECT examples_history FROM examples_history_data), '{}'::types.q_get_persona_detail_v4_example_history_item[]) as examples_history
+    COALESCE((SELECT examples_history FROM examples_history_data), '{}'::types.q_get_persona_detail_v4_example_history_item[]) as examples_history,
+    -- Filtered preset colors (SQL-side filtering)
+    COALESCE(
+        (SELECT ARRAY_AGG((pcf.hex, pcf.name)::types.q_get_persona_detail_v4_color ORDER BY pcf.name) FROM preset_colors_filtered pcf),
+        '{}'::types.q_get_persona_detail_v4_color[]
+    ) as preset_colors,
+    -- Filtered suggested icons (SQL-side filtering)
+    COALESCE(
+        (SELECT ARRAY_AGG(sif.icon_name ORDER BY sif.icon_name) FROM suggested_icons_filtered sif),
+        '{}'::text[]
+    ) as suggested_icons,
+    -- Filtered valid icons (SQL-side filtering)
+    COALESCE(
+        (SELECT ARRAY_AGG(vif.icon_name ORDER BY vif.icon_name) FROM valid_icons_filtered vif),
+        '{}'::text[]
+    ) as valid_icons
 FROM persona_data pd
 CROSS JOIN usage_data ud
 CROSS JOIN user_profile up

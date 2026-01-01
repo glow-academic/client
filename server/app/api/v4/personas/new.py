@@ -9,7 +9,6 @@ from app.main import get_db
 from app.sql.types import (GetPersonaNewApiRequest, GetPersonaNewApiResponse,
                            GetPersonaNewSqlParams, GetPersonaNewSqlRow,
                            load_sql_query)
-from app.utils.color_utils import filter_colors, filter_icons
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -62,15 +61,23 @@ async def get_persona_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Extract search params from API request
+        # Extract search and filter params from API request
         color_search = request.color_search
         icon_search = request.icon_search
+        color_show_selected = request.color_show_selected
+        icon_show_selected = request.icon_show_selected
+        current_color = request.current_color
+        current_icon = request.current_icon
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetPersonaNewSqlParams(
             profile_id=profile_id,
             color_search=color_search,
             icon_search=icon_search,
+            color_show_selected=color_show_selected,
+            icon_show_selected=icon_show_selected,
+            current_color=current_color,
+            current_icon=current_icon,
         )
         sql_params = params.to_tuple()
 
@@ -93,42 +100,10 @@ async def get_persona_new(
                 status_code=400, detail="No accessible departments found for user"
             )
 
-        # Get preset colors, icons from SQL result
-        # preset_colors is list[QGetPersonaNewV4Color] (Pydantic models from composite type)
-        preset_colors_from_sql = result.preset_colors or []
-        suggested_icons_from_sql = result.suggested_icons or []
-        valid_icons_from_sql = result.valid_icons or []
-
-        # Convert Pydantic color models to dicts for easier manipulation
-        preset_colors_dicts = [
-            {"hex": color.hex or "", "name": color.name or ""}
-            for color in preset_colors_from_sql
-        ]
-
-        # Filter colors and icons using server-side utilities if search params provided
-        if color_search:
-            # Extract hex values for filtering
-            preset_colors_hex_list = [color["hex"] for color in preset_colors_dicts if color.get("hex")]
-            preset_colors_filtered = filter_colors(preset_colors_hex_list, color_search)
-        else:
-            # No filtering needed, use colors from SQL
-            preset_colors_filtered = preset_colors_dicts
-
-        if icon_search:
-            suggested_icons = filter_icons(suggested_icons_from_sql, icon_search)
-            valid_icons = filter_icons(valid_icons_from_sql, icon_search)
-        else:
-            # No filtering needed, use icons from SQL
-            suggested_icons = suggested_icons_from_sql
-            valid_icons = valid_icons_from_sql
-
-        # Convert SQL result to API response (all fields now come from SQL)
+        # Convert SQL result to API response (all fields now come from SQL, including filtered colors/icons)
         response_data = GetPersonaNewApiResponse.model_validate(
             {
                 **result.model_dump(),
-                "preset_colors": preset_colors_filtered,
-                "suggested_icons": suggested_icons,
-                "valid_icons": valid_icons,
             }
         )
 

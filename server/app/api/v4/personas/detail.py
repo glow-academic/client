@@ -19,7 +19,6 @@ from app.sql.types import (
     GetPersonaDetailSqlRow,
     load_sql_query,
 )
-from app.utils.color_utils import filter_colors, filter_icons
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/personas/get_persona_detail_complete.sql"
@@ -69,9 +68,13 @@ async def get_persona_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Extract search params from API request
+        # Extract search and filter params from API request
         color_search = request.color_search
         icon_search = request.icon_search
+        color_show_selected = request.color_show_selected
+        icon_show_selected = request.icon_show_selected
+        current_color = request.current_color
+        current_icon = request.current_icon
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetPersonaDetailSqlParams(
@@ -79,6 +82,10 @@ async def get_persona_detail(
             profile_id=profile_id,
             color_search=color_search,
             icon_search=icon_search,
+            color_show_selected=color_show_selected,
+            icon_show_selected=icon_show_selected,
+            current_color=current_color,
+            current_icon=current_icon,
         )
         sql_params = params.to_tuple()
 
@@ -113,86 +120,11 @@ async def get_persona_detail(
                 persona={"name": result.name, "id": str(request.persona_id)},
             )
 
-        # Hardcoded metadata (keep in Python as per original)
-        preset_colors_raw = [
-            "#ef4444",
-            "#f97316",
-            "#f59e0b",
-            "#eab308",
-            "#84cc16",
-            "#22c55e",
-            "#10b981",
-            "#14b8a6",
-            "#06b6d4",
-            "#0ea5e9",
-            "#3b82f6",
-            "#6366f1",
-            "#8b5cf6",
-            "#a855f7",
-            "#d946ef",
-            "#ec4899",
-            "#f43f5e",
-        ]
-
-        suggested_icons_raw = [
-            "Brain",
-            "User",
-            "Users",
-            "Sparkles",
-            "Zap",
-            "Heart",
-            "Star",
-            "MessageSquare",
-            "Bot",
-            "GraduationCap",
-        ]
-
-        valid_icons_raw = [
-            "Brain",
-            "User",
-            "Users",
-            "Sparkles",
-            "Zap",
-            "Heart",
-            "Star",
-            "MessageSquare",
-            "Bot",
-            "GraduationCap",
-            "Lightbulb",
-            "Target",
-            "Award",
-            "BookOpen",
-            "Code",
-            "Cpu",
-            "Database",
-            "FileText",
-            "Globe",
-            "Mail",
-            "Mic",
-            "Monitor",
-            "Phone",
-            "Radio",
-            "Search",
-            "Settings",
-            "Shield",
-            "Video",
-            "Wifi",
-        ]
-
-        # Filter colors and icons using server-side utilities
-        preset_colors = filter_colors(preset_colors_raw, color_search)
-        suggested_icons = filter_icons(suggested_icons_raw, icon_search)
-        valid_icons = filter_icons(valid_icons_raw, icon_search)
-
         # Convert SQL result to API response
-        # Note: preset_colors, suggested_icons, valid_icons are hardcoded in Python
-        # All other fields come from SQL result
+        # Note: preset_colors, suggested_icons, valid_icons now come from SQL (filtered server-side)
         response_data = GetPersonaDetailApiResponse.model_validate(
             {
                 **result.model_dump(),
-                "preset_colors": preset_colors,
-                "suggested_icons": suggested_icons,
-                "valid_icons": valid_icons,
                 "debug_info": [],  # Empty for now
             }
         )

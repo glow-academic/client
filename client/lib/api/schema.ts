@@ -11574,6 +11574,14 @@ export interface components {
             color_search?: string | null;
             /** Icon Search */
             icon_search?: string | null;
+            /** Color Show Selected */
+            color_show_selected?: boolean | null;
+            /** Icon Show Selected */
+            icon_show_selected?: boolean | null;
+            /** Current Color */
+            current_color?: string | null;
+            /** Current Icon */
+            current_icon?: string | null;
         };
         /** GetPersonaDetailApiResponse */
         GetPersonaDetailApiResponse: {
@@ -11631,6 +11639,12 @@ export interface components {
             examples?: components["schemas"]["QGetPersonaDetailV4Example"][] | null;
             /** Examples History */
             examples_history?: components["schemas"]["QGetPersonaDetailV4ExampleHistoryItem"][] | null;
+            /** Preset Colors */
+            preset_colors?: components["schemas"]["QGetPersonaDetailV4Color"][] | null;
+            /** Suggested Icons */
+            suggested_icons?: string[] | null;
+            /** Valid Icons */
+            valid_icons?: string[] | null;
         };
         /** GetPersonaNewApiRequest */
         GetPersonaNewApiRequest: {
@@ -11638,6 +11652,14 @@ export interface components {
             color_search?: string | null;
             /** Icon Search */
             icon_search?: string | null;
+            /** Color Show Selected */
+            color_show_selected?: boolean | null;
+            /** Icon Show Selected */
+            icon_show_selected?: boolean | null;
+            /** Current Color */
+            current_color?: string | null;
+            /** Current Icon */
+            current_icon?: string | null;
         };
         /** GetPersonaNewApiResponse */
         GetPersonaNewApiResponse: {
@@ -16071,6 +16093,13 @@ export interface components {
             description: string | null;
             /** Roles */
             roles: string[] | null;
+        };
+        /** QGetPersonaDetailV4Color */
+        QGetPersonaDetailV4Color: {
+            /** Hex */
+            hex: string | null;
+            /** Name */
+            name: string | null;
         };
         /** QGetPersonaDetailV4Department */
         QGetPersonaDetailV4Department: {

@@ -78,7 +78,11 @@ CREATE TYPE types.q_get_persona_new_v4_color AS (
 CREATE OR REPLACE FUNCTION api_get_persona_new_v4(
     profile_id uuid,
     color_search text DEFAULT NULL,
-    icon_search text DEFAULT NULL
+    icon_search text DEFAULT NULL,
+    color_show_selected boolean DEFAULT NULL,
+    icon_show_selected boolean DEFAULT NULL,
+    current_color text DEFAULT NULL,
+    current_icon text DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
@@ -112,7 +116,14 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        color_search AS color_search,
+        icon_search AS icon_search,
+        COALESCE(color_show_selected, false) AS color_show_selected,
+        COALESCE(icon_show_selected, false) AS icon_show_selected,
+        current_color AS current_color,
+        current_icon AS current_icon
 ),
 user_profile AS (
     SELECT 
@@ -197,6 +208,80 @@ field_mapping_data AS (
 valid_parameter_item_ids_data AS (
     SELECT ARRAY_AGG(field_id ORDER BY name) as valid_parameter_item_ids
     FROM field_mapping_data
+),
+-- All preset colors (hardcoded)
+all_preset_colors AS (
+    SELECT * FROM (VALUES
+        ('#EF4444', 'Red'),
+        ('#F97316', 'Orange'),
+        ('#F59E0B', 'Amber'),
+        ('#10B981', 'Emerald'),
+        ('#3B82F6', 'Blue'),
+        ('#6366F1', 'Indigo'),
+        ('#8B5CF6', 'Violet'),
+        ('#EC4899', 'Pink')
+    ) AS t(hex, name)
+),
+-- Filtered preset colors based on search and show_selected
+preset_colors_filtered AS (
+    SELECT apc.hex, apc.name
+    FROM all_preset_colors apc
+    CROSS JOIN params p
+    WHERE 
+        -- Search filter: if color_search provided, match name or hex
+        (p.color_search IS NULL OR p.color_search = '' OR
+         LOWER(apc.name) LIKE '%' || LOWER(p.color_search) || '%' OR
+         LOWER(apc.hex) LIKE '%' || LOWER(p.color_search) || '%')
+        -- Show selected filter: if enabled and current_color provided, only show current color
+        AND (
+            NOT p.color_show_selected OR
+            p.current_color IS NULL OR
+            UPPER(apc.hex) = UPPER(COALESCE(p.current_color, ''))
+        )
+),
+-- All suggested icons (hardcoded)
+all_suggested_icons AS (
+    SELECT unnest(ARRAY['Sparkles', 'Zap', 'Star', 'Heart', 'Users']) AS icon_name
+),
+-- Filtered suggested icons based on search and show_selected
+suggested_icons_filtered AS (
+    SELECT asi.icon_name
+    FROM all_suggested_icons asi
+    CROSS JOIN params p
+    WHERE 
+        -- Search filter: if icon_search provided, match name
+        (p.icon_search IS NULL OR p.icon_search = '' OR
+         LOWER(asi.icon_name) LIKE '%' || LOWER(p.icon_search) || '%')
+        -- Show selected filter: if enabled and current_icon provided, only show current icon
+        AND (
+            NOT p.icon_show_selected OR
+            p.current_icon IS NULL OR
+            LOWER(asi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
+        )
+),
+-- All valid icons (hardcoded)
+all_valid_icons AS (
+    SELECT unnest(ARRAY[
+        'Activity', 'Anchor', 'Award', 'Bell', 'Book', 'Briefcase', 'Calendar', 'Camera',
+        'ChevronRight', 'Clock', 'Cloud', 'Code', 'Compass', 'Database', 'FileText', 'Globe',
+        'Mail', 'Mic', 'Monitor', 'Phone', 'Radio', 'Search', 'Settings', 'Shield', 'Video', 'Wifi'
+    ]) AS icon_name
+),
+-- Filtered valid icons based on search and show_selected
+valid_icons_filtered AS (
+    SELECT avi.icon_name
+    FROM all_valid_icons avi
+    CROSS JOIN params p
+    WHERE 
+        -- Search filter: if icon_search provided, match name
+        (p.icon_search IS NULL OR p.icon_search = '' OR
+         LOWER(avi.icon_name) LIKE '%' || LOWER(p.icon_search) || '%')
+        -- Show selected filter: if enabled and current_icon provided, only show current icon
+        AND (
+            NOT p.icon_show_selected OR
+            p.current_icon IS NULL OR
+            LOWER(avi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
+        )
 )
 SELECT 
     up.actor_name::text as actor_name,
@@ -239,25 +324,21 @@ SELECT
         ) FROM field_mapping_data fmd),
         '{}'::types.q_get_persona_new_v4_field[]
     ) as fields,
-    -- Hardcoded preset colors (all colors, filtering happens client-side or in Python)
-    ARRAY[
-        ('#EF4444', 'Red')::types.q_get_persona_new_v4_color,
-        ('#F97316', 'Orange')::types.q_get_persona_new_v4_color,
-        ('#F59E0B', 'Amber')::types.q_get_persona_new_v4_color,
-        ('#10B981', 'Emerald')::types.q_get_persona_new_v4_color,
-        ('#3B82F6', 'Blue')::types.q_get_persona_new_v4_color,
-        ('#6366F1', 'Indigo')::types.q_get_persona_new_v4_color,
-        ('#8B5CF6', 'Violet')::types.q_get_persona_new_v4_color,
-        ('#EC4899', 'Pink')::types.q_get_persona_new_v4_color
-    ]::types.q_get_persona_new_v4_color[] as preset_colors,
-    -- Hardcoded suggested icons
-    ARRAY['Sparkles', 'Zap', 'Star', 'Heart', 'Users']::text[] as suggested_icons,
-    -- Hardcoded valid icons
-    ARRAY[
-        'Activity', 'Anchor', 'Award', 'Bell', 'Book', 'Briefcase', 'Calendar', 'Camera',
-        'ChevronRight', 'Clock', 'Cloud', 'Code', 'Compass', 'Database', 'FileText', 'Globe',
-        'Mail', 'Mic', 'Monitor', 'Phone', 'Radio', 'Search', 'Settings', 'Shield', 'Video', 'Wifi'
-    ]::text[] as valid_icons,
+    -- Filtered preset colors (SQL-side filtering)
+    COALESCE(
+        (SELECT ARRAY_AGG((pcf.hex, pcf.name)::types.q_get_persona_new_v4_color ORDER BY pcf.name) FROM preset_colors_filtered pcf),
+        '{}'::types.q_get_persona_new_v4_color[]
+    ) as preset_colors,
+    -- Filtered suggested icons (SQL-side filtering)
+    COALESCE(
+        (SELECT ARRAY_AGG(sif.icon_name ORDER BY sif.icon_name) FROM suggested_icons_filtered sif),
+        '{}'::text[]
+    ) as suggested_icons,
+    -- Filtered valid icons (SQL-side filtering)
+    COALESCE(
+        (SELECT ARRAY_AGG(vif.icon_name ORDER BY vif.icon_name) FROM valid_icons_filtered vif),
+        '{}'::text[]
+    ) as valid_icons,
     -- Default values for new persona
     ''::text as name,
     ''::text as description,
