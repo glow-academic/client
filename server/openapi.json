@@ -13028,7 +13028,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_client_agents_documents_generate_post",
+        "operationId": "handle_document_generate_generate",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13049,7 +13049,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Client Agents Documents Generate Post"
+                  "title": "Response Handle Document Generate Generate"
                 }
               }
             }
@@ -13175,7 +13175,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_client_agents_rubrics_generate_post",
+        "operationId": "handle_rubric_generate_generate",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13196,7 +13196,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Client Agents Rubrics Generate Post"
+                  "title": "Response Handle Rubric Generate Generate"
                 }
               }
             }
@@ -13224,7 +13224,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_client_agents_rubrics_regenerate_post",
+        "operationId": "handle_rubric_regenerate_regenerate",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13245,7 +13245,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Client Agents Rubrics Regenerate Post"
+                  "title": "Response Handle Rubric Regenerate Regenerate"
                 }
               }
             }
@@ -13322,7 +13322,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_client_agents_hints_generate_post",
+        "operationId": "handle_hint_generate_generate",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13343,7 +13343,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Client Agents Hints Generate Post"
+                  "title": "Response Handle Hint Generate Generate"
                 }
               }
             }
@@ -13371,7 +13371,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_client_agents_grades_start_post",
+        "operationId": "handle_grade_generate_start",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13392,7 +13392,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Client Agents Grades Start Post"
+                  "title": "Response Handle Grade Generate Start"
                 }
               }
             }
@@ -13518,7 +13518,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_client_agents_members_progress_post",
+        "operationId": "handle_member_progress_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13539,7 +13539,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Client Agents Members Progress Post"
+                  "title": "Response Handle Member Progress Progress"
                 }
               }
             }
@@ -14142,7 +14142,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_client_benchmark_start_post",
+        "operationId": "handle_benchmark_start_start",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14163,7 +14163,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Client Benchmark Start Post"
+                  "title": "Response Handle Benchmark Start Start"
                 }
               }
             }
@@ -14430,7 +14430,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_simulation_text_complete_post",
+        "operationId": "handle_simulation_complete_simulation_text_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14451,7 +14451,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Simulation Text Complete Post"
+                  "title": "Response Handle Simulation Complete Simulation Text Complete"
                 }
               }
             }
@@ -14479,7 +14479,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_simulation_text_error_post",
+        "operationId": "handle_simulation_error_simulation_text_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14500,7 +14500,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Simulation Text Error Post"
+                  "title": "Response Handle Simulation Error Simulation Text Error"
                 }
               }
             }
@@ -14528,7 +14528,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_simulation_text_progress_post",
+        "operationId": "handle_simulation_progress_simulation_text_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14549,7 +14549,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Simulation Text Progress Post"
+                  "title": "Response Handle Simulation Progress Simulation Text Progress"
                 }
               }
             }
@@ -14577,7 +14577,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_eval_post",
+        "operationId": "handle_voice_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14598,7 +14598,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Eval Post"
+                  "title": "Response Handle Voice Eval Eval"
                 }
               }
             }
@@ -14627,7 +14627,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_post",
+        "operationId": "handle_voice_debug_call_debug_info",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14648,7 +14648,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Debug Info Post"
+                  "title": "Response Handle Voice Debug Call Debug Info"
                 }
               }
             }
@@ -14677,7 +14677,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_complete_post",
+        "operationId": "handle_voice_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14698,7 +14698,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Debug Info Complete Post"
+                  "title": "Response Handle Voice Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -14727,7 +14727,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_error_post",
+        "operationId": "handle_voice_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14748,7 +14748,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Debug Info Error Post"
+                  "title": "Response Handle Voice Debug Error Debug Info Error"
                 }
               }
             }
@@ -14777,7 +14777,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_progress_post",
+        "operationId": "handle_voice_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14798,7 +14798,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Debug Info Progress Post"
+                  "title": "Response Handle Voice Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -14827,7 +14827,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_eval_post",
+        "operationId": "handle_voice_speak_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14848,7 +14848,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Eval Post"
+                  "title": "Response Handle Voice Speak Eval Eval"
                 }
               }
             }
@@ -14877,7 +14877,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_speak_tool_post",
+        "operationId": "handle_voice_speak_call_speak_tool",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14898,7 +14898,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Speak Tool Post"
+                  "title": "Response Handle Voice Speak Call Speak Tool"
                 }
               }
             }
@@ -14927,7 +14927,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_speak_complete_post",
+        "operationId": "handle_voice_speak_complete_speak_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14948,7 +14948,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Speak Complete Post"
+                  "title": "Response Handle Voice Speak Complete Speak Complete"
                 }
               }
             }
@@ -14977,7 +14977,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_speak_error_post",
+        "operationId": "handle_voice_speak_error_speak_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14998,7 +14998,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Speak Error Post"
+                  "title": "Response Handle Voice Speak Error Speak Error"
                 }
               }
             }
@@ -15027,7 +15027,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_tools_speak_progress_post",
+        "operationId": "handle_voice_speak_progress_speak_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15048,7 +15048,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Tools Speak Progress Post"
+                  "title": "Response Handle Voice Speak Progress Speak Progress"
                 }
               }
             }
@@ -15174,7 +15174,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_complete_post",
+        "operationId": "handle_voice_complete_simulation_voice_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15195,7 +15195,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Simulation Voice Complete Post"
+                  "title": "Response Handle Voice Complete Simulation Voice Complete"
                 }
               }
             }
@@ -15223,7 +15223,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_error_post",
+        "operationId": "handle_voice_error_simulation_voice_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15244,7 +15244,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Simulations Simulation Voice Error Post"
+                  "title": "Response Handle Voice Error Simulation Voice Error"
                 }
               }
             }
@@ -15566,7 +15566,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_scenario_complete_post",
+        "operationId": "handle_scenario_complete_scenario_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15587,7 +15587,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Scenario Complete Post"
+                  "title": "Response Handle Scenario Complete Scenario Complete"
                 }
               }
             }
@@ -15615,7 +15615,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_scenario_error_post",
+        "operationId": "handle_scenario_error_scenario_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15636,7 +15636,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Scenario Error Post"
+                  "title": "Response Handle Scenario Error Scenario Error"
                 }
               }
             }
@@ -15664,7 +15664,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_scenario_progress_post",
+        "operationId": "handle_scenario_progress_scenario_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15685,7 +15685,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Scenario Progress Post"
+                  "title": "Response Handle Scenario Progress Scenario Progress"
                 }
               }
             }
@@ -15713,7 +15713,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_eval_post",
+        "operationId": "handle_scenario_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15734,7 +15734,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Eval Post"
+                  "title": "Response Handle Scenario Eval Eval"
                 }
               }
             }
@@ -15763,7 +15763,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_post",
+        "operationId": "handle_scenario_debug_call_debug_info",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15784,7 +15784,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Debug Info Post"
+                  "title": "Response Handle Scenario Debug Call Debug Info"
                 }
               }
             }
@@ -15813,7 +15813,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_complete_post",
+        "operationId": "handle_scenario_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15834,7 +15834,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Debug Info Complete Post"
+                  "title": "Response Handle Scenario Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -15863,7 +15863,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_error_post",
+        "operationId": "handle_scenario_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15884,7 +15884,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Debug Info Error Post"
+                  "title": "Response Handle Scenario Debug Error Debug Info Error"
                 }
               }
             }
@@ -15913,7 +15913,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_progress_post",
+        "operationId": "handle_scenario_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15934,7 +15934,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Debug Info Progress Post"
+                  "title": "Response Handle Scenario Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -15963,7 +15963,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_eval_post",
+        "operationId": "handle_scenario_video_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15984,7 +15984,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Eval Post"
+                  "title": "Response Handle Scenario Video Eval Eval"
                 }
               }
             }
@@ -16013,7 +16013,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_document_complete_post",
+        "operationId": "handle_scenario_document_complete_document_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16034,7 +16034,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Document Complete Post"
+                  "title": "Response Handle Scenario Document Complete Document Complete"
                 }
               }
             }
@@ -16063,7 +16063,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_document_error_post",
+        "operationId": "handle_scenario_document_error_document_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16084,7 +16084,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Document Error Post"
+                  "title": "Response Handle Scenario Document Error Document Error"
                 }
               }
             }
@@ -16113,7 +16113,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_document_progress_post",
+        "operationId": "handle_scenario_document_progress_document_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16134,7 +16134,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Document Progress Post"
+                  "title": "Response Handle Scenario Document Progress Document Progress"
                 }
               }
             }
@@ -16163,7 +16163,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_image_complete_post",
+        "operationId": "handle_scenario_image_complete_image_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16184,7 +16184,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Image Complete Post"
+                  "title": "Response Handle Scenario Image Complete Image Complete"
                 }
               }
             }
@@ -16213,7 +16213,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_image_error_post",
+        "operationId": "handle_scenario_image_error_image_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16234,7 +16234,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Image Error Post"
+                  "title": "Response Handle Scenario Image Error Image Error"
                 }
               }
             }
@@ -16263,7 +16263,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_image_progress_post",
+        "operationId": "handle_scenario_image_progress_image_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16284,7 +16284,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Image Progress Post"
+                  "title": "Response Handle Scenario Image Progress Image Progress"
                 }
               }
             }
@@ -16313,7 +16313,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_complete_post",
+        "operationId": "handle_scenario_objective_complete_objectives_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16334,7 +16334,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Objectives Complete Post"
+                  "title": "Response Handle Scenario Objective Complete Objectives Complete"
                 }
               }
             }
@@ -16363,7 +16363,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_error_post",
+        "operationId": "handle_scenario_objective_error_objectives_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16384,7 +16384,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Objectives Error Post"
+                  "title": "Response Handle Scenario Objective Error Objectives Error"
                 }
               }
             }
@@ -16413,7 +16413,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_progress_post",
+        "operationId": "handle_scenario_objective_progress_objectives_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16434,7 +16434,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Objectives Progress Post"
+                  "title": "Response Handle Scenario Objective Progress Objectives Progress"
                 }
               }
             }
@@ -16463,7 +16463,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_complete_post",
+        "operationId": "handle_scenario_question_complete_questions_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16484,7 +16484,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Questions Complete Post"
+                  "title": "Response Handle Scenario Question Complete Questions Complete"
                 }
               }
             }
@@ -16513,7 +16513,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_error_post",
+        "operationId": "handle_scenario_question_error_questions_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16534,7 +16534,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Questions Error Post"
+                  "title": "Response Handle Scenario Question Error Questions Error"
                 }
               }
             }
@@ -16563,7 +16563,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_progress_post",
+        "operationId": "handle_scenario_question_progress_questions_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16584,7 +16584,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Questions Progress Post"
+                  "title": "Response Handle Scenario Question Progress Questions Progress"
                 }
               }
             }
@@ -16613,7 +16613,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_post",
+        "operationId": "handle_scenario_statement_call_title_description",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16634,7 +16634,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Title Description Post"
+                  "title": "Response Handle Scenario Statement Call Title Description"
                 }
               }
             }
@@ -16663,7 +16663,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_complete_post",
+        "operationId": "handle_scenario_statement_complete_title_description_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16684,7 +16684,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Title Description Complete Post"
+                  "title": "Response Handle Scenario Statement Complete Title Description Complete"
                 }
               }
             }
@@ -16713,7 +16713,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_error_post",
+        "operationId": "handle_scenario_statement_error_title_description_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16734,7 +16734,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Title Description Error Post"
+                  "title": "Response Handle Scenario Statement Error Title Description Error"
                 }
               }
             }
@@ -16763,7 +16763,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_progress_post",
+        "operationId": "handle_scenario_statement_progress_title_description_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16784,7 +16784,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Title Description Progress Post"
+                  "title": "Response Handle Scenario Statement Progress Title Description Progress"
                 }
               }
             }
@@ -16813,7 +16813,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_complete_post",
+        "operationId": "handle_scenario_title_complete_scenario_tool_title_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16834,7 +16834,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Scenario Tool Title Complete Post"
+                  "title": "Response Handle Scenario Title Complete Scenario Tool Title Complete"
                 }
               }
             }
@@ -16863,7 +16863,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_error_post",
+        "operationId": "handle_scenario_title_error_scenario_tool_title_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16884,7 +16884,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Scenario Tool Title Error Post"
+                  "title": "Response Handle Scenario Title Error Scenario Tool Title Error"
                 }
               }
             }
@@ -16913,7 +16913,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_progress_post",
+        "operationId": "handle_scenario_title_progress_scenario_tool_title_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16934,7 +16934,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Scenario Tool Title Progress Post"
+                  "title": "Response Handle Scenario Title Progress Scenario Tool Title Progress"
                 }
               }
             }
@@ -16963,7 +16963,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_video_complete_post",
+        "operationId": "handle_scenario_video_complete_video_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16984,7 +16984,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Video Complete Post"
+                  "title": "Response Handle Scenario Video Complete Video Complete"
                 }
               }
             }
@@ -17013,7 +17013,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_video_error_post",
+        "operationId": "handle_scenario_video_error_video_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17034,7 +17034,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Video Error Post"
+                  "title": "Response Handle Scenario Video Error Video Error"
                 }
               }
             }
@@ -17063,7 +17063,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_scenarios_tools_video_progress_post",
+        "operationId": "handle_scenario_video_progress_video_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17084,7 +17084,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Scenarios Tools Video Progress Post"
+                  "title": "Response Handle Scenario Video Progress Video Progress"
                 }
               }
             }
@@ -17112,7 +17112,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_document_complete_post",
+        "operationId": "handle_document_complete_document_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17133,7 +17133,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Document Complete Post"
+                  "title": "Response Handle Document Complete Document Complete"
                 }
               }
             }
@@ -17161,7 +17161,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_document_error_post",
+        "operationId": "handle_document_error_document_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17182,7 +17182,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Document Error Post"
+                  "title": "Response Handle Document Error Document Error"
                 }
               }
             }
@@ -17210,7 +17210,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_document_progress_post",
+        "operationId": "handle_document_progress_document_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17231,7 +17231,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Document Progress Post"
+                  "title": "Response Handle Document Progress Document Progress"
                 }
               }
             }
@@ -17259,7 +17259,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_eval_post",
+        "operationId": "handle_document_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17280,7 +17280,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Eval Post"
+                  "title": "Response Handle Document Eval Eval"
                 }
               }
             }
@@ -17309,7 +17309,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_complete_post",
+        "operationId": "handle_document_title_complete_document_tool_title_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17330,7 +17330,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Document Tool Title Complete Post"
+                  "title": "Response Handle Document Title Complete Document Tool Title Complete"
                 }
               }
             }
@@ -17359,7 +17359,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_error_post",
+        "operationId": "handle_document_title_error_document_tool_title_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17380,7 +17380,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Document Tool Title Error Post"
+                  "title": "Response Handle Document Title Error Document Tool Title Error"
                 }
               }
             }
@@ -17409,7 +17409,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_progress_post",
+        "operationId": "handle_document_title_progress_document_tool_title_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17430,7 +17430,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Document Tool Title Progress Post"
+                  "title": "Response Handle Document Title Progress Document Tool Title Progress"
                 }
               }
             }
@@ -17459,7 +17459,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_eval_post",
+        "operationId": "handle_document_debug_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17480,7 +17480,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Eval Post"
+                  "title": "Response Handle Document Debug Eval Eval"
                 }
               }
             }
@@ -17509,7 +17509,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_debug_post",
+        "operationId": "handle_document_debug_call_document_tool_debug",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17530,7 +17530,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Document Tool Debug Post"
+                  "title": "Response Handle Document Debug Call Document Tool Debug"
                 }
               }
             }
@@ -17559,7 +17559,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_complete_post",
+        "operationId": "handle_document_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17580,7 +17580,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Debug Info Complete Post"
+                  "title": "Response Handle Document Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -17609,7 +17609,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_error_post",
+        "operationId": "handle_document_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17630,7 +17630,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Debug Info Error Post"
+                  "title": "Response Handle Document Debug Error Debug Info Error"
                 }
               }
             }
@@ -17659,7 +17659,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_progress_post",
+        "operationId": "handle_document_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17680,7 +17680,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Documents Tools Debug Info Progress Post"
+                  "title": "Response Handle Document Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -17855,7 +17855,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_video_complete_post",
+        "operationId": "handle_video_complete_video_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17876,7 +17876,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Video Complete Post"
+                  "title": "Response Handle Video Complete Video Complete"
                 }
               }
             }
@@ -17904,7 +17904,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_video_error_post",
+        "operationId": "handle_video_error_video_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17925,7 +17925,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Video Error Post"
+                  "title": "Response Handle Video Error Video Error"
                 }
               }
             }
@@ -17953,7 +17953,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_video_progress_post",
+        "operationId": "handle_video_progress_video_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17974,7 +17974,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Video Progress Post"
+                  "title": "Response Handle Video Progress Video Progress"
                 }
               }
             }
@@ -18002,7 +18002,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_eval_post",
+        "operationId": "handle_video_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18023,7 +18023,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Eval Post"
+                  "title": "Response Handle Video Eval Eval"
                 }
               }
             }
@@ -18052,7 +18052,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_complete_post",
+        "operationId": "handle_video_title_complete_video_tool_title_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18073,7 +18073,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Video Tool Title Complete Post"
+                  "title": "Response Handle Video Title Complete Video Tool Title Complete"
                 }
               }
             }
@@ -18102,7 +18102,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_error_post",
+        "operationId": "handle_video_title_error_video_tool_title_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18123,7 +18123,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Video Tool Title Error Post"
+                  "title": "Response Handle Video Title Error Video Tool Title Error"
                 }
               }
             }
@@ -18152,7 +18152,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_progress_post",
+        "operationId": "handle_video_title_progress_video_tool_title_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18173,7 +18173,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Video Tool Title Progress Post"
+                  "title": "Response Handle Video Title Progress Video Tool Title Progress"
                 }
               }
             }
@@ -18202,7 +18202,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_eval_post",
+        "operationId": "handle_video_debug_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18223,7 +18223,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Eval Post"
+                  "title": "Response Handle Video Debug Eval Eval"
                 }
               }
             }
@@ -18252,7 +18252,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_post",
+        "operationId": "handle_video_debug_call_debug_info",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18273,7 +18273,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Debug Info Post"
+                  "title": "Response Handle Video Debug Call Debug Info"
                 }
               }
             }
@@ -18302,7 +18302,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_complete_post",
+        "operationId": "handle_video_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18323,7 +18323,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Debug Info Complete Post"
+                  "title": "Response Handle Video Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -18352,7 +18352,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_error_post",
+        "operationId": "handle_video_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18373,7 +18373,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Debug Info Error Post"
+                  "title": "Response Handle Video Debug Error Debug Info Error"
                 }
               }
             }
@@ -18402,7 +18402,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_progress_post",
+        "operationId": "handle_video_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18423,7 +18423,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Videos Tools Debug Info Progress Post"
+                  "title": "Response Handle Video Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -18451,7 +18451,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_generation_complete_post",
+        "operationId": "handle_image_complete_generation_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18472,7 +18472,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Generation Complete Post"
+                  "title": "Response Handle Image Complete Generation Complete"
                 }
               }
             }
@@ -18500,7 +18500,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_generation_error_post",
+        "operationId": "handle_image_error_generation_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18521,7 +18521,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Generation Error Post"
+                  "title": "Response Handle Image Error Generation Error"
                 }
               }
             }
@@ -18549,7 +18549,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_generation_progress_post",
+        "operationId": "handle_image_progress_generation_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18570,7 +18570,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Generation Progress Post"
+                  "title": "Response Handle Image Progress Generation Progress"
                 }
               }
             }
@@ -18598,7 +18598,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_eval_post",
+        "operationId": "handle_image_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18619,7 +18619,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Eval Post"
+                  "title": "Response Handle Image Eval Eval"
                 }
               }
             }
@@ -18648,7 +18648,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_debug_info_post",
+        "operationId": "handle_image_debug_call_debug_info",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18669,7 +18669,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Debug Info Post"
+                  "title": "Response Handle Image Debug Call Debug Info"
                 }
               }
             }
@@ -18698,7 +18698,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_debug_info_complete_post",
+        "operationId": "handle_image_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18719,7 +18719,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Debug Info Complete Post"
+                  "title": "Response Handle Image Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -18748,7 +18748,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_debug_info_error_post",
+        "operationId": "handle_image_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18769,7 +18769,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Debug Info Error Post"
+                  "title": "Response Handle Image Debug Error Debug Info Error"
                 }
               }
             }
@@ -18798,7 +18798,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_debug_info_progress_post",
+        "operationId": "handle_image_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18819,7 +18819,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Debug Info Progress Post"
+                  "title": "Response Handle Image Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -18848,7 +18848,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_eval_post",
+        "operationId": "handle_image_title_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18869,7 +18869,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Eval Post"
+                  "title": "Response Handle Image Title Eval Eval"
                 }
               }
             }
@@ -18898,7 +18898,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_complete_post",
+        "operationId": "handle_image_title_complete_image_tool_title_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18919,7 +18919,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Image Tool Title Complete Post"
+                  "title": "Response Handle Image Title Complete Image Tool Title Complete"
                 }
               }
             }
@@ -18948,7 +18948,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_error_post",
+        "operationId": "handle_image_title_error_image_tool_title_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -18969,7 +18969,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Image Tool Title Error Post"
+                  "title": "Response Handle Image Title Error Image Tool Title Error"
                 }
               }
             }
@@ -18998,7 +18998,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_progress_post",
+        "operationId": "handle_image_title_progress_image_tool_title_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19019,7 +19019,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Images Tools Image Tool Title Progress Post"
+                  "title": "Response Handle Image Title Progress Image Tool Title Progress"
                 }
               }
             }
@@ -19047,7 +19047,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_generation_complete_post",
+        "operationId": "handle_rubric_complete_generation_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19068,7 +19068,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Generation Complete Post"
+                  "title": "Response Handle Rubric Complete Generation Complete"
                 }
               }
             }
@@ -19096,7 +19096,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_generation_error_post",
+        "operationId": "handle_rubric_error_generation_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19117,7 +19117,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Generation Error Post"
+                  "title": "Response Handle Rubric Error Generation Error"
                 }
               }
             }
@@ -19145,7 +19145,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_generation_progress_post",
+        "operationId": "handle_rubric_progress_generation_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19166,7 +19166,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Generation Progress Post"
+                  "title": "Response Handle Rubric Progress Generation Progress"
                 }
               }
             }
@@ -19194,7 +19194,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_eval_post",
+        "operationId": "handle_rubric_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19215,7 +19215,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Eval Post"
+                  "title": "Response Handle Rubric Eval Eval"
                 }
               }
             }
@@ -19244,7 +19244,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_complete_post",
+        "operationId": "handle_rubric_title_complete_rubric_tool_title_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19265,7 +19265,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Rubric Tool Title Complete Post"
+                  "title": "Response Handle Rubric Title Complete Rubric Tool Title Complete"
                 }
               }
             }
@@ -19294,7 +19294,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_error_post",
+        "operationId": "handle_rubric_title_error_rubric_tool_title_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19315,7 +19315,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Rubric Tool Title Error Post"
+                  "title": "Response Handle Rubric Title Error Rubric Tool Title Error"
                 }
               }
             }
@@ -19344,7 +19344,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_progress_post",
+        "operationId": "handle_rubric_title_progress_rubric_tool_title_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19365,7 +19365,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Rubric Tool Title Progress Post"
+                  "title": "Response Handle Rubric Title Progress Rubric Tool Title Progress"
                 }
               }
             }
@@ -19394,7 +19394,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_eval_post",
+        "operationId": "handle_rubric_rubric_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19415,7 +19415,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Eval Post"
+                  "title": "Response Handle Rubric Rubric Eval Eval"
                 }
               }
             }
@@ -19444,7 +19444,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_post",
+        "operationId": "handle_rubric_debug_call_debug_info",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19465,7 +19465,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Debug Info Post"
+                  "title": "Response Handle Rubric Debug Call Debug Info"
                 }
               }
             }
@@ -19494,7 +19494,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_complete_post",
+        "operationId": "handle_rubric_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19515,7 +19515,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Debug Info Complete Post"
+                  "title": "Response Handle Rubric Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -19544,7 +19544,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_error_post",
+        "operationId": "handle_rubric_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19565,7 +19565,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Debug Info Error Post"
+                  "title": "Response Handle Rubric Debug Error Debug Info Error"
                 }
               }
             }
@@ -19594,7 +19594,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_progress_post",
+        "operationId": "handle_rubric_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19615,7 +19615,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Debug Info Progress Post"
+                  "title": "Response Handle Rubric Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -19644,7 +19644,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_standard_description_post",
+        "operationId": "handle_rubric_rubric_call_rubric_tool_standard_description",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19665,7 +19665,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Rubric Tool Standard Description Post"
+                  "title": "Response Handle Rubric Rubric Call Rubric Tool Standard Description"
                 }
               }
             }
@@ -19694,7 +19694,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_complete_post",
+        "operationId": "handle_rubric_rubric_complete_standard_description_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19715,7 +19715,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Standard Description Complete Post"
+                  "title": "Response Handle Rubric Rubric Complete Standard Description Complete"
                 }
               }
             }
@@ -19744,7 +19744,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_error_post",
+        "operationId": "handle_rubric_rubric_error_standard_description_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19765,7 +19765,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Standard Description Error Post"
+                  "title": "Response Handle Rubric Rubric Error Standard Description Error"
                 }
               }
             }
@@ -19794,7 +19794,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_progress_post",
+        "operationId": "handle_rubric_rubric_progress_standard_description_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19815,7 +19815,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Rubrics Tools Standard Description Progress Post"
+                  "title": "Response Handle Rubric Rubric Progress Standard Description Progress"
                 }
               }
             }
@@ -19990,7 +19990,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_classify_complete_post",
+        "operationId": "handle_classify_complete_classify_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20011,7 +20011,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Classify Complete Post"
+                  "title": "Response Handle Classify Complete Classify Complete"
                 }
               }
             }
@@ -20039,7 +20039,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_classify_error_post",
+        "operationId": "handle_classify_error_classify_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20060,7 +20060,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Classify Error Post"
+                  "title": "Response Handle Classify Error Classify Error"
                 }
               }
             }
@@ -20088,7 +20088,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_classify_progress_post",
+        "operationId": "handle_classify_progress_classify_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20109,7 +20109,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Classify Progress Post"
+                  "title": "Response Handle Classify Progress Classify Progress"
                 }
               }
             }
@@ -20137,7 +20137,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_eval_post",
+        "operationId": "handle_classify_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20158,7 +20158,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Eval Post"
+                  "title": "Response Handle Classify Eval Eval"
                 }
               }
             }
@@ -20187,7 +20187,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_post",
+        "operationId": "handle_classify_debug_call_debug_info",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20208,7 +20208,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Debug Info Post"
+                  "title": "Response Handle Classify Debug Call Debug Info"
                 }
               }
             }
@@ -20237,7 +20237,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_complete_post",
+        "operationId": "handle_classify_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20258,7 +20258,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Debug Info Complete Post"
+                  "title": "Response Handle Classify Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -20287,7 +20287,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_error_post",
+        "operationId": "handle_classify_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20308,7 +20308,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Debug Info Error Post"
+                  "title": "Response Handle Classify Debug Error Debug Info Error"
                 }
               }
             }
@@ -20337,7 +20337,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_progress_post",
+        "operationId": "handle_classify_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20358,7 +20358,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Debug Info Progress Post"
+                  "title": "Response Handle Classify Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -20387,7 +20387,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_eval_post",
+        "operationId": "handle_classify_classification_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20408,7 +20408,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Eval Post"
+                  "title": "Response Handle Classify Classification Eval Eval"
                 }
               }
             }
@@ -20437,7 +20437,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_classification_tool_post",
+        "operationId": "handle_classify_classification_call_classification_tool",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20458,7 +20458,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Classification Tool Post"
+                  "title": "Response Handle Classify Classification Call Classification Tool"
                 }
               }
             }
@@ -20487,7 +20487,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_classification_complete_post",
+        "operationId": "handle_classify_classification_complete_classification_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20508,7 +20508,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Classification Complete Post"
+                  "title": "Response Handle Classify Classification Complete Classification Complete"
                 }
               }
             }
@@ -20537,7 +20537,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_classification_error_post",
+        "operationId": "handle_classify_classification_error_classification_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20558,7 +20558,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Classification Error Post"
+                  "title": "Response Handle Classify Classification Error Classification Error"
                 }
               }
             }
@@ -20587,7 +20587,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_classify_tools_classification_progress_post",
+        "operationId": "handle_classify_classification_progress_classification_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20608,7 +20608,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Classify Tools Classification Progress Post"
+                  "title": "Response Handle Classify Classification Progress Classification Progress"
                 }
               }
             }
@@ -20636,7 +20636,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_generation_progress_post",
+        "operationId": "handle_hint_generate_generation_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20657,7 +20657,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Generation Progress Post"
+                  "title": "Response Handle Hint Generate Generation Progress"
                 }
               }
             }
@@ -20685,7 +20685,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_hint_complete_post",
+        "operationId": "handle_hint_complete_hint_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20706,7 +20706,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Hint Complete Post"
+                  "title": "Response Handle Hint Complete Hint Complete"
                 }
               }
             }
@@ -20734,7 +20734,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_hint_error_post",
+        "operationId": "handle_hint_error_hint_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20755,7 +20755,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Hint Error Post"
+                  "title": "Response Handle Hint Error Hint Error"
                 }
               }
             }
@@ -20783,7 +20783,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_hint_progress_post",
+        "operationId": "handle_hint_progress_hint_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20804,7 +20804,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Hint Progress Post"
+                  "title": "Response Handle Hint Progress Hint Progress"
                 }
               }
             }
@@ -20832,7 +20832,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_eval_post",
+        "operationId": "handle_hint_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20853,7 +20853,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Eval Post"
+                  "title": "Response Handle Hint Eval Eval"
                 }
               }
             }
@@ -20882,7 +20882,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_debug_post",
+        "operationId": "handle_hint_debug_call_hint_tool_debug",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20903,7 +20903,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Hint Tool Debug Post"
+                  "title": "Response Handle Hint Debug Call Hint Tool Debug"
                 }
               }
             }
@@ -20932,7 +20932,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_complete_post",
+        "operationId": "handle_hint_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20953,7 +20953,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Debug Info Complete Post"
+                  "title": "Response Handle Hint Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -20982,7 +20982,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_error_post",
+        "operationId": "handle_hint_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21003,7 +21003,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Debug Info Error Post"
+                  "title": "Response Handle Hint Debug Error Debug Info Error"
                 }
               }
             }
@@ -21032,7 +21032,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_progress_post",
+        "operationId": "handle_hint_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21053,7 +21053,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Debug Info Progress Post"
+                  "title": "Response Handle Hint Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -21082,7 +21082,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_eval_post",
+        "operationId": "handle_hint_hint_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21103,7 +21103,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Eval Post"
+                  "title": "Response Handle Hint Hint Eval Eval"
                 }
               }
             }
@@ -21132,7 +21132,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_post",
+        "operationId": "handle_hint_hint_call_hint_tool",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21153,7 +21153,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Hint Tool Post"
+                  "title": "Response Handle Hint Hint Call Hint Tool"
                 }
               }
             }
@@ -21182,7 +21182,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_hint_complete_post",
+        "operationId": "handle_hint_hint_complete_hint_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21203,7 +21203,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Hint Complete Post"
+                  "title": "Response Handle Hint Hint Complete Hint Complete"
                 }
               }
             }
@@ -21232,7 +21232,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_hint_error_post",
+        "operationId": "handle_hint_hint_error_hint_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21253,7 +21253,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Hint Error Post"
+                  "title": "Response Handle Hint Hint Error Hint Error"
                 }
               }
             }
@@ -21282,7 +21282,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_hints_tools_hint_progress_post",
+        "operationId": "handle_hint_hint_progress_hint_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21303,7 +21303,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Hints Tools Hint Progress Post"
+                  "title": "Response Handle Hint Hint Progress Hint Progress"
                 }
               }
             }
@@ -21331,7 +21331,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_progress_post",
+        "operationId": "handle_grade_generate_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21352,7 +21352,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Progress Post"
+                  "title": "Response Handle Grade Generate Progress"
                 }
               }
             }
@@ -21380,7 +21380,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_grade_text_complete_post",
+        "operationId": "handle_grade_complete_grade_text_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21401,7 +21401,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Grade Text Complete Post"
+                  "title": "Response Handle Grade Complete Grade Text Complete"
                 }
               }
             }
@@ -21429,7 +21429,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_grade_text_error_post",
+        "operationId": "handle_grade_error_grade_text_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21450,7 +21450,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Grade Text Error Post"
+                  "title": "Response Handle Grade Error Grade Text Error"
                 }
               }
             }
@@ -21478,7 +21478,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_grade_text_progress_post",
+        "operationId": "handle_grade_progress_grade_text_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21499,7 +21499,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Grade Text Progress Post"
+                  "title": "Response Handle Grade Progress Grade Text Progress"
                 }
               }
             }
@@ -21527,7 +21527,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_eval_post",
+        "operationId": "handle_audio_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21548,7 +21548,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Eval Post"
+                  "title": "Response Handle Audio Eval Eval"
                 }
               }
             }
@@ -21577,7 +21577,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_audio_complete_post",
+        "operationId": "handle_grade_audio_complete_audio_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21598,7 +21598,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Audio Complete Post"
+                  "title": "Response Handle Grade Audio Complete Audio Complete"
                 }
               }
             }
@@ -21627,7 +21627,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_audio_error_post",
+        "operationId": "handle_grade_audio_error_audio_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21648,7 +21648,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Audio Error Post"
+                  "title": "Response Handle Grade Audio Error Audio Error"
                 }
               }
             }
@@ -21677,7 +21677,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_audio_progress_post",
+        "operationId": "handle_grade_audio_progress_audio_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21698,7 +21698,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Audio Progress Post"
+                  "title": "Response Handle Grade Audio Progress Audio Progress"
                 }
               }
             }
@@ -21727,7 +21727,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_eval_post",
+        "operationId": "handle_audio_debug_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21748,7 +21748,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Eval Post"
+                  "title": "Response Handle Audio Debug Eval Eval"
                 }
               }
             }
@@ -21777,7 +21777,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_complete_post",
+        "operationId": "handle_grade_improvement_complete_message_improvement_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21798,7 +21798,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Message Improvement Complete Post"
+                  "title": "Response Handle Grade Improvement Complete Message Improvement Complete"
                 }
               }
             }
@@ -21827,7 +21827,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_error_post",
+        "operationId": "handle_grade_improvement_error_message_improvement_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21848,7 +21848,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Message Improvement Error Post"
+                  "title": "Response Handle Grade Improvement Error Message Improvement Error"
                 }
               }
             }
@@ -21877,7 +21877,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_progress_post",
+        "operationId": "handle_grade_improvement_progress_message_improvement_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21898,7 +21898,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Message Improvement Progress Post"
+                  "title": "Response Handle Grade Improvement Progress Message Improvement Progress"
                 }
               }
             }
@@ -21927,7 +21927,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_complete_post",
+        "operationId": "handle_grade_strength_complete_message_strength_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21948,7 +21948,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Message Strength Complete Post"
+                  "title": "Response Handle Grade Strength Complete Message Strength Complete"
                 }
               }
             }
@@ -21977,7 +21977,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_error_post",
+        "operationId": "handle_grade_strength_error_message_strength_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21998,7 +21998,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Message Strength Error Post"
+                  "title": "Response Handle Grade Strength Error Message Strength Error"
                 }
               }
             }
@@ -22027,7 +22027,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_progress_post",
+        "operationId": "handle_grade_strength_progress_message_strength_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22048,7 +22048,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Message Strength Progress Post"
+                  "title": "Response Handle Grade Strength Progress Message Strength Progress"
                 }
               }
             }
@@ -22077,7 +22077,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_feedback_complete_post",
+        "operationId": "handle_grade_grade_complete_feedback_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22098,7 +22098,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Feedback Complete Post"
+                  "title": "Response Handle Grade Grade Complete Feedback Complete"
                 }
               }
             }
@@ -22127,7 +22127,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_feedback_error_post",
+        "operationId": "handle_grade_grade_error_feedback_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22148,7 +22148,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Feedback Error Post"
+                  "title": "Response Handle Grade Grade Error Feedback Error"
                 }
               }
             }
@@ -22177,7 +22177,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_feedback_progress_post",
+        "operationId": "handle_grade_grade_progress_feedback_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22198,7 +22198,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Feedback Progress Post"
+                  "title": "Response Handle Grade Grade Progress Feedback Progress"
                 }
               }
             }
@@ -22227,7 +22227,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_post",
+        "operationId": "handle_audio_debug_call_debug_info",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22248,7 +22248,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Debug Info Post"
+                  "title": "Response Handle Audio Debug Call Debug Info"
                 }
               }
             }
@@ -22277,7 +22277,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_complete_post",
+        "operationId": "handle_audio_debug_complete_debug_info_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22298,7 +22298,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Debug Info Complete Post"
+                  "title": "Response Handle Audio Debug Complete Debug Info Complete"
                 }
               }
             }
@@ -22327,7 +22327,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_error_post",
+        "operationId": "handle_audio_debug_error_debug_info_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22348,7 +22348,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Debug Info Error Post"
+                  "title": "Response Handle Audio Debug Error Debug Info Error"
                 }
               }
             }
@@ -22377,7 +22377,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_progress_post",
+        "operationId": "handle_audio_debug_progress_debug_info_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22398,7 +22398,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Tools Debug Info Progress Post"
+                  "title": "Response Handle Audio Debug Progress Debug Info Progress"
                 }
               }
             }
@@ -22573,7 +22573,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_audio_complete_post",
+        "operationId": "handle_audio_complete_audio_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22594,7 +22594,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Audio Complete Post"
+                  "title": "Response Handle Audio Complete Audio Complete"
                 }
               }
             }
@@ -22622,7 +22622,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_audio_error_post",
+        "operationId": "handle_audio_error_audio_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22643,7 +22643,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Audio Error Post"
+                  "title": "Response Handle Audio Error Audio Error"
                 }
               }
             }
@@ -22671,7 +22671,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_grades_audio_progress_post",
+        "operationId": "handle_audio_progress_audio_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22692,7 +22692,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Grades Audio Progress Post"
+                  "title": "Response Handle Audio Progress Audio Progress"
                 }
               }
             }
@@ -22769,7 +22769,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_member_complete_post",
+        "operationId": "handle_member_complete_member_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22790,7 +22790,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Member Complete Post"
+                  "title": "Response Handle Member Complete Member Complete"
                 }
               }
             }
@@ -22818,7 +22818,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_member_error_post",
+        "operationId": "handle_member_error_member_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22839,7 +22839,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Member Error Post"
+                  "title": "Response Handle Member Error Member Error"
                 }
               }
             }
@@ -22867,7 +22867,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_eval_post",
+        "operationId": "handle_member_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22888,7 +22888,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Eval Post"
+                  "title": "Response Handle Member Eval Eval"
                 }
               }
             }
@@ -22966,7 +22966,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_post",
+        "operationId": "handle_member_conversation_call_conversation_end",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22987,7 +22987,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Tools Conversation End Post"
+                  "title": "Response Handle Member Conversation Call Conversation End"
                 }
               }
             }
@@ -23016,7 +23016,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_complete_post",
+        "operationId": "handle_member_conversation_complete_conversation_end_complete",
         "requestBody": {
           "content": {
             "application/json": {
@@ -23037,7 +23037,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Tools Conversation End Complete Post"
+                  "title": "Response Handle Member Conversation Complete Conversation End Complete"
                 }
               }
             }
@@ -23066,7 +23066,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_error_post",
+        "operationId": "handle_member_conversation_error_conversation_end_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -23087,7 +23087,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Tools Conversation End Error Post"
+                  "title": "Response Handle Member Conversation Error Conversation End Error"
                 }
               }
             }
@@ -23116,7 +23116,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_progress_post",
+        "operationId": "handle_member_conversation_progress_conversation_end_progress",
         "requestBody": {
           "content": {
             "application/json": {
@@ -23137,7 +23137,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Tools Conversation End Progress Post"
+                  "title": "Response Handle Member Conversation Progress Conversation End Progress"
                 }
               }
             }
@@ -23166,7 +23166,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Client-to-server event: {description}",
-        "operationId": "endpoint_handler_socket_v4_server_agents_members_tools_eval_post",
+        "operationId": "handle_member_conversation_eval_eval",
         "requestBody": {
           "content": {
             "application/json": {
@@ -23187,7 +23187,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Endpoint Handler Socket V4 Server Agents Members Tools Eval Post"
+                  "title": "Response Handle Member Conversation Eval Eval"
                 }
               }
             }
