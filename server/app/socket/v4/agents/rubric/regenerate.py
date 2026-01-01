@@ -21,7 +21,7 @@ from app.sql.types import (
     GetRubricRegenerationRunContextAndCreateRunApiRequest,
     GetRubricRegenerationRunContextAndCreateRunSqlParams,
     GetRubricRegenerationRunContextAndCreateRunSqlRow,
-    IUpdateStandardDescriptionsV3Description,
+    IUpdateStandardDescriptionsV4Description,
     RubricGenerationCompleteApiRequest,
     RubricGenerationErrorApiRequest,
     RubricGenerationErrorSqlRow,
@@ -209,7 +209,7 @@ async def _rubric_regenerate_impl(
                 """
                 # Convert descriptions to composite type objects
                 description_objects = [
-                    IUpdateStandardDescriptionsV3Description(
+                    IUpdateStandardDescriptionsV4Description(
                         standard_group_id=uuid.UUID(desc["standard_group_id"]),
                         standard_id=uuid.UUID(desc["standard_id"]),
                         description=desc["description"],

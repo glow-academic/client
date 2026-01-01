@@ -20,8 +20,8 @@ from app.sql.types import (
     ProcessCsvApiResponse,
     ProcessCsvSqlParams,
     ProcessCsvSqlRow,
-    QProcessCsvV3CsvRowError,
-    QProcessCsvV3ProcessedRow,
+    QProcessCsvV4CsvRowError,
+    QProcessCsvV4ProcessedRow,
     load_sql_query,
 )
 
@@ -79,12 +79,12 @@ async def process_csv(
             if mapping.csv_column is not None:
                 column_to_field[mapping.csv_column] = mapping.target_field
 
-        processed_rows: list[QProcessCsvV3ProcessedRow] = []
+        processed_rows: list[QProcessCsvV4ProcessedRow] = []
         row_index = 0
 
         for csv_row in reader:
             row_index += 1
-            errors: list[QProcessCsvV3CsvRowError] = []
+            errors: list[QProcessCsvV4CsvRowError] = []
 
             # Extract values based on mappings (snake_case field names)
             first_name = None
@@ -127,7 +127,7 @@ async def process_csv(
             # Validate required fields
             if not first_name:
                 errors.append(
-                    QProcessCsvV3CsvRowError(
+                    QProcessCsvV4CsvRowError(
                         row_index=row_index,
                         field="first_name",
                         message="First name is required",
@@ -135,7 +135,7 @@ async def process_csv(
                 )
             if not last_name:
                 errors.append(
-                    QProcessCsvV3CsvRowError(
+                    QProcessCsvV4CsvRowError(
                         row_index=row_index,
                         field="last_name",
                         message="Last name is required",
@@ -143,7 +143,7 @@ async def process_csv(
                 )
             if len(emails) == 0:
                 errors.append(
-                    QProcessCsvV3CsvRowError(
+                    QProcessCsvV4CsvRowError(
                         row_index=row_index,
                         field="emails",
                         message="At least one email is required",
@@ -155,7 +155,7 @@ async def process_csv(
                 role = "member"
 
             processed_rows.append(
-                QProcessCsvV3ProcessedRow(
+                QProcessCsvV4ProcessedRow(
                     row_index=row_index,
                     first_name=first_name,
                     last_name=last_name,

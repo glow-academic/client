@@ -16,7 +16,7 @@ from app.sql.types import (
     GetProfileContextApiResponse,
     GetProfileContextSqlParams,
     GetProfileContextSqlRow,
-    QGetProfileContextV3ThemeTokens,
+    QGetProfileContextV4ThemeTokens,
     load_sql_query,
 )
 
@@ -227,7 +227,7 @@ async def get_profile_context(
 
         def derive_theme_tokens(
             primitives: dict[str, str],
-        ) -> QGetProfileContextV3ThemeTokens:
+        ) -> QGetProfileContextV4ThemeTokens:
             """Derive full ThemeTokens from user-editable ThemePrimitives."""
             # Normalize all color inputs to oklch format
             background = normalize_color_to_oklch(primitives.get("background", ""))
@@ -274,7 +274,7 @@ async def get_profile_context(
             sidebar_border = shade(sidebar_bg, 0.064)
             sidebar_ring = shade(sidebar_primary, 0.05)
 
-            return QGetProfileContextV3ThemeTokens(
+            return QGetProfileContextV4ThemeTokens(
                 background=background,
                 foreground=foreground,
                 card=surface,
