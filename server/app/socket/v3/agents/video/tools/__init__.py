@@ -1,2 +1,0 @@
-"""Video agent tools package."""
-

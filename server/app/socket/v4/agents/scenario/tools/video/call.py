@@ -75,7 +75,7 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
     trace_id = validated.trace_id
 
     try:
-        import app.socket.v3.agents.scenario.tools.image as image_tool_module
+        import app.socket.v4.agents.scenario.tools.image as image_tool_module
 
         await image_tool_module._prune_pending_video_generations()
         scenario_id_uuid = uuid.UUID(validated.scenario_id)

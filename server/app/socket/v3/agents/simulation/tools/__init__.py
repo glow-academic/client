@@ -1,2 +1,0 @@
-"""Simulation agent tools package."""
-

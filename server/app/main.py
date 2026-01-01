@@ -430,40 +430,6 @@ async def transaction(
         raise
 
 
-from app.socket.v3.agents.document.tools.title.call import \
-    document_tool_title_internal  # noqa: F401
-# Import WebSocket handlers after sio is created to avoid circular imports
-# Handlers use @sio.event decorators directly - no registration needed
-# Import simulation hints to register internal_sio handler
-from app.socket.v3.agents.hint.generate import \
-    simulation_hints_generate_internal  # noqa: F401
-from app.socket.v3.agents.image.complete import \
-    image_generation_complete_internal  # noqa: F401
-# Import image modules to register internal_sio handlers
-from app.socket.v3.agents.image.generate import generate_image  # noqa: F401
-from app.socket.v3.agents.rubric.tools.title.call import \
-    rubric_tool_title_internal  # noqa: F401
-# Import quiz handlers
-# Note: Quiz events removed - questions now handled through scenarios
-# Import scenario tools to register internal_sio handlers
-from app.socket.v3.agents.scenario.tools.document.call import \
-    scenario_tool_document  # noqa: F401
-from app.socket.v3.agents.scenario.tools.image.call import \
-    scenario_tool_image  # noqa: F401
-from app.socket.v3.agents.scenario.tools.objective.call import \
-    scenario_tool_objectives  # noqa: F401
-from app.socket.v3.agents.scenario.tools.question.call import \
-    scenario_tool_questions  # noqa: F401
-from app.socket.v3.agents.scenario.tools.statement.call import \
-    scenario_tool_problem_statement_internal  # noqa: F401
-from app.socket.v3.agents.scenario.tools.title.call import \
-    scenario_tool_title_internal  # noqa: F401
-# Import scenario tools to register internal_sio handlers
-from app.socket.v3.agents.scenario.tools.video.call import \
-    scenario_tool_video  # noqa: F401
-# Import log module to register internal_sio handler
-from app.socket.v3.log import log_run  # noqa: F401
-
 # Import v4 socket handlers to register decorators
 from app.socket.v4.agents.document.tools.title.call import \
     document_tool_title_internal  # noqa: F401
@@ -560,17 +526,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
         if pool:
             # Setup activity logger
-            from app.infra.v3.activity.logger import \
+            from app.infra.v4.activity.logger import \
                 setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
 
-            # Keycloak sync moved to app.socket.v3.actions.keycloak
+            # Keycloak sync moved to app.socket.v4.actions.keycloak
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.infra.v3.metrics.collector import \
+        from app.infra.v4.metrics.collector import \
             initialize_metrics  # noqa: E402
 
         if pool:
@@ -587,7 +553,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             title=app.title,
             version="0.1.0",
             routes=app.routes,
-            description="Auto-generated OpenAPI schema from FastAPI v3 API",
+            description="Auto-generated OpenAPI schema from FastAPI v4 API",
         )
 
         # Add x-cache-tags extension to each operation based on tags
@@ -640,7 +606,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from app.infra.v3.metrics.collector import record_error, record_request
+        from app.infra.v4.metrics.collector import record_error, record_request
         from utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
@@ -680,13 +646,13 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
         if hasattr(request.state, "profile_id") and request.state.profile_id:
             profile_id = request.state.profile_id
         else:
-            # Try to get from headers (fallback for non-v3 routes or before dependency runs)
+            # Try to get from headers (fallback for non-v4 routes or before dependency runs)
             if not profile_id:
                 profile_id = request.headers.get("X-Profile-Id")
 
         # Set profile_id if found, otherwise skip DB logging
         # Note: We do NOT resolve from department-id/auth-mode cookies here
-        # Only /api/v3/profile/context resolves from cookies (single source of truth)
+        # Only /api/v4/profile/context resolves from cookies (single source of truth)
         if profile_id:
             set_profile_id(profile_id)
         else:
@@ -720,7 +686,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
             # Log activity to database (fire and forget - don't block response)
             try:
-                from app.infra.v3.activity.logger import log_activity
+                from app.infra.v4.activity.logger import log_activity
                 from utils.logging.db_logger import profile_id_context
 
                 # Get resolved profile_id for activity logging
@@ -744,20 +710,10 @@ fastapi_app.add_middleware(DBLoggingMiddleware)
 
 # Include routers
 
-# Include API v3 router (DHH-style)
-from app.api.v3.router import router as api_v3_router  # noqa: E402
-
-fastapi_app.include_router(api_v3_router)
-
 # Include API v4 router (DHH-style)
 from app.api.v4.router import router as api_v4_router  # noqa: E402
 
 fastapi_app.include_router(api_v4_router)
-
-# Include socket v3 router (DHH-style)
-from app.socket.v3 import router as socket_router  # noqa: E402
-
-fastapi_app.include_router(socket_router)
 
 # Include socket v4 router (DHH-style)
 from app.socket.v4 import router as socket_v4_router  # noqa: E402
@@ -798,8 +754,8 @@ async def health_services() -> JSONResponse:
     Returns per-service status + latencies.
     Automatically logs health checks to database when called by notify service.
     """
-    from app.infra.v3.health import run_service_checks
-    from app.infra.v3.metrics.collector import log_health_checks
+    from app.infra.v4.health import run_service_checks
+    from app.infra.v4.metrics.collector import log_health_checks
 
     checks = await run_service_checks()
 
@@ -839,7 +795,7 @@ async def metrics_snapshot() -> JSONResponse:
     Called by notify service to log metrics snapshot.
     No leader election needed since notify service is single instance.
     """
-    from app.infra.v3.metrics.collector import log_metrics_snapshot
+    from app.infra.v4.metrics.collector import log_metrics_snapshot
 
     try:
         await log_metrics_snapshot()

@@ -1,1 +1,0 @@
-"""Activity logging infrastructure utilities."""

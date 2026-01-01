@@ -126,7 +126,7 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
 
   // Filter messages based on toggle switches
   type MessageItem =
-    components["schemas"]["app__api__v3__pricing__detail__MessageItem"];
+    components["schemas"]["app__api__v4__pricing__detail__MessageItem"];
   const filteredMessages = useMemo(() => {
     if (!currentRun) {
       return [];

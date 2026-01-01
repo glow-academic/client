@@ -1,2 +1,0 @@
-"""Rubric agent tools package."""
-

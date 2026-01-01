@@ -17,7 +17,7 @@ export interface paths {
          * Get Profile Detail
          * @description Get profile details with role visibility check.
          */
-        post: operations["get_profile_detail_api_v3_profile_detail_post"];
+        post: operations["get_profile_detail_api_v4_profile_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -37,7 +37,7 @@ export interface paths {
          * Update Profile
          * @description Update profile fields - supports both simple auth updates and comprehensive staff updates.
          */
-        post: operations["update_profile_api_v3_profile_update_post"];
+        post: operations["update_profile_api_v4_profile_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -57,7 +57,7 @@ export interface paths {
          * Create Profile
          * @description Create a new profile.
          */
-        post: operations["create_profile_api_v3_profile_create_post"];
+        post: operations["create_profile_api_v4_profile_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -77,7 +77,7 @@ export interface paths {
          * Delete Profile
          * @description Delete a profile.
          */
-        post: operations["delete_profile_api_v3_profile_delete_post"];
+        post: operations["delete_profile_api_v4_profile_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -97,7 +97,7 @@ export interface paths {
          * Create Or Update Profile
          * @description Create or update a profile based on email.
          */
-        post: operations["create_or_update_profile_api_v3_profile_upsert_post"];
+        post: operations["create_or_update_profile_api_v4_profile_upsert_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -117,7 +117,7 @@ export interface paths {
          * Get Profile New
          * @description Get default profile structure for creation mode.
          */
-        post: operations["get_profile_new_api_v3_profile_new_post"];
+        post: operations["get_profile_new_api_v4_profile_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -137,7 +137,7 @@ export interface paths {
          * Get Profile By Email
          * @description Get profile by email (for auth operations).
          */
-        post: operations["get_profile_by_email_api_v3_profile_email_post"];
+        post: operations["get_profile_by_email_api_v4_profile_email_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -161,7 +161,7 @@ export interface paths {
          *     (hex_to_oklch, ensure_contrast, shade, tint) that are not available in PostgreSQL.
          *     All other business logic is handled in SQL (see get_profile_context_complete.sql).
          */
-        post: operations["get_profile_context_api_v3_profile_context_post"];
+        post: operations["get_profile_context_api_v4_profile_context_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -181,7 +181,7 @@ export interface paths {
          * Authorize Emulation
          * @description Check if emulation is authorized.
          */
-        post: operations["authorize_emulation_api_v3_profile_emulate_post"];
+        post: operations["authorize_emulation_api_v4_profile_emulate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -201,7 +201,7 @@ export interface paths {
          * Search Simulatable Profiles
          * @description Search profiles that can be emulated by the requester.
          */
-        post: operations["search_simulatable_profiles_api_v3_profile_simulatable_post"];
+        post: operations["search_simulatable_profiles_api_v4_profile_simulatable_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -221,7 +221,7 @@ export interface paths {
          * Get Scenarios List
          * @description Get scenarios list with all relationships.
          */
-        post: operations["get_scenarios_list_api_v3_scenarios_list_post"];
+        post: operations["get_scenarios_list_api_v4_scenarios_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -241,7 +241,7 @@ export interface paths {
          * Get Scenario Detail
          * @description Get detailed scenario information.
          */
-        post: operations["get_scenario_detail_api_v3_scenarios_detail_post"];
+        post: operations["get_scenario_detail_api_v4_scenarios_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -261,7 +261,7 @@ export interface paths {
          * Get Scenario New
          * @description Get default scenario structure for creation mode.
          */
-        post: operations["get_scenario_new_api_v3_scenarios_new_post"];
+        post: operations["get_scenario_new_api_v4_scenarios_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -281,7 +281,7 @@ export interface paths {
          * Create Scenario
          * @description Create a new scenario.
          */
-        post: operations["create_scenario_api_v3_scenarios_create_post"];
+        post: operations["create_scenario_api_v4_scenarios_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -301,7 +301,7 @@ export interface paths {
          * Update Scenario
          * @description Update an existing scenario.
          */
-        post: operations["update_scenario_api_v3_scenarios_update_post"];
+        post: operations["update_scenario_api_v4_scenarios_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -321,7 +321,7 @@ export interface paths {
          * Duplicate Scenario
          * @description Duplicate a scenario.
          */
-        post: operations["duplicate_scenario_api_v3_scenarios_duplicate_post"];
+        post: operations["duplicate_scenario_api_v4_scenarios_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -341,7 +341,7 @@ export interface paths {
          * Delete Scenario
          * @description Delete a scenario.
          */
-        post: operations["delete_scenario_api_v3_scenarios_delete_post"];
+        post: operations["delete_scenario_api_v4_scenarios_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -361,7 +361,7 @@ export interface paths {
          * Get Simulations List
          * @description Get simulations list with permissions and relationships.
          */
-        post: operations["get_simulations_list_api_v3_simulations_list_post"];
+        post: operations["get_simulations_list_api_v4_simulations_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -381,7 +381,7 @@ export interface paths {
          * Get Simulation Detail
          * @description Get detailed simulation information.
          */
-        post: operations["get_simulation_detail_api_v3_simulations_detail_post"];
+        post: operations["get_simulation_detail_api_v4_simulations_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -401,7 +401,7 @@ export interface paths {
          * Get Simulation New
          * @description Get default simulation details based on profile.
          */
-        post: operations["get_simulation_new_api_v3_simulations_new_post"];
+        post: operations["get_simulation_new_api_v4_simulations_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -421,7 +421,7 @@ export interface paths {
          * Create Simulation
          * @description Create a new simulation.
          */
-        post: operations["create_simulation_api_v3_simulations_create_post"];
+        post: operations["create_simulation_api_v4_simulations_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -441,7 +441,7 @@ export interface paths {
          * Update Simulation
          * @description Update an existing simulation.
          */
-        post: operations["update_simulation_api_v3_simulations_update_post"];
+        post: operations["update_simulation_api_v4_simulations_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -461,7 +461,7 @@ export interface paths {
          * Duplicate Simulation
          * @description Duplicate a simulation.
          */
-        post: operations["duplicate_simulation_api_v3_simulations_duplicate_post"];
+        post: operations["duplicate_simulation_api_v4_simulations_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -481,7 +481,7 @@ export interface paths {
          * Delete Simulation
          * @description Delete a simulation (with usage check).
          */
-        post: operations["delete_simulation_api_v3_simulations_delete_post"];
+        post: operations["delete_simulation_api_v4_simulations_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -501,7 +501,7 @@ export interface paths {
          * Get Personas List
          * @description Get personas list with permissions and scenario details.
          */
-        post: operations["get_personas_list_api_v3_personas_list_post"];
+        post: operations["get_personas_list_api_v4_personas_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -521,7 +521,7 @@ export interface paths {
          * Get Persona Detail
          * @description Get detailed persona information.
          */
-        post: operations["get_persona_detail_api_v3_personas_detail_post"];
+        post: operations["get_persona_detail_api_v4_personas_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -541,7 +541,7 @@ export interface paths {
          * Get Persona New
          * @description Get default persona structure for creation mode.
          */
-        post: operations["get_persona_new_api_v3_personas_new_post"];
+        post: operations["get_persona_new_api_v4_personas_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -561,7 +561,7 @@ export interface paths {
          * Create Persona
          * @description Create a new persona.
          */
-        post: operations["create_persona_api_v3_personas_create_post"];
+        post: operations["create_persona_api_v4_personas_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -581,7 +581,7 @@ export interface paths {
          * Update Persona
          * @description Update an existing persona.
          */
-        post: operations["update_persona_api_v3_personas_update_post"];
+        post: operations["update_persona_api_v4_personas_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -601,7 +601,7 @@ export interface paths {
          * Duplicate Persona
          * @description Duplicate a persona.
          */
-        post: operations["duplicate_persona_api_v3_personas_duplicate_post"];
+        post: operations["duplicate_persona_api_v4_personas_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -621,7 +621,7 @@ export interface paths {
          * Delete Persona
          * @description Delete a persona.
          */
-        post: operations["delete_persona_api_v3_personas_delete_post"];
+        post: operations["delete_persona_api_v4_personas_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -641,7 +641,7 @@ export interface paths {
          * Get Auth List
          * @description Get auth list with item counts and permissions.
          */
-        post: operations["get_auth_list_api_v3_auth_list_post"];
+        post: operations["get_auth_list_api_v4_auth_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -661,7 +661,7 @@ export interface paths {
          * Get Auth Detail
          * @description Get detailed auth information with nested items and keys.
          */
-        post: operations["get_auth_detail_api_v3_auth_detail_post"];
+        post: operations["get_auth_detail_api_v4_auth_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -681,7 +681,7 @@ export interface paths {
          * Get Auth New
          * @description Get default auth detail for creation mode.
          */
-        post: operations["get_auth_new_api_v3_auth_new_post"];
+        post: operations["get_auth_new_api_v4_auth_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -701,7 +701,7 @@ export interface paths {
          * Create Auth
          * @description Create a new auth entry with nested items.
          */
-        post: operations["create_auth_api_v3_auth_create_post"];
+        post: operations["create_auth_api_v4_auth_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -721,7 +721,7 @@ export interface paths {
          * Update Auth
          * @description Update an existing auth entry (replace all items).
          */
-        post: operations["update_auth_api_v3_auth_update_post"];
+        post: operations["update_auth_api_v4_auth_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -741,7 +741,7 @@ export interface paths {
          * Duplicate Auth
          * @description Duplicate an auth entry with all items and their key associations.
          */
-        post: operations["duplicate_auth_api_v3_auth_duplicate_post"];
+        post: operations["duplicate_auth_api_v4_auth_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -761,7 +761,7 @@ export interface paths {
          * Delete Auth
          * @description Delete an auth entry.
          */
-        post: operations["delete_auth_api_v3_auth_delete_post"];
+        post: operations["delete_auth_api_v4_auth_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -781,7 +781,7 @@ export interface paths {
          * Get Login Providers
          * @description Get list of active auth provider options and departments for login page.
          */
-        post: operations["get_login_providers_api_v3_auth_login_post"];
+        post: operations["get_login_providers_api_v4_auth_login_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -801,7 +801,7 @@ export interface paths {
          * Get Departments List
          * @description Get list of departments with computed fields.
          */
-        post: operations["get_departments_list_api_v3_departments_list_post"];
+        post: operations["get_departments_list_api_v4_departments_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -821,7 +821,7 @@ export interface paths {
          * Get Department Detail
          * @description Get department detail with permissions, stats, and settings.
          */
-        post: operations["get_department_detail_api_v3_departments_detail_post"];
+        post: operations["get_department_detail_api_v4_departments_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -841,7 +841,7 @@ export interface paths {
          * Get Department New
          * @description Get default department detail for creation mode.
          */
-        post: operations["get_department_new_api_v3_departments_new_post"];
+        post: operations["get_department_new_api_v4_departments_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -861,7 +861,7 @@ export interface paths {
          * Create Department
          * @description Create a new department.
          */
-        post: operations["create_department_api_v3_departments_create_post"];
+        post: operations["create_department_api_v4_departments_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -881,7 +881,7 @@ export interface paths {
          * Update Department
          * @description Update a department.
          */
-        post: operations["update_department_api_v3_departments_update_post"];
+        post: operations["update_department_api_v4_departments_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -901,7 +901,7 @@ export interface paths {
          * Duplicate Department
          * @description Duplicate a department.
          */
-        post: operations["duplicate_department_api_v3_departments_duplicate_post"];
+        post: operations["duplicate_department_api_v4_departments_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -921,7 +921,7 @@ export interface paths {
          * Delete Department
          * @description Delete a department (with usage check).
          */
-        post: operations["delete_department_api_v3_departments_delete_post"];
+        post: operations["delete_department_api_v4_departments_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -941,7 +941,7 @@ export interface paths {
          * Get Cohorts List
          * @description Get cohorts list with permissions and relationships.
          */
-        post: operations["get_cohorts_list_api_v3_cohorts_list_post"];
+        post: operations["get_cohorts_list_api_v4_cohorts_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -961,7 +961,7 @@ export interface paths {
          * Get Cohort Detail
          * @description Get cohort detail with staff, simulations, and mappings.
          */
-        post: operations["get_cohort_detail_api_v3_cohorts_detail_post"];
+        post: operations["get_cohort_detail_api_v4_cohorts_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -981,7 +981,7 @@ export interface paths {
          * Get Cohort New
          * @description Get default cohort detail with staff, simulations, and mappings.
          */
-        post: operations["get_cohort_new_api_v3_cohorts_new_post"];
+        post: operations["get_cohort_new_api_v4_cohorts_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1001,7 +1001,7 @@ export interface paths {
          * Duplicate Cohort
          * @description Duplicate a cohort with relationships.
          */
-        post: operations["duplicate_cohort_api_v3_cohorts_duplicate_post"];
+        post: operations["duplicate_cohort_api_v4_cohorts_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1021,7 +1021,7 @@ export interface paths {
          * Leave Cohort
          * @description Remove profile from cohort (leave cohort).
          */
-        post: operations["leave_cohort_api_v3_cohorts_leave_post"];
+        post: operations["leave_cohort_api_v4_cohorts_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1041,7 +1041,7 @@ export interface paths {
          * Create Cohort
          * @description Create a new cohort.
          */
-        post: operations["create_cohort_api_v3_cohorts_create_post"];
+        post: operations["create_cohort_api_v4_cohorts_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1061,7 +1061,7 @@ export interface paths {
          * Update Cohort
          * @description Update an existing cohort.
          */
-        post: operations["update_cohort_api_v3_cohorts_update_post"];
+        post: operations["update_cohort_api_v4_cohorts_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1081,7 +1081,7 @@ export interface paths {
          * Delete Cohort
          * @description Delete a cohort.
          */
-        post: operations["delete_cohort_api_v3_cohorts_delete_post"];
+        post: operations["delete_cohort_api_v4_cohorts_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1101,7 +1101,7 @@ export interface paths {
          * Cohort Search Profile
          * @description Search profiles for adding to a cohort (excludes profiles already in cohort if cohortId provided).
          */
-        post: operations["cohort_search_profile_api_v3_cohorts_search_post"];
+        post: operations["cohort_search_profile_api_v4_cohorts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1121,7 +1121,7 @@ export interface paths {
          * Get Documents List
          * @description Get documents list with tags and scenarios.
          */
-        post: operations["get_documents_list_api_v3_documents_list_post"];
+        post: operations["get_documents_list_api_v4_documents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1141,7 +1141,7 @@ export interface paths {
          * Get Document Detail
          * @description Get document detail information.
          */
-        post: operations["get_document_detail_api_v3_documents_detail_post"];
+        post: operations["get_document_detail_api_v4_documents_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1161,7 +1161,7 @@ export interface paths {
          * Create Document
          * @description Create a new document.
          */
-        post: operations["create_document_api_v3_documents_create_post"];
+        post: operations["create_document_api_v4_documents_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1181,7 +1181,7 @@ export interface paths {
          * Delete Document
          * @description Delete a document.
          */
-        post: operations["delete_document_api_v3_documents_delete_post"];
+        post: operations["delete_document_api_v4_documents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1201,7 +1201,7 @@ export interface paths {
          * Update Document
          * @description Update a document.
          */
-        post: operations["update_document_api_v3_documents_update_post"];
+        post: operations["update_document_api_v4_documents_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1221,7 +1221,7 @@ export interface paths {
          * Generate Certificate
          * @description Generate a certificate PDF/text for a profile.
          */
-        post: operations["generate_certificate_api_v3_documents_certificate_post"];
+        post: operations["generate_certificate_api_v4_documents_certificate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1241,7 +1241,7 @@ export interface paths {
          * Render Document Template
          * @description Render Jinja2 template with template args and theme injection.
          */
-        post: operations["render_document_template_api_v3_documents_render_post"];
+        post: operations["render_document_template_api_v4_documents_render_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1261,7 +1261,7 @@ export interface paths {
          * Create Eval
          * @description Create a new eval.
          */
-        post: operations["create_eval_api_v3_evals_create_post"];
+        post: operations["create_eval_api_v4_evals_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1281,7 +1281,7 @@ export interface paths {
          * Delete Eval
          * @description Delete an eval.
          */
-        post: operations["delete_eval_api_v3_evals_delete_post"];
+        post: operations["delete_eval_api_v4_evals_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1301,7 +1301,7 @@ export interface paths {
          * Get Eval Detail
          * @description Get detailed eval information.
          */
-        post: operations["get_eval_detail_api_v3_evals_detail_post"];
+        post: operations["get_eval_detail_api_v4_evals_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1321,7 +1321,7 @@ export interface paths {
          * Get Evals List
          * @description Get evals list with status derivation and permissions.
          */
-        post: operations["get_evals_list_api_v3_evals_list_post"];
+        post: operations["get_evals_list_api_v4_evals_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1341,7 +1341,7 @@ export interface paths {
          * Get Eval New
          * @description Get default eval detail with departments, agents, and rubrics mappings.
          */
-        post: operations["get_eval_new_api_v3_evals_new_post"];
+        post: operations["get_eval_new_api_v4_evals_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1361,7 +1361,7 @@ export interface paths {
          * Update Eval
          * @description Update an existing eval.
          */
-        post: operations["update_eval_api_v3_evals_update_post"];
+        post: operations["update_eval_api_v4_evals_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1381,7 +1381,7 @@ export interface paths {
          * Get Rubrics List
          * @description Get rubrics list with hierarchical structure and permissions.
          */
-        post: operations["get_rubrics_list_api_v3_rubrics_list_post"];
+        post: operations["get_rubrics_list_api_v4_rubrics_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1401,7 +1401,7 @@ export interface paths {
          * Get Rubric Detail
          * @description Get rubric detail information.
          */
-        post: operations["get_rubric_detail_api_v3_rubrics_detail_post"];
+        post: operations["get_rubric_detail_api_v4_rubrics_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1421,7 +1421,7 @@ export interface paths {
          * Get Rubric New
          * @description Get default rubric detail information.
          */
-        post: operations["get_rubric_new_api_v3_rubrics_new_post"];
+        post: operations["get_rubric_new_api_v4_rubrics_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1441,7 +1441,7 @@ export interface paths {
          * Duplicate Rubric
          * @description Duplicate a rubric with entire hierarchy.
          */
-        post: operations["duplicate_rubric_api_v3_rubrics_duplicate_post"];
+        post: operations["duplicate_rubric_api_v4_rubrics_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1461,7 +1461,7 @@ export interface paths {
          * Create Rubric
          * @description Create a new rubric with nested structure.
          */
-        post: operations["create_rubric_api_v3_rubrics_create_post"];
+        post: operations["create_rubric_api_v4_rubrics_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1481,7 +1481,7 @@ export interface paths {
          * Update Rubric
          * @description Update an existing rubric (replaces entire hierarchy).
          */
-        post: operations["update_rubric_api_v3_rubrics_update_post"];
+        post: operations["update_rubric_api_v4_rubrics_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1501,7 +1501,7 @@ export interface paths {
          * Delete Rubric
          * @description Delete a rubric.
          */
-        post: operations["delete_rubric_api_v3_rubrics_delete_post"];
+        post: operations["delete_rubric_api_v4_rubrics_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1521,7 +1521,7 @@ export interface paths {
          * List Settings
          * @description Get list of all settings ordered by created_at DESC.
          */
-        post: operations["list_settings_api_v3_settings_list_post"];
+        post: operations["list_settings_api_v4_settings_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1541,7 +1541,7 @@ export interface paths {
          * Get Settings Detail
          * @description Get detailed settings information.
          */
-        post: operations["get_settings_detail_api_v3_settings_detail_post"];
+        post: operations["get_settings_detail_api_v4_settings_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1561,7 +1561,7 @@ export interface paths {
          * Update Settings
          * @description Update settings (creates new active row, deactivates old).
          */
-        post: operations["update_settings_api_v3_settings_update_post"];
+        post: operations["update_settings_api_v4_settings_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1581,7 +1581,7 @@ export interface paths {
          * Refresh Analytics
          * @description Refresh the analytics materialized view.
          */
-        post: operations["refresh_analytics_api_v3_analytics_refresh_post"];
+        post: operations["refresh_analytics_api_v4_analytics_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1601,7 +1601,7 @@ export interface paths {
          * Create Analytics View
          * @description Create or recreate the analytics materialized view with all indexes.
          */
-        post: operations["create_analytics_view_api_v3_analytics_view_post"];
+        post: operations["create_analytics_view_api_v4_analytics_view_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1621,7 +1621,7 @@ export interface paths {
          * Get Activity Bundle
          * @description Get activity bundle with header metrics.
          */
-        post: operations["get_activity_bundle_api_v3_activity_bundle_post"];
+        post: operations["get_activity_bundle_api_v4_activity_bundle_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1641,7 +1641,7 @@ export interface paths {
          * Get Activity List
          * @description Get paginated list of activity entries.
          */
-        post: operations["get_activity_list_api_v3_activity_list_post"];
+        post: operations["get_activity_list_api_v4_activity_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1661,7 +1661,7 @@ export interface paths {
          * Get Dashboard
          * @description Get complete dashboard bundle with all metrics, history, insights, and mappings.
          */
-        post: operations["get_dashboard_api_v3_dashboard_overview_post"];
+        post: operations["get_dashboard_api_v4_dashboard_overview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1681,7 +1681,7 @@ export interface paths {
          * Get Dashboard History
          * @description Get paginated dashboard history with search, filters, sorting, and pagination.
          */
-        post: operations["get_dashboard_history_api_v3_dashboard_history_post"];
+        post: operations["get_dashboard_history_api_v4_dashboard_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1701,7 +1701,7 @@ export interface paths {
          * Export Reports
          * @description Export reports data as CSV or ZIP file.
          */
-        post: operations["export_reports_api_v3_reports_export_post"];
+        post: operations["export_reports_api_v4_reports_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1721,7 +1721,7 @@ export interface paths {
          * Get Reports
          * @description Get reports bundle with aggregated metrics per profile and entity mappings.
          */
-        post: operations["get_reports_api_v3_reports_post"];
+        post: operations["get_reports_api_v4_reports_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1741,7 +1741,7 @@ export interface paths {
          * Get Reports Overview
          * @description Get complete reports overview bundle for individual profile - requires profileId.
          */
-        post: operations["get_reports_overview_api_v3_reports_overview_post"];
+        post: operations["get_reports_overview_api_v4_reports_overview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1761,7 +1761,7 @@ export interface paths {
          * Get Reports History
          * @description Get paginated reports history for individual profile - requires profileId.
          */
-        post: operations["get_reports_history_api_v3_reports_history_post"];
+        post: operations["get_reports_history_api_v4_reports_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1781,7 +1781,7 @@ export interface paths {
          * Get Leaderboard
          * @description Get leaderboard bundle with all metrics and profile data.
          */
-        post: operations["get_leaderboard_api_v3_leaderboard_bundle_post"];
+        post: operations["get_leaderboard_api_v4_leaderboard_bundle_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1801,7 +1801,7 @@ export interface paths {
          * List Agents
          * @description Get list of agents with permissions.
          */
-        post: operations["list_agents_api_v3_agents_list_post"];
+        post: operations["list_agents_api_v4_agents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1821,7 +1821,7 @@ export interface paths {
          * Get Agent Detail
          * @description Get agent detail with debug info and metadata.
          */
-        post: operations["get_agent_detail_api_v3_agents_detail_post"];
+        post: operations["get_agent_detail_api_v4_agents_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1841,7 +1841,7 @@ export interface paths {
          * Get Agent New
          * @description Get default agent detail metadata for creating new agents.
          */
-        post: operations["get_agent_new_api_v3_agents_new_post"];
+        post: operations["get_agent_new_api_v4_agents_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1861,7 +1861,7 @@ export interface paths {
          * Create Agent
          * @description Create a new agent.
          */
-        post: operations["create_agent_api_v3_agents_create_post"];
+        post: operations["create_agent_api_v4_agents_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1881,7 +1881,7 @@ export interface paths {
          * Update Agent
          * @description Update an agent.
          */
-        post: operations["update_agent_api_v3_agents_update_post"];
+        post: operations["update_agent_api_v4_agents_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1901,7 +1901,7 @@ export interface paths {
          * Duplicate Agent
          * @description Duplicate an agent.
          */
-        post: operations["duplicate_agent_api_v3_agents_duplicate_post"];
+        post: operations["duplicate_agent_api_v4_agents_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1921,7 +1921,7 @@ export interface paths {
          * Delete Agent
          * @description Delete an agent.
          */
-        post: operations["delete_agent_api_v3_agents_delete_post"];
+        post: operations["delete_agent_api_v4_agents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1941,7 +1941,7 @@ export interface paths {
          * Get Keys List
          * @description Get keys list with permissions and relationships.
          */
-        post: operations["get_keys_list_api_v3_keys_list_post"];
+        post: operations["get_keys_list_api_v4_keys_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1961,7 +1961,7 @@ export interface paths {
          * Get Key Detail
          * @description Get key detail information.
          */
-        post: operations["get_key_detail_api_v3_keys_detail_post"];
+        post: operations["get_key_detail_api_v4_keys_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1981,7 +1981,7 @@ export interface paths {
          * Get Key New
          * @description Get default key detail information for new key creation.
          */
-        post: operations["get_key_new_api_v3_keys_new_post"];
+        post: operations["get_key_new_api_v4_keys_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2001,7 +2001,7 @@ export interface paths {
          * Create Key
          * @description Create a new key.
          */
-        post: operations["create_key_api_v3_keys_create_post"];
+        post: operations["create_key_api_v4_keys_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2021,7 +2021,7 @@ export interface paths {
          * Update Key
          * @description Update an existing key.
          */
-        post: operations["update_key_api_v3_keys_update_post"];
+        post: operations["update_key_api_v4_keys_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2041,7 +2041,7 @@ export interface paths {
          * Delete Key
          * @description Delete a key with permission checks.
          */
-        post: operations["delete_key_api_v3_keys_delete_post"];
+        post: operations["delete_key_api_v4_keys_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2061,7 +2061,7 @@ export interface paths {
          * Decrypt Key
          * @description Decrypt a key's encrypted value.
          */
-        post: operations["decrypt_key_api_v3_keys_decrypt_post"];
+        post: operations["decrypt_key_api_v4_keys_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2081,7 +2081,7 @@ export interface paths {
          * Get Models List
          * @description Get models list (flat structure with provider info).
          */
-        post: operations["get_models_list_api_v3_models_list_post"];
+        post: operations["get_models_list_api_v4_models_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2101,7 +2101,7 @@ export interface paths {
          * Get Model Detail
          * @description Get detailed model information.
          */
-        post: operations["get_model_detail_api_v3_models_detail_post"];
+        post: operations["get_model_detail_api_v4_models_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2121,7 +2121,7 @@ export interface paths {
          * Get Model New
          * @description Get default model detail for creation mode (provider mapping).
          */
-        post: operations["get_model_new_api_v3_models_new_post"];
+        post: operations["get_model_new_api_v4_models_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2141,7 +2141,7 @@ export interface paths {
          * Create Model
          * @description Create a new model.
          */
-        post: operations["create_model_api_v3_models_create_post"];
+        post: operations["create_model_api_v4_models_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2161,7 +2161,7 @@ export interface paths {
          * Update Model
          * @description Update an existing model.
          */
-        post: operations["update_model_api_v3_models_update_post"];
+        post: operations["update_model_api_v4_models_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2181,7 +2181,7 @@ export interface paths {
          * Delete Model
          * @description Delete a model if not in use.
          */
-        post: operations["delete_model_api_v3_models_delete_post"];
+        post: operations["delete_model_api_v4_models_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2201,7 +2201,7 @@ export interface paths {
          * Duplicate Model
          * @description Duplicate a model.
          */
-        post: operations["duplicate_model_api_v3_models_duplicate_post"];
+        post: operations["duplicate_model_api_v4_models_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2221,7 +2221,7 @@ export interface paths {
          * Get Providers List
          * @description Get providers list with permissions and endpoint info.
          */
-        post: operations["get_providers_list_api_v3_providers_list_post"];
+        post: operations["get_providers_list_api_v4_providers_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2241,7 +2241,7 @@ export interface paths {
          * Get Provider Detail
          * @description Get provider detail information.
          */
-        post: operations["get_provider_detail_api_v3_providers_detail_post"];
+        post: operations["get_provider_detail_api_v4_providers_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2261,7 +2261,7 @@ export interface paths {
          * Get Provider New
          * @description Get default provider detail information for new provider creation.
          */
-        post: operations["get_provider_new_api_v3_providers_new_post"];
+        post: operations["get_provider_new_api_v4_providers_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2281,7 +2281,7 @@ export interface paths {
          * Create Provider
          * @description Create a new provider.
          */
-        post: operations["create_provider_api_v3_providers_create_post"];
+        post: operations["create_provider_api_v4_providers_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2301,7 +2301,7 @@ export interface paths {
          * Update Provider
          * @description Update an existing provider.
          */
-        post: operations["update_provider_api_v3_providers_update_post"];
+        post: operations["update_provider_api_v4_providers_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2321,7 +2321,7 @@ export interface paths {
          * Delete Provider
          * @description Delete a provider (prevents deletion if used by models).
          */
-        post: operations["delete_provider_api_v3_providers_delete_post"];
+        post: operations["delete_provider_api_v4_providers_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2341,7 +2341,7 @@ export interface paths {
          * Get Parameters List
          * @description Get parameters list with item counts and permissions.
          */
-        post: operations["get_parameters_list_api_v3_parameters_list_post"];
+        post: operations["get_parameters_list_api_v4_parameters_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2361,7 +2361,7 @@ export interface paths {
          * Get Parameter Detail
          * @description Get detailed parameter information with nested items.
          */
-        post: operations["get_parameter_detail_api_v3_parameters_detail_post"];
+        post: operations["get_parameter_detail_api_v4_parameters_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2381,7 +2381,7 @@ export interface paths {
          * Get Parameter New
          * @description Get default parameter detail for creation mode.
          */
-        post: operations["get_parameter_new_api_v3_parameters_new_post"];
+        post: operations["get_parameter_new_api_v4_parameters_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2401,7 +2401,7 @@ export interface paths {
          * Create Parameter
          * @description Create a new parameter with nested items.
          */
-        post: operations["create_parameter_api_v3_parameters_create_post"];
+        post: operations["create_parameter_api_v4_parameters_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2421,7 +2421,7 @@ export interface paths {
          * Update Parameter
          * @description Update an existing parameter (replace all items).
          */
-        post: operations["update_parameter_api_v3_parameters_update_post"];
+        post: operations["update_parameter_api_v4_parameters_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2441,7 +2441,7 @@ export interface paths {
          * Duplicate Parameter
          * @description Duplicate a parameter with all items and their department associations.
          */
-        post: operations["duplicate_parameter_api_v3_parameters_duplicate_post"];
+        post: operations["duplicate_parameter_api_v4_parameters_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2461,7 +2461,7 @@ export interface paths {
          * Delete Parameter
          * @description Delete a parameter if items not in use.
          */
-        post: operations["delete_parameter_api_v3_parameters_delete_post"];
+        post: operations["delete_parameter_api_v4_parameters_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2481,7 +2481,7 @@ export interface paths {
          * Get Fields List
          * @description Get fields list with permissions and relationships.
          */
-        post: operations["get_fields_list_api_v3_fields_list_post"];
+        post: operations["get_fields_list_api_v4_fields_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2501,7 +2501,7 @@ export interface paths {
          * Get Field Detail
          * @description Get detailed field information.
          */
-        post: operations["get_field_detail_api_v3_fields_detail_post"];
+        post: operations["get_field_detail_api_v4_fields_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2521,7 +2521,7 @@ export interface paths {
          * Get Field New
          * @description Get default field detail for creation mode.
          */
-        post: operations["get_field_new_api_v3_fields_new_post"];
+        post: operations["get_field_new_api_v4_fields_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2541,7 +2541,7 @@ export interface paths {
          * Create Field
          * @description Create a new field with parameter and department associations.
          */
-        post: operations["create_field_api_v3_fields_create_post"];
+        post: operations["create_field_api_v4_fields_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2561,7 +2561,7 @@ export interface paths {
          * Update Field
          * @description Update an existing field.
          */
-        post: operations["update_field_api_v3_fields_update_post"];
+        post: operations["update_field_api_v4_fields_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2581,7 +2581,7 @@ export interface paths {
          * Duplicate Field
          * @description Duplicate a field with all parameter and department associations.
          */
-        post: operations["duplicate_field_api_v3_fields_duplicate_post"];
+        post: operations["duplicate_field_api_v4_fields_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2601,7 +2601,7 @@ export interface paths {
          * Delete Field
          * @description Delete a field.
          */
-        post: operations["delete_field_api_v3_fields_delete_post"];
+        post: operations["delete_field_api_v4_fields_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2621,7 +2621,7 @@ export interface paths {
          * Create Feedback
          * @description Create new app feedback entry.
          */
-        post: operations["create_feedback_api_v3_feedback_create_post"];
+        post: operations["create_feedback_api_v4_feedback_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2641,7 +2641,7 @@ export interface paths {
          * Get Feedback List
          * @description Get list of all feedback entries.
          */
-        post: operations["get_feedback_list_api_v3_feedback_list_post"];
+        post: operations["get_feedback_list_api_v4_feedback_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2661,7 +2661,7 @@ export interface paths {
          * Resolve Feedback
          * @description Resolve or unresolve a feedback entry.
          */
-        post: operations["resolve_feedback_api_v3_feedback_resolve_post"];
+        post: operations["resolve_feedback_api_v4_feedback_resolve_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2681,7 +2681,7 @@ export interface paths {
          * Get Health Bundle
          * @description Get health bundle with health KPIs and metrics.
          */
-        post: operations["get_health_bundle_api_v3_health_bundle_post"];
+        post: operations["get_health_bundle_api_v4_health_bundle_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2701,7 +2701,7 @@ export interface paths {
          * Bulk Archive Attempts
          * @description Bulk archive or unarchive simulation attempts.
          */
-        post: operations["bulk_archive_attempts_api_v3_attempts_archive_post"];
+        post: operations["bulk_archive_attempts_api_v4_attempts_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2721,7 +2721,7 @@ export interface paths {
          * Get Attempt Full
          * @description Get complete attempt data with all related entities and computed values.
          */
-        post: operations["get_attempt_full_api_v3_attempts_simulation_post"];
+        post: operations["get_attempt_full_api_v4_attempts_simulation_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2741,7 +2741,7 @@ export interface paths {
          * Get Eval Attempt Full
          * @description Get complete eval attempt data with all runs and status.
          */
-        post: operations["get_eval_attempt_full_api_v3_attempts_eval_post"];
+        post: operations["get_eval_attempt_full_api_v4_attempts_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2761,7 +2761,7 @@ export interface paths {
          * Delete Prompt
          * @description Delete a prompt.
          */
-        post: operations["delete_prompt_api_v3_prompts_delete_post"];
+        post: operations["delete_prompt_api_v4_prompts_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2781,7 +2781,7 @@ export interface paths {
          * Get Profile List
          * @description Get profile/staff list with permissions and relationships.
          */
-        post: operations["get_profile_list_api_v3_staff_list_post"];
+        post: operations["get_profile_list_api_v4_staff_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2801,7 +2801,7 @@ export interface paths {
          * Get Staff Detail
          * @description Get staff profile details with role visibility check.
          */
-        post: operations["get_staff_detail_api_v3_staff_detail_post"];
+        post: operations["get_staff_detail_api_v4_staff_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2821,7 +2821,7 @@ export interface paths {
          * Get Staff New
          * @description Get default staff structure for creation mode.
          */
-        post: operations["get_staff_new_api_v3_staff_new_post"];
+        post: operations["get_staff_new_api_v4_staff_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2841,7 +2841,7 @@ export interface paths {
          * Search Staff
          * @description Search staff with query and filters.
          */
-        post: operations["search_staff_api_v3_staff_search_post"];
+        post: operations["search_staff_api_v4_staff_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2861,7 +2861,7 @@ export interface paths {
          * Process Csv
          * @description Process CSV file and map columns to target fields.
          */
-        post: operations["process_csv_api_v3_staff_csv_post"];
+        post: operations["process_csv_api_v4_staff_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2881,7 +2881,7 @@ export interface paths {
          * Get Create Staff Data
          * @description Get all data needed for create staff UI (mappings, etc.).
          */
-        post: operations["get_create_staff_data_api_v3_staff_data_create_post"];
+        post: operations["get_create_staff_data_api_v4_staff_data_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2901,7 +2901,7 @@ export interface paths {
          * Bulk Create Staff
          * @description Bulk create profiles.
          */
-        post: operations["bulk_create_staff_api_v3_staff_create_post"];
+        post: operations["bulk_create_staff_api_v4_staff_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2921,7 +2921,7 @@ export interface paths {
          * Bulk Update Staff
          * @description Bulk update profiles.
          */
-        post: operations["bulk_update_staff_api_v3_staff_update_post"];
+        post: operations["bulk_update_staff_api_v4_staff_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2941,7 +2941,7 @@ export interface paths {
          * Bulk Delete Staff
          * @description Bulk delete profiles.
          */
-        post: operations["bulk_delete_staff_api_v3_staff_delete_post"];
+        post: operations["bulk_delete_staff_api_v4_staff_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2961,7 +2961,7 @@ export interface paths {
          * Bulk Create Or Update Staff
          * @description Bulk create or update staff members.
          */
-        post: operations["bulk_create_or_update_staff_api_v3_staff_upsert_post"];
+        post: operations["bulk_create_or_update_staff_api_v4_staff_upsert_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2981,7 +2981,7 @@ export interface paths {
          * Get Benchmark Bundle
          * @description Get benchmark bundle with evals list and eval attempts list.
          */
-        post: operations["get_benchmark_bundle_api_v3_benchmark_bundle_post"];
+        post: operations["get_benchmark_bundle_api_v4_benchmark_bundle_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3004,7 +3004,7 @@ export interface paths {
          *     Home always shows general simulations only (no simulationFilters parameter).
          *     Bundle only returns top half (items + mappings), history is separate endpoint.
          */
-        post: operations["get_home_overview_api_v3_home_overview_post"];
+        post: operations["get_home_overview_api_v4_home_overview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3024,7 +3024,7 @@ export interface paths {
          * Get Home History
          * @description Get paginated home history with search, filters, sorting, and pagination.
          */
-        post: operations["get_home_history_api_v3_home_history_post"];
+        post: operations["get_home_history_api_v4_home_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3048,7 +3048,7 @@ export interface paths {
          *     No cohort/role/date filtering for personal practice.
          *     Note: History is not included in overview - use /practice/history endpoint separately.
          */
-        post: operations["get_practice_overview_api_v3_practice_overview_post"];
+        post: operations["get_practice_overview_api_v4_practice_overview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3068,7 +3068,7 @@ export interface paths {
          * Get Practice History
          * @description Get paginated practice history with search, filters, sorting, and pagination.
          */
-        post: operations["get_practice_history_api_v3_practice_history_post"];
+        post: operations["get_practice_history_api_v4_practice_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3088,7 +3088,7 @@ export interface paths {
          * Get Pricing
          * @description Get pricing metrics with model usage and cost analysis.
          */
-        post: operations["get_pricing_api_v3_pricing_analytics_post"];
+        post: operations["get_pricing_api_v4_pricing_analytics_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3108,7 +3108,7 @@ export interface paths {
          * Get Pricing Runs
          * @description Get paginated, filtered, searched, sorted pricing runs for table.
          */
-        post: operations["get_pricing_runs_api_v3_pricing_runs_post"];
+        post: operations["get_pricing_runs_api_v4_pricing_runs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3128,7 +3128,7 @@ export interface paths {
          * Get Pricing Run Detail
          * @description Get detailed pricing run or group information with all messages.
          */
-        post: operations["get_pricing_run_detail_api_v3_pricing_detail_post"];
+        post: operations["get_pricing_run_detail_api_v4_pricing_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3148,13 +3148,13 @@ export interface paths {
          * Tus Creation
          * @description Handle POST request for tus protocol - create upload.
          */
-        post: operations["tus_creation_api_v3_uploads_upload_post"];
+        post: operations["tus_creation_api_v4_uploads_upload_post"];
         delete?: never;
         /**
          * Tus Options
          * @description Handle OPTIONS request for tus protocol discovery.
          */
-        options: operations["tus_options_api_v3_uploads_upload_options"];
+        options: operations["tus_options_api_v4_uploads_upload_options"];
         head?: never;
         patch?: never;
         trace?: never;
@@ -3174,17 +3174,17 @@ export interface paths {
          * Tus Options Upload Id
          * @description Handle OPTIONS request for specific upload.
          */
-        options: operations["tus_options_upload_id_api_v3_uploads_upload__upload_id__options"];
+        options: operations["tus_options_upload_id_api_v4_uploads_upload__upload_id__options"];
         /**
          * Tus Head
          * @description Handle HEAD request for tus protocol - get upload info.
          */
-        head: operations["tus_head_api_v3_uploads_upload__upload_id__head"];
+        head: operations["tus_head_api_v4_uploads_upload__upload_id__head"];
         /**
          * Tus Patch
          * @description Handle PATCH request for tus protocol - upload chunk.
          */
-        patch: operations["tus_patch_api_v3_uploads_upload__upload_id__patch"];
+        patch: operations["tus_patch_api_v4_uploads_upload__upload_id__patch"];
         trace?: never;
     };
     "/api/v4/uploads/upload/{upload_id}/finalize": {
@@ -3200,7 +3200,7 @@ export interface paths {
          * Tus Finalize
          * @description Finalize a TUS upload and create upload record.
          */
-        post: operations["tus_finalize_api_v3_uploads_upload__upload_id__finalize_post"];
+        post: operations["tus_finalize_api_v4_uploads_upload__upload_id__finalize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3218,7 +3218,7 @@ export interface paths {
          * Download Upload
          * @description Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.
          */
-        get: operations["download_upload_api_v3_uploads_download__upload_id__get"];
+        get: operations["download_upload_api_v4_uploads_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -22968,7 +22968,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_profile_detail_api_v3_profile_detail_post: {
+    get_profile_detail_api_v4_profile_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23004,7 +23004,7 @@ export interface operations {
             };
         };
     };
-    update_profile_api_v3_profile_update_post: {
+    update_profile_api_v4_profile_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23040,7 +23040,7 @@ export interface operations {
             };
         };
     };
-    create_profile_api_v3_profile_create_post: {
+    create_profile_api_v4_profile_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23076,7 +23076,7 @@ export interface operations {
             };
         };
     };
-    delete_profile_api_v3_profile_delete_post: {
+    delete_profile_api_v4_profile_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23112,7 +23112,7 @@ export interface operations {
             };
         };
     };
-    create_or_update_profile_api_v3_profile_upsert_post: {
+    create_or_update_profile_api_v4_profile_upsert_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23148,7 +23148,7 @@ export interface operations {
             };
         };
     };
-    get_profile_new_api_v3_profile_new_post: {
+    get_profile_new_api_v4_profile_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23184,7 +23184,7 @@ export interface operations {
             };
         };
     };
-    get_profile_by_email_api_v3_profile_email_post: {
+    get_profile_by_email_api_v4_profile_email_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23220,7 +23220,7 @@ export interface operations {
             };
         };
     };
-    get_profile_context_api_v3_profile_context_post: {
+    get_profile_context_api_v4_profile_context_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23256,7 +23256,7 @@ export interface operations {
             };
         };
     };
-    authorize_emulation_api_v3_profile_emulate_post: {
+    authorize_emulation_api_v4_profile_emulate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23292,7 +23292,7 @@ export interface operations {
             };
         };
     };
-    search_simulatable_profiles_api_v3_profile_simulatable_post: {
+    search_simulatable_profiles_api_v4_profile_simulatable_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23328,7 +23328,7 @@ export interface operations {
             };
         };
     };
-    get_scenarios_list_api_v3_scenarios_list_post: {
+    get_scenarios_list_api_v4_scenarios_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23364,7 +23364,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_detail_api_v3_scenarios_detail_post: {
+    get_scenario_detail_api_v4_scenarios_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23400,7 +23400,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_new_api_v3_scenarios_new_post: {
+    get_scenario_new_api_v4_scenarios_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23436,7 +23436,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_api_v3_scenarios_create_post: {
+    create_scenario_api_v4_scenarios_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23472,7 +23472,7 @@ export interface operations {
             };
         };
     };
-    update_scenario_api_v3_scenarios_update_post: {
+    update_scenario_api_v4_scenarios_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23508,7 +23508,7 @@ export interface operations {
             };
         };
     };
-    duplicate_scenario_api_v3_scenarios_duplicate_post: {
+    duplicate_scenario_api_v4_scenarios_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23544,7 +23544,7 @@ export interface operations {
             };
         };
     };
-    delete_scenario_api_v3_scenarios_delete_post: {
+    delete_scenario_api_v4_scenarios_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23580,7 +23580,7 @@ export interface operations {
             };
         };
     };
-    get_simulations_list_api_v3_simulations_list_post: {
+    get_simulations_list_api_v4_simulations_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23616,7 +23616,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_detail_api_v3_simulations_detail_post: {
+    get_simulation_detail_api_v4_simulations_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23652,7 +23652,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_new_api_v3_simulations_new_post: {
+    get_simulation_new_api_v4_simulations_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23688,7 +23688,7 @@ export interface operations {
             };
         };
     };
-    create_simulation_api_v3_simulations_create_post: {
+    create_simulation_api_v4_simulations_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23724,7 +23724,7 @@ export interface operations {
             };
         };
     };
-    update_simulation_api_v3_simulations_update_post: {
+    update_simulation_api_v4_simulations_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23760,7 +23760,7 @@ export interface operations {
             };
         };
     };
-    duplicate_simulation_api_v3_simulations_duplicate_post: {
+    duplicate_simulation_api_v4_simulations_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23796,7 +23796,7 @@ export interface operations {
             };
         };
     };
-    delete_simulation_api_v3_simulations_delete_post: {
+    delete_simulation_api_v4_simulations_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23832,7 +23832,7 @@ export interface operations {
             };
         };
     };
-    get_personas_list_api_v3_personas_list_post: {
+    get_personas_list_api_v4_personas_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23868,7 +23868,7 @@ export interface operations {
             };
         };
     };
-    get_persona_detail_api_v3_personas_detail_post: {
+    get_persona_detail_api_v4_personas_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23904,7 +23904,7 @@ export interface operations {
             };
         };
     };
-    get_persona_new_api_v3_personas_new_post: {
+    get_persona_new_api_v4_personas_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23940,7 +23940,7 @@ export interface operations {
             };
         };
     };
-    create_persona_api_v3_personas_create_post: {
+    create_persona_api_v4_personas_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -23976,7 +23976,7 @@ export interface operations {
             };
         };
     };
-    update_persona_api_v3_personas_update_post: {
+    update_persona_api_v4_personas_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24012,7 +24012,7 @@ export interface operations {
             };
         };
     };
-    duplicate_persona_api_v3_personas_duplicate_post: {
+    duplicate_persona_api_v4_personas_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24048,7 +24048,7 @@ export interface operations {
             };
         };
     };
-    delete_persona_api_v3_personas_delete_post: {
+    delete_persona_api_v4_personas_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24084,7 +24084,7 @@ export interface operations {
             };
         };
     };
-    get_auth_list_api_v3_auth_list_post: {
+    get_auth_list_api_v4_auth_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24120,7 +24120,7 @@ export interface operations {
             };
         };
     };
-    get_auth_detail_api_v3_auth_detail_post: {
+    get_auth_detail_api_v4_auth_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24156,7 +24156,7 @@ export interface operations {
             };
         };
     };
-    get_auth_new_api_v3_auth_new_post: {
+    get_auth_new_api_v4_auth_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24192,7 +24192,7 @@ export interface operations {
             };
         };
     };
-    create_auth_api_v3_auth_create_post: {
+    create_auth_api_v4_auth_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24228,7 +24228,7 @@ export interface operations {
             };
         };
     };
-    update_auth_api_v3_auth_update_post: {
+    update_auth_api_v4_auth_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24264,7 +24264,7 @@ export interface operations {
             };
         };
     };
-    duplicate_auth_api_v3_auth_duplicate_post: {
+    duplicate_auth_api_v4_auth_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24300,7 +24300,7 @@ export interface operations {
             };
         };
     };
-    delete_auth_api_v3_auth_delete_post: {
+    delete_auth_api_v4_auth_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24336,7 +24336,7 @@ export interface operations {
             };
         };
     };
-    get_login_providers_api_v3_auth_login_post: {
+    get_login_providers_api_v4_auth_login_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24372,7 +24372,7 @@ export interface operations {
             };
         };
     };
-    get_departments_list_api_v3_departments_list_post: {
+    get_departments_list_api_v4_departments_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24408,7 +24408,7 @@ export interface operations {
             };
         };
     };
-    get_department_detail_api_v3_departments_detail_post: {
+    get_department_detail_api_v4_departments_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24444,7 +24444,7 @@ export interface operations {
             };
         };
     };
-    get_department_new_api_v3_departments_new_post: {
+    get_department_new_api_v4_departments_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24480,7 +24480,7 @@ export interface operations {
             };
         };
     };
-    create_department_api_v3_departments_create_post: {
+    create_department_api_v4_departments_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24516,7 +24516,7 @@ export interface operations {
             };
         };
     };
-    update_department_api_v3_departments_update_post: {
+    update_department_api_v4_departments_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24552,7 +24552,7 @@ export interface operations {
             };
         };
     };
-    duplicate_department_api_v3_departments_duplicate_post: {
+    duplicate_department_api_v4_departments_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24588,7 +24588,7 @@ export interface operations {
             };
         };
     };
-    delete_department_api_v3_departments_delete_post: {
+    delete_department_api_v4_departments_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24624,7 +24624,7 @@ export interface operations {
             };
         };
     };
-    get_cohorts_list_api_v3_cohorts_list_post: {
+    get_cohorts_list_api_v4_cohorts_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24660,7 +24660,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_detail_api_v3_cohorts_detail_post: {
+    get_cohort_detail_api_v4_cohorts_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24696,7 +24696,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_new_api_v3_cohorts_new_post: {
+    get_cohort_new_api_v4_cohorts_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24732,7 +24732,7 @@ export interface operations {
             };
         };
     };
-    duplicate_cohort_api_v3_cohorts_duplicate_post: {
+    duplicate_cohort_api_v4_cohorts_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24768,7 +24768,7 @@ export interface operations {
             };
         };
     };
-    leave_cohort_api_v3_cohorts_leave_post: {
+    leave_cohort_api_v4_cohorts_leave_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24804,7 +24804,7 @@ export interface operations {
             };
         };
     };
-    create_cohort_api_v3_cohorts_create_post: {
+    create_cohort_api_v4_cohorts_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24840,7 +24840,7 @@ export interface operations {
             };
         };
     };
-    update_cohort_api_v3_cohorts_update_post: {
+    update_cohort_api_v4_cohorts_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24876,7 +24876,7 @@ export interface operations {
             };
         };
     };
-    delete_cohort_api_v3_cohorts_delete_post: {
+    delete_cohort_api_v4_cohorts_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24912,7 +24912,7 @@ export interface operations {
             };
         };
     };
-    cohort_search_profile_api_v3_cohorts_search_post: {
+    cohort_search_profile_api_v4_cohorts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24948,7 +24948,7 @@ export interface operations {
             };
         };
     };
-    get_documents_list_api_v3_documents_list_post: {
+    get_documents_list_api_v4_documents_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24984,7 +24984,7 @@ export interface operations {
             };
         };
     };
-    get_document_detail_api_v3_documents_detail_post: {
+    get_document_detail_api_v4_documents_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25020,7 +25020,7 @@ export interface operations {
             };
         };
     };
-    create_document_api_v3_documents_create_post: {
+    create_document_api_v4_documents_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25056,7 +25056,7 @@ export interface operations {
             };
         };
     };
-    delete_document_api_v3_documents_delete_post: {
+    delete_document_api_v4_documents_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25092,7 +25092,7 @@ export interface operations {
             };
         };
     };
-    update_document_api_v3_documents_update_post: {
+    update_document_api_v4_documents_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25128,7 +25128,7 @@ export interface operations {
             };
         };
     };
-    generate_certificate_api_v3_documents_certificate_post: {
+    generate_certificate_api_v4_documents_certificate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25164,7 +25164,7 @@ export interface operations {
             };
         };
     };
-    render_document_template_api_v3_documents_render_post: {
+    render_document_template_api_v4_documents_render_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25202,7 +25202,7 @@ export interface operations {
             };
         };
     };
-    create_eval_api_v3_evals_create_post: {
+    create_eval_api_v4_evals_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25238,7 +25238,7 @@ export interface operations {
             };
         };
     };
-    delete_eval_api_v3_evals_delete_post: {
+    delete_eval_api_v4_evals_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25274,7 +25274,7 @@ export interface operations {
             };
         };
     };
-    get_eval_detail_api_v3_evals_detail_post: {
+    get_eval_detail_api_v4_evals_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25310,7 +25310,7 @@ export interface operations {
             };
         };
     };
-    get_evals_list_api_v3_evals_list_post: {
+    get_evals_list_api_v4_evals_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25346,7 +25346,7 @@ export interface operations {
             };
         };
     };
-    get_eval_new_api_v3_evals_new_post: {
+    get_eval_new_api_v4_evals_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25382,7 +25382,7 @@ export interface operations {
             };
         };
     };
-    update_eval_api_v3_evals_update_post: {
+    update_eval_api_v4_evals_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25418,7 +25418,7 @@ export interface operations {
             };
         };
     };
-    get_rubrics_list_api_v3_rubrics_list_post: {
+    get_rubrics_list_api_v4_rubrics_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25454,7 +25454,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_detail_api_v3_rubrics_detail_post: {
+    get_rubric_detail_api_v4_rubrics_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25490,7 +25490,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_new_api_v3_rubrics_new_post: {
+    get_rubric_new_api_v4_rubrics_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25526,7 +25526,7 @@ export interface operations {
             };
         };
     };
-    duplicate_rubric_api_v3_rubrics_duplicate_post: {
+    duplicate_rubric_api_v4_rubrics_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25562,7 +25562,7 @@ export interface operations {
             };
         };
     };
-    create_rubric_api_v3_rubrics_create_post: {
+    create_rubric_api_v4_rubrics_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25598,7 +25598,7 @@ export interface operations {
             };
         };
     };
-    update_rubric_api_v3_rubrics_update_post: {
+    update_rubric_api_v4_rubrics_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25634,7 +25634,7 @@ export interface operations {
             };
         };
     };
-    delete_rubric_api_v3_rubrics_delete_post: {
+    delete_rubric_api_v4_rubrics_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25670,7 +25670,7 @@ export interface operations {
             };
         };
     };
-    list_settings_api_v3_settings_list_post: {
+    list_settings_api_v4_settings_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25706,7 +25706,7 @@ export interface operations {
             };
         };
     };
-    get_settings_detail_api_v3_settings_detail_post: {
+    get_settings_detail_api_v4_settings_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25742,7 +25742,7 @@ export interface operations {
             };
         };
     };
-    update_settings_api_v3_settings_update_post: {
+    update_settings_api_v4_settings_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25778,7 +25778,7 @@ export interface operations {
             };
         };
     };
-    refresh_analytics_api_v3_analytics_refresh_post: {
+    refresh_analytics_api_v4_analytics_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25814,7 +25814,7 @@ export interface operations {
             };
         };
     };
-    create_analytics_view_api_v3_analytics_view_post: {
+    create_analytics_view_api_v4_analytics_view_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25850,7 +25850,7 @@ export interface operations {
             };
         };
     };
-    get_activity_bundle_api_v3_activity_bundle_post: {
+    get_activity_bundle_api_v4_activity_bundle_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25886,7 +25886,7 @@ export interface operations {
             };
         };
     };
-    get_activity_list_api_v3_activity_list_post: {
+    get_activity_list_api_v4_activity_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25922,7 +25922,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_api_v3_dashboard_overview_post: {
+    get_dashboard_api_v4_dashboard_overview_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25958,7 +25958,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_history_api_v3_dashboard_history_post: {
+    get_dashboard_history_api_v4_dashboard_history_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25994,7 +25994,7 @@ export interface operations {
             };
         };
     };
-    export_reports_api_v3_reports_export_post: {
+    export_reports_api_v4_reports_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26030,7 +26030,7 @@ export interface operations {
             };
         };
     };
-    get_reports_api_v3_reports_post: {
+    get_reports_api_v4_reports_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26066,7 +26066,7 @@ export interface operations {
             };
         };
     };
-    get_reports_overview_api_v3_reports_overview_post: {
+    get_reports_overview_api_v4_reports_overview_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26102,7 +26102,7 @@ export interface operations {
             };
         };
     };
-    get_reports_history_api_v3_reports_history_post: {
+    get_reports_history_api_v4_reports_history_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26138,7 +26138,7 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_api_v3_leaderboard_bundle_post: {
+    get_leaderboard_api_v4_leaderboard_bundle_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26174,7 +26174,7 @@ export interface operations {
             };
         };
     };
-    list_agents_api_v3_agents_list_post: {
+    list_agents_api_v4_agents_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26210,7 +26210,7 @@ export interface operations {
             };
         };
     };
-    get_agent_detail_api_v3_agents_detail_post: {
+    get_agent_detail_api_v4_agents_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26246,7 +26246,7 @@ export interface operations {
             };
         };
     };
-    get_agent_new_api_v3_agents_new_post: {
+    get_agent_new_api_v4_agents_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26282,7 +26282,7 @@ export interface operations {
             };
         };
     };
-    create_agent_api_v3_agents_create_post: {
+    create_agent_api_v4_agents_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26318,7 +26318,7 @@ export interface operations {
             };
         };
     };
-    update_agent_api_v3_agents_update_post: {
+    update_agent_api_v4_agents_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26354,7 +26354,7 @@ export interface operations {
             };
         };
     };
-    duplicate_agent_api_v3_agents_duplicate_post: {
+    duplicate_agent_api_v4_agents_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26390,7 +26390,7 @@ export interface operations {
             };
         };
     };
-    delete_agent_api_v3_agents_delete_post: {
+    delete_agent_api_v4_agents_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26426,7 +26426,7 @@ export interface operations {
             };
         };
     };
-    get_keys_list_api_v3_keys_list_post: {
+    get_keys_list_api_v4_keys_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26462,7 +26462,7 @@ export interface operations {
             };
         };
     };
-    get_key_detail_api_v3_keys_detail_post: {
+    get_key_detail_api_v4_keys_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26498,7 +26498,7 @@ export interface operations {
             };
         };
     };
-    get_key_new_api_v3_keys_new_post: {
+    get_key_new_api_v4_keys_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26534,7 +26534,7 @@ export interface operations {
             };
         };
     };
-    create_key_api_v3_keys_create_post: {
+    create_key_api_v4_keys_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26570,7 +26570,7 @@ export interface operations {
             };
         };
     };
-    update_key_api_v3_keys_update_post: {
+    update_key_api_v4_keys_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26606,7 +26606,7 @@ export interface operations {
             };
         };
     };
-    delete_key_api_v3_keys_delete_post: {
+    delete_key_api_v4_keys_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26642,7 +26642,7 @@ export interface operations {
             };
         };
     };
-    decrypt_key_api_v3_keys_decrypt_post: {
+    decrypt_key_api_v4_keys_decrypt_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26678,7 +26678,7 @@ export interface operations {
             };
         };
     };
-    get_models_list_api_v3_models_list_post: {
+    get_models_list_api_v4_models_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26714,7 +26714,7 @@ export interface operations {
             };
         };
     };
-    get_model_detail_api_v3_models_detail_post: {
+    get_model_detail_api_v4_models_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26750,7 +26750,7 @@ export interface operations {
             };
         };
     };
-    get_model_new_api_v3_models_new_post: {
+    get_model_new_api_v4_models_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26786,7 +26786,7 @@ export interface operations {
             };
         };
     };
-    create_model_api_v3_models_create_post: {
+    create_model_api_v4_models_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26822,7 +26822,7 @@ export interface operations {
             };
         };
     };
-    update_model_api_v3_models_update_post: {
+    update_model_api_v4_models_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26858,7 +26858,7 @@ export interface operations {
             };
         };
     };
-    delete_model_api_v3_models_delete_post: {
+    delete_model_api_v4_models_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26894,7 +26894,7 @@ export interface operations {
             };
         };
     };
-    duplicate_model_api_v3_models_duplicate_post: {
+    duplicate_model_api_v4_models_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26930,7 +26930,7 @@ export interface operations {
             };
         };
     };
-    get_providers_list_api_v3_providers_list_post: {
+    get_providers_list_api_v4_providers_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26966,7 +26966,7 @@ export interface operations {
             };
         };
     };
-    get_provider_detail_api_v3_providers_detail_post: {
+    get_provider_detail_api_v4_providers_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27002,7 +27002,7 @@ export interface operations {
             };
         };
     };
-    get_provider_new_api_v3_providers_new_post: {
+    get_provider_new_api_v4_providers_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27038,7 +27038,7 @@ export interface operations {
             };
         };
     };
-    create_provider_api_v3_providers_create_post: {
+    create_provider_api_v4_providers_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27074,7 +27074,7 @@ export interface operations {
             };
         };
     };
-    update_provider_api_v3_providers_update_post: {
+    update_provider_api_v4_providers_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27110,7 +27110,7 @@ export interface operations {
             };
         };
     };
-    delete_provider_api_v3_providers_delete_post: {
+    delete_provider_api_v4_providers_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27146,7 +27146,7 @@ export interface operations {
             };
         };
     };
-    get_parameters_list_api_v3_parameters_list_post: {
+    get_parameters_list_api_v4_parameters_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27182,7 +27182,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_detail_api_v3_parameters_detail_post: {
+    get_parameter_detail_api_v4_parameters_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27218,7 +27218,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_new_api_v3_parameters_new_post: {
+    get_parameter_new_api_v4_parameters_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27254,7 +27254,7 @@ export interface operations {
             };
         };
     };
-    create_parameter_api_v3_parameters_create_post: {
+    create_parameter_api_v4_parameters_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27290,7 +27290,7 @@ export interface operations {
             };
         };
     };
-    update_parameter_api_v3_parameters_update_post: {
+    update_parameter_api_v4_parameters_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27326,7 +27326,7 @@ export interface operations {
             };
         };
     };
-    duplicate_parameter_api_v3_parameters_duplicate_post: {
+    duplicate_parameter_api_v4_parameters_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27362,7 +27362,7 @@ export interface operations {
             };
         };
     };
-    delete_parameter_api_v3_parameters_delete_post: {
+    delete_parameter_api_v4_parameters_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27398,7 +27398,7 @@ export interface operations {
             };
         };
     };
-    get_fields_list_api_v3_fields_list_post: {
+    get_fields_list_api_v4_fields_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27434,7 +27434,7 @@ export interface operations {
             };
         };
     };
-    get_field_detail_api_v3_fields_detail_post: {
+    get_field_detail_api_v4_fields_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27470,7 +27470,7 @@ export interface operations {
             };
         };
     };
-    get_field_new_api_v3_fields_new_post: {
+    get_field_new_api_v4_fields_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27506,7 +27506,7 @@ export interface operations {
             };
         };
     };
-    create_field_api_v3_fields_create_post: {
+    create_field_api_v4_fields_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27542,7 +27542,7 @@ export interface operations {
             };
         };
     };
-    update_field_api_v3_fields_update_post: {
+    update_field_api_v4_fields_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27578,7 +27578,7 @@ export interface operations {
             };
         };
     };
-    duplicate_field_api_v3_fields_duplicate_post: {
+    duplicate_field_api_v4_fields_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27614,7 +27614,7 @@ export interface operations {
             };
         };
     };
-    delete_field_api_v3_fields_delete_post: {
+    delete_field_api_v4_fields_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27650,7 +27650,7 @@ export interface operations {
             };
         };
     };
-    create_feedback_api_v3_feedback_create_post: {
+    create_feedback_api_v4_feedback_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27686,7 +27686,7 @@ export interface operations {
             };
         };
     };
-    get_feedback_list_api_v3_feedback_list_post: {
+    get_feedback_list_api_v4_feedback_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27722,7 +27722,7 @@ export interface operations {
             };
         };
     };
-    resolve_feedback_api_v3_feedback_resolve_post: {
+    resolve_feedback_api_v4_feedback_resolve_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27758,7 +27758,7 @@ export interface operations {
             };
         };
     };
-    get_health_bundle_api_v3_health_bundle_post: {
+    get_health_bundle_api_v4_health_bundle_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27794,7 +27794,7 @@ export interface operations {
             };
         };
     };
-    bulk_archive_attempts_api_v3_attempts_archive_post: {
+    bulk_archive_attempts_api_v4_attempts_archive_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27830,7 +27830,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_full_api_v3_attempts_simulation_post: {
+    get_attempt_full_api_v4_attempts_simulation_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27866,7 +27866,7 @@ export interface operations {
             };
         };
     };
-    get_eval_attempt_full_api_v3_attempts_eval_post: {
+    get_eval_attempt_full_api_v4_attempts_eval_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27902,7 +27902,7 @@ export interface operations {
             };
         };
     };
-    delete_prompt_api_v3_prompts_delete_post: {
+    delete_prompt_api_v4_prompts_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27938,7 +27938,7 @@ export interface operations {
             };
         };
     };
-    get_profile_list_api_v3_staff_list_post: {
+    get_profile_list_api_v4_staff_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27974,7 +27974,7 @@ export interface operations {
             };
         };
     };
-    get_staff_detail_api_v3_staff_detail_post: {
+    get_staff_detail_api_v4_staff_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28010,7 +28010,7 @@ export interface operations {
             };
         };
     };
-    get_staff_new_api_v3_staff_new_post: {
+    get_staff_new_api_v4_staff_new_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28046,7 +28046,7 @@ export interface operations {
             };
         };
     };
-    search_staff_api_v3_staff_search_post: {
+    search_staff_api_v4_staff_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28082,7 +28082,7 @@ export interface operations {
             };
         };
     };
-    process_csv_api_v3_staff_csv_post: {
+    process_csv_api_v4_staff_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28118,7 +28118,7 @@ export interface operations {
             };
         };
     };
-    get_create_staff_data_api_v3_staff_data_create_post: {
+    get_create_staff_data_api_v4_staff_data_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28154,7 +28154,7 @@ export interface operations {
             };
         };
     };
-    bulk_create_staff_api_v3_staff_create_post: {
+    bulk_create_staff_api_v4_staff_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28190,7 +28190,7 @@ export interface operations {
             };
         };
     };
-    bulk_update_staff_api_v3_staff_update_post: {
+    bulk_update_staff_api_v4_staff_update_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28226,7 +28226,7 @@ export interface operations {
             };
         };
     };
-    bulk_delete_staff_api_v3_staff_delete_post: {
+    bulk_delete_staff_api_v4_staff_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28262,7 +28262,7 @@ export interface operations {
             };
         };
     };
-    bulk_create_or_update_staff_api_v3_staff_upsert_post: {
+    bulk_create_or_update_staff_api_v4_staff_upsert_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28298,7 +28298,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_bundle_api_v3_benchmark_bundle_post: {
+    get_benchmark_bundle_api_v4_benchmark_bundle_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28334,7 +28334,7 @@ export interface operations {
             };
         };
     };
-    get_home_overview_api_v3_home_overview_post: {
+    get_home_overview_api_v4_home_overview_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28370,7 +28370,7 @@ export interface operations {
             };
         };
     };
-    get_home_history_api_v3_home_history_post: {
+    get_home_history_api_v4_home_history_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28406,7 +28406,7 @@ export interface operations {
             };
         };
     };
-    get_practice_overview_api_v3_practice_overview_post: {
+    get_practice_overview_api_v4_practice_overview_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28442,7 +28442,7 @@ export interface operations {
             };
         };
     };
-    get_practice_history_api_v3_practice_history_post: {
+    get_practice_history_api_v4_practice_history_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28478,7 +28478,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_api_v3_pricing_analytics_post: {
+    get_pricing_api_v4_pricing_analytics_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28514,7 +28514,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_runs_api_v3_pricing_runs_post: {
+    get_pricing_runs_api_v4_pricing_runs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28550,7 +28550,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_run_detail_api_v3_pricing_detail_post: {
+    get_pricing_run_detail_api_v4_pricing_detail_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28586,7 +28586,7 @@ export interface operations {
             };
         };
     };
-    tus_creation_api_v3_uploads_upload_post: {
+    tus_creation_api_v4_uploads_upload_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28618,7 +28618,7 @@ export interface operations {
             };
         };
     };
-    tus_options_api_v3_uploads_upload_options: {
+    tus_options_api_v4_uploads_upload_options: {
         parameters: {
             query?: never;
             header?: {
@@ -28650,7 +28650,7 @@ export interface operations {
             };
         };
     };
-    tus_options_upload_id_api_v3_uploads_upload__upload_id__options: {
+    tus_options_upload_id_api_v4_uploads_upload__upload_id__options: {
         parameters: {
             query?: never;
             header?: {
@@ -28684,7 +28684,7 @@ export interface operations {
             };
         };
     };
-    tus_head_api_v3_uploads_upload__upload_id__head: {
+    tus_head_api_v4_uploads_upload__upload_id__head: {
         parameters: {
             query?: never;
             header?: {
@@ -28718,7 +28718,7 @@ export interface operations {
             };
         };
     };
-    tus_patch_api_v3_uploads_upload__upload_id__patch: {
+    tus_patch_api_v4_uploads_upload__upload_id__patch: {
         parameters: {
             query?: never;
             header?: {
@@ -28752,7 +28752,7 @@ export interface operations {
             };
         };
     };
-    tus_finalize_api_v3_uploads_upload__upload_id__finalize_post: {
+    tus_finalize_api_v4_uploads_upload__upload_id__finalize_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28786,7 +28786,7 @@ export interface operations {
             };
         };
     };
-    download_upload_api_v3_uploads_download__upload_id__get: {
+    download_upload_api_v4_uploads_download__upload_id__get: {
         parameters: {
             query?: {
                 /** @description Return preview image for PDFs */

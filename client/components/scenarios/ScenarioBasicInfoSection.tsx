@@ -19,9 +19,9 @@ import {
 import type { components } from "@/lib/api/schema";
 
 type AgentMappingItem =
-  components["schemas"]["app__api__v3__scenarios__detail__AgentMappingItem"];
+  components["schemas"]["app__api__v4__scenarios__detail__AgentMappingItem"];
 type DepartmentMappingItem =
-  components["schemas"]["app__api__v3__scenarios__detail__DepartmentMappingItem"];
+  components["schemas"]["app__api__v4__scenarios__detail__DepartmentMappingItem"];
 
 export interface ScenarioBasicInfoSectionProps {
   // Data

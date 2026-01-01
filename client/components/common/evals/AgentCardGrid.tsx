@@ -12,7 +12,7 @@ import type { components } from "@/lib/api/schema";
 
 // Extract AgentMappingItem type from schema
 type AgentMappingItem =
-  components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
+  components["schemas"]["app__api__v4__evals__detail__AgentMappingItem"];
 
 export interface AgentCardGridProps {
   agents: Array<{ agent_id: string; name: string; description?: string; roles?: string[] }>;

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { components } from "@/lib/api/schema";
 
 type DepartmentMappingItem =
-  components["schemas"]["app__api__v3__documents__detail__DepartmentMappingItem"];
+  components["schemas"]["app__api__v4__documents__detail__DepartmentMappingItem"];
 
 export interface DocumentBasicInfoSectionProps {
   // Data

@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 type PersonaMappingItem =
-  components["schemas"]["app__api__v3__scenarios__detail__PersonaMappingItem"];
+  components["schemas"]["app__api__v4__scenarios__detail__PersonaMappingItem"];
 
 type StepStatus = "pending" | "active" | "completed";
 

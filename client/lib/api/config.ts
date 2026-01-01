@@ -1,8 +1,8 @@
 // lib/api/config.ts
 import { env } from "./env";
 
-export type Version = "v3";
-export const API_VERSION = "v3" as const satisfies Version;
+export type Version = "v4";
+export const API_VERSION = "v4" as const satisfies Version;
 
 // Prefix you already use for multi-tenant paths (may be empty: "")
 const APP_PREFIX = env("NEXT_PUBLIC_APP_PREFIX", ""); // e.g. "" or "/glow"

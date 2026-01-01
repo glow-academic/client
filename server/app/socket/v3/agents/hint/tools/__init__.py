@@ -1,2 +1,0 @@
-"""Hint agent tools package."""
-
