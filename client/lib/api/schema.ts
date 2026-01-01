@@ -3460,7 +3460,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_client_agents_documents_generate_post"];
+        post: operations["handle_document_generate_generate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3520,7 +3520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_client_agents_rubrics_generate_post"];
+        post: operations["handle_rubric_generate_generate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3540,7 +3540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_client_agents_rubrics_regenerate_post"];
+        post: operations["handle_rubric_regenerate_regenerate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3580,7 +3580,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_client_agents_hints_generate_post"];
+        post: operations["handle_hint_generate_generate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3600,7 +3600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_client_agents_grades_start_post"];
+        post: operations["handle_grade_generate_start"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3660,7 +3660,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_client_agents_members_progress_post"];
+        post: operations["handle_member_progress_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3920,7 +3920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_client_benchmark_start_post"];
+        post: operations["handle_benchmark_start_start"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4040,7 +4040,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_text_complete_post"];
+        post: operations["handle_simulation_complete_simulation_text_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4060,7 +4060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_text_error_post"];
+        post: operations["handle_simulation_error_simulation_text_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4080,7 +4080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_text_progress_post"];
+        post: operations["handle_simulation_progress_simulation_text_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4100,7 +4100,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_eval_post"];
+        post: operations["handle_voice_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4120,7 +4120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_post"];
+        post: operations["handle_voice_debug_call_debug_info"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4140,7 +4140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_complete_post"];
+        post: operations["handle_voice_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4160,7 +4160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_error_post"];
+        post: operations["handle_voice_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4180,7 +4180,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_progress_post"];
+        post: operations["handle_voice_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4200,7 +4200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_eval_post"];
+        post: operations["handle_voice_speak_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4220,7 +4220,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_tool_post"];
+        post: operations["handle_voice_speak_call_speak_tool"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4240,7 +4240,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_complete_post"];
+        post: operations["handle_voice_speak_complete_speak_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4260,7 +4260,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_error_post"];
+        post: operations["handle_voice_speak_error_speak_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4280,7 +4280,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_tools_speak_progress_post"];
+        post: operations["handle_voice_speak_progress_speak_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4340,7 +4340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_complete_post"];
+        post: operations["handle_voice_complete_simulation_voice_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4360,7 +4360,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_error_post"];
+        post: operations["handle_voice_error_simulation_voice_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4500,7 +4500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_scenario_complete_post"];
+        post: operations["handle_scenario_complete_scenario_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4520,7 +4520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_scenario_error_post"];
+        post: operations["handle_scenario_error_scenario_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4540,7 +4540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_scenario_progress_post"];
+        post: operations["handle_scenario_progress_scenario_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4560,7 +4560,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_eval_post"];
+        post: operations["handle_scenario_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4580,7 +4580,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_post"];
+        post: operations["handle_scenario_debug_call_debug_info"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4600,7 +4600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_complete_post"];
+        post: operations["handle_scenario_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4620,7 +4620,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_error_post"];
+        post: operations["handle_scenario_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4640,7 +4640,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_progress_post"];
+        post: operations["handle_scenario_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4660,7 +4660,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_eval_post"];
+        post: operations["handle_scenario_video_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4680,7 +4680,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_document_complete_post"];
+        post: operations["handle_scenario_document_complete_document_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4700,7 +4700,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_document_error_post"];
+        post: operations["handle_scenario_document_error_document_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4720,7 +4720,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_document_progress_post"];
+        post: operations["handle_scenario_document_progress_document_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4740,7 +4740,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_image_complete_post"];
+        post: operations["handle_scenario_image_complete_image_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4760,7 +4760,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_image_error_post"];
+        post: operations["handle_scenario_image_error_image_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4780,7 +4780,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_image_progress_post"];
+        post: operations["handle_scenario_image_progress_image_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4800,7 +4800,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_complete_post"];
+        post: operations["handle_scenario_objective_complete_objectives_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4820,7 +4820,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_error_post"];
+        post: operations["handle_scenario_objective_error_objectives_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4840,7 +4840,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_progress_post"];
+        post: operations["handle_scenario_objective_progress_objectives_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4860,7 +4860,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_complete_post"];
+        post: operations["handle_scenario_question_complete_questions_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4880,7 +4880,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_error_post"];
+        post: operations["handle_scenario_question_error_questions_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4900,7 +4900,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_progress_post"];
+        post: operations["handle_scenario_question_progress_questions_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4920,7 +4920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_post"];
+        post: operations["handle_scenario_statement_call_title_description"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4940,7 +4940,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_complete_post"];
+        post: operations["handle_scenario_statement_complete_title_description_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4960,7 +4960,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_error_post"];
+        post: operations["handle_scenario_statement_error_title_description_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4980,7 +4980,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_progress_post"];
+        post: operations["handle_scenario_statement_progress_title_description_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5000,7 +5000,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_complete_post"];
+        post: operations["handle_scenario_title_complete_scenario_tool_title_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5020,7 +5020,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_error_post"];
+        post: operations["handle_scenario_title_error_scenario_tool_title_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5040,7 +5040,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_progress_post"];
+        post: operations["handle_scenario_title_progress_scenario_tool_title_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5060,7 +5060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_video_complete_post"];
+        post: operations["handle_scenario_video_complete_video_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5080,7 +5080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_video_error_post"];
+        post: operations["handle_scenario_video_error_video_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5100,7 +5100,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_scenarios_tools_video_progress_post"];
+        post: operations["handle_scenario_video_progress_video_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5120,7 +5120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_document_complete_post"];
+        post: operations["handle_document_complete_document_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5140,7 +5140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_document_error_post"];
+        post: operations["handle_document_error_document_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5160,7 +5160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_document_progress_post"];
+        post: operations["handle_document_progress_document_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5180,7 +5180,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_eval_post"];
+        post: operations["handle_document_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5200,7 +5200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_complete_post"];
+        post: operations["handle_document_title_complete_document_tool_title_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5220,7 +5220,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_error_post"];
+        post: operations["handle_document_title_error_document_tool_title_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5240,7 +5240,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_progress_post"];
+        post: operations["handle_document_title_progress_document_tool_title_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5260,7 +5260,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_eval_post"];
+        post: operations["handle_document_debug_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5280,7 +5280,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_debug_post"];
+        post: operations["handle_document_debug_call_document_tool_debug"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5300,7 +5300,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_complete_post"];
+        post: operations["handle_document_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5320,7 +5320,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_error_post"];
+        post: operations["handle_document_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5340,7 +5340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_progress_post"];
+        post: operations["handle_document_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5420,7 +5420,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_video_complete_post"];
+        post: operations["handle_video_complete_video_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5440,7 +5440,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_video_error_post"];
+        post: operations["handle_video_error_video_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5460,7 +5460,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_video_progress_post"];
+        post: operations["handle_video_progress_video_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5480,7 +5480,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_eval_post"];
+        post: operations["handle_video_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5500,7 +5500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_complete_post"];
+        post: operations["handle_video_title_complete_video_tool_title_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5520,7 +5520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_error_post"];
+        post: operations["handle_video_title_error_video_tool_title_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5540,7 +5540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_progress_post"];
+        post: operations["handle_video_title_progress_video_tool_title_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5560,7 +5560,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_eval_post"];
+        post: operations["handle_video_debug_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5580,7 +5580,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_post"];
+        post: operations["handle_video_debug_call_debug_info"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5600,7 +5600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_complete_post"];
+        post: operations["handle_video_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5620,7 +5620,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_error_post"];
+        post: operations["handle_video_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5640,7 +5640,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_progress_post"];
+        post: operations["handle_video_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5660,7 +5660,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_generation_complete_post"];
+        post: operations["handle_image_complete_generation_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5680,7 +5680,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_generation_error_post"];
+        post: operations["handle_image_error_generation_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5700,7 +5700,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_generation_progress_post"];
+        post: operations["handle_image_progress_generation_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5720,7 +5720,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_eval_post"];
+        post: operations["handle_image_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5740,7 +5740,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_post"];
+        post: operations["handle_image_debug_call_debug_info"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5760,7 +5760,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_complete_post"];
+        post: operations["handle_image_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5780,7 +5780,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_error_post"];
+        post: operations["handle_image_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5800,7 +5800,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_debug_info_progress_post"];
+        post: operations["handle_image_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5820,7 +5820,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_eval_post"];
+        post: operations["handle_image_title_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5840,7 +5840,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_complete_post"];
+        post: operations["handle_image_title_complete_image_tool_title_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5860,7 +5860,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_error_post"];
+        post: operations["handle_image_title_error_image_tool_title_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5880,7 +5880,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_progress_post"];
+        post: operations["handle_image_title_progress_image_tool_title_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5900,7 +5900,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_generation_complete_post"];
+        post: operations["handle_rubric_complete_generation_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5920,7 +5920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_generation_error_post"];
+        post: operations["handle_rubric_error_generation_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5940,7 +5940,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_generation_progress_post"];
+        post: operations["handle_rubric_progress_generation_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5960,7 +5960,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_eval_post"];
+        post: operations["handle_rubric_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5980,7 +5980,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_complete_post"];
+        post: operations["handle_rubric_title_complete_rubric_tool_title_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6000,7 +6000,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_error_post"];
+        post: operations["handle_rubric_title_error_rubric_tool_title_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6020,7 +6020,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_progress_post"];
+        post: operations["handle_rubric_title_progress_rubric_tool_title_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6040,7 +6040,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_eval_post"];
+        post: operations["handle_rubric_rubric_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6060,7 +6060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_post"];
+        post: operations["handle_rubric_debug_call_debug_info"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6080,7 +6080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_complete_post"];
+        post: operations["handle_rubric_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6100,7 +6100,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_error_post"];
+        post: operations["handle_rubric_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6120,7 +6120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_progress_post"];
+        post: operations["handle_rubric_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6140,7 +6140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_standard_description_post"];
+        post: operations["handle_rubric_rubric_call_rubric_tool_standard_description"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6160,7 +6160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_complete_post"];
+        post: operations["handle_rubric_rubric_complete_standard_description_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6180,7 +6180,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_error_post"];
+        post: operations["handle_rubric_rubric_error_standard_description_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6200,7 +6200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_progress_post"];
+        post: operations["handle_rubric_rubric_progress_standard_description_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6280,7 +6280,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_classify_complete_post"];
+        post: operations["handle_classify_complete_classify_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6300,7 +6300,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_classify_error_post"];
+        post: operations["handle_classify_error_classify_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6320,7 +6320,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_classify_progress_post"];
+        post: operations["handle_classify_progress_classify_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6340,7 +6340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_eval_post"];
+        post: operations["handle_classify_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6360,7 +6360,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_post"];
+        post: operations["handle_classify_debug_call_debug_info"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6380,7 +6380,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_complete_post"];
+        post: operations["handle_classify_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6400,7 +6400,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_error_post"];
+        post: operations["handle_classify_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6420,7 +6420,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_progress_post"];
+        post: operations["handle_classify_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6440,7 +6440,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_eval_post"];
+        post: operations["handle_classify_classification_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6460,7 +6460,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_tool_post"];
+        post: operations["handle_classify_classification_call_classification_tool"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6480,7 +6480,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_complete_post"];
+        post: operations["handle_classify_classification_complete_classification_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6500,7 +6500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_error_post"];
+        post: operations["handle_classify_classification_error_classification_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6520,7 +6520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_classify_tools_classification_progress_post"];
+        post: operations["handle_classify_classification_progress_classification_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6540,7 +6540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_generation_progress_post"];
+        post: operations["handle_hint_generate_generation_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6560,7 +6560,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_hint_complete_post"];
+        post: operations["handle_hint_complete_hint_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6580,7 +6580,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_hint_error_post"];
+        post: operations["handle_hint_error_hint_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6600,7 +6600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_hint_progress_post"];
+        post: operations["handle_hint_progress_hint_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6620,7 +6620,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_eval_post"];
+        post: operations["handle_hint_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6640,7 +6640,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_debug_post"];
+        post: operations["handle_hint_debug_call_hint_tool_debug"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6660,7 +6660,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_complete_post"];
+        post: operations["handle_hint_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6680,7 +6680,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_error_post"];
+        post: operations["handle_hint_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6700,7 +6700,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_progress_post"];
+        post: operations["handle_hint_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6720,7 +6720,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_eval_post"];
+        post: operations["handle_hint_hint_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6740,7 +6740,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_post"];
+        post: operations["handle_hint_hint_call_hint_tool"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6760,7 +6760,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_complete_post"];
+        post: operations["handle_hint_hint_complete_hint_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6780,7 +6780,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_error_post"];
+        post: operations["handle_hint_hint_error_hint_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6800,7 +6800,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_hints_tools_hint_progress_post"];
+        post: operations["handle_hint_hint_progress_hint_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6820,7 +6820,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_progress_post"];
+        post: operations["handle_grade_generate_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6840,7 +6840,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_grade_text_complete_post"];
+        post: operations["handle_grade_complete_grade_text_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6860,7 +6860,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_grade_text_error_post"];
+        post: operations["handle_grade_error_grade_text_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6880,7 +6880,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_grade_text_progress_post"];
+        post: operations["handle_grade_progress_grade_text_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6900,7 +6900,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_eval_post"];
+        post: operations["handle_audio_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6920,7 +6920,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_audio_complete_post"];
+        post: operations["handle_grade_audio_complete_audio_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6940,7 +6940,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_audio_error_post"];
+        post: operations["handle_grade_audio_error_audio_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6960,7 +6960,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_audio_progress_post"];
+        post: operations["handle_grade_audio_progress_audio_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6980,7 +6980,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_eval_post"];
+        post: operations["handle_audio_debug_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7000,7 +7000,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_complete_post"];
+        post: operations["handle_grade_improvement_complete_message_improvement_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7020,7 +7020,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_error_post"];
+        post: operations["handle_grade_improvement_error_message_improvement_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7040,7 +7040,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_progress_post"];
+        post: operations["handle_grade_improvement_progress_message_improvement_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7060,7 +7060,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_complete_post"];
+        post: operations["handle_grade_strength_complete_message_strength_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7080,7 +7080,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_error_post"];
+        post: operations["handle_grade_strength_error_message_strength_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7100,7 +7100,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_progress_post"];
+        post: operations["handle_grade_strength_progress_message_strength_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7120,7 +7120,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_feedback_complete_post"];
+        post: operations["handle_grade_grade_complete_feedback_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7140,7 +7140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_feedback_error_post"];
+        post: operations["handle_grade_grade_error_feedback_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7160,7 +7160,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_feedback_progress_post"];
+        post: operations["handle_grade_grade_progress_feedback_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7180,7 +7180,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_post"];
+        post: operations["handle_audio_debug_call_debug_info"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7200,7 +7200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_complete_post"];
+        post: operations["handle_audio_debug_complete_debug_info_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7220,7 +7220,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_error_post"];
+        post: operations["handle_audio_debug_error_debug_info_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7240,7 +7240,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_progress_post"];
+        post: operations["handle_audio_debug_progress_debug_info_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7320,7 +7320,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_audio_complete_post"];
+        post: operations["handle_audio_complete_audio_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7340,7 +7340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_audio_error_post"];
+        post: operations["handle_audio_error_audio_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7360,7 +7360,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_grades_audio_progress_post"];
+        post: operations["handle_audio_progress_audio_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7400,7 +7400,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_member_complete_post"];
+        post: operations["handle_member_complete_member_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7420,7 +7420,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_member_error_post"];
+        post: operations["handle_member_error_member_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7440,7 +7440,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_eval_post"];
+        post: operations["handle_member_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7480,7 +7480,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_post"];
+        post: operations["handle_member_conversation_call_conversation_end"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7500,7 +7500,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_complete_post"];
+        post: operations["handle_member_conversation_complete_conversation_end_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7520,7 +7520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_error_post"];
+        post: operations["handle_member_conversation_error_conversation_end_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7540,7 +7540,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_progress_post"];
+        post: operations["handle_member_conversation_progress_conversation_end_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7560,7 +7560,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["endpoint_handler_socket_v4_server_agents_members_tools_eval_post"];
+        post: operations["handle_member_conversation_eval_eval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8230,7 +8230,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/metrics/snapshot": {
+    "/metrics": {
         parameters: {
             query?: never;
             header?: never;
@@ -8246,7 +8246,31 @@ export interface paths {
          *     Called by notify service to log metrics snapshot.
          *     No leader election needed since notify service is single instance.
          */
-        post: operations["metrics_snapshot_metrics_snapshot_post"];
+        post: operations["metrics_snapshot_metrics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/init": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Init System
+         * @description Trigger system initialization (Keycloak sync).
+         *
+         *     Called by notify service to initialize system on startup.
+         *     Performs Keycloak sync to ensure identity providers are configured.
+         *     No authentication required - internal service-to-service call.
+         */
+        post: operations["init_system_init_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -28155,7 +28179,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_client_agents_documents_generate_post: {
+    handle_document_generate_generate: {
         parameters: {
             query?: never;
             header?: never;
@@ -28260,7 +28284,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_client_agents_rubrics_generate_post: {
+    handle_rubric_generate_generate: {
         parameters: {
             query?: never;
             header?: never;
@@ -28295,7 +28319,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_client_agents_rubrics_regenerate_post: {
+    handle_rubric_regenerate_regenerate: {
         parameters: {
             query?: never;
             header?: never;
@@ -28365,7 +28389,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_client_agents_hints_generate_post: {
+    handle_hint_generate_generate: {
         parameters: {
             query?: never;
             header?: never;
@@ -28400,7 +28424,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_client_agents_grades_start_post: {
+    handle_grade_generate_start: {
         parameters: {
             query?: never;
             header?: never;
@@ -28505,7 +28529,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_client_agents_members_progress_post: {
+    handle_member_progress_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -28960,7 +28984,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_client_benchmark_start_post: {
+    handle_benchmark_start_start: {
         parameters: {
             query?: never;
             header?: never;
@@ -29170,7 +29194,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_simulation_text_complete_post: {
+    handle_simulation_complete_simulation_text_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -29205,7 +29229,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_simulation_text_error_post: {
+    handle_simulation_error_simulation_text_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -29240,7 +29264,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_simulation_text_progress_post: {
+    handle_simulation_progress_simulation_text_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -29275,7 +29299,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_eval_post: {
+    handle_voice_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -29310,7 +29334,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_post: {
+    handle_voice_debug_call_debug_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -29345,7 +29369,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_complete_post: {
+    handle_voice_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -29380,7 +29404,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_error_post: {
+    handle_voice_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -29415,7 +29439,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_debug_info_progress_post: {
+    handle_voice_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -29450,7 +29474,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_eval_post: {
+    handle_voice_speak_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -29485,7 +29509,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_tool_post: {
+    handle_voice_speak_call_speak_tool: {
         parameters: {
             query?: never;
             header?: never;
@@ -29520,7 +29544,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_complete_post: {
+    handle_voice_speak_complete_speak_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -29555,7 +29579,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_error_post: {
+    handle_voice_speak_error_speak_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -29590,7 +29614,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_tools_speak_progress_post: {
+    handle_voice_speak_progress_speak_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -29695,7 +29719,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_complete_post: {
+    handle_voice_complete_simulation_voice_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -29730,7 +29754,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_simulations_simulation_voice_error_post: {
+    handle_voice_error_simulation_voice_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -29975,7 +29999,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_scenario_complete_post: {
+    handle_scenario_complete_scenario_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30010,7 +30034,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_scenario_error_post: {
+    handle_scenario_error_scenario_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30045,7 +30069,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_scenario_progress_post: {
+    handle_scenario_progress_scenario_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30080,7 +30104,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_eval_post: {
+    handle_scenario_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -30115,7 +30139,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_post: {
+    handle_scenario_debug_call_debug_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -30150,7 +30174,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_complete_post: {
+    handle_scenario_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30185,7 +30209,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_error_post: {
+    handle_scenario_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30220,7 +30244,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_debug_info_progress_post: {
+    handle_scenario_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30255,7 +30279,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_eval_post: {
+    handle_scenario_video_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -30290,7 +30314,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_document_complete_post: {
+    handle_scenario_document_complete_document_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30325,7 +30349,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_document_error_post: {
+    handle_scenario_document_error_document_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30360,7 +30384,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_document_progress_post: {
+    handle_scenario_document_progress_document_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30395,7 +30419,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_image_complete_post: {
+    handle_scenario_image_complete_image_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30430,7 +30454,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_image_error_post: {
+    handle_scenario_image_error_image_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30465,7 +30489,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_image_progress_post: {
+    handle_scenario_image_progress_image_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30500,7 +30524,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_complete_post: {
+    handle_scenario_objective_complete_objectives_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30535,7 +30559,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_error_post: {
+    handle_scenario_objective_error_objectives_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30570,7 +30594,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_objectives_progress_post: {
+    handle_scenario_objective_progress_objectives_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30605,7 +30629,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_complete_post: {
+    handle_scenario_question_complete_questions_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30640,7 +30664,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_error_post: {
+    handle_scenario_question_error_questions_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30675,7 +30699,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_questions_progress_post: {
+    handle_scenario_question_progress_questions_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30710,7 +30734,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_post: {
+    handle_scenario_statement_call_title_description: {
         parameters: {
             query?: never;
             header?: never;
@@ -30745,7 +30769,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_complete_post: {
+    handle_scenario_statement_complete_title_description_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30780,7 +30804,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_error_post: {
+    handle_scenario_statement_error_title_description_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30815,7 +30839,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_title_description_progress_post: {
+    handle_scenario_statement_progress_title_description_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30850,7 +30874,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_complete_post: {
+    handle_scenario_title_complete_scenario_tool_title_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30885,7 +30909,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_error_post: {
+    handle_scenario_title_error_scenario_tool_title_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -30920,7 +30944,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_scenario_tool_title_progress_post: {
+    handle_scenario_title_progress_scenario_tool_title_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30955,7 +30979,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_video_complete_post: {
+    handle_scenario_video_complete_video_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -30990,7 +31014,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_video_error_post: {
+    handle_scenario_video_error_video_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -31025,7 +31049,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_scenarios_tools_video_progress_post: {
+    handle_scenario_video_progress_video_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -31060,7 +31084,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_document_complete_post: {
+    handle_document_complete_document_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -31095,7 +31119,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_document_error_post: {
+    handle_document_error_document_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -31130,7 +31154,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_document_progress_post: {
+    handle_document_progress_document_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -31165,7 +31189,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_eval_post: {
+    handle_document_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -31200,7 +31224,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_complete_post: {
+    handle_document_title_complete_document_tool_title_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -31235,7 +31259,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_error_post: {
+    handle_document_title_error_document_tool_title_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -31270,7 +31294,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_title_progress_post: {
+    handle_document_title_progress_document_tool_title_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -31305,7 +31329,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_eval_post: {
+    handle_document_debug_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -31340,7 +31364,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_document_tool_debug_post: {
+    handle_document_debug_call_document_tool_debug: {
         parameters: {
             query?: never;
             header?: never;
@@ -31375,7 +31399,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_complete_post: {
+    handle_document_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -31410,7 +31434,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_error_post: {
+    handle_document_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -31445,7 +31469,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_documents_tools_debug_info_progress_post: {
+    handle_document_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -31585,7 +31609,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_video_complete_post: {
+    handle_video_complete_video_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -31620,7 +31644,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_video_error_post: {
+    handle_video_error_video_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -31655,7 +31679,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_video_progress_post: {
+    handle_video_progress_video_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -31690,7 +31714,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_eval_post: {
+    handle_video_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -31725,7 +31749,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_complete_post: {
+    handle_video_title_complete_video_tool_title_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -31760,7 +31784,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_error_post: {
+    handle_video_title_error_video_tool_title_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -31795,7 +31819,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_video_tool_title_progress_post: {
+    handle_video_title_progress_video_tool_title_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -31830,7 +31854,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_eval_post: {
+    handle_video_debug_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -31865,7 +31889,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_post: {
+    handle_video_debug_call_debug_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -31900,7 +31924,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_complete_post: {
+    handle_video_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -31935,7 +31959,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_error_post: {
+    handle_video_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -31970,7 +31994,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_videos_tools_debug_info_progress_post: {
+    handle_video_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32005,7 +32029,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_generation_complete_post: {
+    handle_image_complete_generation_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32040,7 +32064,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_generation_error_post: {
+    handle_image_error_generation_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -32075,7 +32099,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_generation_progress_post: {
+    handle_image_progress_generation_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32110,7 +32134,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_eval_post: {
+    handle_image_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -32145,7 +32169,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_post: {
+    handle_image_debug_call_debug_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -32180,7 +32204,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_complete_post: {
+    handle_image_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32215,7 +32239,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_error_post: {
+    handle_image_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -32250,7 +32274,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_debug_info_progress_post: {
+    handle_image_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32285,7 +32309,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_eval_post: {
+    handle_image_title_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -32320,7 +32344,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_complete_post: {
+    handle_image_title_complete_image_tool_title_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32355,7 +32379,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_error_post: {
+    handle_image_title_error_image_tool_title_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -32390,7 +32414,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_images_tools_image_tool_title_progress_post: {
+    handle_image_title_progress_image_tool_title_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32425,7 +32449,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_generation_complete_post: {
+    handle_rubric_complete_generation_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32460,7 +32484,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_generation_error_post: {
+    handle_rubric_error_generation_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -32495,7 +32519,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_generation_progress_post: {
+    handle_rubric_progress_generation_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32530,7 +32554,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_eval_post: {
+    handle_rubric_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -32565,7 +32589,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_complete_post: {
+    handle_rubric_title_complete_rubric_tool_title_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32600,7 +32624,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_error_post: {
+    handle_rubric_title_error_rubric_tool_title_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -32635,7 +32659,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_title_progress_post: {
+    handle_rubric_title_progress_rubric_tool_title_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32670,7 +32694,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_eval_post: {
+    handle_rubric_rubric_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -32705,7 +32729,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_post: {
+    handle_rubric_debug_call_debug_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -32740,7 +32764,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_complete_post: {
+    handle_rubric_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32775,7 +32799,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_error_post: {
+    handle_rubric_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -32810,7 +32834,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_debug_info_progress_post: {
+    handle_rubric_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32845,7 +32869,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_rubric_tool_standard_description_post: {
+    handle_rubric_rubric_call_rubric_tool_standard_description: {
         parameters: {
             query?: never;
             header?: never;
@@ -32880,7 +32904,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_complete_post: {
+    handle_rubric_rubric_complete_standard_description_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32915,7 +32939,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_error_post: {
+    handle_rubric_rubric_error_standard_description_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -32950,7 +32974,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_rubrics_tools_standard_description_progress_post: {
+    handle_rubric_rubric_progress_standard_description_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -33090,7 +33114,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_classify_complete_post: {
+    handle_classify_complete_classify_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -33125,7 +33149,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_classify_error_post: {
+    handle_classify_error_classify_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -33160,7 +33184,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_classify_progress_post: {
+    handle_classify_progress_classify_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -33195,7 +33219,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_eval_post: {
+    handle_classify_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -33230,7 +33254,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_post: {
+    handle_classify_debug_call_debug_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -33265,7 +33289,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_complete_post: {
+    handle_classify_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -33300,7 +33324,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_error_post: {
+    handle_classify_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -33335,7 +33359,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_debug_info_progress_post: {
+    handle_classify_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -33370,7 +33394,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_eval_post: {
+    handle_classify_classification_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -33405,7 +33429,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_classification_tool_post: {
+    handle_classify_classification_call_classification_tool: {
         parameters: {
             query?: never;
             header?: never;
@@ -33440,7 +33464,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_classification_complete_post: {
+    handle_classify_classification_complete_classification_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -33475,7 +33499,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_classification_error_post: {
+    handle_classify_classification_error_classification_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -33510,7 +33534,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_classify_tools_classification_progress_post: {
+    handle_classify_classification_progress_classification_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -33545,7 +33569,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_generation_progress_post: {
+    handle_hint_generate_generation_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -33580,7 +33604,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_hint_complete_post: {
+    handle_hint_complete_hint_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -33615,7 +33639,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_hint_error_post: {
+    handle_hint_error_hint_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -33650,7 +33674,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_hint_progress_post: {
+    handle_hint_progress_hint_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -33685,7 +33709,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_eval_post: {
+    handle_hint_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -33720,7 +33744,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_debug_post: {
+    handle_hint_debug_call_hint_tool_debug: {
         parameters: {
             query?: never;
             header?: never;
@@ -33755,7 +33779,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_complete_post: {
+    handle_hint_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -33790,7 +33814,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_error_post: {
+    handle_hint_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -33825,7 +33849,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_debug_info_progress_post: {
+    handle_hint_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -33860,7 +33884,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_eval_post: {
+    handle_hint_hint_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -33895,7 +33919,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_hint_tool_post: {
+    handle_hint_hint_call_hint_tool: {
         parameters: {
             query?: never;
             header?: never;
@@ -33930,7 +33954,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_hint_complete_post: {
+    handle_hint_hint_complete_hint_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -33965,7 +33989,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_hint_error_post: {
+    handle_hint_hint_error_hint_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34000,7 +34024,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_hints_tools_hint_progress_post: {
+    handle_hint_hint_progress_hint_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34035,7 +34059,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_progress_post: {
+    handle_grade_generate_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34070,7 +34094,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_grade_text_complete_post: {
+    handle_grade_complete_grade_text_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -34105,7 +34129,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_grade_text_error_post: {
+    handle_grade_error_grade_text_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34140,7 +34164,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_grade_text_progress_post: {
+    handle_grade_progress_grade_text_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34175,7 +34199,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_eval_post: {
+    handle_audio_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -34210,7 +34234,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_audio_complete_post: {
+    handle_grade_audio_complete_audio_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -34245,7 +34269,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_audio_error_post: {
+    handle_grade_audio_error_audio_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34280,7 +34304,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_audio_progress_post: {
+    handle_grade_audio_progress_audio_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34315,7 +34339,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_eval_post: {
+    handle_audio_debug_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -34350,7 +34374,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_complete_post: {
+    handle_grade_improvement_complete_message_improvement_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -34385,7 +34409,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_error_post: {
+    handle_grade_improvement_error_message_improvement_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34420,7 +34444,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_message_improvement_progress_post: {
+    handle_grade_improvement_progress_message_improvement_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34455,7 +34479,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_complete_post: {
+    handle_grade_strength_complete_message_strength_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -34490,7 +34514,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_error_post: {
+    handle_grade_strength_error_message_strength_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34525,7 +34549,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_message_strength_progress_post: {
+    handle_grade_strength_progress_message_strength_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34560,7 +34584,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_feedback_complete_post: {
+    handle_grade_grade_complete_feedback_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -34595,7 +34619,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_feedback_error_post: {
+    handle_grade_grade_error_feedback_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34630,7 +34654,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_feedback_progress_post: {
+    handle_grade_grade_progress_feedback_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34665,7 +34689,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_post: {
+    handle_audio_debug_call_debug_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -34700,7 +34724,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_complete_post: {
+    handle_audio_debug_complete_debug_info_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -34735,7 +34759,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_error_post: {
+    handle_audio_debug_error_debug_info_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34770,7 +34794,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_tools_debug_info_progress_post: {
+    handle_audio_debug_progress_debug_info_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -34910,7 +34934,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_audio_complete_post: {
+    handle_audio_complete_audio_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -34945,7 +34969,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_audio_error_post: {
+    handle_audio_error_audio_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -34980,7 +35004,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_grades_audio_progress_post: {
+    handle_audio_progress_audio_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -35050,7 +35074,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_member_complete_post: {
+    handle_member_complete_member_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -35085,7 +35109,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_member_error_post: {
+    handle_member_error_member_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -35120,7 +35144,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_eval_post: {
+    handle_member_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -35190,7 +35214,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_post: {
+    handle_member_conversation_call_conversation_end: {
         parameters: {
             query?: never;
             header?: never;
@@ -35225,7 +35249,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_complete_post: {
+    handle_member_conversation_complete_conversation_end_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -35260,7 +35284,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_error_post: {
+    handle_member_conversation_error_conversation_end_error: {
         parameters: {
             query?: never;
             header?: never;
@@ -35295,7 +35319,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_tools_conversation_end_progress_post: {
+    handle_member_conversation_progress_conversation_end_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -35330,7 +35354,7 @@ export interface operations {
             };
         };
     };
-    endpoint_handler_socket_v4_server_agents_members_tools_eval_post: {
+    handle_member_conversation_eval_eval: {
         parameters: {
             query?: never;
             header?: never;
@@ -36490,7 +36514,27 @@ export interface operations {
             };
         };
     };
-    metrics_snapshot_metrics_snapshot_post: {
+    metrics_snapshot_metrics_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    init_system_init_post: {
         parameters: {
             query?: never;
             header?: never;

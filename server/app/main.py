@@ -788,7 +788,7 @@ async def health_services() -> JSONResponse:
     )
 
 
-@fastapi_app.post("/metrics/snapshot")
+@fastapi_app.post("/metrics")
 async def metrics_snapshot() -> JSONResponse:
     """Trigger metrics snapshot to database.
 
@@ -815,6 +815,52 @@ async def metrics_snapshot() -> JSONResponse:
             content={
                 "success": False,
                 "message": f"Failed to log metrics snapshot: {str(e)}",
+            },
+        )
+
+
+@fastapi_app.post("/init")
+async def init_system() -> JSONResponse:
+    """Trigger system initialization (Keycloak sync).
+
+    Called by notify service to initialize system on startup.
+    Performs Keycloak sync to ensure identity providers are configured.
+    No authentication required - internal service-to-service call.
+    """
+    from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
+    from utils.logging.db_logger import get_logger
+
+    logger = get_logger("app.main")
+
+    try:
+        result = await perform_keycloak_sync(department_id=None)
+        
+        if result.success:
+            return JSONResponse(
+                content={
+                    "success": True,
+                    "message": result.message,
+                    "error": None,
+                }
+            )
+        else:
+            # Sync failed - return error response
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "success": False,
+                    "message": result.message,
+                    "error": result.error,
+                }
+            )
+    except Exception as e:
+        logger.error(f"Error during system initialization: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "message": f"Failed to initialize system: {str(e)}",
+                "error": str(e),
             },
         )
 
