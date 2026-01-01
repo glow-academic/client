@@ -9,8 +9,10 @@
 "use client";
 
 import type {
-  LayoutContextOut,
+  LayoutContextResponse,
+  ProfileItem,
   SafeSessionSnapshot,
+  SettingsActiveClient,
 } from "@/app/(main)/layout-server";
 import { createSocketClient } from "@/lib/ws/socket";
 import type { ServerToClientEvents } from "@/lib/ws/types";
@@ -39,33 +41,17 @@ type ProfileRole =
   | "member"
   | "guest";
 
-// Use types from server response
-// ProfileItem is constructed from flat fields in LayoutContextResponse
-// Actual profile uses actual_* fields, effective profile uses unprefixed fields
-type ProfileItem = {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  emails: string[];
-  primary_email: string | null;
-  role: string;
-  active: boolean;
-  req_per_day: number | null;
-  last_login: string | null;
-  last_active: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  primary_department_id: string | null;
-};
-
 // ============================================================================
 // TYPES (derived from LayoutContextResponse)
 // ============================================================================
 
-export type DepartmentItem = LayoutContextResponse["departments"][number];
-export type CohortItem = LayoutContextResponse["cohorts"][number];
-export type SimulationContextItem =
-  LayoutContextResponse["simulations"][number];
+export type DepartmentItem = NonNullable<
+  LayoutContextResponse["departments"]
+>[number];
+export type CohortItem = NonNullable<LayoutContextResponse["cohorts"]>[number];
+export type SimulationContextItem = NonNullable<
+  LayoutContextResponse["simulations"]
+>[number];
 
 // Note: With server-side access control, users without valid sessions won't reach pages
 // (they see UnifiedAccessDenied). However, we handle null profiles gracefully for
@@ -104,7 +90,10 @@ interface ProfileContextType {
   scopedRoles: string[]; // Roles that the effective profile has scope to see
 
   // Settings data (from server)
-  settings: LayoutContextResponse["settings"] | null;
+  // Note: Settings are stored as flat fields (settings_*) in LayoutContextResponse
+  // The layout-server.tsx transforms these into a nested SettingsActiveClient object
+  // Currently not used in profile context, but available for future use
+  settings: SettingsActiveClient | null;
 
   // WebSocket connection (tied to profile)
   socket: Socket | null;
@@ -144,9 +133,9 @@ export const useProfile = () => {
 
 interface ProfileProviderClientProps {
   children: React.ReactNode;
-  // Use LayoutContextOut directly from OutputOf - it matches API response exactly (snake_case)
+  // Use LayoutContextResponse directly from OutputOf - it matches API response exactly (snake_case)
   // No need for manual type assertions - OpenAPI types are generated from server schema
-  initial: LayoutContextOut | null; // Can be null if user doesn't have access
+  initial: LayoutContextResponse | null; // Can be null if user doesn't have access
   sessionSnapshot: SafeSessionSnapshot;
 }
 
@@ -166,41 +155,43 @@ export function ProfileProviderClient({
   // Handle null initial (access denied case) - with server-side access control,
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
   // However, we handle null gracefully for edge cases and loading states.
-  // Construct profile objects from flat fields in LayoutContextOut
-  const bootstrapProfile: ProfileItem | null = initial
-    ? {
-        id: initial.actual_id ?? "",
-        first_name: initial.actual_first_name ?? null,
-        last_name: initial.actual_last_name ?? null,
-        emails: initial.actual_emails ?? [],
-        primary_email: initial.actual_primary_email ?? null,
-        role: initial.actual_role ?? "guest",
-        active: initial.actual_active ?? false,
-        req_per_day: initial.actual_req_per_day ?? null,
-        last_login: initial.actual_last_login ?? null,
-        last_active: initial.actual_last_active ?? null,
-        created_at: initial.actual_created_at ?? null,
-        updated_at: initial.actual_updated_at ?? null,
-        primary_department_id: initial.actual_primary_department_id ?? null,
-      }
-    : null;
-  const effectiveProfile: ProfileItem | null = initial
-    ? {
-        id: initial.id ?? "",
-        first_name: initial.first_name ?? null,
-        last_name: initial.last_name ?? null,
-        emails: initial.emails ?? [],
-        primary_email: initial.primary_email ?? null,
-        role: initial.role ?? "guest",
-        active: initial.active ?? false,
-        req_per_day: initial.req_per_day ?? null,
-        last_login: initial.last_login ?? null,
-        last_active: initial.last_active ?? null,
-        created_at: initial.created_at ?? null,
-        updated_at: initial.updated_at ?? null,
-        primary_department_id: initial.primary_department_id ?? null,
-      }
-    : null;
+  // Construct profile objects from flat fields in LayoutContextResponse
+  const bootstrapProfile = useMemo<ProfileItem | null>(() => {
+    if (!initial) return null;
+    return {
+      id: initial.actual_id ?? "",
+      first_name: initial.actual_first_name ?? null,
+      last_name: initial.actual_last_name ?? null,
+      emails: initial.actual_emails ?? [],
+      primary_email: initial.actual_primary_email ?? null,
+      role: initial.actual_role ?? "guest",
+      active: initial.actual_active ?? false,
+      req_per_day: initial.actual_req_per_day ?? null,
+      last_login: initial.actual_last_login ?? null,
+      last_active: initial.actual_last_active ?? null,
+      created_at: initial.actual_created_at ?? null,
+      updated_at: initial.actual_updated_at ?? null,
+      primary_department_id: initial.actual_primary_department_id ?? null,
+    };
+  }, [initial]);
+  const effectiveProfile = useMemo<ProfileItem | null>(() => {
+    if (!initial) return null;
+    return {
+      id: initial.id ?? "",
+      first_name: initial.first_name ?? null,
+      last_name: initial.last_name ?? null,
+      emails: initial.emails ?? [],
+      primary_email: initial.primary_email ?? null,
+      role: initial.role ?? "guest",
+      active: initial.active ?? false,
+      req_per_day: initial.req_per_day ?? null,
+      last_login: initial.last_login ?? null,
+      last_active: initial.last_active ?? null,
+      created_at: initial.created_at ?? null,
+      updated_at: initial.updated_at ?? null,
+      primary_department_id: initial.primary_department_id ?? null,
+    };
+  }, [initial]);
 
   // WebSocket connection state
   const [isConnected, setIsConnected] = useState(false);
@@ -324,11 +315,11 @@ export function ProfileProviderClient({
 
   // Compute effective department IDs (like cohorts in Home.tsx)
   const effectiveDepartmentIds = useMemo(() => {
-    const allDepartmentIds = initial?.departmentIds ?? [];
+    const allDepartmentIds = initial?.department_ids ?? [];
     return selectedDepartmentIds.length > 0
       ? selectedDepartmentIds
       : allDepartmentIds;
-  }, [selectedDepartmentIds, initial?.departmentIds]);
+  }, [selectedDepartmentIds, initial?.department_ids]);
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {
@@ -404,7 +395,7 @@ export function ProfileProviderClient({
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
-      const payload = {
+      const payload: Record<string, unknown> = {
         simulation_id: data.simulation_id,
         ...(data.scenario_id !== undefined && {
           scenario_id: data.scenario_id,
@@ -415,7 +406,7 @@ export function ProfileProviderClient({
         }),
       };
       if (data.profile_id) {
-        payload.profile_id = data.profile_id;
+        payload["profile_id"] = data.profile_id;
       }
 
       setStartingSimulationId(data.simulation_id);
@@ -482,26 +473,29 @@ export function ProfileProviderClient({
 
     // Layout data (from server) - handle null initial gracefully
     departments: initial?.departments ?? [],
-    departmentIds: initial?.departmentIds ?? [],
+    departmentIds: initial?.department_ids ?? [],
     selectedDepartmentIds,
     setSelectedDepartmentIds,
     effectiveDepartmentIds,
     cohorts: initial?.cohorts ?? [], // Arrays directly (no .items property)
-    cohortIds: initial?.cohortIds ?? [],
+    cohortIds: initial?.cohort_ids ?? [],
     simulations: initial?.simulations ?? [], // Arrays directly (no .items property)
-    simulationIds: initial?.simulationIds ?? [],
+    simulationIds: initial?.simulation_ids ?? [],
     cohortMemberCounts: {}, // TODO: Compute from cohorts array if needed
-    earliestAttemptDate: initial?.earliestAttemptDate ?? null,
+    earliestAttemptDate: initial?.earliest_attempt_date ?? null,
 
     // Permissions data (from server) - handle null initial gracefully
-    // LayoutContextOut uses snake_case fields matching API response exactly (from OpenAPI schema)
+    // LayoutContextResponse uses snake_case fields matching API response exactly (from OpenAPI schema)
     // No type assertions needed - types are auto-generated from server schema
     availableSections: initial?.available_sections ?? [],
     redirectPath: initial?.redirect_path ?? "/home",
     scopedRoles: initial?.scoped_roles ?? [],
 
     // Settings data (from server) - handle null initial gracefully
-    settings: initial?.settings ?? null,
+    // Note: Settings are stored as flat fields (settings_*) in LayoutContextResponse
+    // The layout-server.tsx transforms these into a nested SettingsActiveClient object
+    // Currently not used in profile context, but available for future use
+    settings: null,
 
     // WebSocket connection (tied to profile)
     socket: socketRef.current,
