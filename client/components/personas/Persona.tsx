@@ -301,6 +301,7 @@ export default function Persona({
       setFormData({
         color: null,
         colorSearch: null,
+        colorShowSelected: null,
       });
       setLocalColorSearch("");
       toast.success("Color reset");
@@ -314,6 +315,7 @@ export default function Persona({
       setFormData({
         icon: null,
         iconSearch: null,
+        iconShowSelected: null,
       });
       setLocalIconSearch("");
       toast.success("Icon reset");
