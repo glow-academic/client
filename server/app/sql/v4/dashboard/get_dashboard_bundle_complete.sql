@@ -545,8 +545,8 @@ CREATE TYPE types.q_get_dashboard_bundle_v4_field AS (
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_dashboard_bundle_v4(
-    start_date timestamptz,
-    end_date timestamptz,
+    start_date text,
+    end_date text,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     roles profile_role[] DEFAULT ARRAY[]::profile_role[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
@@ -572,8 +572,8 @@ STABLE
 AS $$
 WITH params AS (
     SELECT 
-        start_date AS start_date,
-        end_date AS end_date,
+        start_date::timestamptz AS start_date,
+        end_date::timestamptz AS end_date,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(roles, ARRAY[]::profile_role[]) AS roles,
         COALESCE(simulation_filters, ARRAY[]::text[]) AS simulation_filters,

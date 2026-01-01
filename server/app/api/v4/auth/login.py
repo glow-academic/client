@@ -1,9 +1,11 @@
 """Auth login endpoint - returns list of active provider options and departments."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends
+from fastapi import Request
 from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity
@@ -29,6 +31,7 @@ router = APIRouter()
 )
 async def get_login_providers(
     request: GetLoginDataApiRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetLoginDataApiResponse:
     """Get list of active auth provider options and departments for login page."""
@@ -36,9 +39,24 @@ async def get_login_providers(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Convert API request to SQL params
-        # Note: request.department_id is optional UUID, SQL function expects uuid | NULL
-        params = GetLoginDataSqlParams(**request.model_dump())
+        # Read department-id cookie for provider filtering (like profile/context endpoint)
+        department_id_cookie = http_request.cookies.get("department-id")
+
+        # Use department_id from request body if provided, otherwise use cookie as fallback
+        # Convert cookie string to UUID if present
+        department_id: UUID | None = None
+        if request.department_id:
+            department_id = request.department_id
+        elif department_id_cookie:
+            try:
+                department_id = UUID(department_id_cookie)
+            except ValueError:
+                # Invalid UUID in cookie, ignore it
+                department_id = None
+
+        # Convert API request to SQL params with cookie fallback
+        # Note: SQL function expects uuid | NULL
+        params = GetLoginDataSqlParams(department_id=department_id)
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present

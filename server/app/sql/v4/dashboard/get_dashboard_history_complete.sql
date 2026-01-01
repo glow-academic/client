@@ -92,9 +92,11 @@ CREATE TYPE types.q_get_dashboard_history_v4_scenario_option AS (
 );
 
 -- 4) Recreate function
+-- Accept dates as text (ISO format strings) and cast to timestamptz internally
+-- This allows Python to pass ISO strings from model_dump(mode="json"), and SQL handles conversion
 CREATE OR REPLACE FUNCTION api_get_dashboard_history_v4(
-    start_date timestamptz,
-    end_date timestamptz,
+    start_date text,
+    end_date text,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     roles profile_role[] DEFAULT ARRAY[]::profile_role[],
@@ -124,8 +126,8 @@ STABLE
 AS $$
 WITH params AS (
     SELECT 
-        start_date AS start_date,
-        end_date AS end_date,
+        start_date::timestamptz AS start_date,
+        end_date::timestamptz AS end_date,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(roles, ARRAY[]::profile_role[]) AS roles,

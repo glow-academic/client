@@ -77,11 +77,11 @@ export interface UnifiedSidebarProps
   activeSection: string;
   onSectionChange?: (section: string) => void;
   switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn,
+    input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
 }
 
@@ -139,7 +139,7 @@ export function UnifiedSidebar({
   const getScrollContainer = () => {
     // Find the scrollable SidebarContent element by data attribute
     return document.querySelector(
-      '[data-sidebar="content"]',
+      '[data-sidebar="content"]'
     ) as HTMLDivElement | null;
   };
 
@@ -194,118 +194,106 @@ export function UnifiedSidebar({
     }
 
     // Analytics - Available from instructional level and up
+    // Check for parent section "analytics" - if present, show all subsections
     if (
       ["instructional", "admin", "superadmin"].includes(
-        effectiveProfile.role,
+        effectiveProfile.role
       ) &&
-      (availableSections.includes("dashboard") ||
-        availableSections.includes("reports") ||
-        availableSections.includes("activity") ||
-        availableSections.includes("pricing"))
+      availableSections.includes("analytics")
     ) {
       const analyticsItems: MenuItem[] = [];
 
-      if (availableSections.includes("dashboard")) {
-        analyticsItems.push({
-          title: "Dashboard",
-          url: "#",
-          section: "dashboard",
-        });
-      }
+      // Show all analytics subsections when parent section is available
+      analyticsItems.push({
+        title: "Dashboard",
+        url: "#",
+        section: "dashboard",
+      });
+      analyticsItems.push({
+        title: "Reports",
+        url: "#",
+        section: "reports",
+      });
+      analyticsItems.push({
+        title: "Activity",
+        url: "#",
+        section: "activity",
+      });
+      analyticsItems.push({
+        title: "Pricing",
+        url: "#",
+        section: "pricing",
+      });
 
-      if (availableSections.includes("reports")) {
-        analyticsItems.push({
-          title: "Reports",
-          url: "#",
-          section: "reports",
-        });
-      }
-
-      if (availableSections.includes("activity")) {
-        analyticsItems.push({
-          title: "Activity",
-          url: "#",
-          section: "activity",
-        });
-      }
-
-      if (availableSections.includes("pricing")) {
-        analyticsItems.push({
-          title: "Pricing",
-          url: "#",
-          section: "pricing",
-        });
-      }
-
-      if (analyticsItems.length > 0) {
-        menu.push({
-          title: "Analytics",
-          url: "#",
-          icon: PieChart,
-          items: analyticsItems,
-        });
-      }
+      menu.push({
+        title: "Analytics",
+        url: "#",
+        icon: PieChart,
+        items: analyticsItems,
+      });
     }
 
     // Create - Available from instructor level and up
-    if (
-      availableSections.includes("personas") ||
-      availableSections.includes("scenarios") ||
-      availableSections.includes("simulations") ||
-      availableSections.includes("cohorts")
-    ) {
+    // Check for parent section "create" - if present, show all subsections
+    if (availableSections.includes("create")) {
       const createItems: MenuItem[] = [];
 
-      if (availableSections.includes("cohorts")) {
-        createItems.push({
-          title: "Cohorts",
-          url: "#",
-          section: "cohorts",
-        });
-      }
+      // Show all create subsections when parent section is available
+      createItems.push({
+        title: "Cohorts",
+        url: "#",
+        section: "cohorts",
+      });
+      createItems.push({
+        title: "Simulations",
+        url: "#",
+        section: "simulations",
+      });
+      createItems.push({
+        title: "Scenarios",
+        url: "#",
+        section: "scenarios",
+      });
+      createItems.push({
+        title: "Personas",
+        url: "#",
+        section: "personas",
+      });
 
-      if (availableSections.includes("simulations")) {
-        createItems.push({
-          title: "Simulations",
-          url: "#",
-          section: "simulations",
-        });
-      }
-
-      if (availableSections.includes("scenarios")) {
-        createItems.push({
-          title: "Scenarios",
-          url: "#",
-          section: "scenarios",
-        });
-      }
-
-      if (availableSections.includes("personas")) {
-        createItems.push({
-          title: "Personas",
-          url: "#",
-          section: "personas",
-        });
-      }
-
-      if (createItems.length > 0) {
-        menu.push({
-          title: "Create",
-          url: "#",
-          icon: Sparkles,
-          items: createItems,
-        });
-      }
+      menu.push({
+        title: "Create",
+        url: "#",
+        icon: Sparkles,
+        items: createItems,
+      });
     }
 
     // Management - Available from admin level and up
-    if (
-      availableSections.includes("staff") ||
-      availableSections.includes("documents") ||
-      availableSections.includes("parameters") ||
-      availableSections.includes("fields")
-    ) {
+    // Check for parent section "management" - if present, show all subsections
+    if (availableSections.includes("management")) {
       const managementItems: MenuItem[] = [];
+
+      // Show all management subsections when parent section is available
+      managementItems.push({
+        title: "Staff",
+        url: "#",
+        section: "staff",
+      });
+      managementItems.push({
+        title: "Documents",
+        url: "#",
+        section: "documents",
+      });
+      managementItems.push({
+        title: "Parameters",
+        url: "#",
+        section: "parameters",
+      });
+      managementItems.push({
+        title: "Fields",
+        url: "#",
+        section: "fields",
+      });
 
       menu.push({
         title: "Management",
@@ -313,50 +301,38 @@ export function UnifiedSidebar({
         icon: ClipboardList,
         items: managementItems,
       });
-
-      if (availableSections.includes("staff")) {
-        managementItems.push({
-          title: "Staff",
-          url: "#",
-          section: "staff",
-        });
-      }
-
-      if (availableSections.includes("documents")) {
-        managementItems.push({
-          title: "Documents",
-          url: "#",
-          section: "documents",
-        });
-      }
-
-      if (availableSections.includes("parameters")) {
-        managementItems.push({
-          title: "Parameters",
-          url: "#",
-          section: "parameters",
-        });
-      }
-
-      if (availableSections.includes("fields")) {
-        managementItems.push({
-          title: "Fields",
-          url: "#",
-          section: "fields",
-        });
-      }
     }
 
     // Engine - Available for admin and superadmin
+    // Check for parent section "engine" - if present, show all subsections
     if (
       (effectiveProfile.role === "admin" ||
         effectiveProfile.role === "superadmin") &&
-      (availableSections.includes("agents") ||
-        availableSections.includes("models") ||
-        availableSections.includes("rubrics") ||
-        availableSections.includes("evals"))
+      availableSections.includes("engine")
     ) {
       const engineItems: MenuItem[] = [];
+
+      // Show all engine subsections when parent section is available
+      engineItems.push({
+        title: "Agents",
+        url: "#",
+        section: "agents",
+      });
+      engineItems.push({
+        title: "Models",
+        url: "#",
+        section: "models",
+      });
+      engineItems.push({
+        title: "Rubrics",
+        url: "#",
+        section: "rubrics",
+      });
+      engineItems.push({
+        title: "Evals",
+        url: "#",
+        section: "evals",
+      });
 
       menu.push({
         title: "Engine",
@@ -364,85 +340,44 @@ export function UnifiedSidebar({
         icon: Brain,
         items: engineItems,
       });
-
-      if (availableSections.includes("agents")) {
-        engineItems.push({
-          title: "Agents",
-          url: "#",
-          section: "agents",
-        });
-      }
-
-      if (availableSections.includes("models")) {
-        engineItems.push({
-          title: "Models",
-          url: "#",
-          section: "models",
-        });
-      }
-
-      if (availableSections.includes("rubrics")) {
-        engineItems.push({
-          title: "Rubrics",
-          url: "#",
-          section: "rubrics",
-        });
-      }
-
-      if (availableSections.includes("evals")) {
-        engineItems.push({
-          title: "Evals",
-          url: "#",
-          section: "evals",
-        });
-      }
     }
 
     // System - Available for superadmin only
-    if (effectiveProfile.role === "superadmin") {
+    // Check for parent section "system" - if present, show all subsections
+    if (
+      effectiveProfile.role === "superadmin" &&
+      availableSections.includes("system")
+    ) {
       const systemItems: MenuItem[] = [];
 
-      if (availableSections.includes("departments")) {
-        systemItems.push({
-          title: "Departments",
-          url: "#",
-          section: "departments",
-        });
-      }
+      // Show all system subsections when parent section is available
+      systemItems.push({
+        title: "Departments",
+        url: "#",
+        section: "departments",
+      });
+      systemItems.push({
+        title: "Providers",
+        url: "#",
+        section: "providers",
+      });
+      systemItems.push({
+        title: "Auth",
+        url: "#",
+        section: "auth",
+      });
+      systemItems.push({
+        title: "Keys",
+        url: "#",
+        section: "keys",
+      });
 
-      if (availableSections.includes("providers")) {
-        systemItems.push({
-          title: "Providers",
-          url: "#",
-          section: "providers",
-        });
-      }
-
-      if (availableSections.includes("auth")) {
-        systemItems.push({
-          title: "Auth",
-          url: "#",
-          section: "auth",
-        });
-      }
-
-      if (availableSections.includes("keys")) {
-        systemItems.push({
-          title: "Keys",
-          url: "#",
-          section: "keys",
-        });
-      }
-
-      // Only add System section if it has items
-      if (systemItems.length > 0) {
-        menu.push({
-          title: "System",
-          url: "#",
-          icon: Server,
-          items: systemItems,
-        });
-      }
+      menu.push({
+        title: "System",
+        url: "#",
+        icon: Server,
+        items: systemItems,
+      });
     }
 
     // Health - Available for superadmin only, top-level
@@ -504,7 +439,7 @@ export function UnifiedSidebar({
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchLower) ||
-                item.section?.toLowerCase().includes(searchLower),
+                item.section?.toLowerCase().includes(searchLower)
             ) || [];
 
           // Also check if the section title itself matches
@@ -527,13 +462,32 @@ export function UnifiedSidebar({
       return filteredMenu;
     }
 
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "UnifiedSidebar.tsx:531",
+        message: "navMain built",
+        data: {
+          menuLength: menu.length,
+          menuSections: menu.map((m) => m.title),
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run8",
+        hypothesisId: "K",
+      }),
+    }).catch(() => {});
+    // #endregion
+
     return menu;
   }, [effectiveProfile, searchTerm, availableSections]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
     onSectionChange,
-    pathname,
+    pathname
   );
 
   // Wrapper function that closes mobile sidebar on section change
@@ -584,7 +538,7 @@ export function UnifiedSidebar({
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile],
+    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
   // Handle exit emulation
@@ -647,7 +601,7 @@ export function UnifiedSidebar({
   // Restore scroll position synchronously before paint to prevent flash
   useLayoutEffect(() => {
     const savedScrollFromStorage = sessionStorage.getItem(
-      "sidebar-scroll-position",
+      "sidebar-scroll-position"
     );
     const isRestoringFromStorage =
       sessionStorage.getItem("sidebar-is-restoring") === "true";
@@ -682,7 +636,7 @@ export function UnifiedSidebar({
           return "Logged out successfully";
         } catch (error) {
           throw new Error(
-            typeof error === "string" ? error : "Failed to log out",
+            typeof error === "string" ? error : "Failed to log out"
           );
         } finally {
           setIsLoggingOut(false);
@@ -692,7 +646,7 @@ export function UnifiedSidebar({
         loading: "Logging out...",
         success: (message) => message,
         error: (error) => error.message || "Failed to log out",
-      },
+      }
     );
   };
 
@@ -724,14 +678,14 @@ export function UnifiedSidebar({
                         {!effectiveProfile
                           ? "GU"
                           : getInitials(
-                              effectiveProfile?.firstName +
+                              (effectiveProfile?.first_name || "") +
                                 " " +
-                                effectiveProfile?.lastName,
+                                (effectiveProfile?.last_name || "")
                             )}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-0.5 leading-none text-left">
-                      <span className="font-medium truncate">{`${effectiveProfile?.firstName || "Guest"} ${effectiveProfile?.lastName || "User"}`}</span>
+                      <span className="font-medium truncate">{`${effectiveProfile?.first_name || "Guest"} ${effectiveProfile?.last_name || "User"}`}</span>
                       {/* Capitalize the role for display */}
                       <span className="text-xs capitalize">
                         {effectiveProfile?.role || "guest"}

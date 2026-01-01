@@ -435,7 +435,12 @@ actual_profile_role AS (
 ),
 effective_profile_role AS (
     -- Use effective profile's role for UI permissions filtering
-    SELECT role FROM profiles p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    -- Return NULL role when profile ID is NULL (for settings-only requests)
+    SELECT 
+        COALESCE(
+            (SELECT role FROM profiles p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
+            NULL::profile_role
+        ) as role
 ),
 scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
@@ -451,6 +456,7 @@ scoped_roles_computed AS (
 ),
 actual_profile_data AS (
     -- Fetch the logged-in user's profile
+    -- Return NULL values when profile ID is NULL (for settings-only requests)
     SELECT 
         p.id,
         p.first_name,
@@ -480,9 +486,27 @@ actual_profile_data AS (
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
+    UNION ALL
+    -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
+    SELECT 
+        NULL::uuid as id,
+        NULL::text as first_name,
+        NULL::text as last_name,
+        NULL::text[] as emails,
+        NULL::text as primary_email,
+        NULL::profile_role as role,
+        NULL::boolean as active,
+        NULL::integer as req_per_day,
+        NULL::timestamptz as last_login,
+        NULL::timestamptz as last_active,
+        NULL::timestamptz as created_at,
+        NULL::timestamptz as updated_at,
+        NULL::uuid as primary_department_id
+    WHERE (SELECT actual_profile_id FROM resolved_profile_ids) IS NULL
 ),
 effective_profile_data AS (
     -- Fetch the profile being viewed (could be same as actual or emulated)
+    -- Return NULL values when profile ID is NULL (for settings-only requests)
     SELECT 
         p.id,
         p.first_name,
@@ -512,6 +536,23 @@ effective_profile_data AS (
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
+    UNION ALL
+    -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
+    SELECT 
+        NULL::uuid as id,
+        NULL::text as first_name,
+        NULL::text as last_name,
+        NULL::text[] as emails,
+        NULL::text as primary_email,
+        NULL::profile_role as role,
+        NULL::boolean as active,
+        NULL::integer as req_per_day,
+        NULL::timestamptz as last_login,
+        NULL::timestamptz as last_active,
+        NULL::timestamptz as created_at,
+        NULL::timestamptz as updated_at,
+        NULL::uuid as primary_department_id
+    WHERE (SELECT effective_profile_id FROM resolved_profile_ids) IS NULL
 ),
 dept_data AS (
     -- Departments for the effective profile
@@ -629,8 +670,9 @@ earliest_attempt AS (
       AND pd_effective.active = true
 ),
 settings_resolution AS (
-    -- Resolve settings based on effective profile's department
+    -- Resolve settings based on effective profile's department OR department_id parameter
     -- Logic: department-specific → default → any active
+    -- When no profile exists, use department_id parameter directly
     WITH default_settings AS (
         -- Get settings with no department links (cross-department/default)
         SELECT s.id as settings_id
@@ -643,21 +685,35 @@ settings_resolution AS (
         LIMIT 1
     ),
     effective_profile_department AS (
-        -- Get effective profile's primary department
+        -- Get effective profile's primary department (if profile exists)
         SELECT pd.department_id
         FROM resolved_profile_ids rpi
         JOIN profile_departments pd ON pd.profile_id = rpi.effective_profile_id
-        WHERE pd.is_primary = TRUE 
+        WHERE rpi.effective_profile_id IS NOT NULL
+          AND pd.is_primary = TRUE 
           AND pd.active = true
         LIMIT 1
     ),
+    resolved_department_id AS (
+        -- Use profile's department if available, otherwise use department_id parameter
+        -- Cast department_id from params to UUID to match effective_profile_department type
+        SELECT COALESCE(
+            (SELECT department_id FROM effective_profile_department),
+            (SELECT CASE 
+                WHEN department_id IS NOT NULL AND department_id != '' THEN department_id::uuid
+                ELSE NULL::uuid
+            END FROM params)
+        ) as department_id
+    ),
     dept_specific_settings AS (
-        -- Get department-specific settings (if effective profile has a department)
+        -- Get department-specific settings (if department exists from profile OR parameter)
         SELECT s.id as settings_id
         FROM settings s
         JOIN department_settings sd ON sd.settings_id = s.id
-        JOIN effective_profile_department epd ON sd.department_id = epd.department_id
-        WHERE s.active = true 
+        CROSS JOIN resolved_department_id rdi
+        WHERE rdi.department_id IS NOT NULL
+          AND sd.department_id = rdi.department_id
+          AND s.active = true 
           AND sd.active = true
         LIMIT 1
     ),
@@ -759,7 +815,7 @@ settings_resolution AS (
         sdgd.default_guest_profile_id,
         sdad.default_account_profile_id
     FROM selected_settings ss
-    JOIN settings s ON s.id = ss.settings_id
+    JOIN settings s ON s.id = ss.settings_id::uuid
     LEFT JOIN settings_auths_data sad ON true
     LEFT JOIN settings_providers_data spd ON true
     LEFT JOIN settings_default_guest_data sdgd ON true
@@ -769,23 +825,27 @@ settings_resolution AS (
 actor_name_computed AS (
     -- Compute actor_name from effective_profile_id if available, else actual_profile_id
     -- This is used for audit logging
+    -- Return NULL when both profile IDs are NULL (for settings-only requests)
     SELECT 
         COALESCE(
             (SELECT first_name || ' ' || last_name 
              FROM profiles 
-             WHERE id = (SELECT effective_profile_id FROM resolved_profile_ids)),
+             WHERE id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
             (SELECT first_name || ' ' || last_name 
              FROM profiles 
-             WHERE id = (SELECT actual_profile_id FROM resolved_profile_ids))
+             WHERE id = (SELECT actual_profile_id FROM resolved_profile_ids) LIMIT 1),
+            NULL::text
         ) as actor_name
 ),
 available_sections_computed AS (
     -- Compute available sections based on effective profile's role
-    -- Replicates get_available_subsections_for_role logic
+    -- Returns top-level sections only - sidebar will show all subsections when parent section is available
+    -- Return empty array when role is NULL (for settings-only requests)
     SELECT 
         CASE 
-            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
-            WHEN epr.role = 'admin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
+            WHEN epr.role IS NULL THEN ARRAY[]::text[]
+            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management', 'engine', 'system', 'health', 'benchmark', 'settings']::text[]
+            WHEN epr.role = 'admin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management', 'engine', 'settings']::text[]
             WHEN epr.role = 'instructional'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create']::text[]
             WHEN epr.role = 'member'::profile_role THEN ARRAY['home', 'practice']::text[]
             ELSE ARRAY['practice']::text[]  -- guest
@@ -795,8 +855,10 @@ available_sections_computed AS (
 redirect_path_computed AS (
     -- Compute redirect path based on effective profile's role
     -- Replicates get_redirect_path_for_role logic
+    -- Return NULL when role is NULL (for settings-only requests)
     SELECT 
         CASE 
+            WHEN epr.role IS NULL THEN NULL::text
             WHEN epr.role = 'guest'::profile_role THEN '/practice'::text
             WHEN epr.role = 'member'::profile_role THEN '/home'::text
             WHEN epr.role = 'instructional'::profile_role THEN '/analytics/dashboard'::text
@@ -878,35 +940,35 @@ SELECT
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date,
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
     -- Settings data (all fields prefixed with settings_)
-    (SELECT settings_id FROM settings_resolution) as settings_id,
-    (SELECT settings_created_at FROM settings_resolution) as settings_created_at,
-    (SELECT settings_active FROM settings_resolution) as settings_active,
-    (SELECT settings_name FROM settings_resolution) as settings_name,
-    (SELECT settings_description FROM settings_resolution) as settings_description,
-    (SELECT primary_color FROM settings_resolution) as settings_primary_color,
-    (SELECT accent FROM settings_resolution) as settings_accent,
-    (SELECT background FROM settings_resolution) as settings_background,
-    (SELECT surface FROM settings_resolution) as settings_surface,
-    (SELECT success FROM settings_resolution) as settings_success,
-    (SELECT warning FROM settings_resolution) as settings_warning,
-    (SELECT error FROM settings_resolution) as settings_error,
-    (SELECT sidebar_background FROM settings_resolution) as settings_sidebar_background,
-    (SELECT sidebar_primary FROM settings_resolution) as settings_sidebar_primary,
-    (SELECT chart1 FROM settings_resolution) as settings_chart1,
-    (SELECT chart2 FROM settings_resolution) as settings_chart2,
-    (SELECT chart3 FROM settings_resolution) as settings_chart3,
-    (SELECT chart4 FROM settings_resolution) as settings_chart4,
-    (SELECT chart5 FROM settings_resolution) as settings_chart5,
-    (SELECT guest_login_enabled FROM settings_resolution) as settings_guest_login_enabled,
-    (SELECT success_threshold FROM settings_resolution) as settings_success_threshold,
-    (SELECT warning_threshold FROM settings_resolution) as settings_warning_threshold,
-    (SELECT danger_threshold FROM settings_resolution) as settings_danger_threshold,
-    (SELECT settings_auth_ids FROM settings_resolution) as settings_auth_ids,
-    (SELECT settings_auths FROM settings_resolution) as settings_auths,
-    (SELECT settings_provider_ids FROM settings_resolution) as settings_provider_ids,
-    (SELECT settings_providers FROM settings_resolution) as settings_providers,
-    (SELECT default_guest_profile_id FROM settings_resolution) as settings_default_guest_profile_id,
-    (SELECT default_account_profile_id FROM settings_resolution) as settings_default_account_profile_id,
+    sr.settings_id as settings_id,
+    sr.settings_created_at as settings_created_at,
+    sr.settings_active as settings_active,
+    sr.settings_name as settings_name,
+    sr.settings_description as settings_description,
+    sr.primary_color as settings_primary_color,
+    sr.accent as settings_accent,
+    sr.background as settings_background,
+    sr.surface as settings_surface,
+    sr.success as settings_success,
+    sr.warning as settings_warning,
+    sr.error as settings_error,
+    sr.sidebar_background as settings_sidebar_background,
+    sr.sidebar_primary as settings_sidebar_primary,
+    sr.chart1 as settings_chart1,
+    sr.chart2 as settings_chart2,
+    sr.chart3 as settings_chart3,
+    sr.chart4 as settings_chart4,
+    sr.chart5 as settings_chart5,
+    sr.guest_login_enabled as settings_guest_login_enabled,
+    sr.success_threshold as settings_success_threshold,
+    sr.warning_threshold as settings_warning_threshold,
+    sr.danger_threshold as settings_danger_threshold,
+    sr.settings_auth_ids as settings_auth_ids,
+    sr.settings_auths as settings_auths,
+    sr.settings_provider_ids as settings_provider_ids,
+    sr.settings_providers as settings_providers,
+    sr.default_guest_profile_id as settings_default_guest_profile_id,
+    sr.default_account_profile_id as settings_default_account_profile_id,
     -- Computed fields
     (SELECT available_sections FROM available_sections_computed) as available_sections,
     (SELECT redirect_path FROM redirect_path_computed) as redirect_path,
@@ -917,7 +979,8 @@ SELECT
     -- 37 fields: background, foreground, card, card_foreground, popover, popover_foreground, primary_color, primary_foreground, secondary, secondary_foreground, muted, muted_foreground, accent, accent_foreground, destructive, border, input, ring, success, success_foreground, warning, warning_foreground, info, info_foreground, chart1, chart2, chart3, chart4, chart5, sidebar, sidebar_foreground, sidebar_primary, sidebar_primary_foreground, sidebar_accent, sidebar_accent_foreground, sidebar_border, sidebar_ring
     ('', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '')::types.q_get_profile_context_v4_theme_tokens as settings_tokens,
     (SELECT actor_name FROM actor_name_computed) as actor_name
-FROM emulation_validation ev
+FROM params
+CROSS JOIN emulation_validation ev
 CROSS JOIN resolved_profile_ids rpi
 CROSS JOIN actual_profile_data apd
 CROSS JOIN effective_profile_data epd
@@ -932,9 +995,19 @@ CROSS JOIN redirect_path_computed rpc
 CROSS JOIN department_ids_computed dic
 CROSS JOIN cohort_ids_computed cic
 CROSS JOIN simulation_ids_computed sic
-WHERE ev.is_authorized = true  -- Only return data if emulation is authorized
-  AND rpi.actual_profile_id IS NOT NULL  -- Ensure we have valid profile IDs
-  AND rpi.effective_profile_id IS NOT NULL
+WHERE (
+    -- Standard case: require authorization and profile IDs
+    (ev.is_authorized = true 
+     AND rpi.actual_profile_id IS NOT NULL 
+     AND rpi.effective_profile_id IS NOT NULL)
+    OR
+    -- Settings-only case: allow NULL profile IDs when department_id is provided (for login page theme)
+    (rpi.actual_profile_id IS NULL 
+     AND rpi.effective_profile_id IS NULL
+     AND params.department_id IS NOT NULL
+     AND params.department_id != '')
+     -- Note: settings_id check happens in Python code, not here
+)
 $$;
 
 COMMIT;

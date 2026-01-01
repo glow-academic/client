@@ -9,7 +9,7 @@
 "use client";
 
 import type {
-  LayoutContextResponse,
+  LayoutContextOut,
   SafeSessionSnapshot,
 } from "@/app/(main)/layout-server";
 import { createSocketClient } from "@/lib/ws/socket";
@@ -40,7 +40,23 @@ type ProfileRole =
   | "guest";
 
 // Use types from server response
-type ProfileItem = LayoutContextResponse["actualProfile"];
+// ProfileItem is constructed from flat fields in LayoutContextResponse
+// Actual profile uses actual_* fields, effective profile uses unprefixed fields
+type ProfileItem = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  emails: string[];
+  primary_email: string | null;
+  role: string;
+  active: boolean;
+  req_per_day: number | null;
+  last_login: string | null;
+  last_active: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  primary_department_id: string | null;
+};
 
 // ============================================================================
 // TYPES (derived from LayoutContextResponse)
@@ -128,7 +144,9 @@ export const useProfile = () => {
 
 interface ProfileProviderClientProps {
   children: React.ReactNode;
-  initial: LayoutContextResponse | null; // Can be null if user doesn't have access
+  // Use LayoutContextOut directly from OutputOf - it matches API response exactly (snake_case)
+  // No need for manual type assertions - OpenAPI types are generated from server schema
+  initial: LayoutContextOut | null; // Can be null if user doesn't have access
   sessionSnapshot: SafeSessionSnapshot;
 }
 
@@ -148,8 +166,41 @@ export function ProfileProviderClient({
   // Handle null initial (access denied case) - with server-side access control,
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
   // However, we handle null gracefully for edge cases and loading states.
-  const bootstrapProfile = initial?.actualProfile ?? null;
-  const effectiveProfile = initial?.effectiveProfile ?? null;
+  // Construct profile objects from flat fields in LayoutContextOut
+  const bootstrapProfile: ProfileItem | null = initial
+    ? {
+        id: initial.actual_id ?? "",
+        first_name: initial.actual_first_name ?? null,
+        last_name: initial.actual_last_name ?? null,
+        emails: initial.actual_emails ?? [],
+        primary_email: initial.actual_primary_email ?? null,
+        role: initial.actual_role ?? "guest",
+        active: initial.actual_active ?? false,
+        req_per_day: initial.actual_req_per_day ?? null,
+        last_login: initial.actual_last_login ?? null,
+        last_active: initial.actual_last_active ?? null,
+        created_at: initial.actual_created_at ?? null,
+        updated_at: initial.actual_updated_at ?? null,
+        primary_department_id: initial.actual_primary_department_id ?? null,
+      }
+    : null;
+  const effectiveProfile: ProfileItem | null = initial
+    ? {
+        id: initial.id ?? "",
+        first_name: initial.first_name ?? null,
+        last_name: initial.last_name ?? null,
+        emails: initial.emails ?? [],
+        primary_email: initial.primary_email ?? null,
+        role: initial.role ?? "guest",
+        active: initial.active ?? false,
+        req_per_day: initial.req_per_day ?? null,
+        last_login: initial.last_login ?? null,
+        last_active: initial.last_active ?? null,
+        created_at: initial.created_at ?? null,
+        updated_at: initial.updated_at ?? null,
+        primary_department_id: initial.primary_department_id ?? null,
+      }
+    : null;
 
   // WebSocket connection state
   const [isConnected, setIsConnected] = useState(false);
@@ -413,6 +464,34 @@ export function ProfileProviderClient({
     [isConnected]
   );
 
+  // #region agent log
+  React.useEffect(() => {
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "profile-context.tsx:416",
+        message: "Profile context value computed",
+        data: {
+          hasInitial: !!initial,
+          hasEffectiveProfile: !!effectiveProfile,
+          hasResolvedActiveProfile: !!resolvedActiveProfile,
+          effectiveProfileId: effectiveProfile?.id,
+          resolvedActiveProfileId: resolvedActiveProfile?.id,
+          bootstrapProfileId: bootstrapProfile?.id,
+          initialKeys: initial ? Object.keys(initial).filter(k => k.includes('section') || k.includes('redirect') || k.includes('scoped')) : [],
+          availableSectionsCamel: (initial as any)?.availableSections,
+          availableSectionsSnake: (initial as any)?.available_sections,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run9",
+        hypothesisId: "L",
+      }),
+    }).catch(() => {});
+  }, [initial, effectiveProfile, resolvedActiveProfile, bootstrapProfile]);
+  // #endregion
+
   const value: ProfileContextType = {
     // Profile data
     activeProfile: resolvedActiveProfile,
@@ -445,9 +524,11 @@ export function ProfileProviderClient({
     earliestAttemptDate: initial?.earliestAttemptDate ?? null,
 
     // Permissions data (from server) - handle null initial gracefully
-    availableSections: initial?.availableSections ?? [],
-    redirectPath: initial?.redirectPath ?? "/home",
-    scopedRoles: initial?.scopedRoles ?? [],
+    // LayoutContextOut uses snake_case fields matching API response exactly (from OpenAPI schema)
+    // No type assertions needed - types are auto-generated from server schema
+    availableSections: initial?.available_sections ?? [],
+    redirectPath: initial?.redirect_path ?? "/home",
+    scopedRoles: initial?.scoped_roles ?? [],
 
     // Settings data (from server) - handle null initial gracefully
     settings: initial?.settings ?? null,

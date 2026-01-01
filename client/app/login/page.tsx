@@ -76,9 +76,13 @@ async function getProfileContext(
       departmentIdFromQuery || cookieStore.get("department-id")?.value;
     const authMode = cookieStore.get("auth-mode")?.value;
 
-    // Build cookie header - server will default auth-mode to "default-account" if not provided
+    // Build cookie header
+    // NOTE: Do NOT send auth-mode cookie if not set - this prevents authorization check
+    // from blocking settings fetch on login page (we're just getting theme, not authenticating)
     const cookieHeader = [
       departmentIdToUse && `department-id=${departmentIdToUse}`,
+      // Only include auth-mode if explicitly set (don't default to "default-account")
+      // This allows login page to fetch settings without triggering authorization checks
       authMode && `auth-mode=${authMode}`,
     ]
       .filter(Boolean)
@@ -143,12 +147,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   );
 
   // Fetch settings via profile context endpoint
-  // Uses department-id query parameter (if provided) for dynamic settings changes
-  // Server logic:
-  // - If no department-id: uses default settings (no department-specific)
-  // - If no auth-mode: defaults to "default-account" on server
-  // - If department-id provided: tries department-specific settings first, then falls back to default
-  const profileContext = await getProfileContext(departmentIdFromQuery);
+  // Only fetch if we have a department-id (from query param or cookie)
+  // Without a department-id, the SQL query requires a profile which we don't have on login page
+  // In that case, we'll use default theme (handled by Login component)
+  const cookieStore = await cookies();
+  const departmentIdFromCookie = cookieStore.get("department-id")?.value;
+  const hasDepartmentContext = departmentIdFromQuery || departmentIdFromCookie;
+
+  const profileContext = hasDepartmentContext
+    ? await getProfileContext(departmentIdFromQuery)
+    : null;
   // Extract settings from profile context (SettingsData is compatible with SettingsActiveOut)
   const activeSettings: ProfileContextOut["settings_tokens"] | null =
     profileContext?.settings_tokens ?? null;

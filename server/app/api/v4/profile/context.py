@@ -73,11 +73,16 @@ async def get_profile_context(
 
         # Read department-id and auth-mode cookies for profile resolution
         department_id_cookie = http_request.cookies.get("department-id")
-        auth_mode_cookie = http_request.cookies.get("auth-mode")
+        auth_mode_cookie_raw = http_request.cookies.get("auth-mode")
 
-        # Default auth-mode to "default-account" ONLY when resolving from cookies
-        if not auth_mode_cookie and not actual_profile_id and not effective_profile_id:
-            auth_mode_cookie = "default-account"
+        # When fetching settings without a profile (e.g., login page), ignore auth-mode cookie
+        # This prevents old auth-mode cookies from triggering authorization checks when just fetching settings
+        # Authorization checks should only run when we're actually trying to authenticate (have profile IDs)
+        # If we have no profile IDs, we're just fetching settings, so ignore auth-mode cookie
+        if not actual_profile_id and not effective_profile_id:
+            auth_mode_cookie = None  # Ignore auth-mode when just fetching settings
+        else:
+            auth_mode_cookie = auth_mode_cookie_raw  # Use auth-mode when authenticating
 
         # Validate auth_mode if provided
         if auth_mode_cookie is not None and auth_mode_cookie not in (
@@ -105,7 +110,7 @@ async def get_profile_context(
 
         # Execute SQL with typed helper
         result = cast(
-            GetProfileContextSqlRow,
+            GetProfileContextSqlRow | None,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -113,7 +118,46 @@ async def get_profile_context(
             ),
         )
 
-        if not result or not result.is_authorized:
+        # Handle case where we're fetching settings without a profile (e.g., login page)
+        # When auth_mode is NULL and no profile IDs, the SQL query may return a result but with is_authorized=NULL
+        # because it requires a profile to determine authorization. However, if we have a department_id,
+        # we should still be able to return settings for that department.
+        # Only treat as settings-only request if we have a department_id (for login page theme)
+        is_settings_only_request = (
+            not actual_profile_id
+            and not effective_profile_id
+            and auth_mode_cookie is None
+            and department_id_cookie is not None
+        )
+
+        # For settings-only requests: if we have a department_id, allow returning settings even if is_authorized is NULL
+        # The SQL query returns settings data but can't determine authorization without a profile
+        # This is fine for settings-only requests - we just want the theme/settings, not authorization
+        if is_settings_only_request:
+            if result is None or result.settings_id is None:
+                # No result at all or no settings_id - can't get settings
+                raise HTTPException(
+                    status_code=404,
+                    detail="Settings not available for this department. Please select a different department.",
+                )
+            # If result exists and settings_id is not NULL, that's OK for settings-only requests
+            # We'll continue and return the settings data (the SQL query includes settings even without a profile)
+            # Skip the authorization check below by continuing past the is_authorized check
+            # Note: The SQL query may return settings data even when is_authorized is NULL
+            pass
+        elif not actual_profile_id and not effective_profile_id and not department_id_cookie:
+            # No profile IDs, no department_id, and not a settings-only request
+            # This happens after login when session isn't fully established yet
+            # Return 404 with a helpful message
+            raise HTTPException(
+                status_code=404,
+                detail="Profile context not found: Could not resolve profile. Please try logging in again.",
+            )
+
+        # Only check authorization for non-settings-only requests (when we have profile IDs or auth_mode)
+        # Skip authorization check if we already handled settings-only or no-profile case above
+        if not is_settings_only_request and (actual_profile_id or effective_profile_id) and (not result or not result.is_authorized):
+            # For actual profile resolution requests, require valid profile
             resolved_actual = actual_profile_id
             resolved_effective = effective_profile_id
 

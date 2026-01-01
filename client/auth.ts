@@ -137,7 +137,11 @@ export const {
           const profileResponse = await api.post("/profile/email", {
             body: { email: user.email || "" },
           });
-          existingProfile = profileResponse.profile;
+          // API response has profile_id directly, not nested in profile object
+          existingProfile = profileResponse.profile_id ? {
+            id: profileResponse.profile_id,
+            role: profileResponse.role || "guest",
+          } : null;
         } catch {
           // Profile not found, will create new one
           existingProfile = null;
@@ -191,7 +195,11 @@ export const {
             const profileResponse = await api.post("/profile/email", {
               body: { email: user.email },
             });
-            existingProfile = profileResponse.profile;
+            // API response has profile_id directly, not nested in profile object
+            existingProfile = profileResponse.profile_id ? {
+              id: profileResponse.profile_id,
+              role: profileResponse.role || "guest",
+            } : null;
           } catch {
             // Profile not found
             existingProfile = null;
@@ -238,8 +246,12 @@ export const {
           const profileResponse = await api.post("/profile/email", {
             body: { email: user.email },
           });
-          profile = profileResponse.profile;
-        } catch {
+          // API response has profile_id directly, not nested in profile object
+          profile = profileResponse.profile_id ? {
+            id: profileResponse.profile_id,
+            role: profileResponse.role || "guest",
+          } : null;
+        } catch (error) {
           // Profile not found - create it synchronously as fallback
           // This handles race conditions where createUser event hasn't completed yet
           try {
@@ -249,7 +261,11 @@ export const {
               const profileResponse = await api.post("/profile/email", {
                 body: { email: user.email },
               });
-              profile = profileResponse.profile;
+              // API response has profile_id directly, not nested in profile object
+              profile = profileResponse.profile_id ? {
+                id: profileResponse.profile_id,
+                role: profileResponse.role || "guest",
+              } : null;
             } catch (retryError) {
               // eslint-disable-next-line no-console
               console.error(
@@ -309,7 +325,7 @@ export const {
       return token;
     },
 
-    // 🌐 Expose to client session
+      // 🌐 Expose to client session
     async session({ session, token }) {
       // Ensure user object exists (for guest/default account users resolved from cookies)
       if (!session.user && token["profileId"]) {
