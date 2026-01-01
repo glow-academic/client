@@ -7,7 +7,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -30,24 +30,15 @@ import { ReorderableList } from "@/components/common/forms/ReorderableList";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
+import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
-import { Check, Loader2, Power, RotateCcw } from "lucide-react";
+import { Check, Power } from "lucide-react";
 import {
   parseAsArrayOf,
   parseAsBoolean,
@@ -128,16 +119,6 @@ export default function Persona({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
-  const defaultDepartmentIds = useMemo(
-    () =>
-      getDefaultDepartmentIds(
-        isSuperadmin,
-        effectiveProfile?.primary_department_id || null
-      ),
-    [isSuperadmin, effectiveProfile?.primary_department_id]
-  );
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -213,10 +194,6 @@ export default function Persona({
     return {};
   }, [personaData]);
 
-  // Local state for search inputs (for immediate filtering, debounced updates to URL)
-  const [localColorSearch, setLocalColorSearch] = useState<string>("");
-  const [localIconSearch, setLocalIconSearch] = useState<string>("");
-
   // Inline parsers for URL-backed state (client-side only - no server-side parsing needed)
   const personaSearchParamsClient = {
     name: parseAsString,
@@ -229,7 +206,7 @@ export default function Persona({
     parameterIds: parseAsArrayOf(parseAsString),
     parameterFieldIds: parseAsArrayOf(parseAsString),
     examples: parseAsArrayOf(parseAsString),
-    // Search params (URL-backed, updated via debounced callback)
+    // Search params (URL-backed, updated via debounced callback in StepCard)
     colorSearch: parseAsString,
     iconSearch: parseAsString,
     // Filter params (URL-backed)
@@ -237,119 +214,11 @@ export default function Persona({
     iconShowSelected: parseAsBoolean,
   } as const;
 
-  // URL-backed state using nuqs (managed by GenericForm, but we need access for initialization)
-  const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
+  // URL-backed state using nuqs (managed by GenericForm, but we need access for computations)
+  const [formData] = useQueryStates(personaSearchParamsClient, {
     history: "replace",
     shallow: false,
   });
-
-  // Sync local search state with URL params (for browser back/forward navigation)
-  useEffect(() => {
-    if (formData.colorSearch !== undefined) {
-      setLocalColorSearch(formData.colorSearch || "");
-    }
-  }, [formData.colorSearch]);
-
-  useEffect(() => {
-    if (formData.iconSearch !== undefined) {
-      setLocalIconSearch(formData.iconSearch || "");
-    }
-  }, [formData.iconSearch]);
-
-  // Debounced callbacks to update URL params (prevents infinite loops)
-  const colorSearchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const iconSearchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const debouncedUpdateColorSearch = useCallback(
-    (term: string) => {
-      if (colorSearchTimeoutRef.current) {
-        clearTimeout(colorSearchTimeoutRef.current);
-      }
-      colorSearchTimeoutRef.current = setTimeout(() => {
-        setFormData({ colorSearch: term || null });
-      }, 300);
-    },
-    [setFormData]
-  );
-
-  const debouncedUpdateIconSearch = useCallback(
-    (term: string) => {
-      if (iconSearchTimeoutRef.current) {
-        clearTimeout(iconSearchTimeoutRef.current);
-      }
-      iconSearchTimeoutRef.current = setTimeout(() => {
-        setFormData({ iconSearch: term || null });
-      }, 300);
-    },
-    [setFormData]
-  );
-
-  // Handle search changes (immediate local update + debounced URL update)
-  const handleColorSearchChange = (term: string) => {
-    setLocalColorSearch(term);
-    debouncedUpdateColorSearch(term);
-  };
-
-  const handleIconSearchChange = (term: string) => {
-    setLocalIconSearch(term);
-    debouncedUpdateIconSearch(term);
-  };
-
-  // Reset handlers for each card
-  const handleResetColor = () => {
-    try {
-      setFormData({
-        color: null,
-        colorSearch: null,
-        colorShowSelected: null,
-      });
-      setLocalColorSearch("");
-      toast.success("Color reset");
-    } catch {
-      toast.error("Failed to reset color");
-    }
-  };
-
-  const handleResetIcon = () => {
-    try {
-      setFormData({
-        icon: null,
-        iconSearch: null,
-        iconShowSelected: null,
-      });
-      setLocalIconSearch("");
-      toast.success("Icon reset");
-    } catch {
-      toast.error("Failed to reset icon");
-    }
-  };
-
-  const handleResetContent = () => {
-    try {
-      setFormData({
-        instructions: null,
-        examples: null,
-      });
-      toast.success("Content reset");
-    } catch {
-      toast.error("Failed to reset content");
-    }
-  };
-
-  const handleResetBasic = () => {
-    try {
-      setFormData({
-        name: null,
-        description: null,
-        departmentIds: null,
-        parameterFieldIds: null,
-        active: null, // Clear from URL to use default value (true)
-      });
-      toast.success("Basic information reset");
-    } catch {
-      toast.error("Failed to reset basic information");
-    }
-  };
 
   // Get preset colors and valid icons from server (all colors/icons, filtered client-side)
   // Server returns colors as list of objects: [{hex: "#ef4444", name: "Red"}, ...]
@@ -369,7 +238,7 @@ export default function Persona({
     return colors as Array<{ hex: string; name: string }>;
   }, [personaData]);
 
-  // Filter colors client-side based on local search state
+  // Filter colors client-side based on search state from URL
   // Also include custom colors that aren't in the preset list
   const presetColors = useMemo(() => {
     // Get current color from form data or default
@@ -405,17 +274,19 @@ export default function Persona({
       ];
     }
 
-    // Filter by search term if present
-    if (!localColorSearch.trim()) {
+    // Filter by search term if present (from URL-backed state)
+    const colorSearch =
+      (formData["colorSearch"] as string | null | undefined) || "";
+    if (!colorSearch.trim()) {
       return colors;
     }
-    const searchLower = localColorSearch.toLowerCase();
+    const searchLower = colorSearch.toLowerCase();
     return colors.filter(
       (color) =>
         color.name.toLowerCase().includes(searchLower) ||
         color.hex.toLowerCase().includes(searchLower)
     );
-  }, [presetColorsAll, localColorSearch, formData, personaData]);
+  }, [presetColorsAll, formData, personaData]);
 
   const suggestedIconsAll = useMemo(
     () =>
@@ -448,74 +319,18 @@ export default function Persona({
     );
   }, [suggestedIconsAll, validIconsAll]);
 
-  // Filter icons client-side based on local search state
+  // Filter icons client-side based on search state from URL
   const allIcons = useMemo(() => {
-    if (!localIconSearch.trim()) {
+    const iconSearch =
+      (formData["iconSearch"] as string | null | undefined) || "";
+    if (!iconSearch.trim()) {
       return allIconsAll;
     }
-    const searchLower = localIconSearch.toLowerCase();
+    const searchLower = iconSearch.toLowerCase();
     return allIconsAll.filter((icon) =>
       icon.toLowerCase().includes(searchLower)
     );
-  }, [allIconsAll, localIconSearch]);
-
-  // Extract body types for type safety
-  type CreatePersonaBody = CreatePersonaIn extends { body: infer B }
-    ? B
-    : never;
-  type UpdatePersonaBody = UpdatePersonaIn extends { body: infer B }
-    ? B
-    : never;
-
-  // Server action handlers
-  const handleCreatePersona = async (body: CreatePersonaBody) => {
-    if (!createPersonaAction) {
-      throw new Error("createPersonaAction is required");
-    }
-    await createPersonaAction({ body });
-  };
-
-  const handleUpdatePersona = async (body: UpdatePersonaBody) => {
-    if (!updatePersonaAction) {
-      throw new Error("updatePersonaAction is required");
-    }
-    await updatePersonaAction({ body });
-  };
-
-  // Wrapper functions for compatibility (matching original mutate signature with callbacks)
-  const createPersona = (
-    body: CreatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    handleCreatePersona(body)
-      .then(() => {
-        options?.onSuccess?.();
-      })
-      .catch((error) => {
-        const err = error instanceof Error ? error : new Error("Unknown error");
-        options?.onError?.(err);
-        if (!options?.onError) {
-          toast.error(`Failed to create persona: ${err.message}`);
-        }
-      });
-  };
-
-  const updatePersona = (
-    body: UpdatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    handleUpdatePersona(body)
-      .then(() => {
-        options?.onSuccess?.();
-      })
-      .catch((error) => {
-        const err = error instanceof Error ? error : new Error("Unknown error");
-        options?.onError?.(err);
-        if (!options?.onError) {
-          toast.error(`Failed to update persona: ${err.message}`);
-        }
-      });
-  };
+  }, [allIconsAll, formData]);
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
@@ -597,115 +412,95 @@ export default function Persona({
     []
   );
 
-  // Filter examples_history based on selected departments
-  const examplesHistory = useMemo(() => {
-    if (!personaData || !("examples_history" in personaData)) return [];
-    const rawHistory =
-      (
-        personaData as PersonaDetailOut & {
-          examples_history?: Array<{
-            example: string;
-            department_ids?: string[];
-          }>;
-        }
-      )?.examples_history || [];
-    const selectedDeptIds =
-      (formData["departmentIds"] as string[] | null | undefined) || [];
+  // Helper to filter examples_history based on selected departments
+  const getExamplesHistory = useCallback(
+    (departmentIds: string[] | null | undefined) => {
+      if (!personaData || !("examples_history" in personaData)) return [];
+      const rawHistory =
+        (
+          personaData as PersonaDetailOut & {
+            examples_history?: Array<{
+              example: string;
+              department_ids?: string[];
+            }>;
+          }
+        )?.examples_history || [];
+      const selectedDeptIds = departmentIds || [];
 
-    // Convert to array of strings for autocomplete
-    const examples: string[] = [];
+      // Convert to array of strings for autocomplete
+      const examples: string[] = [];
 
-    // If no departments selected, return all examples
-    if (selectedDeptIds.length === 0) {
+      // If no departments selected, return all examples
+      if (selectedDeptIds.length === 0) {
+        rawHistory.forEach((ex) => {
+          if (typeof ex === "string") {
+            examples.push(ex);
+          } else if (ex && typeof ex === "object") {
+            const exWithDept = ex as {
+              example: string;
+              department_ids?: string[];
+            };
+            if ("example" in exWithDept) {
+              examples.push(exWithDept.example);
+            }
+          }
+        });
+        return examples;
+      }
+
+      // Filter examples that:
+      // 1. Have department_ids that intersect with selected departments
+      // 2. Are cross-department (empty department_ids array)
       rawHistory.forEach((ex) => {
+        // Handle both new format (object with department_ids) and legacy format (string)
         if (typeof ex === "string") {
-          examples.push(ex);
+          examples.push(ex); // Legacy format - include all
         } else if (ex && typeof ex === "object") {
           const exWithDept = ex as {
             example: string;
             department_ids?: string[];
           };
           if ("example" in exWithDept) {
-            examples.push(exWithDept.example);
+            const exDeptIds = exWithDept.department_ids || [];
+            // Include if cross-department (empty) or intersects with selected departments
+            if (
+              exDeptIds.length === 0 ||
+              exDeptIds.some((deptId) => selectedDeptIds.includes(deptId))
+            ) {
+              examples.push(exWithDept.example);
+            }
           }
         }
       });
+
       return examples;
-    }
+    },
+    [personaData]
+  );
 
-    // Filter examples that:
-    // 1. Have department_ids that intersect with selected departments
-    // 2. Are cross-department (empty department_ids array)
-    rawHistory.forEach((ex) => {
-      // Handle both new format (object with department_ids) and legacy format (string)
-      if (typeof ex === "string") {
-        examples.push(ex); // Legacy format - include all
-      } else if (ex && typeof ex === "object") {
-        const exWithDept = ex as {
-          example: string;
-          department_ids?: string[];
-        };
-        if ("example" in exWithDept) {
-          const exDeptIds = exWithDept.department_ids || [];
-          // Include if cross-department (empty) or intersects with selected departments
-          if (
-            exDeptIds.length === 0 ||
-            exDeptIds.some((deptId) => selectedDeptIds.includes(deptId))
-          ) {
-            examples.push(exWithDept.example);
-          }
-        }
+  // Form initialization function for GenericForm
+  const initializeForm = useCallback(
+    (serverData: PersonaDetailOut | PersonaNewOut, editMode: boolean) => {
+      if (!editMode || !("department_ids" in serverData)) {
+        return {};
       }
-    });
 
-    return examples;
-  }, [personaData, formData]);
-
-  // Initialize form data from server (only if URL params are empty)
-  // Use a ref to track if we've initialized to avoid re-initializing on every render
-  const hasInitializedRef = React.useRef(false);
-
-  useEffect(() => {
-    if (!personaData || hasInitializedRef.current) {
-      return;
-    }
-
-    // Check if URL has any actual form field values (not filter/search params)
-    // Filter params (colorSearch, iconSearch, colorShowSelected, iconShowSelected) should NOT prevent initialization
-    // Only check for meaningful form field values - empty strings or undefined should not prevent initialization
-    const hasUrlFormData =
-      (formData["name"] && typeof formData["name"] === "string" && formData["name"].trim() !== "") ||
-      (formData["description"] && typeof formData["description"] === "string" && formData["description"].trim() !== "") ||
-      (formData["color"] && typeof formData["color"] === "string" && formData["color"].trim() !== "") ||
-      (formData["icon"] && typeof formData["icon"] === "string" && formData["icon"].trim() !== "") ||
-      (formData["active"] !== undefined && formData["active"] !== null && typeof formData["active"] === "boolean") ||
-      (formData["instructions"] && typeof formData["instructions"] === "string" && formData["instructions"].trim() !== "") ||
-      (Array.isArray(formData["departmentIds"]) && formData["departmentIds"].length > 0) ||
-      (Array.isArray(formData["parameterIds"]) && formData["parameterIds"].length > 0) ||
-      (Array.isArray(formData["parameterFieldIds"]) && formData["parameterFieldIds"].length > 0) ||
-      (Array.isArray(formData["examples"]) && formData["examples"].length > 0);
-
-    if (hasUrlFormData) {
-      // URL params exist with actual form field values - they are the source of truth, don't override
-      hasInitializedRef.current = true;
-      return;
-    }
-
-    // URL is clean - initialize from server data, but only set fields that aren't already in URL
-    // This prevents writing defaults to URL when URL is clean
-    if (isEditMode && "department_ids" in personaData) {
-      const personaDetail = personaData as PersonaDetailOut;
+      const personaDetail = serverData as PersonaDetailOut;
       const deptIds = personaDetail.department_ids || [];
       const exampleIdsRaw =
-        (personaDetail as PersonaDetailOut & {
-          example_ids?: Array<string | { toString(): string }>;
-        })?.example_ids || [];
+        (
+          personaDetail as PersonaDetailOut & {
+            example_ids?: Array<string | { toString(): string }>;
+          }
+        )?.example_ids || [];
       // Convert example_ids to strings for mapping lookup (UUIDs may come as objects or strings)
       const exampleIds = exampleIdsRaw.map((id) => String(id));
       const examples = getExamplesFromMapping(exampleIds, exampleMapping);
 
       // Only set fields that have values (don't write nulls/empty strings to URL)
-      const updates: Record<string, unknown> = {};
+      const updates: Partial<
+        Record<keyof typeof personaSearchParamsClient, unknown>
+      > = {};
       if (personaDetail.name) updates["name"] = personaDetail.name;
       if (personaDetail.description)
         updates["description"] = personaDetail.description;
@@ -751,26 +546,10 @@ export default function Persona({
       }
       if (examples.length > 0) updates["examples"] = examples;
 
-      // Only update if we have fields to set
-      if (Object.keys(updates).length > 0) {
-        setFormData(updates);
-      }
-    } else {
-      // For create mode, don't write defaults to URL - let API defaults be used internally
-      // Only set fields if user explicitly changes them (which will write to URL)
-      // This keeps URL clean when visiting /create/personas/new
-    }
-
-    hasInitializedRef.current = true;
-  }, [
-    personaData,
-    isEditMode,
-    defaultDepartmentIds,
-    exampleMapping,
-    getExamplesFromMapping,
-    setFormData,
-    formData,
-  ]);
+      return updates;
+    },
+    [exampleMapping, getExamplesFromMapping]
+  );
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
@@ -790,28 +569,24 @@ export default function Persona({
     clearEntityMetadata,
   ]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Submit handler for GenericForm
+  const handleSubmit = useCallback(
+    async (formData: Record<string, unknown>) => {
+      if (!formData["name"]) {
+        toast.error("Persona name is required");
+        throw new Error("Persona name is required");
+      }
 
-    if (!formData["name"]) {
-      toast.error("Persona name is required");
-      return;
-    }
+      if (!formData["description"]) {
+        toast.error("Persona description is required");
+        throw new Error("Persona description is required");
+      }
 
-    if (!formData["description"]) {
-      toast.error("Persona description is required");
-      return;
-    }
+      if (!formData["instructions"]) {
+        toast.error("Instructions are required");
+        throw new Error("Instructions are required");
+      }
 
-    if (!formData["instructions"]) {
-      toast.error("Instructions are required");
-      return;
-    }
-
-    // Validate: at least one agent must be selected based on simulation type
-    setIsSubmitting(true);
-
-    try {
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
       const finalDepartmentIds =
         transformDepartmentIdsForSubmit(
@@ -827,8 +602,7 @@ export default function Persona({
       // Ensure profileId exists - required for API calls
       if (!effectiveProfile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
-        setIsSubmitting(false);
-        return;
+        throw new Error("Profile not loaded");
       }
 
       if (isEditMode) {
@@ -841,37 +615,35 @@ export default function Persona({
           | string
           | null
           | undefined;
-        if (!nameValue) {
+        if (!nameValue || !updatePersonaAction) {
           toast.error("Persona name is required");
-          setIsSubmitting(false);
-          return;
+          throw new Error("Persona name is required");
         }
         // After null check, nameValue is guaranteed to be string
-        updatePersona(
-          {
-            persona_id: personaId!,
-            name: nameValue!,
-            description: description || "",
-            instructions: instructions || "",
-            color:
-              (formData["color"] as string | null | undefined) || "#000000",
-            icon: (formData["icon"] as string | null | undefined) || "Zap",
-            active: (formData["active"] as boolean | null | undefined) ?? true,
-            department_ids: finalDepartmentIds,
-            example_ids: [],
-            // profileId comes from X-Profile-Id header automatically
-          },
-          {
-            onSuccess: () => {
-              toast.success("Persona updated successfully!");
-              router.push("/create/personas");
+        try {
+          await updatePersonaAction({
+            body: {
+              persona_id: personaId!,
+              name: nameValue,
+              description: description || "",
+              instructions: instructions || "",
+              color:
+                (formData["color"] as string | null | undefined) || "#000000",
+              icon: (formData["icon"] as string | null | undefined) || "Zap",
+              active:
+                (formData["active"] as boolean | null | undefined) ?? true,
+              department_ids: finalDepartmentIds,
+              example_ids: [],
             },
-            onError: (error) => {
-              toast.error(`Failed to update persona: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+          });
+          toast.success("Persona updated successfully!");
+          router.push("/create/personas");
+        } catch (error) {
+          toast.error(
+            `Failed to update persona: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          throw error;
+        }
       } else {
         const nameValue = formData["name"] as string | null | undefined;
         const description = formData["description"] as
@@ -882,45 +654,50 @@ export default function Persona({
           | string
           | null
           | undefined;
-        if (!nameValue) {
+        if (!nameValue || !createPersonaAction) {
           toast.error("Persona name is required");
-          setIsSubmitting(false);
-          return;
+          throw new Error("Persona name is required");
         }
         // TypeScript type narrowing - nameValue is guaranteed to be string after check
         const name: string = nameValue; // Explicit type annotation helps TypeScript
-        createPersona(
-          {
-            name,
-            description: description || "",
-            instructions: instructions || "",
-            color:
-              (formData["color"] as string | null | undefined) || "#000000",
-            icon: (formData["icon"] as string | null | undefined) || "Zap",
-            active: (formData["active"] as boolean | null | undefined) ?? true,
-            department_ids: finalDepartmentIds,
-            example_ids: (formData.examples || []).filter((ex) => ex.trim()),
-            // profileId comes from X-Profile-Id header automatically
-          },
-          {
-            onSuccess: () => {
-              toast.success("Persona created successfully!");
-              router.push("/create/personas");
+        try {
+          await createPersonaAction({
+            body: {
+              name,
+              description: description || "",
+              instructions: instructions || "",
+              color:
+                (formData["color"] as string | null | undefined) || "#000000",
+              icon: (formData["icon"] as string | null | undefined) || "Zap",
+              active:
+                (formData["active"] as boolean | null | undefined) ?? true,
+              department_ids: finalDepartmentIds,
+              example_ids: (
+                (formData["examples"] as string[] | null | undefined) || []
+              ).filter((ex: string) => ex.trim()),
             },
-            onError: (error) => {
-              toast.error(`Failed to create persona: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+          });
+          toast.success("Persona created successfully!");
+          router.push("/create/personas");
+        } catch (error) {
+          toast.error(
+            `Failed to create persona: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          throw error;
+        }
       }
-    } catch (error) {
-      toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
-      );
-      setIsSubmitting(false);
-    }
-  };
+    },
+    [
+      isEditMode,
+      personaId,
+      isSuperadmin,
+      personaData,
+      effectiveProfile?.id,
+      updatePersonaAction,
+      createPersonaAction,
+      router,
+    ]
+  );
 
   // Step status logic (for GenericForm)
   const getStepStatus = useCallback(
@@ -964,22 +741,32 @@ export default function Persona({
         title: "Basic Information",
         description:
           "Set the persona name, description, departments, and active status.",
+        resetFields: [
+          "name",
+          "description",
+          "departmentIds",
+          "parameterFieldIds",
+          "active",
+        ],
       },
       {
         id: "color",
         title: "Color",
         description: "Select a color for the persona.",
+        resetFields: ["color", "colorSearch", "colorShowSelected"],
       },
       {
         id: "icon",
         title: "Icon",
         description: "Select an icon for the persona.",
+        resetFields: ["icon", "iconSearch", "iconShowSelected"],
       },
       {
         id: "content",
         title: "Personality",
         description:
           "Define instructions and example messages for the persona.",
+        resetFields: ["instructions", "examples"],
       },
     ],
     []
@@ -1024,625 +811,608 @@ export default function Persona({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <GenericForm
-            nuqsParsers={
-              personaSearchParamsClient as Record<string, Parser<unknown>>
+        <GenericForm
+          nuqsParsers={
+            personaSearchParamsClient as Record<string, Parser<unknown>>
+          }
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={personaData}
+          initializeForm={initializeForm}
+          formFieldKeys={[
+            "name",
+            "description",
+            "color",
+            "icon",
+            "instructions",
+            "active",
+            "departmentIds",
+            "parameterIds",
+            "parameterFieldIds",
+            "examples",
+          ]}
+          resetSuccessMessage={(stepId) => {
+            switch (stepId) {
+              case "basic":
+                return "Basic information reset";
+              case "color":
+                return "Color reset";
+              case "icon":
+                return "Icon reset";
+              case "content":
+                return "Content reset";
+              default:
+                return "Reset";
             }
-            steps={steps}
-            getStepStatus={getStepStatus}
-            formData={formData}
-            setFormData={setFormData}
-            isReadonly={isReadonly}
-            isEditMode={isEditMode}
-            renderStep={({
-              stepId,
-              stepStatus,
-              stepTitle,
-              stepDescription,
-              stepNumber,
-              formData: stepFormData,
-              setFormData: setStepFormData,
-            }) => {
-              switch (stepId) {
-                case "basic":
-                  return (
-                    <StepCard
-                      stepStatus={stepStatus}
-                      stepNumber={stepNumber}
-                      stepTitle={stepTitle}
-                      stepDescription={stepDescription}
-                      isReadonly={isReadonly}
-                      isEditMode={isEditMode}
-                      editableTitle={{
-                        value:
-                          (stepFormData["name"] as string | null | undefined) ??
-                          "",
-                        onChange: (value) =>
-                          setStepFormData({ name: value || null }),
-                        placeholder: "e.g., Enthusiastic Student",
-                        defaultName: "New Persona",
-                        required: true,
-                      }}
-                      actions={
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={handleResetBasic}
-                              disabled={isReadonly}
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Reset</TooltipContent>
-                        </Tooltip>
-                      }
-                    >
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Description</Label>
-                          <Textarea
-                            id="description"
-                            data-testid="input-persona-description"
-                            value={
-                              (stepFormData["description"] as
-                                | string
-                                | null
-                                | undefined) || ""
-                            }
-                            onChange={(e) =>
-                              setStepFormData({
-                                description: e.target.value || null,
-                              })
-                            }
-                            placeholder="Detailed behavior description and personality traits"
-                            rows={4}
-                            disabled={isReadonly}
-                          />
-                        </div>
-
-                        {/* Department Selection */}
-                        {personaData?.valid_department_ids &&
-                        personaData.valid_department_ids.length > 1 ? (
-                          <div className="space-y-2">
-                            <Label htmlFor="department">Department</Label>
-                            <GenericPicker
-                              items={departmentMapping}
-                              itemIds={
-                                (
-                                  personaData as PersonaDetailOut & {
-                                    valid_department_ids?: string[];
-                                  }
-                                )?.valid_department_ids || []
-                              }
-                              selectedIds={
-                                (stepFormData["departmentIds"] as
-                                  | string[]
-                                  | null
-                                  | undefined) || []
-                              }
-                              onSelect={(ids) =>
-                                setStepFormData({
-                                  departmentIds: ids.length > 0 ? ids : null,
-                                })
-                              }
-                              getId={(dept) => (dept as { id: string }).id}
-                              getLabel={(dept) =>
-                                (dept as { name: string }).name || ""
-                              }
-                              getSearchText={(dept) =>
-                                `${(dept as { name: string }).name} ${(dept as { description?: string }).description || ""}`
-                              }
-                              placeholder="All Departments"
-                              disabled={isReadonly}
-                              multiSelect={true}
-                              hideSelectedChips={true}
-                              buttonClassName="w-full"
-                            />
-                          </div>
-                        ) : null}
-
-                        {/* Required Parameters */}
-                        {personaData &&
-                        "linked_parameter_ids" in personaData &&
-                        (
-                          personaData as PersonaDetailOut & {
-                            linked_parameter_ids?: string[];
-                          }
-                        ).linked_parameter_ids &&
-                        (
-                          personaData as PersonaDetailOut & {
-                            linked_parameter_ids?: string[];
-                          }
-                        ).linked_parameter_ids!.length > 0 ? (
-                          <div className="space-y-4">
-                            <Label>Required Parameters</Label>
-                            <ParameterSelector
-                              parameterMapping={
-                                (
-                                  personaData as PersonaDetailOut & {
-                                    parameter_mapping?: Record<
-                                      string,
-                                      {
-                                        name: string;
-                                        description: string;
-                                        numerical: boolean;
-                                        document_parameter: boolean;
-                                        persona_parameter: boolean;
-                                      }
-                                    >;
-                                  }
-                                ).parameter_mapping || {}
-                              }
-                              fieldMapping={
-                                (
-                                  personaData as PersonaDetailOut & {
-                                    field_mapping?: Record<
-                                      string,
-                                      {
-                                        name: string;
-                                        description: string;
-                                        parameter_id: string;
-                                        parameter_name: string;
-                                        value: string;
-                                      }
-                                    >;
-                                  }
-                                ).field_mapping || {}
-                              }
-                              validParameterItemIds={
-                                (
-                                  personaData as PersonaDetailOut & {
-                                    valid_parameter_item_ids?: string[];
-                                  }
-                                ).valid_parameter_item_ids || []
-                              }
-                              selectedParameterItemIds={
-                                (stepFormData["parameterFieldIds"] as
-                                  | string[]
-                                  | null
-                                  | undefined) || []
-                              }
-                              onParameterItemIdsChange={(ids) =>
-                                setStepFormData({
-                                  parameterFieldIds:
-                                    ids.length > 0 ? ids : null,
-                                })
-                              }
-                              disabled={isReadonly}
-                            />
-                          </div>
-                        ) : null}
-
-                        {/* Active Switch */}
-                        <div className="space-y-2 pt-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Label
-                                htmlFor="active"
-                                className="text-sm flex items-center gap-1.5"
-                              >
-                                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                                Active
-                              </Label>
-                              <Switch
-                                id="active"
-                                checked={
-                                  (stepFormData["active"] as
-                                    | boolean
-                                    | null
-                                    | undefined) ??
-                                  (personaData as { active?: boolean })
-                                    ?.active ??
-                                  true
-                                }
-                                onCheckedChange={(checked) =>
-                                  setStepFormData({ active: checked })
-                                }
-                                disabled={isReadonly}
-                              />
-                            </div>
-                            <p className="text-xs text-muted-foreground pl-5">
-                              Inactive personas will not be available for
-                              scenarios
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </StepCard>
-                  );
-
-                case "color": {
-                  // Use URL param if present, otherwise use API default
-                  // Check if explicitly set (even if null) vs undefined (not set yet)
-                  const colorValue = stepFormData["color"] as
-                    | string
-                    | null
-                    | undefined;
-                  const currentColorRaw =
-                    colorValue !== undefined
-                      ? colorValue
-                      : (personaData as { color?: string })?.color || "#000000";
-                  
-                  // Normalize currentColor to match preset color format (lowercase) for SelectableGrid comparison
-                  const currentColor = currentColorRaw
-                    ? currentColorRaw.toLowerCase().startsWith("#")
-                      ? currentColorRaw.toLowerCase()
-                      : `#${currentColorRaw.toLowerCase()}`
-                    : "#000000";
-
-                  const colorShowSelected =
-                    (formData.colorShowSelected as
-                      | boolean
-                      | null
-                      | undefined) ?? false;
-
-                  return (
-                    <StepCard
-                      stepStatus={stepStatus}
-                      stepNumber={stepNumber}
-                      stepTitle={stepTitle}
-                      stepDescription={stepDescription}
-                      isReadonly={isReadonly}
-                      isEditMode={isEditMode}
-                      searchTerm={localColorSearch}
-                      onSearchChange={handleColorSearchChange}
-                      searchPlaceholder="Search colors..."
-                      filters={[
-                        {
-                          key: "showSelected",
-                          label: "Show selected",
-                          value: colorShowSelected,
-                          onChange: (value) =>
-                            setFormData({ colorShowSelected: value || null }),
-                        },
-                      ]}
-                      actions={
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={handleResetColor}
-                              disabled={isReadonly}
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Reset</TooltipContent>
-                        </Tooltip>
-                      }
-                    >
-                      {presetColors.length > 0 && (
-                        <SelectableGrid<{ hex: string; name: string }>
-                          items={presetColors}
-                          selectedId={currentColor}
-                          onSelect={(colorHex) => {
-                            const current = stepFormData["color"] as
-                              | string
-                              | null
-                              | undefined;
-                            const normalizedCurrent = current
-                              ? current.toLowerCase().startsWith("#")
-                                ? current.toLowerCase()
-                                : `#${current.toLowerCase()}`
-                              : null;
-                            setStepFormData({
-                              color: colorHex === normalizedCurrent ? null : colorHex,
-                            });
-                          }}
-                          getId={(color) => color.hex.toLowerCase()}
-                          renderItem={(color, isSelected) => (
-                            <div
-                              className={cn(
-                                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                                "hover:shadow-md hover:bg-accent/50",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                isSelected && "ring-2 ring-primary bg-accent"
-                              )}
-                            >
-                              {/* Check icon - top right */}
-                              {isSelected && (
-                                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                                </div>
-                              )}
-
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="w-10 h-10 rounded-lg border-2 border-border shrink-0"
-                                  style={{ backgroundColor: color.hex }}
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-medium text-sm leading-tight">
-                                    {color.name}
-                                  </h3>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {color.hex}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          emptyMessage="No colors found. Try adjusting your search."
-                          disabled={isReadonly}
-                        />
-                      )}
-
-                      {/* Hex Input */}
+          }}
+          onSubmit={handleSubmit}
+          submitButton={{
+            backUrl: "/create/personas",
+            backLabel: "Back",
+            createLabel: "Create Persona",
+            updateLabel: "Update Persona",
+          }}
+          isReadonly={isReadonly}
+          isEditMode={isEditMode}
+          renderStep={({
+            stepId,
+            stepStatus,
+            stepTitle,
+            stepDescription,
+            stepNumber,
+            formData: stepFormData,
+            setFormData: setStepFormData,
+            onReset,
+          }) => {
+            switch (stepId) {
+              case "basic":
+                return (
+                  <StepCard
+                    stepStatus={stepStatus}
+                    stepNumber={stepNumber}
+                    stepTitle={stepTitle}
+                    stepDescription={stepDescription}
+                    isReadonly={isReadonly}
+                    isEditMode={isEditMode}
+                    editableTitle={{
+                      value:
+                        (stepFormData["name"] as string | null | undefined) ??
+                        "",
+                      onChange: (value) =>
+                        setStepFormData({ name: value || null }),
+                      placeholder: "e.g., Enthusiastic Student",
+                      defaultName: "New Persona",
+                      required: true,
+                    }}
+                    resetFields={[
+                      "name",
+                      "description",
+                      "departmentIds",
+                      "parameterFieldIds",
+                      "active",
+                    ]}
+                    {...(onReset ? { onReset } : {})}
+                    resetLabel="Reset"
+                  >
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="colorInput">Hex Color</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="colorInput"
-                            value={currentColorRaw || ""}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Allow any hex value (with or without #, any length)
-                              if (
-                                value === "" ||
-                                /^#?[0-9A-Fa-f]*$/.test(value)
-                              ) {
-                                setStepFormData({
-                                  color: value.startsWith("#")
-                                    ? value
-                                    : `#${value}`,
-                                });
-                              }
-                            }}
-                            placeholder="#000000"
-                            className="flex-1"
-                            disabled={isReadonly}
-                          />
-                          <div
-                            className="w-10 h-10 rounded border shrink-0"
-                            style={{
-                              backgroundColor: currentColorRaw || "#000000",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </StepCard>
-                  );
-                }
-
-                case "icon": {
-                  // Use URL param if present, otherwise use API default
-                  // Check if explicitly set (even if null) vs undefined (not set yet)
-                  const iconValue = stepFormData["icon"] as
-                    | string
-                    | null
-                    | undefined;
-                  const currentIcon =
-                    iconValue !== undefined
-                      ? iconValue
-                      : (personaData as { icon?: string })?.icon || "Zap";
-
-                  const iconShowSelected =
-                    (formData.iconShowSelected as boolean | null | undefined) ??
-                    false;
-
-                  return (
-                    <StepCard
-                      stepStatus={stepStatus}
-                      stepNumber={stepNumber}
-                      stepTitle={stepTitle}
-                      stepDescription={stepDescription}
-                      isReadonly={isReadonly}
-                      isEditMode={isEditMode}
-                      searchTerm={localIconSearch}
-                      onSearchChange={handleIconSearchChange}
-                      searchPlaceholder="Search icons..."
-                      filters={[
-                        {
-                          key: "showSelected",
-                          label: "Show selected",
-                          value: iconShowSelected,
-                          onChange: (value) =>
-                            setFormData({ iconShowSelected: value || null }),
-                        },
-                      ]}
-                      actions={
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={handleResetIcon}
-                              disabled={isReadonly}
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Reset</TooltipContent>
-                        </Tooltip>
-                      }
-                    >
-                      <SelectableGrid
-                        items={allIcons}
-                        selectedId={currentIcon}
-                        onSelect={(icon) => {
-                          const current = stepFormData["icon"] as
-                            | string
-                            | null
-                            | undefined;
-                          setStepFormData({
-                            icon: icon === current ? null : icon,
-                          });
-                        }}
-                        getId={(icon) => icon}
-                        renderItem={(iconName, isSelected) => {
-                          const IconComponent =
-                            PERSONA_ICON_MAP[
-                              iconName as keyof typeof PERSONA_ICON_MAP
-                            ];
-                          if (!IconComponent) return null;
-
-                          const isSuggested =
-                            suggestedIconsAll.includes(iconName);
-
-                          return (
-                            <div
-                              className={cn(
-                                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                                "hover:shadow-md hover:bg-accent/50",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                isSelected && "ring-2 ring-primary bg-accent"
-                              )}
-                            >
-                              {/* Check icon - top right */}
-                              {isSelected && (
-                                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                                </div>
-                              )}
-
-                              {/* Suggested badge - top left */}
-                              {isSuggested && !isSelected && (
-                                <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                                  Suggested
-                                </div>
-                              )}
-
-                              <div className="flex flex-col items-center gap-2">
-                                <IconComponent className="h-8 w-8 text-foreground" />
-                                <span className="text-sm font-medium text-center">
-                                  {iconName}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        }}
-                        emptyMessage="No icons found. Try adjusting your search."
-                        disabled={isReadonly}
-                      />
-                    </StepCard>
-                  );
-                }
-
-                case "content":
-                  return (
-                    <StepCard
-                      stepStatus={stepStatus}
-                      stepNumber={stepNumber}
-                      stepTitle={stepTitle}
-                      stepDescription={stepDescription}
-                      isReadonly={isReadonly}
-                      isEditMode={isEditMode}
-                      actions={
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={handleResetContent}
-                              disabled={isReadonly}
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Reset</TooltipContent>
-                        </Tooltip>
-                      }
-                    >
-                      {/* Instructions */}
-                      <div className="space-y-2">
-                        <Label htmlFor="instructions">Instructions *</Label>
+                        <Label htmlFor="description">Description</Label>
                         <Textarea
-                          id="instructions"
-                          data-testid="input-instructions"
+                          id="description"
+                          data-testid="input-persona-description"
                           value={
-                            (stepFormData["instructions"] as
+                            (stepFormData["description"] as
                               | string
                               | null
                               | undefined) || ""
                           }
                           onChange={(e) =>
                             setStepFormData({
-                              instructions: e.target.value || null,
+                              description: e.target.value || null,
                             })
                           }
-                          placeholder="Instructions that define how the persona should behave and respond."
-                          rows={8}
-                          required
+                          placeholder="Detailed behavior description and personality traits"
+                          rows={4}
                           disabled={isReadonly}
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Define the persona's behavior, communication style,
-                          and response patterns
-                        </p>
                       </div>
 
-                      {/* Examples Section */}
+                      {/* Department Selection */}
+                      {personaData?.valid_department_ids &&
+                      personaData.valid_department_ids.length > 1 ? (
+                        <div className="space-y-2">
+                          <Label htmlFor="department">Department</Label>
+                          <GenericPicker
+                            items={departmentMapping}
+                            itemIds={
+                              (
+                                personaData as PersonaDetailOut & {
+                                  valid_department_ids?: string[];
+                                }
+                              )?.valid_department_ids || []
+                            }
+                            selectedIds={
+                              (stepFormData["departmentIds"] as
+                                | string[]
+                                | null
+                                | undefined) || []
+                            }
+                            onSelect={(ids) =>
+                              setStepFormData({
+                                departmentIds: ids.length > 0 ? ids : null,
+                              })
+                            }
+                            getId={(dept) => (dept as { id: string }).id}
+                            getLabel={(dept) =>
+                              (dept as { name: string }).name || ""
+                            }
+                            getSearchText={(dept) =>
+                              `${(dept as { name: string }).name} ${(dept as { description?: string }).description || ""}`
+                            }
+                            placeholder="All Departments"
+                            disabled={isReadonly}
+                            multiSelect={true}
+                            hideSelectedChips={true}
+                            buttonClassName="w-full"
+                          />
+                        </div>
+                      ) : null}
+
+                      {/* Required Parameters */}
+                      {personaData &&
+                      "linked_parameter_ids" in personaData &&
+                      (
+                        personaData as PersonaDetailOut & {
+                          linked_parameter_ids?: string[];
+                        }
+                      ).linked_parameter_ids &&
+                      (
+                        personaData as PersonaDetailOut & {
+                          linked_parameter_ids?: string[];
+                        }
+                      ).linked_parameter_ids!.length > 0 ? (
+                        <div className="space-y-4">
+                          <Label>Required Parameters</Label>
+                          <ParameterSelector
+                            parameterMapping={
+                              (
+                                personaData as PersonaDetailOut & {
+                                  parameter_mapping?: Record<
+                                    string,
+                                    {
+                                      name: string;
+                                      description: string;
+                                      numerical: boolean;
+                                      document_parameter: boolean;
+                                      persona_parameter: boolean;
+                                    }
+                                  >;
+                                }
+                              ).parameter_mapping || {}
+                            }
+                            fieldMapping={
+                              (
+                                personaData as PersonaDetailOut & {
+                                  field_mapping?: Record<
+                                    string,
+                                    {
+                                      name: string;
+                                      description: string;
+                                      parameter_id: string;
+                                      parameter_name: string;
+                                      value: string;
+                                    }
+                                  >;
+                                }
+                              ).field_mapping || {}
+                            }
+                            validParameterItemIds={
+                              (
+                                personaData as PersonaDetailOut & {
+                                  valid_parameter_item_ids?: string[];
+                                }
+                              ).valid_parameter_item_ids || []
+                            }
+                            selectedParameterItemIds={
+                              (stepFormData["parameterFieldIds"] as
+                                | string[]
+                                | null
+                                | undefined) || []
+                            }
+                            onParameterItemIdsChange={(ids) =>
+                              setStepFormData({
+                                parameterFieldIds: ids.length > 0 ? ids : null,
+                              })
+                            }
+                            disabled={isReadonly}
+                          />
+                        </div>
+                      ) : null}
+
+                      {/* Active Switch */}
                       <div className="space-y-2 pt-2">
-                        <Label className="text-sm">Example Messages</Label>
-                        <ReorderableList
-                          items={
-                            formData.examples && formData.examples.length > 0
-                              ? formData.examples
-                              : [""]
-                          }
-                          onItemsChange={(items) => {
-                            // Save items as-is (including empty strings for editing)
-                            // This allows ReorderableList to work properly when adding new items
-                            // Empty strings will be filtered when submitting the form
-                            if (items.length === 0) {
-                              setFormData({ examples: null });
-                            } else {
-                              setFormData({ examples: items });
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor="active"
+                              className="text-sm flex items-center gap-1.5"
+                            >
+                              <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                              Active
+                            </Label>
+                            <Switch
+                              id="active"
+                              checked={
+                                (stepFormData["active"] as
+                                  | boolean
+                                  | null
+                                  | undefined) ??
+                                (personaData as { active?: boolean })?.active ??
+                                true
+                              }
+                              onCheckedChange={(checked) =>
+                                setStepFormData({ active: checked })
+                              }
+                              disabled={isReadonly}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground pl-5">
+                            Inactive personas will not be available for
+                            scenarios
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </StepCard>
+                );
+
+              case "color": {
+                // Use URL param if present, otherwise use API default
+                // Check if explicitly set (even if null) vs undefined (not set yet)
+                const colorValue = stepFormData["color"] as
+                  | string
+                  | null
+                  | undefined;
+                const currentColorRaw =
+                  colorValue !== undefined
+                    ? colorValue
+                    : (personaData as { color?: string })?.color || "#000000";
+
+                // Normalize currentColor to match preset color format (lowercase) for SelectableGrid comparison
+                const currentColor = currentColorRaw
+                  ? currentColorRaw.toLowerCase().startsWith("#")
+                    ? currentColorRaw.toLowerCase()
+                    : `#${currentColorRaw.toLowerCase()}`
+                  : "#000000";
+
+                const colorShowSelected =
+                  (stepFormData["colorShowSelected"] as
+                    | boolean
+                    | null
+                    | undefined) ?? false;
+
+                return (
+                  <StepCard
+                    stepStatus={stepStatus}
+                    stepNumber={stepNumber}
+                    stepTitle={stepTitle}
+                    stepDescription={stepDescription}
+                    isReadonly={isReadonly}
+                    isEditMode={isEditMode}
+                    searchTerm={
+                      (stepFormData["colorSearch"] as
+                        | string
+                        | null
+                        | undefined) || ""
+                    }
+                    onSearchChange={(term: string) =>
+                      setStepFormData({ colorSearch: term || null })
+                    }
+                    searchPlaceholder="Search colors..."
+                    debounceMs={300}
+                    filters={[
+                      {
+                        key: "showSelected",
+                        label: "Show selected",
+                        value: colorShowSelected,
+                        onChange: (value) =>
+                          setStepFormData({ colorShowSelected: value || null }),
+                      },
+                    ]}
+                    resetFields={["color", "colorSearch", "colorShowSelected"]}
+                    {...(onReset ? { onReset } : {})}
+                    resetLabel="Reset"
+                  >
+                    {presetColors.length > 0 && (
+                      <SelectableGrid<{ hex: string; name: string }>
+                        items={presetColors}
+                        selectedId={currentColor}
+                        onSelect={(colorHex) => {
+                          const current = stepFormData["color"] as
+                            | string
+                            | null
+                            | undefined;
+                          const normalizedCurrent = current
+                            ? current.toLowerCase().startsWith("#")
+                              ? current.toLowerCase()
+                              : `#${current.toLowerCase()}`
+                            : null;
+                          setStepFormData({
+                            color:
+                              colorHex === normalizedCurrent ? null : colorHex,
+                          });
+                        }}
+                        getId={(color) => color.hex.toLowerCase()}
+                        renderItem={(color, isSelected) => (
+                          <div
+                            className={cn(
+                              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                              "hover:shadow-md hover:bg-accent/50",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                              isSelected && "ring-2 ring-primary bg-accent"
+                            )}
+                          >
+                            {/* Check icon - top right */}
+                            {isSelected && (
+                              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                                <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-10 h-10 rounded-lg border-2 border-border shrink-0"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-sm leading-tight">
+                                  {color.name}
+                                </h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {color.hex}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        emptyMessage="No colors found. Try adjusting your search."
+                        disabled={isReadonly}
+                      />
+                    )}
+
+                    {/* Hex Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="colorInput">Hex Color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="colorInput"
+                          value={currentColorRaw || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow any hex value (with or without #, any length)
+                            if (
+                              value === "" ||
+                              /^#?[0-9A-Fa-f]*$/.test(value)
+                            ) {
+                              setStepFormData({
+                                color: value.startsWith("#")
+                                  ? value
+                                  : `#${value}`,
+                              });
                             }
                           }}
-                          suggestions={examplesHistory}
-                          maxItems={10}
-                          addButtonLabel="Add example"
+                          placeholder="#000000"
+                          className="flex-1"
                           disabled={isReadonly}
-                          itemPlaceholder="Message"
+                        />
+                        <div
+                          className="w-10 h-10 rounded border shrink-0"
+                          style={{
+                            backgroundColor: currentColorRaw || "#000000",
+                          }}
                         />
                       </div>
-                    </StepCard>
-                  );
-
-                default:
-                  return null;
+                    </div>
+                  </StepCard>
+                );
               }
-            }}
-          />
 
-          {/* Submit Button */}
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => router.push("/create/personas")}
-              disabled={isSubmitting}
-            >
-              Back
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || isReadonly}
-              data-testid="btn-submit-persona"
-              className="min-w-[120px]"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isEditMode ? "Updating..." : "Creating..."}
-                </>
-              ) : isEditMode ? (
-                "Update Persona"
-              ) : (
-                "Create Persona"
-              )}
-            </Button>
-          </div>
-        </form>
+              case "icon": {
+                // Use URL param if present, otherwise use API default
+                // Check if explicitly set (even if null) vs undefined (not set yet)
+                const iconValue = stepFormData["icon"] as
+                  | string
+                  | null
+                  | undefined;
+                const currentIcon =
+                  iconValue !== undefined
+                    ? iconValue
+                    : (personaData as { icon?: string })?.icon || "Zap";
+
+                const iconShowSelected =
+                  (stepFormData["iconShowSelected"] as
+                    | boolean
+                    | null
+                    | undefined) ?? false;
+
+                return (
+                  <StepCard
+                    stepStatus={stepStatus}
+                    stepNumber={stepNumber}
+                    stepTitle={stepTitle}
+                    stepDescription={stepDescription}
+                    isReadonly={isReadonly}
+                    isEditMode={isEditMode}
+                    searchTerm={
+                      (stepFormData["iconSearch"] as
+                        | string
+                        | null
+                        | undefined) || ""
+                    }
+                    onSearchChange={(term: string) =>
+                      setStepFormData({ iconSearch: term || null })
+                    }
+                    searchPlaceholder="Search icons..."
+                    debounceMs={300}
+                    filters={[
+                      {
+                        key: "showSelected",
+                        label: "Show selected",
+                        value: iconShowSelected,
+                        onChange: (value) =>
+                          setStepFormData({ iconShowSelected: value || null }),
+                      },
+                    ]}
+                    resetFields={["icon", "iconSearch", "iconShowSelected"]}
+                    {...(onReset ? { onReset } : {})}
+                    resetLabel="Reset"
+                  >
+                    <SelectableGrid
+                      items={allIcons}
+                      selectedId={currentIcon}
+                      onSelect={(icon) => {
+                        const current = stepFormData["icon"] as
+                          | string
+                          | null
+                          | undefined;
+                        setStepFormData({
+                          icon: icon === current ? null : icon,
+                        });
+                      }}
+                      getId={(icon) => icon}
+                      renderItem={(iconName, isSelected) => {
+                        const IconComponent =
+                          PERSONA_ICON_MAP[
+                            iconName as keyof typeof PERSONA_ICON_MAP
+                          ];
+                        if (!IconComponent) return null;
+
+                        const isSuggested =
+                          suggestedIconsAll.includes(iconName);
+
+                        return (
+                          <div
+                            className={cn(
+                              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                              "hover:shadow-md hover:bg-accent/50",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                              isSelected && "ring-2 ring-primary bg-accent"
+                            )}
+                          >
+                            {/* Check icon - top right */}
+                            {isSelected && (
+                              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                                <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                              </div>
+                            )}
+
+                            {/* Suggested badge - top left */}
+                            {isSuggested && !isSelected && (
+                              <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                                Suggested
+                              </div>
+                            )}
+
+                            <div className="flex flex-col items-center gap-2">
+                              <IconComponent className="h-8 w-8 text-foreground" />
+                              <span className="text-sm font-medium text-center">
+                                {iconName}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }}
+                      emptyMessage="No icons found. Try adjusting your search."
+                      disabled={isReadonly}
+                    />
+                  </StepCard>
+                );
+              }
+
+              case "content":
+                return (
+                  <StepCard
+                    stepStatus={stepStatus}
+                    stepNumber={stepNumber}
+                    stepTitle={stepTitle}
+                    stepDescription={stepDescription}
+                    isReadonly={isReadonly}
+                    isEditMode={isEditMode}
+                    resetFields={["instructions", "examples"]}
+                    {...(onReset ? { onReset } : {})}
+                    resetLabel="Reset"
+                  >
+                    {/* Instructions */}
+                    <div className="space-y-2">
+                      <Label htmlFor="instructions">Instructions *</Label>
+                      <Textarea
+                        id="instructions"
+                        data-testid="input-instructions"
+                        value={
+                          (stepFormData["instructions"] as
+                            | string
+                            | null
+                            | undefined) || ""
+                        }
+                        onChange={(e) =>
+                          setStepFormData({
+                            instructions: e.target.value || null,
+                          })
+                        }
+                        placeholder="Instructions that define how the persona should behave and respond."
+                        rows={8}
+                        required
+                        disabled={isReadonly}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Define the persona's behavior, communication style, and
+                        response patterns
+                      </p>
+                    </div>
+
+                    {/* Examples Section */}
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-sm">Example Messages</Label>
+                      <ReorderableList
+                        items={
+                          (stepFormData["examples"] as
+                            | string[]
+                            | null
+                            | undefined) &&
+                          (stepFormData["examples"] as string[]).length > 0
+                            ? (stepFormData["examples"] as string[])
+                            : [""]
+                        }
+                        onItemsChange={(items) => {
+                          // Save items as-is (including empty strings for editing)
+                          // This allows ReorderableList to work properly when adding new items
+                          // Empty strings will be filtered when submitting the form
+                          if (items.length === 0) {
+                            setStepFormData({ examples: null });
+                          } else {
+                            setStepFormData({ examples: items });
+                          }
+                        }}
+                        suggestions={getExamplesHistory(
+                          stepFormData["departmentIds"] as
+                            | string[]
+                            | null
+                            | undefined
+                        )}
+                        maxItems={10}
+                        addButtonLabel="Add example"
+                        disabled={isReadonly}
+                        itemPlaceholder="Message"
+                      />
+                    </div>
+                  </StepCard>
+                );
+
+              default:
+                return null;
+            }
+          }}
+        />
       </div>
     </TooltipProvider>
   );

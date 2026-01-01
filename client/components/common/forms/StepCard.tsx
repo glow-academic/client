@@ -4,8 +4,8 @@
  */
 "use client";
 
-import { Check, Filter, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, Filter, RotateCcw, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ import {
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,12 @@ export interface StepCardProps {
     defaultName?: string;
     required?: boolean;
   };
+  // Reset button configuration
+  resetFields?: string[];
+  onReset?: () => void;
+  resetLabel?: string;
+  // Debounced search configuration
+  debounceMs?: number;
   children: React.ReactNode;
 }
 
@@ -76,13 +83,44 @@ export function StepCard({
   searchPlaceholder,
   filters,
   editableTitle,
+  resetFields,
+  onReset,
+  resetLabel,
+  debounceMs = 300,
   children,
 }: StepCardProps) {
   // Local temporary state for filter values (until Apply is clicked)
-  const [tempFilterValues, setTempFilterValues] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [tempFilterValues, setTempFilterValues] = useState<
+    Record<string, boolean>
+  >({});
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+
+  // Debounced search - local state for immediate UI updates, debounced updates to parent
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm || "");
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync local search with prop changes (for browser back/forward navigation)
+  useEffect(() => {
+    if (searchTerm !== undefined) {
+      setLocalSearchTerm(searchTerm || "");
+    }
+  }, [searchTerm]);
+
+  // Debounce search updates to parent
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      onSearchChange?.(localSearchTerm);
+    }, debounceMs);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [localSearchTerm, debounceMs, onSearchChange]);
 
   // Initialize temp filter values from props
   useEffect(() => {
@@ -121,13 +159,45 @@ export function StepCard({
 
   const hasActiveFilters = filters?.some((filter) => filter.value) ?? false;
 
+  // Handle reset button click
+  const handleResetClick = () => {
+    if (onReset) {
+      onReset();
+    }
+  };
+
+  // Build actions with reset button if configured
+  const finalActions = (
+    <>
+      {resetFields && resetFields.length > 0 && onReset && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handleResetClick}
+                disabled={isReadonly}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{resetLabel || "Reset"}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {actions}
+    </>
+  );
+
   return (
     <Card
       className={cn(
         "transition-all",
         !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
         !isEditMode && stepStatus === "pending" && "opacity-50",
-        className,
+        className
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -139,7 +209,7 @@ export function StepCard({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted",
+                  : "bg-muted"
             )}
           >
             {stepStatus === "completed" ? (
@@ -192,7 +262,9 @@ export function StepCard({
             )}
           </div>
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {(actions || (resetFields && resetFields.length > 0 && onReset)) && (
+          <div className="flex items-center gap-2">{finalActions}</div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search bar with optional filter */}
@@ -204,15 +276,18 @@ export function StepCard({
                 <input
                   type="text"
                   placeholder={searchPlaceholder || "Search..."}
-                  value={searchTerm}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
+                  value={localSearchTerm}
+                  onChange={(e) => setLocalSearchTerm(e.target.value)}
                   className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={isReadonly}
                 />
               </>
             )}
             {filters && (
-              <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+              <Popover
+                open={filterPopoverOpen}
+                onOpenChange={setFilterPopoverOpen}
+              >
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <PopoverTrigger asChild>
@@ -235,7 +310,10 @@ export function StepCard({
                   <div className="space-y-4">
                     <div className="space-y-2">
                       {filters.map((filter) => (
-                        <div key={filter.key} className="flex items-center space-x-2">
+                        <div
+                          key={filter.key}
+                          className="flex items-center space-x-2"
+                        >
                           <Checkbox
                             id={`filter-${filter.key}`}
                             checked={tempFilterValues[filter.key] ?? false}
@@ -275,4 +353,3 @@ export function StepCard({
     </Card>
   );
 }
-

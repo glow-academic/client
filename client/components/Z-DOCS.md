@@ -697,3 +697,635 @@ const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
 - **File size**: Component files become slightly larger
 - **Consistency**: Some resources still have server-side `searchParams.ts` (but that's necessary)
 
+## Complete Migration Guide: List/New Page with GenericForm
+
+This guide covers the end-to-end migration process for converting a resource's list/new page to use `GenericForm` with `nuqs` for URL-backed state management.
+
+### Overview
+
+The migration involves:
+1. **Client Component**: Migrate to `GenericForm` with `nuqs` parsers
+2. **Server Actions**: Define typed server actions in page files
+3. **Server Pages**: Fetch data server-side and pass to client component
+4. **Type Safety**: Export types from page files for client components
+
+### Step 1: Define nuqs Parsers (Client Component)
+
+**Location**: `client/components/[resource]/[Resource].tsx`
+
+Define parsers inline for client-side URL-backed state:
+
+```typescript
+import {
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+  useQueryStates,
+  type Parser,
+} from "nuqs";
+
+// Inline parsers for URL-backed state (client-side only)
+const resourceSearchParamsClient = {
+  name: parseAsString,
+  description: parseAsString,
+  color: parseAsString,
+  icon: parseAsString,
+  instructions: parseAsString,
+  active: parseAsBoolean,
+  departmentIds: parseAsArrayOf(parseAsString),
+  parameterIds: parseAsArrayOf(parseAsString),
+  examples: parseAsArrayOf(parseAsString),
+  // Search params (URL-backed, debounced in StepCard)
+  colorSearch: parseAsString,
+  iconSearch: parseAsString,
+  // Filter params (URL-backed)
+  colorShowSelected: parseAsBoolean,
+  iconShowSelected: parseAsBoolean,
+} as const;
+
+// Use in component
+const [formData] = useQueryStates(resourceSearchParamsClient, {
+  history: "replace",
+  shallow: false,
+});
+```
+
+**Key Points**:
+- Use `parseAsString`, `parseAsBoolean`, `parseAsArrayOf(parseAsString)` for different types
+- Include search/filter params if needed (they're URL-backed for browser back/forward)
+- Use `as const` for type inference
+- `history: "replace"` prevents URL spam, `shallow: false` triggers server re-fetch
+
+### Step 2: Configure GenericForm
+
+**Location**: `client/components/[resource]/[Resource].tsx`
+
+```typescript
+import { GenericForm, type StepStatus } from "@/components/common/forms/GenericForm";
+
+// Steps configuration
+const steps = useMemo(
+  () => [
+    {
+      id: "basic",
+      title: "Basic Information",
+      description: "Set the resource name, description, and active status.",
+      resetFields: ["name", "description", "active"],
+    },
+    {
+      id: "color",
+      title: "Color",
+      description: "Select a color for the resource.",
+      resetFields: ["color", "colorSearch", "colorShowSelected"],
+    },
+    {
+      id: "content",
+      title: "Content",
+      description: "Define instructions and examples.",
+      resetFields: ["instructions", "examples"],
+    },
+  ],
+  []
+);
+
+// Step status calculation
+const getStepStatus = useCallback(
+  (stepId: string, formData: Record<string, unknown>): StepStatus => {
+    const hasName = !!(formData["name"] as string | null | undefined)?.trim();
+    const hasDescription = !!(
+      formData["description"] as string | null | undefined
+    )?.trim();
+    const hasColor = !!(
+      formData["color"] as string | null | undefined
+    )?.trim();
+    const hasInstructions = !!(
+      formData["instructions"] as string | null | undefined
+    )?.trim();
+
+    switch (stepId) {
+      case "basic":
+        return hasName && hasDescription ? "completed" : "active";
+      case "color":
+        if (!hasName || !hasDescription) return "pending";
+        return hasColor ? "completed" : "active";
+      case "content":
+        if (!hasName || !hasDescription) return "pending";
+        return hasInstructions ? "completed" : "active";
+      default:
+        return "pending";
+    }
+  },
+  []
+);
+
+// Form initialization from server data
+const initializeForm = useCallback(
+  (serverData: ResourceDetailOut | ResourceNewOut, editMode: boolean) => {
+    if (!editMode || !("id" in serverData)) {
+      return {};
+    }
+
+    const resourceDetail = serverData as ResourceDetailOut;
+    const updates: Partial<
+      Record<keyof typeof resourceSearchParamsClient, unknown>
+    > = {};
+    
+    if (resourceDetail.name) updates["name"] = resourceDetail.name;
+    if (resourceDetail.description)
+      updates["description"] = resourceDetail.description;
+    if (resourceDetail.color) updates["color"] = resourceDetail.color;
+    // ... more fields
+
+    return updates;
+  },
+  []
+);
+
+// Submit handler
+const handleSubmit = useCallback(
+  async (formData: Record<string, unknown>) => {
+    if (!formData["name"]) {
+      toast.error("Name is required");
+      throw new Error("Name is required");
+    }
+
+    // Transform and validate data
+    const finalData = {
+      name: formData["name"] as string,
+      description: formData["description"] as string || "",
+      // ... more fields
+    };
+
+    if (isEditMode) {
+      if (!updateResourceAction) {
+        throw new Error("updateResourceAction is required");
+      }
+      try {
+        await updateResourceAction({ body: { ...finalData, resource_id: resourceId! } });
+        toast.success("Resource updated successfully!");
+        router.push("/create/resources");
+      } catch (error) {
+        toast.error(
+          `Failed to update resource: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
+      }
+    } else {
+      if (!createResourceAction) {
+        throw new Error("createResourceAction is required");
+      }
+      try {
+        await createResourceAction({ body: finalData });
+        toast.success("Resource created successfully!");
+        router.push("/create/resources");
+      } catch (error) {
+        toast.error(
+          `Failed to create resource: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
+      }
+    }
+  },
+  [isEditMode, resourceId, updateResourceAction, createResourceAction, router]
+);
+
+// Render GenericForm
+<GenericForm
+  nuqsParsers={
+    resourceSearchParamsClient as Record<string, Parser<unknown>>
+  }
+  steps={steps}
+  getStepStatus={getStepStatus}
+  serverData={resourceData}
+  initializeForm={initializeForm}
+  formFieldKeys={["name", "description", "color", "instructions", "examples"]}
+  resetSuccessMessage={(stepId) => {
+    switch (stepId) {
+      case "basic":
+        return "Basic information reset";
+      case "color":
+        return "Color reset";
+      case "content":
+        return "Content reset";
+      default:
+        return "Reset";
+    }
+  }}
+  onSubmit={handleSubmit}
+  submitButton={{
+    backUrl: "/create/resources",
+    backLabel: "Back",
+    createLabel: "Create Resource",
+    updateLabel: "Update Resource",
+  }}
+  isReadonly={isReadonly}
+  isEditMode={isEditMode}
+  renderStep={({ stepId, stepStatus, stepTitle, stepDescription, stepNumber, formData: stepFormData, setFormData: setStepFormData, onReset }) => {
+    // Render steps using StepCard
+    switch (stepId) {
+      case "basic":
+        return (
+          <StepCard
+            stepStatus={stepStatus}
+            stepNumber={stepNumber}
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+            resetFields={["name", "description", "active"]}
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
+          >
+            {/* Form fields */}
+          </StepCard>
+        );
+      // ... more cases
+    }
+  }}
+/>
+```
+
+### Step 3: Define Server Actions (Page File)
+
+**Location**: `client/app/(main)/create/[resource]/new/page.tsx` and `client/app/(main)/create/[resource]/[resourceId]/page.tsx`
+
+```typescript
+"use server";
+
+import { api } from "@/lib/request-core";
+import type {
+  CreateResourceIn,
+  CreateResourceOut,
+  UpdateResourceIn,
+  UpdateResourceOut,
+} from "@/app/(main)/create/[resource]/new/page";
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function createResource(
+  input: CreateResourceIn
+): Promise<CreateResourceOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/resources/create", input);
+}
+
+async function updateResource(
+  input: UpdateResourceIn
+): Promise<UpdateResourceOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/resources/update", input);
+}
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  CreateResourceIn,
+  CreateResourceOut,
+  UpdateResourceIn,
+  UpdateResourceOut,
+  ResourceNewIn,
+  ResourceNewOut,
+  ResourceDetailOut,
+};
+```
+
+**Key Points**:
+- Server actions use `"use server"` directive
+- Types are exported for client component imports
+- `profileId` is auto-injected via `X-Profile-Id` header (no need to pass manually)
+- Use `api.post()` helper for API calls
+
+### Step 4: Server Page Implementation (New Page)
+
+**Location**: `client/app/(main)/create/[resource]/new/page.tsx`
+
+```typescript
+import { Metadata } from "next";
+import { api } from "@/lib/request-core";
+import Resource from "@/components/resources/Resource";
+import type {
+  CreateResourceIn,
+  CreateResourceOut,
+  ResourceNewIn,
+  ResourceNewOut,
+} from "./page";
+
+// Fetch default data for new resource
+const getResourceDefault = async (input: ResourceNewIn) => {
+  return api.get<ResourceNewOut>("/resources/new", {
+    query: {
+      department_id: input.department_id,
+    },
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
+};
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function createResource(
+  input: CreateResourceIn
+): Promise<CreateResourceOut> {
+  "use server";
+  return api.post("/resources/create", input);
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Create Resource",
+    description: "Create a new resource",
+  };
+}
+
+export default async function NewResourcePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const q = await searchParams;
+  
+  // Build input from URL params (if any)
+  const input = {
+    department_id: (q.department_id as string) || null,
+  } as unknown as ResourceNewIn;
+  
+  const resourceDetailDefault = await getResourceDefault(input);
+
+  // Override API defaults with URL params if present (URL params take precedence)
+  const resourceDetailDefaultWithParams = {
+    ...resourceDetailDefault,
+    ...(q.color && { color: q.color }),
+    ...(q.icon && { icon: q.icon }),
+    ...(q.active !== null && q.active !== undefined && { active: q.active === "true" }),
+  };
+
+  return (
+    <div
+      className="space-y-6"
+      data-page="resource-new"
+      aria-label="Create new resource page"
+    >
+      <Resource
+        mode="create"
+        resourceDetailDefault={resourceDetailDefaultWithParams}
+        createResourceAction={createResource}
+      />
+    </div>
+  );
+}
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  CreateResourceIn,
+  CreateResourceOut,
+  ResourceNewIn,
+  ResourceNewOut,
+};
+```
+
+**Key Points**:
+- Fetch default data server-side
+- Override defaults with URL params if present
+- Pass server actions as props to client component
+- Export types for client component imports
+
+### Step 5: Server Page Implementation (Edit Page)
+
+**Location**: `client/app/(main)/create/[resource]/[resourceId]/page.tsx`
+
+```typescript
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { api } from "@/lib/request-core";
+import Resource from "@/components/resources/Resource";
+import type {
+  UpdateResourceIn,
+  UpdateResourceOut,
+  ResourceDetailOut,
+} from "./page";
+
+// Fetch resource detail
+const getResourceDetail = async (
+  resourceId: string
+): Promise<ResourceDetailOut | null> => {
+  try {
+    return await api.get<ResourceDetailOut>(`/resources/${resourceId}/detail`);
+  } catch {
+    return null;
+  }
+};
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function updateResource(
+  input: UpdateResourceIn
+): Promise<UpdateResourceOut> {
+  "use server";
+  return api.post("/resources/update", input);
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ resourceId: string }>;
+}): Promise<Metadata> {
+  const { resourceId } = await params;
+  return {
+    title: `Edit Resource ${resourceId}`,
+    description: "Edit resource details",
+  };
+}
+
+export default async function ResourceEditPage({
+  params,
+}: {
+  params: Promise<{ resourceId: string }>;
+}) {
+  const { resourceId } = await params;
+  const resourceDetail = await getResourceDetail(resourceId);
+
+  if (!resourceDetail) {
+    notFound();
+  }
+
+  return (
+    <div
+      className="space-y-6"
+      data-page="resource-edit"
+      aria-label={`Edit resource ${resourceId} page`}
+    >
+      <Resource
+        resourceId={resourceId}
+        mode="edit"
+        resourceDetail={resourceDetail}
+        updateResourceAction={updateResource}
+      />
+    </div>
+  );
+}
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  UpdateResourceIn,
+  UpdateResourceOut,
+  ResourceDetailOut,
+};
+```
+
+**Key Points**:
+- Fetch resource detail server-side
+- Handle `notFound()` if resource doesn't exist
+- Pass server actions as props to client component
+- Export types for client component imports
+
+### Step 6: Component Props Interface
+
+**Location**: `client/components/[resource]/[Resource].tsx`
+
+```typescript
+import type {
+  CreateResourceIn,
+  CreateResourceOut,
+  ResourceDetailOut,
+  ResourceNewOut,
+  UpdateResourceIn,
+  UpdateResourceOut,
+} from "@/app/(main)/create/[resource]/new/page";
+
+export interface ResourceProps {
+  resourceId?: string;
+  mode?: "create" | "edit";
+  // Server-provided data (for server-side rendering)
+  resourceDetail?: ResourceDetailOut;
+  resourceDetailDefault?: ResourceNewOut;
+  // Server actions (replaces useMutation)
+  createResourceAction?: (input: CreateResourceIn) => Promise<CreateResourceOut>;
+  updateResourceAction?: (input: UpdateResourceIn) => Promise<UpdateResourceOut>;
+}
+
+export default function Resource({
+  resourceId,
+  mode = resourceId ? "edit" : "create",
+  resourceDetail: serverResourceDetail,
+  resourceDetailDefault: serverResourceDetailDefault,
+  createResourceAction,
+  updateResourceAction,
+}: ResourceProps) {
+  // Component implementation
+}
+```
+
+**Key Points**:
+- Import types from page files (type-only imports)
+- Props include server data and server actions
+- Mode is inferred from `resourceId` if not provided
+
+### Migration Checklist
+
+When migrating a resource to use `GenericForm`:
+
+- [ ] **Client Component**:
+  - [ ] Define `nuqs` parsers inline
+  - [ ] Configure `steps` array with `resetFields`
+  - [ ] Implement `getStepStatus` callback
+  - [ ] Implement `initializeForm` callback
+  - [ ] Implement `handleSubmit` callback
+  - [ ] Use `GenericForm` with all props
+  - [ ] Use `StepCard` for each step with proper props
+  - [ ] Handle optional props correctly (`{...(onReset ? { onReset } : {})}`)
+
+- [ ] **Server Actions**:
+  - [ ] Define `createResource` action in `new/page.tsx`
+  - [ ] Define `updateResource` action in `[resourceId]/page.tsx`
+  - [ ] Export types from page files
+  - [ ] Use `"use server"` directive
+
+- [ ] **Server Pages**:
+  - [ ] Fetch default data in `new/page.tsx`
+  - [ ] Fetch detail data in `[resourceId]/page.tsx`
+  - [ ] Override defaults with URL params if present
+  - [ ] Pass server actions as props
+  - [ ] Handle `notFound()` for missing resources
+
+- [ ] **Type Safety**:
+  - [ ] Import types from page files (type-only)
+  - [ ] Use `InputOf` and `OutputOf` helpers if needed
+  - [ ] Ensure all types are exported from page files
+
+- [ ] **Testing**:
+  - [ ] Test form initialization (edit mode)
+  - [ ] Test form submission (create and update)
+  - [ ] Test reset handlers
+  - [ ] Test step status calculation
+  - [ ] Test URL param persistence (browser back/forward)
+  - [ ] Test readonly mode
+
+### Common Patterns
+
+#### Pattern 1: Conditional Props
+
+```typescript
+// For optional props with exactOptionalPropertyTypes
+{...(onReset ? { onReset } : {})}
+{...(searchTerm ? { searchTerm, onSearchChange, searchPlaceholder } : {})}
+```
+
+#### Pattern 2: Form Data Access
+
+```typescript
+// Always use bracket notation for index signatures
+const name = formData["name"] as string | null | undefined;
+const examples = formData["examples"] as string[] | null | undefined;
+```
+
+#### Pattern 3: Type Assertions
+
+```typescript
+// For array filtering
+example_ids: ((formData["examples"] as string[] | null | undefined) || []).filter((ex: string) => ex.trim())
+```
+
+#### Pattern 4: Server Action Error Handling
+
+```typescript
+try {
+  await createResourceAction({ body: finalData });
+  toast.success("Resource created successfully!");
+  router.push("/create/resources");
+} catch (error) {
+  toast.error(
+    `Failed to create resource: ${error instanceof Error ? error.message : "Unknown error"}`
+  );
+  throw error;
+}
+```
+
+### Example: Persona.tsx Migration
+
+See `client/components/personas/Persona.tsx` for a complete reference implementation.
+
+**Key Features**:
+- Inline `nuqs` parsers
+- `GenericForm` with initialization, reset, and submit
+- `StepCard` with debounced search and reset buttons
+- Server actions passed as props
+- Type-safe with exported types from page files
+
+### Troubleshooting
+
+**Issue**: Type errors with optional props
+- **Solution**: Use conditional spread: `{...(prop ? { prop } : {})}`
+
+**Issue**: Form not initializing from server data
+- **Solution**: Check `initializeForm` returns correct shape, ensure `formFieldKeys` includes all fields
+
+**Issue**: Reset not working
+- **Solution**: Ensure `resetFields` in step config matches fields in `StepCard` props
+
+**Issue**: Search not debouncing
+- **Solution**: Ensure `debounceMs` prop is set on `StepCard` (default is 300ms)
+
+**Issue**: Submit button not showing
+- **Solution**: Ensure `onSubmit` and `submitButton` props are provided to `GenericForm`
+
