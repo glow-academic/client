@@ -10,6 +10,7 @@ import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type SimulationDetailIn = InputOf<"/api/v4/simulations/detail", "post">;
@@ -23,23 +24,21 @@ type CreateSimulationOut = OutputOf<"/api/v4/simulations/create", "post">;
 
 type UpdateSimulationIn = InputOf<"/api/v4/simulations/update", "post">;
 type UpdateSimulationOut = OutputOf<"/api/v4/simulations/update", "post">;
+type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
+type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getSimulation = async (
-  simulationId: string
+  input: SimulationDetailIn
 ): Promise<SimulationDetailOut> => {
-  return api.post(
-    "/simulations/detail",
-    { body: { simulationId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/simulations/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -51,7 +50,13 @@ export async function generateMetadata(
   // profileId removed - comes from X-Profile-Id header automatically
 
   try {
-    const simulation = await getSimulation(simulationId);
+    const input: SimulationDetailIn = {
+      body: {
+        simulation_id: simulationId,
+        draft_id: null,
+      } as SimulationDetailIn["body"],
+    };
+    const simulation = await getSimulation(input);
     return {
       title: `${simulation?.name || "Simulation"}`,
       description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
@@ -76,19 +81,54 @@ async function updateSimulation(
   return api.post("/simulations/update", input);
 }
 
+async function patchSimulationDraft(
+  input: PatchSimulationDraftIn
+): Promise<PatchSimulationDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/simulations/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditSimulationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ simulationId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { simulationId } = await params;
   // Access control is handled server-side in layout
   // profileId removed - comes from X-Profile-Id header automatically
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
 
-  // Fetch simulation detail (always fresh - source of truth)
+  // Inline server-side parsers for simulation search params
+  const simulationSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadSimulationSearchParams = createLoader(simulationSearchParams);
+  const q = loadSimulationSearchParams(searchParamsObj);
+
+  // Fetch simulation detail (always fresh - source of truth) with draft_id
   try {
-    const simulationDetail = await getSimulation(simulationId);
+    const input: SimulationDetailIn = {
+      body: {
+        simulation_id: simulationId,
+        draft_id: q.draftId ?? null,
+      } as SimulationDetailIn["body"],
+    };
+    const simulationDetail = await getSimulation(input);
 
     return (
       <div
@@ -100,6 +140,7 @@ export default async function EditSimulationPage({
           simulationId={simulationId}
           simulationDetail={simulationDetail}
           updateSimulationAction={updateSimulation}
+          patchSimulationDraftAction={patchSimulationDraft}
         />
       </div>
     );
@@ -128,6 +169,8 @@ export default async function EditSimulationPage({
 export type {
   CreateSimulationIn,
   CreateSimulationOut,
+  PatchSimulationDraftIn,
+  PatchSimulationDraftOut,
   SimulationDetailIn,
   SimulationDetailOut,
   SimulationNewIn,

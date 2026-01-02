@@ -149,7 +149,8 @@ CREATE TYPE types.q_get_simulation_detail_v4_agent AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_simulation_detail_v4(
     simulation_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     simulation_exists boolean,
@@ -189,8 +190,20 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT simulation_id AS simulation_id,
-           profile_id AS profile_id
+    SELECT 
+        simulation_id AS simulation_id,
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'simulations'::draft_resource_type
+    LIMIT 1
 ),
 resolve_profile_id AS (
     SELECT 
@@ -760,20 +773,65 @@ SELECT
     (SELECT simulation_exists FROM simulation_exists_check) as simulation_exists,
     uc.actor_name::text as actor_name,
     sb.id as simulation_id,
-    sb.title as name,
-    sb.description,
-    sb.department_ids,
+    -- Merge draft payload over existing simulation data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'title' FROM draft_payload_data),
+        sb.title
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        sb.description
+    ) as description,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::uuid[]
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        sb.department_ids
+    ) as department_ids,
     COALESCE(dd.department_ids::uuid[], ARRAY[]::uuid[]) as valid_department_ids,
     sb.time_limit,
     sb.rubric_id,
     COALESCE(rd.rubric_ids::uuid[], ARRAY[]::uuid[]) as valid_rubric_ids,
-    COALESCE(sd.scenario_ids::uuid[], ARRAY[]::uuid[]) as scenario_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(payload->'scenarioIds') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'scenarioIds'))::uuid[]
+                WHEN payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(payload->'scenario_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'scenario_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(sd.scenario_ids::uuid[], ARRAY[]::uuid[])
+    ) as scenario_ids,
     COALESCE(vs.ids::uuid[], ARRAY[]::uuid[]) as valid_scenario_ids,
-    sb.active,
-    sb.practice_simulation,
-    sb.hint_agent_id,
-    sb.simulation_text_agent_id,
-    sb.simulation_voice_agent_id,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        sb.active
+    ) as active,
+    COALESCE(
+        (SELECT (payload->>'practiceSimulation')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'practice_simulation')::boolean FROM draft_payload_data),
+        sb.practice_simulation
+    ) as practice_simulation,
+    COALESCE(
+        (SELECT (payload->>'hint_agent_id')::uuid FROM draft_payload_data),
+        sb.hint_agent_id
+    ) as hint_agent_id,
+    COALESCE(
+        (SELECT (payload->>'simulation_text_agent_id')::uuid FROM draft_payload_data),
+        sb.simulation_text_agent_id
+    ) as simulation_text_agent_id,
+    COALESCE(
+        (SELECT (payload->>'simulation_voice_agent_id')::uuid FROM draft_payload_data),
+        sb.simulation_voice_agent_id
+    ) as simulation_voice_agent_id,
     CASE 
         WHEN COALESCE(sb.department_ids, NULL) IS NULL AND uc.role != 'superadmin' THEN false
         WHEN uc.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true

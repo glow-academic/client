@@ -43,8 +43,8 @@ async def get_simulation_new(
     """Get default simulation details based on profile."""
     tags = ["simulations"]
 
-    # Generate cache key from path and parsed body
-    body_dict = request_data.model_dump()
+    # Generate cache key from path and parsed body (use mode='json' to serialize UUIDs)
+    body_dict = request_data.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -87,7 +87,8 @@ async def get_simulation_new(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
-        api_response = GetSimulationNewApiResponse.model_validate(result.model_dump())
+        # Use mode='json' to serialize UUIDs properly
+        api_response = GetSimulationNewApiResponse.model_validate(result.model_dump(mode="json"))
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

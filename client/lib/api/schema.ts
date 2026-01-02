@@ -488,6 +488,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/simulations/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Simulation Draft
+         * @description Patch simulation draft (creates if not exists).
+         */
+        patch: operations["patch_simulation_draft_api_v4_simulations_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/personas/list": {
         parameters: {
             query?: never;
@@ -13080,6 +13100,8 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetSimulationDetailApiResponse */
         GetSimulationDetailApiResponse: {
@@ -13149,7 +13171,10 @@ export interface components {
             valid_agent_ids?: string[] | null;
         };
         /** GetSimulationNewApiRequest */
-        GetSimulationNewApiRequest: Record<string, never>;
+        GetSimulationNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetSimulationNewApiResponse */
         GetSimulationNewApiResponse: {
             /** Actor Name */
@@ -13792,6 +13817,26 @@ export interface components {
         };
         /** PatchPersonaDraftApiResponse */
         PatchPersonaDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchSimulationDraftApiRequest */
+        PatchSimulationDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchSimulationDraftApiResponse */
+        PatchSimulationDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -23000,6 +23045,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteSimulationApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_simulation_draft_api_v4_simulations_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchSimulationDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchSimulationDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

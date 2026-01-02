@@ -21487,11 +21487,13 @@ class GetSimulationDetailSqlParams(BaseModel):
 
     simulation_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.simulation_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetSimulationDetailV4Agent(BaseModel):
@@ -21668,6 +21670,7 @@ class GetSimulationDetailSqlRow(BaseModel):
 class GetSimulationDetailApiRequest(BaseModel):
 
     simulation_id: UUID
+    draft_id: UUID | None = None
 
 class GetSimulationDetailApiResponse(BaseModel):
 
@@ -21777,10 +21780,12 @@ class GetSimulationMetadataForChatApiResponse(BaseModel):
 class GetSimulationNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetSimulationNewV4Agent(BaseModel):
@@ -21957,7 +21962,7 @@ class GetSimulationNewSqlRow(BaseModel):
 
 class GetSimulationNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetSimulationNewApiResponse(BaseModel):
 
@@ -22570,6 +22575,43 @@ class MarkChatCompletedApiRequest(BaseModel):
 class MarkChatCompletedApiResponse(BaseModel):
 
     success: bool | None = None
+
+
+
+# Generated from: patch_simulation_draft
+
+class PatchSimulationDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchSimulationDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchSimulationDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchSimulationDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -26136,6 +26178,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkChatCompletedApiRequest",
         "MarkChatCompletedApiResponse",
     ),
+    "app/sql/v4/simulations/patch_simulation_draft_complete.sql": (
+        "PatchSimulationDraftSqlParams",
+        "PatchSimulationDraftSqlRow",
+        "PatchSimulationDraftApiRequest",
+        "PatchSimulationDraftApiResponse",
+    ),
     "app/sql/v4/simulations/simulation_text_stop_run_complete.sql": (
         "SimulationTextStopRunSqlParams",
         "SimulationTextStopRunSqlRow",
@@ -28072,6 +28120,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/mark_chat_completed_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/patch_simulation_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

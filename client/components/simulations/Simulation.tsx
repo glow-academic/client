@@ -25,6 +25,7 @@ import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
@@ -44,7 +45,7 @@ import {
   Power,
   Text,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   parseAsArrayOf,
   parseAsBoolean,
@@ -58,6 +59,8 @@ import {
 import type {
   CreateSimulationIn,
   CreateSimulationOut,
+  PatchSimulationDraftIn,
+  PatchSimulationDraftOut,
   SimulationDetailOut,
   SimulationNewOut,
   UpdateSimulationIn,
@@ -75,6 +78,9 @@ export interface SimulationProps {
   updateSimulationAction?: (
     input: UpdateSimulationIn
   ) => Promise<UpdateSimulationOut>;
+  patchSimulationDraftAction?: (
+    input: PatchSimulationDraftIn
+  ) => Promise<PatchSimulationDraftOut>;
 }
 
 export default function Simulation({
@@ -83,11 +89,14 @@ export default function Simulation({
   simulationDetailDefault: serverSimulationDetailDefault,
   createSimulationAction,
   updateSimulationAction,
+  patchSimulationDraftAction,
 }: SimulationProps) {
-  const { effectiveProfile } = useProfile();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
-  const router = useRouter();
   const isEditMode = !!simulationId;
 
   // Inline parsers for URL-backed state
@@ -103,9 +112,21 @@ export default function Simulation({
     simulationSearchParamsClient,
     {
       history: "replace",
-      shallow: true,
+      shallow: true, // Use shallow routing to prevent server component re-renders
     }
   );
+
+  // Get draftId from URL (managed by nuqs via urlParams)
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
 
   // Extract body types from server action types for type safety
   type CreateSimulationBody = CreateSimulationIn extends { body: infer B }
@@ -309,15 +330,82 @@ export default function Simulation({
     simulationDetailDefault,
     defaultDepartmentIds,
     urlParams.scenarioIds,
+    // Note: draftId/urlDraftId not needed here - server data already includes merged draft payload
   ]);
 
   // Local draft state (not in URL)
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
 
-  // Update draft state when server data changes
+  // Track previous initialDraftState content to avoid unnecessary updates
+  const prevInitialDraftStateRef = useRef<string>(
+    JSON.stringify(initialDraftState)
+  );
+
+  // Update draft state when server data changes (e.g., draft selected)
+  // Only update if content actually changed (deep comparison to prevent unnecessary re-renders)
   useEffect(() => {
-    setDraftState(initialDraftState);
+    // Deep compare to avoid unnecessary state updates
+    const currentStateStr = prevInitialDraftStateRef.current;
+    const newStateStr = JSON.stringify(initialDraftState);
+
+    // Only update if content actually changed
+    if (currentStateStr !== newStateStr) {
+      prevInitialDraftStateRef.current = newStateStr;
+      setDraftState(initialDraftState);
+    }
   }, [initialDraftState]);
+
+  // Integrate autosave hook
+  // Pattern: Transform hook API (draft_id, patch, expected_version) to backend API (input_draft_id, patch, expected_version)
+  const {
+    saveStatus: _saveStatus,
+    saveNow: _saveNow,
+    lastSavedVersion: _lastSavedVersion,
+  } = useDraftAutosave({
+    draftId,
+    draftState,
+    patchDraftAction: patchSimulationDraftAction
+      ? async (input) => {
+          // Transform hook API → backend API
+          // Hook API: { body: { draft_id, patch, expected_version } }
+          // Backend API: { body: { input_draft_id, patch, expected_version } }
+          // Note: profile_id is added server-side from header
+          const result = await patchSimulationDraftAction({
+            body: {
+              input_draft_id: input.body.draft_id || null,
+              patch: input.body.patch as Record<string, unknown>,
+              expected_version: input.body.expected_version,
+            } as PatchSimulationDraftIn["body"],
+          });
+          // Transform backend API → hook API
+          // Backend API: { draft_id, new_version, draft_exists }
+          // Hook API: { draftId, newVersion, draftExists }
+          return {
+            draftId: result.draft_id || "",
+            newVersion: result.new_version || 0,
+            draftExists: result.draft_exists || false,
+          };
+        }
+      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    debounceMs: 1000,
+    onDraftCreated: useCallback(
+      (newDraftId: string) => {
+        // Only update URL if draftId actually changed
+        const currentUrlDraftId = searchParams.get("draftId");
+        if (newDraftId === currentUrlDraftId) {
+          return;
+        }
+        // Update URL with new draftId and trigger server-side refetch
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("draftId", newDraftId);
+        const newUrl = `?${params.toString()}`;
+        router.replace(newUrl, { scroll: false });
+        // Force server components to re-render with updated search params
+        router.refresh();
+      },
+      [router, searchParams]
+    ),
+  });
 
   // Readonly logic using server-provided can_edit flag
   const isReadonly = useMemo(() => {

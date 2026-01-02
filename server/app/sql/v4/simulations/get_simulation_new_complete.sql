@@ -142,7 +142,10 @@ CREATE TYPE types.q_get_simulation_new_v4_video AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_simulation_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_simulation_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     actor_name text,
     name text,
@@ -183,7 +186,19 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'simulations'::draft_resource_type
+    LIMIT 1
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -501,25 +516,71 @@ agents_data AS (
 )
 SELECT 
     up.actor_name::text as actor_name,
-    ''::text as name,
-    ''::text as description,
-    CASE 
-        WHEN up.role = 'superadmin'::profile_role THEN NULL::uuid[]
-        ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
-    END as department_ids,
+    -- Default values for new simulation (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'title' FROM draft_payload_data),
+        ''::text
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''::text
+    ) as description,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::uuid[]
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        CASE 
+            WHEN up.role = 'superadmin'::profile_role THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
+        END
+    ) as department_ids,
     COALESCE(dd.department_ids::uuid[], ARRAY[]::uuid[]) as valid_department_ids,
     0 as time_limit,
     NULL::uuid as rubric_id,
     COALESCE(rd.rubric_ids::uuid[], ARRAY[]::uuid[]) as valid_rubric_ids,
-    ARRAY[]::uuid[] as scenario_ids,
+    -- Extract scenario_ids from draft payload if available
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(payload->'scenarioIds') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'scenarioIds'))::uuid[]
+                WHEN payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(payload->'scenario_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'scenario_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        ARRAY[]::uuid[]
+    ) as scenario_ids,
     COALESCE(vs.ids::uuid[], ARRAY[]::uuid[]) as valid_scenario_ids,
     ARRAY[]::uuid[] as video_ids,
     COALESCE(vv.ids::uuid[], ARRAY[]::uuid[]) as valid_video_ids,
-    true as active,
-    false as practice_simulation,
-    NULL::uuid as hint_agent_id,
-    NULL::uuid as simulation_text_agent_id,
-    NULL::uuid as simulation_voice_agent_id,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true
+    ) as active,
+    COALESCE(
+        (SELECT (payload->>'practiceSimulation')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'practice_simulation')::boolean FROM draft_payload_data),
+        false
+    ) as practice_simulation,
+    COALESCE(
+        (SELECT (payload->>'hint_agent_id')::uuid FROM draft_payload_data),
+        NULL::uuid
+    ) as hint_agent_id,
+    COALESCE(
+        (SELECT (payload->>'simulation_text_agent_id')::uuid FROM draft_payload_data),
+        NULL::uuid
+    ) as simulation_text_agent_id,
+    COALESCE(
+        (SELECT (payload->>'simulation_voice_agent_id')::uuid FROM draft_payload_data),
+        NULL::uuid
+    ) as simulation_voice_agent_id,
     CASE 
         WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
