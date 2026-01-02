@@ -69,7 +69,8 @@ CREATE TYPE types.q_get_rubric_detail_v4_agent AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_rubric_detail_v4(
     rubric_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     rubric_exists boolean,
@@ -89,13 +90,28 @@ RETURNS TABLE (
     standard_groups types.q_get_rubric_detail_v4_standard_group[],
     standards types.q_get_rubric_detail_v4_standard[],
     departments types.q_get_rubric_detail_v4_department[],
-    agents types.q_get_rubric_detail_v4_agent[]
+    agents types.q_get_rubric_detail_v4_agent[],
+    draft_version int,
+    draft_standard_groups jsonb,
+    draft_standards jsonb,
+    draft_grid_cells jsonb
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT rubric_id AS rubric_id, profile_id AS profile_id
+    SELECT rubric_id AS rubric_id, profile_id AS profile_id, draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'rubrics'::draft_resource_type
+    LIMIT 1
 ),
 rubric_exists_check AS (
     SELECT EXISTS(
@@ -273,27 +289,61 @@ agents_aggregated AS (
 SELECT 
     rec.rubric_exists,
     rd.rubric_id,
-    rd.name,
-    rd.description,
+    -- Merge draft payload with rubric data (draft takes precedence)
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        rd.name::text
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        rd.description::text
+    ) as description,
     COALESCE(rdd.department_ids, ARRAY[]::text[]) as department_ids,
     COALESCE(vd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
     rd.points,
     rd.pass_points,
-    rd.active,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        rd.active::boolean
+    ) as active,
     CASE 
         WHEN (COALESCE(rdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND pr.user_role != 'superadmin') THEN false
         WHEN pr.user_role = 'superadmin' THEN true
         WHEN pr.user_role IN ('admin', 'instructional') AND uhra.has_access THEN true
         ELSE false
     END as can_edit,
-    rd.rubric_agent_id,
+    COALESCE(
+        (SELECT (payload->>'rubricAgentId')::uuid FROM draft_payload_data),
+        (SELECT (payload->>'rubric_agent_id')::uuid FROM draft_payload_data),
+        rd.rubric_agent_id
+    ) as rubric_agent_id,
     COALESCE(aa.valid_agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     up.actor_name,
     COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) as standard_group_ids,
     sga.standard_groups,
     sta.standards,
     da.departments,
-    aa.agents
+    aa.agents,
+    -- Draft version (from draft payload if exists)
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract standardGroups from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'standardGroups' FROM draft_payload_data),
+        (SELECT payload->'standard_groups' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as draft_standard_groups,
+    -- Extract standards from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'standards' FROM draft_payload_data),
+        (SELECT payload->'standards' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as draft_standards,
+    -- Extract gridCells from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'gridCells' FROM draft_payload_data),
+        (SELECT payload->'grid_cells' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as draft_grid_cells
 FROM rubric_exists_check rec
 CROSS JOIN rubric_data rd
 LEFT JOIN rubric_departments_data rdd ON true
@@ -305,6 +355,7 @@ CROSS JOIN standards_aggregated sta
 CROSS JOIN departments_aggregated da
 CROSS JOIN user_has_rubric_access uhra
 CROSS JOIN agents_aggregated aa
+LEFT JOIN draft_payload_data ON true
 WHERE uhra.has_access = true OR rec.rubric_exists = false
 $$;
 

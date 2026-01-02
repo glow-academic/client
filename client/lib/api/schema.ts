@@ -1628,6 +1628,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/rubrics/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Rubric Draft
+         * @description Patch rubric draft (creates if not exists).
+         */
+        patch: operations["patch_rubric_draft_api_v4_rubrics_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/settings/list": {
         parameters: {
             query?: never;
@@ -2786,6 +2806,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/fields/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Field Draft
+         * @description Patch field draft (creates if not exists).
+         */
+        patch: operations["patch_field_draft_api_v4_fields_draft_patch"];
         trace?: never;
     };
     "/api/v4/feedback/create": {
@@ -11161,6 +11201,10 @@ export interface components {
             rubric_grade_agent_active_states?: unknown | null;
             /** Rubric Grade Agent Positions */
             rubric_grade_agent_positions?: unknown | null;
+            /** Run Rubric Grade Agents */
+            run_rubric_grade_agents?: unknown | null;
+            /** Group Rubric Grade Agents */
+            group_rubric_grade_agents?: unknown | null;
         };
         /** GetEvalNewApiRequest */
         GetEvalNewApiRequest: {
@@ -11241,6 +11285,10 @@ export interface components {
             rubric_grade_agent_active_states?: unknown | null;
             /** Rubric Grade Agent Positions */
             rubric_grade_agent_positions?: unknown | null;
+            /** Run Rubric Grade Agents */
+            run_rubric_grade_agents?: unknown | null;
+            /** Group Rubric Grade Agents */
+            group_rubric_grade_agents?: unknown | null;
         };
         /** GetEvalsListApiRequest */
         GetEvalsListApiRequest: Record<string, never>;
@@ -11276,6 +11324,8 @@ export interface components {
              * Format: uuid
              */
             field_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetFieldDetailApiResponse */
         GetFieldDetailApiResponse: {
@@ -11307,9 +11357,14 @@ export interface components {
             can_edit?: boolean | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetFieldNewApiRequest */
-        GetFieldNewApiRequest: Record<string, never>;
+        GetFieldNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetFieldNewApiResponse */
         GetFieldNewApiResponse: {
             /** Valid Department Ids */
@@ -11326,6 +11381,18 @@ export interface components {
             primary_department_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
         };
         /** GetFieldsListApiRequest */
         GetFieldsListApiRequest: Record<string, never>;
@@ -12763,6 +12830,8 @@ export interface components {
              * Format: uuid
              */
             rubric_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetRubricDetailApiResponse */
         GetRubricDetailApiResponse: {
@@ -12802,9 +12871,20 @@ export interface components {
             departments?: components["schemas"]["QGetRubricDetailV4Department"][] | null;
             /** Agents */
             agents?: components["schemas"]["QGetRubricDetailV4Agent"][] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Draft Standard Groups */
+            draft_standard_groups?: unknown | null;
+            /** Draft Standards */
+            draft_standards?: unknown | null;
+            /** Draft Grid Cells */
+            draft_grid_cells?: unknown | null;
         };
         /** GetRubricNewApiRequest */
-        GetRubricNewApiRequest: Record<string, never>;
+        GetRubricNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetRubricNewApiResponse */
         GetRubricNewApiResponse: {
             /** Name */
@@ -12843,6 +12923,14 @@ export interface components {
             departments?: components["schemas"]["QGetRubricNewV4Department"][] | null;
             /** Agents */
             agents?: components["schemas"]["QGetRubricNewV4Agent"][] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Draft Standard Groups */
+            draft_standard_groups?: unknown | null;
+            /** Draft Standards */
+            draft_standards?: unknown | null;
+            /** Draft Grid Cells */
+            draft_grid_cells?: unknown | null;
         };
         /** GetRubricsListApiRequest */
         GetRubricsListApiRequest: Record<string, never>;
@@ -14148,6 +14236,26 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
+        /** PatchFieldDraftApiRequest */
+        PatchFieldDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchFieldDraftApiResponse */
+        PatchFieldDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PatchKeyDraftApiRequest */
         PatchKeyDraftApiRequest: {
             /** Patch */
@@ -14221,6 +14329,26 @@ export interface components {
         };
         /** PatchProviderDraftApiResponse */
         PatchProviderDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchRubricDraftApiRequest */
+        PatchRubricDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchRubricDraftApiResponse */
+        PatchRubricDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -25516,6 +25644,42 @@ export interface operations {
             };
         };
     };
+    patch_rubric_draft_api_v4_rubrics_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchRubricDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchRubricDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_settings_api_v4_settings_list_post: {
         parameters: {
             query?: never;
@@ -27591,6 +27755,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteFieldApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_field_draft_api_v4_fields_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchFieldDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchFieldDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

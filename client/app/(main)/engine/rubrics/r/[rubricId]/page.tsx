@@ -10,6 +10,7 @@ import Rubric from "@/components/rubrics/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricDetailIn = InputOf<"/api/v4/rubrics/detail", "post">;
@@ -19,14 +20,19 @@ type RubricNewIn = InputOf<"/api/v4/rubrics/new", "post">;
 type RubricNewOut = OutputOf<"/api/v4/rubrics/new", "post">;
 type UpdateRubricIn = InputOf<"/api/v4/rubrics/update", "post">;
 type UpdateRubricOut = OutputOf<"/api/v4/rubrics/update", "post">;
+type PatchRubricDraftIn = InputOf<"/api/v4/rubrics/draft", "patch">;
+type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getRubric = async (rubricId: string): Promise<RubricDetailOut> => {
+const getRubric = async (
+  rubricId: string,
+  draftId: string | null
+): Promise<RubricDetailOut> => {
   return api.post(
     "/rubrics/detail",
-    { body: { rubricId } },
+    { body: { rubricId, draftId: draftId || null } },
     {
       cache: "no-store",
       headers: {
@@ -36,10 +42,12 @@ const getRubric = async (rubricId: string): Promise<RubricDetailOut> => {
   );
 };
 
-const getRubricDefault = async (): Promise<RubricNewOut> => {
+const getRubricDefault = async (
+  draftId: string | null
+): Promise<RubricNewOut> => {
   return api.post(
     "/rubrics/new",
-    { body: {} },
+    { body: { draftId: draftId || null } },
     {
       cache: "no-store",
       headers: {
@@ -76,17 +84,43 @@ export async function generateMetadata(
 /** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
 export default async function EditRubricPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ rubricId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { rubricId } = await params;
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch data based on mode (edit vs create)
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for rubric search params
+  const rubricSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadRubricSearchParams = createLoader(rubricSearchParams);
+  const q = loadRubricSearchParams(searchParamsObj);
+
+  // Fetch data based on mode (edit vs create) with draft_id
   try {
     const [rubricDetail, rubricNew] = await Promise.all([
-      rubricId ? getRubric(rubricId).catch(() => null) : Promise.resolve(null),
-      !rubricId ? getRubricDefault().catch(() => null) : Promise.resolve(null),
+      rubricId
+        ? getRubric(rubricId, q.draftId ?? null).catch(() => null)
+        : Promise.resolve(null),
+      !rubricId
+        ? getRubricDefault(q.draftId ?? null).catch(() => null)
+        : Promise.resolve(null),
     ]);
 
     return (
@@ -100,6 +134,7 @@ export default async function EditRubricPage({
           {...(rubricDetail && { rubricDetail })}
           {...(rubricNew && { rubricDetailDefault: rubricNew })}
           updateRubricAction={updateRubric}
+          patchRubricDraftAction={patchRubricDraft}
         />
       </div>
     );
@@ -132,6 +167,14 @@ async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
   return api.post("/rubrics/update", input);
 }
 
+async function patchRubricDraft(
+  input: PatchRubricDraftIn
+): Promise<PatchRubricDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/rubrics/draft", input);
+}
+
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   RubricDetailIn,
@@ -140,4 +183,6 @@ export type {
   RubricNewOut,
   UpdateRubricIn,
   UpdateRubricOut,
+  PatchRubricDraftIn,
+  PatchRubricDraftOut,
 };

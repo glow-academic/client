@@ -9010,6 +9010,145 @@ class DuplicateFieldApiResponse(BaseModel):
 
 
 
+# Generated from: get_field_detail
+
+class GetFieldDetailSqlParams(BaseModel):
+
+    field_id: UUID
+    profile_id: UUID
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.field_id,
+            self.profile_id,
+            self.draft_id,
+        )
+
+class QGetFieldDetailV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetFieldDetailV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetFieldDetailSqlRow(BaseModel):
+
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+    departments: list[QGetFieldDetailV4Department] | None = None
+    valid_department_ids: list[str] | None = None
+    parameters: list[QGetFieldDetailV4Parameter] | None = None
+    valid_parameter_ids: list[str] | None = None
+    can_edit: bool | None = None
+    actor_name: str | None = None
+    draft_version: int | None = None
+
+class GetFieldDetailApiRequest(BaseModel):
+
+    field_id: UUID
+    draft_id: UUID | None = None
+
+class GetFieldDetailApiResponse(BaseModel):
+
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+    departments: list[QGetFieldDetailV4Department] | None = None
+    valid_department_ids: list[str] | None = None
+    parameters: list[QGetFieldDetailV4Parameter] | None = None
+    valid_parameter_ids: list[str] | None = None
+    can_edit: bool | None = None
+    actor_name: str | None = None
+    draft_version: int | None = None
+
+
+
+# Generated from: get_field_new
+
+class GetFieldNewSqlParams(BaseModel):
+
+    profile_id: UUID
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.draft_id,
+        )
+
+class QGetFieldNewV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetFieldNewV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetFieldNewSqlRow(BaseModel):
+
+    valid_department_ids: list[str] | None = None
+    departments: list[QGetFieldNewV4Department] | None = None
+    valid_parameter_ids: list[str] | None = None
+    parameters: list[QGetFieldNewV4Parameter] | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
+    draft_version: int | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+
+class GetFieldNewApiRequest(BaseModel):
+
+    draft_id: UUID | None = None
+
+class GetFieldNewApiResponse(BaseModel):
+
+    valid_department_ids: list[str] | None = None
+    departments: list[QGetFieldNewV4Department] | None = None
+    valid_parameter_ids: list[str] | None = None
+    parameters: list[QGetFieldNewV4Parameter] | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
+    draft_version: int | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+
+
+
 # Generated from: get_fields_list
 
 class GetFieldsListSqlParams(BaseModel):
@@ -16745,11 +16884,13 @@ class GetRubricDetailSqlParams(BaseModel):
 
     rubric_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.rubric_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetRubricDetailV4Agent(BaseModel):
@@ -16812,10 +16953,15 @@ class GetRubricDetailSqlRow(BaseModel):
     standards: list[QGetRubricDetailV4Standard] | None = None
     departments: list[QGetRubricDetailV4Department] | None = None
     agents: list[QGetRubricDetailV4Agent] | None = None
+    draft_version: int | None = None
+    draft_standard_groups: Any | None = None
+    draft_standards: Any | None = None
+    draft_grid_cells: Any | None = None
 
 class GetRubricDetailApiRequest(BaseModel):
 
     rubric_id: UUID
+    draft_id: UUID | None = None
 
 class GetRubricDetailApiResponse(BaseModel):
 
@@ -16837,6 +16983,10 @@ class GetRubricDetailApiResponse(BaseModel):
     standards: list[QGetRubricDetailV4Standard] | None = None
     departments: list[QGetRubricDetailV4Department] | None = None
     agents: list[QGetRubricDetailV4Agent] | None = None
+    draft_version: int | None = None
+    draft_standard_groups: Any | None = None
+    draft_standards: Any | None = None
+    draft_grid_cells: Any | None = None
 
 
 
@@ -16845,10 +16995,12 @@ class GetRubricDetailApiResponse(BaseModel):
 class GetRubricNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetRubricNewV4Agent(BaseModel):
@@ -16911,10 +17063,14 @@ class GetRubricNewSqlRow(BaseModel):
     standards: list[QGetRubricNewV4Standard] | None = None
     departments: list[QGetRubricNewV4Department] | None = None
     agents: list[QGetRubricNewV4Agent] | None = None
+    draft_version: int | None = None
+    draft_standard_groups: Any | None = None
+    draft_standards: Any | None = None
+    draft_grid_cells: Any | None = None
 
 class GetRubricNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetRubricNewApiResponse(BaseModel):
 
@@ -16936,6 +17092,10 @@ class GetRubricNewApiResponse(BaseModel):
     standards: list[QGetRubricNewV4Standard] | None = None
     departments: list[QGetRubricNewV4Department] | None = None
     agents: list[QGetRubricNewV4Agent] | None = None
+    draft_version: int | None = None
+    draft_standard_groups: Any | None = None
+    draft_standards: Any | None = None
+    draft_grid_cells: Any | None = None
 
 
 
@@ -17237,6 +17397,43 @@ class GetRubricsListApiResponse(BaseModel):
     departments: list[QGetRubricsListV4Department] | None = None
     simulations: list[QGetRubricsListV4Simulation] | None = None
     simulation_options: list[QGetRubricsListV4Simulation] | None = None
+
+
+
+# Generated from: patch_rubric_draft
+
+class PatchRubricDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchRubricDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchRubricDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchRubricDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25329,6 +25526,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateFieldApiRequest",
         "DuplicateFieldApiResponse",
     ),
+    "app/sql/v4/fields/get_field_detail_complete.sql": (
+        "GetFieldDetailSqlParams",
+        "GetFieldDetailSqlRow",
+        "GetFieldDetailApiRequest",
+        "GetFieldDetailApiResponse",
+    ),
+    "app/sql/v4/fields/get_field_new_complete.sql": (
+        "GetFieldNewSqlParams",
+        "GetFieldNewSqlRow",
+        "GetFieldNewApiRequest",
+        "GetFieldNewApiResponse",
+    ),
     "app/sql/v4/fields/get_fields_list_complete.sql": (
         "GetFieldsListSqlParams",
         "GetFieldsListSqlRow",
@@ -26054,6 +26263,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricsListSqlRow",
         "GetRubricsListApiRequest",
         "GetRubricsListApiResponse",
+    ),
+    "app/sql/v4/rubric/patch_rubric_draft_complete.sql": (
+        "PatchRubricDraftSqlParams",
+        "PatchRubricDraftSqlRow",
+        "PatchRubricDraftApiRequest",
+        "PatchRubricDraftApiResponse",
     ),
     "app/sql/v4/rubric/rubric_generation_complete_complete.sql": (
         "RubricGenerationCompleteSqlParams",
@@ -27509,6 +27724,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/fields/get_field_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/fields/get_field_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/fields/get_fields_list_complete.sql"]
     ) -> SqlString: ...
 
@@ -28110,6 +28335,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/rubric/get_rubrics_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/rubric/patch_rubric_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -70,7 +70,7 @@ draft_payload_data AS (
         d.payload
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
-        AND d.resource_type = 'field'::draft_resource_type
+        AND d.resource_type = 'fields'::draft_resource_type
         AND d.profile_id = x.profile_id
 ),
 user_profile AS (

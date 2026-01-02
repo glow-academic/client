@@ -1,4 +1,4 @@
--- Patch field draft (create if not exists, patch if exists)
+-- Patch rubric draft (create if not exists, patch if exists)
 -- Function handles both create and patch logic
 
 BEGIN;
@@ -11,17 +11,17 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'api_patch_field_draft_v4'
+        WHERE proname = 'api_patch_rubric_draft_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_patch_field_draft_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_patch_rubric_draft_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
 -- 2) Recreate function (same as migration, but with parameter names matching API)
 -- Note: input_draft_id parameter renamed to avoid conflict with return column draft_id
 -- Note: patch parameter is text (not jsonb) to allow asyncpg to pass JSON strings directly
-CREATE OR REPLACE FUNCTION api_patch_field_draft_v4(
+CREATE OR REPLACE FUNCTION api_patch_rubric_draft_v4(
     profile_id uuid,
     patch text,
     expected_version int,
@@ -60,11 +60,14 @@ BEGIN
     -- If no input_draft_id or update failed (version mismatch), create new draft
     WITH defaults AS (
         SELECT jsonb_build_object(
-            'name', 'New Field',
+            'name', 'New Rubric',
             'description', '',
             'active', true,
             'departmentIds', jsonb_build_array(),
-            'conditionalParameterIds', jsonb_build_array()
+            'rubricAgentId', NULL,
+            'standardGroups', jsonb_build_array(),
+            'standards', jsonb_build_array(),
+            'gridCells', jsonb_build_array()
         ) AS d
     ),
     payload AS (
@@ -75,7 +78,7 @@ BEGIN
         SELECT v_profile_id AS p_profile_id
     )
     INSERT INTO drafts(resource_type, profile_id, payload)
-    SELECT 'fields'::draft_resource_type, p_profile_id, p
+    SELECT 'rubrics'::draft_resource_type, p_profile_id, p
     FROM payload, params
     RETURNING id, version INTO v_draft_id, v_new_version;
     

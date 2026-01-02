@@ -6567,6 +6567,87 @@
         ]
       }
     },
+    "/api/v4/rubrics/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "rubrics"
+        ],
+        "summary": "Patch Rubric Draft",
+        "description": "Patch rubric draft (creates if not exists).",
+        "operationId": "patch_rubric_draft_api_v4_rubrics_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchRubricDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchRubricDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
+      }
+    },
     "/api/v4/settings/list": {
       "post": {
         "tags": [
@@ -11244,6 +11325,87 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteFieldApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
+      }
+    },
+    "/api/v4/fields/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "fields"
+        ],
+        "summary": "Patch Field Draft",
+        "description": "Patch field draft (creates if not exists).",
+        "operationId": "patch_field_draft_api_v4_fields_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchFieldDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchFieldDraftApiResponse"
                 }
               }
             }
@@ -38226,6 +38388,24 @@
               }
             ],
             "title": "Rubric Grade Agent Positions"
+          },
+          "run_rubric_grade_agents": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Rubric Grade Agents"
+          },
+          "group_rubric_grade_agents": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Rubric Grade Agents"
           }
         },
         "type": "object",
@@ -38650,6 +38830,24 @@
               }
             ],
             "title": "Rubric Grade Agent Positions"
+          },
+          "run_rubric_grade_agents": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Rubric Grade Agents"
+          },
+          "group_rubric_grade_agents": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Rubric Grade Agents"
           }
         },
         "type": "object",
@@ -38823,6 +39021,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Field Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -39008,13 +39218,37 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           }
         },
         "type": "object",
         "title": "GetFieldDetailApiResponse"
       },
       "GetFieldNewApiRequest": {
-        "properties": {},
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
         "type": "object",
         "title": "GetFieldNewApiRequest"
       },
@@ -39109,6 +39343,78 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
           }
         },
         "type": "object",
@@ -46696,6 +47002,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Rubric Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -46930,13 +47248,64 @@
               }
             ],
             "title": "Agents"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "draft_standard_groups": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Standard Groups"
+          },
+          "draft_standards": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Standards"
+          },
+          "draft_grid_cells": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Grid Cells"
           }
         },
         "type": "object",
         "title": "GetRubricDetailApiResponse"
       },
       "GetRubricNewApiRequest": {
-        "properties": {},
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
         "type": "object",
         "title": "GetRubricNewApiRequest"
       },
@@ -47166,6 +47535,44 @@
               }
             ],
             "title": "Agents"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "draft_standard_groups": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Standard Groups"
+          },
+          "draft_standards": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Standards"
+          },
+          "draft_grid_cells": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Grid Cells"
           }
         },
         "type": "object",
@@ -53990,6 +54397,77 @@
         "type": "object",
         "title": "PatchEvalDraftApiResponse"
       },
+      "PatchFieldDraftApiRequest": {
+        "properties": {
+          "patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Patch"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patch",
+          "expected_version"
+        ],
+        "title": "PatchFieldDraftApiRequest"
+      },
+      "PatchFieldDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchFieldDraftApiResponse"
+      },
       "PatchKeyDraftApiRequest": {
         "properties": {
           "patch": {
@@ -54273,6 +54751,77 @@
         },
         "type": "object",
         "title": "PatchProviderDraftApiResponse"
+      },
+      "PatchRubricDraftApiRequest": {
+        "properties": {
+          "patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Patch"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patch",
+          "expected_version"
+        ],
+        "title": "PatchRubricDraftApiRequest"
+      },
+      "PatchRubricDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchRubricDraftApiResponse"
       },
       "PatchSimulationDraftApiRequest": {
         "properties": {

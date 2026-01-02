@@ -672,6 +672,60 @@ case "emails": {
 **Pattern for First Name Section**:
 The first name section is kept as a pre-form section (not a step) because it's always visible and doesn't fit the step pattern. It's rendered before GenericForm and uses draftState directly.
 
+### Rubric.tsx Migration
+
+**Before**: Custom step management with local useState (~1462 lines)
+- Custom step rendering with Card components
+- Local formData state for basic fields
+- Separate state for standardGroups, standards, gridCells
+- Manual step status calculation
+- No draft autosave support
+
+**After**: GenericForm with draft autosave (~1760 lines)
+- GenericForm with StepCard for all steps
+- DraftState type with nested objects (standardGroups, standards, gridCells)
+- Draft autosave with complex nested object handling
+- Proper extraction from draft payload (draft_standard_groups, draft_standards, draft_grid_cells)
+- Fallback to server data arrays when draft payload doesn't exist
+
+**Key Changes**:
+1. **DraftState with nested objects**: 
+   ```typescript
+   type DraftState = {
+     name: string;
+     description: string;
+     active: boolean;
+     departmentIds: string[];
+     rubricAgentId: string | null;
+     standardGroups: StandardGroup[];  // Nested array
+     standards: Standard[];  // Nested array
+     gridCells: GridCell[];  // Nested array
+   };
+   ```
+
+2. **Draft payload extraction**: Extract nested objects from SQL-returned JSONB fields (`draft_standard_groups`, `draft_standards`, `draft_grid_cells`), with fallback to extracting from server data arrays
+
+3. **Complex nested state management**: Handle standardGroups, standards, and gridCells as arrays in draft state, with proper initialization from both draft payload and server data
+
+4. **StepCard integration**: All steps use StepCard, including:
+   - Basic Info: Editable title, description, department picker, agent picker, active switch
+   - Standard Groups: RubricStandardGroupCardGrid component (kept as separate component for now)
+   - Group Configuration: RubricStandardSection components (kept as separate components for now)
+   - Preview: Grid table with generate button
+
+5. **GenericForm integration**: Uses URL params for draftId only, all form fields in draftState
+
+6. **Draft autosave**: Properly handles complex nested objects in draft payload, with transformation between hook API and backend API
+
+**Pattern for Complex Nested Objects**:
+Rubric demonstrates handling multiple nested arrays (standardGroups, standards, gridCells) in draft state:
+- Extract from draft payload JSONB fields first (if draft exists)
+- Fall back to extracting from server data arrays if draft payload doesn't exist
+- Preserve existing state when merging (similar to Simulation.tsx pattern)
+- Handle both array and object formats for backward compatibility (gridCells)
+
+**Reference Implementation**: See `client/components/rubrics/Rubric.tsx` for a complete example of complex form with nested objects.
+
 ## Best Practices
 
 1. **Separate URL params from draft state**: URL params for search/filter, draft state for form fields
