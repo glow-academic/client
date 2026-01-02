@@ -13217,6 +13217,8 @@ export interface components {
             simulation_text_agent_id?: string | null;
             /** Simulation Voice Agent Id */
             simulation_voice_agent_id?: string | null;
+            /** Member Agent Id */
+            member_agent_id?: string | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Duplicate */

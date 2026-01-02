@@ -816,6 +816,55 @@ agents_data AS (
         SELECT DISTINCT sas.id, sas.name, sas.description, sas.role
         FROM selected_agents_from_simulation sas
     ) filtered_agents
+),
+-- Auto-select default agents when there's only one option for each role (for new simulations or when simulation doesn't have agent set)
+valid_hint_agents AS (
+    SELECT DISTINCT a.id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'hint'::agent_role
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+valid_simulation_agents AS (
+    SELECT DISTINCT a.id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'simulation'::agent_role
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+valid_voice_agents AS (
+    SELECT DISTINCT a.id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'voice'::agent_role
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+default_hint_agent AS (
+    SELECT id FROM valid_hint_agents
+    WHERE (SELECT COUNT(*) FROM valid_hint_agents) = 1
+    LIMIT 1
+),
+default_simulation_agent AS (
+    SELECT id FROM valid_simulation_agents
+    WHERE (SELECT COUNT(*) FROM valid_simulation_agents) = 1
+    LIMIT 1
+),
+default_voice_agent AS (
+    SELECT id FROM valid_voice_agents
+    WHERE (SELECT COUNT(*) FROM valid_voice_agents) = 1
+    LIMIT 1
 )
 SELECT 
     (SELECT simulation_exists FROM simulation_exists_check) as simulation_exists,
@@ -868,17 +917,24 @@ SELECT
         (SELECT (payload->>'practice_simulation')::boolean FROM draft_payload_data),
         sb.practice_simulation
     ) as practice_simulation,
+    -- Auto-select agents: draft payload -> simulation value -> default from SQL (if only one option) -> NULL
     COALESCE(
         (SELECT (payload->>'hint_agent_id')::uuid FROM draft_payload_data),
-        sb.hint_agent_id
+        sb.hint_agent_id,
+        (SELECT id FROM default_hint_agent),
+        NULL::uuid
     ) as hint_agent_id,
     COALESCE(
         (SELECT (payload->>'simulation_text_agent_id')::uuid FROM draft_payload_data),
-        sb.simulation_text_agent_id
+        sb.simulation_text_agent_id,
+        (SELECT id FROM default_simulation_agent),
+        NULL::uuid
     ) as simulation_text_agent_id,
     COALESCE(
         (SELECT (payload->>'simulation_voice_agent_id')::uuid FROM draft_payload_data),
-        sb.simulation_voice_agent_id
+        sb.simulation_voice_agent_id,
+        (SELECT id FROM default_voice_agent),
+        NULL::uuid
     ) as simulation_voice_agent_id,
     CASE 
         WHEN COALESCE(sb.department_ids, NULL) IS NULL AND uc.role != 'superadmin' THEN false

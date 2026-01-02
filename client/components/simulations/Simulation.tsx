@@ -221,9 +221,10 @@ export default function Simulation({
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
-        rubric_id?: string | null;
-        grade_agent_id?: string | null; // Grade agent for this scenario's rubric
+        rubric_ids?: string[]; // Array of rubric IDs (multi-select)
+        grade_agent_ids?: string[]; // Array of grade agent IDs (multi-select) - will generate all permutations
         time_limit_seconds?: number | null;
+        time_limit_enabled?: boolean; // Track if time limit feature is enabled (separate from value)
       }
     >;
   };
@@ -233,10 +234,32 @@ export default function Simulation({
     const data = isEditMode ? simulationDetail : simulationDetailDefault;
 
     // Get scenarioIds from server data (draft payload if available, otherwise simulation data)
+    // Both SimulationDetailOut and SimulationNewOut have scenario_ids field
     const serverScenarioIds =
-      isEditMode && data && "scenario_ids" in data
-        ? (data as SimulationDetailOut).scenario_ids || []
+      data && "scenario_ids" in data
+        ? (data.scenario_ids || []).map(String)
         : [];
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "Simulation.tsx:237",
+        message: "Initializing scenarioIds from server",
+        data: {
+          isEditMode,
+          hasData: !!data,
+          hasScenarioIds: "scenario_ids" in (data || {}),
+          serverScenarioIds,
+          scenarioIdsFromData:
+            data && "scenario_ids" in data ? data.scenario_ids : null,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        hypothesisId: "D",
+      }),
+    }).catch(() => {});
+    // #endregion
 
     if (!data) {
       return {
@@ -264,21 +287,27 @@ export default function Simulation({
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
-        rubric_id?: string | null;
-        grade_agent_id?: string | null;
+        rubric_ids?: string[];
+        grade_agent_ids?: string[];
         time_limit_seconds?: number | null;
+        time_limit_enabled?: boolean;
       }
     > = {};
 
-    // Extract member_agent_id from first rubric_grade_agent (if available)
-    let memberAgentId: string | null = null;
+    // Member agent ID is now provided by server (auto-selected when there's only one option)
+    // For edit mode, fall back to extracting from first scenario's rubric_grade_agents if not provided by server
+    let memberAgentId: string | null =
+      (data && "member_agent_id" in data
+        ? (data.member_agent_id as string | null)
+        : null) || null;
     if (
+      !memberAgentId &&
       isEditMode &&
       simulationDetail &&
       "scenarios" in simulationDetail &&
       simulationDetail.scenarios
     ) {
-      // Find first scenario with rubric_grade_agents to get member agent
+      // Fallback: Find first scenario with rubric_grade_agents to get member agent
       const firstScenarioWithRubric = simulationDetail.scenarios.find(
         (s) =>
           s.rubric_grade_agents &&
@@ -305,13 +334,24 @@ export default function Simulation({
           const key = scenario.scenario_id;
           if (key) {
             scenarioActiveStates[key] = scenario.active ?? false;
-            // Extract rubric_id and grade_agent_id from rubric_grade_agents
-            const rubricGradeAgent =
+            // Extract rubric_ids and grade_agent_ids from rubric_grade_agents (support multiple)
+            const rubricGradeAgents =
               scenario.rubric_grade_agents &&
               Array.isArray(scenario.rubric_grade_agents) &&
               scenario.rubric_grade_agents.length > 0
-                ? scenario.rubric_grade_agents[0]
-                : null;
+                ? scenario.rubric_grade_agents
+                : [];
+            // Collect all unique rubric_ids and grade_agent_ids
+            const rubricIdsSet = new Set<string>();
+            const gradeAgentIdsSet = new Set<string>();
+            rubricGradeAgents.forEach((rga) => {
+              if (rga.rubric_id) {
+                rubricIdsSet.add(rga.rubric_id);
+              }
+              if (rga.grade_agent_id) {
+                gradeAgentIdsSet.add(rga.grade_agent_id);
+              }
+            });
             scenarioSettings[key] = {
               hints_enabled: scenario.hints_enabled ?? false,
               copy_paste_allowed:
@@ -325,9 +365,13 @@ export default function Simulation({
               text_enabled:
                 ("text_enabled" in scenario ? scenario.text_enabled : true) ??
                 true,
-              rubric_id: rubricGradeAgent?.rubric_id || null,
-              grade_agent_id: rubricGradeAgent?.grade_agent_id || null,
+              rubric_ids: Array.from(rubricIdsSet),
+              grade_agent_ids: Array.from(gradeAgentIdsSet),
               time_limit_seconds: scenario.time_limit_seconds ?? null,
+              // Infer time_limit_enabled from time_limit_seconds (if not null, it's enabled)
+              time_limit_enabled:
+                scenario.time_limit_seconds !== null &&
+                scenario.time_limit_seconds !== undefined,
             };
           }
         });
@@ -339,15 +383,11 @@ export default function Simulation({
       active: data.active ?? true,
       practiceSimulation: data.practice_simulation ?? false,
       departmentIds: data.department_ids || defaultDepartmentIds,
-      hint_agent_id: isEditMode
-        ? simulationDetail?.hint_agent_id || null
-        : null,
-      simulation_text_agent_id: isEditMode
-        ? simulationDetail?.simulation_text_agent_id || null
-        : null,
-      simulation_voice_agent_id: isEditMode
-        ? simulationDetail?.simulation_voice_agent_id || null
-        : null,
+      // Agent IDs are now auto-selected server-side when there's only one option
+      // Use server-provided values (which include auto-selected defaults)
+      hint_agent_id: data.hint_agent_id || null,
+      simulation_text_agent_id: data.simulation_text_agent_id || null,
+      simulation_voice_agent_id: data.simulation_voice_agent_id || null,
       member_agent_id: memberAgentId,
       scenarioIds: serverScenarioIds,
       scenarioActiveStates,
@@ -394,6 +434,58 @@ export default function Simulation({
     draftState,
     patchDraftAction: patchSimulationDraftAction
       ? async (input) => {
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "Simulation.tsx:396",
+                message: "patchDraftAction - entry",
+                data: {
+                  patch: input.body.patch,
+                  draftId: input.body.draft_id,
+                  expectedVersion: input.body.expected_version,
+                },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                hypothesisId: "B",
+              }),
+            }
+          ).catch(() => {});
+          // #endregion
+          // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case for some fields, camelCase for others)
+          // Based on SQL defaults: scenarioIds (camelCase), scenarioActiveStates (camelCase), scenarioSettings (camelCase),
+          // departmentIds (camelCase), practiceSimulation (camelCase), but hint_agent_id (snake_case), etc.
+          // Actually, looking at the SQL, it uses camelCase for arrays/objects and snake_case for IDs
+          // So we need to check what the actual SQL expects. For now, let's keep camelCase as-is since SQL defaults use camelCase
+          // But we should verify this matches what SQL expects
+          const transformedPatch: Record<string, unknown> = {};
+          Object.entries(input.body.patch as Record<string, unknown>).forEach(
+            ([key, value]) => {
+              // Keep camelCase keys as-is (scenarioIds, scenarioActiveStates, scenarioSettings, departmentIds, practiceSimulation)
+              // These match SQL defaults
+              transformedPatch[key] = value;
+            }
+          );
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "Simulation.tsx:405",
+                message: "patchDraftAction - transformed patch",
+                data: { originalPatch: input.body.patch, transformedPatch },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                hypothesisId: "B",
+              }),
+            }
+          ).catch(() => {});
+          // #endregion
           // Transform hook API → backend API
           // Hook API: { body: { draft_id, patch, expected_version } }
           // Backend API: { body: { input_draft_id, patch, expected_version } }
@@ -401,10 +493,31 @@ export default function Simulation({
           const result = await patchSimulationDraftAction({
             body: {
               input_draft_id: input.body.draft_id || null,
-              patch: input.body.patch as Record<string, unknown>,
+              patch: transformedPatch,
               expected_version: input.body.expected_version,
             } as PatchSimulationDraftIn["body"],
           });
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "Simulation.tsx:407",
+                message: "patchDraftAction - result",
+                data: {
+                  draftId: result.draft_id,
+                  newVersion: result.new_version,
+                  draftExists: result.draft_exists,
+                },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                hypothesisId: "B",
+              }),
+            }
+          ).catch(() => {});
+          // #endregion
           // Transform backend API → hook API
           // Backend API: { draft_id, new_version, draft_exists }
           // Hook API: { draftId, newVersion, draftExists }
@@ -468,12 +581,11 @@ export default function Simulation({
     );
   }, [simulationData?.departments]);
   // Extract agent mapping - create dict from array (composite types)
-  // Map to the expected type format: Record<string, { name: string; description: string; roles?: string[] }>
   // Always include selected agents even if they're not in the API response (for backward compatibility)
   const agentMapping = useMemo(() => {
     const mapped: Record<
       string,
-      { name: string; description: string; roles?: string[] }
+      { id: string; name: string; description: string; roles?: string[] }
     > = {};
 
     // Add agents from API response (arrays now)
@@ -487,11 +599,16 @@ export default function Simulation({
       mapped[key] =
         agent.roles && agent.roles.length > 0
           ? {
+              id: key,
               name: agent.name || "",
               description: agent.description || "",
               roles: agent.roles.map(String),
             }
-          : { name: agent.name || "", description: agent.description || "" };
+          : {
+              id: key,
+              name: agent.name || "",
+              description: agent.description || "",
+            };
     });
 
     // Add selected agents that aren't in the mapping (for backward compatibility)
@@ -501,6 +618,7 @@ export default function Simulation({
       !mapped[draftState.simulation_text_agent_id]
     ) {
       mapped[draftState.simulation_text_agent_id] = {
+        id: draftState.simulation_text_agent_id,
         name: `Agent ${draftState.simulation_text_agent_id.slice(0, 8)}...`,
         description: "Selected simulation agent",
         roles: [],
@@ -511,6 +629,7 @@ export default function Simulation({
       !mapped[draftState.simulation_voice_agent_id]
     ) {
       mapped[draftState.simulation_voice_agent_id] = {
+        id: draftState.simulation_voice_agent_id,
         name: `Agent ${draftState.simulation_voice_agent_id.slice(0, 8)}...`,
         description: "Selected voice agent",
         roles: [],
@@ -518,6 +637,7 @@ export default function Simulation({
     }
     if (draftState.hint_agent_id && !mapped[draftState.hint_agent_id]) {
       mapped[draftState.hint_agent_id] = {
+        id: draftState.hint_agent_id,
         name: `Agent ${draftState.hint_agent_id.slice(0, 8)}...`,
         description: "Selected hint agent",
         roles: [],
@@ -708,8 +828,8 @@ export default function Simulation({
     // Always include currently selected rubrics from draftState (for edit mode - ensures selected items are visible)
     const selectedRubricIdSet = new Set<string>();
     Object.values(draftState.scenarioSettings).forEach((settings) => {
-      if (settings.rubric_id) {
-        selectedRubricIdSet.add(settings.rubric_id);
+      if (settings.rubric_ids && settings.rubric_ids.length > 0) {
+        settings.rubric_ids.forEach((id) => selectedRubricIdSet.add(id));
       }
     });
 
@@ -791,12 +911,16 @@ export default function Simulation({
 
     // Add selected rubrics from draftState that aren't in the mapping
     Object.values(draftState.scenarioSettings).forEach((settings) => {
-      if (settings.rubric_id && !mapped[settings.rubric_id]) {
-        mapped[settings.rubric_id] = {
-          id: settings.rubric_id,
-          name: `Rubric ${settings.rubric_id.slice(0, 8)}...`,
-          description: "Selected rubric",
-        };
+      if (settings.rubric_ids && settings.rubric_ids.length > 0) {
+        settings.rubric_ids.forEach((rubricId) => {
+          if (rubricId && !mapped[rubricId]) {
+            mapped[rubricId] = {
+              id: rubricId,
+              name: `Rubric ${rubricId.slice(0, 8)}...`,
+              description: "Selected rubric",
+            };
+          }
+        });
       }
     });
 
@@ -835,91 +959,7 @@ export default function Simulation({
   // Note: scenarioIds is now only in draftState, not URL params
 
   // Initialize content active states and switch states from server data
-
-  // Auto-select agents when there's only one option available (similar to Scenario.tsx)
-  useEffect(() => {
-    if (!simulationData || !agentMapping) {
-      return;
-    }
-
-    const hintAgentIds =
-      validAgentIds.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("hint");
-      }) || [];
-
-    const simulationTextAgentIds =
-      validAgentIds.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("simulation");
-      }) || [];
-
-    const simulationVoiceAgentIds =
-      validAgentIds.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("voice");
-      }) || [];
-
-    const memberAgentIds =
-      validAgentIds.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("member");
-      }) || [];
-
-    // Auto-select first hint agent if only one option and not already set
-    if (
-      hintAgentIds.length === 1 &&
-      (!draftState.hint_agent_id || draftState.hint_agent_id === null)
-    ) {
-      setDraftState((prev) => ({
-        ...prev,
-        hint_agent_id: hintAgentIds[0] || null,
-      }));
-    }
-
-    // Auto-select first simulation text agent if only one option and not already set
-    if (
-      simulationTextAgentIds.length === 1 &&
-      (!draftState.simulation_text_agent_id ||
-        draftState.simulation_text_agent_id === null)
-    ) {
-      setDraftState((prev) => ({
-        ...prev,
-        simulation_text_agent_id: simulationTextAgentIds[0] || null,
-      }));
-    }
-
-    // Auto-select first simulation voice agent if only one option and not already set
-    if (
-      simulationVoiceAgentIds.length === 1 &&
-      (!draftState.simulation_voice_agent_id ||
-        draftState.simulation_voice_agent_id === null)
-    ) {
-      setDraftState((prev) => ({
-        ...prev,
-        simulation_voice_agent_id: simulationVoiceAgentIds[0] || null,
-      }));
-    }
-
-    // Auto-select first member agent if only one option and not already set
-    if (
-      memberAgentIds.length === 1 &&
-      (!draftState.member_agent_id || draftState.member_agent_id === null)
-    ) {
-      setDraftState((prev) => ({
-        ...prev,
-        member_agent_id: memberAgentIds[0] || null,
-      }));
-    }
-  }, [
-    simulationData,
-    agentMapping,
-    validAgentIds,
-    draftState.hint_agent_id,
-    draftState.simulation_text_agent_id,
-    draftState.simulation_voice_agent_id,
-    draftState.member_agent_id,
-  ]);
+  // Note: Agent auto-selection is now handled server-side in get_simulation_new_complete.sql and get_simulation_detail_complete.sql
 
   // Clear scenarios that are no longer valid after department changes
   // Use ref to track previous validScenarioIds to prevent loops
@@ -1022,25 +1062,33 @@ export default function Simulation({
           scenario_text_enabled.push(settings.text_enabled ?? true);
           scenario_time_limit_seconds.push(settings.time_limit_seconds ?? 0);
 
-          // Build rubric_grade_agents with rubric_id and grade_agent_id
-          const rubricId = settings.rubric_id;
-          // Use grade_agent_id from scenario settings, or fall back to member_agent_id for saving
-          // (member_agent_id is used as fallback when creating rubric_grade_agents entries)
-          const gradeAgentId =
-            settings.grade_agent_id || draftState.member_agent_id || null;
-          if (
-            rubricId &&
-            rubricId !== "00000000-0000-0000-0000-000000000000" &&
-            gradeAgentId &&
-            gradeAgentId !== "00000000-0000-0000-0000-000000000000"
-          ) {
-            scenario_rubric_grade_agents.push({
-              scenario_id: scenarioId,
-              rubric_id: rubricId,
-              grade_agent_id: gradeAgentId,
-              audio_agent_id: null, // TODO: Add UI to select audio agent if needed
+          // Build rubric_grade_agents with all permutations of rubric_ids and grade_agent_ids
+          const rubricIds = settings.rubric_ids || [];
+          const gradeAgentIds = settings.grade_agent_ids || [];
+
+          // Generate all permutations of rubric_ids × grade_agent_ids
+          rubricIds.forEach((rubricId) => {
+            if (
+              !rubricId ||
+              rubricId === "00000000-0000-0000-0000-000000000000"
+            ) {
+              return;
+            }
+            gradeAgentIds.forEach((gradeAgentId) => {
+              if (
+                !gradeAgentId ||
+                gradeAgentId === "00000000-0000-0000-0000-000000000000"
+              ) {
+                return;
+              }
+              scenario_rubric_grade_agents.push({
+                scenario_id: scenarioId,
+                rubric_id: rubricId,
+                grade_agent_id: gradeAgentId,
+                audio_agent_id: null, // TODO: Add UI to select audio agent if needed
+              });
             });
-          }
+          });
         });
 
         if (simulationId) {
@@ -1706,19 +1754,93 @@ export default function Simulation({
               selectedId={null}
               selectedIds={selectedScenarioIds}
               onSelect={(scenarioId) => {
+                // #region agent log
+                fetch(
+                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      location: "Simulation.tsx:1708",
+                      message: "Scenario selection - entry",
+                      data: {
+                        scenarioId,
+                        isSelected: selectedScenarioIds.includes(scenarioId),
+                        currentIds: selectedScenarioIds,
+                      },
+                      timestamp: Date.now(),
+                      sessionId: "debug-session",
+                      hypothesisId: "A",
+                    }),
+                  }
+                ).catch(() => {});
+                // #endregion
                 const isSelected = selectedScenarioIds.includes(scenarioId);
                 // Prevent unselection if can_remove is false
                 if (isSelected && scenarioCanRemoveMap[scenarioId] === false) {
+                  // #region agent log
+                  fetch(
+                    "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        location: "Simulation.tsx:1711",
+                        message: "Scenario selection - prevented unselection",
+                        data: {
+                          scenarioId,
+                          canRemove: scenarioCanRemoveMap[scenarioId],
+                        },
+                        timestamp: Date.now(),
+                        sessionId: "debug-session",
+                        hypothesisId: "A",
+                      }),
+                    }
+                  ).catch(() => {});
+                  // #endregion
                   return;
                 }
                 const newIds = isSelected
                   ? selectedScenarioIds.filter((id) => id !== scenarioId)
                   : [...selectedScenarioIds, scenarioId];
-                // Update draftState (scenarioIds is draft data, not URL param)
-                setStepFormData({
-                  scenarioIds: newIds.length > 0 ? newIds : null,
+                // #region agent log
+                fetch(
+                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      location: "Simulation.tsx:1716",
+                      message: "Scenario selection - before state update",
+                      data: { newIds, isSelected },
+                      timestamp: Date.now(),
+                      sessionId: "debug-session",
+                      hypothesisId: "A",
+                    }),
+                  }
+                ).catch(() => {});
+                // #endregion
+                // Update draftState (scenarioIds is draft data, not URL param - don't call setStepFormData)
+                setDraftState((prev) => {
+                  // #region agent log
+                  fetch(
+                    "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        location: "Simulation.tsx:1721",
+                        message: "Scenario selection - updating draftState",
+                        data: { prevScenarioIds: prev.scenarioIds, newIds },
+                        timestamp: Date.now(),
+                        sessionId: "debug-session",
+                        hypothesisId: "A",
+                      }),
+                    }
+                  ).catch(() => {});
+                  // #endregion
+                  return { ...prev, scenarioIds: newIds };
                 });
-                setDraftState((prev) => ({ ...prev, scenarioIds: newIds }));
               }}
               getId={(scenario) => scenario.scenario_id}
               renderItem={(scenario, isSelected) => (
@@ -1804,16 +1926,22 @@ export default function Simulation({
                 ("text_enabled" in simulationScenario
                   ? simulationScenario.text_enabled
                   : true) ?? true,
-              rubric_id: null, // rubric_id is now per-scenario via rubric_grade_agents
+              rubric_ids: [],
+              grade_agent_ids: [],
               time_limit_seconds: simulationScenario.time_limit_seconds ?? null,
+              time_limit_enabled:
+                simulationScenario.time_limit_seconds !== null &&
+                simulationScenario.time_limit_seconds !== undefined,
             }
           : {
               hints_enabled: false,
               copy_paste_allowed: false,
               audio_enabled: false,
               text_enabled: true,
-              rubric_id: null,
+              rubric_ids: [],
+              grade_agent_ids: [],
               time_limit_seconds: null,
+              time_limit_enabled: false,
             })
       );
     },
@@ -2353,8 +2481,12 @@ export default function Simulation({
                   const timeLimitMinutes = settings.time_limit_seconds
                     ? Math.round(settings.time_limit_seconds / 60)
                     : null;
+                  // Use time_limit_enabled flag if available, otherwise infer from time_limit_seconds (backward compatibility)
                   const hasTimeLimit =
-                    timeLimitMinutes !== null && timeLimitMinutes > 0;
+                    settings.time_limit_enabled !== undefined
+                      ? settings.time_limit_enabled
+                      : settings.time_limit_seconds !== null &&
+                        settings.time_limit_seconds !== undefined;
 
                   return (
                     <Card key={scenarioId} className="p-4">
@@ -2381,16 +2513,78 @@ export default function Simulation({
                               id={`${scenarioId}-time-limit-toggle`}
                               checked={hasTimeLimit}
                               onCheckedChange={(checked) => {
-                                setDraftState((prev) => ({
-                                  ...prev,
-                                  scenarioSettings: {
+                                // #region agent log
+                                fetch(
+                                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      location: "Simulation.tsx:2383",
+                                      message: "Time limit toggle - entry",
+                                      data: {
+                                        scenarioId,
+                                        checked,
+                                        currentTimeLimit:
+                                          settings.time_limit_seconds,
+                                      },
+                                      timestamp: Date.now(),
+                                      sessionId: "debug-session",
+                                      hypothesisId: "C",
+                                    }),
+                                  }
+                                ).catch(() => {});
+                                // #endregion
+                                setDraftState((prev) => {
+                                  const currentSettings =
+                                    prev.scenarioSettings[scenarioId] || {};
+                                  const newSettings = {
                                     ...prev.scenarioSettings,
                                     [scenarioId]: {
-                                      ...prev.scenarioSettings[scenarioId],
-                                      time_limit_seconds: checked ? 60 : null, // Default to 1 minute if enabling
+                                      ...currentSettings,
+                                      time_limit_enabled: checked,
+                                      time_limit_seconds: checked
+                                        ? currentSettings.time_limit_seconds ||
+                                          60 // Preserve existing value if enabling, default to 60 if none
+                                        : null, // Set to null when disabling
                                     },
-                                  },
-                                }));
+                                  };
+                                  // #region agent log
+                                  const updatedSettings =
+                                    newSettings[scenarioId];
+                                  fetch(
+                                    "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        location: "Simulation.tsx:2390",
+                                        message:
+                                          "Time limit toggle - updating state",
+                                        data: {
+                                          scenarioId,
+                                          checked,
+                                          newTimeLimit:
+                                            updatedSettings?.time_limit_seconds,
+                                          timeLimitEnabled:
+                                            updatedSettings?.time_limit_enabled,
+                                        },
+                                        timestamp: Date.now(),
+                                        sessionId: "debug-session",
+                                        hypothesisId: "C",
+                                      }),
+                                    }
+                                  ).catch(() => {});
+                                  // #endregion
+                                  return {
+                                    ...prev,
+                                    scenarioSettings: newSettings,
+                                  };
+                                });
                               }}
                               disabled={isReadonly}
                             />
@@ -2403,20 +2597,83 @@ export default function Simulation({
                             max="120"
                             value={timeLimitMinutes || ""}
                             onChange={(e) => {
-                              const minutes = parseInt(e.target.value, 10);
-                              setDraftState((prev) => ({
-                                ...prev,
-                                scenarioSettings: {
-                                  ...prev.scenarioSettings,
-                                  [scenarioId]: {
-                                    ...prev.scenarioSettings[scenarioId],
-                                    time_limit_seconds:
-                                      minutes && minutes > 0
-                                        ? minutes * 60
-                                        : null,
+                              // #region agent log
+                              fetch(
+                                "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
                                   },
-                                },
-                              }));
+                                  body: JSON.stringify({
+                                    location: "Simulation.tsx:2405",
+                                    message: "Time limit input - onChange",
+                                    data: {
+                                      scenarioId,
+                                      value: e.target.value,
+                                      isEmpty: e.target.value === "",
+                                    },
+                                    timestamp: Date.now(),
+                                    sessionId: "debug-session",
+                                    hypothesisId: "C",
+                                  }),
+                                }
+                              ).catch(() => {});
+                              // #endregion
+                              const minutes =
+                                e.target.value === ""
+                                  ? null
+                                  : parseInt(e.target.value, 10);
+                              setDraftState((prev) => {
+                                const currentSettings =
+                                  prev.scenarioSettings[scenarioId] || {};
+                                // If input is empty, set to null but keep time_limit_enabled true (switch stays on)
+                                // If input has value, convert to seconds
+                                const newTimeLimit =
+                                  minutes && minutes > 0 ? minutes * 60 : null;
+                                // #region agent log
+                                fetch(
+                                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      location: "Simulation.tsx:2407",
+                                      message:
+                                        "Time limit input - updating state",
+                                      data: {
+                                        scenarioId,
+                                        minutes,
+                                        newTimeLimit,
+                                        timeLimitEnabled:
+                                          currentSettings.time_limit_enabled,
+                                      },
+                                      timestamp: Date.now(),
+                                      sessionId: "debug-session",
+                                      hypothesisId: "C",
+                                    }),
+                                  }
+                                ).catch(() => {});
+                                // #endregion
+                                return {
+                                  ...prev,
+                                  scenarioSettings: {
+                                    ...prev.scenarioSettings,
+                                    [scenarioId]: {
+                                      ...currentSettings,
+                                      time_limit_seconds: newTimeLimit,
+                                      // Preserve time_limit_enabled flag (don't change it when input changes)
+                                      time_limit_enabled:
+                                        currentSettings.time_limit_enabled !==
+                                        undefined
+                                          ? currentSettings.time_limit_enabled
+                                          : true, // Default to enabled if not set (backward compatibility)
+                                    },
+                                  },
+                                };
+                              });
                             }}
                             placeholder="Enter minutes"
                             disabled={isReadonly}
@@ -2457,17 +2714,16 @@ export default function Simulation({
                   const settings = getScenarioSettings(scenarioId);
 
                   // Grade agent picker only shows grade agents (no member_agent_id fallback)
-                  // Validate that gradeAgentId is actually a grade agent before showing as selected
                   const gradeAgentIds = validAgentIds.filter((id) => {
                     const agent = agentMapping[id];
                     return agent?.roles?.includes("grade");
                   });
-                  const gradeAgentId = settings.grade_agent_id || null;
-                  // Only show as selected if it's actually a grade agent
-                  const validGradeAgentId =
-                    gradeAgentId && gradeAgentIds.includes(gradeAgentId)
-                      ? gradeAgentId
-                      : null;
+                  const selectedGradeAgentIds = settings.grade_agent_ids || [];
+                  // Filter to only valid grade agents
+                  const validGradeAgentIds = selectedGradeAgentIds.filter(
+                    (id: string) => gradeAgentIds.includes(id)
+                  );
+                  const selectedRubricIds = settings.rubric_ids || [];
 
                   return (
                     <Card key={scenarioId} className="p-4">
@@ -2481,45 +2737,66 @@ export default function Simulation({
                           </p>
                         )}
                         <div className="space-y-2">
-                          <Label className="text-xs">Rubric</Label>
+                          <Label className="text-xs">
+                            Rubrics (Multi-select)
+                          </Label>
                           <GenericPicker
                             items={rubricMapping}
                             itemIds={validRubricIds}
-                            selectedIds={
-                              settings.rubric_id ? [settings.rubric_id] : []
-                            }
+                            selectedIds={selectedRubricIds}
                             onSelect={(ids) => {
-                              setDraftState((prev) => ({
-                                ...prev,
-                                scenarioSettings: {
-                                  ...prev.scenarioSettings,
-                                  [scenarioId]: {
-                                    ...prev.scenarioSettings[scenarioId],
-                                    rubric_id: ids[0] || null,
+                              setDraftState((prev) => {
+                                const currentSettings =
+                                  prev.scenarioSettings[scenarioId] || {};
+                                const newSettings = {
+                                  ...currentSettings,
+                                  rubric_ids: ids.length > 0 ? ids : [],
+                                };
+                                // Remove old rubric_id field if new format is used
+                                if (newSettings.rubric_ids.length > 0) {
+                                  delete (
+                                    newSettings as { rubric_id?: string | null }
+                                  ).rubric_id;
+                                }
+                                return {
+                                  ...prev,
+                                  scenarioSettings: {
+                                    ...prev.scenarioSettings,
+                                    [scenarioId]: newSettings,
                                   },
-                                },
-                              }));
+                                };
+                              });
                             }}
-                            getId={(item) => item.id}
-                            getLabel={(item) => item.name || ""}
-                            getSearchText={(item) =>
-                              `${item.name} ${item.description || ""}`
-                            }
-                            placeholder="Select rubric"
+                            getId={(item: {
+                              id: string;
+                              name: string;
+                              description?: string;
+                            }) => item.id}
+                            getLabel={(item: {
+                              id: string;
+                              name: string;
+                              description?: string;
+                            }) => item.name || ""}
+                            getSearchText={(item: {
+                              id: string;
+                              name: string;
+                              description?: string;
+                            }) => `${item.name} ${item.description || ""}`}
+                            placeholder="Select rubrics"
                             disabled={isReadonly}
-                            multiSelect={false}
-                            hideSelectedChips={true}
+                            multiSelect={true}
+                            hideSelectedChips={false}
                             buttonClassName="w-full"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">Grade Agent</Label>
+                          <Label className="text-xs">
+                            Grade Agents (Multi-select)
+                          </Label>
                           <GenericPicker
                             items={agentMapping}
                             itemIds={gradeAgentIds}
-                            selectedIds={
-                              validGradeAgentId ? [validGradeAgentId] : []
-                            }
+                            selectedIds={validGradeAgentIds}
                             onSelect={(ids) => {
                               setDraftState((prev) => ({
                                 ...prev,
@@ -2527,22 +2804,33 @@ export default function Simulation({
                                   ...prev.scenarioSettings,
                                   [scenarioId]: {
                                     ...prev.scenarioSettings[scenarioId],
-                                    grade_agent_id: ids[0] || null,
+                                    grade_agent_ids: ids.length > 0 ? ids : [],
                                   },
                                 },
                               }));
                             }}
-                            getId={(item) =>
-                              (item as unknown as { id: string }).id
-                            }
-                            getLabel={(item) => item.name || ""}
-                            getSearchText={(item) =>
-                              `${item.name} ${item.description || ""}`
-                            }
-                            placeholder="Select grade agent"
+                            getId={(item: {
+                              id: string;
+                              name: string;
+                              description: string;
+                              roles?: string[];
+                            }) => item.id}
+                            getLabel={(item: {
+                              id: string;
+                              name: string;
+                              description: string;
+                              roles?: string[];
+                            }) => item.name || ""}
+                            getSearchText={(item: {
+                              id: string;
+                              name: string;
+                              description: string;
+                              roles?: string[];
+                            }) => `${item.name} ${item.description || ""}`}
+                            placeholder="Select grade agents"
                             disabled={isReadonly}
-                            multiSelect={false}
-                            hideSelectedChips={true}
+                            multiSelect={true}
+                            hideSelectedChips={false}
                             buttonClassName="w-full"
                           />
                         </div>

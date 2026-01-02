@@ -49647,6 +49647,18 @@
             ],
             "title": "Simulation Voice Agent Id"
           },
+          "member_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Agent Id"
+          },
           "can_edit": {
             "anyOf": [
               {

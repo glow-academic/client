@@ -21951,6 +21951,7 @@ class GetSimulationNewSqlRow(BaseModel):
     hint_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
+    member_agent_id: UUID | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
@@ -21992,6 +21993,7 @@ class GetSimulationNewApiResponse(BaseModel):
     hint_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
+    member_agent_id: UUID | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None

@@ -7,15 +7,15 @@ BEGIN;
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
-    r RECORD;
+    func_rec RECORD;
 BEGIN
-    FOR r IN 
+    FOR func_rec IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
         WHERE proname = 'api_get_simulation_new_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_simulation_new_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_simulation_new_v4(%s)', func_rec.sig);
     END LOOP;
 END $$;
 
@@ -164,6 +164,7 @@ RETURNS TABLE (
     hint_agent_id uuid,
     simulation_text_agent_id uuid,
     simulation_voice_agent_id uuid,
+    member_agent_id uuid,
     can_edit boolean,
     can_duplicate boolean,
     can_delete boolean,
@@ -520,6 +521,79 @@ agents_data AS (
         JOIN agents a ON a.id = r.rubric_agent_id AND a.role = 'member'::agent_role
         WHERE a.active = true AND r.rubric_agent_id IS NOT NULL
     ) filtered_agents
+),
+-- Auto-select default agents when there's only one option for each role
+valid_hint_agents AS (
+    SELECT DISTINCT a.id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'hint'::agent_role
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+valid_simulation_agents AS (
+    SELECT DISTINCT a.id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'simulation'::agent_role
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+valid_voice_agents AS (
+    SELECT DISTINCT a.id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'voice'::agent_role
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+valid_member_agents AS (
+    SELECT DISTINCT a.id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'member'::agent_role
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    UNION
+    -- Get rubric agents (member role) from rubrics.rubric_agent_id
+    SELECT DISTINCT a.id
+    FROM rubrics r
+    JOIN agents a ON a.id = r.rubric_agent_id AND a.role = 'member'::agent_role
+    WHERE a.active = true 
+    AND r.active = true
+    AND r.rubric_agent_id IS NOT NULL
+),
+default_hint_agent AS (
+    SELECT id FROM valid_hint_agents
+    WHERE (SELECT COUNT(*) FROM valid_hint_agents) = 1
+    LIMIT 1
+),
+default_simulation_agent AS (
+    SELECT id FROM valid_simulation_agents
+    WHERE (SELECT COUNT(*) FROM valid_simulation_agents) = 1
+    LIMIT 1
+),
+default_voice_agent AS (
+    SELECT id FROM valid_voice_agents
+    WHERE (SELECT COUNT(*) FROM valid_voice_agents) = 1
+    LIMIT 1
+),
+default_member_agent AS (
+    SELECT id FROM valid_member_agents
+    WHERE (SELECT COUNT(*) FROM valid_member_agents) = 1
+    LIMIT 1
 )
 SELECT 
     up.actor_name::text as actor_name,
@@ -576,18 +650,28 @@ SELECT
         (SELECT (payload->>'practice_simulation')::boolean FROM draft_payload_data),
         false
     ) as practice_simulation,
+    -- Auto-select agents: draft payload -> default from SQL (if only one option) -> NULL
     COALESCE(
         (SELECT (payload->>'hint_agent_id')::uuid FROM draft_payload_data),
+        (SELECT id FROM default_hint_agent),
         NULL::uuid
     ) as hint_agent_id,
     COALESCE(
         (SELECT (payload->>'simulation_text_agent_id')::uuid FROM draft_payload_data),
+        (SELECT id FROM default_simulation_agent),
         NULL::uuid
     ) as simulation_text_agent_id,
     COALESCE(
         (SELECT (payload->>'simulation_voice_agent_id')::uuid FROM draft_payload_data),
+        (SELECT id FROM default_voice_agent),
         NULL::uuid
     ) as simulation_voice_agent_id,
+    -- Auto-select member agent: draft payload -> default from SQL (if only one option) -> NULL
+    COALESCE(
+        (SELECT (payload->>'member_agent_id')::uuid FROM draft_payload_data),
+        (SELECT id FROM default_member_agent),
+        NULL::uuid
+    ) as member_agent_id,
     CASE 
         WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
