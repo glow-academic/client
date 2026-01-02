@@ -94,7 +94,8 @@ CREATE TYPE types.q_get_cohort_detail_v4_department AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_cohort_detail_v4(
     cohort_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     cohort_exists boolean,
@@ -119,7 +120,18 @@ AS $$
 WITH params AS (
     SELECT
         cohort_id AS cohort_id,
-        profile_id AS profile_id
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'cohorts'::draft_resource_type
+    LIMIT 1
 ),
 cohort_exists_check AS (
     -- Check if cohort exists independently of access control
@@ -163,11 +175,19 @@ cohort_department_access_check AS (
 cohort_data AS (
     SELECT 
         c.id,
-        c.title,
-        c.description,
-        c.active,
+        COALESCE((SELECT payload->>'title' FROM draft_payload_data), c.title, '') as title,
+        COALESCE((SELECT payload->>'description' FROM draft_payload_data), c.description, '') as description,
+        COALESCE((SELECT (payload->>'active')::boolean FROM draft_payload_data), c.active, true) as active,
         c.updated_at,
-        COALESCE(cdd.department_ids, NULL) as department_ids
+        COALESCE(
+            CASE 
+                WHEN EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'department_ids') 
+                THEN (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids')) FROM draft_payload_data)
+                ELSE NULL
+            END,
+            cdd.department_ids,
+            NULL
+        ) as department_ids
     FROM params x
     JOIN cohorts c ON c.id = x.cohort_id
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id

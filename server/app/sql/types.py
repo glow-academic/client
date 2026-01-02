@@ -5971,11 +5971,13 @@ class GetCohortDetailSqlParams(BaseModel):
 
     cohort_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.cohort_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetCohortDetailV4Department(BaseModel):
@@ -6033,6 +6035,7 @@ class GetCohortDetailSqlRow(BaseModel):
 class GetCohortDetailApiRequest(BaseModel):
 
     cohort_id: UUID
+    draft_id: UUID | None = None
 
 class GetCohortDetailApiResponse(BaseModel):
 
@@ -6059,10 +6062,12 @@ class GetCohortDetailApiResponse(BaseModel):
 class GetCohortNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetCohortNewV4Cohort(BaseModel):
@@ -6149,7 +6154,7 @@ class GetCohortNewSqlRow(BaseModel):
 
 class GetCohortNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetCohortNewApiResponse(BaseModel):
 
@@ -6355,6 +6360,43 @@ class LeaveCohortApiResponse(BaseModel):
 
     cohort_title: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: patch_cohort_draft
+
+class PatchCohortDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchCohortDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchCohortDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchCohortDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -24648,6 +24690,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LeaveCohortApiRequest",
         "LeaveCohortApiResponse",
     ),
+    "app/sql/v4/cohorts/patch_cohort_draft_complete.sql": (
+        "PatchCohortDraftSqlParams",
+        "PatchCohortDraftSqlRow",
+        "PatchCohortDraftApiRequest",
+        "PatchCohortDraftApiResponse",
+    ),
     "app/sql/v4/cohorts/update_cohort_complete.sql": (
         "UpdateCohortSqlParams",
         "UpdateCohortSqlRow",
@@ -26816,6 +26864,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/leave_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/cohorts/patch_cohort_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

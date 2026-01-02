@@ -69,7 +69,10 @@ async def get_cohort_detail(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetCohortDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetCohortDetailSqlParams(
+            **request.model_dump(),
+            profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present

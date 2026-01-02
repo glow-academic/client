@@ -68,7 +68,10 @@ async def get_cohort_new(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetCohortNewSqlParams(profile_id=uuid.UUID(profile_id))
+        params = GetCohortNewSqlParams(
+            profile_id=uuid.UUID(profile_id),
+            draft_id=request.draft_id
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present

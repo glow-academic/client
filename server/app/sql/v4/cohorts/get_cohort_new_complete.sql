@@ -114,7 +114,8 @@ CREATE TYPE types.q_get_cohort_new_v4_department AS (
 
 -- 4) Recreate function (reuses detail simulation types)
 CREATE OR REPLACE FUNCTION api_get_cohort_new_v4(
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     title text,
@@ -141,7 +142,19 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'cohorts'::draft_resource_type
+    LIMIT 1
 ),
 user_departments AS (
     SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
@@ -171,10 +184,18 @@ cohort_departments_data AS (
 cohort_data AS (
     SELECT 
         c.id,
-        c.title,
-        c.description,
-        c.active,
-        COALESCE(cdd.department_ids, NULL) as department_ids
+        COALESCE((SELECT payload->>'title' FROM draft_payload_data), c.title, '') as title,
+        COALESCE((SELECT payload->>'description' FROM draft_payload_data), c.description, '') as description,
+        COALESCE((SELECT (payload->>'active')::boolean FROM draft_payload_data), c.active, true) as active,
+        COALESCE(
+            CASE 
+                WHEN EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'department_ids') 
+                THEN (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids')) FROM draft_payload_data)
+                ELSE NULL
+            END,
+            cdd.department_ids,
+            NULL
+        ) as department_ids
     FROM default_cohort dc
     JOIN cohorts c ON c.id = dc.id
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id

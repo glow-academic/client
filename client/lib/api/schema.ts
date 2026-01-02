@@ -1128,6 +1128,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/cohorts/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Cohort Draft
+         * @description Patch cohort draft (creates if not exists).
+         */
+        patch: operations["patch_cohort_draft_api_v4_cohorts_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/documents/list": {
         parameters: {
             query?: never;
@@ -10400,6 +10420,8 @@ export interface components {
              * Format: uuid
              */
             cohort_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetCohortDetailApiResponse */
         GetCohortDetailApiResponse: {
@@ -10435,7 +10457,10 @@ export interface components {
             actor_name?: string | null;
         };
         /** GetCohortNewApiRequest */
-        GetCohortNewApiRequest: Record<string, never>;
+        GetCohortNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetCohortNewApiResponse */
         GetCohortNewApiResponse: {
             /** Title */
@@ -13721,6 +13746,26 @@ export interface components {
             trace_id: string;
             /** Message */
             message?: string | null;
+        };
+        /** PatchCohortDraftApiRequest */
+        PatchCohortDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchCohortDraftApiResponse */
+        PatchCohortDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
         };
         /** PatchPersonaDraftApiRequest */
         PatchPersonaDraftApiRequest: {
@@ -24095,6 +24140,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetCohortSearchApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_cohort_draft_api_v4_cohorts_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchCohortDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchCohortDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -37,25 +37,29 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { SimulationCardGrid } from "@/components/common/cohorts/SimulationCardGrid";
 import { CohortSimulationSection } from "@/components/common/cohorts/CohortSimulationSection";
+import { SimulationCardGrid } from "@/components/common/cohorts/SimulationCardGrid";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Accordion } from "@/components/ui/accordion";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { Check, Loader2, Power } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 
 // Import types from new page (create action)
 import type {
   CohortNewOut,
   CreateCohortIn,
   CreateCohortOut,
+  PatchCohortDraftIn,
+  PatchCohortDraftOut,
 } from "@/app/(main)/create/cohorts/new/page";
 // Import types from edit page (update action)
 import type {
@@ -72,6 +76,10 @@ export interface CohortProps {
   // Server actions (replaces useMutation)
   createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
   updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
+  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
+  patchCohortDraftAction?: (
+    input: PatchCohortDraftIn
+  ) => Promise<PatchCohortDraftOut>;
 }
 
 interface FormErrors {
@@ -99,11 +107,11 @@ export default function Cohort({
   cohortDetailDefault: serverCohortDetailDefault,
   createCohortAction,
   updateCohortAction,
+  patchCohortDraftAction,
 }: CohortProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
@@ -113,31 +121,37 @@ export default function Cohort({
 
   const isEditMode = !!cohortId;
 
-  // Helper function to update URL with query parameters
-  const updateUrlParams = useCallback(
-    (updates: Record<string, string | string[] | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
+  // Inline parsers for URL-backed state (navigation/search params only)
+  const cohortSearchParamsClient = {
+    // Draft ID (URL-backed, updated when draft is created)
+    draftId: parseAsString,
+    // Simulation IDs (URL-backed, updated when simulations are selected)
+    simulationIds: parseAsArrayOf(parseAsString),
+    // Department IDs (URL-backed, updated when departments are selected)
+    departmentIds: parseAsArrayOf(parseAsString),
+  } as const;
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || (Array.isArray(value) && value.length === 0)) {
-          params.delete(key);
-        } else if (Array.isArray(value)) {
-          // Use comma-separated values to match how page.tsx reads them
-          params.set(key, value.join(","));
-        } else {
-          params.set(key, value);
-        }
-      });
+  // URL-backed state using nuqs (only navigation/search params)
+  const [urlParams, setUrlParams] = useQueryStates(cohortSearchParamsClient, {
+    history: "replace",
+    shallow: true, // Use shallow routing to prevent server component re-renders
+  });
 
-      const newParamsString = params.toString();
-      router.replace(`${pathname}?${newParamsString}`, { scroll: false });
-    },
-    [searchParams, pathname, router],
-  );
+  // Get draftId from URL (managed by nuqs via urlParams)
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
 
   // State for accordion (only one section open at a time)
   const [openAccordionItem, setOpenAccordionItem] = useState<string | null>(
-    null,
+    null
   );
 
   // Track if we've initialized URL params from server data to prevent infinite loops
@@ -147,9 +161,9 @@ export default function Cohort({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primary_department_id ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primary_department_id]
   );
 
   const initialFormData: FormData = {
@@ -159,7 +173,70 @@ export default function Cohort({
     departmentIds: defaultDepartmentIds,
   };
 
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  // Local draft state (not in URL) - initialized from server data or draft payload
+  type DraftState = {
+    title: string;
+    description: string;
+    active: boolean;
+    departmentIds: string[];
+    simulationIds: string[];
+  };
+
+  // Initialize draft state from server data or draft payload
+  const initialDraftState = useMemo((): DraftState => {
+    const data = isEditMode ? serverCohortDetail : serverCohortDetailDefault;
+    if (!data) {
+      return {
+        title: "",
+        description: "",
+        active: true,
+        departmentIds: defaultDepartmentIds || [],
+        simulationIds: [],
+      };
+    }
+
+    // If draftId exists, server should have merged draft payload into data
+    // Otherwise, use server defaults
+    return {
+      title: data.title || "",
+      description: data.description || "",
+      active: data.active ?? true,
+      departmentIds: data.department_ids || defaultDepartmentIds || [],
+      simulationIds: data.simulation_ids || [],
+    };
+  }, [
+    isEditMode,
+    serverCohortDetail,
+    serverCohortDetailDefault,
+    defaultDepartmentIds,
+  ]);
+
+  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+  // Update draft state when server data changes (e.g., draft selected)
+  useEffect(() => {
+    const currentStateStr = JSON.stringify(draftState);
+    const newStateStr = JSON.stringify(initialDraftState);
+
+    if (currentStateStr !== newStateStr) {
+      setDraftState(initialDraftState);
+    }
+  }, [draftState, initialDraftState]);
+
+  // Form data derived from draft state and URL params
+  const formData: FormData = useMemo(
+    () => ({
+      title: draftState.title,
+      description: draftState.description,
+      active: draftState.active,
+      departmentIds:
+        urlParams.departmentIds && urlParams.departmentIds.length > 0
+          ? urlParams.departmentIds
+          : draftState.departmentIds,
+    }),
+    [draftState, urlParams.departmentIds]
+  );
+
   const [originalFormData, setOriginalFormData] =
     useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -215,10 +292,12 @@ export default function Cohort({
     await updateCohortAction({ body });
   };
 
-  // State for junction data
-  const [currentSimulationIds, setCurrentSimulationIds] = useState<string[]>(
-    [],
-  );
+  // Simulation IDs from URL params (source of truth)
+  const currentSimulationIds = useMemo(() => {
+    return urlParams.simulationIds && urlParams.simulationIds.length > 0
+      ? urlParams.simulationIds
+      : draftState.simulationIds;
+  }, [urlParams.simulationIds, draftState.simulationIds]);
 
   // Readonly logic using server-provided can_edit flag
   const isReadonly = useMemo(() => {
@@ -233,10 +312,26 @@ export default function Cohort({
     if (Array.isArray(departments)) {
       return Object.fromEntries(
         departments.map((item) => [item.department_id, item])
-      ) as Record<string, { department_id: string; name: string; description: string; simulation_ids: string[] }>;
+      ) as Record<
+        string,
+        {
+          department_id: string;
+          name: string;
+          description: string;
+          simulation_ids: string[];
+        }
+      >;
     }
     // Legacy format (already a dictionary)
-    return departments as Record<string, { department_id: string; name: string; description: string; simulation_ids: string[] }>;
+    return departments as Record<
+      string,
+      {
+        department_id: string;
+        name: string;
+        description: string;
+        simulation_ids: string[];
+      }
+    >;
   }, [cohortData?.departments]);
 
   // Convert simulations_for_picker array to dictionary for efficient lookups
@@ -246,10 +341,28 @@ export default function Cohort({
     if (Array.isArray(simulations)) {
       return Object.fromEntries(
         simulations.map((item) => [item.simulation_id, item])
-      ) as Record<string, { simulation_id: string; name: string; description: string; time_limit: number; department_ids: string[] }>;
+      ) as Record<
+        string,
+        {
+          simulation_id: string;
+          name: string;
+          description: string;
+          time_limit: number;
+          department_ids: string[];
+        }
+      >;
     }
     // Legacy format (already a dictionary)
-    return simulations as Record<string, { simulation_id: string; name: string; description: string; time_limit: number; department_ids: string[] }>;
+    return simulations as Record<
+      string,
+      {
+        simulation_id: string;
+        name: string;
+        description: string;
+        time_limit: number;
+        department_ids: string[];
+      }
+    >;
   }, [cohortData?.simulations_for_picker]);
 
   const validSimulationIds = useMemo(() => {
@@ -265,8 +378,11 @@ export default function Cohort({
     const deptSimulationIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
-      if (deptData?.['simulation_ids'] && Array.isArray(deptData['simulation_ids'])) {
-        deptData['simulation_ids'].forEach((id) => deptSimulationIds.add(id));
+      if (
+        deptData?.["simulation_ids"] &&
+        Array.isArray(deptData["simulation_ids"])
+      ) {
+        deptData["simulation_ids"].forEach((id) => deptSimulationIds.add(id));
       }
     });
 
@@ -281,41 +397,69 @@ export default function Cohort({
   // Handle simulation selection from picker
   const handleSimulationSelection = useCallback(
     (simulationIds: string[]) => {
-      setCurrentSimulationIds(simulationIds);
       // Update URL params when simulations are selected
-      updateUrlParams({
+      setUrlParams({
         simulationIds: simulationIds.length > 0 ? simulationIds : null,
       });
+      // Update draft state
+      setDraftState((prev) => ({
+        ...prev,
+        simulationIds,
+      }));
     },
-    [updateUrlParams],
+    [setUrlParams]
   );
 
-  // Sync simulation IDs from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // IMPORTANT: Compare order-preserving arrays, not sorted arrays
-  useEffect(() => {
-    const simulationIdsFromUrl =
-      searchParams.get("simulationIds")?.split(",").filter(Boolean) || [];
-
-    // Compare arrays preserving order (not sorted)
-    const arraysEqual =
-      simulationIdsFromUrl.length === currentSimulationIds.length &&
-      simulationIdsFromUrl.every((id, idx) => id === currentSimulationIds[idx]);
-
-    if (!arraysEqual) {
-      setCurrentSimulationIds(simulationIdsFromUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes
+  // Draft autosave integration
+  const {
+    saveStatus: _saveStatus,
+    saveNow: _saveNow,
+    lastSavedVersion: _lastSavedVersion,
+  } = useDraftAutosave({
+    draftId,
+    draftState,
+    patchDraftAction: patchCohortDraftAction
+      ? async (input) => {
+          // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
+          // Note: profile_id is added server-side from header
+          const result = await patchCohortDraftAction({
+            body: {
+              input_draft_id: input.body.draft_id || null,
+              patch: input.body.patch as Record<string, unknown>,
+              expected_version: input.body.expected_version,
+            } as PatchCohortDraftIn["body"],
+          });
+          // Transform response to match hook expectations (API returns draft_id, new_version, draft_exists)
+          return {
+            draftId: result.draft_id || "",
+            newVersion: result.new_version || 0,
+            draftExists: result.draft_exists || false,
+          };
+        }
+      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    debounceMs: 1000,
+    onDraftCreated: useCallback(
+      (newDraftId: string) => {
+        // Only update URL if draftId actually changed
+        const currentUrlDraftId = urlParams.draftId;
+        if (newDraftId === currentUrlDraftId) {
+          return;
+        }
+        // Update URL with new draftId and trigger server-side refetch
+        // This ensures the server component gets fresh data with the new draft
+        setUrlParams({ draftId: newDraftId });
+        // Force server components to re-render with updated search params
+        router.refresh();
+      },
+      [router, urlParams.draftId, setUrlParams]
+    ),
+  });
 
   // Position handlers for simulations
   const handleSimulationMoveUp = useCallback(
     (simulationId: string) => {
-      // Get ordered simulation IDs from searchParams (source of truth) - ALWAYS use searchParams first
-      const orderedIds = searchParams
-        .get("simulationIds")
-        ?.split(",")
-        .filter(Boolean) || [...currentSimulationIds];
+      // Get ordered simulation IDs from URL params (source of truth)
+      const orderedIds = [...currentSimulationIds];
 
       const index = orderedIds.indexOf(simulationId);
       if (index <= 0) return;
@@ -328,22 +472,23 @@ export default function Cohort({
       reorderedIds[index - 1] = curr;
       reorderedIds[index] = prev;
 
-      // Update state and URL params (URL params are source of truth)
-      setCurrentSimulationIds(reorderedIds);
-      updateUrlParams({
+      // Update URL params (URL params are source of truth)
+      setUrlParams({
         simulationIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
+      // Update draft state
+      setDraftState((prev) => ({
+        ...prev,
+        simulationIds: reorderedIds,
+      }));
     },
-    [currentSimulationIds, searchParams, updateUrlParams],
+    [currentSimulationIds, setUrlParams]
   );
 
   const handleSimulationMoveDown = useCallback(
     (simulationId: string) => {
-      // Get ordered simulation IDs from searchParams (source of truth) - ALWAYS use searchParams first
-      const orderedIds = searchParams
-        .get("simulationIds")
-        ?.split(",")
-        .filter(Boolean) || [...currentSimulationIds];
+      // Get ordered simulation IDs from URL params (source of truth)
+      const orderedIds = [...currentSimulationIds];
 
       const index = orderedIds.indexOf(simulationId);
       if (index < 0 || index >= orderedIds.length - 1) return;
@@ -356,13 +501,17 @@ export default function Cohort({
       reorderedIds[index] = next;
       reorderedIds[index + 1] = curr;
 
-      // Update state and URL params (URL params are source of truth)
-      setCurrentSimulationIds(reorderedIds);
-      updateUrlParams({
+      // Update URL params (URL params are source of truth)
+      setUrlParams({
         simulationIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
+      // Update draft state
+      setDraftState((prev) => ({
+        ...prev,
+        simulationIds: reorderedIds,
+      }));
     },
-    [currentSimulationIds, searchParams, updateUrlParams],
+    [currentSimulationIds, setUrlParams]
   );
 
   // Handle simulation active toggle
@@ -373,10 +522,10 @@ export default function Cohort({
         [simulationId]: active,
       }));
     },
-    [],
+    []
   );
 
-  // Load cohort data from V2 API response
+  // Load cohort data from server response and initialize URL params if needed
   useEffect(() => {
     if (cohortData && isEditMode) {
       const deptIds = cohortData.department_ids || [];
@@ -386,18 +535,6 @@ export default function Cohort({
         active: cohortData.active ?? true,
         departmentIds: deptIds,
       };
-
-      // Only update if the data has actually changed to prevent infinite loops
-      setFormData((prev) => {
-        const hasChanged =
-          prev.title !== cohortFormData.title ||
-          prev.description !== cohortFormData.description ||
-          prev.active !== cohortFormData.active ||
-          JSON.stringify(prev.departmentIds?.sort()) !==
-            JSON.stringify(cohortFormData.departmentIds?.sort());
-
-        return hasChanged ? cohortFormData : prev;
-      });
 
       setOriginalFormData((prev) => {
         const hasChanged =
@@ -412,20 +549,11 @@ export default function Cohort({
 
       // Load simulation IDs
       // Prioritize URL params if they exist, otherwise use server data
-      const simulationIdsFromUrl =
-        searchParams.get("simulationIds")?.split(",").filter(Boolean) || [];
+      const simulationIdsFromUrl = urlParams.simulationIds || [];
       const orderedSimulationIds =
         simulationIdsFromUrl.length > 0
           ? simulationIdsFromUrl
           : cohortData.simulation_ids || [];
-
-      setCurrentSimulationIds((prev) => {
-        // Compare arrays preserving order (not sorted)
-        const hasChanged =
-          prev.length !== orderedSimulationIds.length ||
-          prev.some((id, idx) => id !== orderedSimulationIds[idx]);
-        return hasChanged ? orderedSimulationIds : prev;
-      });
 
       // Update URL params if we're using server data and URL is empty (only in edit mode)
       // Only do this once to prevent infinite loops
@@ -436,7 +564,7 @@ export default function Cohort({
         orderedSimulationIds.length > 0
       ) {
         hasInitializedUrlParamsRef.current = true;
-        updateUrlParams({
+        setUrlParams({
           simulationIds: orderedSimulationIds,
         });
       }
@@ -445,13 +573,15 @@ export default function Cohort({
       if (cohortData.simulations) {
         const activeStates: Record<string, boolean> = {};
         cohortData.simulations.forEach((sim) => {
-          activeStates[sim.simulation_id] = sim.active;
+          if (sim.simulation_id) {
+            activeStates[sim.simulation_id] = sim.active ?? true;
+          }
         });
         setSimulationActiveStates(activeStates);
         setOriginalSimulationActiveStates(activeStates);
       }
     }
-  }, [cohortData, isEditMode, searchParams, updateUrlParams]);
+  }, [cohortData, isEditMode, urlParams.simulationIds, setUrlParams]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -486,9 +616,26 @@ export default function Cohort({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | null,
+    value: string | boolean | string[] | null
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Update draft state
+    setDraftState((prev) => {
+      const updates: Partial<DraftState> = {};
+      if (field === "title") updates.title = value as string;
+      else if (field === "description") updates.description = value as string;
+      else if (field === "active") updates.active = value as boolean;
+      else if (field === "departmentIds") {
+        updates.departmentIds = (value as string[]) || [];
+        // Also update URL params for departmentIds
+        setUrlParams({
+          departmentIds:
+            (value as string[]) && (value as string[]).length > 0
+              ? (value as string[])
+              : null,
+        });
+      }
+      return { ...prev, ...updates };
+    });
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -516,7 +663,7 @@ export default function Cohort({
           return "pending";
       }
     },
-    [formData?.title, currentSimulationIds.length],
+    [formData?.title, currentSimulationIds.length]
   );
 
   // Steps array
@@ -540,20 +687,18 @@ export default function Cohort({
 
   // Compute ordered simulation items for display
   const orderedSimulationItems = useMemo(() => {
-    // Get ordered simulation IDs from searchParams (source of truth)
-    const orderedIds =
-      searchParams.get("simulationIds")?.split(",").filter(Boolean) ||
-      currentSimulationIds;
+    // Get ordered simulation IDs from URL params (source of truth)
+    const orderedIds = currentSimulationIds;
 
     // Track which simulation IDs are in saved cohort data
     const savedSimulationIds = new Set(
-      cohortData?.simulations?.map((s) => s.simulation_id) || [],
+      cohortData?.simulations?.map((s) => s.simulation_id) || []
     );
 
     return orderedIds.map((simulationId, index) => {
       const simulation = simulationMapping[simulationId];
       const simulationData = cohortData?.simulations?.find(
-        (s) => s.simulation_id === simulationId,
+        (s) => s.simulation_id === simulationId
       );
 
       // A simulation is "new" if it's selected but not in saved cohort data
@@ -561,8 +706,8 @@ export default function Cohort({
 
       return {
         simulationId,
-        simulationName: simulation?.['name'] || "Unnamed Simulation",
-        simulationDescription: simulation?.['description'] || "",
+        simulationName: simulation?.["name"] || "Unnamed Simulation",
+        simulationDescription: simulation?.["description"] || "",
         position: index + 1,
         active:
           simulationActiveStates[simulationId] ??
@@ -572,7 +717,6 @@ export default function Cohort({
       };
     });
   }, [
-    searchParams,
     currentSimulationIds,
     simulationMapping,
     cohortData?.simulations,
@@ -605,7 +749,13 @@ export default function Cohort({
   };
 
   const resetFormAndState = () => {
-    setFormData(initialFormData);
+    setDraftState({
+      title: "",
+      description: "",
+      active: true,
+      departmentIds: defaultDepartmentIds || [],
+      simulationIds: [],
+    });
     setOriginalFormData(initialFormData);
     setEditingCohortId(null);
     setErrors({});
@@ -624,16 +774,16 @@ export default function Cohort({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds,
+        validDepartmentIds
       );
 
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
         // UPDATE mode
         const updateRequest: UpdateCohortBody = {
-          cohortId: targetCohortId,
+          cohort_id: targetCohortId,
           title: formData.title || "",
-          description: formData.description || null,
+          description: formData.description || "",
           department_ids: finalDepartmentIds || [],
           active: formData.active ?? true,
           profile_ids: [], // Profile management moved to staff page
@@ -646,7 +796,7 @@ export default function Cohort({
         // CREATE mode
         const createRequest: CreateCohortBody = {
           title: formData.title || "",
-          description: formData.description || null,
+          description: formData.description || "",
           department_ids: finalDepartmentIds || [],
           active: formData.active || true,
           profile_ids: [], // Profile management moved to staff page
@@ -662,7 +812,7 @@ export default function Cohort({
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
       toast.error(
-        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -688,7 +838,9 @@ export default function Cohort({
     const map: Record<string, boolean> = {};
     if (cohortData?.simulations) {
       cohortData.simulations.forEach((sim) => {
-        map[sim.simulation_id] = sim.can_remove ?? false;
+        if (sim.simulation_id) {
+          map[sim.simulation_id] = sim.can_remove ?? false;
+        }
       });
     }
     return map;
@@ -742,7 +894,7 @@ export default function Cohort({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted",
+                      : "bg-muted"
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -761,7 +913,7 @@ export default function Cohort({
                     onChange={(e) => handleInputChange("title", e.target.value)}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.title && "border-destructive",
+                      errors.title && "border-destructive"
                     )}
                     placeholder="New Cohort"
                     disabled={isReadonly}
@@ -810,9 +962,9 @@ export default function Cohort({
                         handleInputChange("departmentIds", ids)
                       }
                       getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => String(dept['name'] || "")}
+                      getLabel={(dept) => String(dept["name"] || "")}
                       getSearchText={(dept) =>
-                        `${dept['name']} ${dept['description'] || ""}`
+                        `${dept["name"]} ${dept["description"] || ""}`
                       }
                       placeholder="All Departments"
                       disabled={isReadonly}
@@ -862,7 +1014,7 @@ export default function Cohort({
             !isEditMode &&
               steps[1]?.status === "active" &&
               "ring-2 ring-primary",
-            !isEditMode && steps[1]?.status === "pending" && "opacity-50",
+            !isEditMode && steps[1]?.status === "pending" && "opacity-50"
           )}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -874,7 +1026,7 @@ export default function Cohort({
                     ? "bg-green-500 text-white"
                     : steps[1]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted",
+                      : "bg-muted"
                 )}
               >
                 {steps[1]?.status === "completed" ? (
@@ -901,16 +1053,12 @@ export default function Cohort({
                 return Object.fromEntries(
                   Object.entries(simulationMapping).map(([key, value]) => [
                     key,
-                    { name: value.name, description: value.description }
+                    { name: value.name, description: value.description },
                   ])
                 ) as Record<string, { name: string; description?: string }>;
               }, [simulationMapping])}
               validSimulationIds={validSimulationIds}
-              selectedSimulationIds={
-                // Use searchParams as source of truth for ordering (like Simulation.tsx)
-                searchParams.get("simulationIds")?.split(",").filter(Boolean) ||
-                currentSimulationIds
-              }
+              selectedSimulationIds={currentSimulationIds}
               onSelect={handleSimulationSelection}
               readonly={isReadonly}
               canRemoveMap={simulationCanRemoveMap}
@@ -935,7 +1083,9 @@ export default function Cohort({
                   key={item.simulationId}
                   simulationId={item.simulationId}
                   simulationName={String(item.simulationName || "")}
-                  simulationDescription={String(item.simulationDescription || "")}
+                  simulationDescription={String(
+                    item.simulationDescription || ""
+                  )}
                   position={item.position}
                   totalItems={orderedSimulationItems.length}
                   active={item.active}
