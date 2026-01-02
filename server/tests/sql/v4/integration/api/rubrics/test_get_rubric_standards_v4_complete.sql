@@ -29,7 +29,7 @@ AS $$
         description,
         points,
         created_at,
-        updated_at
+        created_at AS updated_at
     FROM standards
     WHERE standard_group_id = input_standard_group_id
     ORDER BY name;

@@ -18,7 +18,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT id, simulation_id 
-    FROM attempts 
+    FROM simulation_attempts 
     WHERE id = test_get_attempt_by_id_v4.attempt_id;
 $$;
 

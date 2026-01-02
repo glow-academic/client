@@ -10,13 +10,14 @@ DROP FUNCTION IF EXISTS test_create_test_key_v4(text, text, text, boolean);
 CREATE OR REPLACE FUNCTION test_create_test_key_v4(
     key_name text,
     key_value text,
-    key_type text,
-    key_active boolean
+    key_description text DEFAULT 'Test key description',
+    key_active boolean DEFAULT true
 )
 RETURNS TABLE (
     key_id uuid,
     name text,
-    type text,
+    key text,
+    description text,
     active boolean,
     created_at timestamptz,
     updated_at timestamptz
@@ -24,14 +25,14 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO keys(name, key, type, active)
+    INSERT INTO keys(name, key, description, active)
     VALUES (
         key_name,
         key_value,
-        key_type,
+        key_description,
         key_active
     )
-    RETURNING id AS key_id, name, type, active, created_at, updated_at;
+    RETURNING id AS key_id, name, key, description, active, created_at, updated_at;
 $$;
 
 COMMIT;

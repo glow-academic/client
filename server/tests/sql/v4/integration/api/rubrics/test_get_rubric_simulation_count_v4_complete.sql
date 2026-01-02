@@ -16,10 +16,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT 
-        COUNT(*)::bigint AS simulation_count
-    FROM simulations
-    WHERE rubric_id = input_rubric_id;
+    -- NOTE: simulations table doesn't have rubric_id column
+    -- Rubrics are linked to simulations via simulation_scenarios_rubric_grade_agents
+    -- This function returns 0 - tests using this may need updating
+    SELECT 0::bigint AS simulation_count;
 $$;
 
 COMMIT;

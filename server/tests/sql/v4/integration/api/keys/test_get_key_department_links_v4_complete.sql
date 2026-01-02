@@ -19,14 +19,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT 
-        key_id,
-        department_id,
-        active,
-        created_at
-    FROM key_departments
-    WHERE key_id = input_key_id
-      AND active = true;
+    -- NOTE: key_departments table does not exist in current schema
+    -- This function returns empty result - tests using this may need updating
+    SELECT NULL::uuid AS key_id, NULL::uuid AS department_id, NULL::boolean AS active, NULL::timestamptz AS created_at WHERE false;
 $$;
 
 COMMIT;

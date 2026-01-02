@@ -13,7 +13,8 @@ CREATE OR REPLACE FUNCTION test_get_key_by_id_v4(
 RETURNS TABLE (
     key_id uuid,
     name text,
-    type text,
+    key text,
+    description text,
     active boolean,
     created_at timestamptz,
     updated_at timestamptz
@@ -24,7 +25,8 @@ AS $$
     SELECT 
         id AS key_id,
         name,
-        type,
+        key,
+        description,
         active,
         created_at,
         updated_at

@@ -10,9 +10,8 @@ DROP FUNCTION IF EXISTS test_create_test_profile_v4(text, text, text, boolean, b
 CREATE OR REPLACE FUNCTION test_create_test_profile_v4(
     profile_first_name text,
     profile_last_name text,
-    profile_role text,
-    profile_active boolean DEFAULT true,
-    profile_default_profile boolean DEFAULT false
+    profile_role text DEFAULT 'guest',
+    profile_active boolean DEFAULT true
 )
 RETURNS TABLE (
     profile_id uuid,
@@ -20,22 +19,20 @@ RETURNS TABLE (
     last_name text,
     role text,
     active boolean,
-    default_profile boolean,
     created_at timestamptz,
     updated_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO profiles(first_name, last_name, role, active, default_profile)
+    INSERT INTO profiles(first_name, last_name, role, active)
     VALUES (
         profile_first_name,
         profile_last_name,
-        profile_role,
-        profile_active,
-        profile_default_profile
+        profile_role::profile_role,
+        profile_active
     )
-    RETURNING id AS profile_id, first_name, last_name, role, active, default_profile, created_at, updated_at;
+    RETURNING id AS profile_id, first_name, last_name, role, active, created_at, updated_at;
 $$;
 
 COMMIT;

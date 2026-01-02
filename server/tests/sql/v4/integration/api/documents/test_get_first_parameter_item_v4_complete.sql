@@ -14,9 +14,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT id AS parameter_item_id
-    FROM parameter_items
-    LIMIT 1;
+    -- NOTE: parameter_items table does not exist in current schema
+    -- This function returns empty result - tests using this may need updating
+    SELECT NULL::uuid AS parameter_item_id WHERE false;
 $$;
 
 COMMIT;

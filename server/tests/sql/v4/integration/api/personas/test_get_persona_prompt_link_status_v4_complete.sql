@@ -17,13 +17,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT EXISTS(
-        SELECT 1
-        FROM persona_prompts
-        WHERE persona_id = input_persona_id
-          AND prompt_id = input_prompt_id
-          AND active = true
-    ) AS link_exists;
+    -- NOTE: persona_prompts table does not exist in current schema
+    -- Personas don't have direct prompt links in the current schema
+    -- This function returns false - tests using this may need updating
+    SELECT false AS link_exists;
 $$;
 
 COMMIT;

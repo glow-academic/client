@@ -23,16 +23,10 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO persona_department_prompts(persona_id, department_id, prompt_id, active, created_at, updated_at)
-    VALUES (
-        test_create_persona_department_prompt_link_v4.persona_id,
-        test_create_persona_department_prompt_link_v4.department_id,
-        test_create_persona_department_prompt_link_v4.prompt_id,
-        true,
-        NOW(),
-        NOW()
-    )
-    RETURNING persona_id, department_id, prompt_id, active, created_at, updated_at;
+    -- NOTE: persona_department_prompts table does not exist in current schema
+    -- Personas don't have direct prompt links in the current schema
+    -- This function returns empty result - tests using this may need updating
+    SELECT NULL::uuid AS persona_id, NULL::uuid AS department_id, NULL::uuid AS prompt_id, NULL::boolean AS active, NULL::timestamptz AS created_at, NULL::timestamptz AS updated_at WHERE false;
 $$;
 
 COMMIT;

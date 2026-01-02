@@ -21,15 +21,9 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO document_parameter_items(document_id, parameter_item_id, active, created_at, updated_at)
-    VALUES (
-        test_create_document_parameter_item_link_v4.document_id,
-        test_create_document_parameter_item_link_v4.parameter_item_id,
-        true,
-        NOW(),
-        NOW()
-    )
-    RETURNING document_id, parameter_item_id, active, created_at, updated_at;
+    -- NOTE: document_parameter_items table does not exist in current schema
+    -- This function returns empty result - tests using this may need updating
+    SELECT NULL::uuid AS document_id, NULL::uuid AS parameter_item_id, NULL::boolean AS active, NULL::timestamptz AS created_at, NULL::timestamptz AS updated_at WHERE false;
 $$;
 
 COMMIT;

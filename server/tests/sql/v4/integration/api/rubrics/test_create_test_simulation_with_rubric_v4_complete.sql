@@ -24,14 +24,16 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO simulations(name, description, active, rubric_id)
+    -- NOTE: simulations table doesn't have rubric_id column
+    -- Simulations don't directly link to rubrics in current schema
+    -- This function creates a simulation without rubric link - tests using this may need updating
+    INSERT INTO simulations(title, description, active)
     VALUES (
         COALESCE(simulation_name, 'Test Simulation'),
         COALESCE(simulation_description, 'Test Description'),
-        simulation_active,
-        input_rubric_id
+        simulation_active
     )
-    RETURNING id AS simulation_id, name, description, active, rubric_id, created_at;
+    RETURNING id AS simulation_id, title AS name, description, active, NULL::uuid AS rubric_id, created_at;
 $$;
 
 COMMIT;

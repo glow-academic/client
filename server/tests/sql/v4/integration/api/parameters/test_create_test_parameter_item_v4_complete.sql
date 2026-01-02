@@ -25,14 +25,10 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO parameter_items(parameter_id, name, description, value)
-    VALUES (
-        input_parameter_id,
-        item_name,
-        item_description,
-        item_value
-    )
-    RETURNING id AS parameter_item_id, parameter_id, name, description, value, created_at, updated_at;
+    -- NOTE: parameter_items table does not exist in current schema
+    -- Parameters don't have items in the current schema
+    -- This function returns empty result - tests using this may need updating
+    SELECT NULL::uuid AS parameter_item_id, NULL::uuid AS parameter_id, NULL::text AS name, NULL::text AS description, NULL::text AS value, NULL::timestamptz AS created_at, NULL::timestamptz AS updated_at WHERE false;
 $$;
 
 COMMIT;

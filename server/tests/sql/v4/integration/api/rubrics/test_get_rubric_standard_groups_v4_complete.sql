@@ -24,19 +24,22 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+    -- NOTE: standard_groups table doesn't have rubric_id column
+    -- Standard groups are linked to rubrics via rubric_standard_groups table
     SELECT 
-        id AS standard_group_id,
-        rubric_id,
-        name,
-        short_name,
-        description,
-        points,
-        pass_points,
-        created_at,
-        updated_at
-    FROM standard_groups
-    WHERE rubric_id = input_rubric_id
-    ORDER BY name;
+        sg.id AS standard_group_id,
+        rsg.rubric_id,
+        sg.name,
+        sg.short_name,
+        sg.description,
+        sg.points,
+        sg.pass_points,
+        sg.created_at,
+        sg.created_at AS updated_at
+    FROM standard_groups sg
+    JOIN rubric_standard_groups rsg ON rsg.standard_group_id = sg.id
+    WHERE rsg.rubric_id = input_rubric_id
+    ORDER BY sg.name;
 $$;
 
 COMMIT;

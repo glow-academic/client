@@ -34,13 +34,12 @@ AS $$
         LIMIT 1
     ),
     new_agent AS (
-        INSERT INTO agents(name, description, model_id, active, role)
+        INSERT INTO agents(name, description, model_id, active)
         SELECT 
             test_get_or_create_test_agent_v4.name,
             test_get_or_create_test_agent_v4.description,
             COALESCE(mtu.id, (SELECT id FROM models WHERE active = true LIMIT 1)),
-            true,
-            'assistant'::agent_role
+            true
         FROM model_to_use mtu
         WHERE NOT EXISTS (SELECT 1 FROM existing_agent)
         RETURNING id, name, description, model_id

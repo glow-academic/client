@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION test_get_profile_activity_latest_v4(
 )
 RETURNS TABLE (
     profile_id uuid,
-    activity_type text,
+    last_active timestamptz,
     created_at timestamptz
 )
 LANGUAGE sql
@@ -20,7 +20,7 @@ STABLE
 AS $$
     SELECT 
         profile_id,
-        activity_type,
+        last_active,
         created_at
     FROM profile_activity
     WHERE profile_id = input_profile_id

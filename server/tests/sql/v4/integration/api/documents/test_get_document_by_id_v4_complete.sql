@@ -13,10 +13,8 @@ CREATE OR REPLACE FUNCTION test_get_document_by_id_v4(
 RETURNS TABLE (
     document_id uuid,
     name text,
-    type text,
+    description text,
     active boolean,
-    file_path text,
-    mime_type text,
     created_at timestamptz,
     updated_at timestamptz
 )
@@ -26,10 +24,8 @@ AS $$
     SELECT 
         id AS document_id,
         name,
-        type,
+        description,
         active,
-        file_path,
-        mime_type,
         created_at,
         updated_at
     FROM documents

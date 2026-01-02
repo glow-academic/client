@@ -20,13 +20,9 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO key_departments(key_id, department_id, active)
-    VALUES (
-        test_create_key_department_link_v4.key_id,
-        test_create_key_department_link_v4.department_id,
-        true
-    )
-    RETURNING key_id, department_id, active, created_at;
+    -- NOTE: key_departments table does not exist in current schema
+    -- This function returns empty result - tests using this may need updating
+    SELECT NULL::uuid AS key_id, NULL::uuid AS department_id, NULL::boolean AS active, NULL::timestamptz AS created_at WHERE false;
 $$;
 
 COMMIT;

@@ -16,10 +16,7 @@ RETURNS TABLE (
     last_name text,
     role text,
     active boolean,
-    default_profile boolean,
-    req_per_day integer,
     last_login timestamptz,
-    last_active timestamptz,
     created_at timestamptz,
     updated_at timestamptz
 )
@@ -32,10 +29,7 @@ AS $$
         last_name,
         role,
         active,
-        default_profile,
-        req_per_day,
         last_login,
-        last_active,
         created_at,
         updated_at
     FROM profiles

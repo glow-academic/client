@@ -26,23 +26,17 @@ AS $$
         VALUES ('Test Scenario', true)
         RETURNING id AS scenario_id, name, active, created_at
     ),
-    new_problem_statement AS (
-        INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active)
-        SELECT scenario_id, 'Test problem', true
-        FROM new_scenario
-        RETURNING scenario_id
-    ),
     new_link AS (
-        INSERT INTO scenario_parameter_items(scenario_id, parameter_item_id, active)
+        INSERT INTO scenario_parameters(scenario_id, parameter_id, active)
         SELECT scenario_id, input_parameter_item_id, true
         FROM new_scenario
-        RETURNING scenario_id, parameter_item_id, active AS link_active
+        RETURNING scenario_id, parameter_id, active AS link_active
     )
     SELECT 
         ns.scenario_id,
         ns.name,
         ns.active,
-        nl.parameter_item_id,
+        nl.parameter_id AS parameter_item_id,
         nl.link_active,
         ns.created_at
     FROM new_scenario ns

@@ -9,17 +9,15 @@ DROP FUNCTION IF EXISTS test_create_test_parameter_v4(text, text, boolean, boole
 -- Create function
 CREATE OR REPLACE FUNCTION test_create_test_parameter_v4(
     parameter_name text,
-    parameter_description text,
-    parameter_numerical boolean,
-    parameter_active boolean,
-    parameter_document_parameter boolean,
-    parameter_simulation_parameter boolean
+    parameter_description text DEFAULT 'Test parameter description',
+    parameter_active boolean DEFAULT true,
+    parameter_document_parameter boolean DEFAULT false,
+    parameter_simulation_parameter boolean DEFAULT false
 )
 RETURNS TABLE (
     parameter_id uuid,
     name text,
     description text,
-    numerical boolean,
     active boolean,
     document_parameter boolean,
     simulation_parameter boolean,
@@ -29,16 +27,15 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO parameters(name, description, numerical, active, document_parameter, simulation_parameter)
+    INSERT INTO parameters(name, description, active, document_parameter, simulation_parameter)
     VALUES (
         parameter_name,
         parameter_description,
-        parameter_numerical,
         parameter_active,
         parameter_document_parameter,
         parameter_simulation_parameter
     )
-    RETURNING id AS parameter_id, name, description, numerical, active, document_parameter, simulation_parameter, created_at, updated_at;
+    RETURNING id AS parameter_id, name, description, active, document_parameter, simulation_parameter, created_at, updated_at;
 $$;
 
 COMMIT;
