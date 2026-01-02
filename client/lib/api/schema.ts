@@ -8619,22 +8619,8 @@ export interface components {
         };
         /** BulkCreateStaffApiRequest */
         BulkCreateStaffApiRequest: {
-            /** Profile Ids */
-            profile_ids: string[];
-            /** First Names */
-            first_names: string[];
-            /** Last Names */
-            last_names: string[];
-            /** Primary Emails */
-            primary_emails: string[];
-            /** Roles */
-            roles: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Additional Email Profiles */
-            additional_email_profiles: string[];
-            /** Additional Emails */
-            additional_emails: string[];
+            /** Profiles */
+            profiles: components["schemas"]["IBulkCreateStaffV4Profile"][];
         };
         /** BulkCreateStaffApiResponse */
         BulkCreateStaffApiResponse: {
@@ -8662,16 +8648,13 @@ export interface components {
             /** Profile Ids */
             profile_ids: string[];
             /** Role */
-            role: string;
+            role?: string | null;
             /** Active */
-            active: boolean;
+            active?: boolean | null;
             /** Requests Per Day */
-            requests_per_day: number;
-            /**
-             * Primary Department Id
-             * Format: uuid
-             */
-            primary_department_id: string;
+            requests_per_day?: number | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
         };
         /** BulkUpdateStaffApiResponse */
         BulkUpdateStaffApiResponse: {
@@ -13357,6 +13340,23 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** IBulkCreateStaffV4Profile */
+        IBulkCreateStaffV4Profile: {
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email Index */
+            primary_email_index: number | null;
+            /** Role */
+            role: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Primary Department Index */
+            primary_department_index: number | null;
+        };
         /** ICreateAuthV4AuthItem */
         ICreateAuthV4AuthItem: {
             /** Name */
@@ -13567,6 +13567,25 @@ export interface components {
             provider_id: string | null;
             /** Key Id */
             key_id: string | null;
+        };
+        /** IUpsertStaffV4Profile */
+        IUpsertStaffV4Profile: {
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email Index */
+            primary_email_index: number | null;
+            /** Role */
+            role: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
         };
         /**
          * ImageToolCompletePayload
@@ -21920,34 +21939,13 @@ export interface components {
         };
         /** UpsertStaffApiRequest */
         UpsertStaffApiRequest: {
-            /**
-             * Profile Id New
-             * Format: uuid
-             */
-            profile_id_new: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Primary Email */
-            primary_email: string;
-            /** Role */
-            role: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[];
-            /** Cohort Ids */
-            cohort_ids: string[];
+            /** Profiles */
+            profiles: components["schemas"]["IUpsertStaffV4Profile"][];
             /**
              * Current Profile Id
              * Format: uuid
              */
             current_profile_id: string;
-            /** Additional Emails */
-            additional_emails: string[];
-            /** Primary Email Index */
-            primary_email_index: number;
         };
         /** UpsertStaffApiResponse */
         UpsertStaffApiResponse: {

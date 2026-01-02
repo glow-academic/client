@@ -135,8 +135,6 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 "app/sql/v4/scenario/insert_scenario_tree_edge_complete.sql",
                 params=edge_params,
             )
-                True,
-            )
             # Check which AI fields need filling
             sql = load_sql("app/sql/v4/scenario/get_scenario_problem_statement.sql")
             problem_statement_row = await conn.fetchrow(sql, child_scenario_id)
