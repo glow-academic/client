@@ -7,7 +7,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -126,17 +132,7 @@ function PersonaComponent({
     useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  // Get draftId from URL and sync with profile context
-  const urlDraftId = searchParams.get("draftId");
-
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (urlDraftId !== selectedDraftId) {
-      setSelectedDraftId(urlDraftId);
-    }
-  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
-
-  const draftId = urlDraftId;
+  // Get draftId from URL - will be read from urlParams after it's defined below
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
@@ -375,6 +371,8 @@ function PersonaComponent({
 
   // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
   const personaSearchParamsClient = {
+    // Draft ID (URL-backed, updated when draft is created)
+    draftId: parseAsString,
     // Search params (URL-backed, updated via debounced callback in StepCard)
     colorSearch: parseAsString,
     iconSearch: parseAsString,
@@ -386,8 +384,20 @@ function PersonaComponent({
   // URL-backed state using nuqs (only navigation/search params)
   const [urlParams, setUrlParams] = useQueryStates(personaSearchParamsClient, {
     history: "replace",
-    shallow: false,
+    shallow: true, // Use shallow routing to prevent server component re-renders
   });
+
+  // Get draftId from URL (managed by nuqs via urlParams)
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
 
   // Local draft state (not in URL) - initialized from server data or draft payload
   type DraftState = {
@@ -404,8 +414,10 @@ function PersonaComponent({
   };
 
   // Initialize draft state from server data or draft payload
+  // Use stable refs (personaDetail/personaDetailDefault) instead of raw props to prevent recomputation on every server render
+  // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
   const initialDraftState = useMemo((): DraftState => {
-    const data = isEditMode ? serverPersonaDetail : serverPersonaDetailDefault;
+    const data = isEditMode ? personaDetail : personaDetailDefault;
     if (!data) {
       return {
         name: "",
@@ -435,13 +447,48 @@ function PersonaComponent({
       parameterFieldIds: [],
       examples: [],
     };
-  }, [isEditMode, serverPersonaDetail, serverPersonaDetailDefault]);
+  }, [
+    isEditMode,
+    personaDetail,
+    personaDetailDefault,
+    personaDetailId,
+    personaDetailDefaultId,
+    draftId, // Add draftId to dependencies so it recomputes when draft changes
+    urlDraftId, // Add urlDraftId to dependencies so it recomputes when URL draft changes
+    // Include actual content fields so it recomputes when server data changes (not just object reference)
+    personaDetailDefault?.name,
+    personaDetailDefault?.description,
+    personaDetailDefault?.instructions,
+    personaDetailDefault?.color,
+    personaDetailDefault?.icon,
+    personaDetailDefault?.department_ids,
+    personaDetail?.name,
+    personaDetail?.description,
+    personaDetail?.instructions,
+    personaDetail?.color,
+    personaDetail?.icon,
+    personaDetail?.department_ids,
+  ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
 
+  // Track previous initialDraftState content to avoid unnecessary updates
+  const prevInitialDraftStateRef = useRef<string>(
+    JSON.stringify(initialDraftState)
+  );
+
   // Update draft state when server data changes (e.g., draft selected)
+  // Only update if content actually changed (deep comparison to prevent unnecessary re-renders)
   useEffect(() => {
-    setDraftState(initialDraftState);
+    // Deep compare to avoid unnecessary state updates
+    const currentStateStr = prevInitialDraftStateRef.current;
+    const newStateStr = JSON.stringify(initialDraftState);
+
+    // Only update if content actually changed
+    if (currentStateStr !== newStateStr) {
+      prevInitialDraftStateRef.current = newStateStr;
+      setDraftState(initialDraftState);
+    }
   }, [initialDraftState]);
 
   // Integrate autosave hook
@@ -454,13 +501,13 @@ function PersonaComponent({
     draftState,
     patchDraftAction: patchPersonaDraftAction
       ? async (input) => {
-          // Transform input to match API structure (API uses p_draft_id, p_patch, p_expected_version)
-          // Note: p_profile_id is added server-side from header
+          // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
+          // Note: profile_id is added server-side from header
           const result = await patchPersonaDraftAction({
             body: {
-              p_draft_id: input.body.draft_id || null,
-              p_patch: input.body.patch as Record<string, unknown>,
-              p_expected_version: input.body.expected_version,
+              input_draft_id: input.body.draft_id || null,
+              patch: input.body.patch as Record<string, unknown>,
+              expected_version: input.body.expected_version,
             } as PatchPersonaDraftIn["body"],
           });
           // Transform response to match hook expectations (API returns draft_id, new_version, draft_exists)
@@ -472,12 +519,24 @@ function PersonaComponent({
         }
       : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
     debounceMs: 1000,
-    onDraftCreated: (newDraftId) => {
-      // Update URL with new draftId
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("draftId", newDraftId);
-      router.replace(`?${params.toString()}`, { scroll: false });
-    },
+    onDraftCreated: useCallback(
+      (newDraftId: string) => {
+        // Only update URL if draftId actually changed
+        const currentUrlDraftId = searchParams.get("draftId");
+        if (newDraftId === currentUrlDraftId) {
+          return;
+        }
+        // Update URL with new draftId and trigger server-side refetch
+        // This ensures the server component gets fresh data with the new draft
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("draftId", newDraftId);
+        const newUrl = `?${params.toString()}`;
+        router.replace(newUrl, { scroll: false });
+        // Force server components to re-render with updated search params
+        router.refresh();
+      },
+      [router, searchParams]
+    ),
   });
 
   // Merge draftState with urlParams for formData (GenericForm expects single formData object)
@@ -533,10 +592,19 @@ function PersonaComponent({
         setDraftState((prev) => ({ ...prev, ...draftUpdates }));
       }
       if (Object.keys(urlUpdates).length > 0) {
-        setUrlParams(urlUpdates as Parameters<typeof setUrlParams>[0]);
+        // Check if URL params actually changed before updating
+        const hasChanges = Object.keys(urlUpdates).some((key) => {
+          const newValue = urlUpdates[key];
+          const currentValue = urlParams[key as keyof typeof urlParams];
+          return newValue !== currentValue;
+        });
+
+        if (hasChanges) {
+          setUrlParams(urlUpdates as Parameters<typeof setUrlParams>[0]);
+        }
       }
     },
-    [formData, setUrlParams]
+    [formData, setUrlParams, urlParams]
   );
 
   // Get preset colors and valid icons from server (all colors/icons, filtered client-side)

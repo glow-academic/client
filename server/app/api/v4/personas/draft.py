@@ -12,7 +12,6 @@ from app.sql.types import (PatchPersonaDraftApiRequest,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/personas/patch_persona_draft_complete.sql"
@@ -53,25 +52,38 @@ async def patch_persona_draft(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (add p_profile_id from header)
-            # API request may include p_profile_id, but we override it with header value
-            request_dict = request.model_dump()
-            request_dict["p_profile_id"] = profile_id
-            params = PatchPersonaDraftSqlParams(**request_dict)
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper - calls api_patch_persona_draft_v4_wrapper
-            result = cast(
-                PatchPersonaDraftSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
+            # Convert API request to SQL params (add profile_id from header)
+            # Map draft_id from API to input_draft_id for SQL (to avoid conflict with return column)
+            params = PatchPersonaDraftSqlParams(
+                **request.model_dump(), profile_id=profile_id
             )
 
-            if not result:
+            # Manually construct tuple with JSON-encoded patch for asyncpg
+            # asyncpg accepts dict for jsonb, but we need to ensure proper encoding
+            import json
+
+            sql_params_tuple = (
+                params.profile_id,
+                json.dumps(params.patch) if params.patch else "{}",  # Encode dict as JSON string for jsonb
+                params.expected_version,
+                params.input_draft_id,
+            )
+            sql_params = sql_params_tuple  # For error tracking
+
+            # Execute SQL manually with encoded params (bypass execute_sql_typed's to_tuple())
+            # Note: We bypass execute_sql_typed because we need to encode patch as JSON string for jsonb
+            from app.sql.types import get_sql_types
+
+            function_call_sql = 'SELECT * FROM "public"."api_patch_persona_draft_v4"($1, $2, $3, $4)'
+            row = await conn.fetchrow(function_call_sql, *sql_params_tuple)
+
+            if not row:
                 raise ValueError("Failed to patch persona draft")
+
+            # Convert row to dict and parse result
+            InputType, OutputType = get_sql_types(SQL_PATH)
+            row_dict = dict(row)
+            result = cast(PatchPersonaDraftSqlRow, OutputType.model_validate(row_dict))
 
             # Set audit context
             if profile_id:
@@ -82,15 +94,21 @@ async def patch_persona_draft(
                 )
 
         # Convert SQL result to API response
+        # API response model uses snake_case (draft_id, new_version, draft_exists)
         api_response = PatchPersonaDraftApiResponse.model_validate(
             {
-                "draftId": str(result.draft_id),
-                "newVersion": result.new_version,
-                "draftExists": result.draft_exists,
+                "draft_id": result.draft_id,
+                "new_version": result.new_version,
+                "draft_exists": result.draft_exists,
             }
         )
 
         # Invalidate cache after mutation
+        # When creating a new draft, also invalidate profile context cache
+        # so the client can refresh and get the new draft_id in the profile context
+        if not result.draft_exists:
+            tags.append("profile")
+        
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

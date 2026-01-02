@@ -9,11 +9,7 @@ import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import {
-  createLoader,
-  parseAsBoolean,
-  parseAsString,
-} from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonaNewIn = InputOf<"/api/v4/personas/new", "post">;
@@ -119,6 +115,7 @@ export default async function NewPersonaPage({
       aria-label="Create new persona page"
     >
       <Persona
+        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         mode="create"
         personaDetailDefault={personaDetailDefault}
         createPersonaAction={createPersona}

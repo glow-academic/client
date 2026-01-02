@@ -13724,22 +13724,14 @@ export interface components {
         };
         /** PatchPersonaDraftApiRequest */
         PatchPersonaDraftApiRequest: {
-            /**
-             * P Draft Id
-             * Format: uuid
-             */
-            p_draft_id: string;
-            /**
-             * P Profile Id
-             * Format: uuid
-             */
-            p_profile_id: string;
-            /** P Patch */
-            p_patch: {
+            /** Patch */
+            patch: {
                 [key: string]: unknown;
             };
-            /** P Expected Version */
-            p_expected_version: number;
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
         };
         /** PatchPersonaDraftApiResponse */
         PatchPersonaDraftApiResponse: {

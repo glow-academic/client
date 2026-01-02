@@ -75,7 +75,7 @@ async def get_persona_detail(
         icon_show_selected = request.icon_show_selected
         current_color = request.current_color
         current_icon = request.current_icon
-        draft_id = getattr(request, "draft_id", None)
+        draft_id = request.draft_id
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetPersonaDetailSqlParams(

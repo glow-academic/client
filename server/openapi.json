@@ -52082,32 +52082,32 @@
       },
       "PatchPersonaDraftApiRequest": {
         "properties": {
-          "p_draft_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "P Draft Id"
-          },
-          "p_profile_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "P Profile Id"
-          },
-          "p_patch": {
+          "patch": {
             "additionalProperties": true,
             "type": "object",
-            "title": "P Patch"
+            "title": "Patch"
           },
-          "p_expected_version": {
+          "expected_version": {
             "type": "integer",
-            "title": "P Expected Version"
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
           }
         },
         "type": "object",
         "required": [
-          "p_draft_id",
-          "p_profile_id",
-          "p_patch",
-          "p_expected_version"
+          "patch",
+          "expected_version"
         ],
         "title": "PatchPersonaDraftApiRequest"
       },

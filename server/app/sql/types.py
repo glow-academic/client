@@ -12028,17 +12028,17 @@ class GetPersonasListApiResponse(BaseModel):
 
 class PatchPersonaDraftSqlParams(BaseModel):
 
-    p_draft_id: UUID
-    p_profile_id: UUID
-    p_patch: dict[str, Any]
-    p_expected_version: int
+    profile_id: UUID
+    patch: dict[str, Any]
+    expected_version: int
+    input_draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_draft_id,
-            self.p_profile_id,
-            self.p_patch,
-            self.p_expected_version,
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
         )
 
 class PatchPersonaDraftSqlRow(BaseModel):
@@ -12049,10 +12049,9 @@ class PatchPersonaDraftSqlRow(BaseModel):
 
 class PatchPersonaDraftApiRequest(BaseModel):
 
-    p_draft_id: UUID
-    p_profile_id: UUID
-    p_patch: dict[str, Any]
-    p_expected_version: int
+    patch: dict[str, Any]
+    expected_version: int
+    input_draft_id: UUID | None = None
 
 class PatchPersonaDraftApiResponse(BaseModel):
 

@@ -3,7 +3,7 @@
  * Hook for debounced autosave of draft state with optimistic concurrency
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -45,13 +45,19 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMountRef = useRef(true);
   const currentDraftIdRef = useRef<string | null>(draftId);
+  const currentDraftStateRef = useRef<T>(draftState);
+  const patchDraftActionRef = useRef(patchDraftAction);
+  const onDraftCreatedRef = useRef(onDraftCreated);
 
-  // Update draft ID ref when it changes
+  // Update refs when props change (without causing re-renders)
   useEffect(() => {
     currentDraftIdRef.current = draftId;
-  }, [draftId]);
+    currentDraftStateRef.current = draftState;
+    patchDraftActionRef.current = patchDraftAction;
+    onDraftCreatedRef.current = onDraftCreated;
+  }, [draftId, draftState, patchDraftAction, onDraftCreated]);
 
-  // Compute patch (diff)
+  // Compute patch (diff) - stable callback (no dependencies)
   const computePatch = useCallback(
     (current: T, lastSaved: T | null): Partial<T> | null => {
       if (!lastSaved) {
@@ -68,9 +74,7 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
         const lastSavedVal = lastSaved[k];
 
         // Deep comparison for arrays and objects
-        if (
-          JSON.stringify(currentVal) !== JSON.stringify(lastSavedVal)
-        ) {
+        if (JSON.stringify(currentVal) !== JSON.stringify(lastSavedVal)) {
           patch[k] = currentVal;
           hasChanges = true;
         }
@@ -78,14 +82,17 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
 
       return hasChanges ? patch : null;
     },
-    []
+    [] // Stable - no dependencies
   );
 
-  // Save function
+  // Save function - use refs to avoid dependency on draftState
   const saveDraft = useCallback(
     async (patch: Partial<T>, isManual = false) => {
       const currentDraftId = currentDraftIdRef.current;
-      
+      const currentDraftState = currentDraftStateRef.current;
+      const currentPatchDraftAction = patchDraftActionRef.current;
+      const currentOnDraftCreated = onDraftCreatedRef.current;
+
       // Skip if no patch
       if (!patch || Object.keys(patch).length === 0) {
         return;
@@ -93,7 +100,7 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
 
       setSaveStatus("saving");
       try {
-        const result = await patchDraftAction({
+        const result = await currentPatchDraftAction({
           body: {
             draft_id: currentDraftId || null,
             patch,
@@ -101,14 +108,14 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
           },
         });
 
-        // Update last saved state and version
-        lastSavedStateRef.current = { ...draftState };
+        // Update last saved state and version (use ref for current state)
+        lastSavedStateRef.current = { ...currentDraftState };
         setLastSavedVersion(result.newVersion);
         setSaveStatus("saved");
 
         // If draft was just created, notify parent
-        if (!result.draftExists && result.draftId && onDraftCreated) {
-          onDraftCreated(result.draftId);
+        if (!result.draftExists && result.draftId && currentOnDraftCreated) {
+          currentOnDraftCreated(result.draftId);
         }
 
         // Reset to idle after 2 seconds
@@ -126,11 +133,40 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
         }
       }
     },
-    [draftState, patchDraftAction, lastSavedVersion, onDraftCreated]
+    [lastSavedVersion] // Only depend on lastSavedVersion, not draftState or callbacks
   );
 
-  // Debounced autosave
+  // Track stable callback refs to prevent effect re-runs
+  const computePatchRef = useRef(computePatch);
+  const saveDraftRef = useRef(saveDraft);
+
   useEffect(() => {
+    computePatchRef.current = computePatch;
+    saveDraftRef.current = saveDraft;
+  }, [computePatch, saveDraft]);
+
+  // Compute content hash - only changes when content actually changes, not reference
+  const draftStateContentHash = useMemo(() => {
+    return JSON.stringify(draftState);
+  }, [draftState]);
+
+  // Track previous content hash to detect actual content changes
+  const prevContentHashRef = useRef<string>(draftStateContentHash);
+
+  // Debounced autosave - use content hash in dependency array instead of draftState object
+  // This prevents effect from running when only object reference changes
+  useEffect(() => {
+    // Update refs immediately
+    currentDraftStateRef.current = draftState;
+
+    // Skip if content hash hasn't changed (content is the same, only reference changed)
+    if (draftStateContentHash === prevContentHashRef.current) {
+      return;
+    }
+
+    // Update previous hash
+    prevContentHashRef.current = draftStateContentHash;
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -138,7 +174,11 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
       return;
     }
 
-    const patch = computePatch(draftState, lastSavedStateRef.current);
+    // Use stable computePatch from ref
+    const patch = computePatchRef.current(
+      draftState,
+      lastSavedStateRef.current
+    );
     if (!patch) return; // No changes
 
     // Clear existing timer
@@ -146,9 +186,9 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Set new timer
+    // Set new timer - use stable saveDraft from ref
     debounceTimerRef.current = setTimeout(() => {
-      saveDraft(patch, false);
+      saveDraftRef.current(patch, false);
     }, debounceMs);
 
     return () => {
@@ -156,11 +196,23 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [draftState, debounceMs, computePatch, saveDraft]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    draftStateContentHash,
+    debounceMs,
+    // Removed draftId, draftState, computePatch, saveDraft from dependencies
+    // - draftId and draftState are accessed via refs (currentDraftIdRef, currentDraftStateRef)
+    // - computePatch and saveDraft are accessed via refs (computePatchRef, saveDraftRef)
+    // Only content hash changes should trigger autosave, not reference changes
+    // This prevents infinite loops when these props change reference but content stays the same
+  ]); // Use content hash instead of draftState object
 
   // Manual save
   const saveNow = useCallback(async () => {
-    const patch = computePatch(draftState, lastSavedStateRef.current);
+    const patch = computePatch(
+      currentDraftStateRef.current,
+      lastSavedStateRef.current
+    );
     if (!patch) {
       toast.info("No changes to save");
       return;
@@ -172,7 +224,7 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
     }
 
     await saveDraft(patch, true);
-  }, [draftState, computePatch, saveDraft]);
+  }, [computePatch, saveDraft]); // Use ref for draftState, not direct dependency
 
   return {
     saveStatus,
@@ -180,4 +232,3 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
     lastSavedVersion,
   };
 }
-

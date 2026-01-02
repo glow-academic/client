@@ -39,7 +39,8 @@ async def get_persona_new(
     tags = ["personas"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    # Use mode='json' to serialize UUIDs to strings for JSON compatibility
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -68,7 +69,7 @@ async def get_persona_new(
         icon_show_selected = request.icon_show_selected
         current_color = request.current_color
         current_icon = request.current_icon
-        draft_id = getattr(request, "draft_id", None)
+        draft_id = request.draft_id
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetPersonaNewSqlParams(
