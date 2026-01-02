@@ -11,6 +11,7 @@ This document describes the migration from resource-specific section components 
 3. **Function-based extraction**: Like GenericPicker, use functions for flexibility (`getId`, `renderItem`)
 4. **Thin wrapper**: Form components are just configuration, no presentation logic
 5. **Reusable**: Components work for Persona, Scenario, Document, Parameter, etc.
+6. **Inline extra components**: When migrating components (especially when adding draft support), **move any extra components inline** - the logic will be cleaner and can be handled with generic components. Avoid creating resource-specific section components - instead, use generic components with inline configuration.
 
 ## Component Architecture
 
@@ -480,14 +481,18 @@ When migrating a resource-specific section component:
 3. **Create renderItem function**:
    - Extract item rendering logic into inline `renderItem` function
    - Pass item-specific data via closure (e.g., `suggestedIcons`, `getColorName`)
+   - **Keep renderItem inline** in the switch case - don't extract to separate component
 
 4. **Replace section component**:
    - Replace `<ResourceSection>` with `<StepCard>` + `<SelectableGrid>` or `<ReorderableList>`
    - Move all props to inline configuration
+   - **Inline everything** - avoid creating new resource-specific components
 
 5. **Delete old component**:
    - Remove resource-specific section component file
    - Update imports
+
+**⚠️ Important**: When migrating components to use drafts, this is the perfect opportunity to inline any extra components. The logic will be cleaner and can be handled with generic components (`StepCard`, `SelectableGrid`, `ReorderableList`, `GenericPicker`). See the "Draft Autosave Pattern" section for more details on component structure during draft migration.
 
 ## Common Patterns
 
@@ -1346,6 +1351,7 @@ The draft pattern provides automatic saving of form state with version-based con
 3. **Type transformation**: Transform hook API to backend API in wrapper function
 4. **URL draftId management**: Sync draftId between URL (nuqs) and profile context
 5. **Server data initialization**: Initialize draft state from server data (merged with draft payload)
+6. **Inline extra components**: When migrating, move any extra components created inline - logic will be cleaner and can be handled with generic components (`StepCard`, `SelectableGrid`, `ReorderableList`, etc.)
 
 ### Hook Usage Pattern
 
@@ -1651,6 +1657,7 @@ const {resource}Detail = await get{Resource}(input);
 5. **State initialization**: Initialize draft state from server data, which includes merged draft payload if draftId exists
 6. **Debouncing**: Hook debounces saves (default 1000ms) to avoid excessive API calls
 7. **Optimistic concurrency**: Uses `expected_version` to prevent lost updates
+8. **Inline extra components**: When migrating components to use drafts, **move any extra components inline** - the logic will be cleaner and can be handled with generic components (`StepCard`, `SelectableGrid`, `ReorderableList`, `GenericPicker`, etc.). Avoid creating resource-specific section components (e.g., `PersonaColorSection`, `ScenarioBasicSection`) - instead, use generic components with inline configuration in the `renderStep` callback.
 
 ### Reference Implementation
 
@@ -1658,9 +1665,12 @@ See `client/components/personas/Persona.tsx` for a complete reference implementa
 
 **Key Files**:
 - `client/hooks/use-draft-autosave.ts` - Generic draft autosave hook
-- `client/components/personas/Persona.tsx` - Component integration example
+- `client/components/personas/Persona.tsx` - Component integration example (uses inline generic components, no separate section components)
 - `client/app/(main)/create/personas/new/page.tsx` - Server page example
 - `client/app/(main)/create/personas/p/[personaId]/page.tsx` - Edit page example
+
+**Component Structure Example**:
+The Persona component demonstrates the inline pattern - all step rendering is done inline using `StepCard`, `SelectableGrid`, and `ReorderableList` with inline `renderItem` functions. No separate `PersonaColorSection` or `PersonaIconSection` components exist - everything is handled inline for cleaner logic and better maintainability.
 
 ### Migration Checklist
 
@@ -1683,6 +1693,17 @@ When migrating other resources (scenarios, benchmarks, etc.) to use draft autosa
 - [ ] **Add component props** (`client/components/{resource}/{Resource}.tsx`)
   - [ ] Add `patch{Resource}DraftAction` prop to component interface
   - [ ] Import `Patch{Resource}DraftIn` and `Patch{Resource}DraftOut` types from page file
+
+- [ ] **Refactor component structure** (`client/components/{resource}/{Resource}.tsx`)
+  - [ ] **Move extra components inline**: If the component has separate section components (e.g., `{Resource}ColorSection`, `{Resource}BasicSection`), move them inline into the `renderStep` callback
+  - [ ] **Use generic components**: Replace resource-specific section components with generic components:
+    - Use `StepCard` for step wrappers (includes search/filter built-in)
+    - Use `SelectableGrid` for selectable items (colors, icons, etc.)
+    - Use `ReorderableList` for drag-and-drop lists (examples, items, etc.)
+    - Use `GenericPicker` for multi-select pickers (departments, parameters, etc.)
+  - [ ] **Inline renderItem functions**: Keep `renderItem` functions inline in the switch case for clarity
+  - [ ] **Delete old components**: Remove resource-specific section component files after migration
+  - [ ] **Benefits**: Cleaner logic, better reusability, consistent patterns across all resources
 
 - [ ] **Integrate `useDraftAutosave` hook**
   - [ ] Define `DraftState` type with resource-specific fields
