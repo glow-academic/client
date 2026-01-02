@@ -183,21 +183,30 @@ cohort_departments_data AS (
 ),
 cohort_data AS (
     SELECT 
-        c.id,
-        COALESCE((SELECT payload->>'title' FROM draft_payload_data), c.title, '') as title,
-        COALESCE((SELECT payload->>'description' FROM draft_payload_data), c.description, '') as description,
-        COALESCE((SELECT (payload->>'active')::boolean FROM draft_payload_data), c.active, true) as active,
+        COALESCE((SELECT id FROM default_cohort LIMIT 1), NULL::uuid) as id,
+        COALESCE(
+            (SELECT payload->>'title' FROM draft_payload_data),
+            ''::text
+        ) as title,
+        COALESCE(
+            (SELECT payload->>'description' FROM draft_payload_data),
+            ''::text
+        ) as description,
+        COALESCE(
+            (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+            true::boolean
+        ) as active,
         COALESCE(
             CASE 
                 WHEN EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'department_ids') 
                 THEN (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids')) FROM draft_payload_data)
                 ELSE NULL
             END,
-            cdd.department_ids,
-            NULL
+            NULL::text[]
         ) as department_ids
-    FROM default_cohort dc
-    JOIN cohorts c ON c.id = dc.id
+    FROM params x
+    LEFT JOIN default_cohort dc ON true
+    LEFT JOIN cohorts c ON c.id = dc.id
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
 ),
 cohort_profile_ids AS (
@@ -272,7 +281,14 @@ valid_dept_ids AS (
     SELECT id FROM valid_departments
 ),
 cohort_is_default AS (
-    SELECT COALESCE(cd.department_ids, NULL) IS NULL as is_default
+    SELECT 
+        CASE 
+            -- If draft exists and has department_ids, it's not a default cohort
+            WHEN EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'department_ids') THEN false
+            -- If no draft, check if department_ids from default cohort is NULL
+            WHEN COALESCE(cd.department_ids, NULL) IS NULL THEN true
+            ELSE false
+        END as is_default
     FROM cohort_data cd
 ),
 valid_simulations AS (
@@ -283,10 +299,13 @@ valid_simulations AS (
     CROSS JOIN cohort_is_default cid
     GROUP BY s.id, cid.is_default
     HAVING 
-        -- For default cohorts (no department links), include all simulations in the cohort
-        (cid.is_default = true AND s.id IN (SELECT simulation_id FROM cohort_simulation_ids))
+        -- For new cohorts (no draft), include all simulations accessible to user's departments
+        (cid.is_default = true AND (
+            COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT id FROM valid_dept_ids)) > 0
+            OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
+        ))
         OR
-        -- For non-default cohorts, use department filtering
+        -- For cohorts with department links (from draft), use department filtering
         (cid.is_default = false AND (
             COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT id FROM valid_dept_ids)) > 0
             OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
@@ -354,14 +373,8 @@ simulation_mapping_data AS (
         ) as time_limit,
         ARRAY[]::text[] as department_ids
     FROM params x
-    JOIN simulations s ON true
-    CROSS JOIN cohort_is_default cid
-    WHERE 
-        -- For default cohorts, include all simulations in the cohort
-        (cid.is_default = true AND s.id IN (SELECT simulation_id FROM cohort_simulation_ids))
-        OR
-        -- For non-default cohorts, use valid_simulations filtering
-        (cid.is_default = false AND s.id IN (SELECT id FROM valid_simulations))
+    JOIN simulations s ON s.active = true
+    WHERE s.id IN (SELECT id FROM valid_simulations)
 ),
 profile_mapping_data AS (
     SELECT 
@@ -570,9 +583,13 @@ SELECT
     END as can_edit,
     (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
      FROM cohort_profile_ids) as profile_ids,
-    (SELECT COALESCE(array_agg(simulation_id::text ORDER BY position), ARRAY[]::text[])
-     FROM cohort_simulation_ids
-     WHERE active = true) as simulation_ids,
+    CASE 
+        -- If draft exists and has simulation_ids, use draft
+        WHEN EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'simulation_ids') 
+        THEN (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'simulation_ids')) FROM draft_payload_data)
+        -- Otherwise, return empty array for new cohort (no draft)
+        ELSE ARRAY[]::text[]
+    END as simulation_ids,
     (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
      FROM valid_dept_ids) as valid_department_ids,
     (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])

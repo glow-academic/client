@@ -21,13 +21,15 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-import { SimulationCardGrid } from "@/components/common/cohorts/SimulationCardGrid";
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -36,9 +38,16 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { ArrowDown, ArrowUp, GripVertical, Power } from "lucide-react";
 import {
-  parseAsArrayOf,
+  ArrowDown,
+  ArrowUp,
+  Check,
+  GripVertical,
+  PlayCircle,
+  Power,
+} from "lucide-react";
+import {
+  parseAsBoolean,
   parseAsString,
   useQueryStates,
   type Parser,
@@ -245,10 +254,10 @@ function CohortComponent({
   const cohortSearchParamsClient = {
     // Draft ID (URL-backed, updated when draft is created)
     draftId: parseAsString,
-    // Simulation IDs (URL-backed, updated when simulations are selected)
-    simulationIds: parseAsArrayOf(parseAsString),
-    // Department IDs (URL-backed, updated when departments are selected)
-    departmentIds: parseAsArrayOf(parseAsString),
+    // Search params (URL-backed, updated via debounced callback in StepCard)
+    simulationSearch: parseAsString,
+    // Filter params (URL-backed)
+    simulationShowSelected: parseAsBoolean,
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
@@ -268,9 +277,6 @@ function CohortComponent({
   }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
 
   const draftId = urlDraftId;
-
-  // Track if we've initialized URL params from server data to prevent infinite loops
-  const hasInitializedUrlParamsRef = useRef(false);
 
   // Local draft state (not in URL) - initialized from server data or draft payload
   type DraftState = {
@@ -340,16 +346,14 @@ function CohortComponent({
   const formData = useMemo(() => {
     return {
       ...draftState,
-      simulationIds:
-        urlParams.simulationIds && urlParams.simulationIds.length > 0
-          ? urlParams.simulationIds
-          : draftState.simulationIds,
-      departmentIds:
-        urlParams.departmentIds && urlParams.departmentIds.length > 0
-          ? urlParams.departmentIds
-          : draftState.departmentIds,
+      simulationSearch: urlParams.simulationSearch || null,
+      simulationShowSelected: urlParams.simulationShowSelected ?? false,
     } as Record<string, unknown>;
-  }, [draftState, urlParams.simulationIds, urlParams.departmentIds]);
+  }, [
+    draftState,
+    urlParams.simulationSearch,
+    urlParams.simulationShowSelected,
+  ]);
 
   // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
   const setFormData = useCallback(
@@ -370,23 +374,20 @@ function CohortComponent({
           key === "title" ||
           key === "description" ||
           key === "active" ||
-          key === "simulationActiveStates"
+          key === "simulationActiveStates" ||
+          key === "departmentIds" ||
+          key === "simulationIds"
         ) {
           draftUpdates[key as keyof DraftState] = value as never;
-        } else if (key === "departmentIds") {
-          draftUpdates["departmentIds"] = (value as string[]) || [];
-          // Also update URL params for departmentIds
-          urlUpdates["departmentIds"] =
-            (value as string[]) && (value as string[]).length > 0
-              ? (value as string[])
+        } else if (key === "simulationSearch") {
+          // Update URL params for search/filter operations
+          urlUpdates["simulationSearch"] =
+            (value as string) && (value as string).length > 0
+              ? (value as string)
               : null;
-        } else if (key === "simulationIds") {
-          draftUpdates["simulationIds"] = (value as string[]) || [];
-          // Also update URL params for simulationIds
-          urlUpdates["simulationIds"] =
-            (value as string[]) && (value as string[]).length > 0
-              ? (value as string[])
-              : null;
+        } else if (key === "simulationShowSelected") {
+          // Update URL params for filter operations
+          urlUpdates["simulationShowSelected"] = value === true ? true : null;
         }
       });
 
@@ -408,33 +409,6 @@ function CohortComponent({
     },
     [formData, setUrlParams, urlParams]
   );
-
-  // Load cohort data from server response and initialize URL params if needed
-  useEffect(() => {
-    if (cohortData && isEditMode) {
-      // Load simulation IDs
-      // Prioritize URL params if they exist, otherwise use server data
-      const simulationIdsFromUrl = urlParams.simulationIds || [];
-      const orderedSimulationIds =
-        simulationIdsFromUrl.length > 0
-          ? simulationIdsFromUrl
-          : cohortData.simulation_ids || [];
-
-      // Update URL params if we're using server data and URL is empty (only in edit mode)
-      // Only do this once to prevent infinite loops
-      if (
-        isEditMode &&
-        !hasInitializedUrlParamsRef.current &&
-        simulationIdsFromUrl.length === 0 &&
-        orderedSimulationIds.length > 0
-      ) {
-        hasInitializedUrlParamsRef.current = true;
-        setUrlParams({
-          simulationIds: orderedSimulationIds,
-        });
-      }
-    }
-  }, [cohortData, isEditMode, urlParams.simulationIds, setUrlParams]);
 
   // Set breadcrumb context when cohort data is loaded
   useEffect(() => {
@@ -537,26 +511,34 @@ function CohortComponent({
     >;
   }, [cohortData?.departments]);
 
-  // Convert simulations_for_picker array to dictionary for efficient lookups
-  const simulationMapping = useMemo(() => {
+  // Convert simulations_for_picker array to array format for SelectableGrid
+  const simulationsArray = useMemo(() => {
     const simulations = cohortData?.simulations_for_picker || [];
     // Handle both array (new format) and object (legacy format) for backward compatibility
     if (Array.isArray(simulations)) {
-      return Object.fromEntries(
-        simulations.map((item) => [item.simulation_id, item])
-      ) as Record<
-        string,
-        {
-          simulation_id: string;
-          name: string;
-          description: string;
-          time_limit: number;
-          department_ids: string[];
-        }
-      >;
+      return simulations as Array<{
+        simulation_id: string;
+        name: string;
+        description: string;
+        time_limit: number;
+        department_ids: string[];
+      }>;
     }
-    // Legacy format (already a dictionary)
-    return simulations as Record<
+    // Legacy format (dictionary) - convert to array
+    return Object.values(simulations) as Array<{
+      simulation_id: string;
+      name: string;
+      description: string;
+      time_limit: number;
+      department_ids: string[];
+    }>;
+  }, [cohortData?.simulations_for_picker]);
+
+  // Convert to dictionary for efficient lookups (used in contentSections)
+  const simulationMapping = useMemo(() => {
+    return Object.fromEntries(
+      simulationsArray.map((item) => [item.simulation_id, item])
+    ) as Record<
       string,
       {
         simulation_id: string;
@@ -566,7 +548,7 @@ function CohortComponent({
         department_ids: string[];
       }
     >;
-  }, [cohortData?.simulations_for_picker]);
+  }, [simulationsArray]);
 
   const validSimulationIds = useMemo(() => {
     const baseIds = cohortData?.valid_simulation_ids || [];
@@ -594,10 +576,10 @@ function CohortComponent({
     return baseIds.filter((id) => deptSimulationIds.has(id));
   }, [cohortData?.valid_simulation_ids, formData, departmentMapping]);
 
-  // Get current simulation IDs from formData
+  // Get current simulation IDs from draftState (not formData, since simulationIds is not in URL)
   const currentSimulationIds = useMemo(() => {
-    return (formData["simulationIds"] as string[] | null | undefined) || [];
-  }, [formData]);
+    return draftState.simulationIds || [];
+  }, [draftState.simulationIds]);
 
   // Get can_remove map for simulations
   const simulationCanRemoveMap = useMemo(() => {
@@ -783,7 +765,7 @@ function CohortComponent({
           "description",
           "departmentIds",
           "active",
-        ] as (keyof typeof cohortSearchParamsClient)[],
+        ] as string[],
       },
       {
         id: "simulations",
@@ -791,6 +773,8 @@ function CohortComponent({
         description: "Select simulations to include in this cohort.",
         resetFields: [
           "simulationIds",
+          "simulationSearch",
+          "simulationShowSelected",
         ] as (keyof typeof cohortSearchParamsClient)[],
       },
     ],
@@ -853,6 +837,12 @@ function CohortComponent({
       isOptional: boolean;
       formData: Record<string, unknown>;
       setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      filters?: Array<{
+        key: string;
+        label: string;
+        value: boolean;
+        onChange: (value: boolean) => void;
+      }>;
       onReset?: () => void;
     }) => {
       switch (stepId) {
@@ -873,7 +863,9 @@ function CohortComponent({
                 defaultName: "New Cohort",
                 required: true,
               }}
-              resetFields={["title", "description", "departmentIds", "active"]}
+              resetFields={
+                ["title", "description", "departmentIds", "active"] as string[]
+              }
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -970,7 +962,26 @@ function CohortComponent({
             </StepCard>
           );
 
-        case "simulations":
+        case "simulations": {
+          const simulationShowSelected =
+            (stepFormData["simulationShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+          const selectedSimulationIds =
+            (stepFormData["simulationIds"] as string[] | null | undefined) ||
+            [];
+
+          // Filter simulations to only show valid ones
+          const filteredSimulations = simulationsArray.filter((sim) =>
+            validSimulationIds.includes(sim.simulation_id)
+          );
+
+          // Create filter onChange handler (inline function, not useCallback)
+          const createSimulationFilterOnChange = (value: boolean) => {
+            setStepFormData({ simulationShowSelected: value });
+          };
+
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -979,36 +990,96 @@ function CohortComponent({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={["simulationIds"]}
+              searchTerm={
+                (stepFormData["simulationSearch"] as
+                  | string
+                  | null
+                  | undefined) || ""
+              }
+              onSearchChange={(term: string) =>
+                setStepFormData({ simulationSearch: term || null })
+              }
+              searchPlaceholder="Search simulations..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: simulationShowSelected,
+                  onChange: createSimulationFilterOnChange,
+                },
+              ]}
+              resetFields={[
+                "simulationIds",
+                "simulationSearch",
+                "simulationShowSelected",
+              ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <SimulationCardGrid
-                simulationMapping={
-                  Object.fromEntries(
-                    Object.entries(simulationMapping).map(([key, value]) => [
-                      key,
-                      { name: value.name, description: value.description },
-                    ])
-                  ) as Record<string, { name: string; description?: string }>
-                }
-                validSimulationIds={validSimulationIds}
-                selectedSimulationIds={
-                  (stepFormData["simulationIds"] as
-                    | string[]
-                    | null
-                    | undefined) || []
-                }
-                onSelect={(ids) =>
+              <SelectableGrid
+                items={filteredSimulations}
+                selectedId={null}
+                selectedIds={selectedSimulationIds}
+                onSelect={(simulationId) => {
+                  const isSelected =
+                    selectedSimulationIds.includes(simulationId);
+                  // Prevent unselection if can_remove is false
+                  if (
+                    isSelected &&
+                    simulationCanRemoveMap[simulationId] === false
+                  ) {
+                    return;
+                  }
+                  const newIds = isSelected
+                    ? selectedSimulationIds.filter((id) => id !== simulationId)
+                    : [...selectedSimulationIds, simulationId];
                   setStepFormData({
-                    simulationIds: ids.length > 0 ? ids : null,
-                  })
-                }
-                readonly={isReadonly}
-                canRemoveMap={simulationCanRemoveMap}
+                    simulationIds: newIds.length > 0 ? newIds : null,
+                  });
+                }}
+                getId={(sim) => sim.simulation_id}
+                renderItem={(simulation, isSelected) => (
+                  <div
+                    className={cn(
+                      "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                      "hover:shadow-md hover:bg-accent/50",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      isSelected && "ring-2 ring-primary bg-accent",
+                      isSelected &&
+                        simulationCanRemoveMap[simulation.simulation_id] ===
+                          false &&
+                        "opacity-75 cursor-not-allowed"
+                    )}
+                  >
+                    {/* Check icon - top right */}
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-3">
+                      <PlayCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm leading-tight">
+                          {simulation.name || "Unnamed Simulation"}
+                        </h3>
+                        {simulation.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {simulation.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                emptyMessage="No simulations found. Try adjusting your search or filters."
+                disabled={isReadonly}
               />
             </StepCard>
           );
+        }
 
         default:
           return null;
@@ -1017,7 +1088,7 @@ function CohortComponent({
     [
       cohortData,
       departmentMapping,
-      simulationMapping,
+      simulationsArray,
       validSimulationIds,
       simulationCanRemoveMap,
       isReadonly,
@@ -1229,62 +1300,64 @@ function CohortComponent({
   ]);
 
   return (
-    <div
-      className="w-full p-6 space-y-8"
-      data-page={`cohort-${isEditMode ? "edit" : "new"}`}
-    >
-      {isReadonly && (
-        <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-muted-foreground"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-foreground">
-                Cohort is read-only
-              </h3>
-              <div className="mt-2 text-sm text-muted-foreground">
-                <p>
-                  {cohortData?.department_ids?.length === 0
-                    ? "This is a default cohort that cannot be edited. You can view the details but cannot make changes."
-                    : "This cohort cannot be edited. You can view the details but cannot make changes."}
-                </p>
+    <TooltipProvider>
+      <div
+        className="w-full p-6 space-y-8"
+        data-page={`cohort-${isEditMode ? "edit" : "new"}`}
+      >
+        {isReadonly && (
+          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-muted-foreground"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-foreground">
+                  Cohort is read-only
+                </h3>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <p>
+                    {cohortData?.department_ids?.length === 0
+                      ? "This is a default cohort that cannot be edited. You can view the details but cannot make changes."
+                      : "This cohort cannot be edited. You can view the details but cannot make changes."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <GenericForm
-        nuqsParsers={
-          cohortSearchParamsClient as Record<string, Parser<unknown>>
-        }
-        steps={steps}
-        getStepStatus={getStepStatus}
-        formData={formData}
-        setFormData={setFormData}
-        serverData={cohortData}
-        initializeForm={initializeForm}
-        formFieldKeys={formFieldKeys}
-        resetSuccessMessage={resetSuccessMessage}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={isReadonly}
-        isEditMode={isEditMode}
-        renderStep={renderStep}
-        contentSections={contentSections}
-      />
-    </div>
+        <GenericForm
+          nuqsParsers={
+            cohortSearchParamsClient as Record<string, Parser<unknown>>
+          }
+          steps={steps}
+          getStepStatus={getStepStatus}
+          formData={formData}
+          setFormData={setFormData}
+          serverData={cohortData}
+          initializeForm={initializeForm}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={resetSuccessMessage}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={isReadonly}
+          isEditMode={isEditMode}
+          renderStep={renderStep}
+          contentSections={contentSections}
+        />
+      </div>
+    </TooltipProvider>
   );
 }
 

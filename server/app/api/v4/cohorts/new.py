@@ -44,16 +44,20 @@ async def get_cohort_new(
     """Get default cohort detail with staff, simulations, and mappings."""
     tags = ["cohorts"]  # From router tags
 
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetCohortNewApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return GetCohortNewApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -84,7 +88,7 @@ async def get_cohort_new(
             ),
         )
 
-        if not result or not result.title:
+        if not result:
             raise HTTPException(
                 status_code=404, detail="No cohort found for user's departments"
             )

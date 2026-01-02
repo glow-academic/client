@@ -19,6 +19,8 @@ export interface SimulationCardGridProps {
   description?: string;
   readonly?: boolean;
   canRemoveMap?: Record<string, boolean>; // Map of simulation ID to can_remove
+  hideSearch?: boolean; // Hide the built-in search bar (for use with StepCard search)
+  externalSearchTerm?: string; // External search term when hideSearch is true
 }
 
 export function SimulationCardGrid({
@@ -28,8 +30,11 @@ export function SimulationCardGrid({
   onSelect,
   readonly = false,
   canRemoveMap = {},
+  hideSearch = false,
+  externalSearchTerm = "",
 }: SimulationCardGridProps) {
-  const [searchTerm, setSearchTerm] = React.useState("");
+  const [internalSearchTerm, setInternalSearchTerm] = React.useState("");
+  const searchTerm = hideSearch ? externalSearchTerm : internalSearchTerm;
 
   // Build simulations from mapping
   const baseSimulations = React.useMemo(() => {
@@ -91,18 +96,20 @@ export function SimulationCardGrid({
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        {/* Search Bar */}
-        <div className="flex h-9 items-center gap-2 border-b px-0 w-full">
-          <Search className="size-4 shrink-0 opacity-50" />
-          <input
-            type="text"
-            placeholder="Search simulations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={readonly}
-          />
-        </div>
+        {/* Search Bar - only show if not hidden */}
+        {!hideSearch && (
+          <div className="flex h-9 items-center gap-2 border-b px-0 w-full">
+            <Search className="size-4 shrink-0 opacity-50" />
+            <input
+              type="text"
+              placeholder="Search simulations..."
+              value={internalSearchTerm}
+              onChange={(e) => setInternalSearchTerm(e.target.value)}
+              className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={readonly}
+            />
+          </div>
+        )}
 
         {/* Card Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[272px] overflow-y-auto py-2 px-2">
