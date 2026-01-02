@@ -37,8 +37,8 @@ OID_TO_PYTHON_TYPE: dict[int, str] = {
     1083: "str",  # TIME (ISO string)
     1266: "str",  # TIMETZ (ISO string)
     # JSON types
-    114: "dict[str, Any]",  # JSON
-    3802: "dict[str, Any]",  # JSONB
+    114: "Any",  # JSON can be dict or list
+    3802: "Any",  # JSONB can be dict or list
     # Array types (base OID + 1 = array OID)
     # We'll detect arrays by checking if OID is in pg_type with typarray
     1000: "list[bool]",  # BOOLEAN[]

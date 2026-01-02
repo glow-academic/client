@@ -326,8 +326,8 @@ def _pg_type_to_python_type(pg_type: str, generated_types: dict[str, str]) -> st
         "real": "float",
         "double precision": "float",
         "numeric": "float",
-        "json": "dict[str, Any]",
-        "jsonb": "dict[str, Any]",
+        "json": "Any",  # JSON can be dict or list
+        "jsonb": "Any",  # JSONB can be dict or list
     }
 
     return type_map.get(pg_type_lower, "Any")

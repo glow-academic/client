@@ -3246,6 +3246,87 @@
         ]
       }
     },
+    "/api/v4/auth/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "auth"
+        ],
+        "summary": "Patch Auth Draft",
+        "description": "Patch auth draft (creates if not exists).",
+        "operationId": "patch_auth_draft_api_v4_auth_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchAuthDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchAuthDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
+      }
+    },
     "/api/v4/auth/login": {
       "post": {
         "tags": [
@@ -29159,10 +29240,7 @@
           },
           "template_args": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -34285,6 +34363,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Auth Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -34374,6 +34464,44 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "auth_item_ids": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Ids"
+          },
+          "auth_item_active_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Active States"
+          },
+          "auth_item_encrypted_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Encrypted States"
           }
         },
         "type": "object",
@@ -34416,7 +34544,20 @@
         "title": "GetAuthListApiResponse"
       },
       "GetAuthNewApiRequest": {
-        "properties": {},
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
         "type": "object",
         "title": "GetAuthNewApiRequest"
       },
@@ -34490,6 +34631,44 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "auth_item_ids": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Ids"
+          },
+          "auth_item_active_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Active States"
+          },
+          "auth_item_encrypted_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Encrypted States"
           }
         },
         "type": "object",
@@ -35559,10 +35738,7 @@
           },
           "simulation_scenario_mapping": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -37010,10 +37186,7 @@
           },
           "template_args": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -49787,10 +49960,7 @@
           },
           "scenario_active_states": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -49799,10 +49969,7 @@
           },
           "scenario_settings": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -50299,10 +50466,7 @@
           },
           "scenario_active_states": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -50311,10 +50475,7 @@
           },
           "scenario_settings": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -53054,6 +53215,77 @@
         "title": "ObjectivesToolCompletePayload",
         "description": "Response indicating objectives tool completed successfully."
       },
+      "PatchAuthDraftApiRequest": {
+        "properties": {
+          "patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Patch"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patch",
+          "expected_version"
+        ],
+        "title": "PatchAuthDraftApiRequest"
+      },
+      "PatchAuthDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchAuthDraftApiResponse"
+      },
       "PatchCohortDraftApiRequest": {
         "properties": {
           "patch": {
@@ -54082,10 +54314,7 @@
           },
           "temperature_levels": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -54094,10 +54323,7 @@
           },
           "reasoning_options": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -54106,10 +54332,7 @@
           },
           "available_voices": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -54457,10 +54680,7 @@
           },
           "temperature_levels": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -54469,10 +54689,7 @@
           },
           "reasoning_options": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -54481,10 +54698,7 @@
           },
           "available_voices": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -61678,10 +61892,7 @@
           },
           "template_args": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -69963,10 +70174,7 @@
           },
           "payload": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -81142,10 +81350,7 @@
           },
           "persona_mapping": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }
@@ -93807,10 +94012,7 @@
           },
           "template_args": {
             "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
+              {},
               {
                 "type": "null"
               }

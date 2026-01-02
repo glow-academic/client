@@ -808,6 +808,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/auth/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Auth Draft
+         * @description Patch auth draft (creates if not exists).
+         */
+        patch: operations["patch_auth_draft_api_v4_auth_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/auth/login": {
         parameters: {
             query?: never;
@@ -8955,9 +8975,7 @@ export interface components {
             /** Template Upload Id */
             template_upload_id?: string | null;
             /** Template Args */
-            template_args?: {
-                [key: string]: unknown;
-            } | null;
+            template_args?: unknown | null;
         };
         /** CreateDocumentApiResponse */
         CreateDocumentApiResponse: {
@@ -10391,6 +10409,8 @@ export interface components {
              * Format: uuid
              */
             auth_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetAuthDetailApiResponse */
         GetAuthDetailApiResponse: {
@@ -10408,6 +10428,14 @@ export interface components {
             auth_items?: components["schemas"]["QGetAuthDetailV4AuthItem"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Auth Item Ids */
+            auth_item_ids?: unknown | null;
+            /** Auth Item Active States */
+            auth_item_active_states?: unknown | null;
+            /** Auth Item Encrypted States */
+            auth_item_encrypted_states?: unknown | null;
         };
         /** GetAuthListApiRequest */
         GetAuthListApiRequest: Record<string, never>;
@@ -10419,7 +10447,10 @@ export interface components {
             auths?: components["schemas"]["QGetAuthListV4Auth"][] | null;
         };
         /** GetAuthNewApiRequest */
-        GetAuthNewApiRequest: Record<string, never>;
+        GetAuthNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetAuthNewApiResponse */
         GetAuthNewApiResponse: {
             /** Name */
@@ -10434,6 +10465,14 @@ export interface components {
             auth_items?: components["schemas"]["QGetAuthNewV4AuthItem"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Auth Item Ids */
+            auth_item_ids?: unknown | null;
+            /** Auth Item Active States */
+            auth_item_active_states?: unknown | null;
+            /** Auth Item Encrypted States */
+            auth_item_encrypted_states?: unknown | null;
         };
         /** GetBenchmarkBundleApiRequest */
         GetBenchmarkBundleApiRequest: {
@@ -10639,9 +10678,7 @@ export interface components {
             /** Scenarios */
             scenarios?: components["schemas"]["QListCohortsV4Scenario"][] | null;
             /** Simulation Scenario Mapping */
-            simulation_scenario_mapping?: {
-                [key: string]: unknown;
-            } | null;
+            simulation_scenario_mapping?: unknown | null;
             /** Departments */
             departments?: components["schemas"]["QListCohortsV4Department"][] | null;
         };
@@ -10911,9 +10948,7 @@ export interface components {
             /** Template Id */
             template_id?: string | null;
             /** Template Args */
-            template_args?: {
-                [key: string]: unknown;
-            } | null;
+            template_args?: unknown | null;
             /** Template Upload Id */
             template_upload_id?: string | null;
             /** Template File Path */
@@ -13262,13 +13297,9 @@ export interface components {
             /** Draft Version */
             draft_version?: number | null;
             /** Scenario Active States */
-            scenario_active_states?: {
-                [key: string]: unknown;
-            } | null;
+            scenario_active_states?: unknown | null;
             /** Scenario Settings */
-            scenario_settings?: {
-                [key: string]: unknown;
-            } | null;
+            scenario_settings?: unknown | null;
         };
         /** GetSimulationNewApiRequest */
         GetSimulationNewApiRequest: {
@@ -13350,13 +13381,9 @@ export interface components {
             /** Draft Version */
             draft_version?: number | null;
             /** Scenario Active States */
-            scenario_active_states?: {
-                [key: string]: unknown;
-            } | null;
+            scenario_active_states?: unknown | null;
             /** Scenario Settings */
-            scenario_settings?: {
-                [key: string]: unknown;
-            } | null;
+            scenario_settings?: unknown | null;
         };
         /** GetSimulationsListApiRequest */
         GetSimulationsListApiRequest: Record<string, never>;
@@ -13931,6 +13958,26 @@ export interface components {
             /** Message */
             message?: string | null;
         };
+        /** PatchAuthDraftApiRequest */
+        PatchAuthDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchAuthDraftApiResponse */
+        PatchAuthDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PatchCohortDraftApiRequest */
         PatchCohortDraftApiRequest: {
             /** Patch */
@@ -14184,17 +14231,11 @@ export interface components {
             /** Temperature Upper */
             temperature_upper: number | null;
             /** Temperature Levels */
-            temperature_levels: {
-                [key: string]: unknown;
-            } | null;
+            temperature_levels: unknown | null;
             /** Reasoning Options */
-            reasoning_options: {
-                [key: string]: unknown;
-            } | null;
+            reasoning_options: unknown | null;
             /** Available Voices */
-            available_voices: {
-                [key: string]: unknown;
-            } | null;
+            available_voices: unknown | null;
         };
         /** QGetAgentDetailV4Prompt */
         QGetAgentDetailV4Prompt: {
@@ -14259,17 +14300,11 @@ export interface components {
             /** Output Modalities */
             output_modalities: string[] | null;
             /** Temperature Levels */
-            temperature_levels: {
-                [key: string]: unknown;
-            } | null;
+            temperature_levels: unknown | null;
             /** Reasoning Options */
-            reasoning_options: {
-                [key: string]: unknown;
-            } | null;
+            reasoning_options: unknown | null;
             /** Available Voices */
-            available_voices: {
-                [key: string]: unknown;
-            } | null;
+            available_voices: unknown | null;
         };
         /** QGetAuthDetailV4AuthItem */
         QGetAuthDetailV4AuthItem: {
@@ -15566,9 +15601,7 @@ export interface components {
             /** Template Id */
             template_id: string | null;
             /** Template Args */
-            template_args: {
-                [key: string]: unknown;
-            } | null;
+            template_args: unknown | null;
             /** Active */
             active: boolean | null;
             /** Created At */
@@ -17081,9 +17114,7 @@ export interface components {
             /** Resource Type */
             resource_type: string | null;
             /** Payload */
-            payload: {
-                [key: string]: unknown;
-            } | null;
+            payload: unknown | null;
             /** Version */
             version: number | null;
             /** Updated At */
@@ -19074,9 +19105,7 @@ export interface components {
             /** Persona Ids */
             persona_ids: string[] | null;
             /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: unknown;
-            } | null;
+            persona_mapping: unknown | null;
         };
         /** QListCohortsV4Simulation */
         QListCohortsV4Simulation: {
@@ -21717,9 +21746,7 @@ export interface components {
             /** Template Upload Id */
             template_upload_id?: string | null;
             /** Template Args */
-            template_args?: {
-                [key: string]: unknown;
-            } | null;
+            template_args?: unknown | null;
         };
         /** UpdateDocumentApiResponse */
         UpdateDocumentApiResponse: {
@@ -23828,6 +23855,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteAuthApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_auth_draft_api_v4_auth_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchAuthDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchAuthDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -2931,9 +2931,9 @@ class QGetAgentDetailV4Model(BaseModel):
     output_modalities: list[str] | None
     temperature_lower: float | None
     temperature_upper: float | None
-    temperature_levels: dict[str, Any] | None
-    reasoning_options: dict[str, Any] | None
-    available_voices: dict[str, Any] | None
+    temperature_levels: Any | None
+    reasoning_options: Any | None
+    available_voices: Any | None
 
 
 
@@ -3101,9 +3101,9 @@ class QGetAgentNewV4Model(BaseModel):
     temperature_upper: float | None
     input_modalities: list[str] | None
     output_modalities: list[str] | None
-    temperature_levels: dict[str, Any] | None
-    reasoning_options: dict[str, Any] | None
-    available_voices: dict[str, Any] | None
+    temperature_levels: Any | None
+    reasoning_options: Any | None
+    available_voices: Any | None
 
 class GetAgentNewSqlRow(BaseModel):
 
@@ -3149,9 +3149,9 @@ class GetAgentToolsSqlRow(BaseModel):
     description: str | None = None
     tool_type: str | None = None
     agent_role: str | None = None
-    arguments: dict[str, Any] | None = None
-    argument_descriptions: dict[str, Any] | None = None
-    argument_defaults: dict[str, Any] | None = None
+    arguments: Any | None = None
+    argument_descriptions: Any | None = None
+    argument_defaults: Any | None = None
     active: bool | None = None
 
 class GetAgentToolsApiRequest(BaseModel):
@@ -3165,9 +3165,9 @@ class GetAgentToolsApiResponse(BaseModel):
     description: str | None = None
     tool_type: str | None = None
     agent_role: str | None = None
-    arguments: dict[str, Any] | None = None
-    argument_descriptions: dict[str, Any] | None = None
-    argument_defaults: dict[str, Any] | None = None
+    arguments: Any | None = None
+    argument_descriptions: Any | None = None
+    argument_defaults: Any | None = None
     active: bool | None = None
 
 
@@ -4430,11 +4430,13 @@ class GetAuthDetailSqlParams(BaseModel):
 
     auth_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.auth_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetAuthDetailV4AuthItem(BaseModel):
@@ -4457,10 +4459,15 @@ class GetAuthDetailSqlRow(BaseModel):
     can_edit: bool | None = None
     auth_items: list[QGetAuthDetailV4AuthItem] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
 
 class GetAuthDetailApiRequest(BaseModel):
 
     auth_id: UUID
+    draft_id: UUID | None = None
 
 class GetAuthDetailApiResponse(BaseModel):
 
@@ -4471,6 +4478,10 @@ class GetAuthDetailApiResponse(BaseModel):
     can_edit: bool | None = None
     auth_items: list[QGetAuthDetailV4AuthItem] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
 
 
 
@@ -4525,10 +4536,12 @@ class GetAuthListApiResponse(BaseModel):
 class GetAuthNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetAuthNewV4AuthItem(BaseModel):
@@ -4550,10 +4563,14 @@ class GetAuthNewSqlRow(BaseModel):
     can_edit: bool | None = None
     auth_items: list[QGetAuthNewV4AuthItem] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
 
 class GetAuthNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetAuthNewApiResponse(BaseModel):
 
@@ -4563,6 +4580,10 @@ class GetAuthNewApiResponse(BaseModel):
     can_edit: bool | None = None
     auth_items: list[QGetAuthNewV4AuthItem] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
 
 
 
@@ -4614,6 +4635,43 @@ class GetLoginDataApiResponse(BaseModel):
     show_default_account: bool | None = None
     default_department_id: str | None = None
     realm_name: str | None = None
+
+
+
+# Generated from: patch_auth_draft
+
+class PatchAuthDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchAuthDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchAuthDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchAuthDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -6312,7 +6370,7 @@ class QListCohortsV4Scenario(BaseModel):
     description: str | None
     active: bool | None
     persona_ids: list[str] | None
-    persona_mapping: dict[str, Any] | None
+    persona_mapping: Any | None
 
 
 
@@ -6333,7 +6391,7 @@ class GetCohortsListSqlRow(BaseModel):
     profiles: list[QListCohortsV4Profile] | None = None
     simulations: list[QListCohortsV4Simulation] | None = None
     scenarios: list[QListCohortsV4Scenario] | None = None
-    simulation_scenario_mapping: dict[str, Any] | None = None
+    simulation_scenario_mapping: Any | None = None
     departments: list[QListCohortsV4Department] | None = None
 
 class GetCohortsListApiRequest(BaseModel):
@@ -6347,7 +6405,7 @@ class GetCohortsListApiResponse(BaseModel):
     profiles: list[QListCohortsV4Profile] | None = None
     simulations: list[QListCohortsV4Simulation] | None = None
     scenarios: list[QListCohortsV4Scenario] | None = None
-    simulation_scenario_mapping: dict[str, Any] | None = None
+    simulation_scenario_mapping: Any | None = None
     departments: list[QListCohortsV4Department] | None = None
 
 
@@ -7718,7 +7776,7 @@ class CreateDocumentSqlParams(BaseModel):
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_item_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     template_upload_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -7747,7 +7805,7 @@ class CreateDocumentApiRequest(BaseModel):
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_item_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     template_upload_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
 class CreateDocumentApiResponse(BaseModel):
 
@@ -7765,7 +7823,7 @@ class CreateTemplateAndLinkSqlParams(BaseModel):
     document_id: UUID
     upload_id: UUID
     name: str
-    template_schema: dict[str, Any]
+    template_schema: Any
     active: bool
     run_id: UUID
 
@@ -7788,7 +7846,7 @@ class CreateTemplateAndLinkApiRequest(BaseModel):
     document_id: UUID
     upload_id: UUID
     name: str
-    template_schema: dict[str, Any]
+    template_schema: Any
     active: bool
     run_id: UUID
 
@@ -7934,7 +7992,7 @@ class QGetDocumentDetailV4Parameter(BaseModel):
 class QGetDocumentDetailV4Template(BaseModel):
 
     template_id: UUID | None
-    template_args: dict[str, Any] | None
+    template_args: Any | None
     active: bool | None
     created_at: str | None
     updated_at: str | None
@@ -7968,7 +8026,7 @@ class GetDocumentDetailSqlRow(BaseModel):
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
     template_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     template_upload_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
@@ -8008,7 +8066,7 @@ class GetDocumentDetailApiResponse(BaseModel):
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
     template_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     template_upload_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
@@ -8221,7 +8279,7 @@ class GetDocumentTemplateInfoSqlParams(BaseModel):
 class GetDocumentTemplateInfoSqlRow(BaseModel):
 
     file_path: str | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     classify_agent_id: str | None = None
     document_agent_id: str | None = None
     name: str | None = None
@@ -8234,7 +8292,7 @@ class GetDocumentTemplateInfoApiRequest(BaseModel):
 class GetDocumentTemplateInfoApiResponse(BaseModel):
 
     file_path: str | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     classify_agent_id: str | None = None
     document_agent_id: str | None = None
     name: str | None = None
@@ -8257,7 +8315,7 @@ class GetDocumentTemplatesSqlRow(BaseModel):
 
     upload_id: UUID | None = None
     template_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     active: bool | None = None
     created_at: str | None = None
     updated_at: str | None = None
@@ -8270,7 +8328,7 @@ class GetDocumentTemplatesApiResponse(BaseModel):
 
     upload_id: UUID | None = None
     template_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     active: bool | None = None
     created_at: str | None = None
     updated_at: str | None = None
@@ -8410,7 +8468,7 @@ class InsertDocumentSqlParams(BaseModel):
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     template_upload_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -8439,7 +8497,7 @@ class InsertDocumentApiRequest(BaseModel):
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     template_upload_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
 class InsertDocumentApiResponse(BaseModel):
 
@@ -8544,7 +8602,7 @@ class RenderTemplateSqlRow(BaseModel):
     document_name: str | None = None
     actor_name: str | None = None
     file_path: str | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     settings_primary_color: str | None = None
     settings_accent: str | None = None
     settings_background: str | None = None
@@ -8569,7 +8627,7 @@ class RenderTemplateApiResponse(BaseModel):
     document_name: str | None = None
     actor_name: str | None = None
     file_path: str | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
     settings_primary_color: str | None = None
     settings_accent: str | None = None
     settings_background: str | None = None
@@ -8602,7 +8660,7 @@ class UpdateDocumentSqlParams(BaseModel):
     classify_agent_id: UUID | None = None
     document_agent_id: UUID | None = None
     template_upload_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -8640,7 +8698,7 @@ class UpdateDocumentApiRequest(BaseModel):
     classify_agent_id: UUID | None = None
     document_agent_id: UUID | None = None
     template_upload_id: UUID | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
 class UpdateDocumentApiResponse(BaseModel):
 
@@ -14381,7 +14439,7 @@ class QGetProfileContextV4Draft(BaseModel):
 
     id: UUID | None
     resource_type: str | None
-    payload: dict[str, Any] | None
+    payload: Any | None
     version: int | None
     updated_at: str | None
 
@@ -15467,7 +15525,7 @@ class UpdateProviderApiResponse(BaseModel):
 
 class CreateQuestionsWithOptionsSqlParams(BaseModel):
 
-    questions_json: dict[str, Any]
+    questions_json: Any
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15482,7 +15540,7 @@ class CreateQuestionsWithOptionsSqlRow(BaseModel):
 
 class CreateQuestionsWithOptionsApiRequest(BaseModel):
 
-    questions_json: dict[str, Any]
+    questions_json: Any
 
 class CreateQuestionsWithOptionsApiResponse(BaseModel):
 
@@ -17819,7 +17877,7 @@ class GetRandomizationRangesSqlRow(BaseModel):
     document_max: int | None = None
     parameter_min: int | None = None
     parameter_max: int | None = None
-    field_ranges_json: dict[str, Any] | None = None
+    field_ranges_json: Any | None = None
 
 class GetRandomizationRangesApiRequest(BaseModel):
 
@@ -17833,7 +17891,7 @@ class GetRandomizationRangesApiResponse(BaseModel):
     document_max: int | None = None
     parameter_min: int | None = None
     parameter_max: int | None = None
-    field_ranges_json: dict[str, Any] | None = None
+    field_ranges_json: Any | None = None
 
 
 
@@ -18351,8 +18409,8 @@ class GetScenarioIdsForRegenerationSqlRow(BaseModel):
 
     persona_id: UUID | None = None
     scenario_agent_id: str | None = None
-    document_ids: dict[str, Any] | None = None
-    parameter_item_ids: dict[str, Any] | None = None
+    document_ids: Any | None = None
+    parameter_item_ids: Any | None = None
 
 class GetScenarioIdsForRegenerationApiRequest(BaseModel):
 
@@ -18362,8 +18420,8 @@ class GetScenarioIdsForRegenerationApiResponse(BaseModel):
 
     persona_id: UUID | None = None
     scenario_agent_id: str | None = None
-    document_ids: dict[str, Any] | None = None
-    parameter_item_ids: dict[str, Any] | None = None
+    document_ids: Any | None = None
+    parameter_item_ids: Any | None = None
 
 
 
@@ -18851,7 +18909,7 @@ class IGetScenarioRegenerationRunContextAndCreateRunV4Doc(BaseModel):
     file_path: str | None
     mime_type: str | None
     template: bool | None
-    template_args: dict[str, Any] | None
+    template_args: Any | None
 
 
 
@@ -18860,7 +18918,7 @@ class IGetScenarioRegenerationRunContextAndCreateRunV4Docum(BaseModel):
 
     document_id: str | None
     document_name: str | None
-    template_args: dict[str, Any] | None
+    template_args: Any | None
     template_upload_id: str | None
 
 
@@ -18985,7 +19043,7 @@ class IGetScenarioRunContextAndCreateRunV4Document(BaseModel):
     file_path: str | None
     mime_type: str | None
     template: bool | None
-    template_args: dict[str, Any] | None
+    template_args: Any | None
 
 
 
@@ -18997,7 +19055,7 @@ class IGetScenarioRunContextAndCreateRunV4DocumentTemplate(BaseModel):
     document_description: str | None
     classify_agent_id: str | None
     document_agent_id: str | None
-    template_args: dict[str, Any] | None
+    template_args: Any | None
     template_upload_id: str | None
     template_file_path: str | None
 
@@ -19656,7 +19714,7 @@ class RandomizeScenarioSqlParams(BaseModel):
     document_max: int
     parameter_selection_min: int
     parameter_selection_max: int
-    field_ranges_json: dict[str, Any]
+    field_ranges_json: Any
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19699,7 +19757,7 @@ class RandomizeScenarioApiRequest(BaseModel):
     document_max: int
     parameter_selection_min: int
     parameter_selection_max: int
-    field_ranges_json: dict[str, Any]
+    field_ranges_json: Any
 
 class RandomizeScenarioApiResponse(BaseModel):
 
@@ -19716,7 +19774,7 @@ class SaveQuestionTimestampsSqlParams(BaseModel):
 
     scenario_id: UUID
     video_id: UUID
-    question_timestamps: dict[str, Any]
+    question_timestamps: Any
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19733,7 +19791,7 @@ class SaveQuestionTimestampsApiRequest(BaseModel):
 
     scenario_id: UUID
     video_id: UUID
-    question_timestamps: dict[str, Any]
+    question_timestamps: Any
 
 class SaveQuestionTimestampsApiResponse(BaseModel):
 
@@ -21771,8 +21829,8 @@ class GetSimulationDetailSqlRow(BaseModel):
     agents: list[QGetSimulationDetailV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
     draft_version: int | None = None
-    scenario_active_states: dict[str, Any] | None = None
-    scenario_settings: dict[str, Any] | None = None
+    scenario_active_states: Any | None = None
+    scenario_settings: Any | None = None
 
 class GetSimulationDetailApiRequest(BaseModel):
 
@@ -21817,8 +21875,8 @@ class GetSimulationDetailApiResponse(BaseModel):
     agents: list[QGetSimulationDetailV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
     draft_version: int | None = None
-    scenario_active_states: dict[str, Any] | None = None
-    scenario_settings: dict[str, Any] | None = None
+    scenario_active_states: Any | None = None
+    scenario_settings: Any | None = None
 
 
 
@@ -22074,8 +22132,8 @@ class GetSimulationNewSqlRow(BaseModel):
     valid_agent_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
     draft_version: int | None = None
-    scenario_active_states: dict[str, Any] | None = None
-    scenario_settings: dict[str, Any] | None = None
+    scenario_active_states: Any | None = None
+    scenario_settings: Any | None = None
 
 class GetSimulationNewApiRequest(BaseModel):
 
@@ -22119,8 +22177,8 @@ class GetSimulationNewApiResponse(BaseModel):
     valid_agent_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
     draft_version: int | None = None
-    scenario_active_states: dict[str, Any] | None = None
-    scenario_settings: dict[str, Any] | None = None
+    scenario_active_states: Any | None = None
+    scenario_settings: Any | None = None
 
 
 
@@ -22427,7 +22485,7 @@ class GetSimulationRunContextSqlRow(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: dict[str, Any] | None = None
+    documents: Any | None = None
 
 class GetSimulationRunContextApiRequest(BaseModel):
 
@@ -22474,7 +22532,7 @@ class GetSimulationRunContextApiResponse(BaseModel):
     req_per_day: int | None = None
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
-    documents: dict[str, Any] | None = None
+    documents: Any | None = None
 
 
 
@@ -23997,7 +24055,7 @@ class GetUploadFileInfoSqlRow(BaseModel):
     size: int | None = None
     actor_name: str | None = None
     is_template: bool | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
 class GetUploadFileInfoApiRequest(BaseModel):
 
@@ -24012,7 +24070,7 @@ class GetUploadFileInfoApiResponse(BaseModel):
     size: int | None = None
     actor_name: str | None = None
     is_template: bool | None = None
-    template_args: dict[str, Any] | None = None
+    template_args: Any | None = None
 
 
 
@@ -24780,6 +24838,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLoginDataSqlRow",
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
+    ),
+    "app/sql/v4/auth/patch_auth_draft_complete.sql": (
+        "PatchAuthDraftSqlParams",
+        "PatchAuthDraftSqlRow",
+        "PatchAuthDraftApiRequest",
+        "PatchAuthDraftApiResponse",
     ),
     "app/sql/v4/auth/update_auth_complete.sql": (
         "UpdateAuthSqlParams",
@@ -27006,6 +27070,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/auth/get_login_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/patch_auth_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

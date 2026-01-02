@@ -50,20 +50,40 @@ CREATE TYPE types.q_get_auth_new_v4_auth_item AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_auth_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_auth_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     name text,
     description text,
     active boolean,
     can_edit boolean,
     auth_items types.q_get_auth_new_v4_auth_item[],
-    actor_name text
+    actor_name text,
+    draft_version int,
+    auth_item_ids jsonb,
+    auth_item_active_states jsonb,
+    auth_item_encrypted_states jsonb
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'auth'::draft_resource_type
+    LIMIT 1
 ),
 user_profile AS (
     SELECT 
@@ -74,9 +94,18 @@ user_profile AS (
 ),
 auth_data AS (
     SELECT 
-        ''::text as name,
-        ''::text as description,
-        false::boolean as active,
+        COALESCE(
+            (SELECT payload->>'name' FROM draft_payload_data),
+            ''::text
+        ) as name,
+        COALESCE(
+            (SELECT payload->>'description' FROM draft_payload_data),
+            ''::text
+        ) as description,
+        COALESCE(
+            (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+            false::boolean
+        ) as active,
         CASE 
             WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
@@ -89,7 +118,26 @@ SELECT
     ad.active::boolean as active,
     ad.can_edit::boolean as can_edit,
     '{}'::types.q_get_auth_new_v4_auth_item[] as auth_items,
-    up.actor_name::text as actor_name
+    up.actor_name::text as actor_name,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract auth_item_ids from draft payload if available
+    COALESCE(
+        (SELECT payload->'authItemIds' FROM draft_payload_data),
+        (SELECT payload->'auth_item_ids' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as auth_item_ids,
+    -- Extract auth_item_active_states from draft payload if available
+    COALESCE(
+        (SELECT payload->'authItemActiveStates' FROM draft_payload_data),
+        (SELECT payload->'auth_item_active_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as auth_item_active_states,
+    -- Extract auth_item_encrypted_states from draft payload if available
+    COALESCE(
+        (SELECT payload->'authItemEncryptedStates' FROM draft_payload_data),
+        (SELECT payload->'auth_item_encrypted_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as auth_item_encrypted_states
 FROM auth_data ad
 CROSS JOIN user_profile up
 $$;
