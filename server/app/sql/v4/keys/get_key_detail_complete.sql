@@ -50,7 +50,11 @@ CREATE TYPE types.q_get_key_detail_v4_model AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_key_detail_v4(key_id uuid, profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_key_detail_v4(
+    key_id uuid,
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     key_exists boolean,
     key_id uuid,
@@ -67,13 +71,25 @@ RETURNS TABLE (
     can_edit boolean,
     departments types.q_get_key_detail_v4_department[],
     models types.q_get_key_detail_v4_model[],
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT key_id AS key_id, profile_id AS profile_id
+    SELECT key_id AS key_id, profile_id AS profile_id, draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'keys'::draft_resource_type
+    LIMIT 1
 ),
 key_exists_check AS (
     SELECT EXISTS(
@@ -179,11 +195,20 @@ user_has_key_access AS (
 SELECT 
     kec.key_exists::boolean as key_exists,
     kd.key_id::uuid as key_id,
-    kd.name::text as name,
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        kd.name::text
+    ) as name,
     kd.key_masked::text as key_masked,
     'api'::text as type,
-    kd.description::text as description,
-    kd.active::boolean as active,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        kd.description::text
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        kd.active::boolean
+    ) as active,
     kd.created_at::timestamptz as created_at,
     kd.updated_at::timestamptz as updated_at,
     COALESCE(kdd.department_ids, ARRAY[]::text[]) as department_ids,
@@ -210,7 +235,11 @@ SELECT
         ) FILTER (WHERE md.model_id IS NOT NULL),
         '{}'::types.q_get_key_detail_v4_model[]
     ) as models,
-    ap.actor_name::text as actor_name
+    ap.actor_name::text as actor_name,
+    COALESCE(
+        (SELECT draft_version FROM draft_payload_data),
+        0
+    )::int as draft_version
 FROM key_exists_check kec
 CROSS JOIN key_data kd
 LEFT JOIN key_departments_data kdd ON true

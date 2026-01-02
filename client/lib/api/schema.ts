@@ -2168,6 +2168,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/keys/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Key Draft
+         * @description Patch key draft (creates if not exists).
+         */
+        patch: operations["patch_key_draft_api_v4_keys_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/models/list": {
         parameters: {
             query?: never;
@@ -11389,6 +11409,8 @@ export interface components {
              * Format: uuid
              */
             key_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetKeyDetailApiResponse */
         GetKeyDetailApiResponse: {
@@ -11424,6 +11446,8 @@ export interface components {
             models?: components["schemas"]["QGetKeyDetailV4Model"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetKeyForDecryptApiRequest */
         GetKeyForDecryptApiRequest: {
@@ -11443,7 +11467,10 @@ export interface components {
             actor_name?: string | null;
         };
         /** GetKeyNewApiRequest */
-        GetKeyNewApiRequest: Record<string, never>;
+        GetKeyNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetKeyNewApiResponse */
         GetKeyNewApiResponse: {
             /** Key Id */
@@ -11474,6 +11501,8 @@ export interface components {
             models?: components["schemas"]["QGetKeyNewV4Model"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetKeysListApiRequest */
         GetKeysListApiRequest: Record<string, never>;
@@ -14052,6 +14081,26 @@ export interface components {
         };
         /** PatchDepartmentDraftApiResponse */
         PatchDepartmentDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchKeyDraftApiRequest */
+        PatchKeyDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchKeyDraftApiResponse */
+        PatchKeyDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -26366,6 +26415,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetKeyForDecryptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_key_draft_api_v4_keys_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchKeyDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchKeyDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

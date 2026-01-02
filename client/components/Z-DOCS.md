@@ -1399,6 +1399,30 @@ See `client/components/departments/Department.tsx` for a simple form reference i
 - Type-safe with exported types from page files
 - Delete button handled separately (outside GenericForm)
 
+### Example: Key.tsx Migration
+
+See `client/components/keys/Key.tsx` for a simple form reference implementation with special field handling.
+
+**Key Features**:
+- Inline `nuqs` parsers (only `draftId`, no search/filter params)
+- `GenericForm` with initialization, reset, and submit
+- `StepCard` with `editableTitle` for name field
+- Two-step form (basic information, key value)
+- Draft autosave support
+- Server actions passed as props
+- Type-safe with exported types from page files
+- Special key value section with preview/decrypt/edit functionality (edit mode only)
+- Key value never populated from server in edit mode (security)
+- Custom inline component for key value field (dots display, edit toggle, preview/decrypt)
+
+**Special Pattern - Key Value Section**:
+The key value section demonstrates handling sensitive fields that require special UI:
+- **Preview/Decrypt**: Eye icon button to decrypt and preview key value (edit mode only)
+- **Edit Toggle**: Edit button switches between dots display and textarea input
+- **Security**: Key value never populated from server in edit mode (always empty)
+- **Custom Actions**: Uses `StepCard` `actions` prop for preview button in header
+- **Inline Logic**: All key value handling logic is inline in `renderStep` callback
+
 ### Troubleshooting
 
 **Issue**: Type errors with optional props

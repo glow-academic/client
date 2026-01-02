@@ -50,7 +50,10 @@ CREATE TYPE types.q_get_key_new_v4_model AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_key_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_key_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     key_id text,
     name text,
@@ -65,13 +68,25 @@ RETURNS TABLE (
     can_edit boolean,
     departments types.q_get_key_new_v4_department[],
     models types.q_get_key_new_v4_model[],
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT profile_id AS profile_id, draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'keys'::draft_resource_type
+    LIMIT 1
 ),
 actor_profile AS (
     SELECT 
@@ -115,10 +130,19 @@ primary_department_id AS (
 )
 SELECT 
     ''::text as key_id,
-    ''::text as name,
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        ''::text
+    ) as name,
     '****'::text as key_masked,
-    ''::text as description,
-    true::boolean as active,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''::text
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true::boolean
+    ) as active,
     NOW()::timestamptz as created_at,
     NOW()::timestamptz as updated_at,
     -- Set default department_ids based on role
@@ -145,7 +169,11 @@ SELECT
         '{}'::types.q_get_key_new_v4_department[]
     ) as departments,
     '{}'::types.q_get_key_new_v4_model[] as models,
-    ap.actor_name::text as actor_name
+    ap.actor_name::text as actor_name,
+    COALESCE(
+        (SELECT draft_version FROM draft_payload_data),
+        0
+    )::int as draft_version
 FROM valid_depts vd
 CROSS JOIN profile_data pr
 LEFT JOIN primary_department_id pd ON true

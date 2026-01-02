@@ -6,6 +6,7 @@ from app.api.v4.keys.create import router as create_router
 from app.api.v4.keys.decrypt import router as decrypt_router
 from app.api.v4.keys.delete import router as delete_router
 from app.api.v4.keys.detail import router as detail_router
+from app.api.v4.keys.draft import router as draft_router
 from app.api.v4.keys.list import router as list_router
 from app.api.v4.keys.new import router as new_router
 from app.api.v4.keys.update import router as update_router
@@ -20,3 +21,4 @@ router.include_router(create_router)
 router.include_router(update_router)
 router.include_router(delete_router)
 router.include_router(decrypt_router)
+router.include_router(draft_router)

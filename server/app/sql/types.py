@@ -10639,11 +10639,13 @@ class GetKeyDetailSqlParams(BaseModel):
 
     key_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.key_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetKeyDetailV4Department(BaseModel):
@@ -10681,10 +10683,12 @@ class GetKeyDetailSqlRow(BaseModel):
     departments: list[QGetKeyDetailV4Department] | None = None
     models: list[QGetKeyDetailV4Model] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 class GetKeyDetailApiRequest(BaseModel):
 
     key_id: UUID
+    draft_id: UUID | None = None
 
 class GetKeyDetailApiResponse(BaseModel):
 
@@ -10704,6 +10708,7 @@ class GetKeyDetailApiResponse(BaseModel):
     departments: list[QGetKeyDetailV4Department] | None = None
     models: list[QGetKeyDetailV4Model] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 
 
@@ -10743,10 +10748,12 @@ class GetKeyForDecryptApiResponse(BaseModel):
 class GetKeyNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetKeyNewV4Department(BaseModel):
@@ -10782,10 +10789,11 @@ class GetKeyNewSqlRow(BaseModel):
     departments: list[QGetKeyNewV4Department] | None = None
     models: list[QGetKeyNewV4Model] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 class GetKeyNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetKeyNewApiResponse(BaseModel):
 
@@ -10803,6 +10811,7 @@ class GetKeyNewApiResponse(BaseModel):
     departments: list[QGetKeyNewV4Department] | None = None
     models: list[QGetKeyNewV4Model] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 
 
@@ -10889,6 +10898,43 @@ class GetKeysListApiResponse(BaseModel):
     models: list[QGetKeysListV4Model] | None = None
     department_options: list[QGetKeysListV4DepartmentOption] | None = None
     model_options: list[QGetKeysListV4ModelOption] | None = None
+
+
+
+# Generated from: patch_key_draft
+
+class PatchKeyDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchKeyDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchKeyDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchKeyDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25521,6 +25567,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetKeysListApiRequest",
         "GetKeysListApiResponse",
     ),
+    "app/sql/v4/keys/patch_key_draft_complete.sql": (
+        "PatchKeyDraftSqlParams",
+        "PatchKeyDraftSqlRow",
+        "PatchKeyDraftApiRequest",
+        "PatchKeyDraftApiResponse",
+    ),
     "app/sql/v4/keys/update_key_complete.sql": (
         "UpdateKeySqlParams",
         "UpdateKeySqlRow",
@@ -27654,6 +27706,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/keys/get_keys_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/keys/patch_key_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
