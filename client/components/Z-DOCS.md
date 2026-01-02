@@ -1653,15 +1653,165 @@ const initialDraftState = useMemo((): DraftState => {
 const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
 
 // Update draft state when server data changes (e.g., draft selected)
+// CRITICAL: Always update boolean fields (active, practiceSimulation, etc.) from initialDraftState
+// even when skipping empty state updates, as these are simple boolean values that should always sync
 useEffect(() => {
   const currentStateStr = JSON.stringify(draftState);
   const newStateStr = JSON.stringify(initialDraftState);
   
   if (currentStateStr !== newStateStr) {
-    setDraftState(initialDraftState);
+    // Check if new state is "empty" (no title, no scenarios) but current state has content
+    // This prevents form reset when server data refreshes before draft payload is merged
+    const newStateIsEmpty =
+      (!initialDraftState.title || initialDraftState.title.trim() === "") &&
+      (initialDraftState.scenarioIds?.length || 0) === 0;
+    
+    setDraftState((currentDraftState) => {
+      const currentStateHasContent =
+        (currentDraftState.title?.trim() || "").length > 0 ||
+        (currentDraftState.scenarioIds?.length || 0) > 0;
+      
+      // Prevent overwriting with empty values if current state has content
+      // BUT: Always update boolean fields from initialDraftState
+      if (newStateIsEmpty && currentStateHasContent) {
+        // Keep current state but update boolean fields from initialDraftState
+        return {
+          ...currentDraftState,
+          active: initialDraftState.active,
+          practiceSimulation: initialDraftState.practiceSimulation,
+          // Add other boolean fields here as needed
+        };
+      }
+      
+      // Otherwise, update with full initialDraftState
+      return initialDraftState;
+    });
   }
 }, [initialDraftState]);
 ```
+
+**Handling Complex Nested Objects in Draft Payloads**:
+
+When your draft state contains complex nested objects (like `scenarioActiveStates` or `scenarioSettings`), you need to ensure these are properly saved and restored from the draft payload. This requires changes in both SQL and client-side code.
+
+**SQL Changes** (Required for both `get_{resource}_new_complete.sql` and `get_{resource}_detail_complete.sql`):
+
+1. **Add JSONB fields to function return type**:
+```sql
+RETURNS TABLE (
+    -- ... existing fields ...
+    draft_version int,
+    nested_object_states jsonb,  -- Add this
+    nested_object_settings jsonb  -- Add this
+)
+```
+
+2. **Extract from draft payload in SELECT statement**:
+```sql
+SELECT 
+    -- ... existing fields ...
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract nested objects from draft payload if available
+    COALESCE(
+        (SELECT payload->'nestedObjectStates' FROM draft_payload_data),
+        (SELECT payload->'nested_object_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as nested_object_states,
+    COALESCE(
+        (SELECT payload->'nestedObjectSettings' FROM draft_payload_data),
+        (SELECT payload->'nested_object_settings' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as nested_object_settings
+FROM ...
+```
+
+**Client-Side Changes**:
+
+1. **Read nested objects from server data in `initialDraftState`**:
+```typescript
+const initialDraftState = useMemo((): DraftState => {
+  const data = isEditMode ? {resource}Detail : {resource}DetailDefault;
+  
+  // Initialize nested objects from draft payload fields first (if draft exists)
+  let nestedObjectStates: Record<string, boolean> = {};
+  let nestedObjectSettings: Record<string, SomeSettingsType> = {};
+  
+  // Try to read from draft payload fields (returned by SQL when draft exists)
+  if (data && "nested_object_states" in data && data.nested_object_states) {
+    try {
+      const parsed = typeof data.nested_object_states === "string" 
+        ? JSON.parse(data.nested_object_states) 
+        : data.nested_object_states;
+      if (parsed && typeof parsed === "object") {
+        nestedObjectStates = parsed as Record<string, boolean>;
+      }
+    } catch (e) {
+      // Ignore parse errors, fall back to extracting from array data
+    }
+  }
+  
+  if (data && "nested_object_settings" in data && data.nested_object_settings) {
+    try {
+      const parsed = typeof data.nested_object_settings === "string"
+        ? JSON.parse(data.nested_object_settings)
+        : data.nested_object_settings;
+      if (parsed && typeof parsed === "object") {
+        nestedObjectSettings = parsed as Record<string, SomeSettingsType>;
+      }
+    } catch (e) {
+      // Ignore parse errors, fall back to extracting from array data
+    }
+  }
+  
+  // If draft payload didn't have these fields, fall back to extracting from array data (edit mode only)
+  if (
+    Object.keys(nestedObjectStates).length === 0 &&
+    isEditMode &&
+    {resource}Detail &&
+    "items" in {resource}Detail &&
+    {resource}Detail.items
+  ) {
+    // Extract from items array (e.g., scenarios array)
+    {resource}Detail.items.forEach((item) => {
+      const key = item.item_id;
+      if (key) {
+        nestedObjectStates[key] = item.active ?? false;
+        // Only set if not already set from draft payload
+        if (!(key in nestedObjectSettings)) {
+          nestedObjectSettings[key] = {
+            // Extract settings from item
+            setting1: item.setting1 ?? false,
+            setting2: item.setting2 ?? false,
+            // ... more settings
+          };
+        }
+      }
+    });
+  }
+  
+  return {
+    // ... other fields ...
+    nestedObjectStates,
+    nestedObjectSettings,
+  };
+}, [
+  isEditMode,
+  {resource}Detail,
+  {resource}DetailDefault,
+  draftId,
+  // ... dependencies ...
+]);
+```
+
+**Key Points**:
+
+- **SQL must return JSONB fields**: The SQL queries must extract and return nested objects as JSONB fields so the client can read them
+- **Support both naming conventions**: Handle both camelCase (`nestedObjectStates`) and snake_case (`nested_object_states`) for backward compatibility
+- **Fallback to array extraction**: If draft payload doesn't have nested objects (e.g., new draft or edit mode without draft), extract from the items array
+- **Preserve existing state**: When merging, only set nested object values if they're not already present from draft payload
+- **Type safety**: Use proper TypeScript types and type assertions when parsing JSONB data
+
+**Example**: See `Simulation.tsx` for a complete implementation with `scenarioActiveStates` and `scenarioSettings`.
 
 **Hook Integration**:
 ```typescript
@@ -1908,4 +2058,110 @@ When migrating other resources (scenarios, benchmarks, etc.) to use draft autosa
   - [ ] Verify draft state initializes from server data
   - [ ] Verify version conflicts handled correctly
   - [ ] Verify cache invalidation works
+  - [ ] Verify boolean fields (active, practiceSimulation) sync correctly from server state
+
+### Boolean Field Sync Pattern
+
+**⚠️ CRITICAL: Boolean fields must always be updated from `initialDraftState`, even when skipping empty state updates.**
+
+**Problem**: When preventing form resets (skipping updates when `newStateIsEmpty && currentStateHasContent`), boolean fields like `active` and `practiceSimulation` might not sync correctly from the server, causing UI toggles to show incorrect values.
+
+**Solution**: Always update boolean fields from `initialDraftState`, even when skipping the full state update:
+
+```typescript
+// Update draft state when server data changes (e.g., draft selected)
+useEffect(() => {
+  const currentStateStr = JSON.stringify(draftState);
+  const newStateStr = JSON.stringify(initialDraftState);
+  
+  if (currentStateStr !== newStateStr) {
+    // Check if new state is "empty" (no title, no scenarios) but current state has content
+    const newStateIsEmpty =
+      (!initialDraftState.title || initialDraftState.title.trim() === "") &&
+      (initialDraftState.scenarioIds?.length || 0) === 0;
+    
+    setDraftState((currentDraftState) => {
+      const currentStateHasContent =
+        (currentDraftState.title?.trim() || "").length > 0 ||
+        (currentDraftState.scenarioIds?.length || 0) > 0;
+      
+      // Prevent overwriting with empty values if current state has content
+      // BUT: Always update boolean fields from initialDraftState
+      if (newStateIsEmpty && currentStateHasContent) {
+        // Keep current state but update boolean fields from initialDraftState
+        return {
+          ...currentDraftState,
+          active: initialDraftState.active,
+          practiceSimulation: initialDraftState.practiceSimulation,
+          // Add other boolean fields here as needed
+        };
+      }
+      
+      // Otherwise, update with full initialDraftState
+      return initialDraftState;
+    });
+  }
+}, [initialDraftState]);
+```
+
+**Key Points**:
+1. **Always sync boolean fields**: Even when skipping empty state updates, boolean fields must be updated from `initialDraftState`
+2. **Identify boolean fields**: Common boolean fields include `active`, `practiceSimulation`, and any other simple boolean toggles
+3. **Apply to all resources**: This pattern applies to all resources that use draft autosave (Persona, Scenario, Simulation, Cohort, etc.)
+4. **Test thoroughly**: Verify that boolean toggles reflect server state correctly after page refresh
+
+**Reference Implementation**: See `client/components/simulations/Simulation.tsx` for a complete example of boolean field sync pattern.
+  - [ ] Verify boolean fields (active, practiceSimulation) sync correctly from server state
+
+### Boolean Field Sync Pattern
+
+**⚠️ CRITICAL: Boolean fields must always be updated from `initialDraftState`, even when skipping empty state updates.**
+
+**Problem**: When preventing form resets (skipping updates when `newStateIsEmpty && currentStateHasContent`), boolean fields like `active` and `practiceSimulation` might not sync correctly from the server, causing UI toggles to show incorrect values.
+
+**Solution**: Always update boolean fields from `initialDraftState`, even when skipping the full state update:
+
+```typescript
+// Update draft state when server data changes (e.g., draft selected)
+useEffect(() => {
+  const currentStateStr = JSON.stringify(draftState);
+  const newStateStr = JSON.stringify(initialDraftState);
+  
+  if (currentStateStr !== newStateStr) {
+    // Check if new state is "empty" (no title, no scenarios) but current state has content
+    const newStateIsEmpty =
+      (!initialDraftState.title || initialDraftState.title.trim() === "") &&
+      (initialDraftState.scenarioIds?.length || 0) === 0;
+    
+    setDraftState((currentDraftState) => {
+      const currentStateHasContent =
+        (currentDraftState.title?.trim() || "").length > 0 ||
+        (currentDraftState.scenarioIds?.length || 0) > 0;
+      
+      // Prevent overwriting with empty values if current state has content
+      // BUT: Always update boolean fields from initialDraftState
+      if (newStateIsEmpty && currentStateHasContent) {
+        // Keep current state but update boolean fields from initialDraftState
+        return {
+          ...currentDraftState,
+          active: initialDraftState.active,
+          practiceSimulation: initialDraftState.practiceSimulation,
+          // Add other boolean fields here as needed
+        };
+      }
+      
+      // Otherwise, update with full initialDraftState
+      return initialDraftState;
+    });
+  }
+}, [initialDraftState]);
+```
+
+**Key Points**:
+1. **Always sync boolean fields**: Even when skipping empty state updates, boolean fields must be updated from `initialDraftState`
+2. **Identify boolean fields**: Common boolean fields include `active`, `practiceSimulation`, and any other simple boolean toggles
+3. **Apply to all resources**: This pattern applies to all resources that use draft autosave (Persona, Scenario, Simulation, Cohort, etc.)
+4. **Test thoroughly**: Verify that boolean toggles reflect server state correctly after page refresh
+
+**Reference Implementation**: See `client/components/simulations/Simulation.tsx` for a complete example of boolean field sync pattern.
 

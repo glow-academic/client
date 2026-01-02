@@ -21672,6 +21672,9 @@ class GetSimulationDetailSqlRow(BaseModel):
     fields: list[QGetSimulationDetailV4Field] | None = None
     agents: list[QGetSimulationDetailV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
+    draft_version: int | None = None
+    scenario_active_states: dict[str, Any] | None = None
+    scenario_settings: dict[str, Any] | None = None
 
 class GetSimulationDetailApiRequest(BaseModel):
 
@@ -21715,6 +21718,9 @@ class GetSimulationDetailApiResponse(BaseModel):
     fields: list[QGetSimulationDetailV4Field] | None = None
     agents: list[QGetSimulationDetailV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
+    draft_version: int | None = None
+    scenario_active_states: dict[str, Any] | None = None
+    scenario_settings: dict[str, Any] | None = None
 
 
 
@@ -21969,6 +21975,9 @@ class GetSimulationNewSqlRow(BaseModel):
     agents: list[QGetSimulationNewV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
+    draft_version: int | None = None
+    scenario_active_states: dict[str, Any] | None = None
+    scenario_settings: dict[str, Any] | None = None
 
 class GetSimulationNewApiRequest(BaseModel):
 
@@ -22011,6 +22020,9 @@ class GetSimulationNewApiResponse(BaseModel):
     agents: list[QGetSimulationNewV4Agent] | None = None
     valid_agent_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
+    draft_version: int | None = None
+    scenario_active_states: dict[str, Any] | None = None
+    scenario_settings: dict[str, Any] | None = None
 
 
 

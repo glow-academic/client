@@ -239,27 +239,6 @@ export default function Simulation({
       data && "scenario_ids" in data
         ? (data.scenario_ids || []).map(String)
         : [];
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "Simulation.tsx:237",
-        message: "Initializing scenarioIds from server",
-        data: {
-          isEditMode,
-          hasData: !!data,
-          hasScenarioIds: "scenario_ids" in (data || {}),
-          serverScenarioIds,
-          scenarioIdsFromData:
-            data && "scenario_ids" in data ? data.scenario_ids : null,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        hypothesisId: "D",
-      }),
-    }).catch(() => {});
-    // #endregion
 
     if (!data) {
       return {
@@ -279,8 +258,10 @@ export default function Simulation({
     }
 
     // Initialize scenario active states and settings from server data
-    const scenarioActiveStates: Record<string, boolean> = {};
-    const scenarioSettings: Record<
+    // First, try to read from draft payload fields (scenario_active_states, scenario_settings)
+    // These are returned by SQL when draft exists
+    let scenarioActiveStates: Record<string, boolean> = {};
+    let scenarioSettings: Record<
       string,
       {
         hints_enabled?: boolean;
@@ -293,6 +274,50 @@ export default function Simulation({
         time_limit_enabled?: boolean;
       }
     > = {};
+
+    // Try to read from draft payload fields first (if draft exists)
+    if (
+      data &&
+      "scenario_active_states" in data &&
+      data.scenario_active_states
+    ) {
+      try {
+        const parsed =
+          typeof data.scenario_active_states === "string"
+            ? JSON.parse(data.scenario_active_states)
+            : data.scenario_active_states;
+        if (parsed && typeof parsed === "object") {
+          scenarioActiveStates = parsed as Record<string, boolean>;
+        }
+      } catch (e) {
+        // Ignore parse errors, fall back to scenarios array
+      }
+    }
+    if (data && "scenario_settings" in data && data.scenario_settings) {
+      try {
+        const parsed =
+          typeof data.scenario_settings === "string"
+            ? JSON.parse(data.scenario_settings)
+            : data.scenario_settings;
+        if (parsed && typeof parsed === "object") {
+          scenarioSettings = parsed as Record<
+            string,
+            {
+              hints_enabled?: boolean;
+              copy_paste_allowed?: boolean;
+              audio_enabled?: boolean;
+              text_enabled?: boolean;
+              rubric_ids?: string[];
+              grade_agent_ids?: string[];
+              time_limit_seconds?: number | null;
+              time_limit_enabled?: boolean;
+            }
+          >;
+        }
+      } catch (e) {
+        // Ignore parse errors, fall back to scenarios array
+      }
+    }
 
     // Member agent ID is now provided by server (auto-selected when there's only one option)
     // For edit mode, fall back to extracting from first scenario's rubric_grade_agents if not provided by server
@@ -321,7 +346,9 @@ export default function Simulation({
       }
     }
 
+    // If draft payload didn't have these fields, fall back to extracting from scenarios array (edit mode only)
     if (
+      Object.keys(scenarioActiveStates).length === 0 &&
       isEditMode &&
       simulationDetail &&
       "scenarios" in simulationDetail &&
@@ -352,32 +379,35 @@ export default function Simulation({
                 gradeAgentIdsSet.add(rga.grade_agent_id);
               }
             });
-            scenarioSettings[key] = {
-              hints_enabled: scenario.hints_enabled ?? false,
-              copy_paste_allowed:
-                ("copy_paste_allowed" in scenario
-                  ? scenario.copy_paste_allowed
-                  : false) ?? false,
-              audio_enabled:
-                ("audio_enabled" in scenario
-                  ? scenario.audio_enabled
-                  : false) ?? false,
-              text_enabled:
-                ("text_enabled" in scenario ? scenario.text_enabled : true) ??
-                true,
-              rubric_ids: Array.from(rubricIdsSet),
-              grade_agent_ids: Array.from(gradeAgentIdsSet),
-              time_limit_seconds: scenario.time_limit_seconds ?? null,
-              // Infer time_limit_enabled from time_limit_seconds (if not null, it's enabled)
-              time_limit_enabled:
-                scenario.time_limit_seconds !== null &&
-                scenario.time_limit_seconds !== undefined,
-            };
+            // Only set if not already set from draft payload
+            if (!(key in scenarioSettings)) {
+              scenarioSettings[key] = {
+                hints_enabled: scenario.hints_enabled ?? false,
+                copy_paste_allowed:
+                  ("copy_paste_allowed" in scenario
+                    ? scenario.copy_paste_allowed
+                    : false) ?? false,
+                audio_enabled:
+                  ("audio_enabled" in scenario
+                    ? scenario.audio_enabled
+                    : false) ?? false,
+                text_enabled:
+                  ("text_enabled" in scenario ? scenario.text_enabled : true) ??
+                  true,
+                rubric_ids: Array.from(rubricIdsSet),
+                grade_agent_ids: Array.from(gradeAgentIdsSet),
+                time_limit_seconds: scenario.time_limit_seconds ?? null,
+                // Infer time_limit_enabled from time_limit_seconds (if not null, it's enabled)
+                time_limit_enabled:
+                  scenario.time_limit_seconds !== null &&
+                  scenario.time_limit_seconds !== undefined,
+              };
+            }
           }
         });
     }
 
-    return {
+    const result = {
       title: data.name || "New Simulation",
       description: data.description || "",
       active: data.active ?? true,
@@ -393,12 +423,36 @@ export default function Simulation({
       scenarioActiveStates,
       scenarioSettings,
     };
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isEditMode,
     simulationDetail,
     simulationDetailDefault,
+    draftId, // Add draftId to dependencies so it recomputes when draft changes
+    urlDraftId, // Add urlDraftId to dependencies so it recomputes when URL draft changes
     defaultDepartmentIds,
-    // Note: draftId/urlDraftId not needed here - server data already includes merged draft payload
+    // Include actual content fields so it recomputes when server data changes (not just object reference)
+    simulationDetailDefault?.name,
+    simulationDetailDefault?.description,
+    simulationDetailDefault?.active,
+    simulationDetailDefault?.practice_simulation,
+    simulationDetailDefault?.department_ids,
+    simulationDetailDefault?.scenario_ids,
+    simulationDetailDefault?.hint_agent_id,
+    simulationDetailDefault?.simulation_text_agent_id,
+    simulationDetailDefault?.simulation_voice_agent_id,
+    simulationDetail?.name,
+    simulationDetail?.description,
+    simulationDetail?.active,
+    simulationDetail?.practice_simulation,
+    simulationDetail?.department_ids,
+    simulationDetail?.scenario_ids,
+    simulationDetail?.hint_agent_id,
+    simulationDetail?.simulation_text_agent_id,
+    simulationDetail?.simulation_voice_agent_id,
+    // Note: member_agent_id may not be in TypeScript types but is in SQL/draft payload
+    // Access via 'in' operator check in the useMemo body instead of dependency array
   ]);
 
   // Local draft state (not in URL)
@@ -411,6 +465,7 @@ export default function Simulation({
 
   // Update draft state when server data changes (e.g., draft selected)
   // Only update if content actually changed (deep comparison to prevent unnecessary re-renders)
+  // CRITICAL: Prevent overwriting draftState with empty values if current state has content
   useEffect(() => {
     // Deep compare to avoid unnecessary state updates
     const currentStateStr = prevInitialDraftStateRef.current;
@@ -418,13 +473,101 @@ export default function Simulation({
 
     // Only update if content actually changed
     if (currentStateStr !== newStateStr) {
+      // Check if new state is "empty" (no title, no scenarios) but current state has content
+      // This prevents form reset when server data refreshes before draft payload is merged
+      const newStateIsEmpty =
+        (!initialDraftState.title || initialDraftState.title.trim() === "") &&
+        (initialDraftState.scenarioIds?.length || 0) === 0;
+
+      // Get current draftState to check if it has content
+      setDraftState((currentDraftState) => {
+        const currentStateHasContent =
+          (currentDraftState.title?.trim() || "").length > 0 ||
+          (currentDraftState.scenarioIds?.length || 0) > 0;
+
+        // Prevent overwriting with empty values if current state has content
+        // This handles race condition when server refreshes before draft payload is merged
+        // CRITICAL: Always update boolean fields (active, practiceSimulation) from initialDraftState
+        // even when skipping the update, as these are simple boolean values that should always sync
+        if (newStateIsEmpty && currentStateHasContent) {
+          // Keep current state but update boolean fields from initialDraftState
+          return {
+            ...currentDraftState,
+            active: initialDraftState.active,
+            practiceSimulation: initialDraftState.practiceSimulation,
+          };
+        }
+
+        // Merge scenarioSettings and scenarioActiveStates from current state if new state doesn't have them
+        // SQL now returns these from draft payload, but preserve from current draftState if missing
+        const mergedState = { ...initialDraftState };
+        if (
+          Object.keys(currentDraftState.scenarioSettings || {}).length > 0 &&
+          Object.keys(mergedState.scenarioSettings || {}).length === 0
+        ) {
+          mergedState.scenarioSettings = {
+            ...currentDraftState.scenarioSettings,
+          };
+        }
+        if (
+          Object.keys(currentDraftState.scenarioActiveStates || {}).length >
+            0 &&
+          Object.keys(mergedState.scenarioActiveStates || {}).length === 0
+        ) {
+          mergedState.scenarioActiveStates = {
+            ...currentDraftState.scenarioActiveStates,
+          };
+        }
+
+        // Update prev ref and return merged state
+        prevInitialDraftStateRef.current = JSON.stringify(mergedState);
+        return mergedState;
+      });
+    } else {
+      // Even if strings match, check if boolean fields differ and update them
+      // This handles cases where draftState was initialized with defaults but server returns different values
+      setDraftState((currentDraftState) => {
+        const activeDiffers =
+          currentDraftState.active !== initialDraftState.active;
+        const practiceSimulationDiffers =
+          currentDraftState.practiceSimulation !==
+          initialDraftState.practiceSimulation;
+
+        if (activeDiffers || practiceSimulationDiffers) {
+          return {
+            ...currentDraftState,
+            active: initialDraftState.active,
+            practiceSimulation: initialDraftState.practiceSimulation,
+          };
+        }
+        return currentDraftState;
+      });
+      // Even if strings match, update ref to prevent false positives
       prevInitialDraftStateRef.current = newStateStr;
-      setDraftState(initialDraftState);
     }
-  }, [initialDraftState]);
+  }, [initialDraftState, draftId, urlDraftId]);
+
+  // Track when draftId changes to reset autosave hook state
+  const prevDraftIdRef = useRef<string | null>(draftId);
+  useEffect(() => {
+    if (prevDraftIdRef.current !== draftId) {
+      // Draft changed - this will trigger useDraftAutosave to reset lastSavedVersion
+      prevDraftIdRef.current = draftId;
+    }
+  }, [draftId]);
+
+  // Get draft version from server (source of truth)
+  const draftVersion = useMemo(() => {
+    const data = isEditMode ? simulationDetail : simulationDetailDefault;
+    return (
+      (data && "draft_version" in data ? (data.draft_version as number) : 0) ||
+      0
+    );
+  }, [isEditMode, simulationDetail, simulationDetailDefault]);
 
   // Integrate autosave hook
   // Pattern: Transform hook API (draft_id, patch, expected_version) to backend API (input_draft_id, patch, expected_version)
+  // Server is source of truth for version - we pass initialVersion from server response
   const {
     saveStatus: _saveStatus,
     saveNow: _saveNow,
@@ -432,29 +575,9 @@ export default function Simulation({
   } = useDraftAutosave({
     draftId,
     draftState,
+    initialVersion: draftVersion, // Server-provided version (source of truth)
     patchDraftAction: patchSimulationDraftAction
       ? async (input) => {
-          // #region agent log
-          fetch(
-            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                location: "Simulation.tsx:396",
-                message: "patchDraftAction - entry",
-                data: {
-                  patch: input.body.patch,
-                  draftId: input.body.draft_id,
-                  expectedVersion: input.body.expected_version,
-                },
-                timestamp: Date.now(),
-                sessionId: "debug-session",
-                hypothesisId: "B",
-              }),
-            }
-          ).catch(() => {});
-          // #endregion
           // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case for some fields, camelCase for others)
           // Based on SQL defaults: scenarioIds (camelCase), scenarioActiveStates (camelCase), scenarioSettings (camelCase),
           // departmentIds (camelCase), practiceSimulation (camelCase), but hint_agent_id (snake_case), etc.
@@ -469,23 +592,6 @@ export default function Simulation({
               transformedPatch[key] = value;
             }
           );
-          // #region agent log
-          fetch(
-            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                location: "Simulation.tsx:405",
-                message: "patchDraftAction - transformed patch",
-                data: { originalPatch: input.body.patch, transformedPatch },
-                timestamp: Date.now(),
-                sessionId: "debug-session",
-                hypothesisId: "B",
-              }),
-            }
-          ).catch(() => {});
-          // #endregion
           // Transform hook API → backend API
           // Hook API: { body: { draft_id, patch, expected_version } }
           // Backend API: { body: { input_draft_id, patch, expected_version } }
@@ -497,27 +603,6 @@ export default function Simulation({
               expected_version: input.body.expected_version,
             } as PatchSimulationDraftIn["body"],
           });
-          // #region agent log
-          fetch(
-            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                location: "Simulation.tsx:407",
-                message: "patchDraftAction - result",
-                data: {
-                  draftId: result.draft_id,
-                  newVersion: result.new_version,
-                  draftExists: result.draft_exists,
-                },
-                timestamp: Date.now(),
-                sessionId: "debug-session",
-                hypothesisId: "B",
-              }),
-            }
-          ).catch(() => {});
-          // #endregion
           // Transform backend API → hook API
           // Backend API: { draft_id, new_version, draft_exists }
           // Hook API: { draftId, newVersion, draftExists }
@@ -1622,9 +1707,9 @@ export default function Simulation({
                       id="active"
                       data-testid="switch-simulation-active"
                       checked={draftState.active ?? true}
-                      onCheckedChange={(checked) =>
-                        setDraftState((prev) => ({ ...prev, active: checked }))
-                      }
+                      onCheckedChange={(checked) => {
+                        setDraftState((prev) => ({ ...prev, active: checked }));
+                      }}
                       disabled={isReadonly}
                     />
                   </div>
@@ -1754,93 +1839,16 @@ export default function Simulation({
               selectedId={null}
               selectedIds={selectedScenarioIds}
               onSelect={(scenarioId) => {
-                // #region agent log
-                fetch(
-                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      location: "Simulation.tsx:1708",
-                      message: "Scenario selection - entry",
-                      data: {
-                        scenarioId,
-                        isSelected: selectedScenarioIds.includes(scenarioId),
-                        currentIds: selectedScenarioIds,
-                      },
-                      timestamp: Date.now(),
-                      sessionId: "debug-session",
-                      hypothesisId: "A",
-                    }),
-                  }
-                ).catch(() => {});
-                // #endregion
                 const isSelected = selectedScenarioIds.includes(scenarioId);
                 // Prevent unselection if can_remove is false
                 if (isSelected && scenarioCanRemoveMap[scenarioId] === false) {
-                  // #region agent log
-                  fetch(
-                    "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        location: "Simulation.tsx:1711",
-                        message: "Scenario selection - prevented unselection",
-                        data: {
-                          scenarioId,
-                          canRemove: scenarioCanRemoveMap[scenarioId],
-                        },
-                        timestamp: Date.now(),
-                        sessionId: "debug-session",
-                        hypothesisId: "A",
-                      }),
-                    }
-                  ).catch(() => {});
-                  // #endregion
                   return;
                 }
                 const newIds = isSelected
                   ? selectedScenarioIds.filter((id) => id !== scenarioId)
                   : [...selectedScenarioIds, scenarioId];
-                // #region agent log
-                fetch(
-                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      location: "Simulation.tsx:1716",
-                      message: "Scenario selection - before state update",
-                      data: { newIds, isSelected },
-                      timestamp: Date.now(),
-                      sessionId: "debug-session",
-                      hypothesisId: "A",
-                    }),
-                  }
-                ).catch(() => {});
-                // #endregion
                 // Update draftState (scenarioIds is draft data, not URL param - don't call setStepFormData)
-                setDraftState((prev) => {
-                  // #region agent log
-                  fetch(
-                    "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        location: "Simulation.tsx:1721",
-                        message: "Scenario selection - updating draftState",
-                        data: { prevScenarioIds: prev.scenarioIds, newIds },
-                        timestamp: Date.now(),
-                        sessionId: "debug-session",
-                        hypothesisId: "A",
-                      }),
-                    }
-                  ).catch(() => {});
-                  // #endregion
-                  return { ...prev, scenarioIds: newIds };
-                });
+                setDraftState((prev) => ({ ...prev, scenarioIds: newIds }));
               }}
               getId={(scenario) => scenario.scenario_id}
               renderItem={(scenario, isSelected) => (
@@ -1895,6 +1903,7 @@ export default function Simulation({
       departmentMapping,
       validAgentIds,
       agentMapping,
+      draftId,
       effectiveProfile?.role,
       scenariosArray,
       validScenarioIds,
@@ -2513,30 +2522,6 @@ export default function Simulation({
                               id={`${scenarioId}-time-limit-toggle`}
                               checked={hasTimeLimit}
                               onCheckedChange={(checked) => {
-                                // #region agent log
-                                fetch(
-                                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({
-                                      location: "Simulation.tsx:2383",
-                                      message: "Time limit toggle - entry",
-                                      data: {
-                                        scenarioId,
-                                        checked,
-                                        currentTimeLimit:
-                                          settings.time_limit_seconds,
-                                      },
-                                      timestamp: Date.now(),
-                                      sessionId: "debug-session",
-                                      hypothesisId: "C",
-                                    }),
-                                  }
-                                ).catch(() => {});
-                                // #endregion
                                 setDraftState((prev) => {
                                   const currentSettings =
                                     prev.scenarioSettings[scenarioId] || {};
@@ -2551,35 +2536,6 @@ export default function Simulation({
                                         : null, // Set to null when disabling
                                     },
                                   };
-                                  // #region agent log
-                                  const updatedSettings =
-                                    newSettings[scenarioId];
-                                  fetch(
-                                    "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                                    {
-                                      method: "POST",
-                                      headers: {
-                                        "Content-Type": "application/json",
-                                      },
-                                      body: JSON.stringify({
-                                        location: "Simulation.tsx:2390",
-                                        message:
-                                          "Time limit toggle - updating state",
-                                        data: {
-                                          scenarioId,
-                                          checked,
-                                          newTimeLimit:
-                                            updatedSettings?.time_limit_seconds,
-                                          timeLimitEnabled:
-                                            updatedSettings?.time_limit_enabled,
-                                        },
-                                        timestamp: Date.now(),
-                                        sessionId: "debug-session",
-                                        hypothesisId: "C",
-                                      }),
-                                    }
-                                  ).catch(() => {});
-                                  // #endregion
                                   return {
                                     ...prev,
                                     scenarioSettings: newSettings,
@@ -2597,29 +2553,6 @@ export default function Simulation({
                             max="120"
                             value={timeLimitMinutes || ""}
                             onChange={(e) => {
-                              // #region agent log
-                              fetch(
-                                "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                                {
-                                  method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    location: "Simulation.tsx:2405",
-                                    message: "Time limit input - onChange",
-                                    data: {
-                                      scenarioId,
-                                      value: e.target.value,
-                                      isEmpty: e.target.value === "",
-                                    },
-                                    timestamp: Date.now(),
-                                    sessionId: "debug-session",
-                                    hypothesisId: "C",
-                                  }),
-                                }
-                              ).catch(() => {});
-                              // #endregion
                               const minutes =
                                 e.target.value === ""
                                   ? null
@@ -2631,32 +2564,6 @@ export default function Simulation({
                                 // If input has value, convert to seconds
                                 const newTimeLimit =
                                   minutes && minutes > 0 ? minutes * 60 : null;
-                                // #region agent log
-                                fetch(
-                                  "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({
-                                      location: "Simulation.tsx:2407",
-                                      message:
-                                        "Time limit input - updating state",
-                                      data: {
-                                        scenarioId,
-                                        minutes,
-                                        newTimeLimit,
-                                        timeLimitEnabled:
-                                          currentSettings.time_limit_enabled,
-                                      },
-                                      timestamp: Date.now(),
-                                      sessionId: "debug-session",
-                                      hypothesisId: "C",
-                                    }),
-                                  }
-                                ).catch(() => {});
-                                // #endregion
                                 return {
                                   ...prev,
                                   scenarioSettings: {

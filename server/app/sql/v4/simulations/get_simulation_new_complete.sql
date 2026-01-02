@@ -181,7 +181,10 @@ RETURNS TABLE (
     fields types.q_get_simulation_new_v4_field[],
     agents types.q_get_simulation_new_v4_agent[],
     valid_agent_ids uuid[],
-    primary_department_id uuid
+    primary_department_id uuid,
+    draft_version int,
+    scenario_active_states jsonb,
+    scenario_settings jsonb
 )
 LANGUAGE sql
 STABLE
@@ -193,7 +196,8 @@ WITH params AS (
 ),
 draft_payload_data AS (
     SELECT 
-        d.payload
+        d.payload,
+        d.version as draft_version
     FROM params x
     JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
@@ -694,7 +698,19 @@ SELECT
     COALESCE(fd.fields, ARRAY[]::types.q_get_simulation_new_v4_field[]) as fields,
     COALESCE(ad.agents, ARRAY[]::types.q_get_simulation_new_v4_agent[]) as agents,
     COALESCE(ad.agent_ids, ARRAY[]::uuid[]) as valid_agent_ids,
-    pdi.department_id as primary_department_id
+    pdi.department_id as primary_department_id,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract scenarioActiveStates and scenarioSettings from draft payload if available
+    COALESCE(
+        (SELECT payload->'scenarioActiveStates' FROM draft_payload_data),
+        (SELECT payload->'scenario_active_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as scenario_active_states,
+    COALESCE(
+        (SELECT payload->'scenarioSettings' FROM draft_payload_data),
+        (SELECT payload->'scenario_settings' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as scenario_settings
 FROM user_profile up
 CROSS JOIN cohort_usage cu
 CROSS JOIN valid_scenarios vs

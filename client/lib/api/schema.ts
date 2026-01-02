@@ -13175,6 +13175,16 @@ export interface components {
             agents?: components["schemas"]["QGetSimulationDetailV4Agent"][] | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Scenario Active States */
+            scenario_active_states?: {
+                [key: string]: unknown;
+            } | null;
+            /** Scenario Settings */
+            scenario_settings?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** GetSimulationNewApiRequest */
         GetSimulationNewApiRequest: {
@@ -13253,6 +13263,16 @@ export interface components {
             valid_agent_ids?: string[] | null;
             /** Primary Department Id */
             primary_department_id?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Scenario Active States */
+            scenario_active_states?: {
+                [key: string]: unknown;
+            } | null;
+            /** Scenario Settings */
+            scenario_settings?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** GetSimulationsListApiRequest */
         GetSimulationsListApiRequest: Record<string, never>;
