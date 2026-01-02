@@ -1,14 +1,37 @@
 -- Link system and developer messages to a run with proper message_tree structure
 -- Converted to PostgreSQL function
--- Uses safe drop/recreate pattern
+-- Returns: system_message_id, developer_message_id (both nullable)
+-- 
+-- For simulation runs (with personas):
+--   - Links system message (persona prompt, department-specific or default)
+--   - Links developer message (scenario description if chat_id provided)
+--   - Creates message_tree: system → developer → (will link to first user when created)
+--
+-- For agent runs:
+--   - Links system message (agent prompt, department-specific or default)
+--   - Developer messages are linked separately (hint, grade agents)
+--
+-- Note: message_tree linking to first user message happens when user message is created
 
 BEGIN;
 
--- 1) Drop function first
-DROP FUNCTION IF EXISTS socket_link_system_developer_messages_to_run_v4(uuid, uuid, uuid);
+-- Drop function if exists (handles signature variations)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_link_system_developer_messages_to_run_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_link_system_developer_messages_to_run_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
--- 2) Recreate function
-CREATE OR REPLACE FUNCTION socket_link_system_developer_messages_to_run_v4(
+-- Recreate function
+CREATE OR REPLACE FUNCTION api_link_system_developer_messages_to_run_v4(
     run_id uuid,
     department_id uuid DEFAULT NULL,
     chat_id uuid DEFAULT NULL
@@ -211,4 +234,3 @@ SELECT
 $$;
 
 COMMIT;
-

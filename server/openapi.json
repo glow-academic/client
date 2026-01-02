@@ -27904,17 +27904,76 @@
       },
       "BulkCreateStaffApiRequest": {
         "properties": {
-          "profiles": {
+          "profile_ids": {
             "items": {
-              "$ref": "#/components/schemas/IBulkCreateStaffV4Profile"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
-            "title": "Profiles"
+            "title": "Profile Ids"
+          },
+          "first_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "First Names"
+          },
+          "last_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Last Names"
+          },
+          "primary_emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Primary Emails"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "additional_email_profiles": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Additional Email Profiles"
+          },
+          "additional_emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Additional Emails"
           }
         },
         "type": "object",
         "required": [
-          "profiles"
+          "profile_ids",
+          "first_names",
+          "last_names",
+          "primary_emails",
+          "roles",
+          "department_ids",
+          "additional_email_profiles",
+          "additional_emails"
         ],
         "title": "BulkCreateStaffApiRequest"
       },
@@ -28020,54 +28079,30 @@
             "title": "Profile Ids"
           },
           "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Role"
           },
           "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "boolean",
             "title": "Active"
           },
           "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
             "title": "Requests Per Day"
           },
           "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Primary Department Id"
           }
         },
         "type": "object",
         "required": [
-          "profile_ids"
+          "profile_ids",
+          "role",
+          "active",
+          "requests_per_day",
+          "primary_department_id"
         ],
         "title": "BulkUpdateStaffApiRequest"
       },
@@ -50365,105 +50400,6 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "IBulkCreateStaffV4Profile": {
-        "properties": {
-          "first_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
-          },
-          "emails": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emails"
-          },
-          "primary_email_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email Index"
-          },
-          "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "primary_department_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Index"
-          }
-        },
-        "type": "object",
-        "required": [
-          "first_name",
-          "last_name",
-          "emails",
-          "primary_email_index",
-          "role",
-          "department_ids",
-          "primary_department_index"
-        ],
-        "title": "IBulkCreateStaffV4Profile"
-      },
       "ICreateAuthV4AuthItem": {
         "properties": {
           "name": {
@@ -51556,121 +51492,6 @@
           "key_id"
         ],
         "title": "IUpdateSettingsV4ProviderKey"
-      },
-      "IUpsertStaffV4Profile": {
-        "properties": {
-          "first_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
-          },
-          "emails": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emails"
-          },
-          "primary_email_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email Index"
-          },
-          "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "first_name",
-          "last_name",
-          "emails",
-          "primary_email_index",
-          "role",
-          "active",
-          "department_ids",
-          "cohort_ids"
-        ],
-        "title": "IUpsertStaffV4Profile"
       },
       "ImageToolCompletePayload": {
         "properties": {
@@ -94420,23 +94241,77 @@
       },
       "UpsertStaffApiRequest": {
         "properties": {
-          "profiles": {
+          "profile_id_new": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id New"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "primary_email": {
+            "type": "string",
+            "title": "Primary Email"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
             "items": {
-              "$ref": "#/components/schemas/IUpsertStaffV4Profile"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
-            "title": "Profiles"
+            "title": "Department Ids"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
           },
           "current_profile_id": {
             "type": "string",
             "format": "uuid",
             "title": "Current Profile Id"
+          },
+          "additional_emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Additional Emails"
+          },
+          "primary_email_index": {
+            "type": "integer",
+            "title": "Primary Email Index"
           }
         },
         "type": "object",
         "required": [
-          "profiles",
-          "current_profile_id"
+          "profile_id_new",
+          "first_name",
+          "last_name",
+          "primary_email",
+          "role",
+          "active",
+          "department_ids",
+          "cohort_ids",
+          "current_profile_id",
+          "additional_emails",
+          "primary_email_index"
         ],
         "title": "UpsertStaffApiRequest"
       },

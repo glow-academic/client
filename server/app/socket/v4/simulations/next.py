@@ -1,11 +1,11 @@
 """Handler for simulation_next WebSocket event - creates fresh scenario variant and delegates to generate.py."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -68,9 +68,22 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
 
             # Get parent scenario
-            sql = load_sql("app/sql/v4/scenario/get_scenario_by_id.sql")
-            parent_scenario = await conn.fetchrow(sql, parent_scenario_id_uuid)
-            if not parent_scenario:
+            from app.sql.types import (
+                GetScenarioByIdSqlParams,
+                GetScenarioByIdSqlRow,
+            )
+            from typing import cast
+
+            params = GetScenarioByIdSqlParams(scenario_id=parent_scenario_id_uuid)
+            parent_scenario_result = cast(
+                GetScenarioByIdSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/scenario/get_scenario_by_id_complete.sql",
+                    params=params,
+                ),
+            )
+            if not parent_scenario_result:
                 await simulation_next_error(
                     SimulationNextErrorPayload(
                         success=False, message="Parent scenario not found"
@@ -80,28 +93,48 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 return
 
             # Create child scenario variant (no links yet - generate.py will handle randomization and linking)
-            parent_scenario_dict = dict(parent_scenario)
+            parent_scenario_dict = parent_scenario_result.model_dump()
             scenario_title = parent_scenario_dict.get("name", "")
 
-            sql = load_sql("app/sql/v4/scenario/insert_scenario_variant.sql")
-            new_scenario_row = await conn.fetchrow(
-                sql,
-                scenario_title or parent_scenario_dict.get("name", ""),
-                True,  # generated
-                True,  # active
-                parent_scenario_dict.get("objectives_enabled", True),
-                parent_scenario_dict.get("images_enabled", True),
-                parent_scenario_dict.get("scenario_agent_id"),
-                parent_scenario_dict.get("image_agent_id"),
+            from app.sql.types import (
+                InsertScenarioVariantSqlParams,
+                InsertScenarioVariantSqlRow,
             )
-            child_scenario_id = new_scenario_row["id"]
+
+            variant_params = InsertScenarioVariantSqlParams(
+                name=scenario_title or parent_scenario_dict.get("name", ""),
+                generated=True,
+                active=True,
+                objectives_enabled=parent_scenario_dict.get("objectives_enabled", True),
+                images_enabled=parent_scenario_dict.get("images_enabled", True),
+                scenario_agent_id=parent_scenario_dict.get("scenario_agent_id"),
+                image_agent_id=parent_scenario_dict.get("image_agent_id"),
+            )
+            new_scenario_result = cast(
+                InsertScenarioVariantSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/scenario/insert_scenario_variant_complete.sql",
+                    params=variant_params,
+                ),
+            )
+            child_scenario_id = new_scenario_result.id
 
             # Link scenario tree edge (parent to child)
-            sql = load_sql("app/sql/v4/scenario/insert_scenario_tree_edge.sql")
-            await conn.execute(
-                sql,
-                parent_scenario_id_uuid,
-                child_scenario_id,
+            from app.sql.types import (
+                InsertScenarioTreeEdgeSqlParams,
+            )
+
+            edge_params = InsertScenarioTreeEdgeSqlParams(
+                parent_id=parent_scenario_id_uuid,
+                child_id=child_scenario_id,
+                active=True,
+            )
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/scenario/insert_scenario_tree_edge_complete.sql",
+                params=edge_params,
+            )
                 True,
             )
             # Check which AI fields need filling

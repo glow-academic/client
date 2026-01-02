@@ -1,14 +1,26 @@
 -- Get or create developer message and link to run
 -- Converted to PostgreSQL function
--- Uses safe drop/recreate pattern
+-- Uses MD5 deduplication via message_content_hash() function
 
 BEGIN;
 
--- 1) Drop function first
-DROP FUNCTION IF EXISTS socket_link_developer_message_to_run_v4(text, uuid);
+-- Drop function if exists (handles signature variations)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_link_developer_message_to_run_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_link_developer_message_to_run_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
--- 2) Recreate function
-CREATE OR REPLACE FUNCTION socket_link_developer_message_to_run_v4(
+-- Recreate function
+CREATE OR REPLACE FUNCTION api_link_developer_message_to_run_v4(
     content text,
     run_id uuid
 )
@@ -58,4 +70,3 @@ SELECT message_id, run_id FROM link_to_run
 $$;
 
 COMMIT;
-

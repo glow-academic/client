@@ -3,47 +3,37 @@
 import uuid
 from typing import Any, cast
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, Field
-from utils.sql_helper import execute_sql_typed, load_sql
-
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.documents.format_document_template_context import (
-    format_document_template_context,
-)
+from app.infra.v4.documents.format_document_template_context import \
+    format_document_template_context
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from fastapi import APIRouter
+from pydantic import BaseModel, Field
+from utils.sql_helper import execute_sql_typed, load_sql
+
 # Types will be auto-generated from SQL introspection
 # For now, using try/except to handle missing types gracefully
 try:
-    from app.sql.types import (
-        GetDocumentRunContextAndCreateRunApiRequest,
-        GetDocumentRunContextAndCreateRunSqlParams,
-        GetDocumentRunContextAndCreateRunSqlRow,
-        GetDocumentTemplateContextSqlParams,
-        GetDocumentTemplateContextSqlRow,
-        CreateTemplateAndLinkSqlParams,
-        CreateTemplateAndLinkSqlRow,
-        DocumentGenerationCompleteApiRequest,
-        DocumentGenerationErrorApiRequest,
-        DocumentGenerationErrorSqlRow,
-        DocumentGenerationProgressApiRequest,
-    )
+    from app.sql.types import (CreateTemplateAndLinkSqlParams,
+                               CreateTemplateAndLinkSqlRow,
+                               DocumentGenerationCompleteApiRequest,
+                               DocumentGenerationErrorApiRequest,
+                               DocumentGenerationErrorSqlRow,
+                               DocumentGenerationProgressApiRequest,
+                               GetDocumentRunContextAndCreateRunApiRequest,
+                               GetDocumentRunContextAndCreateRunSqlParams,
+                               GetDocumentRunContextAndCreateRunSqlRow,
+                               GetDocumentTemplateContextSqlParams,
+                               GetDocumentTemplateContextSqlRow)
 except ImportError:
     # Types not generated yet - will be created when SQL files are processed
     # Using BaseModel as fallback for now
@@ -260,9 +250,15 @@ async def _document_generate_impl(
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
-            sql_get_agent_tools = load_sql("app/sql/v4/agents/get_agent_tools.sql")
-            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
-            agent_tools_config = [dict(row) for row in rows]
+            from app.sql.types import GetAgentToolsSqlRow
+
+            # Function returns multiple rows, so we call it directly with fetch()
+            function_call_sql = 'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+            rows = await conn.fetch(function_call_sql, agent_id_uuid)
+            agent_tools_config = [
+                GetAgentToolsSqlRow.model_validate(dict(row)).model_dump()
+                for row in rows
+            ]
             tool_config_map_doc: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
@@ -509,9 +505,8 @@ async def _document_generate_impl(
             # Create template directly in database
             import os
 
-            from utils.cache.invalidate_tags import invalidate_tags
-
             from app.main import UPLOAD_FOLDER
+            from utils.cache.invalidate_tags import invalidate_tags
 
             try:
                 # Save template HTML to file and create upload record

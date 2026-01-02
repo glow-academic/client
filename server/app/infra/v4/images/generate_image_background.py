@@ -3,9 +3,11 @@
 import os
 import uuid
 
+from typing import cast
+
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.main import UPLOAD_FOLDER, get_pool
 
@@ -63,15 +65,29 @@ async def generate_image_background(
                 )
                 return
 
-            sql_query = load_sql("app/sql/v4/agents/get_agent_model_info.sql")
-            row = await conn.fetchrow(sql_query, agent_id, profile_id)
-            if not row:
+            from app.sql.types import (
+                GetAgentModelInfoSqlParams,
+                GetAgentModelInfoSqlRow,
+            )
+
+            params = GetAgentModelInfoSqlParams(
+                agent_id=uuid.UUID(agent_id), profile_id=uuid.UUID(profile_id)
+            )
+            result = cast(
+                GetAgentModelInfoSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/agents/get_agent_model_info_complete.sql",
+                    params=params,
+                ),
+            )
+            if not result:
                 await _emit_image_error(
                     image_id, storage_key, f"Agent {agent_id} not found or inactive"
                 )
                 return
 
-            api_key = row["api_key"]
+            api_key = result.api_key
             if not api_key:
                 await _emit_image_error(
                     image_id, storage_key, f"API key not found for agent {agent_id}"
@@ -87,9 +103,9 @@ async def generate_image_background(
                 )
                 return
 
-            model_name = row["model_name"]
-            base_url = row["base_url"]
-            provider = row["provider"] or ""
+            model_name = result.model_name
+            base_url = result.base_url
+            provider = result.provider or ""
 
             # Determine image model
             image_model = model_name

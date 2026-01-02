@@ -431,14 +431,17 @@ async def _simulation_text_generate_impl(
             persona_tools = []
             if personas:
                 # Load agent tools from database
-                # Note: get_agent_tools.sql is a simple query - we'll keep it as is for now
-                # but should convert to function if needed
+                # Load agent tools using typed function
+                from app.sql.types import GetAgentToolsSqlRow
+
                 simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
-                sql_get_agent_tools = load_sql("app/sql/v4/agents/get_agent_tools.sql")
-                rows = await conn.fetch(
-                    sql_get_agent_tools, str(simulation_agent_id_uuid)
-                )
-                agent_tools_config = [dict(row) for row in rows]
+                # Function returns multiple rows, so we call it directly with fetch()
+                function_call_sql = 'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+                rows = await conn.fetch(function_call_sql, simulation_agent_id_uuid)
+                agent_tools_config = [
+                    GetAgentToolsSqlRow.model_validate(dict(row)).model_dump()
+                    for row in rows
+                ]
                 tool_config_map_persona: dict[str, dict[str, Any]] = {
                     tool_config["name"]: tool_config
                     for tool_config in agent_tools_config

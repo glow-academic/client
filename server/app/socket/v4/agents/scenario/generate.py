@@ -1168,10 +1168,16 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             model_run_id = uuid.UUID(result.run_id)
 
             # Load agent tools from database
+            from app.sql.types import GetAgentToolsSqlRow
+
             agent_id_uuid = uuid.UUID(result.agent_id)
-            sql_get_agent_tools = load_sql("app/sql/v4/agents/get_agent_tools.sql")
-            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
-            agent_tools_config = [dict(row) for row in rows]
+            # Function returns multiple rows, so we call it directly with fetch()
+            function_call_sql = 'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+            rows = await conn.fetch(function_call_sql, agent_id_uuid)
+            agent_tools_config = [
+                GetAgentToolsSqlRow.model_validate(dict(row)).model_dump()
+                for row in rows
+            ]
             # Create mapping of tool name -> tool config for quick lookup
             tool_config_map: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config

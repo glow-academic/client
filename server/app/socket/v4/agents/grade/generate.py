@@ -540,24 +540,16 @@ async def _simulation_grading_start_impl(
             grade_id = uuid.UUID(grade_result.id)
 
             # Load agent tools from database
-            # Note: get_agent_tools.sql may not be converted yet - check if it exists as _complete.sql
-            # For now, we'll keep the old pattern if the file doesn't exist as _complete.sql
+            from app.sql.types import GetAgentToolsSqlRow
+
             agent_id_uuid = uuid.UUID(context["agent"]["id"])
-            try:
-                from app.sql.types import GetAgentToolsSqlParams, GetAgentToolsSqlRow
-                SQL_GET_AGENT_TOOLS_PATH = "app/sql/v4/agents/get_agent_tools_complete.sql"
-                agent_tools_params = GetAgentToolsSqlParams(agent_id=agent_id_uuid)
-                agent_tools_rows = await execute_sql_typed(conn, SQL_GET_AGENT_TOOLS_PATH, params=agent_tools_params)
-                if isinstance(agent_tools_rows, list):
-                    agent_tools_config = [dict(row) for row in agent_tools_rows]
-                else:
-                    agent_tools_config = [dict(agent_tools_rows)] if agent_tools_rows else []
-            except Exception:
-                # Fallback to old pattern if SQL file not converted yet
-                from utils.sql_helper import load_sql
-                sql_get_agent_tools = load_sql("app/sql/v4/agents/get_agent_tools.sql")
-                rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
-                agent_tools_config = [dict(row) for row in rows]
+            # Function returns multiple rows, so we call it directly with fetch()
+            function_call_sql = 'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+            rows = await conn.fetch(function_call_sql, agent_id_uuid)
+            agent_tools_config = [
+                GetAgentToolsSqlRow.model_validate(dict(row)).model_dump()
+                for row in rows
+            ]
             tool_config_map_grading: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
