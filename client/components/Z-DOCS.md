@@ -1334,6 +1334,162 @@ See `client/components/personas/Persona.tsx` for a complete reference implementa
 **Issue**: Submit button not showing
 - **Solution**: Ensure `onSubmit` and `submitButton` props are provided to `GenericForm`
 
+## Nested Content Sections Pattern
+
+**Purpose**: Handle complex nested data structures that need separate sections but aren't full steps.
+
+### Overview
+
+The `contentSections` prop in `GenericForm` allows you to insert additional sections between steps. This is useful when you need to split complex nested data into separate sections (e.g., Active Simulations and Simulation Positions in Cohort).
+
+### When to Use contentSections
+
+Use `contentSections` when:
+- You need to split complex nested data into separate sections
+- The sections are related to a parent step but deserve their own UI
+- You want to avoid creating multiple steps for related functionality
+- The sections should appear conditionally (e.g., only when parent data exists)
+
+**Don't use `contentSections` for:**
+- Independent steps (use regular `steps` instead)
+- Simple form fields (use `StepCard` content)
+- Unrelated functionality (create separate steps)
+
+### Pattern Structure
+
+```typescript
+const contentSections = useMemo(() => {
+  // Only show sections if parent data exists
+  if (!parentDataExists) {
+    return [];
+  }
+
+  return [
+    {
+      id: "section-1",
+      insertAfter: "parent-step-id", // Insert after this step
+      render: ({
+        formData,
+        setFormData,
+      }: {
+        formData: Record<string, unknown>;
+        setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      }) => {
+        // Render section content using StepCard or custom Card
+        return (
+          <StepCard
+            stepStatus="completed"
+            stepNumber={3}
+            stepTitle="Section Title"
+            stepDescription="Section description"
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+          >
+            {/* Section content */}
+          </StepCard>
+        );
+      },
+    },
+    {
+      id: "section-2",
+      insertAfter: "parent-step-id", // Can insert multiple sections after same step
+      render: ({ formData, setFormData }) => {
+        // Another section
+      },
+    },
+  ];
+}, [dependencies]);
+```
+
+### Example: Cohort Simulations
+
+**Problem**: Cohort has simulations that need:
+1. Active state management (switches for all simulations)
+2. Position management (reordering simulations)
+
+**Solution**: Split into two `contentSections` after the "simulations" step:
+
+```typescript
+const contentSections = useMemo(() => {
+  const simIds = (formData["simulationIds"] as string[] | null | undefined) || [];
+  
+  if (simIds.length === 0) {
+    return []; // Don't show sections if no simulations selected
+  }
+
+  return [
+    {
+      id: "active-simulations",
+      insertAfter: "simulations",
+      render: ({ formData, setFormData }) => {
+        const activeStates = (formData["simulationActiveStates"] as Record<string, boolean> | null | undefined) || {};
+        
+        return (
+          <StepCard
+            stepStatus="completed"
+            stepNumber={3}
+            stepTitle="Active Simulations"
+            stepDescription="Enable or disable simulations in this cohort."
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {simIds.map((simulationId) => (
+                <Card key={simulationId}>
+                  {/* Switch for active state */}
+                </Card>
+              ))}
+            </div>
+          </StepCard>
+        );
+      },
+    },
+    {
+      id: "simulation-positions",
+      insertAfter: "simulations",
+      render: ({ formData, setFormData }) => {
+        return (
+          <StepCard
+            stepStatus="completed"
+            stepNumber={4}
+            stepTitle="Simulation Positions"
+            stepDescription="Reorder simulations to set their display order."
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+          >
+            {/* Reorderable list with position controls */}
+          </StepCard>
+        );
+      },
+    },
+  ];
+}, [formData, simulationMapping, isReadonly, isEditMode]);
+```
+
+### Key Points
+
+1. **Conditional Rendering**: Return empty array if sections shouldn't be shown
+2. **insertAfter**: Specify which step to insert sections after
+3. **Multiple Sections**: Can insert multiple sections after the same step
+4. **StepCard Usage**: Use `StepCard` for consistent styling (or custom `Card` if needed)
+5. **formData Access**: Access form data via `formData` parameter
+6. **State Updates**: Update form state via `setFormData` callback
+7. **Memoization**: Memoize `contentSections` array to prevent unnecessary re-renders
+
+### Benefits
+
+- **Separation of Concerns**: Split complex nested data into focused sections
+- **Better UX**: Users can manage related data in separate, clear sections
+- **Flexibility**: Sections can be conditional and dynamic
+- **Consistency**: Uses same `StepCard` pattern as regular steps
+- **No Accordions**: Avoids complex accordion logic by using flat sections
+
+### Reference Implementation
+
+See `client/components/cohorts/Cohort.tsx` for a complete example:
+- Active Simulations section (grid of switches)
+- Simulation Positions section (reorderable list)
+
 ## Draft Autosave Pattern
 
 **⚠️ CRITICAL: Draft autosave enables optimistic concurrency control for form state persistence.**
