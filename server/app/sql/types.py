@@ -7320,11 +7320,13 @@ class GetDepartmentDetailSqlParams(BaseModel):
 
     department_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.department_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetDepartmentDetailV4Cohort(BaseModel):
@@ -7404,10 +7406,12 @@ class GetDepartmentDetailSqlRow(BaseModel):
     models: list[QGetDepartmentDetailV4Model] | None = None
     keys: list[QGetDepartmentDetailV4Key] | None = None
     model_keys: list[QGetDepartmentDetailV4ModelKey] | None = None
+    draft_version: int | None = None
 
 class GetDepartmentDetailApiRequest(BaseModel):
 
     department_id: UUID
+    draft_id: UUID | None = None
 
 class GetDepartmentDetailApiResponse(BaseModel):
 
@@ -7433,6 +7437,7 @@ class GetDepartmentDetailApiResponse(BaseModel):
     models: list[QGetDepartmentDetailV4Model] | None = None
     keys: list[QGetDepartmentDetailV4Key] | None = None
     model_keys: list[QGetDepartmentDetailV4ModelKey] | None = None
+    draft_version: int | None = None
 
 
 
@@ -7441,10 +7446,12 @@ class GetDepartmentDetailApiResponse(BaseModel):
 class GetDepartmentNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetDepartmentNewV4Setting(BaseModel):
@@ -7459,16 +7466,24 @@ class GetDepartmentNewSqlRow(BaseModel):
     profile_role: str | None = None
     actor_name: str | None = None
     settings: list[QGetDepartmentNewV4Setting] | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    draft_version: int | None = None
 
 class GetDepartmentNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetDepartmentNewApiResponse(BaseModel):
 
     profile_role: str | None = None
     actor_name: str | None = None
     settings: list[QGetDepartmentNewV4Setting] | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    draft_version: int | None = None
 
 
 
@@ -7558,6 +7573,43 @@ class GetDepartmentsListApiResponse(BaseModel):
     departments: list[QListDepartmentsV4Department] | None = None
     cohorts: list[QListDepartmentsV4Cohort] | None = None
     profiles: list[QListDepartmentsV4Profile] | None = None
+
+
+
+# Generated from: patch_department_draft
+
+class PatchDepartmentDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchDepartmentDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchDepartmentDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchDepartmentDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -24917,6 +24969,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentsListApiRequest",
         "GetDepartmentsListApiResponse",
     ),
+    "app/sql/v4/departments/patch_department_draft_complete.sql": (
+        "PatchDepartmentDraftSqlParams",
+        "PatchDepartmentDraftSqlRow",
+        "PatchDepartmentDraftApiRequest",
+        "PatchDepartmentDraftApiResponse",
+    ),
     "app/sql/v4/departments/update_department_complete.sql": (
         "UpdateDepartmentSqlParams",
         "UpdateDepartmentSqlRow",
@@ -27091,6 +27149,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/departments/get_departments_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/departments/patch_department_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

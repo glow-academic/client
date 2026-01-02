@@ -13,8 +13,8 @@ import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
-import { DraftPicker } from "@/components/common/drafts/DraftPicker";
 import { SimulationControls } from "@/components/common/chat/SimulationControls";
+import { DraftPicker } from "@/components/common/drafts/DraftPicker";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -72,12 +72,17 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
-  const { effectiveProfile, activeProfile, drafts, selectedDraftId, setSelectedDraftId } = useProfile();
+  const {
+    effectiveProfile,
+    activeProfile,
+    drafts,
+    selectedDraftId,
+    setSelectedDraftId,
+  } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
 
   // Check if we're on the staff management pages (but not on /new page)
-  const isStaffManagementPage =
-    pathname?.startsWith("/management/staff") && !pathname.includes("/new");
+  const isStaffManagementPage = pathname === "/management/staff";
 
   // Generate breadcrumbs client-side and enrich with entity names from context
   const breadcrumbs = useMemo(() => {

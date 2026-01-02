@@ -607,15 +607,83 @@ const suggestions = useMemo(() => {
 4. Replaced section components with StepCard + SelectableGrid/ReorderableList
 5. Inline `renderItem` functions for colors and icons
 
+### StaffNewEdit.tsx Migration
+
+**Before**: Used separate component files for each step
+- `StaffRoleCardGrid.tsx` (~127 lines)
+- `StaffEmailCardGrid.tsx` (~283 lines)
+- `StaffCohortCardGrid.tsx` (~157 lines)
+- Mixed URL params and draft state in formData
+
+**After**: Fully inline with GenericForm pattern (~1682 lines)
+- StepCard with built-in search/filter for all steps
+- SelectableGrid for roles, departments, and cohorts
+- Custom inline email component (needs add/remove/edit functionality)
+- Proper separation: URL params (search/filter) vs draft state (form fields)
+- All logic inline in renderStep callback
+
+**Key Changes**:
+1. **Separated state management**: URL-backed state (search params) vs draft state (form fields)
+   - URL params: `draftId`, `roleSearch`, `roleShowSelected`, `primaryDeptSearch`, `primaryDeptShowSelected`, `emailSearch`, `cohortSearch`, `cohortShowSelected`
+   - Draft state: `firstName`, `lastName`, `emails`, `role`, `cohortIds`, `departmentIds`, etc.
+2. **Inlined all components**: Role, email, and cohort components moved inline
+3. **Added filter buttons**: "Show selected" filter for role, primary department, and cohort steps
+4. **Email step special handling**: Custom inline component with add/remove/edit functionality (not using SelectableGrid)
+5. **StepCard integration**: All steps use StepCard with built-in search and filter
+6. **GenericForm integration**: Uses URL params for formData, draftState managed separately
+
+**Pattern for Email Step**:
+The email step is special because it needs add/remove/edit functionality. It uses a custom inline component within StepCard:
+
+```typescript
+case "emails": {
+  const emails = draftState.emails || [];
+  const primaryEmailIndex = draftState.primaryEmailIndex;
+  const emailSearch = (stepFormData["emailSearch"] as string) || "";
+
+  // Filter emails (preserving indices)
+  const filteredEmailIndices = (() => {
+    if (!emailSearch.trim()) return emails.map((_, i) => i);
+    const searchLower = emailSearch.toLowerCase();
+    return emails
+      .map((email, index) => ({ email, index }))
+      .filter(({ email }) => email.toLowerCase().includes(searchLower))
+      .map(({ index }) => index);
+  })();
+
+  return (
+    <StepCard
+      searchTerm={emailSearch}
+      onSearchChange={(term) => stepSetFormData({ emailSearch: term || null })}
+      searchPlaceholder="Search emails..."
+      // ... other props
+    >
+      <div className="grid ...">
+        {filteredEmailIndices.map((index) => {
+          // Render email card with edit/remove functionality
+        })}
+        {/* Add Email button */}
+      </div>
+    </StepCard>
+  );
+}
+```
+
+**Pattern for First Name Section**:
+The first name section is kept as a pre-form section (not a step) because it's always visible and doesn't fit the step pattern. It's rendered before GenericForm and uses draftState directly.
+
 ## Best Practices
 
-1. **Keep search state local**: Don't put search terms in URL params (use local useState)
-2. **Filter in useMemo**: Always filter items in useMemo for performance
-3. **Inline renderItem**: Keep renderItem functions inline in the switch case for clarity
-4. **Extract utilities**: Move reusable utilities (like `getColorName`) to the parent component or a utils file
-5. **Consistent styling**: Use the same card styling pattern across all SelectableGrid items
-6. **Empty states**: Always provide meaningful empty messages
-7. **Disabled state**: Pass `disabled={isReadonly}` to all interactive components
+1. **Separate URL params from draft state**: URL params for search/filter, draft state for form fields
+2. **Search params in URL**: Use nuqs for search/filter params (enables sharing/bookmarking)
+3. **Filter in useMemo**: Always filter items in useMemo for performance
+4. **Inline renderItem**: Keep renderItem functions inline in the switch case for clarity
+5. **Extract utilities**: Move reusable utilities (like `getColorName`) to the parent component or a utils file
+6. **Consistent styling**: Use the same card styling pattern across all SelectableGrid items
+7. **Empty states**: Always provide meaningful empty messages
+8. **Disabled state**: Pass `disabled={isReadonly}` to all interactive components
+9. **Special components**: For components needing add/remove/edit (like emails), use custom inline components within StepCard
+10. **Pre-form sections**: Keep sections that don't fit step pattern (like first name) as pre-form sections before GenericForm
 
 ## Future Migrations
 
@@ -1317,6 +1385,20 @@ See `client/components/personas/Persona.tsx` for a complete reference implementa
 - Server actions passed as props
 - Type-safe with exported types from page files
 
+### Example: Department.tsx Migration
+
+See `client/components/departments/Department.tsx` for a simple form reference implementation.
+
+**Key Features**:
+- Inline `nuqs` parsers (only `draftId`, no search/filter params)
+- `GenericForm` with initialization, reset, and submit
+- `StepCard` with `editableTitle` for title field
+- Single step form (basic information)
+- Draft autosave support
+- Server actions passed as props
+- Type-safe with exported types from page files
+- Delete button handled separately (outside GenericForm)
+
 ### Troubleshooting
 
 **Issue**: Type errors with optional props
@@ -1996,11 +2078,14 @@ See `client/components/personas/Persona.tsx` for a complete reference implementa
 **Key Files**:
 - `client/hooks/use-draft-autosave.ts` - Generic draft autosave hook
 - `client/components/personas/Persona.tsx` - Component integration example (uses inline generic components, no separate section components)
+- `client/components/departments/Department.tsx` - Simple form example (single step, no search/filter)
 - `client/app/(main)/create/personas/new/page.tsx` - Server page example
 - `client/app/(main)/create/personas/p/[personaId]/page.tsx` - Edit page example
 
 **Component Structure Example**:
 The Persona component demonstrates the inline pattern - all step rendering is done inline using `StepCard`, `SelectableGrid`, and `ReorderableList` with inline `renderItem` functions. No separate `PersonaColorSection` or `PersonaIconSection` components exist - everything is handled inline for cleaner logic and better maintainability.
+
+The Department component demonstrates a simpler form pattern - single step with basic fields (title, description, active), no search/filter params, and uses `StepCard` with `editableTitle` for the title field.
 
 ### Migration Checklist
 

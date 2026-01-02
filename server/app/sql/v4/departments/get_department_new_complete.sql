@@ -43,17 +43,36 @@ CREATE TYPE types.q_get_department_new_v4_setting AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_department_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_department_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     profile_role text,
     actor_name text,
-    settings types.q_get_department_new_v4_setting[]
+    settings types.q_get_department_new_v4_setting[],
+    title text,
+    description text,
+    active boolean,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT profile_id AS profile_id,
+           draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'departments'::draft_resource_type
+    LIMIT 1
 ),
 user_profile AS (
     SELECT 
@@ -90,7 +109,24 @@ SELECT
             ORDER BY sd.created_at DESC
         ),
         '{}'::types.q_get_department_new_v4_setting[]
-    ) as settings
+    ) as settings,
+    -- Default values for new department (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'title' FROM draft_payload_data),
+        ''::text
+    ) as title,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''::text
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true::boolean
+    ) as active,
+    COALESCE(
+        (SELECT draft_version FROM draft_payload_data),
+        0::int
+    ) as draft_version
 FROM user_profile up
 CROSS JOIN settings_data sd
 GROUP BY up.role, up.actor_name

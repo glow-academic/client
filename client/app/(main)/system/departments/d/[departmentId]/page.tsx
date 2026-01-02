@@ -10,11 +10,15 @@ import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
+type DepartmentDetailIn = InputOf<"/api/v4/departments/detail", "post">;
 type DepartmentDetailOut = OutputOf<"/api/v4/departments/detail", "post">;
 type UpdateDepartmentIn = InputOf<"/api/v4/departments/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/api/v4/departments/update", "post">;
+type PatchDepartmentDraftIn = InputOf<"/api/v4/departments/draft", "patch">;
+type PatchDepartmentDraftOut = OutputOf<"/api/v4/departments/draft", "patch">;
 
 type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
@@ -29,18 +33,14 @@ type SettingsDetailOut = OutputOf<"/api/v4/settings/detail", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getDepartment = async (
-  departmentId: string
+  input: DepartmentDetailIn
 ): Promise<DepartmentDetailOut> => {
-  return api.post(
-    "/departments/detail",
-    { body: { department_id: departmentId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/departments/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -51,7 +51,13 @@ export async function generateMetadata(
   const { departmentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const department = await getDepartment(departmentId);
+    const input: DepartmentDetailIn = {
+      body: {
+        department_id: departmentId,
+        draft_id: null,
+      } as DepartmentDetailIn["body"],
+    };
+    const department = await getDepartment(input);
     return {
       title: `${department?.title || "Department"} Department`,
       description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
@@ -76,19 +82,55 @@ async function updateDepartment(
   return api.post("/departments/update", input);
 }
 
+async function patchDepartmentDraft(
+  input: PatchDepartmentDraftIn
+): Promise<PatchDepartmentDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/departments/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function DepartmentEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ departmentId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { departmentId } = await params;
 
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch department detail (always fresh - source of truth)
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for department search params
+  const departmentSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadDepartmentSearchParams = createLoader(departmentSearchParams);
+  const q = loadDepartmentSearchParams(searchParamsObj);
+
+  // Fetch department detail (always fresh - source of truth) with draft_id
   try {
-    const departmentDetail = await getDepartment(departmentId);
+    const input: DepartmentDetailIn = {
+      body: {
+        department_id: departmentId,
+        draft_id: q.draftId ?? null,
+      } as DepartmentDetailIn["body"],
+    };
+    const departmentDetail = await getDepartment(input);
 
     return (
       <div
@@ -97,9 +139,11 @@ export default async function DepartmentEditPage({
         data-department-id={departmentId}
       >
         <Department
+          key={q.draftId || departmentId} // Force remount when draftId changes to ensure clean state reset
           departmentId={departmentId}
           departmentDetail={departmentDetail}
           updateDepartmentAction={updateDepartment}
+          patchDepartmentDraftAction={patchDepartmentDraft}
         />
       </div>
     );
@@ -130,8 +174,11 @@ export type {
   CreateKeyOut,
   DecryptKeyIn,
   DecryptKeyOut,
+  DepartmentDetailIn,
   DepartmentDetailOut,
   KeysListOut,
+  PatchDepartmentDraftIn,
+  PatchDepartmentDraftOut,
   SettingsDetailOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,

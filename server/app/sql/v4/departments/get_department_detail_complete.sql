@@ -76,7 +76,8 @@ CREATE TYPE types.q_get_department_detail_v4_model_key AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_department_detail_v4(
     department_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     department_exists boolean,
@@ -100,14 +101,27 @@ RETURNS TABLE (
     departments types.q_get_department_detail_v4_department[],
     models types.q_get_department_detail_v4_model[],
     keys types.q_get_department_detail_v4_key[],
-    model_keys types.q_get_department_detail_v4_model_key[]
+    model_keys types.q_get_department_detail_v4_model_key[],
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
     SELECT department_id AS department_id,
-           profile_id AS profile_id
+           profile_id AS profile_id,
+           draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'departments'::draft_resource_type
+    LIMIT 1
 ),
 department_exists_check AS (
     -- Check if department exists independently of access control
@@ -377,9 +391,19 @@ SELECT
     dec.department_exists::boolean as department_exists,
     -- Top-level department fields
     d.id as department_id,
-    d.title::text as title,
-    d.description::text as description,
-    d.active::boolean as active,
+    -- Merge draft payload over existing department data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'title' FROM draft_payload_data),
+        d.title::text
+    ) as title,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        d.description::text
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        d.active::boolean
+    ) as active,
     CASE 
         WHEN up.role = 'superadmin' THEN true
         WHEN up.role = 'admin' AND uda.has_access THEN true
@@ -440,7 +464,11 @@ SELECT
             ORDER BY mka.model_id, mka.key_id
         ) FILTER (WHERE uda.has_access = true AND mka.model_id IS NOT NULL AND mka.key_id IS NOT NULL),
         '{}'::types.q_get_department_detail_v4_model_key[]
-    ) as model_keys
+    ) as model_keys,
+    COALESCE(
+        (SELECT draft_version FROM draft_payload_data),
+        0::int
+    ) as draft_version
 FROM department_exists_check dec
 CROSS JOIN user_profile up
 CROSS JOIN user_department_access uda

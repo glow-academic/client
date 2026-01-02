@@ -40,16 +40,28 @@ import {
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { StaffCohortCardGrid } from "@/components/staff/StaffCohortCardGrid";
-import { StaffEmailCardGrid } from "@/components/staff/StaffEmailCardGrid";
-import { StaffRoleCardGrid } from "@/components/staff/StaffRoleCardGrid";
+import {
+  STAFF_ROLES,
+  generateGradientFromHex,
+} from "@/components/common/forms/staff-roles";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Building2, Clock, Power } from "lucide-react";
-import { parseAsString, useQueryStates } from "nuqs";
+import {
+  Building2,
+  Check,
+  Clock,
+  Mail,
+  Plus,
+  Power,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
+import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
 
 export interface StaffNewEditProps {
   profileId?: string;
@@ -77,8 +89,7 @@ export default function StaffNewEdit({
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEditMode = mode === "edit" && !!profileId;
-  const { scopedRoles, effectiveProfile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
+  const { scopedRoles, selectedDraftId, setSelectedDraftId } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   // Stabilize server props to prevent unnecessary re-renders
@@ -198,13 +209,19 @@ export default function StaffNewEdit({
 
   const staffData = stableStaffDataRef.current.data;
 
-  // Inline parsers for URL-backed state
+  // Inline parsers for URL-backed state (search/filter params only)
   const staffSearchParamsClient = {
     draftId: parseAsString,
+    roleSearch: parseAsString,
+    roleShowSelected: parseAsBoolean,
     primaryDeptSearch: parseAsString,
+    primaryDeptShowSelected: parseAsBoolean,
+    emailSearch: parseAsString,
+    cohortSearch: parseAsString,
+    cohortShowSelected: parseAsBoolean,
   } as const;
 
-  // URL-backed state using nuqs
+  // URL-backed state using nuqs (search/filter params only)
   const [urlParams, setUrlParams] = useQueryStates(staffSearchParamsClient, {
     history: "replace",
     shallow: true,
@@ -220,6 +237,12 @@ export default function StaffNewEdit({
   }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
 
   const draftId = urlDraftId;
+
+  // Email editing state (local to component, not in draft)
+  const [editingEmailIndex, setEditingEmailIndex] = useState<number | null>(
+    null
+  );
+  const [editingEmailValue, setEditingEmailValue] = useState("");
 
   // Local draft state (not in URL)
   type DraftState = {
@@ -403,40 +426,8 @@ export default function StaffNewEdit({
     ),
   });
 
-  // Merge draftState with urlParams for formData
-  const formData = useMemo(() => {
-    return {
-      ...draftState,
-      primaryDeptSearch: urlParams.primaryDeptSearch || null,
-    } as Record<string, unknown>;
-  }, [draftState, urlParams]);
-
-  // Create setFormData wrapper
-  const setFormData = useCallback(
-    (updates: Partial<Record<string, unknown>>) => {
-      const resolvedUpdates =
-        typeof updates === "function" ? updates(formData) : updates;
-
-      const draftUpdates: Partial<DraftState> = {};
-      const urlUpdates: Partial<Record<string, unknown>> = {};
-
-      Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        if (key === "primaryDeptSearch") {
-          urlUpdates[key] = value;
-        } else {
-          draftUpdates[key as keyof DraftState] = value as never;
-        }
-      });
-
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-      if (Object.keys(urlUpdates).length > 0) {
-        setUrlParams(urlUpdates);
-      }
-    },
-    [formData, setUrlParams]
-  );
+  // formData is URL params only (for GenericForm)
+  // draftState is separate (form fields, autosaved)
 
   // Readonly logic
   const isReadonly = useMemo(() => {
@@ -458,28 +449,27 @@ export default function StaffNewEdit({
     clearEntityMetadata,
   ]);
 
-  // Step status calculation
+  // Step status calculation (uses draftState, not formData)
   const getStepStatus = useCallback(
-    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       const hasFirstName = !!(
-        formData.firstName && String(formData.firstName).trim()
+        draftState.firstName && String(draftState.firstName).trim()
       );
-      const hasRole = !!(formData.role && String(formData.role).trim());
+      const hasRole = !!(draftState.role && String(draftState.role).trim());
       const hasDepartments =
-        (Array.isArray(formData.departmentIds)
-          ? formData.departmentIds.length
-          : 0) > 0 || (staffData?.valid_department_ids || []).length > 1;
+        (draftState.departmentIds?.length || 0) > 0 ||
+        (staffData?.valid_department_ids || []).length > 1;
       const hasPrimaryDepartment =
-        formData.primaryDepartmentIndex !== undefined &&
-        typeof formData.primaryDepartmentIndex === "number" &&
-        formData.primaryDepartmentIndex >= 0;
-      const hasEmails = (
-        Array.isArray(formData.emails) ? formData.emails : []
-      ).some((e) => String(e).trim().length > 0);
+        draftState.primaryDepartmentIndex !== undefined &&
+        typeof draftState.primaryDepartmentIndex === "number" &&
+        draftState.primaryDepartmentIndex >= 0;
+      const hasEmails = (draftState.emails || []).some(
+        (e) => String(e).trim().length > 0
+      );
       const hasPrimaryEmail =
-        formData.primaryEmailIndex !== undefined &&
-        typeof formData.primaryEmailIndex === "number" &&
-        formData.primaryEmailIndex >= 0;
+        draftState.primaryEmailIndex !== undefined &&
+        typeof draftState.primaryEmailIndex === "number" &&
+        draftState.primaryEmailIndex >= 0;
 
       switch (stepId) {
         case "role":
@@ -502,21 +492,26 @@ export default function StaffNewEdit({
           return "pending";
       }
     },
-    [staffData]
+    [draftState, staffData]
   );
 
   // Steps configuration
   const steps = useMemo(() => {
     const hasDepartments =
-      (Array.isArray(formData.departmentIds)
-        ? formData.departmentIds.length
-        : 0) > 0 || (staffData?.valid_department_ids || []).length > 1;
-    const baseSteps = [
+      (draftState.departmentIds?.length || 0) > 0 ||
+      (staffData?.valid_department_ids || []).length > 1;
+    const baseSteps: Array<{
+      id: string;
+      title: string;
+      description: string;
+      resetFields?: string[];
+      optional?: boolean;
+    }> = [
       {
         id: "role",
         title: "Role",
         description: "Select a role for this staff member.",
-        resetFields: ["role"] as const,
+        resetFields: ["role", "roleSearch", "roleShowSelected"],
       },
     ];
 
@@ -526,7 +521,11 @@ export default function StaffNewEdit({
         title: "Primary Department",
         description:
           "Select which department is primary for this staff member.",
-        resetFields: ["primaryDepartmentIndex"] as const,
+        resetFields: [
+          "primaryDepartmentIndex",
+          "primaryDeptSearch",
+          "primaryDeptShowSelected",
+        ],
       });
     }
 
@@ -535,19 +534,36 @@ export default function StaffNewEdit({
         id: "emails",
         title: "Email",
         description: "Select the primary email address for this staff member.",
-        resetFields: ["emails", "primaryEmailIndex"] as const,
+        resetFields: ["emails", "primaryEmailIndex", "emailSearch"],
       },
       {
         id: "cohorts",
         title: "Cohorts",
         description: "Select cohorts for this staff member (optional).",
         optional: true,
-        resetFields: ["cohortIds"] as const,
+        resetFields: ["cohortIds", "cohortSearch", "cohortShowSelected"],
       }
     );
 
     return baseSteps;
-  }, [formData, staffData]);
+  }, [draftState, staffData]);
+
+  // Filtered roles for role selection
+  const filteredRoles = useMemo(() => {
+    const allRoles = STAFF_ROLES.filter((role) =>
+      (scopedRoles || []).includes(role.id)
+    );
+    const searchTerm = (urlParams.roleSearch as string) || "";
+    if (!searchTerm.trim()) {
+      return allRoles;
+    }
+    const searchLower = searchTerm.toLowerCase();
+    return allRoles.filter(
+      (role) =>
+        role.name?.toLowerCase().includes(searchLower) ||
+        role.description?.toLowerCase().includes(searchLower)
+    );
+  }, [scopedRoles, urlParams.roleSearch]);
 
   // Filtered departments for primary department selection
   const filteredPrimaryDeptIds = useMemo(() => {
@@ -555,31 +571,114 @@ export default function StaffNewEdit({
       return [];
     }
     const availableDeptIds = (
-      Array.isArray(formData.departmentIds) && formData.departmentIds.length > 0
-        ? formData.departmentIds
+      (draftState.departmentIds?.length || 0) > 0
+        ? draftState.departmentIds
         : staffData.valid_department_ids || []
     ) as string[];
 
-    const searchTerm = (formData.primaryDeptSearch as string) || "";
-    if (!searchTerm.trim()) {
-      return availableDeptIds;
+    const searchTerm = (urlParams.primaryDeptSearch as string) || "";
+    const showSelected = urlParams.primaryDeptShowSelected || false;
+
+    let filtered = availableDeptIds;
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((deptId) => {
+        const dept = staffData.departments?.find(
+          (d) => d.department_id === deptId
+        );
+        return (
+          dept?.name?.toLowerCase().includes(searchLower) ||
+          dept?.description?.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
-    const searchLower = searchTerm.toLowerCase();
-    return availableDeptIds.filter((deptId) => {
-      const dept = staffData.departments?.find(
-        (d) => d.department_id === deptId
+    if (showSelected && draftState.primaryDepartmentIndex !== undefined) {
+      const selectedId = availableDeptIds[draftState.primaryDepartmentIndex];
+      if (selectedId) {
+        filtered = filtered.filter((id) => id === selectedId);
+      }
+    }
+
+    return filtered;
+  }, [
+    draftState.departmentIds,
+    draftState.primaryDepartmentIndex,
+    staffData?.valid_department_ids,
+    staffData?.departments,
+    urlParams.primaryDeptSearch,
+    urlParams.primaryDeptShowSelected,
+  ]);
+
+  // Filtered cohorts for cohort selection
+  const filteredCohorts = useMemo(() => {
+    if (!staffData?.cohorts || !staffData?.valid_cohort_ids) {
+      return [];
+    }
+    const cohortMap = new Map(
+      (staffData.cohorts || []).map((c) => [c.cohort_id, c])
+    );
+    const baseCohorts = (staffData.valid_cohort_ids || [])
+      .map((id) => {
+        const cohort = cohortMap.get(id);
+        if (cohort) {
+          return {
+            id: cohort.cohort_id,
+            name: cohort.name || "",
+            description: cohort.description || "",
+          };
+        }
+        return null;
+      })
+      .filter(
+        (
+          c
+        ): c is {
+          id: string;
+          name: string;
+          description: string;
+        } => c !== null
+      )
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+    const searchTerm = (urlParams.cohortSearch as string) || "";
+    const showSelected = urlParams.cohortShowSelected || false;
+
+    let filtered = baseCohorts;
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (cohort) =>
+          cohort.name?.toLowerCase().includes(searchLower) ||
+          cohort.description?.toLowerCase().includes(searchLower)
       );
-      return (
-        dept?.name?.toLowerCase().includes(searchLower) ||
-        dept?.description?.toLowerCase().includes(searchLower)
+    }
+
+    if (showSelected) {
+      filtered = filtered.filter((cohort) =>
+        (draftState.cohortIds || []).includes(cohort.id)
       );
+    }
+
+    // Sort: selected first, then by name
+    return filtered.sort((a, b) => {
+      const aSelected = (draftState.cohortIds || []).includes(a.id);
+      const bSelected = (draftState.cohortIds || []).includes(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return (a.name || "").localeCompare(b.name || "");
     });
-  }, [formData, staffData?.valid_department_ids, staffData?.departments]);
+  }, [
+    staffData?.cohorts,
+    staffData?.valid_cohort_ids,
+    draftState.cohortIds,
+    urlParams.cohortSearch,
+    urlParams.cohortShowSelected,
+  ]);
 
   // Submit handler
   const handleSubmit = useCallback(
-    async (formData: Record<string, unknown>) => {
+    async (_formData: Record<string, unknown>) => {
       // Use draftState, not formData parameter
       if (!draftState.firstName?.trim()) {
         toast.error("First name is required");
@@ -621,29 +720,22 @@ export default function StaffNewEdit({
           throw new Error("Update action not available");
         }
 
+        const primaryDeptId =
+          draftState.primaryDepartmentIndex != null &&
+          draftState.primaryDepartmentIndex >= 0 &&
+          draftState.primaryDepartmentIndex < deptIdsForPrimary.length
+            ? deptIdsForPrimary[draftState.primaryDepartmentIndex]
+            : null;
+
         await updateStaffAction({
           body: {
-            profileId: profileId!,
-            first_name: draftState.firstName,
-            last_name: draftState.lastName || "",
-            emails: validEmails,
-            primary_email_index:
-              draftState.primaryEmailIndex != null &&
-              draftState.primaryEmailIndex >= 0 &&
-              draftState.primaryEmailIndex < validEmails.length
-                ? draftState.primaryEmailIndex
-                : null,
-            role: draftState.role || "",
+            profile_ids: [profileId!],
+            role: draftState.role || null,
+            active: draftState.active ?? null,
             requests_per_day: parsedReqPerDay,
-            cohort_ids: draftState.cohortIds || [],
-            department_ids: draftState.departmentIds || [],
-            primary_department_index:
-              draftState.primaryDepartmentIndex != null &&
-              draftState.primaryDepartmentIndex >= 0 &&
-              draftState.primaryDepartmentIndex < deptIdsForPrimary.length
-                ? draftState.primaryDepartmentIndex
-                : null,
-            active: draftState.active ?? true,
+            ...(primaryDeptId !== null && {
+              primary_department_id: primaryDeptId,
+            }),
           },
         });
 
@@ -657,24 +749,27 @@ export default function StaffNewEdit({
 
         await createStaffAction({
           body: {
-            first_name: draftState.firstName,
-            last_name: draftState.lastName || "",
-            emails: validEmails,
-            primary_email_index:
-              draftState.primaryEmailIndex != null &&
-              draftState.primaryEmailIndex >= 0 &&
-              draftState.primaryEmailIndex < validEmails.length
-                ? draftState.primaryEmailIndex
-                : null,
-            role: draftState.role || "",
-            cohort_ids: draftState.cohortIds || [],
-            department_ids: draftState.departmentIds || [],
-            primary_department_index:
-              draftState.primaryDepartmentIndex != null &&
-              draftState.primaryDepartmentIndex >= 0 &&
-              draftState.primaryDepartmentIndex < deptIdsForPrimary.length
-                ? draftState.primaryDepartmentIndex
-                : null,
+            profiles: [
+              {
+                first_name: draftState.firstName,
+                last_name: draftState.lastName || "",
+                emails: validEmails,
+                primary_email_index:
+                  draftState.primaryEmailIndex != null &&
+                  draftState.primaryEmailIndex >= 0 &&
+                  draftState.primaryEmailIndex < validEmails.length
+                    ? draftState.primaryEmailIndex
+                    : null,
+                role: draftState.role || "",
+                department_ids: draftState.departmentIds || [],
+                primary_department_index:
+                  draftState.primaryDepartmentIndex != null &&
+                  draftState.primaryDepartmentIndex >= 0 &&
+                  draftState.primaryDepartmentIndex < deptIdsForPrimary.length
+                    ? draftState.primaryDepartmentIndex
+                    : null,
+              },
+            ],
           },
         });
 
@@ -701,7 +796,7 @@ export default function StaffNewEdit({
       stepDescription,
       stepNumber,
       stepStatus,
-      isOptional,
+      isOptional: _isOptional,
       formData: stepFormData,
       setFormData: stepSetFormData,
       onReset,
@@ -718,46 +813,154 @@ export default function StaffNewEdit({
     }) => {
       switch (stepId) {
         case "role": {
+          const roleShowSelected =
+            (stepFormData["roleShowSelected"] as boolean | null | undefined) ??
+            false;
+          const currentRole = draftState.role || "";
+
+          // Filter roles based on search and show selected
+          let displayRoles = filteredRoles;
+          if (roleShowSelected && currentRole) {
+            displayRoles = displayRoles.filter((r) => r.id === currentRole);
+          }
+
+          // Sort: selected role first
+          displayRoles = [...displayRoles].sort((a, b) => {
+            if (a.id === currentRole) return -1;
+            if (b.id === currentRole) return 1;
+            return (a.name || "").localeCompare(b.name || "");
+          });
+
           return (
             <StepCard
+              stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              stepStatus={stepStatus}
-              isOptional={isOptional}
-              onReset={onReset}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={
+                (stepFormData["roleSearch"] as string | null | undefined) || ""
+              }
+              onSearchChange={(term: string) =>
+                stepSetFormData({ roleSearch: term || null })
+              }
+              searchPlaceholder="Search roles..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: roleShowSelected,
+                  onChange: (value) =>
+                    stepSetFormData({ roleShowSelected: value }),
+                },
+              ]}
+              resetFields={["role", "roleSearch", "roleShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
-              <StaffRoleCardGrid
-                selectedRoleId={(stepFormData.role as string) || ""}
-                scopedRoles={scopedRoles || []}
-                onRoleChange={(role) => stepSetFormData({ role })}
-                readonly={isReadonly}
+              <SelectableGrid
+                items={displayRoles}
+                selectedId={currentRole}
+                onSelect={(roleId) => {
+                  setDraftState((prev) => ({ ...prev, role: roleId }));
+                }}
+                getId={(role) => role.id}
+                renderItem={(role, isSelected) => {
+                  const IconComponent = role.icon;
+                  const hexColor = role.color || "#64748b";
+                  const gradientStyle = generateGradientFromHex(hexColor);
+
+                  return (
+                    <div
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                        "hover:shadow-md hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        isSelected && "ring-2 ring-primary bg-accent"
+                      )}
+                    >
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+                      )}
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="p-2 rounded-lg shadow-sm flex-shrink-0"
+                          style={{ background: gradientStyle }}
+                        >
+                          <IconComponent className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight">
+                            {role.name}
+                          </h3>
+                          {role.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {role.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }}
+                emptyMessage="No roles found. Try adjusting your search."
+                disabled={isReadonly}
               />
             </StepCard>
           );
         }
         case "primaryDepartment": {
           const availableDeptIds = (
-            Array.isArray(stepFormData.departmentIds) &&
-            stepFormData.departmentIds.length > 0
-              ? stepFormData.departmentIds
+            (draftState.departmentIds?.length || 0) > 0
+              ? draftState.departmentIds
               : staffData?.valid_department_ids || []
           ) as string[];
 
+          const primaryDeptShowSelected =
+            (stepFormData["primaryDeptShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+
           return (
             <StepCard
+              stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              stepStatus={stepStatus}
-              isOptional={isOptional}
-              onReset={onReset}
-              searchValue={
-                (stepFormData.primaryDeptSearch as string) || undefined
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={
+                (stepFormData["primaryDeptSearch"] as
+                  | string
+                  | null
+                  | undefined) || ""
               }
-              onSearchChange={(value) =>
-                stepSetFormData({ primaryDeptSearch: value || null })
+              onSearchChange={(term: string) =>
+                stepSetFormData({ primaryDeptSearch: term || null })
               }
+              searchPlaceholder="Search departments..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: primaryDeptShowSelected,
+                  onChange: (value) =>
+                    stepSetFormData({ primaryDeptShowSelected: value }),
+                },
+              ]}
+              resetFields={[
+                "primaryDepartmentIndex",
+                "primaryDeptSearch",
+                "primaryDeptShowSelected",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               {!filteredPrimaryDeptIds ||
               filteredPrimaryDeptIds.length === 0 ? (
@@ -777,19 +980,21 @@ export default function StaffNewEdit({
                     };
                   })}
                   selectedId={
-                    stepFormData.primaryDepartmentIndex !== undefined &&
-                    typeof stepFormData.primaryDepartmentIndex === "number" &&
-                    stepFormData.primaryDepartmentIndex >= 0 &&
-                    stepFormData.primaryDepartmentIndex <
-                      availableDeptIds.length
-                      ? availableDeptIds[stepFormData.primaryDepartmentIndex]
+                    draftState.primaryDepartmentIndex !== undefined &&
+                    typeof draftState.primaryDepartmentIndex === "number" &&
+                    draftState.primaryDepartmentIndex >= 0 &&
+                    draftState.primaryDepartmentIndex < availableDeptIds.length
+                      ? (availableDeptIds[
+                          draftState.primaryDepartmentIndex
+                        ] as string)
                       : null
                   }
                   onSelect={(id) => {
                     const index = availableDeptIds.indexOf(id);
-                    stepSetFormData({
+                    setDraftState((prev) => ({
+                      ...prev,
                       primaryDepartmentIndex: index >= 0 ? index : undefined,
-                    });
+                    }));
                   }}
                   getId={(item) => item.id}
                   renderItem={(item, isSelected) => (
@@ -822,53 +1027,354 @@ export default function StaffNewEdit({
           );
         }
         case "emails": {
+          const emails = draftState.emails || [];
+          const primaryEmailIndex = draftState.primaryEmailIndex;
+          const emailSearch =
+            (stepFormData["emailSearch"] as string | null | undefined) || "";
+
+          // Filter emails based on search term, preserving original indices
+          const filteredEmailIndices = (() => {
+            if (!emailSearch.trim()) {
+              return emails.map((_, index) => index);
+            }
+            const searchLower = emailSearch.toLowerCase();
+            return emails
+              .map((email, index) => ({ email, index }))
+              .filter(({ email }) => email.toLowerCase().includes(searchLower))
+              .map(({ index }) => index);
+          })();
+
+          const handleAddEmail = () => {
+            if (isReadonly) return;
+            const newEmails = [...emails, ""];
+            setDraftState((prev) => ({ ...prev, emails: newEmails }));
+            // If this is the first email, make it primary
+            if (emails.length === 0 && primaryEmailIndex === undefined) {
+              setDraftState((prev) => ({ ...prev, primaryEmailIndex: 0 }));
+            }
+            setEditingEmailIndex(newEmails.length - 1);
+            setEditingEmailValue("");
+          };
+
+          const handleRemoveEmail = (index: number) => {
+            if (isReadonly) return;
+            const newEmails = emails.filter((_, i) => i !== index);
+            if (newEmails.length === 0) {
+              setDraftState((prev) => ({
+                ...prev,
+                emails: [],
+                primaryEmailIndex: undefined,
+              }));
+              return;
+            }
+            let newPrimaryIndex = primaryEmailIndex;
+            if (primaryEmailIndex !== undefined) {
+              if (index === primaryEmailIndex) {
+                newPrimaryIndex = 0;
+              } else if (index < primaryEmailIndex) {
+                newPrimaryIndex = primaryEmailIndex - 1;
+              }
+            }
+            setDraftState((prev) => ({
+              ...prev,
+              emails: newEmails,
+              primaryEmailIndex: newPrimaryIndex,
+            }));
+          };
+
+          const handleEmailClick = (index: number) => {
+            if (isReadonly) return;
+            setDraftState((prev) => ({ ...prev, primaryEmailIndex: index }));
+          };
+
+          const handleStartEdit = (index: number, value: string) => {
+            if (isReadonly) return;
+            setEditingEmailIndex(index);
+            setEditingEmailValue(value);
+          };
+
+          const handleSaveEdit = (index: number) => {
+            if (isReadonly) return;
+            if (!editingEmailValue.trim()) {
+              handleCancelEdit();
+              return;
+            }
+            const newEmails = [...emails];
+            newEmails[index] = editingEmailValue.trim();
+            setDraftState((prev) => ({ ...prev, emails: newEmails }));
+            // If no primary email is selected, make this one primary
+            if (primaryEmailIndex === undefined) {
+              setDraftState((prev) => ({ ...prev, primaryEmailIndex: index }));
+            }
+            setEditingEmailIndex(null);
+            setEditingEmailValue("");
+          };
+
+          const handleCancelEdit = () => {
+            setEditingEmailIndex(null);
+            setEditingEmailValue("");
+          };
+
           return (
             <StepCard
+              stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              stepStatus={stepStatus}
-              isOptional={isOptional}
-              onReset={onReset}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={emailSearch || ""}
+              onSearchChange={(term: string) =>
+                stepSetFormData({ emailSearch: term || null })
+              }
+              searchPlaceholder="Search emails..."
+              debounceMs={300}
+              resetFields={["emails", "primaryEmailIndex", "emailSearch"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
-              <StaffEmailCardGrid
-                emails={(stepFormData.emails as string[]) || []}
-                primaryEmailIndex={
-                  stepFormData.primaryEmailIndex !== undefined
-                    ? (stepFormData.primaryEmailIndex as number)
-                    : undefined
-                }
-                onEmailsChange={(emails) => stepSetFormData({ emails })}
-                onPrimaryEmailIndexChange={(index) =>
-                  stepSetFormData({ primaryEmailIndex: index })
-                }
-                readonly={isReadonly}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[272px] overflow-y-auto py-2 px-2">
+                {filteredEmailIndices.length === 0 ? (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    No emails found. Try adjusting your search.
+                  </div>
+                ) : (
+                  filteredEmailIndices.map((index) => {
+                    const email = emails[index];
+                    const isPrimary =
+                      primaryEmailIndex !== undefined &&
+                      index === primaryEmailIndex;
+                    const isEditing = editingEmailIndex === index;
+
+                    return (
+                      <div
+                        key={index}
+                        className={cn(
+                          "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
+                          "hover:shadow-md hover:bg-accent/50",
+                          isPrimary && "ring-2 ring-primary bg-accent",
+                          !isEditing && "cursor-pointer"
+                        )}
+                        onClick={() => !isEditing && handleEmailClick(index)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            {isEditing ? (
+                              <>
+                                <Input
+                                  type="email"
+                                  value={editingEmailValue}
+                                  onChange={(e) =>
+                                    setEditingEmailValue(e.target.value)
+                                  }
+                                  placeholder="email@example.com"
+                                  className="h-8 text-sm flex-1"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      handleSaveEdit(index);
+                                    } else if (e.key === "Escape") {
+                                      handleCancelEdit();
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    if (
+                                      editingEmailValue.trim() &&
+                                      editingEmailValue.trim() !== email
+                                    ) {
+                                      handleSaveEdit(index);
+                                    } else {
+                                      handleCancelEdit();
+                                    }
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <div
+                                  className="flex items-center gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleSaveEdit(index);
+                                    }}
+                                    disabled={isReadonly}
+                                    className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleCancelEdit();
+                                    }}
+                                    disabled={isReadonly}
+                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div
+                                  className="flex-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEdit(index, email || "");
+                                  }}
+                                >
+                                  <input
+                                    type="text"
+                                    value={email || ""}
+                                    readOnly
+                                    className={cn(
+                                      "w-full text-sm border-none outline-none bg-transparent px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                                      email
+                                        ? "text-foreground cursor-pointer hover:bg-muted/50"
+                                        : "text-muted-foreground cursor-pointer hover:bg-muted/50"
+                                    )}
+                                    placeholder="Click to edit email"
+                                    disabled={isReadonly}
+                                  />
+                                </div>
+                                {emails.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveEmail(index);
+                                    }}
+                                    disabled={isReadonly}
+                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+
+                {/* Add Email Card */}
+                {!isReadonly && (
+                  <button
+                    type="button"
+                    onClick={handleAddEmail}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed bg-card text-card-foreground shadow-sm transition-all",
+                      "hover:shadow-md hover:bg-accent/50 hover:border-primary",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    )}
+                  >
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Add Email
+                    </span>
+                  </button>
+                )}
+              </div>
             </StepCard>
           );
         }
         case "cohorts": {
+          const cohortShowSelected =
+            (stepFormData["cohortShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+          const cohortIds = draftState.cohortIds || [];
+
           return (
             <StepCard
+              stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              stepStatus={stepStatus}
-              isOptional={isOptional}
-              onReset={onReset}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={
+                (stepFormData["cohortSearch"] as string | null | undefined) ??
+                ""
+              }
+              onSearchChange={(term: string) =>
+                stepSetFormData({ cohortSearch: term || null })
+              }
+              searchPlaceholder="Search cohorts..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: cohortShowSelected,
+                  onChange: (value) =>
+                    stepSetFormData({ cohortShowSelected: value }),
+                },
+              ]}
+              resetFields={["cohortIds", "cohortSearch", "cohortShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
-              <StaffCohortCardGrid
-                cohortIds={(stepFormData.cohortIds as string[]) || []}
-                validCohortIds={(staffData?.valid_cohort_ids as string[]) || []}
-                cohorts={
-                  (staffData?.cohorts || []) as Array<{
-                    cohort_id: string;
-                    name: string;
-                    description: string;
-                  }>
+              <SelectableGrid
+                items={filteredCohorts}
+                selectedId={
+                  cohortIds.length > 0 ? (cohortIds[0] as string) : null
                 }
-                onCohortIdsChange={(ids) => stepSetFormData({ cohortIds: ids })}
-                readonly={isReadonly}
+                selectedIds={cohortIds as string[]}
+                onSelect={(cohortId) => {
+                  const isSelected = cohortIds.includes(cohortId);
+                  const newIds = isSelected
+                    ? cohortIds.filter((id) => id !== cohortId)
+                    : [...cohortIds, cohortId];
+                  setDraftState((prev) => ({ ...prev, cohortIds: newIds }));
+                }}
+                getId={(cohort) => cohort.id}
+                renderItem={(cohort, isSelected) => (
+                  <div
+                    className={cn(
+                      "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                      "hover:shadow-md hover:bg-accent/50",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      isSelected && "ring-2 ring-primary bg-accent"
+                    )}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                      </div>
+                    )}
+                    <div className="flex items-start gap-3">
+                      <Users className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm leading-tight">
+                          {cohort.name || "Unnamed Cohort"}
+                        </h3>
+                        {cohort.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {cohort.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                emptyMessage="No cohorts found. Try adjusting your search."
+                disabled={isReadonly}
               />
             </StepCard>
           );
@@ -877,13 +1383,23 @@ export default function StaffNewEdit({
           return null;
       }
     },
-    [scopedRoles, isReadonly, staffData, filteredPrimaryDeptIds]
+    [
+      isReadonly,
+      isEditMode,
+      staffData,
+      draftState,
+      filteredRoles,
+      filteredPrimaryDeptIds,
+      filteredCohorts,
+      editingEmailIndex,
+      editingEmailValue,
+    ]
   );
 
   // Render first name section (not a step, but part of the form)
   const renderFirstNameSection = () => {
     if (
-      formData.firstName === undefined ||
+      draftState.firstName === undefined ||
       !staffData?.departments ||
       staffData?.valid_department_ids === undefined
     ) {
@@ -897,8 +1413,10 @@ export default function StaffNewEdit({
             type="text"
             id="firstName"
             data-testid="input-staff-first-name"
-            value={String(formData.firstName || "")}
-            onChange={(e) => setFormData({ firstName: e.target.value })}
+            value={String(draftState.firstName || "")}
+            onChange={(e) =>
+              setDraftState((prev) => ({ ...prev, firstName: e.target.value }))
+            }
             className={cn(
               "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
             )}
@@ -916,71 +1434,85 @@ export default function StaffNewEdit({
           <Input
             id="lastName"
             data-testid="input-staff-last-name"
-            value={String(formData.lastName || "")}
-            onChange={(e) => setFormData({ lastName: e.target.value })}
+            value={String(draftState.lastName || "")}
+            onChange={(e) =>
+              setDraftState((prev) => ({ ...prev, lastName: e.target.value }))
+            }
             placeholder="Last Name (optional)"
             disabled={isReadonly}
           />
         </div>
 
-        {staffData.valid_department_ids.length > 1 && (
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            <GenericPicker
-              items={staffData.departments.reduce(
-                (acc, dept) => {
-                  if (dept.department_id) {
-                    acc[dept.department_id] = {
-                      name: dept.name || "",
-                      description: dept.description || "",
-                    };
+        {staffData.valid_department_ids &&
+          staffData.valid_department_ids.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <GenericPicker
+                items={staffData.departments.reduce(
+                  (acc, dept) => {
+                    if (dept.department_id) {
+                      acc[dept.department_id] = {
+                        name: dept.name || "",
+                        description: dept.description || "",
+                      };
+                    }
+                    return acc;
+                  },
+                  {} as Record<string, { name: string; description: string }>
+                )}
+                itemIds={Array.from(
+                  new Set([
+                    ...(staffData.valid_department_ids || []),
+                    ...(draftState.departmentIds || []),
+                  ])
+                )}
+                selectedIds={(draftState.departmentIds || []) as string[]}
+                onSelect={(ids) => {
+                  setDraftState((prev) => ({ ...prev, departmentIds: ids }));
+                  const currentPrimaryId =
+                    draftState.departmentIds &&
+                    draftState.primaryDepartmentIndex !== undefined &&
+                    typeof draftState.primaryDepartmentIndex === "number" &&
+                    draftState.primaryDepartmentIndex >= 0 &&
+                    draftState.primaryDepartmentIndex <
+                      draftState.departmentIds.length
+                      ? draftState.departmentIds[
+                          draftState.primaryDepartmentIndex
+                        ]
+                      : undefined;
+                  if (currentPrimaryId && ids.includes(currentPrimaryId)) {
+                    const newIndex = ids.indexOf(currentPrimaryId);
+                    setDraftState((prev) => ({
+                      ...prev,
+                      primaryDepartmentIndex: newIndex,
+                    }));
+                  } else if (ids.length > 0) {
+                    if (draftState.primaryDepartmentIndex === undefined) {
+                      setDraftState((prev) => ({
+                        ...prev,
+                        primaryDepartmentIndex: 0,
+                      }));
+                    }
+                  } else {
+                    setDraftState((prev) => ({
+                      ...prev,
+                      primaryDepartmentIndex: undefined,
+                    }));
                   }
-                  return acc;
-                },
-                {} as Record<string, { name: string; description: string }>
-              )}
-              itemIds={Array.from(
-                new Set([
-                  ...staffData.valid_department_ids,
-                  ...((formData.departmentIds as string[]) || []),
-                ])
-              )}
-              selectedIds={(formData.departmentIds as string[]) || []}
-              onSelect={(ids) => {
-                setFormData({ departmentIds: ids });
-                const currentPrimaryId =
-                  formData.departmentIds &&
-                  formData.primaryDepartmentIndex !== undefined &&
-                  typeof formData.primaryDepartmentIndex === "number" &&
-                  formData.primaryDepartmentIndex >= 0 &&
-                  formData.primaryDepartmentIndex <
-                    (formData.departmentIds as string[]).length
-                    ? (formData.departmentIds as string[])[
-                        formData.primaryDepartmentIndex
-                      ]
-                    : undefined;
-                if (currentPrimaryId && ids.includes(currentPrimaryId)) {
-                  const newIndex = ids.indexOf(currentPrimaryId);
-                  setFormData({ primaryDepartmentIndex: newIndex });
-                } else if (ids.length > 0) {
-                  if (formData.primaryDepartmentIndex === undefined) {
-                    setFormData({ primaryDepartmentIndex: 0 });
-                  }
-                } else {
-                  setFormData({ primaryDepartmentIndex: undefined });
+                }}
+                getId={(dept) => (dept as unknown as { id: string }).id}
+                getLabel={(dept) => dept.name || ""}
+                getSearchText={(dept) =>
+                  `${dept.name} ${dept.description || ""}`
                 }
-              }}
-              getId={(dept) => (dept as unknown as { id: string }).id}
-              getLabel={(dept) => dept.name || ""}
-              getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
-              placeholder="All Departments"
-              disabled={isReadonly}
-              multiSelect={true}
-              hideSelectedChips={true}
-              buttonClassName="w-full"
-            />
-          </div>
-        )}
+                placeholder="All Departments"
+                disabled={isReadonly}
+                multiSelect={true}
+                hideSelectedChips={true}
+                buttonClassName="w-full"
+              />
+            </div>
+          )}
 
         <div className="space-y-2 pt-2">
           <div className="space-y-1">
@@ -994,8 +1526,10 @@ export default function StaffNewEdit({
               </label>
               <Switch
                 id="active"
-                checked={(formData.active as boolean) ?? true}
-                onCheckedChange={(checked) => setFormData({ active: checked })}
+                checked={draftState.active ?? true}
+                onCheckedChange={(checked) =>
+                  setDraftState((prev) => ({ ...prev, active: checked }))
+                }
                 disabled={isReadonly}
               />
             </div>
@@ -1017,40 +1551,42 @@ export default function StaffNewEdit({
               </label>
               <Switch
                 id="requestsPerDayEnabled"
-                checked={(formData.requestsPerDayEnabled as boolean) || false}
+                checked={draftState.requestsPerDayEnabled || false}
                 onCheckedChange={(checked) => {
-                  setFormData({
+                  setDraftState((prev) => ({
+                    ...prev,
                     requestsPerDayEnabled: checked,
-                    reqPerDay: checked ? formData.reqPerDay : "",
-                  });
+                    reqPerDay: checked ? prev.reqPerDay : "",
+                  }));
                 }}
                 disabled={isReadonly}
               />
             </div>
-            {!(formData.requestsPerDayEnabled as boolean) && (
+            {!draftState.requestsPerDayEnabled && (
               <p className="text-xs text-muted-foreground pl-6">
                 Set a daily request limit for this staff member
               </p>
             )}
-            {(formData.requestsPerDayEnabled as boolean) && (
+            {draftState.requestsPerDayEnabled && (
               <div className="space-y-2 pt-2 pl-6">
                 <Input
                   id="reqPerDay"
                   type="number"
                   value={
-                    formData.reqPerDay === ""
+                    draftState.reqPerDay === ""
                       ? ""
-                      : String(formData.reqPerDay || "")
+                      : String(draftState.reqPerDay || "")
                   }
                   onChange={(e) => {
                     const val = e.target.value;
                     if (val === "") {
-                      setFormData({ reqPerDay: "" });
+                      setDraftState((prev) => ({ ...prev, reqPerDay: "" }));
                     } else {
                       const num = parseInt(val, 10);
-                      setFormData({
+                      setDraftState((prev) => ({
+                        ...prev,
                         reqPerDay: Number.isNaN(num) ? "" : num,
-                      });
+                      }));
                     }
                   }}
                   placeholder="Enter number"
@@ -1116,12 +1652,18 @@ export default function StaffNewEdit({
           )}
 
           <GenericForm
-            nuqsParsers={staffSearchParamsClient}
+            nuqsParsers={
+              staffSearchParamsClient as Record<
+                string,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                any
+              >
+            }
             steps={steps}
             getStepStatus={getStepStatus}
             renderStep={renderStep}
-            formData={formData}
-            setFormData={setFormData}
+            formData={urlParams}
+            setFormData={setUrlParams}
             serverData={staffData}
             initializeForm={() => ({})}
             onSubmit={handleSubmit}
