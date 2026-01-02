@@ -9,34 +9,42 @@ import StaffNewEdit from "@/components/staff/StaffNewEdit";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffNewOut = OutputOf<"/api/v4/profile/new", "post">;
-type CreateStaffIn = InputOf<"/api/v4/profile/create", "post">;
-type CreateStaffOut = OutputOf<"/api/v4/profile/create", "post">;
+type StaffNewIn = InputOf<"/api/v4/staff/new", "post">;
+type StaffNewOut = OutputOf<"/api/v4/staff/new", "post">;
+type CreateStaffIn = InputOf<"/api/v4/staff/create", "post">;
+type CreateStaffOut = OutputOf<"/api/v4/staff/create", "post">;
+type PatchStaffDraftIn = InputOf<"/api/v4/staff/draft", "patch">;
+type PatchStaffDraftOut = OutputOf<"/api/v4/staff/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getStaffNew = cache(async (): Promise<StaffNewOut> => {
-  return api.post(
-    "/profile/new",
-    { body: {} },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
+const getStaffNew = cache(async (input: StaffNewIn): Promise<StaffNewOut> => {
+  return api.post("/staff/new", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
     },
-  );
+  });
 });
 
 /** ---- Strongly-typed server actions ---- */
 async function createStaff(input: CreateStaffIn): Promise<CreateStaffOut> {
   "use server";
 
-  return api.post("/profile/create", {
+  return api.post("/staff/create", {
     body: { ...input.body },
   });
+}
+
+async function patchStaffDraft(
+  input: PatchStaffDraftIn
+): Promise<PatchStaffDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/staff/draft", input);
 }
 
 /** ---- Metadata ---- */
@@ -49,11 +57,40 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Server renders client with typed data and actions ---- */
-export default async function NewStaffPage() {
+export default async function NewStaffPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch default staff detail server-side
-  const staffDetailDefault = await getStaffNew();
+  // Parse search params using nuqs
+  const params = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for staff search params
+  const staffSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadStaffSearchParams = createLoader(staffSearchParams);
+  const q = loadStaffSearchParams(searchParamsObj);
+
+  // Fetch default staff detail server-side with draft_id
+  const input: StaffNewIn = {
+    body: {
+      draft_id: q.draftId ?? null,
+    } as StaffNewIn["body"],
+  };
+  const staffDetailDefault = await getStaffNew(input);
 
   return (
     <div
@@ -65,10 +102,18 @@ export default async function NewStaffPage() {
         mode="create"
         staffDetailDefault={staffDetailDefault}
         createStaffAction={createStaff}
+        patchStaffDraftAction={patchStaffDraft}
       />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { CreateStaffIn, CreateStaffOut, StaffNewOut };
+export type {
+  CreateStaffIn,
+  CreateStaffOut,
+  PatchStaffDraftIn,
+  PatchStaffDraftOut,
+  StaffNewIn,
+  StaffNewOut,
+};

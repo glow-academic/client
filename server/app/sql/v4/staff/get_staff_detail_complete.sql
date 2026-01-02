@@ -53,7 +53,8 @@ CREATE TYPE types.q_get_staff_detail_v4_department AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_staff_detail_v4(
     target_profile_id uuid,  -- Target profile to view (comes from request body)
-    profile_id uuid          -- Current user's profile (comes from header, filtered out of ApiRequest)
+    profile_id uuid,         -- Current user's profile (comes from header, filtered out of ApiRequest)
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     staff_exists boolean,
@@ -74,13 +75,27 @@ RETURNS TABLE (
     valid_department_ids text[],
     valid_cohort_ids text[],
     cohorts types.q_get_staff_detail_v4_cohort[],
-    departments types.q_get_staff_detail_v4_department[]
+    departments types.q_get_staff_detail_v4_department[],
+    primary_email_index integer,
+    primary_department_index integer,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT target_profile_id AS target_profile_id, profile_id AS current_profile_id
+    SELECT target_profile_id AS target_profile_id, profile_id AS current_profile_id, draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.current_profile_id
+    AND d.resource_type = 'staff'::draft_resource_type
+    LIMIT 1
 ),
 resolve_current_profile_id AS (
     SELECT current_profile_id AS resolved_profile_id FROM params
@@ -195,17 +210,94 @@ SELECT
     sec.staff_exists::boolean as staff_exists,
     COALESCE(ap.actor_name, '')::text as actor_name,
     vp.id as profile_id,
-    vp.first_name::text,
-    vp.last_name::text,
-    vp.name::text,
-    COALESCE(vp.emails, ARRAY[]::text[]) as emails,
-    vp.primary_email::text,
-    vp.role::text,
-    vp.active::boolean,
-    vp.requests_per_day::integer,
-    COALESCE(tpc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
-    COALESCE(tpd.department_ids, ARRAY[]::text[]) as department_ids,
-    tpd.primary_department_id::text as primary_department_id,
+    -- Merge draft payload with existing staff data (draft takes precedence)
+    COALESCE(
+        (SELECT payload->>'firstName' FROM draft_payload_data),
+        vp.first_name::text
+    ) as first_name,
+    COALESCE(
+        (SELECT payload->>'lastName' FROM draft_payload_data),
+        vp.last_name::text
+    ) as last_name,
+    COALESCE(
+        (SELECT payload->>'firstName' FROM draft_payload_data) || ' ' || 
+        COALESCE((SELECT payload->>'lastName' FROM draft_payload_data), ''),
+        vp.name::text
+    ) as name,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'emails' IS NOT NULL AND jsonb_typeof(payload->'emails') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'emails'))::text[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(vp.emails, ARRAY[]::text[])
+    ) as emails,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'emails' IS NOT NULL AND jsonb_typeof(payload->'emails') = 'array' AND
+                     (payload->>'primaryEmailIndex') IS NOT NULL THEN
+                    (ARRAY(SELECT jsonb_array_elements_text(payload->'emails'))::text[])[
+                        COALESCE((payload->>'primaryEmailIndex')::integer, 0) + 1
+                    ]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        vp.primary_email::text
+    ) as primary_email,
+    COALESCE(
+        (SELECT payload->>'role' FROM draft_payload_data),
+        vp.role::text
+    ) as role,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        vp.active::boolean
+    ) as active,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->>'reqPerDay' IS NOT NULL AND payload->>'reqPerDay' != '' THEN
+                    (payload->>'reqPerDay')::integer
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        vp.requests_per_day::integer
+    ) as requests_per_day,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'cohortIds' IS NOT NULL AND jsonb_typeof(payload->'cohortIds') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'cohortIds'))::text[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(tpc.cohort_ids, ARRAY[]::text[])
+    ) as cohort_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::text[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(tpd.department_ids, ARRAY[]::text[])
+    ) as department_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' AND
+                     (payload->>'primaryDepartmentIndex') IS NOT NULL THEN
+                    (ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::text[])[
+                        COALESCE((payload->>'primaryDepartmentIndex')::integer, 0) + 1
+                    ]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        tpd.primary_department_id::text
+    ) as primary_department_id,
     COALESCE(cec.can_edit, false)::boolean as can_edit,
     COALESCE(
         (SELECT array_agg(dd.department_id::text ORDER BY dd.name)
@@ -232,7 +324,27 @@ SELECT
         )
         FROM departments_data dd),
         '{}'::types.q_get_staff_detail_v4_department[]
-    ) as departments
+    ) as departments,
+    COALESCE(
+        (SELECT (payload->>'primaryEmailIndex')::integer FROM draft_payload_data),
+        CASE 
+            WHEN vp.emails IS NOT NULL AND vp.primary_email IS NOT NULL THEN
+                array_position(vp.emails, vp.primary_email) - 1
+            ELSE NULL
+        END::integer
+    ) as primary_email_index,
+    COALESCE(
+        (SELECT (payload->>'primaryDepartmentIndex')::integer FROM draft_payload_data),
+        CASE 
+            WHEN tpd.department_ids IS NOT NULL AND tpd.primary_department_id IS NOT NULL THEN
+                array_position(tpd.department_ids, tpd.primary_department_id) - 1
+            ELSE NULL
+        END::integer
+    ) as primary_department_index,
+    COALESCE(
+        (SELECT draft_version FROM draft_payload_data),
+        0::int
+    ) as draft_version
 FROM staff_exists_check sec
 LEFT JOIN visible_profile vp ON true
 LEFT JOIN can_edit_check cec ON true

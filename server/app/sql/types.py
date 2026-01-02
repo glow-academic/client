@@ -23102,11 +23102,13 @@ class GetStaffDetailSqlParams(BaseModel):
 
     target_profile_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.target_profile_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetStaffDetailV4Cohort(BaseModel):
@@ -23145,10 +23147,14 @@ class GetStaffDetailSqlRow(BaseModel):
     valid_cohort_ids: list[str] | None = None
     cohorts: list[QGetStaffDetailV4Cohort] | None = None
     departments: list[QGetStaffDetailV4Department] | None = None
+    primary_email_index: int | None = None
+    primary_department_index: int | None = None
+    draft_version: int | None = None
 
 class GetStaffDetailApiRequest(BaseModel):
 
     target_profile_id: UUID
+    draft_id: UUID | None = None
 
 class GetStaffDetailApiResponse(BaseModel):
 
@@ -23171,6 +23177,9 @@ class GetStaffDetailApiResponse(BaseModel):
     valid_cohort_ids: list[str] | None = None
     cohorts: list[QGetStaffDetailV4Cohort] | None = None
     departments: list[QGetStaffDetailV4Department] | None = None
+    primary_email_index: int | None = None
+    primary_department_index: int | None = None
+    draft_version: int | None = None
 
 
 
@@ -23278,10 +23287,12 @@ class GetStaffListApiResponse(BaseModel):
 class GetStaffNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetStaffNewV4Cohort(BaseModel):
@@ -23309,10 +23320,22 @@ class GetStaffNewSqlRow(BaseModel):
     role_options: list[str] | None = None
     cohorts: list[QGetStaffNewV4Cohort] | None = None
     departments: list[QGetStaffNewV4Department] | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    primary_email_index: int | None = None
+    role: str | None = None
+    requests_per_day: int | None = None
+    requests_per_day_enabled: bool | None = None
+    cohort_ids: list[str] | None = None
+    department_ids: list[str] | None = None
+    primary_department_index: int | None = None
+    active: bool | None = None
+    draft_version: int | None = None
 
 class GetStaffNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetStaffNewApiResponse(BaseModel):
 
@@ -23324,6 +23347,18 @@ class GetStaffNewApiResponse(BaseModel):
     role_options: list[str] | None = None
     cohorts: list[QGetStaffNewV4Cohort] | None = None
     departments: list[QGetStaffNewV4Department] | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    primary_email_index: int | None = None
+    role: str | None = None
+    requests_per_day: int | None = None
+    requests_per_day_enabled: bool | None = None
+    cohort_ids: list[str] | None = None
+    department_ids: list[str] | None = None
+    primary_department_index: int | None = None
+    active: bool | None = None
+    draft_version: int | None = None
 
 
 
@@ -23405,6 +23440,43 @@ class GetStaffSearchApiResponse(BaseModel):
     staff: list[QSearchStaffV4Staff] | None = None
     cohorts: list[QSearchStaffV4Cohort] | None = None
     departments: list[QSearchStaffV4Department] | None = None
+
+
+
+# Generated from: patch_staff_draft
+
+class PatchStaffDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchStaffDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchStaffDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchStaffDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -26285,6 +26357,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetStaffSearchApiRequest",
         "GetStaffSearchApiResponse",
     ),
+    "app/sql/v4/staff/patch_staff_draft_complete.sql": (
+        "PatchStaffDraftSqlParams",
+        "PatchStaffDraftSqlRow",
+        "PatchStaffDraftApiRequest",
+        "PatchStaffDraftApiResponse",
+    ),
     "app/sql/v4/staff/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
         "ProcessCsvSqlRow",
@@ -28213,6 +28291,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/staff/get_staff_search_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/staff/patch_staff_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

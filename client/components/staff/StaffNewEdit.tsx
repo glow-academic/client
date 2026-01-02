@@ -1,23 +1,31 @@
 /**
  * StaffNewEdit.tsx
  * Used to create and manage staff - supports both creation and editing
+ * Refactored to use GenericForm pattern with nuqs and draft autosave
  * @AshokSaravanan222
  * 12/04/2025
  */
 "use client";
 
-import { Switch } from "@/components/ui/switch";
-import { Check, Clock, Power, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 
 import type {
   CreateStaffIn,
   CreateStaffOut,
+  PatchStaffDraftIn,
+  PatchStaffDraftOut,
   StaffNewOut,
 } from "@/app/(main)/management/staff/new/page";
 import type {
@@ -25,46 +33,23 @@ import type {
   UpdateStaffIn,
   UpdateStaffOut,
 } from "@/app/(main)/management/staff/p/[profileId]/page";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { StaffCohortsSection } from "@/components/staff/StaffCohortsSection";
-import { StaffEmailsSection } from "@/components/staff/StaffEmailsSection";
-import { StaffRoleSection } from "@/components/staff/StaffRoleSection";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { StepCard } from "@/components/common/forms/StepCard";
+import { StaffCohortCardGrid } from "@/components/staff/StaffCohortCardGrid";
+import { StaffEmailCardGrid } from "@/components/staff/StaffEmailCardGrid";
+import { StaffRoleCardGrid } from "@/components/staff/StaffRoleCardGrid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Building2 } from "lucide-react";
-
-type StepStatus = "pending" | "active" | "completed";
-
-interface Step {
-  id: string;
-  title: string;
-  description: string;
-  status: StepStatus;
-}
-
-interface FormData {
-  firstName?: string;
-  lastName?: string;
-  emails?: string[];
-  primaryEmailIndex?: number | undefined;
-  role?: string;
-  reqPerDay?: number | "";
-  requestsPerDayEnabled?: boolean;
-  cohortIds?: string[];
-  departmentIds?: string[];
-  primaryDepartmentIndex?: number | undefined;
-  active?: boolean;
-}
+import { Building2, Clock, Power } from "lucide-react";
+import { parseAsString, useQueryStates } from "nuqs";
 
 export interface StaffNewEditProps {
   profileId?: string;
@@ -75,6 +60,9 @@ export interface StaffNewEditProps {
   // Server actions
   createStaffAction?: (input: CreateStaffIn) => Promise<CreateStaffOut>;
   updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>;
+  patchStaffDraftAction?: (
+    input: PatchStaffDraftIn
+  ) => Promise<PatchStaffDraftOut>;
 }
 
 export default function StaffNewEdit({
@@ -84,135 +72,382 @@ export default function StaffNewEdit({
   staffDetailDefault: serverStaffDetailDefault,
   createStaffAction,
   updateStaffAction,
+  patchStaffDraftAction,
 }: StaffNewEditProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isEditMode = mode === "edit" && !!profileId;
-  const { scopedRoles } = useProfile();
+  const { scopedRoles, effectiveProfile, selectedDraftId, setSelectedDraftId } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  const initialFormData: FormData = useMemo(
-    () => ({
-      firstName: "",
-      lastName: "",
-      emails: [],
-      primaryEmailIndex: undefined,
-      role: "instructional",
-      reqPerDay: "",
-      requestsPerDayEnabled: false,
-      cohortIds: [],
-      departmentIds: [],
-      primaryDepartmentIndex: undefined,
-      active: true,
-    }),
-    [],
+  // Stabilize server props to prevent unnecessary re-renders
+  const stabilizeServerProp = React.useCallback(
+    (
+      data: typeof serverStaffDetail | typeof serverStaffDetailDefault
+    ): string | null => {
+      if (!data) return null;
+      if (typeof data === "object" && data !== null) {
+        if ("profile_id" in data && data.profile_id) {
+          return `profile_id:${String(data.profile_id)}`;
+        }
+        const keyFields: Record<string, unknown> = {};
+        if ("valid_department_ids" in data) {
+          keyFields["valid_department_ids"] = Array.isArray(
+            data["valid_department_ids"]
+          )
+            ? data["valid_department_ids"].sort().join(",")
+            : data["valid_department_ids"];
+        }
+        if ("valid_cohort_ids" in data) {
+          keyFields["valid_cohort_ids"] = Array.isArray(
+            data["valid_cohort_ids"]
+          )
+            ? data["valid_cohort_ids"].sort().join(",")
+            : data["valid_cohort_ids"];
+        }
+        const sortedKeys = Object.keys(keyFields).sort();
+        const hash = sortedKeys
+          .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+          .join("|");
+        return `new:${hash.length}:${hash.slice(0, 100)}`;
+      }
+      return String(data);
+    },
+    []
   );
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<FormData>();
-  const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
-  const [primaryDeptSearchTerm, setPrimaryDeptSearchTerm] = useState("");
+  const staffDetailId = React.useMemo(
+    () => stabilizeServerProp(serverStaffDetail),
+    [serverStaffDetail, stabilizeServerProp]
+  );
+  const staffDetailDefaultId = React.useMemo(
+    () => stabilizeServerProp(serverStaffDetailDefault),
+    [serverStaffDetailDefault, stabilizeServerProp]
+  );
 
-  // Use server-provided data directly
-  const staffDetail = serverStaffDetail;
-  const staffDetailDefault = serverStaffDetailDefault;
+  // Use refs to track latest server props
+  const latestServerStaffDetailRef = React.useRef(serverStaffDetail);
+  const latestServerStaffDetailDefaultRef = React.useRef(
+    serverStaffDetailDefault
+  );
+
+  latestServerStaffDetailRef.current = serverStaffDetail;
+  latestServerStaffDetailDefaultRef.current = serverStaffDetailDefault;
+
+  // Use refs to track stable server props
+  const stableStaffDetailRef = React.useRef<{
+    data: typeof serverStaffDetail;
+    id: string | null;
+  }>({
+    data: serverStaffDetail,
+    id: staffDetailId,
+  });
+  const stableStaffDetailDefaultRef = React.useRef<{
+    data: typeof serverStaffDetailDefault;
+    id: string | null;
+  }>({
+    data: serverStaffDetailDefault,
+    id: staffDetailDefaultId,
+  });
+
+  React.useEffect(() => {
+    if (stableStaffDetailRef.current.id !== staffDetailId) {
+      stableStaffDetailRef.current = {
+        data: latestServerStaffDetailRef.current,
+        id: staffDetailId,
+      };
+    }
+  }, [staffDetailId]);
+
+  React.useEffect(() => {
+    if (stableStaffDetailDefaultRef.current.id !== staffDetailDefaultId) {
+      stableStaffDetailDefaultRef.current = {
+        data: latestServerStaffDetailDefaultRef.current,
+        id: staffDetailDefaultId,
+      };
+    }
+  }, [staffDetailDefaultId]);
+
+  const staffDetail = stableStaffDetailRef.current.data;
+  const staffDetailDefault = stableStaffDetailDefaultRef.current.data;
 
   // Use edit detail when editing, default detail when creating
-  const staffData = isEditMode ? staffDetail : staffDetailDefault;
+  const staffDataId = React.useMemo(() => {
+    const data = isEditMode ? staffDetail : staffDetailDefault;
+    if (!data) return null;
+    return stabilizeServerProp(data);
+  }, [isEditMode, staffDetail, staffDetailDefault, stabilizeServerProp]);
 
-  // Extract body types for type safety
-  type CreateStaffBody = CreateStaffIn extends { body: infer B } ? B : never;
-  type UpdateStaffBody = UpdateStaffIn extends { body: infer B } ? B : never;
+  const stableStaffDataRef = React.useRef<{
+    data: typeof staffDetail | typeof staffDetailDefault;
+    id: string | null;
+  }>({
+    data: isEditMode ? staffDetail : staffDetailDefault,
+    id: staffDataId,
+  });
 
-  // Server action handlers
-  const handleCreateStaff = async (body: CreateStaffBody) => {
-    if (!createStaffAction) {
-      throw new Error("createStaffAction is required");
+  React.useEffect(() => {
+    if (stableStaffDataRef.current.id !== staffDataId) {
+      stableStaffDataRef.current = {
+        data: isEditMode ? staffDetail : staffDetailDefault,
+        id: staffDataId,
+      };
     }
-    await createStaffAction({ body });
-  };
+  }, [isEditMode, staffDetail, staffDetailDefault, staffDataId]);
 
-  const handleUpdateStaff = async (body: UpdateStaffBody) => {
-    if (!updateStaffAction) {
-      throw new Error("updateStaffAction is required");
-    }
-    await updateStaffAction({ body });
-  };
+  const staffData = stableStaffDataRef.current.data;
 
-  // Readonly logic using permission flags
-  const isReadonly = useMemo(() => {
-    if (!isEditMode || !staffData) return false;
-    return !staffData.can_edit;
-  }, [isEditMode, staffData]);
+  // Inline parsers for URL-backed state
+  const staffSearchParamsClient = {
+    draftId: parseAsString,
+    primaryDeptSearch: parseAsString,
+  } as const;
 
-  // Initialize form data
+  // URL-backed state using nuqs
+  const [urlParams, setUrlParams] = useQueryStates(staffSearchParamsClient, {
+    history: "replace",
+    shallow: true,
+  });
+
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
   useEffect(() => {
-    if (staffData && isEditMode) {
-      const emails = staffData.emails || [];
-      const primaryIndex =
-        emails.length > 0
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
+
+  // Local draft state (not in URL)
+  type DraftState = {
+    firstName: string;
+    lastName: string;
+    emails: string[];
+    primaryEmailIndex: number | undefined;
+    role: string;
+    reqPerDay: number | "";
+    requestsPerDayEnabled: boolean;
+    cohortIds: string[];
+    departmentIds: string[];
+    primaryDepartmentIndex: number | undefined;
+    active: boolean;
+  };
+
+  // Initialize draft state from server data or draft payload
+  const initialDraftState = useMemo((): DraftState => {
+    const data = isEditMode ? staffDetail : staffDetailDefault;
+    if (!data) {
+      return {
+        firstName: "",
+        lastName: "",
+        emails: [],
+        primaryEmailIndex: undefined,
+        role: "instructional",
+        reqPerDay: "",
+        requestsPerDayEnabled: false,
+        cohortIds: [],
+        departmentIds: [],
+        primaryDepartmentIndex: undefined,
+        active: true,
+      };
+    }
+
+    // If draftId exists, server should have merged draft payload into data
+    const emails = data.emails || [];
+    const primaryIndex =
+      "primary_email_index" in data && data.primary_email_index != null
+        ? data.primary_email_index
+        : emails.length > 0
           ? emails.findIndex(
               (e) =>
                 e ===
-                  (staffData as { primary_email?: string | null })
-                    ?.primary_email || e === emails[0],
+                ("primary_email" in data && data.primary_email
+                  ? data.primary_email
+                  : emails[0])
             )
           : undefined;
-      // Type guard: StaffDetailOut has department_ids, StaffNewOut doesn't
-      const departmentIds =
-        "department_ids" in staffData && staffData.department_ids
-          ? staffData.department_ids
-          : [];
-      const primaryDeptIndex =
-        departmentIds.length > 0 && "primary_department_id" in staffData
-          ? departmentIds.findIndex(
-              (id: string) => id === staffData.primary_department_id,
-            )
-          : -1;
-      // Type guard: StaffDetailOut has cohort_ids, StaffNewOut doesn't
-      const cohortIds =
-        "cohort_ids" in staffData && staffData.cohort_ids
-          ? staffData.cohort_ids
-          : [];
-      setFormData({
-        firstName: staffData.first_name || "",
-        lastName: staffData.last_name || "",
-        emails: emails,
-        primaryEmailIndex:
-          primaryIndex !== undefined && primaryIndex >= 0
-            ? primaryIndex
-            : undefined,
-        role: staffData.role || "",
-        reqPerDay: staffData.requests_per_day ?? "",
-        requestsPerDayEnabled: staffData.requests_per_day != null,
-        cohortIds: cohortIds,
-        departmentIds: departmentIds,
-        primaryDepartmentIndex:
-          primaryDeptIndex >= 0 ? primaryDeptIndex : undefined,
-        active: staffData.active ?? true,
-      });
-      setRequestsPerDayEnabled(staffData.requests_per_day != null);
-    } else if (!isEditMode && staffData) {
-      // For create mode, use defaults from the API response
-      setFormData({
-        ...initialFormData,
-        firstName: staffData.first_name || "",
-        lastName: staffData.last_name || "",
-        emails: staffData.emails || [],
-        role: staffData.role || initialFormData.role || "",
-        active: staffData.active ?? true,
-      });
-    }
-  }, [staffData, isEditMode, initialFormData]);
 
-  // Set breadcrumb context when staff data is loaded
+    const departmentIds =
+      "department_ids" in data && data.department_ids
+        ? data.department_ids
+        : [];
+    const primaryDeptIndex =
+      "primary_department_index" in data &&
+      data.primary_department_index != null
+        ? data.primary_department_index
+        : departmentIds.length > 0 &&
+            "primary_department_id" in data &&
+            data.primary_department_id
+          ? departmentIds.findIndex(
+              (id: string) => id === data.primary_department_id
+            )
+          : undefined;
+
+    const cohortIds =
+      "cohort_ids" in data && data.cohort_ids ? data.cohort_ids : [];
+
+    return {
+      firstName: data.first_name || "",
+      lastName: data.last_name || "",
+      emails: emails,
+      primaryEmailIndex:
+        primaryIndex !== undefined && primaryIndex >= 0
+          ? primaryIndex
+          : undefined,
+      role: data.role || "instructional",
+      reqPerDay: data.requests_per_day ?? "",
+      requestsPerDayEnabled: data.requests_per_day != null,
+      cohortIds: cohortIds,
+      departmentIds: departmentIds,
+      primaryDepartmentIndex:
+        primaryDeptIndex !== undefined && primaryDeptIndex >= 0
+          ? primaryDeptIndex
+          : undefined,
+      active: data.active ?? true,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isEditMode,
+    staffDetail,
+    staffDetailDefault,
+    staffDetailId,
+    staffDetailDefaultId,
+    draftId,
+    urlDraftId,
+    staffDetailDefault?.first_name,
+    staffDetailDefault?.last_name,
+    staffDetailDefault?.emails,
+    staffDetailDefault?.role,
+    staffDetailDefault?.requests_per_day,
+    staffDetailDefault?.cohort_ids,
+    staffDetailDefault?.department_ids,
+    staffDetailDefault?.active,
+    staffDetail?.first_name,
+    staffDetail?.last_name,
+    staffDetail?.emails,
+    staffDetail?.role,
+    staffDetail?.requests_per_day,
+    staffDetail?.cohort_ids,
+    staffDetail?.department_ids,
+    staffDetail?.active,
+    staffDetail?.primary_email_index,
+    staffDetail?.primary_department_index,
+  ]);
+
+  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+  const prevInitialDraftStateRef = useRef<string>(
+    JSON.stringify(initialDraftState)
+  );
+
+  useEffect(() => {
+    const currentStateStr = prevInitialDraftStateRef.current;
+    const newStateStr = JSON.stringify(initialDraftState);
+
+    if (currentStateStr !== newStateStr) {
+      prevInitialDraftStateRef.current = newStateStr;
+      setDraftState(initialDraftState);
+    }
+  }, [initialDraftState]);
+
+  // Get draft version from server data
+  const draftVersion =
+    (staffData &&
+    "draft_version" in staffData &&
+    typeof staffData.draft_version === "number"
+      ? staffData.draft_version
+      : 0) || 0;
+
+  // Integrate autosave hook
+  const {
+    saveStatus: _saveStatus,
+    saveNow: _saveNow,
+    lastSavedVersion: _lastSavedVersion,
+  } = useDraftAutosave({
+    draftId,
+    draftState,
+    initialVersion: draftVersion,
+    patchDraftAction: patchStaffDraftAction
+      ? async (input) => {
+          const result = await patchStaffDraftAction({
+            body: {
+              input_draft_id: input.body.draft_id || null,
+              patch: input.body.patch as Record<string, unknown>,
+              expected_version: input.body.expected_version,
+            } as PatchStaffDraftIn["body"],
+          });
+          return {
+            draftId: result.draft_id || "",
+            newVersion: result.new_version || 0,
+            draftExists: result.draft_exists || false,
+          };
+        }
+      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    debounceMs: 1000,
+    onDraftCreated: useCallback(
+      (newDraftId: string) => {
+        const currentUrlDraftId = searchParams.get("draftId");
+        if (newDraftId === currentUrlDraftId) {
+          return;
+        }
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("draftId", newDraftId);
+        const newUrl = `?${params.toString()}`;
+        router.replace(newUrl, { scroll: false });
+        router.refresh();
+      },
+      [router, searchParams]
+    ),
+  });
+
+  // Merge draftState with urlParams for formData
+  const formData = useMemo(() => {
+    return {
+      ...draftState,
+      primaryDeptSearch: urlParams.primaryDeptSearch || null,
+    } as Record<string, unknown>;
+  }, [draftState, urlParams]);
+
+  // Create setFormData wrapper
+  const setFormData = useCallback(
+    (updates: Partial<Record<string, unknown>>) => {
+      const resolvedUpdates =
+        typeof updates === "function" ? updates(formData) : updates;
+
+      const draftUpdates: Partial<DraftState> = {};
+      const urlUpdates: Partial<Record<string, unknown>> = {};
+
+      Object.entries(resolvedUpdates).forEach(([key, value]) => {
+        if (key === "primaryDeptSearch") {
+          urlUpdates[key] = value;
+        } else {
+          draftUpdates[key as keyof DraftState] = value as never;
+        }
+      });
+
+      if (Object.keys(draftUpdates).length > 0) {
+        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
+      }
+      if (Object.keys(urlUpdates).length > 0) {
+        setUrlParams(urlUpdates);
+      }
+    },
+    [formData, setUrlParams]
+  );
+
+  // Readonly logic
+  const isReadonly = useMemo(() => {
+    if (!isEditMode || !staffData) return false;
+    return !("can_edit" in staffData && staffData.can_edit);
+  }, [isEditMode, staffData]);
+
+  // Set breadcrumb context
   useEffect(() => {
     if (staffDetail?.name && profileId && isEditMode) {
       // Note: "staff" is not in EntityMetadata union type, so we skip breadcrumb metadata
-      // setEntityMetadata({
-      //   entityId: profileId,
-      //   entityName: staffDetail.name,
-      //   entityType: "staff",
-      // });
     }
     return () => clearEntityMetadata();
   }, [
@@ -223,32 +458,27 @@ export default function StaffNewEdit({
     clearEntityMetadata,
   ]);
 
-  const handleInputChange = useCallback(
-    (
-      field: string,
-      value: string | number | boolean | string[] | undefined,
-    ) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    [],
-  );
-
-  // Step status logic
+  // Step status calculation
   const getStepStatus = useCallback(
-    (stepId: string): StepStatus => {
-      const hasFirstName = !!formData?.firstName?.trim();
-      const hasRole = !!formData?.role?.trim();
-      const hasDepartments =
-        (formData?.departmentIds || []).length > 0 ||
-        (staffData?.valid_department_ids || []).length > 1;
-      const hasPrimaryDepartment =
-        formData?.primaryDepartmentIndex !== undefined &&
-        formData.primaryDepartmentIndex >= 0;
-      const hasEmails = (formData?.emails || []).some(
-        (e) => e.trim().length > 0,
+    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+      const hasFirstName = !!(
+        formData.firstName && String(formData.firstName).trim()
       );
+      const hasRole = !!(formData.role && String(formData.role).trim());
+      const hasDepartments =
+        (Array.isArray(formData.departmentIds)
+          ? formData.departmentIds.length
+          : 0) > 0 || (staffData?.valid_department_ids || []).length > 1;
+      const hasPrimaryDepartment =
+        formData.primaryDepartmentIndex !== undefined &&
+        typeof formData.primaryDepartmentIndex === "number" &&
+        formData.primaryDepartmentIndex >= 0;
+      const hasEmails = (
+        Array.isArray(formData.emails) ? formData.emails : []
+      ).some((e) => String(e).trim().length > 0);
       const hasPrimaryEmail =
-        formData?.primaryEmailIndex !== undefined &&
+        formData.primaryEmailIndex !== undefined &&
+        typeof formData.primaryEmailIndex === "number" &&
         formData.primaryEmailIndex >= 0;
 
       switch (stepId) {
@@ -257,16 +487,13 @@ export default function StaffNewEdit({
           return hasRole ? "completed" : "active";
         case "primaryDepartment":
           if (!hasFirstName || !hasRole) return "pending";
-          // Only show as required if there are multiple departments
           if (!hasDepartments) return "pending";
           return hasPrimaryDepartment ? "completed" : "active";
         case "emails":
           if (!hasFirstName || !hasRole) return "pending";
-          // If departments exist, require primary department first
           if (hasDepartments && !hasPrimaryDepartment) return "pending";
           return hasEmails && hasPrimaryEmail ? "completed" : "active";
         case "cohorts":
-          // Cohorts are optional, so always completed if previous steps are done
           if (!hasFirstName || !hasRole) return "pending";
           if (hasDepartments && !hasPrimaryDepartment) return "pending";
           if (!hasEmails || !hasPrimaryEmail) return "pending";
@@ -275,31 +502,31 @@ export default function StaffNewEdit({
           return "pending";
       }
     },
-    [formData, staffData],
+    [staffData]
   );
 
-  // Steps array
-  const steps: Step[] = useMemo(() => {
+  // Steps configuration
+  const steps = useMemo(() => {
     const hasDepartments =
-      (formData?.departmentIds || []).length > 0 ||
-      (staffData?.valid_department_ids || []).length > 1;
-    const baseSteps: Step[] = [
+      (Array.isArray(formData.departmentIds)
+        ? formData.departmentIds.length
+        : 0) > 0 || (staffData?.valid_department_ids || []).length > 1;
+    const baseSteps = [
       {
         id: "role",
         title: "Role",
         description: "Select a role for this staff member.",
-        status: getStepStatus("role"),
+        resetFields: ["role"] as const,
       },
     ];
 
-    // Add Primary Department step if there are multiple departments
     if (hasDepartments) {
       baseSteps.push({
         id: "primaryDepartment",
         title: "Primary Department",
         description:
           "Select which department is primary for this staff member.",
-        status: getStepStatus("primaryDepartment"),
+        resetFields: ["primaryDepartmentIndex"] as const,
       });
     }
 
@@ -308,180 +535,537 @@ export default function StaffNewEdit({
         id: "emails",
         title: "Email",
         description: "Select the primary email address for this staff member.",
-        status: getStepStatus("emails"),
+        resetFields: ["emails", "primaryEmailIndex"] as const,
       },
       {
         id: "cohorts",
         title: "Cohorts",
         description: "Select cohorts for this staff member (optional).",
-        status: getStepStatus("cohorts"),
-      },
+        optional: true,
+        resetFields: ["cohortIds"] as const,
+      }
     );
 
     return baseSteps;
-  }, [getStepStatus, formData, staffData]);
+  }, [formData, staffData]);
 
   // Filtered departments for primary department selection
   const filteredPrimaryDeptIds = useMemo(() => {
-    if (
-      !formData ||
-      !staffData?.departments ||
-      !staffData?.valid_department_ids
-    ) {
+    if (!staffData?.departments || !staffData?.valid_department_ids) {
       return [];
     }
-    const availableDeptIds =
-      (formData.departmentIds?.length || 0) === 0
-        ? staffData.valid_department_ids || []
-        : formData.departmentIds || [];
+    const availableDeptIds = (
+      Array.isArray(formData.departmentIds) && formData.departmentIds.length > 0
+        ? formData.departmentIds
+        : staffData.valid_department_ids || []
+    ) as string[];
 
-    if (!primaryDeptSearchTerm.trim()) {
+    const searchTerm = (formData.primaryDeptSearch as string) || "";
+    if (!searchTerm.trim()) {
       return availableDeptIds;
     }
 
-    const searchLower = primaryDeptSearchTerm.toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
     return availableDeptIds.filter((deptId) => {
-      const dept = staffData.departments?.find((d) => d.department_id === deptId);
+      const dept = staffData.departments?.find(
+        (d) => d.department_id === deptId
+      );
       return (
         dept?.name?.toLowerCase().includes(searchLower) ||
         dept?.description?.toLowerCase().includes(searchLower)
       );
     });
-  }, [
-    formData,
-    staffData?.valid_department_ids,
-    staffData?.departments,
-    primaryDeptSearchTerm,
-  ]);
+  }, [formData, staffData?.valid_department_ids, staffData?.departments]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Submit handler
+  const handleSubmit = useCallback(
+    async (formData: Record<string, unknown>) => {
+      // Use draftState, not formData parameter
+      if (!draftState.firstName?.trim()) {
+        toast.error("First name is required");
+        throw new Error("First name is required");
+      }
 
-    if (!formData?.firstName || typeof formData.firstName !== "string") {
-      toast.error("First name is required");
-      return;
-    }
+      const validEmails = (draftState.emails || []).filter(
+        (e) => String(e).trim().length > 0
+      );
+      if (validEmails.length === 0) {
+        toast.error("At least one email is required");
+        throw new Error("At least one email is required");
+      }
 
-    if (!formData.lastName || typeof formData.lastName !== "string") {
-      // lastName is optional, but we need it to be a string if present
-      formData.lastName = "";
-    }
+      if (
+        draftState.primaryEmailIndex === undefined ||
+        draftState.primaryEmailIndex < 0 ||
+        draftState.primaryEmailIndex >= validEmails.length
+      ) {
+        toast.error("Please select a primary email");
+        throw new Error("Please select a primary email");
+      }
 
-    // Validate emails
-    const validEmails = (formData.emails || []).filter(
-      (e) => e.trim().length > 0,
-    );
-    if (validEmails.length === 0) {
-      toast.error("At least one email is required");
-      return;
-    }
-
-    // Validate primary email index
-    if (
-      formData.primaryEmailIndex === undefined ||
-      formData.primaryEmailIndex < 0 ||
-      formData.primaryEmailIndex >= validEmails.length
-    ) {
-      toast.error("Please select a primary email");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
       const parsedReqPerDay =
-        !requestsPerDayEnabled ||
-        formData.reqPerDay === "" ||
-        formData.reqPerDay === undefined
-          ? null // Unlimited
-          : Number(formData.reqPerDay);
+        !draftState.requestsPerDayEnabled ||
+        draftState.reqPerDay === "" ||
+        draftState.reqPerDay === undefined
+          ? null
+          : Number(draftState.reqPerDay);
+
+      const deptIdsForPrimary =
+        (draftState.departmentIds?.length || 0) === 0
+          ? staffData?.valid_department_ids || []
+          : draftState.departmentIds || [];
 
       if (isEditMode) {
-        // Update staff
         if (!updateStaffAction) {
           toast.error("Update action not available");
-          setIsSubmitting(false);
-          return;
+          throw new Error("Update action not available");
         }
 
-        // Determine which departments to use for primary index calculation
-        const deptIdsForPrimary =
-          (formData.departmentIds?.length || 0) === 0
-            ? staffData?.valid_department_ids || []
-            : formData.departmentIds || [];
-
-        await handleUpdateStaff({
-          profileId: profileId!,
-          first_name: formData.firstName,
-          last_name: formData.lastName || "",
-          emails: validEmails,
-          primary_email_index:
-            formData.primaryEmailIndex != null &&
-            formData.primaryEmailIndex >= 0 &&
-            formData.primaryEmailIndex < validEmails.length
-              ? formData.primaryEmailIndex
-              : null,
-          role: formData.role || "",
-          requests_per_day: parsedReqPerDay,
-          cohort_ids: formData.cohortIds || [],
-          department_ids: formData.departmentIds || [],
-          primary_department_index:
-            formData.primaryDepartmentIndex != null &&
-            formData.primaryDepartmentIndex >= 0 &&
-            formData.primaryDepartmentIndex < deptIdsForPrimary.length
-              ? formData.primaryDepartmentIndex
-              : null,
-          active: formData.active ?? true,
+        await updateStaffAction({
+          body: {
+            profileId: profileId!,
+            first_name: draftState.firstName,
+            last_name: draftState.lastName || "",
+            emails: validEmails,
+            primary_email_index:
+              draftState.primaryEmailIndex != null &&
+              draftState.primaryEmailIndex >= 0 &&
+              draftState.primaryEmailIndex < validEmails.length
+                ? draftState.primaryEmailIndex
+                : null,
+            role: draftState.role || "",
+            requests_per_day: parsedReqPerDay,
+            cohort_ids: draftState.cohortIds || [],
+            department_ids: draftState.departmentIds || [],
+            primary_department_index:
+              draftState.primaryDepartmentIndex != null &&
+              draftState.primaryDepartmentIndex >= 0 &&
+              draftState.primaryDepartmentIndex < deptIdsForPrimary.length
+                ? draftState.primaryDepartmentIndex
+                : null,
+            active: draftState.active ?? true,
+          },
         });
 
         toast.success("Staff updated successfully!");
         router.push("/management/staff");
       } else {
-        // Create staff
         if (!createStaffAction) {
           toast.error("Create action not available");
-          setIsSubmitting(false);
-          return;
+          throw new Error("Create action not available");
         }
 
-        // Determine which departments to use for primary index calculation
-        const deptIdsForPrimary =
-          (formData.departmentIds?.length || 0) === 0
-            ? staffData?.valid_department_ids || []
-            : formData.departmentIds || [];
-
-        await handleCreateStaff({
-          first_name: formData.firstName,  // Convert to snake_case for API
-          last_name: formData.lastName || "",  // Convert to snake_case for API
-          emails: validEmails,
-          primary_email_index:
-            formData.primaryEmailIndex != null &&
-            formData.primaryEmailIndex >= 0 &&
-            formData.primaryEmailIndex < validEmails.length
-              ? formData.primaryEmailIndex
-              : null,
-          role: formData.role || "",
-          cohort_ids: formData.cohortIds || [],
-          department_ids: formData.departmentIds || [],
-          primary_department_index:
-            formData.primaryDepartmentIndex != null &&
-            formData.primaryDepartmentIndex >= 0 &&
-            formData.primaryDepartmentIndex < deptIdsForPrimary.length
-              ? formData.primaryDepartmentIndex
-              : null,
+        await createStaffAction({
+          body: {
+            first_name: draftState.firstName,
+            last_name: draftState.lastName || "",
+            emails: validEmails,
+            primary_email_index:
+              draftState.primaryEmailIndex != null &&
+              draftState.primaryEmailIndex >= 0 &&
+              draftState.primaryEmailIndex < validEmails.length
+                ? draftState.primaryEmailIndex
+                : null,
+            role: draftState.role || "",
+            cohort_ids: draftState.cohortIds || [],
+            department_ids: draftState.departmentIds || [],
+            primary_department_index:
+              draftState.primaryDepartmentIndex != null &&
+              draftState.primaryDepartmentIndex >= 0 &&
+              draftState.primaryDepartmentIndex < deptIdsForPrimary.length
+                ? draftState.primaryDepartmentIndex
+                : null,
+          },
         });
 
         toast.success("Staff created successfully!");
         router.push("/management/staff");
       }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} staff: ${errorMessage}`,
-      );
-      setIsSubmitting(false);
+    },
+    [
+      draftState,
+      isEditMode,
+      profileId,
+      staffData,
+      createStaffAction,
+      updateStaffAction,
+      router,
+    ]
+  );
+
+  // Render step callback
+  const renderStep = useCallback(
+    ({
+      stepId,
+      stepTitle,
+      stepDescription,
+      stepNumber,
+      stepStatus,
+      isOptional,
+      formData: stepFormData,
+      setFormData: stepSetFormData,
+      onReset,
+    }: {
+      stepId: string;
+      stepTitle: string;
+      stepDescription: string;
+      stepNumber: number;
+      stepStatus: StepStatus;
+      isOptional: boolean;
+      formData: Record<string, unknown>;
+      setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      onReset?: () => void;
+    }) => {
+      switch (stepId) {
+        case "role": {
+          return (
+            <StepCard
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              stepStatus={stepStatus}
+              isOptional={isOptional}
+              onReset={onReset}
+            >
+              <StaffRoleCardGrid
+                selectedRoleId={(stepFormData.role as string) || ""}
+                scopedRoles={scopedRoles || []}
+                onRoleChange={(role) => stepSetFormData({ role })}
+                readonly={isReadonly}
+              />
+            </StepCard>
+          );
+        }
+        case "primaryDepartment": {
+          const availableDeptIds = (
+            Array.isArray(stepFormData.departmentIds) &&
+            stepFormData.departmentIds.length > 0
+              ? stepFormData.departmentIds
+              : staffData?.valid_department_ids || []
+          ) as string[];
+
+          return (
+            <StepCard
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              stepStatus={stepStatus}
+              isOptional={isOptional}
+              onReset={onReset}
+              searchValue={
+                (stepFormData.primaryDeptSearch as string) || undefined
+              }
+              onSearchChange={(value) =>
+                stepSetFormData({ primaryDeptSearch: value || null })
+              }
+            >
+              {!filteredPrimaryDeptIds ||
+              filteredPrimaryDeptIds.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No departments found. Try adjusting your search.
+                </div>
+              ) : (
+                <SelectableGrid
+                  items={filteredPrimaryDeptIds.map((deptId) => {
+                    const dept = staffData?.departments?.find(
+                      (d) => d.department_id === deptId
+                    );
+                    return {
+                      id: deptId,
+                      name: dept?.name || "Unnamed Department",
+                      description: dept?.description || "",
+                    };
+                  })}
+                  selectedId={
+                    stepFormData.primaryDepartmentIndex !== undefined &&
+                    typeof stepFormData.primaryDepartmentIndex === "number" &&
+                    stepFormData.primaryDepartmentIndex >= 0 &&
+                    stepFormData.primaryDepartmentIndex <
+                      availableDeptIds.length
+                      ? availableDeptIds[stepFormData.primaryDepartmentIndex]
+                      : null
+                  }
+                  onSelect={(id) => {
+                    const index = availableDeptIds.indexOf(id);
+                    stepSetFormData({
+                      primaryDepartmentIndex: index >= 0 ? index : undefined,
+                    });
+                  }}
+                  getId={(item) => item.id}
+                  renderItem={(item, isSelected) => (
+                    <div
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
+                        "hover:shadow-md hover:bg-accent/50",
+                        isSelected && "ring-2 ring-primary bg-accent"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Building2 className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight">
+                            {item.name}
+                          </h3>
+                          {item.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  disabled={isReadonly}
+                />
+              )}
+            </StepCard>
+          );
+        }
+        case "emails": {
+          return (
+            <StepCard
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              stepStatus={stepStatus}
+              isOptional={isOptional}
+              onReset={onReset}
+            >
+              <StaffEmailCardGrid
+                emails={(stepFormData.emails as string[]) || []}
+                primaryEmailIndex={
+                  stepFormData.primaryEmailIndex !== undefined
+                    ? (stepFormData.primaryEmailIndex as number)
+                    : undefined
+                }
+                onEmailsChange={(emails) => stepSetFormData({ emails })}
+                onPrimaryEmailIndexChange={(index) =>
+                  stepSetFormData({ primaryEmailIndex: index })
+                }
+                readonly={isReadonly}
+              />
+            </StepCard>
+          );
+        }
+        case "cohorts": {
+          return (
+            <StepCard
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              stepStatus={stepStatus}
+              isOptional={isOptional}
+              onReset={onReset}
+            >
+              <StaffCohortCardGrid
+                cohortIds={(stepFormData.cohortIds as string[]) || []}
+                validCohortIds={(staffData?.valid_cohort_ids as string[]) || []}
+                cohorts={
+                  (staffData?.cohorts || []) as Array<{
+                    cohort_id: string;
+                    name: string;
+                    description: string;
+                  }>
+                }
+                onCohortIdsChange={(ids) => stepSetFormData({ cohortIds: ids })}
+                readonly={isReadonly}
+              />
+            </StepCard>
+          );
+        }
+        default:
+          return null;
+      }
+    },
+    [scopedRoles, isReadonly, staffData, filteredPrimaryDeptIds]
+  );
+
+  // Render first name section (not a step, but part of the form)
+  const renderFirstNameSection = () => {
+    if (
+      formData.firstName === undefined ||
+      !staffData?.departments ||
+      staffData?.valid_department_ids === undefined
+    ) {
+      return null;
     }
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <input
+            type="text"
+            id="firstName"
+            data-testid="input-staff-first-name"
+            value={String(formData.firstName || "")}
+            onChange={(e) => setFormData({ firstName: e.target.value })}
+            className={cn(
+              "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+            )}
+            placeholder="First Name"
+            required
+            disabled={isReadonly}
+          />
+          <p className="text-xs text-muted-foreground mt-1 px-2">
+            Click to edit
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="lastName">Last Name</Label>
+          <Input
+            id="lastName"
+            data-testid="input-staff-last-name"
+            value={String(formData.lastName || "")}
+            onChange={(e) => setFormData({ lastName: e.target.value })}
+            placeholder="Last Name (optional)"
+            disabled={isReadonly}
+          />
+        </div>
+
+        {staffData.valid_department_ids.length > 1 && (
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            <GenericPicker
+              items={staffData.departments.reduce(
+                (acc, dept) => {
+                  if (dept.department_id) {
+                    acc[dept.department_id] = {
+                      name: dept.name || "",
+                      description: dept.description || "",
+                    };
+                  }
+                  return acc;
+                },
+                {} as Record<string, { name: string; description: string }>
+              )}
+              itemIds={Array.from(
+                new Set([
+                  ...staffData.valid_department_ids,
+                  ...((formData.departmentIds as string[]) || []),
+                ])
+              )}
+              selectedIds={(formData.departmentIds as string[]) || []}
+              onSelect={(ids) => {
+                setFormData({ departmentIds: ids });
+                const currentPrimaryId =
+                  formData.departmentIds &&
+                  formData.primaryDepartmentIndex !== undefined &&
+                  typeof formData.primaryDepartmentIndex === "number" &&
+                  formData.primaryDepartmentIndex >= 0 &&
+                  formData.primaryDepartmentIndex <
+                    (formData.departmentIds as string[]).length
+                    ? (formData.departmentIds as string[])[
+                        formData.primaryDepartmentIndex
+                      ]
+                    : undefined;
+                if (currentPrimaryId && ids.includes(currentPrimaryId)) {
+                  const newIndex = ids.indexOf(currentPrimaryId);
+                  setFormData({ primaryDepartmentIndex: newIndex });
+                } else if (ids.length > 0) {
+                  if (formData.primaryDepartmentIndex === undefined) {
+                    setFormData({ primaryDepartmentIndex: 0 });
+                  }
+                } else {
+                  setFormData({ primaryDepartmentIndex: undefined });
+                }
+              }}
+              getId={(dept) => (dept as unknown as { id: string }).id}
+              getLabel={(dept) => dept.name || ""}
+              getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+              placeholder="All Departments"
+              disabled={isReadonly}
+              multiSelect={true}
+              hideSelectedChips={true}
+              buttonClassName="w-full"
+            />
+          </div>
+        )}
+
+        <div className="space-y-2 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="active"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                Active
+              </label>
+              <Switch
+                id="active"
+                checked={(formData.active as boolean) ?? true}
+                onCheckedChange={(checked) => setFormData({ active: checked })}
+                disabled={isReadonly}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Whether this staff member is active
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="requestsPerDayEnabled"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                Requests per day
+              </label>
+              <Switch
+                id="requestsPerDayEnabled"
+                checked={(formData.requestsPerDayEnabled as boolean) || false}
+                onCheckedChange={(checked) => {
+                  setFormData({
+                    requestsPerDayEnabled: checked,
+                    reqPerDay: checked ? formData.reqPerDay : "",
+                  });
+                }}
+                disabled={isReadonly}
+              />
+            </div>
+            {!(formData.requestsPerDayEnabled as boolean) && (
+              <p className="text-xs text-muted-foreground pl-6">
+                Set a daily request limit for this staff member
+              </p>
+            )}
+            {(formData.requestsPerDayEnabled as boolean) && (
+              <div className="space-y-2 pt-2 pl-6">
+                <Input
+                  id="reqPerDay"
+                  type="number"
+                  value={
+                    formData.reqPerDay === ""
+                      ? ""
+                      : String(formData.reqPerDay || "")
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      setFormData({ reqPerDay: "" });
+                    } else {
+                      const num = parseInt(val, 10);
+                      setFormData({
+                        reqPerDay: Number.isNaN(num) ? "" : num,
+                      });
+                    }
+                  }}
+                  placeholder="Enter number"
+                  min={1}
+                  step={1}
+                  disabled={isReadonly}
+                  data-testid="input-staff-requests-per-day"
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -522,570 +1106,33 @@ export default function StaffNewEdit({
         )}
 
         <div className="w-full">
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-8">
-              {/* First Name Section */}
-              {formData?.firstName !== undefined &&
-                staffData?.departments &&
-                staffData?.valid_department_ids !== undefined && (
-                  <Card className="transition-all">
-                    <CardContent className="pt-6">
-                      <div className="space-y-4">
-                        <div>
-                          <input
-                            type="text"
-                            id="firstName"
-                            data-testid="input-staff-first-name"
-                            value={formData.firstName}
-                            onChange={(e) =>
-                              handleInputChange("firstName", e.target.value)
-                            }
-                            className={cn(
-                              "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                            )}
-                            placeholder="First Name"
-                            required
-                            disabled={isReadonly || isSubmitting}
-                          />
-                          <p className="text-xs text-muted-foreground mt-1 px-2">
-                            Click to edit
-                          </p>
-                        </div>
-
-                        {/* Last Name */}
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input
-                            id="lastName"
-                            data-testid="input-staff-last-name"
-                            value={formData.lastName || ""}
-                            onChange={(e) =>
-                              handleInputChange("lastName", e.target.value)
-                            }
-                            placeholder="Last Name (optional)"
-                            disabled={isReadonly || isSubmitting}
-                          />
-                        </div>
-
-                        {/* Department Selection */}
-                        {staffData.valid_department_ids.length > 1 && (
-                          <div className="space-y-2">
-                            <Label htmlFor="department">Department</Label>
-                            {formData?.departmentIds !== undefined ? (
-                              <GenericPicker
-                                items={staffData.departments.reduce((acc, dept) => {
-                                  if (dept.department_id) {
-                                    acc[dept.department_id] = { name: dept.name || "", description: dept.description || "" };
-                                  }
-                                  return acc;
-                                }, {} as Record<string, { name: string; description: string }>)}
-                                itemIds={Array.from(
-                                  new Set([
-                                    ...staffData.valid_department_ids,
-                                    ...(formData.departmentIds || []),
-                                  ]),
-                                )}
-                                selectedIds={formData.departmentIds || []}
-                                onSelect={(ids) => {
-                                  handleInputChange("departmentIds", ids);
-                                  // Update primary department index if needed
-                                  const currentPrimaryId =
-                                    formData?.departmentIds &&
-                                    formData?.primaryDepartmentIndex !==
-                                      undefined &&
-                                    formData.primaryDepartmentIndex >= 0 &&
-                                    formData.primaryDepartmentIndex <
-                                      formData.departmentIds.length
-                                      ? formData.departmentIds[
-                                          formData.primaryDepartmentIndex
-                                        ]
-                                      : undefined;
-                                  if (
-                                    currentPrimaryId &&
-                                    ids.includes(currentPrimaryId)
-                                  ) {
-                                    // Keep the same primary if it's still in the list
-                                    const newIndex =
-                                      ids.indexOf(currentPrimaryId);
-                                    handleInputChange(
-                                      "primaryDepartmentIndex",
-                                      newIndex,
-                                    );
-                                  } else if (ids.length > 0) {
-                                    // Set first department as primary if none selected
-                                    if (
-                                      formData?.primaryDepartmentIndex ===
-                                      undefined
-                                    ) {
-                                      handleInputChange(
-                                        "primaryDepartmentIndex",
-                                        0,
-                                      );
-                                    }
-                                  } else {
-                                    // Clear primary if no departments
-                                    handleInputChange(
-                                      "primaryDepartmentIndex",
-                                      undefined,
-                                    );
-                                  }
-                                }}
-                                getId={(dept) =>
-                                  (dept as unknown as { id: string }).id
-                                }
-                                getLabel={(dept) => dept.name || ""}
-                                getSearchText={(dept) =>
-                                  `${dept.name} ${dept.description || ""}`
-                                }
-                                placeholder="All Departments"
-                                disabled={isReadonly}
-                                multiSelect={true}
-                                hideSelectedChips={true}
-                                buttonClassName="w-full"
-                              />
-                            ) : null}
-                          </div>
-                        )}
-
-                        {/* Active Switch */}
-                        <div className="space-y-2 pt-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <label
-                                htmlFor="active"
-                                className="text-sm flex items-center gap-1.5"
-                              >
-                                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                                Active
-                              </label>
-                              <Switch
-                                id="active"
-                                checked={formData.active ?? true}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange("active", checked)
-                                }
-                                disabled={isReadonly || isSubmitting}
-                              />
-                            </div>
-                            <p className="text-xs text-muted-foreground pl-5">
-                              Whether this staff member is active
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Requests Per Day Switch */}
-                        <div className="space-y-2 pt-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <label
-                                htmlFor="requestsPerDayEnabled"
-                                className="text-sm flex items-center gap-1.5"
-                              >
-                                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                                Requests per day
-                              </label>
-                              <Switch
-                                id="requestsPerDayEnabled"
-                                checked={requestsPerDayEnabled}
-                                onCheckedChange={(checked) => {
-                                  setRequestsPerDayEnabled(checked);
-                                  if (!checked) {
-                                    handleInputChange("reqPerDay", "");
-                                  }
-                                }}
-                                disabled={isReadonly || isSubmitting}
-                              />
-                            </div>
-                            {!requestsPerDayEnabled && (
-                              <p className="text-xs text-muted-foreground pl-6">
-                                Set a daily request limit for this staff member
-                              </p>
-                            )}
-                            {requestsPerDayEnabled && (
-                              <div className="space-y-2 pt-2 pl-6">
-                                <Input
-                                  id="reqPerDay"
-                                  type="number"
-                                  value={
-                                    formData.reqPerDay === ""
-                                      ? ""
-                                      : String(formData.reqPerDay)
-                                  }
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val === "") {
-                                      handleInputChange("reqPerDay", "");
-                                    } else {
-                                      const num = parseInt(val, 10);
-                                      handleInputChange(
-                                        "reqPerDay",
-                                        Number.isNaN(num) ? "" : num,
-                                      );
-                                    }
-                                  }}
-                                  placeholder="Enter number"
-                                  min={1}
-                                  step={1}
-                                  disabled={isReadonly || isSubmitting}
-                                  data-testid="input-staff-requests-per-day"
-                                  className="w-full"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-              {/* Step 1: Role */}
-              {formData?.role !== undefined && (
-                <Card
-                  className={cn(
-                    "transition-all",
-                    !isEditMode &&
-                      steps[0]?.status === "active" &&
-                      "ring-2 ring-primary",
-                    !isEditMode &&
-                      steps[0]?.status === "pending" &&
-                      "opacity-50",
-                  )}
-                >
-                  <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                          steps[0]?.status === "completed"
-                            ? "bg-green-500 text-white"
-                            : steps[0]?.status === "active"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted",
-                        )}
-                      >
-                        {steps[0]?.status === "completed" ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <span>1</span>
-                        )}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">
-                          {steps[0]?.title || "Role"}
-                        </CardTitle>
-                        <CardDescription>
-                          {steps[0]?.description ||
-                            "Select a role for this staff member."}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4 px-6">
-                    <StaffRoleSection
-                      role={formData.role}
-                      scopedRoles={scopedRoles || []}
-                      onRoleChange={(role) => handleInputChange("role", role)}
-                      isReadonly={isReadonly}
-                      isSubmitting={isSubmitting}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Step 2: Primary Department */}
-              {formData?.departmentIds !== undefined &&
-                staffData?.departments &&
-                staffData?.valid_department_ids !== undefined &&
-                (formData.departmentIds.length > 0 ||
-                  staffData.valid_department_ids.length > 1) && (
-                  <Card
-                    className={cn(
-                      "transition-all",
-                      !isEditMode &&
-                        steps[1]?.status === "active" &&
-                        "ring-2 ring-primary",
-                      !isEditMode &&
-                        steps[1]?.status === "pending" &&
-                        "opacity-50",
-                    )}
-                  >
-                    <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                            steps[1]?.status === "completed"
-                              ? "bg-green-500 text-white"
-                              : steps[1]?.status === "active"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted",
-                          )}
-                        >
-                          {steps[1]?.status === "completed" ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <span>2</span>
-                          )}
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">
-                            {steps[1]?.title || "Primary Department"}
-                          </CardTitle>
-                          <CardDescription>
-                            {steps[1]?.description ||
-                              "Select which department is primary for this staff member."}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4 px-6">
-                      {/* Search Bar */}
-                      <div className="flex h-9 items-center gap-2 border-b px-0 w-full">
-                        <Search className="size-4 shrink-0 opacity-50" />
-                        <input
-                          type="text"
-                          placeholder="Search departments..."
-                          value={primaryDeptSearchTerm}
-                          onChange={(e) =>
-                            setPrimaryDeptSearchTerm(e.target.value)
-                          }
-                          className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                          disabled={isReadonly}
-                        />
-                      </div>
-
-                      {/* Filtered departments */}
-                      {!filteredPrimaryDeptIds ||
-                      filteredPrimaryDeptIds.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          No departments found. Try adjusting your search.
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {filteredPrimaryDeptIds.map((deptId) => {
-                            const dept = staffData.departments?.find((d) => d.department_id === deptId);
-                            // For primary selection, if departmentIds is empty, use all valid departments
-                            const availableDeptIds =
-                              (formData.departmentIds?.length || 0) === 0
-                                ? staffData.valid_department_ids
-                                : formData.departmentIds || [];
-                            const isPrimary =
-                              formData?.primaryDepartmentIndex !== undefined &&
-                              formData.primaryDepartmentIndex >= 0 &&
-                              formData.primaryDepartmentIndex <
-                                availableDeptIds.length &&
-                              availableDeptIds[
-                                formData.primaryDepartmentIndex
-                              ] === deptId;
-
-                            return (
-                              <div
-                                key={deptId}
-                                className={cn(
-                                  "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all cursor-pointer",
-                                  "hover:shadow-md hover:bg-accent/50",
-                                  isPrimary && "ring-2 ring-primary bg-accent",
-                                )}
-                                onClick={() => {
-                                  if (!isReadonly) {
-                                    const index =
-                                      availableDeptIds.indexOf(deptId);
-                                    handleInputChange(
-                                      "primaryDepartmentIndex",
-                                      index,
-                                    );
-                                  }
-                                }}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <Building2 className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-sm leading-tight">
-                                      {dept?.name || "Unnamed Department"}
-                                    </h3>
-                                    {dept?.description && (
-                                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                        {dept.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-              {/* Step 3: Email */}
-              {formData?.emails !== undefined && (
-                <Card
-                  className={cn(
-                    "transition-all",
-                    !isEditMode &&
-                      steps.find((s) => s.id === "emails")?.status ===
-                        "active" &&
-                      "ring-2 ring-primary",
-                    !isEditMode &&
-                      steps.find((s) => s.id === "emails")?.status ===
-                        "pending" &&
-                      "opacity-50",
-                  )}
-                >
-                  <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                          steps.find((s) => s.id === "emails")?.status ===
-                            "completed"
-                            ? "bg-green-500 text-white"
-                            : steps.find((s) => s.id === "emails")?.status ===
-                                "active"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted",
-                        )}
-                      >
-                        {steps.find((s) => s.id === "emails")?.status ===
-                        "completed" ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <span>
-                            {steps.findIndex((s) => s.id === "emails") + 1}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">
-                          {steps.find((s) => s.id === "emails")?.title ||
-                            "Email"}
-                        </CardTitle>
-                        <CardDescription>
-                          {steps.find((s) => s.id === "emails")?.description ||
-                            "Select the primary email address for this staff member."}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4 px-6">
-                    <StaffEmailsSection
-                      emails={formData.emails}
-                      primaryEmailIndex={formData.primaryEmailIndex}
-                      onEmailsChange={(emails) =>
-                        handleInputChange("emails", emails)
-                      }
-                      onPrimaryEmailIndexChange={(index) =>
-                        handleInputChange("primaryEmailIndex", index)
-                      }
-                      isReadonly={isReadonly}
-                      isSubmitting={isSubmitting}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Step 4: Cohorts */}
-              {staffData?.cohorts &&
-                "valid_cohort_ids" in staffData &&
-                staffData.valid_cohort_ids !== undefined && (
-                  <Card
-                    className={cn(
-                      "transition-all",
-                      !isEditMode &&
-                        steps.find((s) => s.id === "cohorts")?.status ===
-                          "active" &&
-                        "ring-2 ring-primary",
-                      !isEditMode &&
-                        steps.find((s) => s.id === "cohorts")?.status ===
-                          "pending" &&
-                        "opacity-50",
-                    )}
-                  >
-                    <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                            steps.find((s) => s.id === "cohorts")?.status ===
-                              "completed"
-                              ? "bg-green-500 text-white"
-                              : steps.find((s) => s.id === "cohorts")
-                                    ?.status === "active"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted",
-                          )}
-                        >
-                          {steps.find((s) => s.id === "cohorts")?.status ===
-                          "completed" ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <span>
-                              {steps.findIndex((s) => s.id === "cohorts") + 1}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">
-                            {steps.find((s) => s.id === "cohorts")?.title ||
-                              "Cohorts"}
-                          </CardTitle>
-                          <CardDescription>
-                            {steps.find((s) => s.id === "cohorts")
-                              ?.description ||
-                              "Select cohorts for this staff member (optional)."}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4 px-6">
-                      <StaffCohortsSection
-                        cohortIds={formData?.cohortIds || []}
-                        validCohortIds={
-                          "valid_cohort_ids" in staffData
-                            ? staffData.valid_cohort_ids || []
-                            : []
-                        }
-                        cohorts={staffData.cohorts || []}
-                        onCohortIdsChange={(ids) =>
-                          handleInputChange("cohortIds", ids)
-                        }
-                        isReadonly={isReadonly}
-                        isSubmitting={isSubmitting}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-              {/* Action buttons */}
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.back()}
-                  disabled={isSubmitting}
-                  data-testid="btn-cancel-staff"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isReadonly || isSubmitting}
-                  data-testid="btn-submit-staff"
-                >
-                  {isSubmitting
-                    ? isEditMode
-                      ? "Updating..."
-                      : "Creating..."
-                    : isEditMode
-                      ? "Update Staff"
-                      : "Create Staff"}
-                </Button>
+          {/* First Name Section - rendered before GenericForm */}
+          {renderFirstNameSection() && (
+            <div className="mb-8">
+              <div className="bg-card border border-border rounded-lg p-6">
+                {renderFirstNameSection()}
               </div>
             </div>
-          </form>
+          )}
+
+          <GenericForm
+            nuqsParsers={staffSearchParamsClient}
+            steps={steps}
+            getStepStatus={getStepStatus}
+            renderStep={renderStep}
+            formData={formData}
+            setFormData={setFormData}
+            serverData={staffData}
+            initializeForm={() => ({})}
+            onSubmit={handleSubmit}
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+            submitButton={{
+              createLabel: "Create Staff",
+              updateLabel: "Update Staff",
+              backUrl: "/management/staff",
+            }}
+          />
         </div>
       </div>
     </TooltipProvider>
