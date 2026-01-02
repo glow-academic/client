@@ -9,7 +9,12 @@ import Cohort from "@/components/cohorts/Cohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsArrayOf, parseAsString } from "nuqs/server";
+import {
+  createLoader,
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+} from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortNewIn = InputOf<"/api/v4/cohorts/new", "post">;
@@ -22,16 +27,12 @@ type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getCohortDefault = async (input: CohortNewIn): Promise<CohortNewOut> => {
-  return api.post(
-    "/cohorts/new",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/cohorts/new", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -85,14 +86,21 @@ export default async function NewCohortPage({
     draftId: parseAsString,
     simulationIds: parseAsArrayOf(parseAsString),
     departmentIds: parseAsArrayOf(parseAsString),
+    // Search/filter params
+    simulationSearch: parseAsString,
+    simulationShowSelected: parseAsBoolean,
   };
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
 
-  // Fetch default cohort detail server-side with draft_id
+  // Fetch default cohort detail server-side with filter params and draft_id
+  // Note: current_simulation_ids will be extracted from draft payload in SQL if draft exists
   const input: CohortNewIn = {
     body: {
       draft_id: q.draftId ?? null,
+      simulation_search: q.simulationSearch ?? null,
+      simulation_show_selected: q.simulationShowSelected ?? null,
+      current_simulation_ids: null, // Will be extracted from draft payload in SQL
     } as CohortNewIn["body"],
   };
   const cohortDetailDefault = await getCohortDefault(input);

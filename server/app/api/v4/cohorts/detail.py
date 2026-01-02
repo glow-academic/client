@@ -68,10 +68,19 @@ async def get_cohort_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Extract filter params from API request
+        simulation_search = request.simulation_search
+        simulation_show_selected = request.simulation_show_selected
+        current_simulation_ids = request.current_simulation_ids
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetCohortDetailSqlParams(
-            **request.model_dump(),
-            profile_id=profile_id
+            cohort_id=request.cohort_id,
+            profile_id=profile_id,
+            draft_id=request.draft_id,
+            simulation_search=simulation_search,
+            simulation_show_selected=simulation_show_selected,
+            current_simulation_ids=current_simulation_ids
         )
         sql_params = params.to_tuple()
 

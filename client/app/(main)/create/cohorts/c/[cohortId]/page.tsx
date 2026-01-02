@@ -10,7 +10,12 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { createLoader, parseAsArrayOf, parseAsString } from "nuqs/server";
+import {
+  createLoader,
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+} from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortDetailIn = InputOf<"/api/v4/cohorts/detail", "post">;
@@ -23,16 +28,12 @@ type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getCohort = async (input: CohortDetailIn): Promise<CohortDetailOut> => {
-  return api.post(
-    "/cohorts/detail",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/cohorts/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -43,7 +44,16 @@ export async function generateMetadata(
   const { cohortId } = await params;
 
   try {
-    const cohort = await getCohort(cohortId);
+    const input: CohortDetailIn = {
+      body: {
+        cohort_id: cohortId,
+        draft_id: null,
+        simulation_search: null,
+        simulation_show_selected: null,
+        current_simulation_ids: null,
+      } as CohortDetailIn["body"],
+    };
+    const cohort = await getCohort(input);
     return {
       title: `${cohort?.title || "Cohort"} Edit`,
       description: `${cohort?.title ? `${cohort.title} - ` : ""}Edit learning cohort for teaching assistant training programs.${cohort?.description ? ` ${cohort.description}` : ""} Manage group settings and coordinate group-based learning activities for effective L&D program administration.`,
@@ -84,7 +94,7 @@ export default async function CohortEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { cohortId } = await params;
-  
+
   // Parse search params using nuqs
   const params_obj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -103,6 +113,9 @@ export default async function CohortEditPage({
     draftId: parseAsString,
     simulationIds: parseAsArrayOf(parseAsString),
     departmentIds: parseAsArrayOf(parseAsString),
+    // Search/filter params
+    simulationSearch: parseAsString,
+    simulationShowSelected: parseAsBoolean,
   };
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
@@ -114,6 +127,9 @@ export default async function CohortEditPage({
       body: {
         cohort_id: cohortId,
         draft_id: q.draftId ?? null,
+        simulation_search: q.simulationSearch ?? null,
+        simulation_show_selected: q.simulationShowSelected ?? null,
+        current_simulation_ids: null, // Will be extracted from draft payload or cohort in SQL
       } as CohortDetailIn["body"],
     };
     cohortDetail = await getCohort(input);
@@ -158,8 +174,8 @@ export default async function CohortEditPage({
 export type {
   CohortDetailIn,
   CohortDetailOut,
-  UpdateCohortIn,
-  UpdateCohortOut,
   PatchCohortDraftIn,
   PatchCohortDraftOut,
+  UpdateCohortIn,
+  UpdateCohortOut,
 };

@@ -95,7 +95,10 @@ CREATE TYPE types.q_get_cohort_detail_v4_department AS (
 CREATE OR REPLACE FUNCTION api_get_cohort_detail_v4(
     cohort_id uuid,
     profile_id uuid,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    simulation_search text DEFAULT NULL,
+    simulation_show_selected boolean DEFAULT NULL,
+    current_simulation_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     cohort_exists boolean,
@@ -121,7 +124,10 @@ WITH params AS (
     SELECT
         cohort_id AS cohort_id,
         profile_id AS profile_id,
-        draft_id AS draft_id
+        draft_id AS draft_id,
+        simulation_search AS simulation_search,
+        COALESCE(simulation_show_selected, false) AS simulation_show_selected,
+        current_simulation_ids AS current_simulation_ids
 ),
 draft_payload_data AS (
     SELECT 
@@ -347,6 +353,54 @@ simulation_mapping_data AS (
         -- For non-default cohorts, use valid_simulations filtering
         (cid.is_default = false AND s.id IN (SELECT id FROM valid_simulations))
 ),
+-- Extract current simulation IDs from draft payload or cohort if not provided in params
+current_simulation_ids_from_draft AS (
+    SELECT 
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'simulation_ids') 
+            THEN ARRAY(
+                SELECT sim_id::uuid
+                FROM draft_payload_data dpd
+                CROSS JOIN jsonb_array_elements_text(dpd.payload->'simulation_ids') AS t(sim_id)
+            )
+            ELSE NULL::uuid[]
+        END as simulation_ids
+),
+current_simulation_ids_from_cohort AS (
+    SELECT 
+        ARRAY_AGG(simulation_id) as simulation_ids
+    FROM cohort_simulation_ids
+    WHERE active = true
+),
+-- Combine current_simulation_ids from params, draft, or cohort
+effective_current_simulation_ids AS (
+    SELECT 
+        COALESCE(
+            (SELECT current_simulation_ids FROM params WHERE current_simulation_ids IS NOT NULL AND cardinality(current_simulation_ids) > 0),
+            (SELECT simulation_ids FROM current_simulation_ids_from_draft WHERE simulation_ids IS NOT NULL),
+            (SELECT simulation_ids FROM current_simulation_ids_from_cohort),
+            NULL::uuid[]
+        ) as simulation_ids
+),
+-- Filtered simulations_for_picker based on search and show_selected
+simulations_for_picker_filtered AS (
+    SELECT smd.simulation_id, smd.name, smd.description, smd.time_limit, smd.department_ids
+    FROM simulation_mapping_data smd
+    CROSS JOIN params p
+    CROSS JOIN effective_current_simulation_ids ecsi
+    WHERE 
+        -- Search filter: if simulation_search provided, match name or description
+        (p.simulation_search IS NULL OR p.simulation_search = '' OR
+         LOWER(smd.name) LIKE '%' || LOWER(p.simulation_search) || '%' OR
+         LOWER(smd.description) LIKE '%' || LOWER(p.simulation_search) || '%')
+        -- Show selected filter: if enabled and current_simulation_ids available, only show selected simulations
+        AND (
+            NOT p.simulation_show_selected OR
+            ecsi.simulation_ids IS NULL OR
+            cardinality(ecsi.simulation_ids) = 0 OR
+            smd.simulation_id::uuid = ANY(ecsi.simulation_ids)
+        )
+),
 department_mapping_data AS (
     SELECT 
         vd.id as department_id,
@@ -395,11 +449,11 @@ SELECT
      FROM cohort_simulation_stats css) as simulations,
     (SELECT COALESCE(
         ARRAY_AGG(
-            (smd.simulation_id, smd.name, smd.description, smd.time_limit, smd.department_ids)::types.q_get_cohort_detail_v4_simulation_for_picker
+            (sfpf.simulation_id, sfpf.name, sfpf.description, sfpf.time_limit, sfpf.department_ids)::types.q_get_cohort_detail_v4_simulation_for_picker
         ),
         '{}'::types.q_get_cohort_detail_v4_simulation_for_picker[]
     )
-     FROM simulation_mapping_data smd) as simulations_for_picker,
+     FROM simulations_for_picker_filtered sfpf) as simulations_for_picker,
     (SELECT COALESCE(
         ARRAY_AGG(
             (dmd.department_id, dmd.name, dmd.description, dmd.simulation_ids)::types.q_get_cohort_detail_v4_department

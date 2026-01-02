@@ -71,10 +71,18 @@ async def get_cohort_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Extract filter params from API request
+        simulation_search = request.simulation_search
+        simulation_show_selected = request.simulation_show_selected
+        current_simulation_ids = request.current_simulation_ids
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetCohortNewSqlParams(
             profile_id=uuid.UUID(profile_id),
-            draft_id=request.draft_id
+            draft_id=request.draft_id,
+            simulation_search=simulation_search,
+            simulation_show_selected=simulation_show_selected,
+            current_simulation_ids=current_simulation_ids
         )
         sql_params = params.to_tuple()
 
@@ -87,35 +95,6 @@ async def get_cohort_new(
                 params=params,
             ),
         )
-        
-        # #region agent log - check draft payload
-        if request.draft_id:
-            draft_payload_raw = await conn.fetchval(
-                "SELECT payload FROM drafts WHERE id = $1 AND profile_id = $2 AND resource_type = 'cohorts'",
-                request.draft_id,  # Already a UUID, don't convert
-                uuid.UUID(profile_id)
-            )
-            import json
-            # Convert JSONB to dict if needed
-            draft_payload = draft_payload_raw if isinstance(draft_payload_raw, dict) else json.loads(draft_payload_raw) if draft_payload_raw else None
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({
-                    "location": "new.py:95",
-                    "message": "draft payload check",
-                    "data": {
-                        "draft_id": str(request.draft_id),
-                        "has_payload": draft_payload is not None,
-                        "simulation_ids": draft_payload.get("simulation_ids") if draft_payload else None,
-                        "simulation_ids_length": len(draft_payload.get("simulation_ids", [])) if draft_payload else 0,
-                        "payload_keys": list(draft_payload.keys()) if draft_payload else [],
-                        "result_simulation_ids": result.simulation_ids if result else None,
-                        "result_simulation_ids_length": len(result.simulation_ids) if result and result.simulation_ids else 0,
-                    },
-                    "timestamp": int(__import__("time").time() * 1000),
-                    "sessionId": "debug-session",
-                    "hypothesisId": "E",
-                }) + "\n")
-        # #endregion
 
         if not result:
             raise HTTPException(

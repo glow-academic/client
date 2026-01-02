@@ -278,6 +278,52 @@ function CohortComponent({
 
   const draftId = urlDraftId;
 
+  // Trigger server component refetch when search/filter params change (for SQL-side filtering)
+  // Similar to Scenario.tsx pattern: URL params change → router.refresh() → Server re-fetch → Filtered data
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prevSearchParamsRef = useRef<{
+    search: string | null;
+    showSelected: boolean | null;
+  }>({
+    search: null,
+    showSelected: null,
+  });
+
+  useEffect(() => {
+    const currentSearch = urlParams.simulationSearch || null;
+    const currentShowSelected = urlParams.simulationShowSelected ?? null;
+    const prevSearch = prevSearchParamsRef.current.search;
+    const prevShowSelected = prevSearchParamsRef.current.showSelected;
+
+    // Check if search or filter params actually changed
+    const hasChanged =
+      prevSearch !== currentSearch || prevShowSelected !== currentShowSelected;
+
+    if (hasChanged) {
+      // Update ref for next comparison (before timeout so we capture the previous values in logs)
+      prevSearchParamsRef.current = {
+        search: currentSearch,
+        showSelected: currentShowSelected,
+      };
+
+      // Clear existing timeout
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+
+      // Debounce router.refresh() calls (300ms to match search debounce)
+      refreshTimeoutRef.current = setTimeout(() => {
+        router.refresh();
+      }, 300);
+    }
+
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, [urlParams.simulationSearch, urlParams.simulationShowSelected, router]);
+
   // Local draft state (not in URL) - initialized from server data or draft payload
   type DraftState = {
     title: string;
@@ -1011,11 +1057,32 @@ function CohortComponent({
           const selectedSimulationIds =
             (stepFormData["simulationIds"] as string[] | null | undefined) ||
             [];
+          const simulationSearch =
+            (stepFormData["simulationSearch"] as string | null | undefined) ||
+            "";
 
-          // Filter simulations to only show valid ones
-          const filteredSimulations = simulationsArray.filter((sim) =>
+          // Filter simulations: department-based + client-side search/show_selected for immediate UI feedback
+          // Note: SQL also filters server-side, but client-side filtering provides immediate feedback
+          let filteredSimulations = simulationsArray.filter((sim) =>
             validSimulationIds.includes(sim.simulation_id)
           );
+
+          // Apply client-side search filter (for immediate UI feedback while server request is in flight)
+          if (simulationSearch.trim()) {
+            const searchLower = simulationSearch.toLowerCase();
+            filteredSimulations = filteredSimulations.filter(
+              (sim) =>
+                sim.name.toLowerCase().includes(searchLower) ||
+                (sim.description || "").toLowerCase().includes(searchLower)
+            );
+          }
+
+          // Apply client-side "show selected" filter (for immediate UI feedback)
+          if (simulationShowSelected && selectedSimulationIds.length > 0) {
+            filteredSimulations = filteredSimulations.filter((sim) =>
+              selectedSimulationIds.includes(sim.simulation_id)
+            );
+          }
 
           // Create filter onChange handler (inline function, not useCallback)
           const createSimulationFilterOnChange = (value: boolean) => {

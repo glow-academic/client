@@ -5972,12 +5972,18 @@ class GetCohortDetailSqlParams(BaseModel):
     cohort_id: UUID
     profile_id: UUID
     draft_id: UUID | None = None
+    simulation_search: str | None = None
+    simulation_show_selected: bool | None = None
+    current_simulation_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.cohort_id,
             self.profile_id,
             self.draft_id,
+            self.simulation_search,
+            self.simulation_show_selected,
+            self.current_simulation_ids,
         )
 
 class QGetCohortDetailV4Department(BaseModel):
@@ -6036,6 +6042,9 @@ class GetCohortDetailApiRequest(BaseModel):
 
     cohort_id: UUID
     draft_id: UUID | None = None
+    simulation_search: str | None = None
+    simulation_show_selected: bool | None = None
+    current_simulation_ids: list[UUID] | None = None
 
 class GetCohortDetailApiResponse(BaseModel):
 
@@ -6063,11 +6072,17 @@ class GetCohortNewSqlParams(BaseModel):
 
     profile_id: UUID
     draft_id: UUID | None = None
+    simulation_search: str | None = None
+    simulation_show_selected: bool | None = None
+    current_simulation_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.draft_id,
+            self.simulation_search,
+            self.simulation_show_selected,
+            self.current_simulation_ids,
         )
 
 class QGetCohortNewV4Cohort(BaseModel):
@@ -6155,6 +6170,9 @@ class GetCohortNewSqlRow(BaseModel):
 class GetCohortNewApiRequest(BaseModel):
 
     draft_id: UUID | None = None
+    simulation_search: str | None = None
+    simulation_show_selected: bool | None = None
+    current_simulation_ids: list[UUID] | None = None
 
 class GetCohortNewApiResponse(BaseModel):
 

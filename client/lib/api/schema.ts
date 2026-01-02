@@ -10422,6 +10422,12 @@ export interface components {
             cohort_id: string;
             /** Draft Id */
             draft_id?: string | null;
+            /** Simulation Search */
+            simulation_search?: string | null;
+            /** Simulation Show Selected */
+            simulation_show_selected?: boolean | null;
+            /** Current Simulation Ids */
+            current_simulation_ids?: string[] | null;
         };
         /** GetCohortDetailApiResponse */
         GetCohortDetailApiResponse: {
@@ -10460,6 +10466,12 @@ export interface components {
         GetCohortNewApiRequest: {
             /** Draft Id */
             draft_id?: string | null;
+            /** Simulation Search */
+            simulation_search?: string | null;
+            /** Simulation Show Selected */
+            simulation_show_selected?: boolean | null;
+            /** Current Simulation Ids */
+            current_simulation_ids?: string[] | null;
         };
         /** GetCohortNewApiResponse */
         GetCohortNewApiResponse: {
