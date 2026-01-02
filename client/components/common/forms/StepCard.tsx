@@ -122,28 +122,49 @@ export function StepCard({
     };
   }, [localSearchTerm, debounceMs, onSearchChange]);
 
-  // Initialize temp filter values from props
+  // Sync temp filter values from props - only update when values actually change
+  // Use value-based comparison instead of reference comparison to prevent flicker
   useEffect(() => {
-    if (filters) {
-      const initialValues: Record<string, boolean> = {};
-      filters.forEach((filter) => {
-        initialValues[filter.key] = filter.value;
-      });
-      setTempFilterValues(initialValues);
+    if (!filters) {
+      return;
     }
-  }, [filters]);
 
-  // Sync temp values when props change
-  useEffect(() => {
-    if (filters) {
-      filters.forEach((filter) => {
-        setTempFilterValues((prev) => ({
-          ...prev,
-          [filter.key]: filter.value,
-        }));
+    // Create a stable key-value map from current filters
+    const currentFilterValues: Record<string, boolean> = {};
+    filters.forEach((filter) => {
+      currentFilterValues[filter.key] = filter.value;
+    });
+
+    // Only update if values actually changed (value-based comparison)
+    setTempFilterValues((prev) => {
+      let hasChanges = false;
+      const newValues: Record<string, boolean> = { ...prev };
+
+      // Update or add new filter values
+      Object.keys(currentFilterValues).forEach((key) => {
+        if (newValues[key] !== currentFilterValues[key]) {
+          newValues[key] = currentFilterValues[key];
+          hasChanges = true;
+        }
       });
-    }
-  }, [filters]);
+
+      // Remove filters that no longer exist
+      Object.keys(newValues).forEach((key) => {
+        if (!(key in currentFilterValues)) {
+          delete newValues[key];
+          hasChanges = true;
+        }
+      });
+
+      // Only update state if values actually changed
+      return hasChanges ? newValues : prev;
+    });
+  }, [
+    // Depend on filter values, not array reference
+    filters
+      ? JSON.stringify(filters.map((f) => `${f.key}:${f.value}`))
+      : null,
+  ]);
 
   const handleApplyFilters = () => {
     if (filters) {

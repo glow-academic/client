@@ -423,8 +423,8 @@ function PersonaComponent({
         name: "",
         description: "",
         instructions: "",
-        color: "#3B82F6",
-        icon: "Sparkles",
+        color: "",
+        icon: "",
         active: true,
         departmentIds: [],
         parameterIds: [],
@@ -439,8 +439,8 @@ function PersonaComponent({
       name: data.name || "",
       description: data.description || "",
       instructions: data.instructions || "",
-      color: data.color || "#3B82F6",
-      icon: data.icon || "Sparkles",
+      color: data.color || "",
+      icon: data.icon || "",
       active: data.active ?? true,
       departmentIds: data.department_ids || [],
       parameterIds: [],
@@ -1189,6 +1189,21 @@ function PersonaComponent({
     []
   );
 
+  // Create stable filter onChange callbacks using memoized setFormData
+  const createColorFilterOnChange = useCallback(
+    (value: boolean) => {
+      setFormData({ colorShowSelected: value || null });
+    },
+    [setFormData]
+  );
+
+  const createIconFilterOnChange = useCallback(
+    (value: boolean) => {
+      setFormData({ iconShowSelected: value || null });
+    },
+    [setFormData]
+  );
+
   // Memoize renderStep to prevent GenericForm re-renders
   const renderStep = useCallback(
     ({
@@ -1421,14 +1436,14 @@ function PersonaComponent({
           const currentColorRaw =
             colorValue !== undefined
               ? colorValue
-              : (personaData as { color?: string })?.color || "#000000";
+              : (personaData as { color?: string })?.color || "";
 
           // Normalize currentColor to match preset color format (lowercase) for SelectableGrid comparison
           const currentColor = currentColorRaw
             ? currentColorRaw.toLowerCase().startsWith("#")
               ? currentColorRaw.toLowerCase()
               : `#${currentColorRaw.toLowerCase()}`
-            : "#000000";
+            : "";
 
           const colorShowSelected =
             (stepFormData["colorShowSelected"] as boolean | null | undefined) ??
@@ -1455,8 +1470,7 @@ function PersonaComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: colorShowSelected,
-                  onChange: (value) =>
-                    setStepFormData({ colorShowSelected: value || null }),
+                  onChange: createColorFilterOnChange,
                 },
               ]}
               resetFields={["color", "colorSearch", "colorShowSelected"]}
@@ -1542,7 +1556,7 @@ function PersonaComponent({
                   <div
                     className="w-10 h-10 rounded border shrink-0"
                     style={{
-                      backgroundColor: currentColorRaw || "#000000",
+                      backgroundColor: currentColorRaw || "transparent",
                     }}
                   />
                 </div>
@@ -1558,7 +1572,7 @@ function PersonaComponent({
           const currentIcon =
             iconValue !== undefined
               ? iconValue
-              : (personaData as { icon?: string })?.icon || "Zap";
+              : (personaData as { icon?: string })?.icon || "";
 
           const iconShowSelected =
             (stepFormData["iconShowSelected"] as boolean | null | undefined) ??
@@ -1585,8 +1599,7 @@ function PersonaComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: iconShowSelected,
-                  onChange: (value) =>
-                    setStepFormData({ iconShowSelected: value || null }),
+                  onChange: createIconFilterOnChange,
                 },
               ]}
               resetFields={["icon", "iconSearch", "iconShowSelected"]}

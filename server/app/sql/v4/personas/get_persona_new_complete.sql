@@ -378,11 +378,11 @@ SELECT
     ) as active,
     COALESCE(
         (SELECT payload->>'color' FROM draft_payload_data),
-        '#3B82F6'::text
+        NULL::text
     ) as color,
     COALESCE(
         (SELECT payload->>'icon' FROM draft_payload_data),
-        'Sparkles'::text
+        NULL::text
     ) as icon,
     COALESCE(
         (SELECT payload->>'instructions' FROM draft_payload_data),
