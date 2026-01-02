@@ -10455,6 +10455,87 @@
         ]
       }
     },
+    "/api/v4/parameters/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "parameters"
+        ],
+        "summary": "Patch Parameter Draft",
+        "description": "Patch parameter draft (creates if not exists).",
+        "operationId": "patch_parameter_draft_api_v4_parameters_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchParameterDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchParameterDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
+      }
+    },
     "/api/v4/fields/list": {
       "post": {
         "tags": [
@@ -40696,6 +40777,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Parameter Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -41008,13 +41101,64 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "field_ids": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "field_active_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Active States"
+          },
+          "field_default_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Default States"
           }
         },
         "type": "object",
         "title": "GetParameterDetailApiResponse"
       },
       "GetParameterNewApiRequest": {
-        "properties": {},
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
         "type": "object",
         "title": "GetParameterNewApiRequest"
       },
@@ -41333,6 +41477,44 @@
               }
             ],
             "title": "Can Edit"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "field_ids": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "field_active_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Active States"
+          },
+          "field_default_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Default States"
           }
         },
         "type": "object",
@@ -53427,6 +53609,77 @@
         },
         "type": "object",
         "title": "PatchDepartmentDraftApiResponse"
+      },
+      "PatchParameterDraftApiRequest": {
+        "properties": {
+          "patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Patch"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patch",
+          "expected_version"
+        ],
+        "title": "PatchParameterDraftApiRequest"
+      },
+      "PatchParameterDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchParameterDraftApiResponse"
       },
       "PatchPersonaDraftApiRequest": {
         "properties": {

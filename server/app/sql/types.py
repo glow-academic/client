@@ -12296,11 +12296,13 @@ class GetParameterDetailSqlParams(BaseModel):
 
     parameter_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.parameter_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetParameterDetailV4Department(BaseModel):
@@ -12385,10 +12387,15 @@ class GetParameterDetailSqlRow(BaseModel):
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    field_ids: Any | None = None
+    field_active_states: Any | None = None
+    field_default_states: Any | None = None
 
 class GetParameterDetailApiRequest(BaseModel):
 
     parameter_id: UUID
+    draft_id: UUID | None = None
 
 class GetParameterDetailApiResponse(BaseModel):
 
@@ -12416,6 +12423,10 @@ class GetParameterDetailApiResponse(BaseModel):
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    field_ids: Any | None = None
+    field_active_states: Any | None = None
+    field_default_states: Any | None = None
 
 
 
@@ -12424,10 +12435,12 @@ class GetParameterDetailApiResponse(BaseModel):
 class GetParameterNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetParameterNewV4Department(BaseModel):
@@ -12513,10 +12526,14 @@ class GetParameterNewSqlRow(BaseModel):
     documents: list[QGetParameterNewV4Document] | None = None
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
+    draft_version: int | None = None
+    field_ids: Any | None = None
+    field_active_states: Any | None = None
+    field_default_states: Any | None = None
 
 class GetParameterNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetParameterNewApiResponse(BaseModel):
 
@@ -12545,6 +12562,10 @@ class GetParameterNewApiResponse(BaseModel):
     documents: list[QGetParameterNewV4Document] | None = None
     valid_document_ids: list[str] | None = None
     can_edit: bool | None = None
+    draft_version: int | None = None
+    field_ids: Any | None = None
+    field_active_states: Any | None = None
+    field_default_states: Any | None = None
 
 
 
@@ -12648,6 +12669,43 @@ class GetParametersListApiResponse(BaseModel):
     documents: list[QListParametersV4Document] | None = None
     scenario_options: list[QListParametersV4ScenarioOption] | None = None
     document_options: list[QListParametersV4DocumentOption] | None = None
+
+
+
+# Generated from: patch_parameter_draft
+
+class PatchParameterDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchParameterDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchParameterDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchParameterDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25619,6 +25677,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParametersListApiRequest",
         "GetParametersListApiResponse",
     ),
+    "app/sql/v4/parameters/patch_parameter_draft_complete.sql": (
+        "PatchParameterDraftSqlParams",
+        "PatchParameterDraftSqlRow",
+        "PatchParameterDraftApiRequest",
+        "PatchParameterDraftApiResponse",
+    ),
     "app/sql/v4/parameters/update_parameter_complete.sql": (
         "UpdateParameterSqlParams",
         "UpdateParameterSqlRow",
@@ -27720,6 +27784,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/parameters/get_parameters_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/parameters/patch_parameter_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -5,7 +5,20 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_get_parameter_new_v4(uuid);
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_parameter_new_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_parameter_new_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
 -- If any other object depends on them, this will ERROR and stop the migration (good)
@@ -59,7 +72,10 @@ CREATE TYPE types.q_get_parameter_new_v4_document AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_parameter_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_parameter_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     actor_name text,
     user_role text,
@@ -85,13 +101,30 @@ RETURNS TABLE (
     document_ids text[],
     documents types.q_get_parameter_new_v4_document[],
     valid_document_ids text[],
-    can_edit boolean
+    can_edit boolean,
+    draft_version int,
+    field_ids jsonb,
+    field_active_states jsonb,
+    field_default_states jsonb
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'parameters'::draft_resource_type
+    LIMIT 1
 ),
 actor_profile AS (
     SELECT 
@@ -274,15 +307,56 @@ SELECT
     ap.actor_name::text as actor_name,
     ap.role::text as user_role,
     COALESCE(pdi.department_id, NULL)::text as primary_department_id,
-    pd.name::text as name,
-    pd.description::text as description,
-    pd.active::boolean as active,
-    pd.simulation_parameter::boolean as simulation_parameter,
-    pd.document_parameter::boolean as document_parameter,
-    pd.persona_parameter::boolean as persona_parameter,
-    pd.scenario_parameter::boolean as scenario_parameter,
-    pd.video_parameter::boolean as video_parameter,
-    pd.department_ids as department_ids,
+    -- Default values for new parameter (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        pd.name::text
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        pd.description::text
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        pd.active::boolean
+    ) as active,
+    COALESCE(
+        (SELECT (payload->>'simulation_parameter')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'simulationParameter')::boolean FROM draft_payload_data),
+        pd.simulation_parameter::boolean
+    ) as simulation_parameter,
+    COALESCE(
+        (SELECT (payload->>'document_parameter')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'documentParameter')::boolean FROM draft_payload_data),
+        pd.document_parameter::boolean
+    ) as document_parameter,
+    COALESCE(
+        (SELECT (payload->>'persona_parameter')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'personaParameter')::boolean FROM draft_payload_data),
+        pd.persona_parameter::boolean
+    ) as persona_parameter,
+    COALESCE(
+        (SELECT (payload->>'scenario_parameter')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'scenarioParameter')::boolean FROM draft_payload_data),
+        pd.scenario_parameter::boolean
+    ) as scenario_parameter,
+    COALESCE(
+        (SELECT (payload->>'video_parameter')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'videoParameter')::boolean FROM draft_payload_data),
+        pd.video_parameter::boolean
+    ) as video_parameter,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::text[]
+                WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::text[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        pd.department_ids
+    ) as department_ids,
     -- Parameter items (from default parameter)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -359,7 +433,27 @@ SELECT
         WHEN ap.role = 'superadmin'::profile_role THEN true::boolean
         WHEN ap.role IN ('admin'::profile_role, 'instructional'::profile_role) THEN true::boolean
         ELSE false::boolean
-    END as can_edit
+    END as can_edit,
+    -- Draft version (from draft payload if exists)
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract field_ids from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'fieldIds' FROM draft_payload_data),
+        (SELECT payload->'field_ids' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as field_ids,
+    -- Extract field_active_states from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'fieldActiveStates' FROM draft_payload_data),
+        (SELECT payload->'field_active_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as field_active_states,
+    -- Extract field_default_states from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'fieldDefaultStates' FROM draft_payload_data),
+        (SELECT payload->'field_default_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as field_default_states
 FROM actor_profile ap
 CROSS JOIN parameter_data pd
 LEFT JOIN primary_department_id pdi ON true

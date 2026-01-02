@@ -10,6 +10,7 @@ import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParameterDetailIn = InputOf<"/api/v4/parameters/detail", "post">;
@@ -24,22 +25,21 @@ type CreateParameterOut = OutputOf<"/api/v4/parameters/create", "post">;
 type UpdateParameterIn = InputOf<"/api/v4/parameters/update", "post">;
 type UpdateParameterOut = OutputOf<"/api/v4/parameters/update", "post">;
 
+type PatchParameterDraftIn = InputOf<"/api/v4/parameters/draft", "patch">;
+type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getParameter = async (
-  parameterId: string
+  input: ParameterDetailIn
 ): Promise<ParameterDetailOut> => {
-  return api.post(
-    "/parameters/detail",
-    { body: { parameterId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/parameters/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -48,9 +48,15 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { parameterId } = await params;
-
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const parameter = await getParameter(parameterId);
+    const input: ParameterDetailIn = {
+      body: {
+        parameter_id: parameterId,
+        draft_id: null,
+      } as ParameterDetailIn["body"],
+    };
+    const parameter = await getParameter(input);
     return {
       title: `${parameter?.name || "Parameter"} Parameter`,
       description: `${parameter?.name ? `${parameter.name} - ` : ""}System parameter configuration for teaching assistant training platform.${parameter?.description ? ` ${parameter.description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
@@ -84,17 +90,56 @@ async function updateParameter(
   return api.post("/parameters/update", input);
 }
 
+async function patchParameterDraft(
+  input: PatchParameterDraftIn
+): Promise<PatchParameterDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/parameters/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ParameterEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ parameterId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { parameterId } = await params;
-  // Fetch parameter detail (always fresh - source of truth)
+  // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for parameter search params
+  const parameterSearchParams = {
+    draftId: parseAsString,
+    fieldSearch: parseAsString,
+    fieldShowSelected: parseAsBoolean,
+  };
+  const loadParameterSearchParams = createLoader(parameterSearchParams);
+  const q = loadParameterSearchParams(searchParamsObj);
+
+  // Fetch parameter detail (always fresh - source of truth) with filter params
   try {
-    const parameterDetail = await getParameter(parameterId);
+    const input: ParameterDetailIn = {
+      body: {
+        parameter_id: parameterId,
+        draft_id: q.draftId ?? null,
+      } as ParameterDetailIn["body"],
+    };
+    const parameterDetail = await getParameter(input);
 
     return (
       <div
@@ -108,6 +153,7 @@ export default async function ParameterEditPage({
           parameterDetail={parameterDetail}
           createParameterAction={createParameter}
           updateParameterAction={updateParameter}
+          patchParameterDraftAction={patchParameterDraft}
         />
       </div>
     );
@@ -136,6 +182,8 @@ export default async function ParameterEditPage({
 export type {
   CreateParameterIn,
   CreateParameterOut,
+  PatchParameterDraftIn,
+  PatchParameterDraftOut,
   ParameterDetailIn,
   ParameterDetailOut,
   ParameterNewIn,

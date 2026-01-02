@@ -2588,6 +2588,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/parameters/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Parameter Draft
+         * @description Patch parameter draft (creates if not exists).
+         */
+        patch: operations["patch_parameter_draft_api_v4_parameters_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/fields/list": {
         parameters: {
             query?: never;
@@ -11624,6 +11644,8 @@ export interface components {
              * Format: uuid
              */
             parameter_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetParameterDetailApiResponse */
         GetParameterDetailApiResponse: {
@@ -11675,9 +11697,20 @@ export interface components {
             can_edit?: boolean | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Field Ids */
+            field_ids?: unknown | null;
+            /** Field Active States */
+            field_active_states?: unknown | null;
+            /** Field Default States */
+            field_default_states?: unknown | null;
         };
         /** GetParameterNewApiRequest */
-        GetParameterNewApiRequest: Record<string, never>;
+        GetParameterNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetParameterNewApiResponse */
         GetParameterNewApiResponse: {
             /** Actor Name */
@@ -11730,6 +11763,14 @@ export interface components {
             valid_document_ids?: string[] | null;
             /** Can Edit */
             can_edit?: boolean | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Field Ids */
+            field_ids?: unknown | null;
+            /** Field Active States */
+            field_active_states?: unknown | null;
+            /** Field Default States */
+            field_default_states?: unknown | null;
         };
         /** GetParametersListApiRequest */
         GetParametersListApiRequest: Record<string, never>;
@@ -14011,6 +14052,26 @@ export interface components {
         };
         /** PatchDepartmentDraftApiResponse */
         PatchDepartmentDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchParameterDraftApiRequest */
+        PatchParameterDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchParameterDraftApiResponse */
+        PatchParameterDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -27061,6 +27122,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteParameterApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_parameter_draft_api_v4_parameters_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchParameterDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchParameterDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
