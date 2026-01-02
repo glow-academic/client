@@ -10,7 +10,12 @@ import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { createLoader, parseAsString } from "nuqs/server";
+import {
+  createLoader,
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+} from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type SimulationDetailIn = InputOf<"/api/v4/simulations/detail", "post">;
@@ -116,16 +121,25 @@ export default async function EditSimulationPage({
   // Inline server-side parsers for simulation search params
   const simulationSearchParams = {
     draftId: parseAsString,
+    scenarioSearch: parseAsString,
+    scenarioShowSelected: parseAsBoolean,
+    scenarioIds: parseAsArrayOf(parseAsString),
   };
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
 
-  // Fetch simulation detail (always fresh - source of truth) with draft_id
+  // Fetch simulation detail (always fresh - source of truth) with draft_id and filters
   try {
     const input: SimulationDetailIn = {
       body: {
         simulation_id: simulationId,
         draft_id: q.draftId ?? null,
+        scenario_search: q.scenarioSearch ?? null,
+        scenario_show_selected: q.scenarioShowSelected ?? null,
+        filter_scenario_ids:
+          q.scenarioIds && q.scenarioIds.length > 0
+            ? q.scenarioIds
+            : null,
       } as SimulationDetailIn["body"],
     };
     const simulationDetail = await getSimulation(input);

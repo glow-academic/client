@@ -150,7 +150,10 @@ CREATE TYPE types.q_get_simulation_detail_v4_agent AS (
 CREATE OR REPLACE FUNCTION api_get_simulation_detail_v4(
     simulation_id uuid,
     profile_id uuid,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    scenario_search text DEFAULT NULL,
+    scenario_show_selected boolean DEFAULT NULL,
+    filter_scenario_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     simulation_exists boolean,
@@ -193,7 +196,10 @@ WITH params AS (
     SELECT 
         simulation_id AS simulation_id,
         profile_id AS profile_id,
-        draft_id AS draft_id
+        draft_id AS draft_id,
+        COALESCE(NULLIF(scenario_search, ''), NULL) AS scenario_search,
+        COALESCE(scenario_show_selected, false) AS scenario_show_selected,
+        COALESCE(filter_scenario_ids, ARRAY[]::uuid[]) AS filter_scenario_ids
 ),
 draft_payload_data AS (
     SELECT 
@@ -662,6 +668,20 @@ scenarios_full_data AS (
     LEFT JOIN scenario_persona_mapping spm ON spm.scenario_id = vsl.id
     LEFT JOIN scenario_document_mapping sdm ON sdm.scenario_id = vsl.id
     LEFT JOIN scenario_field_mapping sfm ON sfm.scenario_id = vsl.id
+    WHERE
+        -- Search filter
+        (
+            (SELECT scenario_search FROM params LIMIT 1) IS NULL
+            OR LOWER(vsl.name) LIKE '%' || LOWER((SELECT scenario_search FROM params LIMIT 1)) || '%'
+            OR LOWER(COALESCE(vsl.description, '')) LIKE '%' || LOWER((SELECT scenario_search FROM params LIMIT 1)) || '%'
+        )
+        -- Show selected filter
+        AND (
+            (SELECT scenario_show_selected FROM params LIMIT 1) = false
+            OR (SELECT array_length(filter_scenario_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_scenario_ids, 1) FROM params LIMIT 1) = 0
+            OR vsl.id = ANY((SELECT filter_scenario_ids FROM params LIMIT 1)::uuid[])
+        )
 ),
 department_scenario_ids AS (
     SELECT 

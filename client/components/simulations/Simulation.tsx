@@ -1160,7 +1160,7 @@ export default function Simulation({
       stepDescription,
       stepNumber,
       stepStatus,
-      formData: stepFormData,
+      formData: _stepFormData,
       setFormData: setStepFormData,
       onReset,
     }: {
@@ -1197,6 +1197,15 @@ export default function Simulation({
               defaultName: "New Simulation",
               required: true,
             }}
+            resetFields={[
+              "title",
+              "description",
+              "departmentIds",
+              "active",
+              "practiceSimulation",
+            ]}
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <div className="space-y-4">
               <div className="space-y-2">
@@ -1522,15 +1531,11 @@ export default function Simulation({
       }
 
       if (stepId === "scenarios") {
-        const scenarioShowSelected =
-          (stepFormData["scenarioShowSelected"] as
-            | boolean
-            | null
-            | undefined) ?? false;
-        const selectedScenarioIds =
-          (stepFormData["scenarioIds"] as string[] | null | undefined) || [];
-        const scenarioSearch =
-          (stepFormData["scenarioSearch"] as string | null | undefined) || "";
+        // Read from urlParams (nuqs-backed state) for proper URL sync
+        // Note: stepFormData is still needed for setStepFormData calls to GenericForm
+        const scenarioShowSelected = urlParams.scenarioShowSelected ?? false;
+        const selectedScenarioIds = urlParams.scenarioIds || [];
+        const scenarioSearch = urlParams.scenarioSearch || "";
 
         // Filter scenarios: department-based + client-side search/show_selected for immediate UI feedback
         // Note: SQL also filters server-side, but client-side filtering provides immediate feedback
@@ -1556,8 +1561,13 @@ export default function Simulation({
         }
 
         // Create filter onChange handler (inline function, not useCallback)
+        // Update both stepFormData (for GenericForm) and urlParams (for URL sync)
         const createScenarioFilterOnChange = (value: boolean) => {
           setStepFormData({ scenarioShowSelected: value });
+          setUrlParams((prev) => ({
+            ...prev,
+            scenarioShowSelected: value || null,
+          }));
         };
 
         // Build canRemoveMap
@@ -1580,9 +1590,13 @@ export default function Simulation({
             isReadonly={isReadonly}
             isEditMode={isEditMode}
             searchTerm={scenarioSearch}
-            onSearchChange={(term: string) =>
-              setStepFormData({ scenarioSearch: term || null })
-            }
+            onSearchChange={(term: string) => {
+              setStepFormData({ scenarioSearch: term || null });
+              setUrlParams((prev) => ({
+                ...prev,
+                scenarioSearch: term || null,
+              }));
+            }}
             searchPlaceholder="Search scenarios..."
             debounceMs={300}
             filters={[
@@ -1618,6 +1632,10 @@ export default function Simulation({
                 setStepFormData({
                   scenarioIds: newIds.length > 0 ? newIds : null,
                 });
+                setUrlParams((prev) => ({
+                  ...prev,
+                  scenarioIds: newIds.length > 0 ? newIds : null,
+                }));
                 setDraftState((prev) => ({ ...prev, scenarioIds: newIds }));
               }}
               getId={(scenario) => scenario.scenario_id}
@@ -1676,6 +1694,8 @@ export default function Simulation({
       effectiveProfile?.role,
       scenariosArray,
       validScenarioIds,
+      urlParams,
+      setUrlParams,
     ]
   );
 

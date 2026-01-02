@@ -13102,6 +13102,12 @@ export interface components {
             simulation_id: string;
             /** Draft Id */
             draft_id?: string | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Scenario Show Selected */
+            scenario_show_selected?: boolean | null;
+            /** Filter Scenario Ids */
+            filter_scenario_ids?: string[] | null;
         };
         /** GetSimulationDetailApiResponse */
         GetSimulationDetailApiResponse: {

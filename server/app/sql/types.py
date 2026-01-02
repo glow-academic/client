@@ -21488,12 +21488,18 @@ class GetSimulationDetailSqlParams(BaseModel):
     simulation_id: UUID
     profile_id: UUID
     draft_id: UUID | None = None
+    scenario_search: str | None = None
+    scenario_show_selected: bool | None = None
+    filter_scenario_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.simulation_id,
             self.profile_id,
             self.draft_id,
+            self.scenario_search,
+            self.scenario_show_selected,
+            self.filter_scenario_ids,
         )
 
 class QGetSimulationDetailV4Agent(BaseModel):
@@ -21671,6 +21677,9 @@ class GetSimulationDetailApiRequest(BaseModel):
 
     simulation_id: UUID
     draft_id: UUID | None = None
+    scenario_search: str | None = None
+    scenario_show_selected: bool | None = None
+    filter_scenario_ids: list[UUID] | None = None
 
 class GetSimulationDetailApiResponse(BaseModel):
 
