@@ -70,7 +70,10 @@ CREATE TYPE types.q_get_model_new_v4_unit AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_model_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_model_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     valid_provider_ids uuid[],
     providers types.q_get_model_new_v4_provider[],
@@ -83,13 +86,27 @@ RETURNS TABLE (
     units types.q_get_model_new_v4_unit[],
     user_role text,
     primary_department_id uuid,
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'models'::draft_resource_type
+    LIMIT 1
 ),
 resolve_profile_id AS (
     SELECT 
@@ -218,7 +235,8 @@ SELECT
     COALESCE(ua.units, '{}'::types.q_get_model_new_v4_unit[]) as units,
     pr.user_role::text as user_role,
     pdi.department_id as primary_department_id,
-    ap.actor_name::text as actor_name
+    ap.actor_name::text as actor_name,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version
 FROM providers_aggregated pa
 CROSS JOIN departments_aggregated da
 CROSS JOIN models_aggregated ma

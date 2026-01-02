@@ -40845,6 +40845,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Model Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -41206,13 +41218,37 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           }
         },
         "type": "object",
         "title": "GetModelDetailApiResponse"
       },
       "GetModelNewApiRequest": {
-        "properties": {},
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
         "type": "object",
         "title": "GetModelNewApiRequest"
       },
@@ -41381,6 +41417,17 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           }
         },
         "type": "object",

@@ -86,7 +86,8 @@ CREATE TYPE types.q_get_model_detail_v4_voice AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_model_detail_v4(
     model_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     model_exists boolean,
@@ -116,13 +117,28 @@ RETURNS TABLE (
     voices types.q_get_model_detail_v4_voice[],
     qualities text[],
     units types.q_get_model_detail_v4_unit[],
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT model_id AS model_id, profile_id AS profile_id
+    SELECT 
+        model_id AS model_id,
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'models'::draft_resource_type
+    LIMIT 1
 ),
 model_exists_check AS (
     SELECT EXISTS(SELECT 1 FROM models WHERE id = (SELECT model_id FROM params))::boolean as model_exists
@@ -403,36 +419,109 @@ units_aggregated AS (
 )
 SELECT 
     mec.model_exists::boolean as model_exists,
-    md.name,
-    md.description,
-    md.active,
+    -- Merge draft payload over existing model data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        md.name
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        md.description
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        md.active
+    ) as active,
     COALESCE(imc.image_model, false) as image_model,
     md.provider,
-    md.provider_id,
+    COALESCE(
+        (SELECT (payload->>'provider_id')::uuid FROM draft_payload_data),
+        md.provider_id
+    ) as provider_id,
     md.provider_name,
-    md.value,
-    COALESCE(med.base_url, '') as base_url,
+    COALESCE(
+        (SELECT payload->>'value' FROM draft_payload_data),
+        md.value
+    ) as value,
+    COALESCE(
+        (SELECT payload->>'base_url' FROM draft_payload_data),
+        COALESCE(med.base_url, '')
+    ) as base_url,
     COALESCE(pa.valid_provider_ids, ARRAY[]::uuid[]) as valid_provider_ids,
     COALESCE(pa.providers, '{}'::types.q_get_model_detail_v4_provider[]) as providers,
     COALESCE(da.valid_department_ids, ARRAY[]::uuid[]) as valid_department_ids,
     COALESCE(da.departments, '{}'::types.q_get_model_detail_v4_department[]) as departments,
-    COALESCE(mdd.department_ids, mdf.department_ids, ARRAY[]::uuid[]) as department_ids,
+    -- Merge draft payload department_ids over existing model department_ids if draft_id provided
+    COALESCE(
+        (SELECT (payload->'department_ids')::uuid[] FROM draft_payload_data),
+        COALESCE(mdd.department_ids, mdf.department_ids, ARRAY[]::uuid[])
+    ) as department_ids,
     COALESCE(ka.valid_key_ids, ARRAY[]::uuid[]) as valid_key_ids,
     COALESCE(ka.keys, '{}'::types.q_get_model_detail_v4_key[]) as keys,
     NULL::uuid as default_key_id,
-    COALESCE(mtd.temperature_lower, 0.0) as temperature_lower,
-    COALESCE(mtd.temperature_upper, 1.0) as temperature_upper,
-    COALESCE(mtd.temperature_values, ARRAY[]::text[]) as temperature_values,
-    COALESCE(pra.pricing, '{}'::types.q_get_model_detail_v4_pricing[]) as pricing,
+    -- Merge draft payload temperature_bounds over existing model temperature if draft_id provided
     COALESCE(
-        (COALESCE(mmod.input_modalities, ARRAY[]::text[]), COALESCE(mmod.output_modalities, ARRAY[]::text[]))::types.q_get_model_detail_v4_modalities,
-        (ARRAY[]::text[], ARRAY[]::text[])::types.q_get_model_detail_v4_modalities
+        (SELECT (payload->'temperature_bounds'->>'lower')::float FROM draft_payload_data),
+        COALESCE(mtd.temperature_lower, 0.0)
+    ) as temperature_lower,
+    COALESCE(
+        (SELECT (payload->'temperature_bounds'->>'upper')::float FROM draft_payload_data),
+        COALESCE(mtd.temperature_upper, 1.0)
+    ) as temperature_upper,
+    COALESCE(mtd.temperature_values, ARRAY[]::text[]) as temperature_values,
+    -- Merge draft payload pricing over existing model pricing if draft_id provided
+    COALESCE(
+        (SELECT 
+            ARRAY_AGG(
+                (pricing_entry->>'type', 
+                 (pricing_entry->>'unit_id')::uuid,
+                 u.name,
+                 u.unit_category::text,
+                 (pricing_entry->>'price')::float
+                )::types.q_get_model_detail_v4_pricing
+            )
+            FROM jsonb_array_elements((SELECT payload->'pricing' FROM draft_payload_data)) AS pricing_entry
+            JOIN units u ON u.id = (pricing_entry->>'unit_id')::uuid AND u.active = true
+        ),
+        COALESCE(pra.pricing, '{}'::types.q_get_model_detail_v4_pricing[])
+    ) as pricing,
+    -- Merge draft payload modalities over existing model modalities if draft_id provided
+    COALESCE(
+        (SELECT 
+            (
+                ARRAY(SELECT jsonb_array_elements_text(payload->'modalities'->'input')),
+                ARRAY(SELECT jsonb_array_elements_text(payload->'modalities'->'output'))
+            )::types.q_get_model_detail_v4_modalities
+            FROM draft_payload_data
+        ),
+        COALESCE(
+            (COALESCE(mmod.input_modalities, ARRAY[]::text[]), COALESCE(mmod.output_modalities, ARRAY[]::text[]))::types.q_get_model_detail_v4_modalities,
+            (ARRAY[]::text[], ARRAY[]::text[])::types.q_get_model_detail_v4_modalities
+        )
     ) as modalities,
-    COALESCE(mrl.reasoning_levels, ARRAY[]::text[]) as reasoning_levels,
-    COALESCE(va.voices, '{}'::types.q_get_model_detail_v4_voice[]) as voices,
-    COALESCE(mq.qualities, ARRAY[]::text[]) as qualities,
+    -- Merge draft payload reasoning_levels over existing model reasoning_levels if draft_id provided
+    COALESCE(
+        (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'reasoning_levels')) FROM draft_payload_data),
+        COALESCE(mrl.reasoning_levels, ARRAY[]::text[])
+    ) as reasoning_levels,
+    -- Merge draft payload voices over existing model voices if draft_id provided
+    COALESCE(
+        (SELECT 
+            ARRAY_AGG(
+                (gen_random_uuid(), voice_text)::types.q_get_model_detail_v4_voice
+            )
+            FROM jsonb_array_elements_text((SELECT payload->'voices' FROM draft_payload_data)) AS voice_text
+        ),
+        COALESCE(va.voices, '{}'::types.q_get_model_detail_v4_voice[])
+    ) as voices,
+    -- Merge draft payload qualities over existing model qualities if draft_id provided
+    COALESCE(
+        (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'qualities')) FROM draft_payload_data),
+        COALESCE(mq.qualities, ARRAY[]::text[])
+    ) as qualities,
     COALESCE(ua.units, '{}'::types.q_get_model_detail_v4_unit[]) as units,
-    ap.actor_name::text as actor_name
+    ap.actor_name::text as actor_name,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version
 FROM model_exists_check mec
 CROSS JOIN model_data md
 CROSS JOIN actor_profile ap

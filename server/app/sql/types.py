@@ -11903,160 +11903,17 @@ class DuplicateModelApiResponse(BaseModel):
 
 
 
-# Generated from: get_model_detail
-
-class GetModelDetailSqlParams(BaseModel):
-
-    model_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_id,
-            self.profile_id,
-        )
-
-class QGetModelDetailV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetModelDetailV4Key(BaseModel):
-
-    key_id: UUID | None
-    name: str | None
-    description: str | None
-    key_masked: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-
-
-
-
-class QGetModelDetailV4Modalities(BaseModel):
-
-    input: list[str] | None
-    output: list[str] | None
-
-
-
-
-class QGetModelDetailV4Pricing(BaseModel):
-
-    pricing_type: str | None
-    unit_id: UUID | None
-    unit_name: str | None
-    unit_category: str | None
-    price: float | None
-
-
-
-
-class QGetModelDetailV4Provider(BaseModel):
-
-    provider_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetModelDetailV4Unit(BaseModel):
-
-    unit_id: UUID | None
-    name: str | None
-    unit_category: str | None
-    value: int | None
-
-
-
-
-class QGetModelDetailV4Voice(BaseModel):
-
-    voice_id: UUID | None
-    voice: str | None
-
-class GetModelDetailSqlRow(BaseModel):
-
-    model_exists: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    image_model: bool | None = None
-    provider: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    value: str | None = None
-    base_url: str | None = None
-    valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelDetailV4Provider] | None = None
-    valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelDetailV4Department] | None = None
-    department_ids: list[UUID] | None = None
-    valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelDetailV4Key] | None = None
-    default_key_id: UUID | None = None
-    temperature_lower: float | None = None
-    temperature_upper: float | None = None
-    temperature_values: list[str] | None = None
-    pricing: list[QGetModelDetailV4Pricing] | None = None
-    modalities: QGetModelDetailV4Modalities | None = None
-    reasoning_levels: list[str] | None = None
-    voices: list[QGetModelDetailV4Voice] | None = None
-    qualities: list[str] | None = None
-    units: list[QGetModelDetailV4Unit] | None = None
-    actor_name: str | None = None
-
-class GetModelDetailApiRequest(BaseModel):
-
-    model_id: UUID
-
-class GetModelDetailApiResponse(BaseModel):
-
-    model_exists: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    image_model: bool | None = None
-    provider: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    value: str | None = None
-    base_url: str | None = None
-    valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelDetailV4Provider] | None = None
-    valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelDetailV4Department] | None = None
-    department_ids: list[UUID] | None = None
-    valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelDetailV4Key] | None = None
-    default_key_id: UUID | None = None
-    temperature_lower: float | None = None
-    temperature_upper: float | None = None
-    temperature_values: list[str] | None = None
-    pricing: list[QGetModelDetailV4Pricing] | None = None
-    modalities: QGetModelDetailV4Modalities | None = None
-    reasoning_levels: list[str] | None = None
-    voices: list[QGetModelDetailV4Voice] | None = None
-    qualities: list[str] | None = None
-    units: list[QGetModelDetailV4Unit] | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: get_model_new
 
 class GetModelNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetModelNewV4Department(BaseModel):
@@ -12119,10 +11976,11 @@ class GetModelNewSqlRow(BaseModel):
     user_role: str | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 class GetModelNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetModelNewApiResponse(BaseModel):
 
@@ -12138,6 +11996,7 @@ class GetModelNewApiResponse(BaseModel):
     user_role: str | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 
 
@@ -12200,6 +12059,43 @@ class ListModelsApiResponse(BaseModel):
     models: list[QListModelsV4Model] | None = None
     provider_options: list[QListModelsV4ProviderOption] | None = None
     status_options: list[QListModelsV4StatusOption] | None = None
+
+
+
+# Generated from: patch_model_draft
+
+class PatchModelDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchModelDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchModelDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchModelDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25856,12 +25752,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateModelApiRequest",
         "DuplicateModelApiResponse",
     ),
-    "app/sql/v4/models/get_model_detail_complete.sql": (
-        "GetModelDetailSqlParams",
-        "GetModelDetailSqlRow",
-        "GetModelDetailApiRequest",
-        "GetModelDetailApiResponse",
-    ),
     "app/sql/v4/models/get_model_new_complete.sql": (
         "GetModelNewSqlParams",
         "GetModelNewSqlRow",
@@ -25873,6 +25763,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ListModelsSqlRow",
         "ListModelsApiRequest",
         "ListModelsApiResponse",
+    ),
+    "app/sql/v4/models/patch_model_draft_complete.sql": (
+        "PatchModelDraftSqlParams",
+        "PatchModelDraftSqlRow",
+        "PatchModelDraftApiRequest",
+        "PatchModelDraftApiResponse",
     ),
     "app/sql/v4/models/update_model_complete.sql": (
         "UpdateModelSqlParams",
@@ -27999,17 +27895,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/get_model_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/models/get_model_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/models/list_models_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/models/patch_model_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

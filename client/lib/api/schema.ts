@@ -11685,6 +11685,8 @@ export interface components {
              * Format: uuid
              */
             model_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetModelDetailApiResponse */
         GetModelDetailApiResponse: {
@@ -11743,9 +11745,14 @@ export interface components {
             units?: components["schemas"]["QGetModelDetailV4Unit"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetModelNewApiRequest */
-        GetModelNewApiRequest: Record<string, never>;
+        GetModelNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetModelNewApiResponse */
         GetModelNewApiResponse: {
             /** Valid Provider Ids */
@@ -11772,6 +11779,8 @@ export interface components {
             primary_department_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetParameterDetailApiRequest */
         GetParameterDetailApiRequest: {

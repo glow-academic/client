@@ -9,6 +9,7 @@ import Model from "@/components/models/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type ModelDetailIn = InputOf<"/api/v4/models/detail", "post">;
@@ -16,21 +17,19 @@ type ModelDetailOut = OutputOf<"/api/v4/models/detail", "post">;
 
 type UpdateModelIn = InputOf<"/api/v4/models/update", "post">;
 type UpdateModelOut = OutputOf<"/api/v4/models/update", "post">;
+type PatchModelDraftIn = InputOf<"/api/v4/models/draft", "patch">;
+type PatchModelDraftOut = OutputOf<"/api/v4/models/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getModel = async (modelId: string): Promise<ModelDetailOut> => {
-  return api.post(
-    "/models/detail",
-    { body: { model_id: modelId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+const getModel = async (input: ModelDetailIn): Promise<ModelDetailOut> => {
+  return api.post("/models/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -41,7 +40,12 @@ export async function generateMetadata(
   const { modelId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const model = await getModel(modelId);
+    const input: ModelDetailIn = {
+      body: {
+        model_id: modelId,
+      },
+    };
+    const model = await getModel(input);
     return {
       title: `${model?.name || "Model"}`,
       description:
@@ -75,17 +79,53 @@ async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   return api.post("/models/update", snakeCaseInput as UpdateModelIn);
 }
 
+async function patchModelDraft(
+  input: PatchModelDraftIn
+): Promise<PatchModelDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/models/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ModelEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ modelId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { modelId } = await params;
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch model data (always fresh - source of truth, includes provider_mapping)
-  const model = await getModel(modelId);
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for model search params (draftId only)
+  const modelSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadModelSearchParams = createLoader(modelSearchParams);
+  const q = loadModelSearchParams(searchParamsObj);
+
+  // Fetch model data with draft_id
+  const input: ModelDetailIn = {
+    body: {
+      model_id: modelId,
+      draft_id: q.draftId ?? null,
+    },
+  };
+  const model = await getModel(input);
 
   return (
     <div className="space-y-6" data-page="model-edit" data-model-id={modelId}>
@@ -93,10 +133,18 @@ export default async function ModelEditPage({
         modelId={modelId}
         modelDetail={model}
         updateModelAction={updateModel}
+        patchModelDraftAction={patchModelDraft}
       />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { ModelDetailIn, ModelDetailOut, UpdateModelIn, UpdateModelOut };
+export type {
+  ModelDetailIn,
+  ModelDetailOut,
+  UpdateModelIn,
+  UpdateModelOut,
+  PatchModelDraftIn,
+  PatchModelDraftOut,
+};
