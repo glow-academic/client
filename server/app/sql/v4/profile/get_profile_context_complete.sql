@@ -96,6 +96,14 @@ CREATE TYPE types.q_get_profile_context_v4_provider AS (
     value text
 );
 
+CREATE TYPE types.q_get_profile_context_v4_draft AS (
+    id uuid,
+    resource_type text,
+    payload jsonb,
+    version int,
+    updated_at timestamptz
+);
+
 CREATE TYPE types.q_get_profile_context_v4_theme_tokens AS (
     background text,
     foreground text,
@@ -222,6 +230,7 @@ RETURNS TABLE (
     department_ids text[],
     cohort_ids text[],
     simulation_ids text[],
+    drafts types.q_get_profile_context_v4_draft[],
     settings_tokens types.q_get_profile_context_v4_theme_tokens,
     actor_name text
 )
@@ -894,6 +903,29 @@ simulation_ids_computed AS (
             ARRAY[]::text[]
         ) as simulation_ids
     FROM sim_data s
+),
+drafts_data AS (
+    -- Get all drafts for effective profile
+    SELECT 
+        d.id,
+        d.resource_type::text as resource_type,
+        d.payload,
+        d.version,
+        d.updated_at
+    FROM drafts d
+    WHERE d.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+),
+drafts_aggregated AS (
+    -- Aggregate drafts as array of composite types
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (dd.id, dd.resource_type, dd.payload, dd.version, dd.updated_at)::types.q_get_profile_context_v4_draft
+                ORDER BY dd.updated_at DESC
+            ),
+            '{}'::types.q_get_profile_context_v4_draft[]
+        ) as drafts
+    FROM drafts_data dd
 )
 SELECT 
     -- Emulation authorization flag
@@ -975,6 +1007,7 @@ SELECT
     (SELECT department_ids FROM department_ids_computed) as department_ids,
     (SELECT cohort_ids FROM cohort_ids_computed) as cohort_ids,
     (SELECT simulation_ids FROM simulation_ids_computed) as simulation_ids,
+    (SELECT drafts FROM drafts_aggregated) as drafts,
     -- Return empty theme tokens struct for type introspection (Python will override with computed values)
     -- 37 fields: background, foreground, card, card_foreground, popover, popover_foreground, primary_color, primary_foreground, secondary, secondary_foreground, muted, muted_foreground, accent, accent_foreground, destructive, border, input, ring, success, success_foreground, warning, warning_foreground, info, info_foreground, chart1, chart2, chart3, chart4, chart5, sidebar, sidebar_foreground, sidebar_primary, sidebar_primary_foreground, sidebar_accent, sidebar_accent_foreground, sidebar_border, sidebar_ring
     ('', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '')::types.q_get_profile_context_v4_theme_tokens as settings_tokens,
@@ -995,6 +1028,7 @@ CROSS JOIN redirect_path_computed rpc
 CROSS JOIN department_ids_computed dic
 CROSS JOIN cohort_ids_computed cic
 CROSS JOIN simulation_ids_computed sic
+CROSS JOIN drafts_aggregated da_drafts
 WHERE (
     -- Standard case: require authorization and profile IDs
     (ev.is_authorized = true 

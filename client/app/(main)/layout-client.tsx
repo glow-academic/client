@@ -13,6 +13,7 @@ import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
+import { DraftPicker } from "@/components/common/drafts/DraftPicker";
 import { SimulationControls } from "@/components/common/chat/SimulationControls";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
@@ -71,7 +72,7 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
-  const { effectiveProfile, activeProfile } = useProfile();
+  const { effectiveProfile, activeProfile, drafts, selectedDraftId, setSelectedDraftId } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
 
   // Check if we're on the staff management pages (but not on /new page)
@@ -334,6 +335,18 @@ function MainLayoutContent({
     return attemptData.attempt.profile_id === activeProfile.id;
   }, [attemptData, attemptId, activeProfile]);
 
+  // Determine if we're on a create/edit page and get resource type
+  const isCreateOrEditPage = useMemo(() => {
+    // Match patterns like /create/personas/new, /create/personas/p/[id], /create/simulations/s/[id], etc.
+    return /\/create\/([^/]+)\/(new|[pscrdafm]\/[^/]+)/.test(pathname);
+  }, [pathname]);
+
+  const resourceType = useMemo(() => {
+    if (!isCreateOrEditPage) return null;
+    const match = pathname.match(/\/create\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [pathname, isCreateOrEditPage]);
+
   return (
     <>
       <SidebarProvider>
@@ -372,6 +385,13 @@ function MainLayoutContent({
                   attemptId={attemptId}
                   attemptData={attemptData}
                 />
+              </div>
+            )}
+
+            {/* DraftPicker - Show on create/edit pages */}
+            {isCreateOrEditPage && resourceType && (
+              <div className="pr-4">
+                <DraftPicker resourceType={resourceType} />
               </div>
             )}
 

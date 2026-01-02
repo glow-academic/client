@@ -2517,6 +2517,87 @@
         ]
       }
     },
+    "/api/v4/personas/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "personas"
+        ],
+        "summary": "Patch Persona Draft",
+        "description": "Patch persona draft (creates if not exists).",
+        "operationId": "patch_persona_draft_api_v4_personas_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchPersonaDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchPersonaDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
+      }
+    },
     "/api/v4/auth/list": {
       "post": {
         "tags": [
@@ -40678,6 +40759,18 @@
               }
             ],
             "title": "Current Icon"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -41148,6 +41241,18 @@
               }
             ],
             "title": "Current Icon"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -43600,6 +43705,20 @@
               }
             ],
             "title": "Simulation Ids"
+          },
+          "drafts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV4Draft"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafts"
           },
           "settings_tokens": {
             "anyOf": [
@@ -51960,6 +52079,77 @@
         ],
         "title": "ObjectivesToolCompletePayload",
         "description": "Response indicating objectives tool completed successfully."
+      },
+      "PatchPersonaDraftApiRequest": {
+        "properties": {
+          "p_draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "P Draft Id"
+          },
+          "p_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "P Profile Id"
+          },
+          "p_patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "P Patch"
+          },
+          "p_expected_version": {
+            "type": "integer",
+            "title": "P Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "p_draft_id",
+          "p_profile_id",
+          "p_patch",
+          "p_expected_version"
+        ],
+        "title": "PatchPersonaDraftApiRequest"
+      },
+      "PatchPersonaDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchPersonaDraftApiResponse"
       },
       "PersonaTool": {
         "properties": {
@@ -68416,6 +68606,76 @@
           "is_primary"
         ],
         "title": "QGetProfileContextV4Department"
+      },
+      "QGetProfileContextV4Draft": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Type"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "resource_type",
+          "payload",
+          "version",
+          "updated_at"
+        ],
+        "title": "QGetProfileContextV4Draft"
       },
       "QGetProfileContextV4Provider": {
         "properties": {

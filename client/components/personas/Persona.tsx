@@ -6,16 +6,19 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 
 import type {
   CreatePersonaIn,
   CreatePersonaOut,
+  PatchPersonaDraftIn,
+  PatchPersonaDraftOut,
   PersonaDetailOut,
   PersonaNewOut,
   UpdatePersonaIn,
@@ -40,7 +43,6 @@ import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpe
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check, Power } from "lucide-react";
 import {
-  parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
   useQueryStates,
@@ -103,6 +105,9 @@ export interface PersonaProps {
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
+  patchPersonaDraftAction?: (
+    input: PatchPersonaDraftIn
+  ) => Promise<PatchPersonaDraftOut>;
 }
 
 function PersonaComponent({
@@ -112,11 +117,26 @@ function PersonaComponent({
   personaDetailDefault: serverPersonaDetailDefault,
   createPersonaAction,
   updatePersonaAction,
+  patchPersonaDraftAction,
 }: PersonaProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isEditMode = mode === "edit" && !!personaId;
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+
+  // Get draftId from URL and sync with profile context
+  const urlDraftId = searchParams.get("draftId");
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
@@ -353,18 +373,8 @@ function PersonaComponent({
     return {};
   }, [personaData]);
 
-  // Inline parsers for URL-backed state (client-side only - no server-side parsing needed)
+  // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
   const personaSearchParamsClient = {
-    name: parseAsString,
-    description: parseAsString,
-    color: parseAsString,
-    icon: parseAsString,
-    instructions: parseAsString,
-    active: parseAsBoolean,
-    departmentIds: parseAsArrayOf(parseAsString),
-    parameterIds: parseAsArrayOf(parseAsString),
-    parameterFieldIds: parseAsArrayOf(parseAsString),
-    examples: parseAsArrayOf(parseAsString),
     // Search params (URL-backed, updated via debounced callback in StepCard)
     colorSearch: parseAsString,
     iconSearch: parseAsString,
@@ -373,11 +383,161 @@ function PersonaComponent({
     iconShowSelected: parseAsBoolean,
   } as const;
 
-  // URL-backed state using nuqs (shared with GenericForm to avoid duplicate useQueryStates calls)
-  const [formData, setFormData] = useQueryStates(personaSearchParamsClient, {
+  // URL-backed state using nuqs (only navigation/search params)
+  const [urlParams, setUrlParams] = useQueryStates(personaSearchParamsClient, {
     history: "replace",
     shallow: false,
   });
+
+  // Local draft state (not in URL) - initialized from server data or draft payload
+  type DraftState = {
+    name: string;
+    description: string;
+    instructions: string;
+    color: string;
+    icon: string;
+    active: boolean;
+    departmentIds: string[];
+    parameterIds: string[];
+    parameterFieldIds: string[];
+    examples: string[];
+  };
+
+  // Initialize draft state from server data or draft payload
+  const initialDraftState = useMemo((): DraftState => {
+    const data = isEditMode ? serverPersonaDetail : serverPersonaDetailDefault;
+    if (!data) {
+      return {
+        name: "",
+        description: "",
+        instructions: "",
+        color: "#3B82F6",
+        icon: "Sparkles",
+        active: true,
+        departmentIds: [],
+        parameterIds: [],
+        parameterFieldIds: [],
+        examples: [],
+      };
+    }
+
+    // If draftId exists, server should have merged draft payload into data
+    // Otherwise, use server defaults
+    return {
+      name: data.name || "",
+      description: data.description || "",
+      instructions: data.instructions || "",
+      color: data.color || "#3B82F6",
+      icon: data.icon || "Sparkles",
+      active: data.active ?? true,
+      departmentIds: data.department_ids || [],
+      parameterIds: [],
+      parameterFieldIds: [],
+      examples: [],
+    };
+  }, [isEditMode, serverPersonaDetail, serverPersonaDetailDefault]);
+
+  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+  // Update draft state when server data changes (e.g., draft selected)
+  useEffect(() => {
+    setDraftState(initialDraftState);
+  }, [initialDraftState]);
+
+  // Integrate autosave hook
+  const {
+    saveStatus: _saveStatus,
+    saveNow: _saveNow,
+    lastSavedVersion: _lastSavedVersion,
+  } = useDraftAutosave({
+    draftId,
+    draftState,
+    patchDraftAction: patchPersonaDraftAction
+      ? async (input) => {
+          // Transform input to match API structure (API uses p_draft_id, p_patch, p_expected_version)
+          // Note: p_profile_id is added server-side from header
+          const result = await patchPersonaDraftAction({
+            body: {
+              p_draft_id: input.body.draft_id || null,
+              p_patch: input.body.patch as Record<string, unknown>,
+              p_expected_version: input.body.expected_version,
+            } as PatchPersonaDraftIn["body"],
+          });
+          // Transform response to match hook expectations (API returns draft_id, new_version, draft_exists)
+          return {
+            draftId: result.draft_id || "",
+            newVersion: result.new_version || 0,
+            draftExists: result.draft_exists || false,
+          };
+        }
+      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    debounceMs: 1000,
+    onDraftCreated: (newDraftId) => {
+      // Update URL with new draftId
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("draftId", newDraftId);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+  });
+
+  // Merge draftState with urlParams for formData (GenericForm expects single formData object)
+  const formData = useMemo(() => {
+    return {
+      ...draftState,
+      colorSearch: urlParams.colorSearch || null,
+      iconSearch: urlParams.iconSearch || null,
+      colorShowSelected: urlParams.colorShowSelected || null,
+      iconShowSelected: urlParams.iconShowSelected || null,
+    } as Record<string, unknown>;
+  }, [draftState, urlParams]);
+
+  // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
+  const setFormData = useCallback(
+    (
+      updates:
+        | Partial<Record<string, unknown>>
+        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
+    ) => {
+      // Handle function form
+      const resolvedUpdates =
+        typeof updates === "function" ? updates(formData) : updates;
+
+      const draftUpdates: Partial<DraftState> = {};
+      const urlUpdates: Partial<Record<string, unknown>> = {};
+
+      Object.entries(resolvedUpdates).forEach(([key, value]) => {
+        if (
+          key === "name" ||
+          key === "description" ||
+          key === "instructions" ||
+          key === "color" ||
+          key === "icon" ||
+          key === "active" ||
+          key === "departmentIds" ||
+          key === "parameterIds" ||
+          key === "parameterFieldIds" ||
+          key === "examples"
+        ) {
+          draftUpdates[key as keyof DraftState] = value as never;
+        } else if (
+          key === "colorSearch" ||
+          key === "iconSearch" ||
+          key === "colorShowSelected" ||
+          key === "iconShowSelected"
+        ) {
+          urlUpdates[key] = value;
+        }
+      });
+
+      if (Object.keys(draftUpdates).length > 0) {
+        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
+      }
+      if (Object.keys(urlUpdates).length > 0) {
+        setUrlParams(urlUpdates as Parameters<typeof setUrlParams>[0]);
+      }
+    },
+    [formData, setUrlParams]
+  );
 
   // Get preset colors and valid icons from server (all colors/icons, filtered client-side)
   // Server returns colors as list of objects: [{hex: "#ef4444", name: "Red"}, ...]
@@ -398,11 +558,9 @@ function PersonaComponent({
   }, [personaData]);
 
   // Extract specific form values to avoid re-renders when formData object reference changes
-  const colorValue = formData["color"] as string | null | undefined;
-  const colorSearch =
-    (formData["colorSearch"] as string | null | undefined) || "";
-  const iconSearch =
-    (formData["iconSearch"] as string | null | undefined) || "";
+  const colorValue = draftState.color;
+  const colorSearch = urlParams.colorSearch || "";
+  const iconSearch = urlParams.iconSearch || "";
 
   // Filter colors client-side based on search state from URL
   // Also include custom colors that aren't in the preset list
@@ -663,20 +821,19 @@ function PersonaComponent({
       const exampleIds = exampleIdsRaw.map((id) => String(id));
       const examples = getExamplesFromMapping(exampleIds, exampleMapping);
 
-      // Only set fields that have values (don't write nulls/empty strings to URL)
-      const updates: Partial<
-        Record<keyof typeof personaSearchParamsClient, unknown>
-      > = {};
-      if (personaDetail.name) updates["name"] = personaDetail.name;
+      // Update draftState directly (form fields are now in local state, not URL)
+      const draftUpdates: Partial<DraftState> = {};
+
+      if (personaDetail.name) draftUpdates.name = personaDetail.name;
       if (personaDetail.description)
-        updates["description"] = personaDetail.description;
+        draftUpdates.description = personaDetail.description;
       if (personaDetail.instructions)
-        updates["instructions"] = personaDetail.instructions;
-      if (personaDetail.color) updates["color"] = personaDetail.color;
-      if (personaDetail.icon) updates["icon"] = personaDetail.icon;
+        draftUpdates.instructions = personaDetail.instructions;
+      if (personaDetail.color) draftUpdates.color = personaDetail.color;
+      if (personaDetail.icon) draftUpdates.icon = personaDetail.icon;
       if (personaDetail.active !== undefined)
-        updates["active"] = personaDetail.active;
-      if (deptIds.length > 0) updates["departmentIds"] = deptIds;
+        draftUpdates.active = personaDetail.active ?? true;
+      if (deptIds.length > 0) draftUpdates.departmentIds = deptIds;
       if (
         (
           personaDetail as PersonaDetailOut & {
@@ -689,7 +846,7 @@ function PersonaComponent({
           }
         ).linked_parameter_ids!.length > 0
       ) {
-        updates["parameterIds"] = (
+        draftUpdates.parameterIds = (
           personaDetail as PersonaDetailOut & {
             linked_parameter_ids?: string[];
           }
@@ -704,15 +861,21 @@ function PersonaComponent({
           }
         ).parameter_field_ids!.length > 0
       ) {
-        updates["parameterFieldIds"] = (
+        draftUpdates.parameterFieldIds = (
           personaDetail as PersonaDetailOut & {
             parameter_field_ids?: string[];
           }
         ).parameter_field_ids!;
       }
-      if (examples.length > 0) updates["examples"] = examples;
+      if (examples.length > 0) draftUpdates.examples = examples;
 
-      return updates;
+      // Apply updates to draftState
+      if (Object.keys(draftUpdates).length > 0) {
+        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
+      }
+
+      // Return empty object for GenericForm compatibility (form fields are handled via draftState)
+      return {};
     },
     [exampleMapping, getExamplesFromMapping]
   );
@@ -735,20 +898,20 @@ function PersonaComponent({
     clearEntityMetadata,
   ]);
 
-  // Submit handler for GenericForm
+  // Submit handler for GenericForm (uses draftState, not formData parameter)
   const handleSubmit = useCallback(
-    async (formData: Record<string, unknown>) => {
-      if (!formData["name"]) {
+    async (_formData: Record<string, unknown>) => {
+      if (!draftState.name) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
 
-      if (!formData["description"]) {
+      if (!draftState.description) {
         toast.error("Persona description is required");
         throw new Error("Persona description is required");
       }
 
-      if (!formData["instructions"]) {
+      if (!draftState.instructions) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
       }
@@ -756,7 +919,7 @@ function PersonaComponent({
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
       const finalDepartmentIds =
         transformDepartmentIdsForSubmit(
-          (formData["departmentIds"] as string[] | null | undefined) || [],
+          draftState.departmentIds || [],
           isSuperadmin,
           (
             personaData as PersonaDetailOut & {
@@ -772,32 +935,20 @@ function PersonaComponent({
       }
 
       if (isEditMode) {
-        const nameValue = formData["name"] as string | null | undefined;
-        const description = formData["description"] as
-          | string
-          | null
-          | undefined;
-        const instructions = formData["instructions"] as
-          | string
-          | null
-          | undefined;
-        if (!nameValue || !updatePersonaAction) {
-          toast.error("Persona name is required");
-          throw new Error("Persona name is required");
+        if (!updatePersonaAction) {
+          toast.error("Update action not available");
+          throw new Error("Update action not available");
         }
-        // After null check, nameValue is guaranteed to be string
         try {
           await updatePersonaAction({
             body: {
               persona_id: personaId!,
-              name: nameValue,
-              description: description || "",
-              instructions: instructions || "",
-              color:
-                (formData["color"] as string | null | undefined) || "#000000",
-              icon: (formData["icon"] as string | null | undefined) || "Zap",
-              active:
-                (formData["active"] as boolean | null | undefined) ?? true,
+              name: draftState.name,
+              description: draftState.description || "",
+              instructions: draftState.instructions || "",
+              color: draftState.color || "#000000",
+              icon: draftState.icon || "Zap",
+              active: draftState.active ?? true,
               department_ids: finalDepartmentIds,
               example_ids: [],
             },
@@ -811,36 +962,23 @@ function PersonaComponent({
           throw error;
         }
       } else {
-        const nameValue = formData["name"] as string | null | undefined;
-        const description = formData["description"] as
-          | string
-          | null
-          | undefined;
-        const instructions = formData["instructions"] as
-          | string
-          | null
-          | undefined;
-        if (!nameValue || !createPersonaAction) {
-          toast.error("Persona name is required");
-          throw new Error("Persona name is required");
+        if (!createPersonaAction) {
+          toast.error("Create action not available");
+          throw new Error("Create action not available");
         }
-        // TypeScript type narrowing - nameValue is guaranteed to be string after check
-        const name: string = nameValue; // Explicit type annotation helps TypeScript
         try {
           await createPersonaAction({
             body: {
-              name,
-              description: description || "",
-              instructions: instructions || "",
-              color:
-                (formData["color"] as string | null | undefined) || "#000000",
-              icon: (formData["icon"] as string | null | undefined) || "Zap",
-              active:
-                (formData["active"] as boolean | null | undefined) ?? true,
+              name: draftState.name,
+              description: draftState.description || "",
+              instructions: draftState.instructions || "",
+              color: draftState.color || "#000000",
+              icon: draftState.icon || "Zap",
+              active: draftState.active ?? true,
               department_ids: finalDepartmentIds,
-              example_ids: (
-                (formData["examples"] as string[] | null | undefined) || []
-              ).filter((ex: string) => ex.trim()),
+              example_ids: (draftState.examples || []).filter((ex: string) =>
+                ex.trim()
+              ),
             },
           });
           toast.success("Persona created successfully!");
@@ -854,6 +992,7 @@ function PersonaComponent({
       }
     },
     [
+      draftState,
       isEditMode,
       personaId,
       isSuperadmin,

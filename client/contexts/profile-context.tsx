@@ -52,6 +52,7 @@ export type CohortItem = NonNullable<LayoutContextResponse["cohorts"]>[number];
 export type SimulationContextItem = NonNullable<
   LayoutContextResponse["simulations"]
 >[number];
+export type DraftItem = NonNullable<LayoutContextResponse["drafts"]>[number];
 
 // Note: With server-side access control, users without valid sessions won't reach pages
 // (they see UnifiedAccessDenied). However, we handle null profiles gracefully for
@@ -94,6 +95,11 @@ interface ProfileContextType {
   // The layout-server.tsx transforms these into a nested SettingsActiveClient object
   // Currently not used in profile context, but available for future use
   settings: SettingsActiveClient | null;
+
+  // Drafts data (from server)
+  drafts: DraftItem[];
+  selectedDraftId: string | null;
+  setSelectedDraftId: (id: string | null) => void;
 
   // WebSocket connection (tied to profile)
   socket: Socket | null;
@@ -151,6 +157,9 @@ export function ProfileProviderClient({
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
     []
   );
+
+  // Draft state
+  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
 
   // Handle null initial (access denied case) - with server-side access control,
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
@@ -496,6 +505,11 @@ export function ProfileProviderClient({
     // The layout-server.tsx transforms these into a nested SettingsActiveClient object
     // Currently not used in profile context, but available for future use
     settings: null,
+
+    // Drafts data (from server) - handle null initial gracefully
+    drafts: initial?.drafts ?? [],
+    selectedDraftId,
+    setSelectedDraftId,
 
     // WebSocket connection (tied to profile)
     socket: socketRef.current,

@@ -628,6 +628,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/personas/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Persona Draft
+         * @description Patch persona draft (creates if not exists).
+         */
+        patch: operations["patch_persona_draft_api_v4_personas_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/auth/list": {
         parameters: {
             query?: never;
@@ -11582,6 +11602,8 @@ export interface components {
             current_color?: string | null;
             /** Current Icon */
             current_icon?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetPersonaDetailApiResponse */
         GetPersonaDetailApiResponse: {
@@ -11660,6 +11682,8 @@ export interface components {
             current_color?: string | null;
             /** Current Icon */
             current_icon?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetPersonaNewApiResponse */
         GetPersonaNewApiResponse: {
@@ -12121,6 +12145,8 @@ export interface components {
             cohort_ids?: string[] | null;
             /** Simulation Ids */
             simulation_ids?: string[] | null;
+            /** Drafts */
+            drafts?: components["schemas"]["QGetProfileContextV4Draft"][] | null;
             settings_tokens?: components["schemas"]["QGetProfileContextV4ThemeTokens"] | null;
             /** Actor Name */
             actor_name?: string | null;
@@ -13695,6 +13721,34 @@ export interface components {
             trace_id: string;
             /** Message */
             message?: string | null;
+        };
+        /** PatchPersonaDraftApiRequest */
+        PatchPersonaDraftApiRequest: {
+            /**
+             * P Draft Id
+             * Format: uuid
+             */
+            p_draft_id: string;
+            /**
+             * P Profile Id
+             * Format: uuid
+             */
+            p_profile_id: string;
+            /** P Patch */
+            p_patch: {
+                [key: string]: unknown;
+            };
+            /** P Expected Version */
+            p_expected_version: number;
+        };
+        /** PatchPersonaDraftApiResponse */
+        PatchPersonaDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
         };
         /**
          * PersonaTool
@@ -16718,6 +16772,21 @@ export interface components {
             active: boolean | null;
             /** Is Primary */
             is_primary: boolean | null;
+        };
+        /** QGetProfileContextV4Draft */
+        QGetProfileContextV4Draft: {
+            /** Id */
+            id: string | null;
+            /** Resource Type */
+            resource_type: string | null;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            } | null;
+            /** Version */
+            version: number | null;
+            /** Updated At */
+            updated_at: string | null;
         };
         /** QGetProfileContextV4Provider */
         QGetProfileContextV4Provider: {
@@ -23134,6 +23203,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePersonaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_persona_draft_api_v4_personas_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchPersonaDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchPersonaDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

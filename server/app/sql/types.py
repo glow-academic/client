@@ -11631,6 +11631,7 @@ class GetPersonaDetailSqlParams(BaseModel):
     icon_show_selected: bool | None = None
     current_color: str | None = None
     current_icon: str | None = None
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11642,6 +11643,7 @@ class GetPersonaDetailSqlParams(BaseModel):
             self.icon_show_selected,
             self.current_color,
             self.current_icon,
+            self.draft_id,
         )
 
 class QGetPersonaDetailV4Agent(BaseModel):
@@ -11752,6 +11754,7 @@ class GetPersonaDetailApiRequest(BaseModel):
     icon_show_selected: bool | None = None
     current_color: str | None = None
     current_icon: str | None = None
+    draft_id: UUID | None = None
 
 class GetPersonaDetailApiResponse(BaseModel):
 
@@ -11799,6 +11802,7 @@ class GetPersonaNewSqlParams(BaseModel):
     icon_show_selected: bool | None = None
     current_color: str | None = None
     current_icon: str | None = None
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11809,6 +11813,7 @@ class GetPersonaNewSqlParams(BaseModel):
             self.icon_show_selected,
             self.current_color,
             self.current_icon,
+            self.draft_id,
         )
 
 class QGetPersonaNewV4Agent(BaseModel):
@@ -11897,6 +11902,7 @@ class GetPersonaNewApiRequest(BaseModel):
     icon_show_selected: bool | None = None
     current_color: str | None = None
     current_icon: str | None = None
+    draft_id: UUID | None = None
 
 class GetPersonaNewApiResponse(BaseModel):
 
@@ -12015,6 +12021,44 @@ class GetPersonasListApiResponse(BaseModel):
     scenarios: list[QListPersonasV4Scenario] | None = None
     agents: list[QListPersonasV4Agent] | None = None
     departments: list[QListPersonasV4Department] | None = None
+
+
+
+# Generated from: patch_persona_draft
+
+class PatchPersonaDraftSqlParams(BaseModel):
+
+    p_draft_id: UUID
+    p_profile_id: UUID
+    p_patch: dict[str, Any]
+    p_expected_version: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_draft_id,
+            self.p_profile_id,
+            self.p_patch,
+            self.p_expected_version,
+        )
+
+class PatchPersonaDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchPersonaDraftApiRequest(BaseModel):
+
+    p_draft_id: UUID
+    p_profile_id: UUID
+    p_patch: dict[str, Any]
+    p_expected_version: int
+
+class PatchPersonaDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -13079,6 +13123,17 @@ class QGetProfileContextV4Department(BaseModel):
 
 
 
+class QGetProfileContextV4Draft(BaseModel):
+
+    id: UUID | None
+    resource_type: str | None
+    payload: dict[str, Any] | None
+    version: int | None
+    updated_at: str | None
+
+
+
+
 class QGetProfileContextV4Provider(BaseModel):
 
     provider_id: UUID | None
@@ -13216,6 +13271,7 @@ class GetProfileContextSqlRow(BaseModel):
     department_ids: list[str] | None = None
     cohort_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
+    drafts: list[QGetProfileContextV4Draft] | None = None
     settings_tokens: QGetProfileContextV4ThemeTokens | None = None
     actor_name: str | None = None
 
@@ -13300,6 +13356,7 @@ class GetProfileContextApiResponse(BaseModel):
     department_ids: list[str] | None = None
     cohort_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
+    drafts: list[QGetProfileContextV4Draft] | None = None
     settings_tokens: QGetProfileContextV4ThemeTokens | None = None
     actor_name: str | None = None
 
@@ -22209,6 +22266,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonasListApiRequest",
         "GetPersonasListApiResponse",
     ),
+    "app/sql/v4/personas/patch_persona_draft_complete.sql": (
+        "PatchPersonaDraftSqlParams",
+        "PatchPersonaDraftSqlRow",
+        "PatchPersonaDraftApiRequest",
+        "PatchPersonaDraftApiResponse",
+    ),
     "app/sql/v4/personas/update_persona_complete.sql": (
         "UpdatePersonaSqlParams",
         "UpdatePersonaSqlRow",
@@ -23780,6 +23843,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/get_personas_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/patch_persona_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

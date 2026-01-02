@@ -21,6 +21,8 @@ type CreatePersonaIn = InputOf<"/api/v4/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v4/personas/create", "post">;
 type UpdatePersonaIn = InputOf<"/api/v4/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/api/v4/personas/update", "post">;
+type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -86,6 +88,14 @@ async function updatePersona(
   return api.post("/personas/update", input);
 }
 
+async function patchPersonaDraft(
+  input: PatchPersonaDraftIn
+): Promise<PatchPersonaDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/personas/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function PersonaEditPage({
   params,
@@ -112,6 +122,7 @@ export default async function PersonaEditPage({
 
   // Inline server-side parsers for persona search params
   const personaSearchParams = {
+    draftId: parseAsString,
     colorSearch: parseAsString,
     iconSearch: parseAsString,
     colorShowSelected: parseAsBoolean,
@@ -128,6 +139,7 @@ export default async function PersonaEditPage({
     const input: PersonaDetailIn = {
       body: {
         persona_id: personaId,
+        draft_id: q.draftId ?? null,
         color_search: q.colorSearch ?? null,
         icon_search: q.iconSearch ?? null,
         color_show_selected: q.colorShowSelected ?? null,
@@ -150,6 +162,7 @@ export default async function PersonaEditPage({
           personaDetail={personaDetail}
           createPersonaAction={createPersona}
           updatePersonaAction={updatePersona}
+          patchPersonaDraftAction={patchPersonaDraft}
         />
       </div>
     );
@@ -182,6 +195,8 @@ export type {
   PersonaDetailOut,
   PersonaNewIn,
   PersonaNewOut,
+  PatchPersonaDraftIn,
+  PatchPersonaDraftOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
 };

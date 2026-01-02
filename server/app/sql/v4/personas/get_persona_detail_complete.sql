@@ -94,7 +94,8 @@ CREATE OR REPLACE FUNCTION api_get_persona_detail_v4(
     color_show_selected boolean DEFAULT NULL,
     icon_show_selected boolean DEFAULT NULL,
     current_color text DEFAULT NULL,
-    current_icon text DEFAULT NULL
+    current_icon text DEFAULT NULL,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     persona_exists boolean,
@@ -140,7 +141,18 @@ WITH params AS (
         COALESCE(color_show_selected, false) AS color_show_selected,
         COALESCE(icon_show_selected, false) AS icon_show_selected,
         current_color AS current_color,
-        current_icon AS current_icon
+        current_icon AS current_icon,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'personas'::draft_resource_type
+    LIMIT 1
 ),
 persona_exists_check AS (
     SELECT EXISTS(
@@ -451,13 +463,41 @@ valid_icons_filtered AS (
 )
 SELECT 
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
-    pd.name,
-    pd.description,
-    pd.department_ids,
-    pd.active,
-    pd.color,
-    pd.icon,
-    pd.instructions,
+    -- Merge draft payload over existing persona data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        pd.name
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        pd.description
+    ) as description,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        pd.department_ids
+    ) as department_ids,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        pd.active
+    ) as active,
+    COALESCE(
+        (SELECT payload->>'color' FROM draft_payload_data),
+        pd.color
+    ) as color,
+    COALESCE(
+        (SELECT payload->>'icon' FROM draft_payload_data),
+        pd.icon
+    ) as icon,
+    COALESCE(
+        (SELECT payload->>'instructions' FROM draft_payload_data),
+        pd.instructions
+    ) as instructions,
     CASE WHEN COALESCE(ud.usage_count, 0) > 0 THEN true ELSE false END as in_use,
     COALESCE(ud.usage_count, 0) as scenario_count,
     perm.can_edit,

@@ -82,7 +82,8 @@ CREATE OR REPLACE FUNCTION api_get_persona_new_v4(
     color_show_selected boolean DEFAULT NULL,
     icon_show_selected boolean DEFAULT NULL,
     current_color text DEFAULT NULL,
-    current_icon text DEFAULT NULL
+    current_icon text DEFAULT NULL,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
@@ -123,7 +124,18 @@ WITH params AS (
         COALESCE(color_show_selected, false) AS color_show_selected,
         COALESCE(icon_show_selected, false) AS icon_show_selected,
         current_color AS current_color,
-        current_icon AS current_icon
+        current_icon AS current_icon,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'personas'::draft_resource_type
+    LIMIT 1
 ),
 user_profile AS (
     SELECT 
@@ -338,17 +350,44 @@ SELECT
         (SELECT ARRAY_AGG(vif.icon_name ORDER BY vif.icon_name) FROM valid_icons_filtered vif),
         '{}'::text[]
     ) as valid_icons,
-    -- Default values for new persona
-    ''::text as name,
-    ''::text as description,
-    CASE 
-        WHEN up.user_role = 'superadmin' THEN NULL::uuid[]
-        ELSE COALESCE(ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
-    END as department_ids,
-    true::boolean as active,
-    '#3B82F6'::text as color,
-    'Sparkles'::text as icon,
-    ''::text as instructions,
+    -- Default values for new persona (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        ''::text
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''::text
+    ) as description,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        CASE 
+            WHEN up.user_role = 'superadmin' THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
+        END
+    ) as department_ids,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true::boolean
+    ) as active,
+    COALESCE(
+        (SELECT payload->>'color' FROM draft_payload_data),
+        '#3B82F6'::text
+    ) as color,
+    COALESCE(
+        (SELECT payload->>'icon' FROM draft_payload_data),
+        'Sparkles'::text
+    ) as icon,
+    COALESCE(
+        (SELECT payload->>'instructions' FROM draft_payload_data),
+        ''::text
+    ) as instructions,
     false::boolean as in_use,
     0::int as scenario_count,
     -- can_edit: true for superadmin, or if default_department_ids is not empty

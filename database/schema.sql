@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 19zYn130W12h5aRoY5cv6WGeapNkVHlSXcE2c8yAElw8RIo6yI7ez95dk56NWHW
+\restrict 2DfNWBZJJ76Trr6qEshOgiM4HvzYg5heMYTIkoAG5MdfmJ4EJFiWeglFJk3hwx8
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -79,6 +79,33 @@ CREATE TYPE public.agent_role AS ENUM (
     'audio',
     'member',
     'rubric'
+);
+
+
+--
+-- Name: draft_resource_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.draft_resource_type AS ENUM (
+    'cohorts',
+    'simulations',
+    'scenarios',
+    'personas',
+    'staff',
+    'documents',
+    'parameters',
+    'fields',
+    'agents',
+    'models',
+    'rubrics',
+    'evals',
+    'departments',
+    'providers',
+    'auth',
+    'keys',
+    'practice',
+    'benchmark',
+    'settings'
 );
 
 
@@ -358,6 +385,64 @@ BEGIN
     )::text
   );
   RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: api_patch_persona_draft_v4(uuid, uuid, jsonb, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.api_patch_persona_draft_v4(p_draft_id uuid, p_profile_id uuid, p_patch jsonb, p_expected_version integer) RETURNS TABLE(draft_id uuid, new_version integer, draft_exists boolean)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_draft_id uuid;
+    v_new_version int;
+BEGIN
+    -- If draft_id provided, try to patch existing draft
+    IF p_draft_id IS NOT NULL THEN
+        UPDATE drafts
+        SET
+            payload = drafts.payload || p_patch,
+            version = drafts.version + 1,
+            updated_at = now()
+        WHERE
+            drafts.id = p_draft_id
+            AND drafts.profile_id = p_profile_id
+            AND drafts.version = p_expected_version
+        RETURNING drafts.id, drafts.version INTO v_draft_id, v_new_version;
+        
+        -- If update succeeded, return result
+        IF v_draft_id IS NOT NULL THEN
+            RETURN QUERY SELECT v_draft_id, v_new_version, true;
+            RETURN;
+        END IF;
+    END IF;
+    
+    -- If no draft_id or update failed (version mismatch), create new draft
+    WITH defaults AS (
+        SELECT jsonb_build_object(
+            'name', '',
+            'description', '',
+            'active', true,
+            'color', '#3B82F6',
+            'icon', 'Sparkles',
+            'instructions', '',
+            'department_ids', jsonb_build_array(),
+            'example_ids', jsonb_build_array()
+        ) AS d
+    ),
+    payload AS (
+        SELECT (d || p_patch) AS p
+        FROM defaults
+    )
+    INSERT INTO drafts(resource_type, profile_id, payload)
+    SELECT 'personas'::draft_resource_type, p_profile_id, p
+    FROM payload
+    RETURNING id, version INTO v_draft_id, v_new_version;
+    
+    RETURN QUERY SELECT v_draft_id, v_new_version, false;
 END;
 $$;
 
@@ -977,6 +1062,21 @@ CREATE TABLE public.documents (
     id uuid DEFAULT uuidv7() CONSTRAINT documents_id_v7_not_null NOT NULL,
     document_agent_id uuid,
     classify_agent_id uuid
+);
+
+
+--
+-- Name: drafts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.drafts (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    resource_type public.draft_resource_type NOT NULL,
+    profile_id uuid NOT NULL,
+    payload jsonb DEFAULT '{}'::jsonb NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -3086,6 +3186,14 @@ ALTER TABLE ONLY public.documents
 
 
 --
+-- Name: drafts drafts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.drafts
+    ADD CONSTRAINT drafts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: eval_agents eval_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4882,6 +4990,13 @@ CREATE INDEX idx_cohort_profiles_active ON public.cohort_profiles USING btree (a
 --
 
 CREATE INDEX idx_cohort_simulations_active ON public.cohort_simulations USING btree (active) WHERE (active = true);
+
+
+--
+-- Name: idx_drafts_profile_resource; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_drafts_profile_resource ON public.drafts USING btree (profile_id, resource_type);
 
 
 --
@@ -7205,6 +7320,14 @@ ALTER TABLE ONLY public.documents
 
 
 --
+-- Name: drafts drafts_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.drafts
+    ADD CONSTRAINT drafts_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id);
+
+
+--
 -- Name: eval_agents eval_agents_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8816,5 +8939,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 19zYn130W12h5aRoY5cv6WGeapNkVHlSXcE2c8yAElw8RIo6yI7ez95dk56NWHW
+\unrestrict 2DfNWBZJJ76Trr6qEshOgiM4HvzYg5heMYTIkoAG5MdfmJ4EJFiWeglFJk3hwx8
 

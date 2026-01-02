@@ -11,7 +11,6 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import {
   createLoader,
-  parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
 } from "nuqs/server";
@@ -21,6 +20,8 @@ type PersonaNewIn = InputOf<"/api/v4/personas/new", "post">;
 type PersonaNewOut = OutputOf<"/api/v4/personas/new", "post">;
 type CreatePersonaIn = InputOf<"/api/v4/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v4/personas/create", "post">;
+type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -44,6 +45,14 @@ async function createPersona(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/personas/create", input);
+}
+
+async function patchPersonaDraft(
+  input: PatchPersonaDraftIn
+): Promise<PatchPersonaDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/personas/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -74,19 +83,9 @@ export default async function NewPersonaPage({
     }
   });
 
-  // Inline server-side parsers for persona search params (matches client-side parsers)
+  // Inline server-side parsers for persona search params (navigation/search params only)
   const personaSearchParams = {
-    // Form fields (read from URL if present)
-    name: parseAsString,
-    description: parseAsString,
-    color: parseAsString,
-    icon: parseAsString,
-    instructions: parseAsString,
-    active: parseAsBoolean,
-    departmentIds: parseAsArrayOf(parseAsString),
-    parameterIds: parseAsArrayOf(parseAsString),
-    parameterFieldIds: parseAsArrayOf(parseAsString),
-    examples: parseAsArrayOf(parseAsString),
+    draftId: parseAsString,
     // Search/filter params
     colorSearch: parseAsString,
     iconSearch: parseAsString,
@@ -98,28 +97,20 @@ export default async function NewPersonaPage({
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
 
-  // Fetch default persona detail server-side with filter params
+  // Fetch default persona detail server-side with filter params and draft_id
   // Note: OpenAPI schema needs regeneration to include new filter params
-  const input = {
+  const input: PersonaNewIn = {
     body: {
+      draft_id: q.draftId ?? null,
       color_search: q.colorSearch ?? null,
       icon_search: q.iconSearch ?? null,
       color_show_selected: q.colorShowSelected ?? null,
       icon_show_selected: q.iconShowSelected ?? null,
       current_color: q.color ?? null,
       current_icon: q.icon ?? null,
-    },
-  } as unknown as PersonaNewIn;
-  const personaDetailDefaultRaw = await getPersonaDefault(input);
-
-  // Override API defaults with URL params if present (URL params take precedence)
-  // Create a new object to avoid mutating the read-only response
-  const personaDetailDefault = {
-    ...personaDetailDefaultRaw,
-    ...(q.color && { color: q.color }),
-    ...(q.icon && { icon: q.icon }),
-    ...(q.active !== null && q.active !== undefined && { active: q.active }),
+    } as PersonaNewIn["body"],
   };
+  const personaDetailDefault = await getPersonaDefault(input);
 
   return (
     <div
@@ -131,10 +122,18 @@ export default async function NewPersonaPage({
         mode="create"
         personaDetailDefault={personaDetailDefault}
         createPersonaAction={createPersona}
+        patchPersonaDraftAction={patchPersonaDraft}
       />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { CreatePersonaIn, CreatePersonaOut, PersonaNewIn, PersonaNewOut };
+export type {
+  CreatePersonaIn,
+  CreatePersonaOut,
+  PatchPersonaDraftIn,
+  PatchPersonaDraftOut,
+  PersonaNewIn,
+  PersonaNewOut,
+};
