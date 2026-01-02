@@ -23,13 +23,13 @@ END $$;
 CREATE OR REPLACE FUNCTION api_insert_document_v4(
     document_id uuid,
     name text,
+    profile_id uuid,
     description text DEFAULT NULL,
     upload_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     field_ids uuid[] DEFAULT ARRAY[]::uuid[],
     template_upload_id uuid DEFAULT NULL,
-    template_args jsonb DEFAULT NULL,
-    profile_id uuid
+    template_args jsonb DEFAULT NULL
 )
 RETURNS TABLE (
     document_id text,

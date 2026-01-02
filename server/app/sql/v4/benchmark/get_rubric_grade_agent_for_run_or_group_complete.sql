@@ -23,9 +23,9 @@ END $$;
 -- Recreate function
 CREATE OR REPLACE FUNCTION api_get_rubric_grade_agent_for_run_or_group_v4(
     eval_id uuid,
+    use_groups boolean,
     run_id uuid DEFAULT NULL,
-    group_id uuid DEFAULT NULL,
-    use_groups boolean
+    group_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     rubric_grade_agent_id uuid

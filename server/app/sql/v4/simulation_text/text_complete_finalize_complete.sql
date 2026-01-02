@@ -1,27 +1,30 @@
--- Finalize message and tool call
--- Parameters:
---   $1=chat_id (uuid)
---   $2=run_id (uuid)
---   $3=tool_call_id (uuid, nullable - if provided, finalize tool call)
---   $4=call_id (text, nullable - for tool call identification)
---   $5=message_id (uuid, nullable - if provided, finalize this message; otherwise get from tool_call)
---   $6=final_content (text - final message content)
---   $7=persona_id (uuid, nullable - for persona linking)
--- Returns: message_id (uuid as text), final_content (text), completed (boolean)
---
--- This function:
--- 1. Finalizes tool call (marks as completed, updates arguments)
--- 2. Finalizes message (marks as completed, updates final content)
--- 3. Links message to persona if provided
+BEGIN;
+DROP FUNCTION IF EXISTS api_text_complete_finalize_v4(uuid, uuid, uuid, text, uuid, text, uuid);
+CREATE OR REPLACE FUNCTION api_text_complete_finalize_v4(
+    chat_id uuid,
+    run_id uuid,
+    tool_call_id uuid,
+    call_id text,
+    message_id uuid,
+    final_content text,
+    persona_id uuid
+)
+RETURNS TABLE (
+    message_id text,
+    final_content text,
+    completed boolean
+)
+LANGUAGE sql
+AS $$
 WITH params AS (
     SELECT 
-        $1::uuid as chat_id,
-        $2::uuid as run_id,
-        $3::uuid as tool_call_id,
-        $4::text as call_id,
-        $5::uuid as message_id,
-        $6::text as final_content,
-        $7::uuid as persona_id
+        api_text_complete_finalize_v4.chat_id as chat_id,
+        api_text_complete_finalize_v4.run_id as run_id,
+        api_text_complete_finalize_v4.tool_call_id as tool_call_id,
+        api_text_complete_finalize_v4.call_id as call_id,
+        api_text_complete_finalize_v4.message_id as message_id,
+        api_text_complete_finalize_v4.final_content as final_content,
+        api_text_complete_finalize_v4.persona_id as persona_id
 ),
 -- Get tool call if tool_call_id or call_id provided
 get_tool_call AS (
@@ -99,4 +102,6 @@ SELECT
     (SELECT message_id FROM selected_message LIMIT 1)::text as message_id,
     (SELECT final_content FROM params LIMIT 1) as final_content,
     (SELECT completed FROM complete_message LIMIT 1) as completed
+$$;
+COMMIT;
 

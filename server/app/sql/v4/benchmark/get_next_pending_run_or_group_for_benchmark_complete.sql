@@ -65,7 +65,10 @@ next_group AS (
     FROM eval_groups eg
     CROSS JOIN attempt_data ad
     WHERE eg.eval_id = ad.eval_id 
-      AND eg.completed = false
+      AND NOT EXISTS (
+          SELECT 1 FROM grade_groups gg 
+          WHERE gg.group_id = eg.group_id
+      )
       AND use_groups = true
     ORDER BY eg.created_at ASC
     LIMIT 1

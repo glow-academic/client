@@ -36,11 +36,11 @@ LANGUAGE sql
 VOLATILE
 AS $$
 INSERT INTO document_tree (parent_id, child_id, active, created_at, updated_at)
-VALUES (parent_id, child_id, active, NOW(), NOW())
+VALUES (api_insert_document_tree_v4.parent_id, api_insert_document_tree_v4.child_id, api_insert_document_tree_v4.active, NOW(), NOW())
 ON CONFLICT (parent_id, child_id) DO UPDATE SET
     active = EXCLUDED.active,
     updated_at = NOW()
-RETURNING *
+RETURNING parent_id, child_id, active, created_at, updated_at
 $$;
 
 COMMIT;

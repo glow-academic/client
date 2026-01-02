@@ -26,7 +26,6 @@ RETURNS TABLE (
     id uuid,
     simulation_id uuid,
     created_at timestamptz,
-    updated_at timestamptz,
     infinite_mode boolean,
     profile_id uuid
 )
@@ -37,7 +36,6 @@ SELECT
     sa.id,
     sa.simulation_id,
     sa.created_at,
-    sa.updated_at,
     sa.infinite_mode,
     (SELECT profile_id FROM attempt_profiles WHERE attempt_id = sa.id AND active = true LIMIT 1) as profile_id
 FROM simulation_attempts sa

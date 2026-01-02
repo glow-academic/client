@@ -35,46 +35,30 @@ VOLATILE
 AS $$
 WITH params AS (
     SELECT
-        video_id as video_id,
-        file_path as file_path,
-        mime_type as mime_type,
-        upload_id as upload_id,
-        active as active,
-        run_id as run_id
+        api_create_generation_and_link_v4.video_id as video_id,
+        api_create_generation_and_link_v4.file_path as file_path,
+        api_create_generation_and_link_v4.mime_type as mime_type,
+        api_create_generation_and_link_v4.upload_id as upload_id,
+        api_create_generation_and_link_v4.active as active,
+        api_create_generation_and_link_v4.run_id as run_id
 ),
-deactivate_existing AS (
-    UPDATE video_generations
-    SET active = FALSE,
-        updated_at = NOW()
-    WHERE video_id = (SELECT video_id FROM params)
-),
-insert_generation AS (
-    INSERT INTO generations (file_path, mime_type, upload_id, active, created_at, updated_at)
-    SELECT file_path, mime_type, upload_id, active, NOW(), NOW()
+insert_upload AS (
+    INSERT INTO uploads (file_path, mime_type, size, created_at, updated_at)
+    SELECT file_path, mime_type, 0, NOW(), NOW()
     FROM params
-    RETURNING id
+    WHERE upload_id IS NULL
+    RETURNING id as new_upload_id
 ),
-link_video AS (
-    INSERT INTO video_generations (video_id, generation_id, active, created_at, updated_at)
-    SELECT p.video_id, g.id, p.active, NOW(), NOW()
-    FROM params p
-    CROSS JOIN insert_generation g
-    ON CONFLICT (video_id, generation_id)
-    DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
+final_upload_id AS (
+    SELECT COALESCE((SELECT upload_id FROM params), (SELECT new_upload_id FROM insert_upload LIMIT 1)) as upload_id
 ),
 link_upload AS (
     INSERT INTO video_uploads (video_id, upload_id, active, created_at, updated_at)
-    SELECT p.video_id, p.upload_id, p.active, NOW(), NOW()
+    SELECT p.video_id, fi.upload_id, p.active, NOW(), NOW()
     FROM params p
+    CROSS JOIN final_upload_id fi
     ON CONFLICT (video_id, upload_id)
     DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
-),
-link_run AS (
-    INSERT INTO generation_runs (generation_id, run_id, created_at, updated_at)
-    SELECT g.id, p.run_id, NOW(), NOW()
-    FROM params p
-    CROSS JOIN insert_generation g
-    ON CONFLICT (generation_id, run_id) DO NOTHING
 ),
 mark_video AS (
     UPDATE videos
@@ -82,8 +66,8 @@ mark_video AS (
         updated_at = NOW()
     WHERE id = (SELECT video_id FROM params)
 )
-SELECT id as generation_id
-FROM insert_generation
+SELECT fi.upload_id as generation_id
+FROM final_upload_id fi
 $$;
 
 COMMIT;

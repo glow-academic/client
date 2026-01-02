@@ -36,11 +36,11 @@ LANGUAGE sql
 VOLATILE
 AS $$
 INSERT INTO document_uploads (document_id, upload_id, active, created_at, updated_at)
-VALUES (document_id, upload_id, active, NOW(), NOW())
+VALUES (api_insert_document_upload_v4.document_id, api_insert_document_upload_v4.upload_id, api_insert_document_upload_v4.active, NOW(), NOW())
 ON CONFLICT (document_id, upload_id) DO UPDATE SET
     active = EXCLUDED.active,
     updated_at = NOW()
-RETURNING *
+RETURNING document_id, upload_id, active, created_at, updated_at
 $$;
 
 COMMIT;

@@ -1,11 +1,21 @@
--- Insert objective (strong entity) and optionally link to scenario with idx
--- Parameters: $1=objective (text), $2=idx (int), $3=scenario_id (uuid, nullable)
+BEGIN;
+DROP FUNCTION IF EXISTS api_insert_objective_v4(text, integer, uuid);
+CREATE OR REPLACE FUNCTION api_insert_objective_v4(
+    objective text,
+    idx integer,
+    scenario_id uuid
+)
+RETURNS TABLE (
+    objective_id text
+)
+LANGUAGE sql
+AS $$
 WITH existing_obj AS (
-    SELECT id as objective_id FROM objectives WHERE objective = $1 LIMIT 1
+    SELECT id as objective_id FROM objectives WHERE objectives.objective = api_insert_objective_v4.objective LIMIT 1
 ),
 create_obj AS (
     INSERT INTO objectives (objective, created_at, updated_at)
-    SELECT $1, NOW(), NOW()
+    SELECT api_insert_objective_v4.objective, NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_obj)
     RETURNING id as objective_id
 ),
@@ -16,11 +26,13 @@ all_obj AS (
 ),
 link_scenario AS (
     INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
-    SELECT $3::uuid, objective_id, $2, NOW()
+    SELECT api_insert_objective_v4.scenario_id, objective_id, api_insert_objective_v4.idx, NOW()
     FROM all_obj
-    WHERE $3 IS NOT NULL
+    WHERE api_insert_objective_v4.scenario_id IS NOT NULL
     RETURNING objective_id
 )
 SELECT objective_id::text as objective_id
 FROM all_obj
+$$;
+COMMIT;
 

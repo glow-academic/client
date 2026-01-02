@@ -472,25 +472,86 @@ async def _randomize_missing_scenario_values(
     dept_uuids: list[uuid.UUID] = (
         [] if not selected_department_id else [selected_department_id]
     )
-    sql = load_sql("app/sql/v4/scenario/get_randomization_data_complete.sql")
-    result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
-
-    if not result:
-        raise ValueError("Failed to fetch randomization data")
-
-    # Parse JSONB aggregations
-    personas_data = parse_jsonb(result.get("personas", []))
-    documents_data = parse_jsonb(result.get("documents", []))
-    parameters_data = parse_jsonb(result.get("parameters", []))
-    parameter_items_data = parse_jsonb(result.get("parameter_items", []))
-    document_parameter_items_data = parse_jsonb(
-        result.get("document_parameter_items", [])
-    )
-
-    # Get existing scenario links if scenario_id provided
-    existing_scenario_persona_ids = result.get("persona_ids", []) or []
-    existing_scenario_document_ids = result.get("document_ids", []) or []
-    existing_scenario_parameter_item_ids = result.get("parameter_item_ids", []) or []
+    
+    # Use typed SQL function instead of raw SQL
+    try:
+        from app.sql.types import (
+            GetRandomizationDataSqlParams,
+            GetRandomizationDataSqlRow,
+        )
+        
+        sql_params = GetRandomizationDataSqlParams(
+            department_ids=dept_uuids,
+            scenario_id=scenario_id_uuid
+        )
+        result = await execute_sql_typed(
+            conn,
+            "app/sql/v4/scenario/get_randomization_data_complete.sql",
+            params=sql_params
+        )
+        result_row = cast(GetRandomizationDataSqlRow, result)
+        
+        # Extract arrays from composite types (now arrays of composite types, not JSONB)
+        # Convert composite type arrays to dict lists for compatibility
+        personas_data = [
+            {"id": str(p.id), "name": p.name, "description": p.description}
+            for p in result_row.personas
+        ]
+        documents_data = [
+            {"id": str(d.id), "name": d.name, "type": d.type, "file_path": d.file_path}
+            for d in result_row.documents
+        ]
+        parameters_data = [
+            {
+                "id": str(p.id),
+                "name": p.name,
+                "description": p.description,
+                "document_parameter": p.document_parameter,
+                "persona_parameter": p.persona_parameter,
+            }
+            for p in result_row.parameters
+        ]
+        parameter_items_data = [
+            {
+                "id": str(pi.id),
+                "name": pi.name,
+                "description": pi.description,
+                "parameter_id": str(pi.parameter_id),
+            }
+            for pi in result_row.parameter_items
+        ]
+        document_parameter_items_data = [
+            {
+                "document_id": str(dpi.document_id),
+                "parameter_item_id": str(dpi.parameter_item_id),
+            }
+            for dpi in result_row.document_parameter_items
+        ]
+        
+        # Get existing scenario links if scenario_id provided
+        existing_scenario_persona_ids = result_row.persona_ids or []
+        existing_scenario_document_ids = result_row.document_ids or []
+        existing_scenario_parameter_item_ids = result_row.parameter_item_ids or []
+    except ImportError:
+        # Fallback if types not generated yet - use old JSONB approach
+        sql = load_sql("app/sql/v4/scenario/get_randomization_data_complete.sql")
+        result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
+        if not result:
+            raise ValueError("Failed to fetch randomization data")
+        
+        # Parse JSONB aggregations (fallback)
+        personas_data = parse_jsonb(result.get("personas", []))
+        documents_data = parse_jsonb(result.get("documents", []))
+        parameters_data = parse_jsonb(result.get("parameters", []))
+        parameter_items_data = parse_jsonb(result.get("parameter_items", []))
+        document_parameter_items_data = parse_jsonb(
+            result.get("document_parameter_items", [])
+        )
+        
+        # Get existing scenario links if scenario_id provided
+        existing_scenario_persona_ids = result.get("persona_ids", []) or []
+        existing_scenario_document_ids = result.get("document_ids", []) or []
+        existing_scenario_parameter_item_ids = result.get("parameter_item_ids", []) or []
 
     # Build lookup maps
     active_personas = []

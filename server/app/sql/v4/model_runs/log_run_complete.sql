@@ -1,29 +1,37 @@
+BEGIN;
+DROP FUNCTION IF EXISTS api_log_run_v4(uuid, uuid, integer, integer, integer, integer, integer, integer, integer, text[], text);
+CREATE OR REPLACE FUNCTION api_log_run_v4(
+    run_id uuid,
+    department_id uuid,
+    input_text_tokens integer,
+    input_audio_tokens integer,
+    input_image_tokens integer,
+    output_text_tokens integer,
+    output_audio_tokens integer,
+    cached_text_tokens integer,
+    cached_audio_tokens integer,
+    developer_contents text[],
+    assistant_output text
+)
+RETURNS TABLE (
+    success integer
+)
+LANGUAGE sql
+AS $$
 -- Complete log_run handler: token updates + message logging in single transaction
--- @params
---   run_id: uuid
---   department_id?: uuid
---   input_text_tokens: integer
---   input_audio_tokens?: integer
---   input_image_tokens?: integer
---   output_text_tokens: integer
---   output_audio_tokens?: integer
---   cached_text_tokens?: integer
---   cached_audio_tokens?: integer
---   developer_contents: text[] = {}
---   assistant_output?: text
 -- All parameters are cast exactly once in params CTE for reliable type introspection
 WITH params AS (
-    SELECT $1::uuid AS run_id,
-           $2::uuid AS department_id,
-           $3::integer AS input_text_tokens,
-           $4::integer AS input_audio_tokens,
-           $5::integer AS input_image_tokens,
-           $6::integer AS output_text_tokens,
-           $7::integer AS output_audio_tokens,
-           $8::integer AS cached_text_tokens,
-           $9::integer AS cached_audio_tokens,
-           COALESCE($10::text[], ARRAY[]::text[]) AS developer_contents,
-           NULLIF($11::text, '') AS assistant_output
+    SELECT api_log_run_v4.run_id AS run_id,
+           api_log_run_v4.department_id AS department_id,
+           api_log_run_v4.input_text_tokens AS input_text_tokens,
+           api_log_run_v4.input_audio_tokens AS input_audio_tokens,
+           api_log_run_v4.input_image_tokens AS input_image_tokens,
+           api_log_run_v4.output_text_tokens AS output_text_tokens,
+           api_log_run_v4.output_audio_tokens AS output_audio_tokens,
+           api_log_run_v4.cached_text_tokens AS cached_text_tokens,
+           api_log_run_v4.cached_audio_tokens AS cached_audio_tokens,
+           COALESCE(api_log_run_v4.developer_contents, ARRAY[]::text[]) AS developer_contents,
+           NULLIF(api_log_run_v4.assistant_output, '') AS assistant_output
 ),
 run_info AS (
     SELECT 
@@ -545,4 +553,6 @@ create_assistant_branch AS (
         updated_at = NOW()
 )
 SELECT 1 AS success
+$$;
+COMMIT;
 

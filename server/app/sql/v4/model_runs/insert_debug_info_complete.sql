@@ -32,8 +32,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
 INSERT INTO debug_info (run_id, content, created_at)
-VALUES (run_id, content, NOW())
-RETURNING *
+VALUES (api_insert_debug_info_v4.run_id, api_insert_debug_info_v4.content, NOW())
+RETURNING run_id, content, created_at
 $$;
 
 COMMIT;

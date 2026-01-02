@@ -7,7 +7,7 @@ BEGIN;
 DROP FUNCTION IF EXISTS socket_debug_info_v4(uuid, text);
 
 -- Create function
-CREATE FUNCTION socket_debug_info_v4(
+CREATE OR REPLACE FUNCTION socket_debug_info_v4(
     profile_id uuid,
     info text
 ) RETURNS TABLE (

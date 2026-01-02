@@ -3411,6 +3411,39 @@ class BulkArchiveAttemptsApiResponse(BaseModel):
 
 
 
+# Generated from: get_attempt_with_profile
+
+class GetAttemptWithProfileSqlParams(BaseModel):
+
+    attempt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+        )
+
+class GetAttemptWithProfileSqlRow(BaseModel):
+
+    id: UUID | None = None
+    simulation_id: UUID | None = None
+    created_at: str | None = None
+    infinite_mode: bool | None = None
+    profile_id: UUID | None = None
+
+class GetAttemptWithProfileApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetAttemptWithProfileApiResponse(BaseModel):
+
+    id: UUID | None = None
+    simulation_id: UUID | None = None
+    created_at: str | None = None
+    infinite_mode: bool | None = None
+    profile_id: UUID | None = None
+
+
+
 # Generated from: get_eval_attempt
 
 class GetEvalAttemptSqlParams(BaseModel):
@@ -4059,6 +4092,34 @@ class LinkChatToAttemptApiResponse(BaseModel):
 
     attempt_id: UUID | None = None
     chat_id: UUID | None = None
+
+
+
+# Generated from: update_chat_created_at
+
+class UpdateChatCreatedAtSqlParams(BaseModel):
+
+    created_at: str
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.created_at,
+            self.chat_id,
+        )
+
+class UpdateChatCreatedAtSqlRow(BaseModel):
+
+    chat_id: str | None = None
+
+class UpdateChatCreatedAtApiRequest(BaseModel):
+
+    created_at: str
+    chat_id: UUID
+
+class UpdateChatCreatedAtApiResponse(BaseModel):
+
+    chat_id: str | None = None
 
 
 
@@ -5595,6 +5656,119 @@ class GetGroupStopToolsApiResponse(BaseModel):
 
     tool_id: UUID | None = None
     position_idx: int | None = None
+
+
+
+# Generated from: get_next_pending_run_or_group_for_benchmark
+
+class GetNextPendingRunOrGroupForBenchmarkSqlParams(BaseModel):
+
+    attempt_id: UUID
+    eval_id: UUID
+    use_groups: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.eval_id,
+            self.use_groups,
+        )
+
+class GetNextPendingRunOrGroupForBenchmarkSqlRow(BaseModel):
+
+    next_run_id: UUID | None = None
+    next_group_id: UUID | None = None
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+
+class GetNextPendingRunOrGroupForBenchmarkApiRequest(BaseModel):
+
+    attempt_id: UUID
+    eval_id: UUID
+    use_groups: bool
+
+class GetNextPendingRunOrGroupForBenchmarkApiResponse(BaseModel):
+
+    next_run_id: UUID | None = None
+    next_group_id: UUID | None = None
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+
+
+
+# Generated from: get_rubric_grade_agent_for_run_or_group
+
+class GetRubricGradeAgentForRunOrGroupSqlParams(BaseModel):
+
+    eval_id: UUID
+    use_groups: bool
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.use_groups,
+            self.run_id,
+            self.group_id,
+        )
+
+class GetRubricGradeAgentForRunOrGroupSqlRow(BaseModel):
+
+    rubric_grade_agent_id: UUID | None = None
+
+class GetRubricGradeAgentForRunOrGroupApiRequest(BaseModel):
+
+    eval_id: UUID
+    use_groups: bool
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+
+class GetRubricGradeAgentForRunOrGroupApiResponse(BaseModel):
+
+    rubric_grade_agent_id: UUID | None = None
+
+
+
+# Generated from: start_benchmark_attempt
+
+class StartBenchmarkAttemptSqlParams(BaseModel):
+
+    eval_id: UUID
+    infinite_mode: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.infinite_mode,
+        )
+
+class StartBenchmarkAttemptSqlRow(BaseModel):
+
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    agent_ids: list[str] | None = None
+    dynamic: bool | None = None
+    infinite_mode: bool | None = None
+    use_groups: bool | None = None
+    pending_run_ids: list[UUID] | None = None
+    pending_group_ids: list[UUID] | None = None
+
+class StartBenchmarkAttemptApiRequest(BaseModel):
+
+    eval_id: UUID
+    infinite_mode: bool
+
+class StartBenchmarkAttemptApiResponse(BaseModel):
+
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    agent_ids: list[str] | None = None
+    dynamic: bool | None = None
+    infinite_mode: bool | None = None
+    use_groups: bool | None = None
+    pending_run_ids: list[UUID] | None = None
+    pending_group_ids: list[UUID] | None = None
 
 
 
@@ -7370,6 +7544,57 @@ class UpdateDepartmentApiResponse(BaseModel):
 
 
 
+# Generated from: complete_document_creation
+
+class CompleteDocumentCreationSqlParams(BaseModel):
+
+    parent_document_id: UUID
+    file_path: str
+    mime_type: str
+    file_size: int
+    child_name: str
+    child_description: str
+    classify_agent_id: UUID
+    document_agent_id: UUID
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.parent_document_id,
+            self.file_path,
+            self.mime_type,
+            self.file_size,
+            self.child_name,
+            self.child_description,
+            self.classify_agent_id,
+            self.document_agent_id,
+            self.scenario_id,
+        )
+
+class CompleteDocumentCreationSqlRow(BaseModel):
+
+    child_document_id: str | None = None
+    upload_id: str | None = None
+
+class CompleteDocumentCreationApiRequest(BaseModel):
+
+    parent_document_id: UUID
+    file_path: str
+    mime_type: str
+    file_size: int
+    child_name: str
+    child_description: str
+    classify_agent_id: UUID
+    document_agent_id: UUID
+    scenario_id: UUID
+
+class CompleteDocumentCreationApiResponse(BaseModel):
+
+    child_document_id: str | None = None
+    upload_id: str | None = None
+
+
+
 # Generated from: create_document
 
 class CreateDocumentSqlParams(BaseModel):
@@ -8058,6 +8283,134 @@ class GetDocumentsListApiResponse(BaseModel):
     department_options: list[QListDocumentsV4DepartmentOption] | None = None
     valid_department_ids: list[str] | None = None
     document_type_options: list[str] | None = None
+
+
+
+# Generated from: insert_document
+
+class InsertDocumentSqlParams(BaseModel):
+
+    document_id: UUID
+    name: str
+    profile_id: UUID
+    description: str | None = None
+    upload_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    template_upload_id: UUID | None = None
+    template_args: dict[str, Any] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+            self.name,
+            self.profile_id,
+            self.description,
+            self.upload_id,
+            self.department_ids,
+            self.field_ids,
+            self.template_upload_id,
+            self.template_args,
+        )
+
+class InsertDocumentSqlRow(BaseModel):
+
+    document_id: str | None = None
+    actor_name: str | None = None
+
+class InsertDocumentApiRequest(BaseModel):
+
+    document_id: UUID
+    name: str
+    description: str | None = None
+    upload_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    template_upload_id: UUID | None = None
+    template_args: dict[str, Any] | None = None
+
+class InsertDocumentApiResponse(BaseModel):
+
+    document_id: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: insert_document_tree
+
+class InsertDocumentTreeSqlParams(BaseModel):
+
+    parent_id: UUID
+    child_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.parent_id,
+            self.child_id,
+            self.active,
+        )
+
+class InsertDocumentTreeSqlRow(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertDocumentTreeApiRequest(BaseModel):
+
+    parent_id: UUID
+    child_id: UUID
+    active: bool
+
+class InsertDocumentTreeApiResponse(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: insert_document_upload
+
+class InsertDocumentUploadSqlParams(BaseModel):
+
+    document_id: UUID
+    upload_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+            self.upload_id,
+            self.active,
+        )
+
+class InsertDocumentUploadSqlRow(BaseModel):
+
+    document_id: UUID | None = None
+    upload_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertDocumentUploadApiRequest(BaseModel):
+
+    document_id: UUID
+    upload_id: UUID
+    active: bool
+
+class InsertDocumentUploadApiResponse(BaseModel):
+
+    document_id: UUID | None = None
+    upload_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 
@@ -9665,6 +10018,31 @@ class GetImageRegenerationRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: insert_image
+
+class InsertImageSqlParams(BaseModel):
+
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+        )
+
+class InsertImageSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class InsertImageApiRequest(BaseModel):
+
+    name: str
+
+class InsertImageApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: update_image_completed
 
 class UpdateImageCompletedSqlParams(BaseModel):
@@ -9918,6 +10296,69 @@ class InfrastructureProfileResolveFromDepartmentApiRequest(BaseModel):
 class InfrastructureProfileResolveFromDepartmentApiResponse(BaseModel):
 
     resolved_profile_id: UUID | None = None
+
+
+
+# Generated from: get_auth_items
+
+class GetAuthItemsSqlParams(BaseModel):
+
+    auth_id: UUID
+    department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.auth_id,
+            self.department_id,
+        )
+
+class GetAuthItemsSqlRow(BaseModel):
+
+    name: str | None = None
+    value: str | None = None
+    encrypted: bool | None = None
+
+class GetAuthItemsApiRequest(BaseModel):
+
+    auth_id: UUID
+    department_id: UUID
+
+class GetAuthItemsApiResponse(BaseModel):
+
+    name: str | None = None
+    value: str | None = None
+    encrypted: bool | None = None
+
+
+
+# Generated from: get_auth_providers
+
+class GetAuthProvidersSqlParams(BaseModel):
+
+    department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+        )
+
+class GetAuthProvidersSqlRow(BaseModel):
+
+    id: UUID | None = None
+    slug: str | None = None
+    provider_id: str | None = None
+    name: str | None = None
+
+class GetAuthProvidersApiRequest(BaseModel):
+
+    department_id: UUID
+
+class GetAuthProvidersApiResponse(BaseModel):
+
+    id: UUID | None = None
+    slug: str | None = None
+    provider_id: str | None = None
+    name: str | None = None
 
 
 
@@ -10844,6 +11285,38 @@ class CreateModelRunApiResponse(BaseModel):
 
 
 
+# Generated from: insert_debug_info
+
+class InsertDebugInfoSqlParams(BaseModel):
+
+    run_id: UUID
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.content,
+        )
+
+class InsertDebugInfoSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    content: str | None = None
+    created_at: str | None = None
+
+class InsertDebugInfoApiRequest(BaseModel):
+
+    run_id: UUID
+    content: str
+
+class InsertDebugInfoApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    content: str | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: link_system_developer_messages_to_run
 
 class LinkSystemDeveloperMessagesToRunSqlParams(BaseModel):
@@ -10874,6 +11347,61 @@ class LinkSystemDeveloperMessagesToRunApiResponse(BaseModel):
 
     system_message_id: UUID | None = None
     developer_message_id: UUID | None = None
+
+
+
+# Generated from: log_run
+
+class LogRunSqlParams(BaseModel):
+
+    run_id: UUID
+    department_id: UUID
+    input_text_tokens: int
+    input_audio_tokens: int
+    input_image_tokens: int
+    output_text_tokens: int
+    output_audio_tokens: int
+    cached_text_tokens: int
+    cached_audio_tokens: int
+    developer_contents: list[str]
+    assistant_output: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.department_id,
+            self.input_text_tokens,
+            self.input_audio_tokens,
+            self.input_image_tokens,
+            self.output_text_tokens,
+            self.output_audio_tokens,
+            self.cached_text_tokens,
+            self.cached_audio_tokens,
+            self.developer_contents,
+            self.assistant_output,
+        )
+
+class LogRunSqlRow(BaseModel):
+
+    success: int | None = None
+
+class LogRunApiRequest(BaseModel):
+
+    run_id: UUID
+    department_id: UUID
+    input_text_tokens: int
+    input_audio_tokens: int
+    input_image_tokens: int
+    output_text_tokens: int
+    output_audio_tokens: int
+    cached_text_tokens: int
+    cached_audio_tokens: int
+    developer_contents: list[str]
+    assistant_output: str
+
+class LogRunApiResponse(BaseModel):
+
+    success: int | None = None
 
 
 
@@ -11427,6 +11955,37 @@ class UpdateModelApiResponse(BaseModel):
     model_exists: bool | None = None
     model_name: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: insert_objective
+
+class InsertObjectiveSqlParams(BaseModel):
+
+    objective: str
+    idx: int
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.objective,
+            self.idx,
+            self.scenario_id,
+        )
+
+class InsertObjectiveSqlRow(BaseModel):
+
+    objective_id: str | None = None
+
+class InsertObjectiveApiRequest(BaseModel):
+
+    objective: str
+    idx: int
+    scenario_id: UUID
+
+class InsertObjectiveApiResponse(BaseModel):
+
+    objective_id: str | None = None
 
 
 
@@ -13256,6 +13815,40 @@ class GetPricingRunsApiResponse(BaseModel):
     profiles: list[QGetPricingRunsV4Profile] | None = None
     agents: list[QGetPricingRunsV4Agent] | None = None
     personas: list[QGetPricingRunsV4Persona] | None = None
+
+
+
+# Generated from: insert_problem_statement
+
+class InsertProblemStatementSqlParams(BaseModel):
+
+    problem_statement: str
+    problem_statement_name: str
+    scenario_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.problem_statement,
+            self.problem_statement_name,
+            self.scenario_id,
+            self.active,
+        )
+
+class InsertProblemStatementSqlRow(BaseModel):
+
+    problem_statement_id: str | None = None
+
+class InsertProblemStatementApiRequest(BaseModel):
+
+    problem_statement: str
+    problem_statement_name: str
+    scenario_id: UUID
+    active: bool
+
+class InsertProblemStatementApiResponse(BaseModel):
+
+    problem_statement_id: str | None = None
 
 
 
@@ -16926,6 +17519,93 @@ class DuplicateScenarioApiResponse(BaseModel):
 
 
 
+# Generated from: get_randomization_data
+
+class GetRandomizationDataSqlParams(BaseModel):
+
+    department_ids: list[UUID]
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_ids,
+            self.scenario_id,
+        )
+
+class GetRandomizationDataDocumentParameterItemV4(BaseModel):
+
+    document_id: UUID | None
+    parameter_item_id: UUID | None
+
+
+
+
+class GetRandomizationDataDocumentV4(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    type: str | None
+    file_path: str | None
+
+
+
+
+class GetRandomizationDataParameterItemV4(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+
+
+
+
+class GetRandomizationDataParameterV4(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class GetRandomizationDataPersonaV4(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetRandomizationDataSqlRow(BaseModel):
+
+    personas: list[GetRandomizationDataPersonaV4] | None = None
+    documents: list[GetRandomizationDataDocumentV4] | None = None
+    parameters: list[GetRandomizationDataParameterV4] | None = None
+    parameter_items: list[GetRandomizationDataParameterItemV4] | None = None
+    document_parameter_items: list[GetRandomizationDataDocumentParameterItemV4] | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    parameter_item_ids: list[str] | None = None
+
+class GetRandomizationDataApiRequest(BaseModel):
+
+    department_ids: list[UUID]
+    scenario_id: UUID
+
+class GetRandomizationDataApiResponse(BaseModel):
+
+    personas: list[GetRandomizationDataPersonaV4] | None = None
+    documents: list[GetRandomizationDataDocumentV4] | None = None
+    parameters: list[GetRandomizationDataParameterV4] | None = None
+    parameter_items: list[GetRandomizationDataParameterItemV4] | None = None
+    document_parameter_items: list[GetRandomizationDataDocumentParameterItemV4] | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    parameter_item_ids: list[str] | None = None
+
+
+
 # Generated from: get_randomization_ranges
 
 class GetRandomizationRangesSqlParams(BaseModel):
@@ -20165,6 +20845,41 @@ class GetScenariosWithGradesApiResponse(BaseModel):
 
 
 
+# Generated from: get_simulation_by_id
+
+class GetSimulationByIdSqlParams(BaseModel):
+
+    simulation_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_id,
+        )
+
+class GetSimulationByIdSqlRow(BaseModel):
+
+    id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    rubric_id: UUID | None = None
+
+class GetSimulationByIdApiRequest(BaseModel):
+
+    simulation_id: UUID
+
+class GetSimulationByIdApiResponse(BaseModel):
+
+    id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    rubric_id: UUID | None = None
+
+
+
 # Generated from: get_simulation_detail
 
 class GetSimulationDetailSqlParams(BaseModel):
@@ -21127,6 +21842,35 @@ class MarkChatCompletedApiResponse(BaseModel):
 
 
 
+# Generated from: simulation_text_stop_run
+
+class SimulationTextStopRunSqlParams(BaseModel):
+
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+        )
+
+class SimulationTextStopRunSqlRow(BaseModel):
+
+    success: bool | None = None
+    cancelled_message_id: UUID | None = None
+    final_content: str | None = None
+
+class SimulationTextStopRunApiRequest(BaseModel):
+
+    chat_id: UUID
+
+class SimulationTextStopRunApiResponse(BaseModel):
+
+    success: bool | None = None
+    cancelled_message_id: UUID | None = None
+    final_content: str | None = None
+
+
+
 # Generated from: start_simulation_attempt
 
 class StartSimulationAttemptSqlParams(BaseModel):
@@ -22030,6 +22774,35 @@ class CheckGroupStopApiResponse(BaseModel):
 
 
 
+# Generated from: tools_debug_call
+
+class ToolsDebugCallSqlParams(BaseModel):
+
+    profile_id: UUID
+    info: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.info,
+        )
+
+class ToolsDebugCallSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+
+class ToolsDebugCallApiRequest(BaseModel):
+
+    info: str
+
+class ToolsDebugCallApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+
+
+
 # Generated from: finalize_upload
 
 class FinalizeUploadSqlParams(BaseModel):
@@ -22330,6 +23103,46 @@ class InsertUploadApiRequest(BaseModel):
 class InsertUploadApiResponse(BaseModel):
 
     id: str | None = None
+
+
+
+# Generated from: create_generation_and_link
+
+class CreateGenerationAndLinkSqlParams(BaseModel):
+
+    video_id: UUID
+    file_path: str
+    mime_type: str
+    upload_id: UUID
+    active: bool
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.video_id,
+            self.file_path,
+            self.mime_type,
+            self.upload_id,
+            self.active,
+            self.run_id,
+        )
+
+class CreateGenerationAndLinkSqlRow(BaseModel):
+
+    generation_id: UUID | None = None
+
+class CreateGenerationAndLinkApiRequest(BaseModel):
+
+    video_id: UUID
+    file_path: str
+    mime_type: str
+    upload_id: UUID
+    active: bool
+    run_id: UUID
+
+class CreateGenerationAndLinkApiResponse(BaseModel):
+
+    generation_id: UUID | None = None
 
 
 
@@ -22912,6 +23725,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "BulkArchiveAttemptsApiRequest",
         "BulkArchiveAttemptsApiResponse",
     ),
+    "app/sql/v4/attempts/get_attempt_with_profile_complete.sql": (
+        "GetAttemptWithProfileSqlParams",
+        "GetAttemptWithProfileSqlRow",
+        "GetAttemptWithProfileApiRequest",
+        "GetAttemptWithProfileApiResponse",
+    ),
     "app/sql/v4/attempts/get_eval_attempt_complete.sql": (
         "GetEvalAttemptSqlParams",
         "GetEvalAttemptSqlRow",
@@ -22935,6 +23754,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkChatToAttemptSqlRow",
         "LinkChatToAttemptApiRequest",
         "LinkChatToAttemptApiResponse",
+    ),
+    "app/sql/v4/attempts/update_chat_created_at_complete.sql": (
+        "UpdateChatCreatedAtSqlParams",
+        "UpdateChatCreatedAtSqlRow",
+        "UpdateChatCreatedAtApiRequest",
+        "UpdateChatCreatedAtApiResponse",
     ),
     "app/sql/v4/audio/get_audio_regeneration_run_context_and_create_run_complete.sql": (
         "GetAudioRegenerationRunContextAndCreateRunSqlParams",
@@ -23074,6 +23899,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetGroupStopToolsApiRequest",
         "GetGroupStopToolsApiResponse",
     ),
+    "app/sql/v4/benchmark/get_next_pending_run_or_group_for_benchmark_complete.sql": (
+        "GetNextPendingRunOrGroupForBenchmarkSqlParams",
+        "GetNextPendingRunOrGroupForBenchmarkSqlRow",
+        "GetNextPendingRunOrGroupForBenchmarkApiRequest",
+        "GetNextPendingRunOrGroupForBenchmarkApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_rubric_grade_agent_for_run_or_group_complete.sql": (
+        "GetRubricGradeAgentForRunOrGroupSqlParams",
+        "GetRubricGradeAgentForRunOrGroupSqlRow",
+        "GetRubricGradeAgentForRunOrGroupApiRequest",
+        "GetRubricGradeAgentForRunOrGroupApiResponse",
+    ),
+    "app/sql/v4/benchmark/start_benchmark_attempt_complete.sql": (
+        "StartBenchmarkAttemptSqlParams",
+        "StartBenchmarkAttemptSqlRow",
+        "StartBenchmarkAttemptApiRequest",
+        "StartBenchmarkAttemptApiResponse",
+    ),
     "app/sql/v4/benchmark/update_eval_complete.sql": (
         "UpdateEvalSqlParams",
         "UpdateEvalSqlRow",
@@ -23206,6 +24049,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDepartmentApiRequest",
         "UpdateDepartmentApiResponse",
     ),
+    "app/sql/v4/documents/complete_document_creation_complete.sql": (
+        "CompleteDocumentCreationSqlParams",
+        "CompleteDocumentCreationSqlRow",
+        "CompleteDocumentCreationApiRequest",
+        "CompleteDocumentCreationApiResponse",
+    ),
     "app/sql/v4/documents/create_document_complete.sql": (
         "CreateDocumentSqlParams",
         "CreateDocumentSqlRow",
@@ -23271,6 +24120,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentsListSqlRow",
         "GetDocumentsListApiRequest",
         "GetDocumentsListApiResponse",
+    ),
+    "app/sql/v4/documents/insert_document_complete.sql": (
+        "InsertDocumentSqlParams",
+        "InsertDocumentSqlRow",
+        "InsertDocumentApiRequest",
+        "InsertDocumentApiResponse",
+    ),
+    "app/sql/v4/documents/insert_document_tree_complete.sql": (
+        "InsertDocumentTreeSqlParams",
+        "InsertDocumentTreeSqlRow",
+        "InsertDocumentTreeApiRequest",
+        "InsertDocumentTreeApiResponse",
+    ),
+    "app/sql/v4/documents/insert_document_upload_complete.sql": (
+        "InsertDocumentUploadSqlParams",
+        "InsertDocumentUploadSqlRow",
+        "InsertDocumentUploadApiRequest",
+        "InsertDocumentUploadApiResponse",
     ),
     "app/sql/v4/documents/render_template_complete.sql": (
         "RenderTemplateSqlParams",
@@ -23446,6 +24313,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetImageRegenerationRunContextAndCreateRunApiRequest",
         "GetImageRegenerationRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/images/insert_image_complete.sql": (
+        "InsertImageSqlParams",
+        "InsertImageSqlRow",
+        "InsertImageApiRequest",
+        "InsertImageApiResponse",
+    ),
     "app/sql/v4/images/update_image_completed_complete.sql": (
         "UpdateImageCompletedSqlParams",
         "UpdateImageCompletedSqlRow",
@@ -23493,6 +24366,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfrastructureProfileResolveFromDepartmentSqlRow",
         "InfrastructureProfileResolveFromDepartmentApiRequest",
         "InfrastructureProfileResolveFromDepartmentApiResponse",
+    ),
+    "app/sql/v4/keycloak/get_auth_items_complete.sql": (
+        "GetAuthItemsSqlParams",
+        "GetAuthItemsSqlRow",
+        "GetAuthItemsApiRequest",
+        "GetAuthItemsApiResponse",
+    ),
+    "app/sql/v4/keycloak/get_auth_providers_complete.sql": (
+        "GetAuthProvidersSqlParams",
+        "GetAuthProvidersSqlRow",
+        "GetAuthProvidersApiRequest",
+        "GetAuthProvidersApiResponse",
     ),
     "app/sql/v4/keycloak/get_realm_name_for_department_complete.sql": (
         "GetRealmNameForDepartmentSqlParams",
@@ -23590,11 +24475,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateModelRunApiRequest",
         "CreateModelRunApiResponse",
     ),
+    "app/sql/v4/model_runs/insert_debug_info_complete.sql": (
+        "InsertDebugInfoSqlParams",
+        "InsertDebugInfoSqlRow",
+        "InsertDebugInfoApiRequest",
+        "InsertDebugInfoApiResponse",
+    ),
     "app/sql/v4/model_runs/link_system_developer_messages_to_run_complete.sql": (
         "LinkSystemDeveloperMessagesToRunSqlParams",
         "LinkSystemDeveloperMessagesToRunSqlRow",
         "LinkSystemDeveloperMessagesToRunApiRequest",
         "LinkSystemDeveloperMessagesToRunApiResponse",
+    ),
+    "app/sql/v4/model_runs/log_run_complete.sql": (
+        "LogRunSqlParams",
+        "LogRunSqlRow",
+        "LogRunApiRequest",
+        "LogRunApiResponse",
     ),
     "app/sql/v4/models/create_model_complete.sql": (
         "CreateModelSqlParams",
@@ -23637,6 +24534,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateModelSqlRow",
         "UpdateModelApiRequest",
         "UpdateModelApiResponse",
+    ),
+    "app/sql/v4/objectives/insert_objective_complete.sql": (
+        "InsertObjectiveSqlParams",
+        "InsertObjectiveSqlRow",
+        "InsertObjectiveApiRequest",
+        "InsertObjectiveApiResponse",
     ),
     "app/sql/v4/parameters/create_parameter_complete.sql": (
         "CreateParameterSqlParams",
@@ -23757,6 +24660,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPricingRunsSqlRow",
         "GetPricingRunsApiRequest",
         "GetPricingRunsApiResponse",
+    ),
+    "app/sql/v4/problem_statements/insert_problem_statement_complete.sql": (
+        "InsertProblemStatementSqlParams",
+        "InsertProblemStatementSqlRow",
+        "InsertProblemStatementApiRequest",
+        "InsertProblemStatementApiResponse",
     ),
     "app/sql/v4/profile/authorize_emulation_complete.sql": (
         "AuthorizeEmulationSqlParams",
@@ -24064,6 +24973,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateScenarioApiRequest",
         "DuplicateScenarioApiResponse",
     ),
+    "app/sql/v4/scenario/get_randomization_data_complete.sql": (
+        "GetRandomizationDataSqlParams",
+        "GetRandomizationDataSqlRow",
+        "GetRandomizationDataApiRequest",
+        "GetRandomizationDataApiResponse",
+    ),
     "app/sql/v4/scenario/get_randomization_ranges_complete.sql": (
         "GetRandomizationRangesSqlParams",
         "GetRandomizationRangesSqlRow",
@@ -24334,6 +25249,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenariosWithGradesApiRequest",
         "GetScenariosWithGradesApiResponse",
     ),
+    "app/sql/v4/simulations/get_simulation_by_id_complete.sql": (
+        "GetSimulationByIdSqlParams",
+        "GetSimulationByIdSqlRow",
+        "GetSimulationByIdApiRequest",
+        "GetSimulationByIdApiResponse",
+    ),
     "app/sql/v4/simulations/get_simulation_detail_complete.sql": (
         "GetSimulationDetailSqlParams",
         "GetSimulationDetailSqlRow",
@@ -24387,6 +25308,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkChatCompletedSqlRow",
         "MarkChatCompletedApiRequest",
         "MarkChatCompletedApiResponse",
+    ),
+    "app/sql/v4/simulations/simulation_text_stop_run_complete.sql": (
+        "SimulationTextStopRunSqlParams",
+        "SimulationTextStopRunSqlRow",
+        "SimulationTextStopRunApiRequest",
+        "SimulationTextStopRunApiResponse",
     ),
     "app/sql/v4/simulations/start_simulation_attempt_complete.sql": (
         "StartSimulationAttemptSqlParams",
@@ -24484,6 +25411,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckGroupStopApiRequest",
         "CheckGroupStopApiResponse",
     ),
+    "app/sql/v4/tools/tools_debug_call_complete.sql": (
+        "ToolsDebugCallSqlParams",
+        "ToolsDebugCallSqlRow",
+        "ToolsDebugCallApiRequest",
+        "ToolsDebugCallApiResponse",
+    ),
     "app/sql/v4/uploads/finalize_upload_complete.sql": (
         "FinalizeUploadSqlParams",
         "FinalizeUploadSqlRow",
@@ -24525,6 +25458,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertUploadSqlRow",
         "InsertUploadApiRequest",
         "InsertUploadApiResponse",
+    ),
+    "app/sql/v4/videos/create_generation_and_link_complete.sql": (
+        "CreateGenerationAndLinkSqlParams",
+        "CreateGenerationAndLinkSqlRow",
+        "CreateGenerationAndLinkApiRequest",
+        "CreateGenerationAndLinkApiResponse",
     ),
     "app/sql/v4/videos/create_video_basic_complete.sql": (
         "CreateVideoBasicSqlParams",
@@ -24910,6 +25849,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/attempts/get_attempt_with_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/attempts/get_eval_attempt_complete.sql"]
     ) -> SqlString: ...
 
@@ -24926,6 +25870,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/attempts/link_chat_to_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/attempts/update_chat_created_at_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25045,6 +25994,21 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_next_pending_run_or_group_for_benchmark_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_rubric_grade_agent_for_run_or_group_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/start_benchmark_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/update_eval_complete.sql"]
     ) -> SqlString: ...
 
@@ -25155,6 +26119,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/complete_document_creation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/create_document_complete.sql"]
     ) -> SqlString: ...
 
@@ -25206,6 +26175,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/documents/get_documents_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/insert_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/insert_document_tree_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/insert_document_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25355,6 +26339,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/images/insert_image_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/images/update_image_completed_complete.sql"]
     ) -> SqlString: ...
 
@@ -25391,6 +26380,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/keycloak/get_auth_items_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/keycloak/get_auth_providers_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25475,7 +26474,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/model_runs/insert_debug_info_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/model_runs/link_system_developer_messages_to_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/model_runs/log_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25511,6 +26520,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/models/update_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/objectives/insert_objective_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25611,6 +26625,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/pricing/get_pricing_runs_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/problem_statements/insert_problem_statement_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25870,6 +26889,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/get_randomization_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/get_randomization_ranges_complete.sql"]
     ) -> SqlString: ...
 
@@ -26095,6 +27119,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_simulation_by_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_simulation_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -26136,6 +27165,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/mark_chat_completed_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/simulation_text_stop_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -26220,6 +27254,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/tools/tools_debug_call_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/uploads/finalize_upload_complete.sql"]
     ) -> SqlString: ...
 
@@ -26251,6 +27290,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/uploads/insert_upload_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/videos/create_generation_and_link_complete.sql"]
     ) -> SqlString: ...
 
     @overload

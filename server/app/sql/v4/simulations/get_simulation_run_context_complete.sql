@@ -218,7 +218,7 @@ SELECT
     -- Chat data
     sc.id::text as chat_id,
     sc.title as chat_title,
-    g.trace_id,
+    (SELECT g.trace_id FROM groups g JOIN chat_groups cg ON cg.group_id = g.id WHERE cg.chat_id = sc.id LIMIT 1) as trace_id,
     
     -- Attempt data
     sa.id::text as attempt_id,

@@ -1,8 +1,17 @@
--- Stop a simulation run by marking the latest message completed
--- Parameters: $1=chat_id (uuid)
--- Returns: success (boolean), cancelled_message_id (uuid), final_content (text)
+BEGIN;
+DROP FUNCTION IF EXISTS api_simulation_text_stop_run_v4(uuid);
+CREATE OR REPLACE FUNCTION api_simulation_text_stop_run_v4(
+    chat_id uuid
+)
+RETURNS TABLE (
+    success boolean,
+    cancelled_message_id uuid,
+    final_content text
+)
+LANGUAGE sql
+AS $$
 WITH params AS (
-    SELECT $1::uuid as chat_id
+    SELECT api_simulation_text_stop_run_v4.chat_id as chat_id
 ),
 latest_message AS (
     SELECT
@@ -34,4 +43,6 @@ update_message AS (
 SELECT
     (SELECT id FROM update_message) IS NOT NULL as success,
     (SELECT id FROM update_message) as cancelled_message_id,
-    (SELECT content FROM latest_message) as final_content;
+    (SELECT content FROM latest_message) as final_content
+$$;
+COMMIT;

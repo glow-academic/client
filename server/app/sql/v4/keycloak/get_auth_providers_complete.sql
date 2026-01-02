@@ -1,16 +1,23 @@
--- Get active auth providers for Keycloak sync filtered by settings
--- Parameters: $1 = department_id (optional UUID, NULL for default settings)
---             Note: This is kept for backward compatibility, but logic determines settings based on keys
--- Returns: id, slug, auth_type (as provider_id), name
--- Strategy: Determine which settings has keys, then return providers for that settings
---           If department-specific settings has keys → use that settings
---           If not → use default settings (master realm)
+BEGIN;
+DROP FUNCTION IF EXISTS api_get_auth_providers_v4(uuid);
+CREATE OR REPLACE FUNCTION api_get_auth_providers_v4(
+    department_id uuid
+)
+RETURNS TABLE (
+    id uuid,
+    slug text,
+    provider_id text,
+    name text
+)
+LANGUAGE sql
+STABLE
+AS $$
 WITH dept_settings AS (
     -- Get department-specific settings if department_id provided
     SELECT DISTINCT s.id as settings_id
     FROM settings s
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-    WHERE ($1::uuid IS NOT NULL AND ds.department_id = $1::uuid)
+    WHERE (api_get_auth_providers_v4.department_id IS NOT NULL AND ds.department_id = api_get_auth_providers_v4.department_id)
       AND s.active = true
     LIMIT 1
 ),
@@ -41,7 +48,7 @@ selected_settings AS (
     SELECT 
         CASE 
             -- If department_id is NULL, use default settings (master realm)
-            WHEN $1::uuid IS NULL THEN (SELECT settings_id FROM default_settings)
+            WHEN api_get_auth_providers_v4.department_id IS NULL THEN (SELECT settings_id FROM default_settings)
             -- If department-specific settings has keys, use it
             WHEN (SELECT has_keys FROM dept_settings_has_keys) = true 
                 THEN (SELECT settings_id FROM dept_settings LIMIT 1)
@@ -66,5 +73,7 @@ SELECT DISTINCT
 FROM auth a
 WHERE a.active = true
   AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = a.id)
-ORDER BY a.slug;
+ORDER BY a.slug
+$$;
+COMMIT;
 

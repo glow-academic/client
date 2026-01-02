@@ -1,8 +1,67 @@
--- Get randomization data for scenarios (personas, documents, parameters) and existing scenario links
--- Parameters: 
---   $1=department_ids (uuid array, nullable)
---   $2=scenario_id (uuid, nullable) - if provided, also returns existing scenario links
--- Returns: personas, documents, parameters, parameter_items, document_parameter_items, persona_ids, document_ids, parameter_item_ids as JSON
+BEGIN;
+
+-- Drop existing types if they exist (for idempotent migrations)
+DROP TYPE IF EXISTS types.get_randomization_data_persona_v4 CASCADE;
+DROP TYPE IF EXISTS types.get_randomization_data_document_v4 CASCADE;
+DROP TYPE IF EXISTS types.get_randomization_data_parameter_v4 CASCADE;
+DROP TYPE IF EXISTS types.get_randomization_data_parameter_item_v4 CASCADE;
+DROP TYPE IF EXISTS types.get_randomization_data_document_parameter_item_v4 CASCADE;
+
+-- Create composite types for nested structures
+CREATE TYPE types.get_randomization_data_persona_v4 AS (
+    id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.get_randomization_data_document_v4 AS (
+    id uuid,
+    name text,
+    type text,
+    file_path text
+);
+
+CREATE TYPE types.get_randomization_data_parameter_v4 AS (
+    id uuid,
+    name text,
+    description text,
+    document_parameter boolean,
+    persona_parameter boolean
+);
+
+CREATE TYPE types.get_randomization_data_parameter_item_v4 AS (
+    id uuid,
+    name text,
+    description text,
+    parameter_id uuid
+);
+
+CREATE TYPE types.get_randomization_data_document_parameter_item_v4 AS (
+    document_id uuid,
+    parameter_item_id uuid
+);
+
+-- Drop function if exists
+DROP FUNCTION IF EXISTS api_get_randomization_data_v4(uuid[], uuid);
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_get_randomization_data_v4(
+    department_ids uuid[],
+    scenario_id uuid
+)
+RETURNS TABLE (
+    personas types.get_randomization_data_persona_v4[],
+    documents types.get_randomization_data_document_v4[],
+    parameters types.get_randomization_data_parameter_v4[],
+    parameter_items types.get_randomization_data_parameter_item_v4[],
+    document_parameter_items types.get_randomization_data_document_parameter_item_v4[],
+    persona_ids text[],
+    document_ids text[],
+    parameter_item_ids text[]
+)
+LANGUAGE sql
+STABLE
+AS $$
 WITH filtered_personas AS (
     SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description
     FROM personas p
@@ -11,8 +70,8 @@ WITH filtered_personas AS (
     GROUP BY p.id, p.name, p.description
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
-        (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
-         COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
+        (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
+         COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(api_get_randomization_data_v4.department_ids)) > 0
          OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
 ),
 filtered_documents AS (
@@ -25,8 +84,8 @@ filtered_documents AS (
     GROUP BY d.id, d.name, u.file_path
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
-        (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
-         COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1::uuid[])) > 0
+        (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
+         COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(api_get_randomization_data_v4.department_ids)) > 0
          OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true))
 ),
 filtered_parameters AS (
@@ -40,11 +99,11 @@ filtered_parameters AS (
     JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description
+    GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
-        (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
-         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($1::uuid[])) > 0
+        (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
+         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(api_get_randomization_data_v4.department_ids)) > 0
          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                       WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
@@ -59,8 +118,8 @@ parameter_items_data AS (
     GROUP BY f.id, f.name, f.description, pf.parameter_id
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
-        (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
-         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($1::uuid[])) > 0
+        (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
+         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(api_get_randomization_data_v4.department_ids)) > 0
          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true))
 ),
 document_parameter_items_junction AS (
@@ -73,63 +132,67 @@ document_parameter_items_junction AS (
 scenario_persona_links AS (
     SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id) as persona_ids
     FROM scenario_personas
-    WHERE scenario_id = $2::uuid AND active = true
+    WHERE scenario_id = api_get_randomization_data_v4.scenario_id AND active = true
 ),
 scenario_document_links AS (
     SELECT ARRAY_AGG(document_id::text ORDER BY document_id) as document_ids
     FROM scenario_documents
-    WHERE scenario_id = $2::uuid AND active = true
+    WHERE scenario_id = api_get_randomization_data_v4.scenario_id AND active = true
 ),
 scenario_parameter_item_links AS (
     SELECT ARRAY_AGG(field_id::text ORDER BY field_id) as parameter_item_ids
     FROM scenario_fields
-    WHERE scenario_id = $2::uuid AND active = true
+    WHERE scenario_id = api_get_randomization_data_v4.scenario_id AND active = true
+),
+personas_agg AS (
+    SELECT COALESCE(
+        ARRAY_AGG(ROW(fp.id, fp.name, fp.description)::types.get_randomization_data_persona_v4 ORDER BY fp.id),
+        ARRAY[]::types.get_randomization_data_persona_v4[]
+    ) as personas
+    FROM filtered_personas fp
+),
+documents_agg AS (
+    SELECT COALESCE(
+        ARRAY_AGG(ROW(fd.id, fd.name, fd.type, fd.file_path)::types.get_randomization_data_document_v4 ORDER BY fd.id),
+        ARRAY[]::types.get_randomization_data_document_v4[]
+    ) as documents
+    FROM filtered_documents fd
+),
+parameters_agg AS (
+    SELECT COALESCE(
+        ARRAY_AGG(ROW(fp2.id, fp2.name, fp2.description, fp2.document_parameter, fp2.persona_parameter)::types.get_randomization_data_parameter_v4 ORDER BY fp2.id),
+        ARRAY[]::types.get_randomization_data_parameter_v4[]
+    ) as parameters
+    FROM filtered_parameters fp2
+),
+parameter_items_agg AS (
+    SELECT COALESCE(
+        ARRAY_AGG(ROW(pid.id, pid.name, pid.description, pid.parameter_id)::types.get_randomization_data_parameter_item_v4 ORDER BY pid.id),
+        ARRAY[]::types.get_randomization_data_parameter_item_v4[]
+    ) as parameter_items
+    FROM parameter_items_data pid
+),
+document_parameter_items_agg AS (
+    SELECT COALESCE(
+        ARRAY_AGG(ROW(dpi.document_id, dpi.parameter_item_id)::types.get_randomization_data_document_parameter_item_v4 ORDER BY dpi.document_id, dpi.parameter_item_id),
+        ARRAY[]::types.get_randomization_data_document_parameter_item_v4[]
+    ) as document_parameter_items
+    FROM document_parameter_items_junction dpi
 )
 SELECT 
-    (SELECT COALESCE(
-        json_agg(DISTINCT jsonb_build_object(
-            'id', fp.id,
-            'name', fp.name,
-            'description', fp.description
-        )),
-        '[]'::json
-    ) FROM filtered_personas fp) as personas,
-    (SELECT COALESCE(
-        json_agg(DISTINCT jsonb_build_object(
-            'id', fd.id,
-            'name', fd.name,
-            'type', fd.type,
-            'file_path', fd.file_path
-        )),
-        '[]'::json
-    ) FROM filtered_documents fd) as documents,
-    (SELECT COALESCE(
-        json_agg(DISTINCT jsonb_build_object(
-            'id', fp2.id,
-            'name', fp2.name,
-            'description', fp2.description,
-            'document_parameter', fp2.document_parameter,
-            'persona_parameter', fp2.persona_parameter
-        )),
-        '[]'::json
-    ) FROM filtered_parameters fp2) as parameters,
-    (SELECT COALESCE(
-        json_agg(DISTINCT jsonb_build_object(
-            'id', pid.id,
-            'name', pid.name,
-            'description', pid.description,
-            'parameter_id', pid.parameter_id
-        )),
-        '[]'::json
-    ) FROM parameter_items_data pid) as parameter_items,
-    (SELECT COALESCE(
-        json_agg(DISTINCT jsonb_build_object(
-            'document_id', dpi.document_id,
-            'parameter_item_id', dpi.parameter_item_id
-        )),
-        '[]'::json
-    ) FROM document_parameter_items_junction dpi) as document_parameter_items,
+    pa.personas,
+    da.documents,
+    pra.parameters,
+    pia.parameter_items,
+    dpia.document_parameter_items,
     COALESCE((SELECT persona_ids FROM scenario_persona_links), ARRAY[]::text[]) as persona_ids,
     COALESCE((SELECT document_ids FROM scenario_document_links), ARRAY[]::text[]) as document_ids,
     COALESCE((SELECT parameter_item_ids FROM scenario_parameter_item_links), ARRAY[]::text[]) as parameter_item_ids
+FROM personas_agg pa
+CROSS JOIN documents_agg da
+CROSS JOIN parameters_agg pra
+CROSS JOIN parameter_items_agg pia
+CROSS JOIN document_parameter_items_agg dpia
+$$;
 
+COMMIT;
