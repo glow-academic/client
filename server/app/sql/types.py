@@ -5408,6 +5408,8 @@ class GetEvalDetailSqlRow(BaseModel):
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None
     rubric_grade_agent_positions: Any | None = None
+    run_rubric_grade_agents: Any | None = None
+    group_rubric_grade_agents: Any | None = None
 
 class GetEvalDetailApiRequest(BaseModel):
 
@@ -5455,6 +5457,8 @@ class GetEvalDetailApiResponse(BaseModel):
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None
     rubric_grade_agent_positions: Any | None = None
+    run_rubric_grade_agents: Any | None = None
+    group_rubric_grade_agents: Any | None = None
 
 
 
@@ -5510,6 +5514,8 @@ class GetEvalNewSqlRow(BaseModel):
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None
     rubric_grade_agent_positions: Any | None = None
+    run_rubric_grade_agents: Any | None = None
+    group_rubric_grade_agents: Any | None = None
 
 class GetEvalNewApiRequest(BaseModel):
 
@@ -5550,6 +5556,8 @@ class GetEvalNewApiResponse(BaseModel):
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None
     rubric_grade_agent_positions: Any | None = None
+    run_rubric_grade_agents: Any | None = None
+    group_rubric_grade_agents: Any | None = None
 
 
 
@@ -9002,126 +9010,6 @@ class DuplicateFieldApiResponse(BaseModel):
 
 
 
-# Generated from: get_field_detail
-
-class GetFieldDetailSqlParams(BaseModel):
-
-    field_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.field_id,
-            self.profile_id,
-        )
-
-class QGetFieldDetailV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetFieldDetailV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-
-class GetFieldDetailSqlRow(BaseModel):
-
-    field_exists: bool | None = None
-    field_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    department_ids: list[str] | None = None
-    parameter_ids: list[str] | None = None
-    conditional_parameter_ids: list[str] | None = None
-    departments: list[QGetFieldDetailV4Department] | None = None
-    valid_department_ids: list[str] | None = None
-    parameters: list[QGetFieldDetailV4Parameter] | None = None
-    valid_parameter_ids: list[str] | None = None
-    can_edit: bool | None = None
-    actor_name: str | None = None
-
-class GetFieldDetailApiRequest(BaseModel):
-
-    field_id: UUID
-
-class GetFieldDetailApiResponse(BaseModel):
-
-    field_exists: bool | None = None
-    field_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    department_ids: list[str] | None = None
-    parameter_ids: list[str] | None = None
-    conditional_parameter_ids: list[str] | None = None
-    departments: list[QGetFieldDetailV4Department] | None = None
-    valid_department_ids: list[str] | None = None
-    parameters: list[QGetFieldDetailV4Parameter] | None = None
-    valid_parameter_ids: list[str] | None = None
-    can_edit: bool | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_field_new
-
-class GetFieldNewSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class QGetFieldNewV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetFieldNewV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-
-class GetFieldNewSqlRow(BaseModel):
-
-    valid_department_ids: list[str] | None = None
-    departments: list[QGetFieldNewV4Department] | None = None
-    valid_parameter_ids: list[str] | None = None
-    parameters: list[QGetFieldNewV4Parameter] | None = None
-    user_role: str | None = None
-    primary_department_id: UUID | None = None
-    actor_name: str | None = None
-
-class GetFieldNewApiRequest(BaseModel):
-
-    pass
-
-class GetFieldNewApiResponse(BaseModel):
-
-    valid_department_ids: list[str] | None = None
-    departments: list[QGetFieldNewV4Department] | None = None
-    valid_parameter_ids: list[str] | None = None
-    parameters: list[QGetFieldNewV4Parameter] | None = None
-    user_role: str | None = None
-    primary_department_id: UUID | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: get_fields_list
 
 class GetFieldsListSqlParams(BaseModel):
@@ -9195,6 +9083,43 @@ class GetFieldsListApiResponse(BaseModel):
     departments: list[QListFieldsV4Department] | None = None
     parameter_options: list[QListFieldsV4Option] | None = None
     department_options: list[QListFieldsV4Option] | None = None
+
+
+
+# Generated from: patch_field_draft
+
+class PatchFieldDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchFieldDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchFieldDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchFieldDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25404,23 +25329,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateFieldApiRequest",
         "DuplicateFieldApiResponse",
     ),
-    "app/sql/v4/fields/get_field_detail_complete.sql": (
-        "GetFieldDetailSqlParams",
-        "GetFieldDetailSqlRow",
-        "GetFieldDetailApiRequest",
-        "GetFieldDetailApiResponse",
-    ),
-    "app/sql/v4/fields/get_field_new_complete.sql": (
-        "GetFieldNewSqlParams",
-        "GetFieldNewSqlRow",
-        "GetFieldNewApiRequest",
-        "GetFieldNewApiResponse",
-    ),
     "app/sql/v4/fields/get_fields_list_complete.sql": (
         "GetFieldsListSqlParams",
         "GetFieldsListSqlRow",
         "GetFieldsListApiRequest",
         "GetFieldsListApiResponse",
+    ),
+    "app/sql/v4/fields/patch_field_draft_complete.sql": (
+        "PatchFieldDraftSqlParams",
+        "PatchFieldDraftSqlRow",
+        "PatchFieldDraftApiRequest",
+        "PatchFieldDraftApiResponse",
     ),
     "app/sql/v4/fields/update_field_complete.sql": (
         "UpdateFieldSqlParams",
@@ -27590,17 +27509,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/get_field_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/get_field_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/fields/get_fields_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/fields/patch_field_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

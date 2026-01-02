@@ -5,57 +5,39 @@
  * 12/05/2025
  */
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  parseAsString,
+  useQueryStates,
+  type Parser,
+} from "nuqs";
+
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import {
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { StepCard } from "@/components/common/forms/StepCard";
 import { ParameterCardGrid } from "@/components/common/parameters/ParameterCardGrid";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { cn } from "@/lib/utils";
+import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
-import { Check, Loader2, Power } from "lucide-react";
-import { useRouter } from "next/navigation";
-
-type StepStatus = "pending" | "active" | "completed";
-
-interface Step {
-  id: string;
-  title: string;
-  description: string;
-  status: StepStatus;
-}
-
-interface FormErrors {
-  name?: string;
-  description?: string;
-}
-
-interface FormData {
-  name?: string;
-  description?: string;
-  active?: boolean;
-  departmentIds?: string[] | null;
-  conditionalParameterIds?: string[] | null;
-}
+import { Power } from "lucide-react";
 
 // Type-only imports from server pages
 import type {
   FieldDetailOut,
   UpdateFieldIn,
   UpdateFieldOut,
+  PatchFieldDraftIn,
+  PatchFieldDraftOut,
 } from "@/app/(main)/management/fields/[fieldId]/page";
 import type {
   CreateFieldIn,
@@ -71,48 +53,167 @@ export interface FieldProps {
   fieldDetail?: FieldDetailOut;
   createFieldAction?: (input: CreateFieldIn) => Promise<CreateFieldOut>;
   updateFieldAction?: (input: UpdateFieldIn) => Promise<UpdateFieldOut>;
+  patchFieldDraftAction?: (
+    input: PatchFieldDraftIn
+  ) => Promise<PatchFieldDraftOut>;
 }
 
 export default function Field({
   fieldId,
-  fieldDetailDefault,
+  fieldDetailDefault: serverFieldDetailDefault,
   fieldDetail: serverFieldDetail,
   createFieldAction,
   updateFieldAction,
+  patchFieldDraftAction,
 }: FieldProps) {
+  const searchParams = useSearchParams();
+  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { effectiveProfile } = useProfile();
   const router = useRouter();
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!fieldId;
 
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
-  const defaultDepartmentIds = useMemo(
-    () =>
-      getDefaultDepartmentIds(
-        isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
-      ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  // Stabilize server props to prevent unnecessary re-renders
+  const stabilizeServerProp = React.useCallback(
+    (
+      data: typeof serverFieldDetail | typeof serverFieldDetailDefault
+    ): string | null => {
+      if (!data) return null;
+      if (typeof data === "object" && data !== null) {
+        if ("field_id" in data && data.field_id) {
+          return `field_id:${String(data.field_id)}`;
+        }
+        const keyFields: Record<string, unknown> = {};
+        if ("valid_department_ids" in data) {
+          keyFields["valid_department_ids"] = Array.isArray(
+            data["valid_department_ids"]
+          )
+            ? data["valid_department_ids"].sort().join(",")
+            : data["valid_department_ids"];
+        }
+        if ("valid_parameter_ids" in data) {
+          keyFields["valid_parameter_ids"] = Array.isArray(
+            data["valid_parameter_ids"]
+          )
+            ? data["valid_parameter_ids"].sort().join(",")
+            : data["valid_parameter_ids"];
+        }
+        const sortedKeys = Object.keys(keyFields).sort();
+        const hash = sortedKeys
+          .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+          .join("|");
+        return `new:${hash.length}:${hash.slice(0, 100)}`;
+      }
+      return String(data);
+    },
+    []
   );
 
-  const initialFormData: FormData = useMemo(
-    () => ({
-      name: "New Field",
-      description: "",
-      active: true,
-      departmentIds: defaultDepartmentIds,
-      conditionalParameterIds: [],
-    }),
-    [defaultDepartmentIds]
+  const fieldDetailId = React.useMemo(
+    () => stabilizeServerProp(serverFieldDetail),
+    [serverFieldDetail, stabilizeServerProp]
+  );
+  const fieldDetailDefaultId = React.useMemo(
+    () => stabilizeServerProp(serverFieldDetailDefault),
+    [serverFieldDetailDefault, stabilizeServerProp]
   );
 
-  const [formData, setFormData] = useState<FormData>({});
-  const [errors, setErrors] = useState<FormErrors>({});
+  // Use refs to track latest server props
+  const latestServerFieldDetailRef = React.useRef(serverFieldDetail);
+  const latestServerFieldDetailDefaultRef = React.useRef(
+    serverFieldDetailDefault
+  );
 
-  // Use server-provided data
-  const fieldDetail = serverFieldDetail;
+  latestServerFieldDetailRef.current = serverFieldDetail;
+  latestServerFieldDetailDefaultRef.current = serverFieldDetailDefault;
+
+  // Use refs to track stable server props
+  const stableFieldDetailRef = React.useRef<{
+    data: typeof serverFieldDetail;
+    id: string | null;
+  }>({
+    data: serverFieldDetail,
+    id: fieldDetailId,
+  });
+  const stableFieldDetailDefaultRef = React.useRef<{
+    data: typeof serverFieldDetailDefault;
+    id: string | null;
+  }>({
+    data: serverFieldDetailDefault,
+    id: fieldDetailDefaultId,
+  });
+
+  React.useEffect(() => {
+    if (stableFieldDetailRef.current.id !== fieldDetailId) {
+      stableFieldDetailRef.current = {
+        data: latestServerFieldDetailRef.current,
+        id: fieldDetailId,
+      };
+    }
+  }, [fieldDetailId]);
+
+  React.useEffect(() => {
+    if (stableFieldDetailDefaultRef.current.id !== fieldDetailDefaultId) {
+      stableFieldDetailDefaultRef.current = {
+        data: latestServerFieldDetailDefaultRef.current,
+        id: fieldDetailDefaultId,
+      };
+    }
+  }, [fieldDetailDefaultId]);
+
+  const fieldDetail = stableFieldDetailRef.current.data;
+  const fieldDetailDefault = stableFieldDetailDefaultRef.current.data;
+
+  // Use edit detail when editing, default detail when creating
+  const fieldDataId = React.useMemo(() => {
+    const data = isEditMode ? fieldDetail : fieldDetailDefault;
+    if (!data) return null;
+    if (typeof data === "object" && data !== null) {
+      if ("field_id" in data && data.field_id) {
+        return `field_id:${String(data.field_id)}`;
+      }
+      const keyFields: Record<string, unknown> = {};
+      if ("valid_department_ids" in data) {
+        keyFields["valid_department_ids"] = Array.isArray(
+          data["valid_department_ids"]
+        )
+          ? data["valid_department_ids"].sort().join(",")
+          : data["valid_department_ids"];
+      }
+      if ("valid_parameter_ids" in data) {
+        keyFields["valid_parameter_ids"] = Array.isArray(
+          data["valid_parameter_ids"]
+        )
+          ? data["valid_parameter_ids"].sort().join(",")
+          : data["valid_parameter_ids"];
+      }
+      const sortedKeys = Object.keys(keyFields).sort();
+      const hash = sortedKeys
+        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+        .join("|");
+      return `new:${hash.length}:${hash.slice(0, 100)}`;
+    }
+    return String(data);
+  }, [isEditMode, fieldDetail, fieldDetailDefault]);
+
+  const stableFieldDataRef = React.useRef<{
+    data: typeof fieldDetail | typeof fieldDetailDefault;
+    id: string | null;
+  }>({
+    data: isEditMode ? fieldDetail : fieldDetailDefault,
+    id: fieldDataId,
+  });
+
+  React.useEffect(() => {
+    if (stableFieldDataRef.current.id !== fieldDataId) {
+      stableFieldDataRef.current = {
+        data: isEditMode ? fieldDetail : fieldDetailDefault,
+        id: fieldDataId,
+      };
+    }
+  }, [isEditMode, fieldDetail, fieldDetailDefault, fieldDataId]);
+
+  const fieldData = stableFieldDataRef.current.data;
 
   // Get valid options from server data
   const validDepartmentIds = useMemo(() => {
@@ -159,35 +260,203 @@ export default function Field({
     ) as Record<string, { name: string; description?: string }>;
   }, [fieldDetail?.parameters, fieldDetailDefault?.parameters]);
 
-  // Single consolidated useEffect to handle all form state scenarios
+  // Inline parsers for URL-backed state
+  const fieldSearchParamsClient = {
+    draftId: parseAsString,
+  } as const;
+
+  // URL-backed state using nuqs
+  const [urlParams, setUrlParams] = useQueryStates(fieldSearchParamsClient, {
+    history: "replace",
+    shallow: true,
+  });
+
+  // Get draftId from URL
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
   useEffect(() => {
-    if (isEditMode && fieldDetail) {
-      // We are in EDIT mode and have the field's data, so populate the form
-      setFormData({
-        name: fieldDetail.name || "",
-        description: fieldDetail.description || "",
-        active: fieldDetail.active ?? true,
-        departmentIds: fieldDetail.department_ids || null,
-        conditionalParameterIds: fieldDetail.conditional_parameter_ids || [],
-      });
-    } else if (!isEditMode && fieldDetailDefault) {
-      // We are in CREATE mode, use defaults from fieldDetailDefault
-      setFormData({
-        ...initialFormData,
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
+
+  // Draft state type
+  type DraftState = {
+    name: string;
+    description: string;
+    active: boolean;
+    departmentIds: string[];
+    conditionalParameterIds: string[];
+  };
+
+  // Initialize draft state from server data
+  const initialDraftState = useMemo((): DraftState => {
+    const data = isEditMode ? fieldDetail : fieldDetailDefault;
+    if (!data) {
+      const isSuperadmin = effectiveProfile?.role === "superadmin";
+      const defaultDepartmentIds = getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId || null
+      );
+      return {
+        name: "New Field",
+        description: "",
+        active: true,
         departmentIds: defaultDepartmentIds,
         conditionalParameterIds: [],
-      });
-    } else if (!isEditMode && !fieldDetailDefault) {
-      // No default data available, use initial form data
-      setFormData(initialFormData);
+      };
     }
+
+    // If draftId exists, server should have merged draft payload into data
+    return {
+      name: data.name || "New Field",
+      description: data.description || "",
+      active: data.active ?? true,
+      departmentIds: data.department_ids || [],
+      conditionalParameterIds: data.conditional_parameter_ids || [],
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isEditMode,
     fieldDetail,
     fieldDetailDefault,
-    initialFormData,
-    defaultDepartmentIds,
+    fieldDetailId,
+    fieldDetailDefaultId,
+    draftId,
+    urlDraftId,
+    fieldDetailDefault?.name,
+    fieldDetailDefault?.description,
+    fieldDetailDefault?.department_ids,
+    fieldDetailDefault?.conditional_parameter_ids,
+    fieldDetail?.name,
+    fieldDetail?.description,
+    fieldDetail?.active,
+    fieldDetail?.department_ids,
+    fieldDetail?.conditional_parameter_ids,
+    effectiveProfile?.role,
+    effectiveProfile?.primaryDepartmentId,
   ]);
+
+  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+  // Track previous initialDraftState content
+  const prevInitialDraftStateRef = useRef<string>(
+    JSON.stringify(initialDraftState)
+  );
+
+  // Update draft state when server data changes
+  useEffect(() => {
+    const currentStateStr = prevInitialDraftStateRef.current;
+    const newStateStr = JSON.stringify(initialDraftState);
+
+    if (currentStateStr !== newStateStr) {
+      // Check if new state is "empty" but current state has content
+      const newStateIsEmpty =
+        (!initialDraftState.name || initialDraftState.name.trim() === "") &&
+        (initialDraftState.departmentIds?.length || 0) === 0;
+
+      setDraftState((currentDraftState) => {
+        const currentStateHasContent =
+          (currentDraftState.name?.trim() || "").length > 0 ||
+          (currentDraftState.departmentIds?.length || 0) > 0;
+
+        // Prevent overwriting with empty values if current state has content
+        // BUT: Always update boolean fields from initialDraftState
+        if (newStateIsEmpty && currentStateHasContent) {
+          return {
+            ...currentDraftState,
+            active: initialDraftState.active,
+          };
+        }
+
+        return initialDraftState;
+      });
+
+      prevInitialDraftStateRef.current = newStateStr;
+    }
+  }, [initialDraftState]);
+
+  // Integrate autosave hook
+  const {
+    saveStatus: _saveStatus,
+    saveNow: _saveNow,
+    lastSavedVersion: _lastSavedVersion,
+  } = useDraftAutosave({
+    draftId,
+    draftState,
+    patchDraftAction: patchFieldDraftAction
+      ? async (input) => {
+          const result = await patchFieldDraftAction({
+            body: {
+              input_draft_id: input.body.draft_id || null,
+              patch: input.body.patch as Record<string, unknown>,
+              expected_version: input.body.expected_version,
+            } as PatchFieldDraftIn["body"],
+          });
+          return {
+            draftId: result.draft_id || "",
+            newVersion: result.new_version || 0,
+            draftExists: result.draft_exists || false,
+          };
+        }
+      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    debounceMs: 1000,
+    onDraftCreated: useCallback(
+      (newDraftId: string) => {
+        const currentUrlDraftId = searchParams.get("draftId");
+        if (newDraftId === currentUrlDraftId) {
+          return;
+        }
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("draftId", newDraftId);
+        const newUrl = `?${params.toString()}`;
+        router.replace(newUrl, { scroll: false });
+        router.refresh();
+      },
+      [router, searchParams]
+    ),
+  });
+
+  // Merge draftState with urlParams for formData
+  const formData = useMemo(() => {
+    return {
+      ...draftState,
+    } as Record<string, unknown>;
+  }, [draftState]);
+
+  // Wrapper for setFormData that updates draftState
+  const setFormData = useCallback(
+    (
+      updates:
+        | Partial<Record<string, unknown>>
+        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
+    ) => {
+      const resolvedUpdates =
+        typeof updates === "function" ? updates(formData) : updates;
+
+      const draftUpdates: Partial<DraftState> = {};
+
+      Object.entries(resolvedUpdates).forEach(([key, value]) => {
+        if (
+          key === "name" ||
+          key === "description" ||
+          key === "active" ||
+          key === "departmentIds" ||
+          key === "conditionalParameterIds"
+        ) {
+          draftUpdates[key as keyof DraftState] = value as never;
+        }
+      });
+
+      if (Object.keys(draftUpdates).length > 0) {
+        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
+      }
+    },
+    [formData]
+  );
 
   // Set breadcrumb metadata
   useEffect(() => {
@@ -195,7 +464,7 @@ export default function Field({
       setEntityMetadata({
         entityId: fieldId,
         entityName: fieldDetail.name,
-        entityType: "parameter",
+        entityType: "field",
       });
     }
 
@@ -212,16 +481,37 @@ export default function Field({
     clearEntityMetadata,
   ]);
 
-  // Readonly logic using server-provided can_edit flag
+  // Readonly logic
   const isReadonly = useMemo(() => {
     if (!isEditMode || !fieldDetail) return false;
     return !fieldDetail.can_edit;
   }, [isEditMode, fieldDetail]);
 
-  // Step status logic
+  // Steps configuration
+  const steps = useMemo(
+    () => [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description:
+          "Set the field name, description, departments, and active status.",
+        resetFields: ["name", "description", "active", "departmentIds"],
+      },
+      {
+        id: "conditionalParameters",
+        title: "Conditional Parameters",
+        description:
+          "Select parameters to show when this field is selected (enables parameter chaining).",
+        resetFields: ["conditionalParameterIds"],
+      },
+    ],
+    []
+  );
+
+  // Step status calculation
   const getStepStatus = useCallback(
-    (stepId: string): StepStatus => {
-      const hasName = !!formData?.name?.trim();
+    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
 
       switch (stepId) {
         case "basic":
@@ -229,104 +519,265 @@ export default function Field({
         case "conditionalParameters":
           if (!hasName) return "pending";
           const hasParameters =
-            (formData?.conditionalParameterIds?.length || 0) > 0;
+            ((formData["conditionalParameterIds"] as string[] | null | undefined)
+              ?.length || 0) > 0;
           return hasParameters ? "completed" : "active";
         default:
           return "pending";
       }
     },
-    [formData]
+    []
   );
 
-  // Steps array
-  const steps: Step[] = useMemo(() => {
-    return [
-      {
-        id: "basic",
-        title: "Basic Information",
-        description:
-          "Set the field name, description, departments, and active status.",
-        status: getStepStatus("basic"),
-      },
-      {
-        id: "conditionalParameters",
-        title: "Conditional Parameters",
-        description:
-          "Select parameters to show when this field is selected (enables parameter chaining).",
-        status: getStepStatus("conditionalParameters"),
-      },
-    ];
-  }, [getStepStatus]);
-
-  const handleInputChange = (
-    field: keyof FormData,
-    value: string | boolean | string[] | null | undefined
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const resetFormAndState = () => {
-    setFormData(initialFormData);
-    setErrors({});
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.name.trim()) {
-      setErrors((prev) => ({ ...prev, name: "Name is required" }));
-      return;
-    }
-
-    // Description is optional, so no validation needed
-
-    // Ensure profileId exists - required for API calls
-    if (!effectiveProfile?.id) {
-      toast.error("Profile not loaded. Please refresh the page.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      if (isEditMode && fieldId) {
-        await updateFieldAction!({
-          body: {
-            fieldId: fieldId,
-            name: formData.name!,
-            description: formData.description || "",
-            active: formData.active ?? true,
-            department_ids: formData.departmentIds || null,
-            conditional_parameter_ids: formData.conditionalParameterIds || null,
-          },
-        });
-        resetFormAndState();
-        toast.success("Field updated successfully!");
-        router.push(`/management/fields`);
-      } else {
-        await createFieldAction!({
-          body: {
-            name: formData.name!,
-            description: formData.description || "",
-            active: formData.active ?? true,
-            department_ids: formData.departmentIds || null,
-            conditional_parameter_ids: formData.conditionalParameterIds || null,
-          },
-        });
-        resetFormAndState();
-        toast.success("Field created successfully!");
-        router.push(`/management/fields`);
+  // Form initialization from server data
+  const initializeForm = useCallback(
+    (serverData: FieldDetailOut | FieldNewOut, editMode: boolean) => {
+      if (!editMode || !("field_id" in serverData)) {
+        return {};
       }
-    } catch (error) {
-      toast.error(
-        `Failed to ${isEditMode && fieldId ? "update" : "create"} field: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-      setIsSubmitting(false);
-    }
-  };
+
+      const fieldDetail = serverData as FieldDetailOut;
+      const updates: Partial<
+        Record<keyof typeof fieldSearchParamsClient, unknown>
+      > = {};
+
+      if (fieldDetail.name) updates["name"] = fieldDetail.name;
+      if (fieldDetail.description)
+        updates["description"] = fieldDetail.description;
+      if (fieldDetail.active !== undefined) updates["active"] = fieldDetail.active;
+      if (fieldDetail.department_ids)
+        updates["departmentIds"] = fieldDetail.department_ids;
+      if (fieldDetail.conditional_parameter_ids)
+        updates["conditionalParameterIds"] = fieldDetail.conditional_parameter_ids;
+
+      return updates;
+    },
+    []
+  );
+
+  // Submit handler
+  const handleSubmit = useCallback(
+    async (formData: Record<string, unknown>) => {
+      if (!formData["name"]) {
+        toast.error("Name is required");
+        throw new Error("Name is required");
+      }
+
+      const finalData = {
+        name: formData["name"] as string,
+        description: (formData["description"] as string) || "",
+        active: (formData["active"] as boolean) ?? true,
+        department_ids: (formData["departmentIds"] as string[] | null | undefined) || null,
+        conditional_parameter_ids: (formData["conditionalParameterIds"] as string[] | null | undefined) || null,
+      };
+
+      if (isEditMode) {
+        if (!updateFieldAction) {
+          throw new Error("updateFieldAction is required");
+        }
+        try {
+          await updateFieldAction({
+            body: { ...finalData, field_id: fieldId! },
+          });
+        toast.success("Field updated successfully!");
+          router.push("/management/fields");
+        } catch (error) {
+          toast.error(
+            `Failed to update field: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          throw error;
+        }
+      } else {
+        if (!createFieldAction) {
+          throw new Error("createFieldAction is required");
+        }
+        try {
+          await createFieldAction({ body: finalData });
+        toast.success("Field created successfully!");
+          router.push("/management/fields");
+        } catch (error) {
+          toast.error(
+            `Failed to create field: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          throw error;
+        }
+      }
+    },
+    [isEditMode, fieldId, updateFieldAction, createFieldAction, router]
+  );
+
+  // Render step
+  const renderStep = useCallback(
+    ({
+      stepId,
+      stepStatus,
+      stepTitle,
+      stepDescription,
+      stepNumber,
+      formData: stepFormData,
+      setFormData: setStepFormData,
+    }: {
+      stepId: string;
+      stepStatus: StepStatus;
+      stepTitle: string;
+      stepDescription: string;
+      stepNumber: number;
+      formData: Record<string, unknown>;
+      setFormData: (updates: Partial<Record<string, unknown>>) => void;
+    }) => {
+      switch (stepId) {
+        case "basic": {
+          const name = (stepFormData["name"] as string | null | undefined) || "";
+          const description =
+            (stepFormData["description"] as string | null | undefined) || "";
+          const active = (stepFormData["active"] as boolean | null | undefined) ?? true;
+          const departmentIds =
+            (stepFormData["departmentIds"] as string[] | null | undefined) || [];
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              editableTitle={{
+                value: name,
+                onChange: (value) => setStepFormData({ name: value }),
+                placeholder: "New Field",
+                onFocus: (e) => {
+                  if (e.target.value === "New Field") {
+                    e.target.select();
+                  }
+                },
+                onBlur: (e) => {
+                  if (!e.target.value || e.target.value.trim() === "") {
+                    setStepFormData({ name: "New Field" });
+                  }
+                },
+              }}
+            >
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    data-testid="input-field-description"
+                    value={description}
+                    onChange={(e) =>
+                      setStepFormData({ description: e.target.value })
+                    }
+                    placeholder="Enter a brief description (optional)"
+                    rows={3}
+                    disabled={isReadonly}
+                  />
+                </div>
+
+                {/* Department Selection */}
+                {validDepartmentIds && validDepartmentIds.length > 1 ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <GenericPicker
+                      items={departmentMapping}
+                      itemIds={validDepartmentIds}
+                      selectedIds={departmentIds}
+                      onSelect={(ids) => setStepFormData({ departmentIds: ids })}
+                      getId={(dept) => {
+                        const entry = Object.entries(departmentMapping).find(
+                          ([, v]) => v === dept
+                        );
+                        return entry ? entry[0] : "";
+                      }}
+                      getLabel={(dept) =>
+                        (dept["name"] as string | undefined) || ""
+                      }
+                      getSearchText={(dept) =>
+                        `${dept["name"]} ${dept["description"] || ""}`
+                      }
+                      placeholder="All Departments"
+                      disabled={isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                    />
+                  </div>
+                ) : null}
+
+                {/* Active Switch */}
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="active"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                        Active
+                      </Label>
+                      <Switch
+                        id="active"
+                        data-testid="switch-field-active"
+                        checked={active}
+                        onCheckedChange={(checked) =>
+                          setStepFormData({ active: checked })
+                        }
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Inactive fields will not be available for selection
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </StepCard>
+          );
+        }
+
+        case "conditionalParameters": {
+          const conditionalParameterIds =
+            (stepFormData["conditionalParameterIds"] as string[] | null | undefined) || [];
+
+          if (!validParameterIds || validParameterIds.length === 0) {
+            return null;
+          }
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <ParameterCardGrid
+                parameterMapping={parameterMapping}
+                validParameterIds={validParameterIds}
+                selectedParameterIds={conditionalParameterIds}
+                onSelect={(ids) =>
+                  setStepFormData({ conditionalParameterIds: ids })
+                }
+                readonly={isReadonly}
+              />
+            </StepCard>
+          );
+        }
+
+        default:
+          return null;
+      }
+    },
+    [
+      isReadonly,
+      isEditMode,
+      validDepartmentIds,
+      departmentMapping,
+      validParameterIds,
+      parameterMapping,
+    ]
+  );
 
   return (
     <div
@@ -365,235 +816,33 @@ export default function Field({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Step 1: Basic Information */}
-        <Card className="transition-all">
-          <CardContent className="pt-3">
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
-                  steps[0]?.status === "completed"
-                    ? "bg-green-500 text-white"
-                    : steps[0]?.status === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                )}
-              >
-                {steps[0]?.status === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <span>1</span>
-                )}
-              </div>
-              <div className="flex-1">
-                {formData.name !== undefined ? (
-                  <input
-                    type="text"
-                    id="name"
-                    data-testid="input-field-name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    onFocus={(e) => {
-                      if (e.target.value === "New Field") {
-                        e.target.select();
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // If empty on blur, revert to default name
-                      if (!e.target.value || e.target.value.trim() === "") {
-                        handleInputChange("name", "New Field");
-                      }
-                    }}
-                    className={cn(
-                      "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.name && "border-destructive"
-                    )}
-                    placeholder="New Field"
-                    disabled={isReadonly}
-                  />
-                ) : null}
-                <p className="text-xs text-muted-foreground mt-1 px-2">
-                  Click to edit
-                </p>
-                {errors.name && (
-                  <p className="text-sm text-destructive mt-1 px-2">
-                    {errors.name}
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-          <CardContent className="pt-0 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              {formData.description !== undefined ? (
-                <Textarea
-                  id="description"
-                  data-testid="input-field-description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  placeholder="Enter a brief description (optional)"
-                  rows={3}
-                  className={errors.description ? "border-destructive" : ""}
-                  disabled={isReadonly}
-                />
-              ) : null}
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-              )}
-            </div>
-
-            {/* Department Selection */}
-            {validDepartmentIds && validDepartmentIds.length > 1 ? (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                {formData?.departmentIds !== undefined ? (
-                  <GenericPicker
-                    items={departmentMapping}
-                    itemIds={validDepartmentIds}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                    getId={(dept) => {
-                      const entry = Object.entries(departmentMapping).find(
-                        ([, v]) => v === dept
-                      );
-                      return entry ? entry[0] : "";
-                    }}
-                    getLabel={(dept) =>
-                      (dept["name"] as string | undefined) || ""
-                    }
-                    getSearchText={(dept) =>
-                      `${dept["name"]} ${dept["description"] || ""}`
-                    }
-                    placeholder="All Departments"
-                    disabled={isReadonly}
-                    multiSelect={true}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                  />
-                ) : null}
-              </div>
-            ) : null}
-
-            {/* Active Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="active"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                  {formData.active !== undefined ? (
-                    <Switch
-                      id="active"
-                      data-testid="switch-field-active"
-                      checked={formData.active}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("active", checked)
-                      }
-                      disabled={isReadonly}
-                    />
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Inactive fields will not be available for selection
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Step 2: Conditional Parameters */}
-        {validParameterIds && validParameterIds.length > 0 && (
-          <Card
-            className={cn(
-              "transition-all",
-              !isEditMode &&
-                steps[1]?.status === "active" &&
-                "ring-2 ring-primary",
-              !isEditMode && steps[1]?.status === "pending" && "opacity-50"
-            )}
-          >
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-              <div className="flex items-center space-x-3">
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                    steps[1]?.status === "completed"
-                      ? "bg-green-500 text-white"
-                      : steps[1]?.status === "active"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                  )}
-                >
-                  {steps[1]?.status === "completed" ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <span>2</span>
-                  )}
-                </div>
-                <div>
-                  <CardTitle className="text-lg">
-                    {steps[1]?.title || "Conditional Parameters"}
-                  </CardTitle>
-                  <CardDescription>
-                    {steps[1]?.description ||
-                      "Select parameters to show when this field is selected (enables parameter chaining)."}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 px-6">
-              {formData?.conditionalParameterIds !== undefined ? (
-                <ParameterCardGrid
-                  parameterMapping={parameterMapping}
-                  validParameterIds={validParameterIds}
-                  selectedParameterIds={formData.conditionalParameterIds || []}
-                  onSelect={(ids) =>
-                    handleInputChange("conditionalParameterIds", ids)
-                  }
-                  readonly={isReadonly}
-                />
-              ) : null}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Submit Button */}
-        <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => router.back()}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || isReadonly}
-            data-testid="btn-submit-field"
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {isEditMode ? "Updating..." : "Creating..."}
-              </>
-            ) : isEditMode ? (
-              "Update Field"
-            ) : (
-              "Create Field"
-            )}
-          </Button>
-        </div>
-      </form>
+      <GenericForm
+        nuqsParsers={
+          fieldSearchParamsClient as Record<string, Parser<unknown>>
+        }
+        steps={steps}
+        getStepStatus={getStepStatus}
+        formData={formData}
+        setFormData={setFormData}
+        serverData={fieldData}
+        initializeForm={initializeForm}
+        formFieldKeys={["name", "description", "active", "departmentIds", "conditionalParameterIds"]}
+        resetSuccessMessage={(stepId) => {
+          if (stepId === "basic") return "Basic information reset";
+          if (stepId === "conditionalParameters") return "Conditional parameters reset";
+          return `${stepId} reset`;
+        }}
+        onSubmit={handleSubmit}
+        submitButton={{
+          createLabel: "Create Field",
+          updateLabel: "Update Field",
+          backUrl: "/management/fields",
+          backLabel: "Back",
+        }}
+        isReadonly={isReadonly}
+        isEditMode={isEditMode}
+        renderStep={renderStep}
+      />
     </div>
   );
 }

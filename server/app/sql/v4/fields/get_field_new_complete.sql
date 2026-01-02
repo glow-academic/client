@@ -4,7 +4,20 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_get_field_new_v4(uuid);
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_field_new_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_field_new_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
 DROP TYPE IF EXISTS types.q_get_field_new_v4_department;
@@ -25,7 +38,8 @@ CREATE TYPE types.q_get_field_new_v4_parameter AS (
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_field_new_v4(
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     valid_department_ids text[],
@@ -34,13 +48,30 @@ RETURNS TABLE (
     parameters types.q_get_field_new_v4_parameter[],
     user_role text,
     primary_department_id uuid,
-    actor_name text
+    actor_name text,
+    draft_version int,
+    name text,
+    description text,
+    active boolean,
+    department_ids text[],
+    conditional_parameter_ids text[]
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.version as draft_version,
+        d.payload
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
+        AND d.resource_type = 'field'::draft_resource_type
+        AND d.profile_id = x.profile_id
 ),
 user_profile AS (
     SELECT 
@@ -105,9 +136,32 @@ SELECT
     ) as parameters,
     up.role::text as user_role,
     pdd.primary_department_id,
-    up.actor_name
+    up.actor_name,
+    -- Draft fields
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        'New Field'
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true
+    ) as active,
+    COALESCE(
+        (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds')) FROM draft_payload_data),
+        ARRAY[]::text[]
+    ) as department_ids,
+    COALESCE(
+        (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'conditionalParameterIds')) FROM draft_payload_data),
+        ARRAY[]::text[]
+    ) as conditional_parameter_ids
 FROM user_profile up
 LEFT JOIN primary_department_data pdd ON true
+LEFT JOIN draft_payload_data dpd ON true
 $$;
 
 COMMIT;

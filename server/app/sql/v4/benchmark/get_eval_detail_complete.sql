@@ -144,7 +144,9 @@ CREATE OR REPLACE FUNCTION api_get_eval_detail_v4(
     draft_version int,
     rubric_grade_agent_pairs jsonb,
     rubric_grade_agent_active_states jsonb,
-    rubric_grade_agent_positions jsonb
+    rubric_grade_agent_positions jsonb,
+    run_rubric_grade_agents jsonb,
+    group_rubric_grade_agents jsonb
 )
 LANGUAGE sql
 STABLE
@@ -635,7 +637,55 @@ SELECT
     COALESCE(
         (SELECT payload->'rubric_grade_agent_positions' FROM draft_payload_data),
         '[]'::jsonb
-    ) as rubric_grade_agent_positions
+    ) as rubric_grade_agent_positions,
+    COALESCE(
+        (SELECT payload->'run_rubric_grade_agents' FROM draft_payload_data),
+        COALESCE(
+            (SELECT jsonb_object_agg(
+                errga.run_id::text,
+                COALESCE(
+                    (SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'rubric_id', rga.rubric_id::text,
+                            'grade_text_agent_id', rga.grade_agent_id::text
+                        )
+                    )
+                    FROM eval_runs_rubric_grade_agents errga2
+                    JOIN rubric_grade_agents rga ON rga.id = errga2.rubric_grade_agent_id
+                    WHERE errga2.eval_id = ed.eval_id AND errga2.run_id = errga.run_id),
+                    '[]'::jsonb
+                )
+            )
+             FROM params x2
+             JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = ed.eval_id
+             GROUP BY errga.run_id),
+            '{}'::jsonb
+        )
+    ) as run_rubric_grade_agents,
+    COALESCE(
+        (SELECT payload->'group_rubric_grade_agents' FROM draft_payload_data),
+        COALESCE(
+            (SELECT jsonb_object_agg(
+                egga.group_id::text,
+                COALESCE(
+                    (SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'rubric_id', rga.rubric_id::text,
+                            'grade_text_agent_id', rga.grade_agent_id::text
+                        )
+                    )
+                    FROM eval_groups_rubric_grade_agents egga2
+                    JOIN rubric_grade_agents rga ON rga.id = egga2.rubric_grade_agent_id
+                    WHERE egga2.eval_id = ed.eval_id AND egga2.group_id = egga.group_id),
+                    '[]'::jsonb
+                )
+            )
+             FROM params x3
+             JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = ed.eval_id
+             GROUP BY egga.group_id),
+            '{}'::jsonb
+        )
+    ) as group_rubric_grade_agents
 FROM eval_exists_check eec
 CROSS JOIN params
 CROSS JOIN eval_data ed

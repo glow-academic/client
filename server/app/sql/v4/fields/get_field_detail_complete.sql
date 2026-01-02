@@ -4,7 +4,20 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_get_field_detail_v4(uuid, uuid);
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_field_detail_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_field_detail_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
 DROP TYPE IF EXISTS types.q_get_field_detail_v4_department;
@@ -26,7 +39,8 @@ CREATE TYPE types.q_get_field_detail_v4_parameter AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_field_detail_v4(
     field_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     field_exists boolean,
@@ -42,7 +56,8 @@ RETURNS TABLE (
     parameters types.q_get_field_detail_v4_parameter[],
     valid_parameter_ids text[],
     can_edit boolean,
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
@@ -50,7 +65,17 @@ AS $$
 WITH params AS (
     SELECT
         field_id AS field_id,
-        profile_id AS profile_id
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.version as draft_version,
+        d.payload
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
+        AND d.resource_type = 'field'::draft_resource_type
+        AND d.profile_id = x.profile_id
 ),
 field_exists_check AS (
     -- Check if field exists independently of access control
@@ -138,12 +163,30 @@ SELECT
     -- Field existence check (always returned)
     fec.field_exists::boolean as field_exists,
     f.id as field_id,
-    f.name,
-    f.description,
-    f.active,
-    COALESCE(fdd.department_ids, NULL) as department_ids,
+    -- Merge draft payload with field data (draft takes precedence)
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        f.name
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        f.description
+    ) as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        f.active
+    ) as active,
+    COALESCE(
+        (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds')) FROM draft_payload_data),
+        fdd.department_ids,
+        NULL
+    ) as department_ids,
     COALESCE(fpd.parameter_ids, ARRAY[]::text[]) as parameter_ids,
-    COALESCE(fcpd.conditional_parameter_ids, ARRAY[]::text[]) as conditional_parameter_ids,
+    COALESCE(
+        (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'conditionalParameterIds')) FROM draft_payload_data),
+        fcpd.conditional_parameter_ids,
+        ARRAY[]::text[]
+    ) as conditional_parameter_ids,
     -- Aggregate departments
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -171,7 +214,9 @@ SELECT
         WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_edit,
-    up.actor_name
+    up.actor_name,
+    -- Draft version
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version
 FROM field_exists_check fec
 CROSS JOIN user_profile up
 LEFT JOIN params x ON true
@@ -180,6 +225,7 @@ LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
 LEFT JOIN field_parameters_data fpd ON fpd.field_id = f.id
 LEFT JOIN field_conditional_parameters_data fcpd ON fcpd.field_id = f.id
 CROSS JOIN user_has_field_access uha
+LEFT JOIN draft_payload_data dpd ON true
 WHERE uha.has_access = true OR fec.field_exists = false
 $$;
 

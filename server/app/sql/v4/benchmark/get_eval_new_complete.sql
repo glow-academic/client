@@ -114,7 +114,9 @@ RETURNS TABLE (
     draft_version int,
     rubric_grade_agent_pairs jsonb,
     rubric_grade_agent_active_states jsonb,
-    rubric_grade_agent_positions jsonb
+    rubric_grade_agent_positions jsonb,
+    run_rubric_grade_agents jsonb,
+    group_rubric_grade_agents jsonb
 )
 LANGUAGE sql
 STABLE
@@ -436,7 +438,15 @@ SELECT
     COALESCE(
         (SELECT payload->'rubric_grade_agent_positions' FROM draft_payload_data),
         '[]'::jsonb
-    ) as rubric_grade_agent_positions
+    ) as rubric_grade_agent_positions,
+    COALESCE(
+        (SELECT payload->'run_rubric_grade_agents' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as run_rubric_grade_agents,
+    COALESCE(
+        (SELECT payload->'group_rubric_grade_agents' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as group_rubric_grade_agents
 FROM user_profile up
 CROSS JOIN valid_dept_ids vdi
 CROSS JOIN departments_array da
