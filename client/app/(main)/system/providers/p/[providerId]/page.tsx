@@ -8,6 +8,7 @@ import Provider from "@/components/providers/Provider";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProviderDetailIn = InputOf<"/api/v4/providers/detail", "post">;
@@ -15,21 +16,21 @@ type ProviderDetailOut = OutputOf<"/api/v4/providers/detail", "post">;
 
 type UpdateProviderIn = InputOf<"/api/v4/providers/update", "post">;
 type UpdateProviderOut = OutputOf<"/api/v4/providers/update", "post">;
+type PatchProviderDraftIn = InputOf<"/api/v4/providers/draft", "patch">;
+type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getProvider = async (providerId: string): Promise<ProviderDetailOut> => {
-  return api.post(
-    "/providers/detail",
-    { body: { provider_id: providerId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+const getProvider = async (
+  input: ProviderDetailIn
+): Promise<ProviderDetailOut> => {
+  return api.post("/providers/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -38,9 +39,14 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { providerId } = await params;
-
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const provider = await getProvider(providerId);
+    const input: ProviderDetailIn = {
+      body: {
+        provider_id: providerId,
+      } as ProviderDetailIn["body"],
+    };
+    const provider = await getProvider(input);
     return {
       title: `${provider?.name || "Provider"}`,
       description: `${provider?.name ? `${provider.name} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
@@ -56,19 +62,64 @@ export async function generateMetadata(
   };
 }
 
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function updateProvider(
+  input: UpdateProviderIn
+): Promise<UpdateProviderOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/providers/update", input);
+}
+
+async function patchProviderDraft(
+  input: PatchProviderDraftIn
+): Promise<PatchProviderDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/providers/draft", input);
+}
+
 /** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
 export default async function EditProviderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ providerId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { providerId } = await params;
   // Access control is handled server-side in layout
-  // Get profileId from session
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
 
-  // Fetch data for edit mode
+  // Inline server-side parsers for provider search params
+  const providerSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadProviderSearchParams = createLoader(providerSearchParams);
+  const q = loadProviderSearchParams(searchParamsObj);
+
+  // Fetch data for edit mode (always fresh - source of truth) with draft_id
   try {
-    const providerDetail = await getProvider(providerId).catch(() => null);
+    const input: ProviderDetailIn = {
+      body: {
+        provider_id: providerId,
+        draft_id: q.draftId ?? null,
+      } as ProviderDetailIn["body"],
+    };
+    const providerDetail = await getProvider(input).catch(() => null);
 
     if (!providerDetail) {
       throw new Error("Provider not found");
@@ -82,8 +133,10 @@ export default async function EditProviderPage({
       >
         <Provider
           providerId={providerId}
+          mode="edit"
           providerDetail={providerDetail}
           updateProviderAction={updateProvider}
+          patchProviderDraftAction={patchProviderDraft}
         />
       </div>
     );
@@ -108,20 +161,10 @@ export default async function EditProviderPage({
   }
 }
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateProvider(
-  input: UpdateProviderIn
-): Promise<UpdateProviderOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/providers/update", {
-    ...input,
-    body: { ...input.body },
-  });
-}
-
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  PatchProviderDraftIn,
+  PatchProviderDraftOut,
   ProviderDetailIn,
   ProviderDetailOut,
   UpdateProviderIn,

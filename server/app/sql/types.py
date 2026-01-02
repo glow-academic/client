@@ -15222,11 +15222,13 @@ class GetProviderDetailSqlParams(BaseModel):
 
     provider_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.provider_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class GetProviderDetailSqlRow(BaseModel):
@@ -15243,10 +15245,12 @@ class GetProviderDetailSqlRow(BaseModel):
     can_edit: bool | None = None
     can_delete: bool | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 class GetProviderDetailApiRequest(BaseModel):
 
     provider_id: UUID
+    draft_id: UUID | None = None
 
 class GetProviderDetailApiResponse(BaseModel):
 
@@ -15262,6 +15266,7 @@ class GetProviderDetailApiResponse(BaseModel):
     can_edit: bool | None = None
     can_delete: bool | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 
 
@@ -15270,10 +15275,12 @@ class GetProviderDetailApiResponse(BaseModel):
 class GetProviderNewSqlParams(BaseModel):
 
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.draft_id,
         )
 
 class GetProviderNewSqlRow(BaseModel):
@@ -15289,10 +15296,11 @@ class GetProviderNewSqlRow(BaseModel):
     can_edit: bool | None = None
     can_delete: bool | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 class GetProviderNewApiRequest(BaseModel):
 
-    pass
+    draft_id: UUID | None = None
 
 class GetProviderNewApiResponse(BaseModel):
 
@@ -15307,6 +15315,7 @@ class GetProviderNewApiResponse(BaseModel):
     can_edit: bool | None = None
     can_delete: bool | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 
 
@@ -15368,6 +15377,43 @@ class GetProvidersListApiResponse(BaseModel):
     providers: list[QListProvidersV4Provider] | None = None
     provider_options: list[QListProvidersV4ProviderOption] | None = None
     status_options: list[QListProvidersV4StatusOption] | None = None
+
+
+
+# Generated from: patch_provider_draft
+
+class PatchProviderDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchProviderDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchProviderDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchProviderDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25755,6 +25801,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProvidersListApiRequest",
         "GetProvidersListApiResponse",
     ),
+    "app/sql/v4/providers/patch_provider_draft_complete.sql": (
+        "PatchProviderDraftSqlParams",
+        "PatchProviderDraftSqlRow",
+        "PatchProviderDraftApiRequest",
+        "PatchProviderDraftApiResponse",
+    ),
     "app/sql/v4/providers/update_provider_complete.sql": (
         "UpdateProviderSqlParams",
         "UpdateProviderSqlRow",
@@ -27804,6 +27856,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/providers/get_providers_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/providers/patch_provider_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

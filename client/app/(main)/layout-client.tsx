@@ -342,14 +342,22 @@ function MainLayoutContent({
 
   // Determine if we're on a create/edit page and get resource type
   const isCreateOrEditPage = useMemo(() => {
-    // Match patterns like /create/personas/new, /create/personas/p/[id], /create/simulations/s/[id], etc.
-    return /\/create\/([^/]+)\/(new|[pscrdafm]\/[^/]+)/.test(pathname);
+    // Match patterns like:
+    // /create/personas/new, /create/personas/p/[id]
+    // /management/staff/new
+    // /engine/rubrics/new
+    // /system/departments/new
+    return /^\/(create|management|engine|system)\/([^/]+)\/(new|[pscrdafm]\/[^/]+)/.test(
+      pathname
+    );
   }, [pathname]);
 
   const resourceType = useMemo(() => {
     if (!isCreateOrEditPage) return null;
-    const match = pathname.match(/\/create\/([^/]+)/);
-    return match ? match[1] : null;
+    const match = pathname.match(
+      /^\/(create|management|engine|system)\/([^/]+)/
+    );
+    return match ? match[2] : null; // Use second capture group (resource name)
   }, [pathname, isCreateOrEditPage]);
 
   return (

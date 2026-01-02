@@ -40,7 +40,8 @@ END $$;
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_provider_detail_v4(
     provider_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     provider_exists boolean,
@@ -54,13 +55,28 @@ RETURNS TABLE (
     base_url text,
     can_edit boolean,
     can_delete boolean,
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT provider_id AS provider_id, profile_id AS profile_id
+    SELECT 
+        provider_id AS provider_id, 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'providers'::draft_resource_type
+    LIMIT 1
 ),
 provider_exists_check AS (
     -- Check if provider exists independently of access control
@@ -103,10 +119,23 @@ check_usage AS (
 SELECT 
     pec.provider_exists::boolean as provider_exists,
     pd.provider_id,
-    pd.name,
-    pd.description,
-    pd.value,
-    pd.active,
+    -- Merge draft payload over existing provider data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        pd.name
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        pd.description
+    ) as description,
+    COALESCE(
+        (SELECT payload->>'value' FROM draft_payload_data),
+        pd.value
+    ) as value,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        pd.active
+    ) as active,
     pd.created_at,
     pd.updated_at,
     pd.base_url,
@@ -119,7 +148,8 @@ SELECT
         WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_delete,
-    ap.actor_name::text as actor_name
+    ap.actor_name::text as actor_name,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version
 FROM provider_exists_check pec
 LEFT JOIN provider_data pd ON pec.provider_exists = true
 CROSS JOIN user_profile up

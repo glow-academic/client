@@ -2408,6 +2408,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/providers/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Provider Draft
+         * @description Patch provider draft (creates if not exists).
+         */
+        patch: operations["patch_provider_draft_api_v4_providers_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/parameters/list": {
         parameters: {
             query?: never;
@@ -12352,6 +12372,8 @@ export interface components {
              * Format: uuid
              */
             provider_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetProviderDetailApiResponse */
         GetProviderDetailApiResponse: {
@@ -12379,9 +12401,14 @@ export interface components {
             can_delete?: boolean | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetProviderNewApiRequest */
-        GetProviderNewApiRequest: Record<string, never>;
+        GetProviderNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetProviderNewApiResponse */
         GetProviderNewApiResponse: {
             /** Provider Id */
@@ -12406,6 +12433,8 @@ export interface components {
             can_delete?: boolean | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetProvidersListApiRequest */
         GetProvidersListApiRequest: Record<string, never>;
@@ -13955,6 +13984,26 @@ export interface components {
         };
         /** PatchPersonaDraftApiResponse */
         PatchPersonaDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchProviderDraftApiRequest */
+        PatchProviderDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchProviderDraftApiResponse */
+        PatchProviderDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -26661,6 +26710,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteProviderApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_provider_draft_api_v4_providers_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchProviderDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchProviderDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

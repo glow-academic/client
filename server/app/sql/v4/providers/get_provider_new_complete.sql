@@ -38,7 +38,10 @@ BEGIN
 END $$;
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_provider_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_provider_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     provider_id text,
     name text,
@@ -50,13 +53,27 @@ RETURNS TABLE (
     base_url text,
     can_edit boolean,
     can_delete boolean,
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'providers'::draft_resource_type
+    LIMIT 1
 ),
 actor_profile AS (
     SELECT 
@@ -71,22 +88,36 @@ user_profile AS (
 )
 SELECT 
     ''::text as provider_id,
-    ''::text as name,
-    ''::text as description,
-    ''::text as value,
-    true::boolean as active,
+    -- Default values for new provider (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        ''::text
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''::text
+    ) as description,
+    COALESCE(
+        (SELECT payload->>'value' FROM draft_payload_data),
+        ''::text
+    ) as value,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true::boolean
+    ) as active,
     NOW()::timestamptz as created_at,
     NOW()::timestamptz as updated_at,
     ''::text as base_url,
     CASE 
-        WHEN up.user_role IN ('admin', 'superadmin') THEN true
+        WHEN up.user_role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END::boolean as can_edit,
     CASE 
-        WHEN up.user_role IN ('admin', 'superadmin') THEN true
+        WHEN up.user_role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END::boolean as can_delete,
-    ap.actor_name::text as actor_name
+    ap.actor_name::text as actor_name,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version
 FROM user_profile up
 CROSS JOIN actor_profile ap
 $$;
