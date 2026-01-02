@@ -529,6 +529,271 @@ await set_cached(
 - [ ] All `cache_key()` calls use `request.model_dump(mode='json')` for UUID serialization
 - [ ] No UUID serialization errors in server logs
 
+## Draft Endpoint Pattern
+
+**⚠️ CRITICAL: Draft endpoints follow a standardized pattern for autosave functionality.**
+
+Draft endpoints enable optimistic concurrency control for form autosave. All draft endpoints follow the same pattern with resource-specific defaults.
+
+### Pattern Overview
+
+**Endpoint**: `PATCH /api/v4/{resource}/draft`
+
+**Purpose**: Create or patch a draft for a resource (personas, scenarios, benchmarks, etc.)
+
+**Key Principles**:
+
+1. **One endpoint per resource**: Each resource has its own draft endpoint (e.g., `/api/v4/personas/draft`, `/api/v4/scenarios/draft`)
+2. **SQL function naming**: Function name follows `api_patch_{resource}_draft_v4` pattern
+3. **SQL file naming**: SQL file follows `patch_{resource}_draft_complete.sql` pattern
+4. **Text parameter for patch**: SQL function accepts `patch text` (JSON string), not `jsonb` - allows asyncpg to pass JSON strings directly
+5. **Standard return type**: All draft functions return `(draft_id uuid, new_version int, draft_exists boolean)`
+6. **Resource-specific defaults**: Default values in SQL are resource-specific (acceptable - each resource has different fields)
+
+### Request/Response Structure
+
+**Request Model** (Python):
+```python
+class Patch{Resource}DraftApiRequest(BaseModel):
+    patch: dict[str, Any]  # Partial draft state (only changed fields)
+    expected_version: int  # Optimistic concurrency control
+    input_draft_id: UUID | None = None  # Optional - creates new draft if None
+```
+
+**SQL Function Signature**:
+```sql
+CREATE OR REPLACE FUNCTION api_patch_{resource}_draft_v4(
+    profile_id uuid,
+    patch text,  -- JSON string (not jsonb) for asyncpg compatibility
+    expected_version int,
+    input_draft_id uuid DEFAULT NULL
+)
+RETURNS TABLE (draft_id uuid, new_version int, draft_exists boolean)
+```
+
+**Response Model** (Auto-generated from SQL):
+```python
+class Patch{Resource}DraftApiResponse(BaseModel):
+    draft_id: UUID
+    new_version: int
+    draft_exists: bool  # True if draft existed, False if newly created
+```
+
+### Implementation Pattern
+
+**Route Handler** (`server/app/api/v4/{resource}/draft.py`):
+```python
+@router.patch(
+    "/draft",
+    response_model=Patch{Resource}DraftApiResponse,
+    dependencies=[
+        audit_activity(
+            "{resource}.draft.patched",
+            "{{ actor.name }} saved {resource} draft",
+        )
+    ],
+)
+async def patch_{resource}_draft(
+    request: Patch{Resource}DraftApiRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> Patch{Resource}DraftApiResponse:
+    """Patch {resource} draft (creates if not exists)."""
+    tags = ["{resource}", "drafts"]
+    
+    sql_query = load_sql_query(SQL_PATH)
+    sql_params: tuple[Any, ...] | None = None
+    
+    try:
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+        
+        async with conn.transaction():
+            # Encode patch dict as JSON string (SQL function accepts text)
+            import json
+            patch_json = json.dumps(request.patch) if request.patch else "{}"
+            
+            params = Patch{Resource}DraftSqlParams(
+                profile_id=profile_id,
+                patch=patch_json,  # JSON string, not jsonb
+                expected_version=request.expected_version,
+                input_draft_id=request.input_draft_id,
+            )
+            sql_params = params.to_tuple()
+            
+            result = cast(
+                Patch{Resource}DraftSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+            
+            if not result or result.draft_id is None:
+                raise ValueError("Failed to patch {resource} draft")
+            
+            # Set audit context
+            if profile_id:
+                audit_set(
+                    http_request,
+                    actor={"id": profile_id},
+                    draft={"id": str(result.draft_id)},
+                )
+        
+        api_response = Patch{Resource}DraftApiResponse.model_validate(result.model_dump())
+        
+        # Invalidate cache - also invalidate profile cache on create
+        if not result.draft_exists:
+            tags.append("profile")
+        
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return api_response
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="patch_{resource}_draft",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
+```
+
+**SQL Function** (`server/app/sql/v4/{resource}/patch_{resource}_draft_complete.sql`):
+```sql
+-- Patch {resource} draft (create if not exists, patch if exists)
+BEGIN;
+
+-- Drop function if exists (handles signature variations)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_patch_{resource}_draft_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_patch_{resource}_draft_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- Recreate function
+CREATE OR REPLACE FUNCTION api_patch_{resource}_draft_v4(
+    profile_id uuid,
+    patch text,  -- JSON string (cast to jsonb internally)
+    expected_version int,
+    input_draft_id uuid DEFAULT NULL
+)
+RETURNS TABLE (draft_id uuid, new_version int, draft_exists boolean)
+LANGUAGE plpgsql
+VOLATILE
+AS $$
+DECLARE
+    v_draft_id uuid;
+    v_new_version int;
+    v_profile_id uuid := profile_id;
+    v_patch jsonb := patch::jsonb;  -- Cast text to jsonb
+BEGIN
+    -- If input_draft_id provided, try to patch existing draft
+    IF input_draft_id IS NOT NULL THEN
+        UPDATE drafts
+        SET
+            payload = drafts.payload || v_patch,
+            version = drafts.version + 1,
+            updated_at = now()
+        WHERE
+            drafts.id = input_draft_id
+            AND drafts.profile_id = v_profile_id
+            AND drafts.version = expected_version
+        RETURNING drafts.id, drafts.version INTO v_draft_id, v_new_version;
+        
+        -- If update succeeded, return result
+        IF v_draft_id IS NOT NULL THEN
+            RETURN QUERY SELECT v_draft_id, v_new_version, true;
+            RETURN;
+        END IF;
+    END IF;
+    
+    -- If no input_draft_id or update failed (version mismatch), create new draft
+    WITH defaults AS (
+        SELECT jsonb_build_object(
+            -- Resource-specific defaults (e.g., for personas: name, description, color, icon, etc.)
+            'field1', '',
+            'field2', '',
+            'field3', true
+        ) AS d
+    ),
+    payload AS (
+        SELECT (d || v_patch) AS p
+        FROM defaults
+    ),
+    params AS (
+        SELECT v_profile_id AS p_profile_id
+    )
+    INSERT INTO drafts(resource_type, profile_id, payload)
+    SELECT '{resource}'::draft_resource_type, p_profile_id, p
+    FROM payload, params
+    RETURNING id, version INTO v_draft_id, v_new_version;
+    
+    RETURN QUERY SELECT v_draft_id, v_new_version, false;
+END;
+$$;
+
+COMMIT;
+```
+
+### Cache Invalidation Pattern
+
+**Standard Tags**:
+- `["{resource}", "drafts"]` - Always invalidate
+- `["profile"]` - Also invalidate when creating new draft (so client can refresh and get new draft_id)
+
+**Pattern**:
+```python
+tags = ["{resource}", "drafts"]
+if not result.draft_exists:
+    tags.append("profile")
+await invalidate_tags(tags)
+```
+
+### Audit Logging Pattern
+
+**Activity Name**: `{resource}.draft.patched`
+
+**Message Template**: `"{{ actor.name }} saved {resource} draft"`
+
+**Audit Context**:
+```python
+audit_set(
+    http_request,
+    actor={"id": profile_id},
+    draft={"id": str(result.draft_id)},
+)
+```
+
+### Key Points
+
+1. **Text parameter**: SQL function accepts `patch text` (not `jsonb`) to allow asyncpg to pass JSON strings directly without manual encoding
+2. **JSON encoding**: Python route encodes `dict` to JSON string before passing to SQL
+3. **JSON casting**: SQL function casts `text` to `jsonb` internally for JSON operations
+4. **Optimistic concurrency**: Uses `expected_version` to prevent lost updates
+5. **Create-on-miss**: Creates new draft if `input_draft_id` is None or version mismatch occurs
+6. **Resource-specific defaults**: Default values in SQL are resource-specific (each resource has different fields)
+
+### Reference Implementation
+
+See `server/app/api/v4/personas/draft.py` and `server/app/sql/v4/personas/patch_persona_draft_complete.sql` as the reference implementation.
+
 ## Reference Implementation
 
 See `server/app/api/v3/agents/list.py` and `server/app/sql/v4/agents/get_agents_list_complete.sql` as the reference implementation.

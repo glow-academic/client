@@ -45,6 +45,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { getColorName } from "@/utils/color-helpers";
 import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check, Power } from "lucide-react";
@@ -55,53 +56,6 @@ import {
   type Parser,
 } from "nuqs";
 
-// Color name mapping for common hex colors (similar to Settings)
-const getColorName = (hex: string): string => {
-  const colorMap: Record<string, string> = {
-    "#000000": "Black",
-    "#FFFFFF": "White",
-    "#FF0000": "Red",
-    "#00FF00": "Green",
-    "#0000FF": "Blue",
-    "#FFFF00": "Yellow",
-    "#FF00FF": "Magenta",
-    "#00FFFF": "Cyan",
-    "#FFA500": "Orange",
-    "#800080": "Purple",
-    "#FFC0CB": "Pink",
-    "#A52A2A": "Brown",
-    "#808080": "Gray",
-    "#FFD700": "Gold",
-    "#C0C0C0": "Silver",
-    "#008000": "Dark Green",
-    "#000080": "Navy",
-    "#800000": "Maroon",
-    "#EF4444": "Red",
-    "#F97316": "Orange",
-    "#F59E0B": "Amber",
-    "#EAB308": "Yellow",
-    "#84CC16": "Lime",
-    "#22C55E": "Green",
-    "#10B981": "Emerald",
-    "#14B8A6": "Teal",
-    "#06B6D4": "Cyan",
-    "#0EA5E9": "Sky",
-    "#3B82F6": "Blue",
-    "#6366F1": "Indigo",
-    "#8B5CF6": "Violet",
-    "#A855F7": "Purple",
-    "#D946EF": "Fuchsia",
-    "#EC4899": "Pink",
-    "#F43F5E": "Rose",
-  };
-
-  const normalizedHex = hex.toUpperCase().startsWith("#")
-    ? hex.toUpperCase()
-    : `#${hex.toUpperCase()}`;
-
-  return colorMap[normalizedHex] || "Custom";
-};
-
 export interface PersonaProps {
   personaId?: string;
   mode?: "create" | "edit";
@@ -111,6 +65,9 @@ export interface PersonaProps {
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
+  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
+  // For other resources, use pattern: patch{Resource}DraftAction (e.g., patchScenarioDraftAction)
+  // See Z-DOCS.md "Draft Autosave Pattern" section for migration guide
   patchPersonaDraftAction?: (
     input: PatchPersonaDraftIn
   ) => Promise<PatchPersonaDraftOut>;
@@ -447,6 +404,7 @@ function PersonaComponent({
       parameterFieldIds: [],
       examples: [],
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isEditMode,
     personaDetail,
@@ -492,6 +450,8 @@ function PersonaComponent({
   }, [initialDraftState]);
 
   // Integrate autosave hook
+  // Pattern: Transform hook API (draft_id, patch, expected_version) to backend API (input_draft_id, patch, expected_version)
+  // See Z-DOCS.md "Draft Autosave Pattern" section for type transformation details
   const {
     saveStatus: _saveStatus,
     saveNow: _saveNow,
@@ -501,7 +461,9 @@ function PersonaComponent({
     draftState,
     patchDraftAction: patchPersonaDraftAction
       ? async (input) => {
-          // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
+          // Transform hook API → backend API
+          // Hook API: { body: { draft_id, patch, expected_version } }
+          // Backend API: { body: { input_draft_id, patch, expected_version } }
           // Note: profile_id is added server-side from header
           const result = await patchPersonaDraftAction({
             body: {
@@ -510,7 +472,9 @@ function PersonaComponent({
               expected_version: input.body.expected_version,
             } as PatchPersonaDraftIn["body"],
           });
-          // Transform response to match hook expectations (API returns draft_id, new_version, draft_exists)
+          // Transform backend API → hook API
+          // Backend API: { draft_id, new_version, draft_exists }
+          // Hook API: { draftId, newVersion, draftExists }
           return {
             draftId: result.draft_id || "",
             newVersion: result.new_version || 0,
@@ -1751,6 +1715,8 @@ function PersonaComponent({
       allIcons,
       suggestedIconsAll,
       getExamplesHistory,
+      createColorFilterOnChange,
+      createIconFilterOnChange,
     ]
   );
 

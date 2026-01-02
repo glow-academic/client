@@ -1329,3 +1329,382 @@ See `client/components/personas/Persona.tsx` for a complete reference implementa
 **Issue**: Submit button not showing
 - **Solution**: Ensure `onSubmit` and `submitButton` props are provided to `GenericForm`
 
+## Draft Autosave Pattern
+
+**⚠️ CRITICAL: Draft autosave enables optimistic concurrency control for form state persistence.**
+
+The draft pattern provides automatic saving of form state with version-based conflict detection. All resources that support drafts follow the same component pattern.
+
+### Pattern Overview
+
+**Purpose**: Automatically save form state as drafts with debouncing and optimistic concurrency control
+
+**Key Principles**:
+
+1. **Generic hook**: Use `useDraftAutosave` hook for all resources
+2. **Resource-specific prop names**: Component props use resource-specific names (e.g., `patchPersonaDraftAction`, `patchScenarioDraftAction`)
+3. **Type transformation**: Transform hook API to backend API in wrapper function
+4. **URL draftId management**: Sync draftId between URL (nuqs) and profile context
+5. **Server data initialization**: Initialize draft state from server data (merged with draft payload)
+
+### Hook Usage Pattern
+
+**Hook**: `useDraftAutosave<T extends Record<string, unknown>>`
+
+**Location**: `client/hooks/use-draft-autosave.ts`
+
+**Interface**:
+```typescript
+interface UseDraftAutosaveOptions<T extends Record<string, unknown>> {
+  draftId: string | null;
+  draftState: T;
+  patchDraftAction: (input: {
+    body: {
+      draft_id?: string | null;
+      patch: Partial<T>;
+      expected_version: number;
+    };
+  }) => Promise<{
+    draftId: string;
+    newVersion: number;
+    draftExists: boolean;
+  }>;
+  debounceMs?: number;
+  onDraftCreated?: (draftId: string) => void;
+}
+```
+
+### Component Integration Pattern
+
+**Component Props**:
+```typescript
+export interface {Resource}Props {
+  {resource}Id?: string;
+  mode?: "create" | "edit";
+  {resource}Detail?: {Resource}DetailOut;
+  {resource}DetailDefault?: {Resource}NewOut;
+  create{Resource}Action?: (input: Create{Resource}In) => Promise<Create{Resource}Out>;
+  update{Resource}Action?: (input: Update{Resource}In) => Promise<Update{Resource}Out>;
+  // Resource-specific draft action prop name
+  patch{Resource}DraftAction?: (
+    input: Patch{Resource}DraftIn
+  ) => Promise<Patch{Resource}DraftOut>;
+}
+```
+
+**Draft State Type**:
+```typescript
+type DraftState = {
+  // Resource-specific fields (e.g., for personas: name, description, color, icon, etc.)
+  field1: string;
+  field2: string;
+  field3: boolean;
+  // ... more fields
+};
+```
+
+**URL DraftId Management**:
+```typescript
+// Inline parsers for URL-backed state
+const {resource}SearchParamsClient = {
+  // Draft ID (URL-backed, updated when draft is created)
+  draftId: parseAsString,
+  // ... other search params
+} as const;
+
+// URL-backed state using nuqs
+const [urlParams, setUrlParams] = useQueryStates({resource}SearchParamsClient, {
+  history: "replace",
+  shallow: true, // Use shallow routing to prevent server component re-renders
+});
+
+// Get draftId from URL (managed by nuqs via urlParams)
+const urlDraftId = urlParams.draftId || null;
+
+// Sync URL draftId to profile context
+const { selectedDraftId, setSelectedDraftId } = useProfile();
+useEffect(() => {
+  if (urlDraftId !== selectedDraftId) {
+    setSelectedDraftId(urlDraftId);
+  }
+}, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+const draftId = urlDraftId;
+```
+
+**Draft State Initialization**:
+```typescript
+// Initialize draft state from server data or draft payload
+const initialDraftState = useMemo((): DraftState => {
+  const data = isEditMode ? {resource}Detail : {resource}DetailDefault;
+  if (!data) {
+    return {
+      // Default empty state
+      field1: "",
+      field2: "",
+      field3: true,
+    };
+  }
+  
+  // If draftId exists, server should have merged draft payload into data
+  // Otherwise, use server defaults
+  return {
+    field1: data.field1 || "",
+    field2: data.field2 || "",
+    field3: data.field3 ?? true,
+  };
+}, [
+  isEditMode,
+  {resource}Detail,
+  {resource}DetailDefault,
+  draftId,
+  // Include actual content fields so it recomputes when server data changes
+  {resource}DetailDefault?.field1,
+  {resource}Detail?.field1,
+  // ... more fields
+]);
+
+const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+// Update draft state when server data changes (e.g., draft selected)
+useEffect(() => {
+  const currentStateStr = JSON.stringify(draftState);
+  const newStateStr = JSON.stringify(initialDraftState);
+  
+  if (currentStateStr !== newStateStr) {
+    setDraftState(initialDraftState);
+  }
+}, [initialDraftState]);
+```
+
+**Hook Integration**:
+```typescript
+const {
+  saveStatus: _saveStatus,
+  saveNow: _saveNow,
+  lastSavedVersion: _lastSavedVersion,
+} = useDraftAutosave({
+  draftId,
+  draftState,
+  patchDraftAction: patch{Resource}DraftAction
+    ? async (input) => {
+        // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
+        // Note: profile_id is added server-side from header
+        const result = await patch{Resource}DraftAction({
+          body: {
+            input_draft_id: input.body.draft_id || null,
+            patch: input.body.patch as Record<string, unknown>,
+            expected_version: input.body.expected_version,
+          } as Patch{Resource}DraftIn["body"],
+        });
+        // Transform response to match hook expectations (API returns draft_id, new_version, draft_exists)
+        return {
+          draftId: result.draft_id || "",
+          newVersion: result.new_version || 0,
+          draftExists: result.draft_exists || false,
+        };
+      }
+    : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+  debounceMs: 1000,
+  onDraftCreated: useCallback(
+    (newDraftId: string) => {
+      // Only update URL if draftId actually changed
+      const currentUrlDraftId = searchParams.get("draftId");
+      if (newDraftId === currentUrlDraftId) {
+        return;
+      }
+      // Update URL with new draftId and trigger server-side refetch
+      // This ensures the server component gets fresh data with the new draft
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("draftId", newDraftId);
+      const newUrl = `?${params.toString()}`;
+      router.replace(newUrl, { scroll: false });
+      // Force server components to re-render with updated search params
+      router.refresh();
+    },
+    [router, searchParams]
+  ),
+});
+```
+
+### Type Transformation Pattern
+
+**Hook API** (what `useDraftAutosave` expects):
+```typescript
+patchDraftAction: (input: {
+  body: {
+    draft_id?: string | null;
+    patch: Partial<T>;
+    expected_version: number;
+  };
+}) => Promise<{
+  draftId: string;
+  newVersion: number;
+  draftExists: boolean;
+}>
+```
+
+**Backend API** (what server action provides):
+```typescript
+patch{Resource}DraftAction: (input: Patch{Resource}DraftIn) => Promise<Patch{Resource}DraftOut>
+
+// Where Patch{Resource}DraftIn is:
+{
+  body: {
+    input_draft_id: UUID | null;
+    patch: Record<string, unknown>;
+    expected_version: number;
+  };
+}
+
+// And Patch{Resource}DraftOut is:
+{
+  draft_id: UUID;
+  new_version: number;
+  draft_exists: boolean;
+}
+```
+
+**Transformation Wrapper**:
+```typescript
+patchDraftAction: patch{Resource}DraftAction
+  ? async (input) => {
+      // Transform hook API → backend API
+      const result = await patch{Resource}DraftAction({
+        body: {
+          input_draft_id: input.body.draft_id || null,
+          patch: input.body.patch as Record<string, unknown>,
+          expected_version: input.body.expected_version,
+        } as Patch{Resource}DraftIn["body"],
+      });
+      // Transform backend API → hook API
+      return {
+        draftId: result.draft_id || "",
+        newVersion: result.new_version || 0,
+        draftExists: result.draft_exists || false,
+      };
+    }
+  : async () => ({ draftId: "", newVersion: 0, draftExists: false })
+```
+
+### Server Page Integration
+
+**New Page** (`client/app/(main)/create/{resource}/new/page.tsx`):
+```typescript
+// Parse draftId from URL
+const personaSearchParams = {
+  draftId: parseAsString,
+  // ... other params
+};
+const loadPersonaSearchParams = createLoader(personaSearchParams);
+const q = loadPersonaSearchParams(searchParamsObj);
+
+// Fetch default data with draft_id
+const input: {Resource}NewIn = {
+  body: {
+    draft_id: q.draftId ?? null,
+    // ... other params
+  } as {Resource}NewIn["body"],
+};
+const {resource}DetailDefault = await get{Resource}Default(input);
+
+// Pass draft action to component
+<{Resource}
+  mode="create"
+  {resource}DetailDefault={resource}DetailDefault}
+  create{Resource}Action={create{Resource}}
+  patch{Resource}DraftAction={patch{Resource}Draft}
+/>
+```
+
+**Edit Page** (`client/app/(main)/create/{resource}/[{resource}Id]/page.tsx`):
+```typescript
+// Parse draftId from URL
+const q = loadPersonaSearchParams(searchParamsObj);
+
+// Fetch detail data with draft_id
+const input: {Resource}DetailIn = {
+  body: {
+    {resource}_id: {resource}Id,
+    draft_id: q.draftId ?? null,
+    // ... other params
+  } as {Resource}DetailIn["body"],
+};
+const {resource}Detail = await get{Resource}(input);
+
+// Pass draft action to component
+<{Resource}
+  {resource}Id={resource}Id}
+  mode="edit"
+  {resource}Detail={resource}Detail}
+  update{Resource}Action={update{Resource}}
+  patch{Resource}DraftAction={patch{Resource}Draft}
+/>
+```
+
+### Key Points
+
+1. **Resource-specific prop names**: Each resource uses its own prop name (e.g., `patchPersonaDraftAction`) - this is acceptable since types are resource-specific
+2. **Type transformation**: Always wrap the backend action in a transformation function to match hook API
+3. **URL sync**: DraftId is managed in URL (nuqs) and synced to profile context
+4. **Server data merge**: Server merges draft payload into detail/new data automatically
+5. **State initialization**: Initialize draft state from server data, which includes merged draft payload if draftId exists
+6. **Debouncing**: Hook debounces saves (default 1000ms) to avoid excessive API calls
+7. **Optimistic concurrency**: Uses `expected_version` to prevent lost updates
+
+### Reference Implementation
+
+See `client/components/personas/Persona.tsx` for a complete reference implementation.
+
+**Key Files**:
+- `client/hooks/use-draft-autosave.ts` - Generic draft autosave hook
+- `client/components/personas/Persona.tsx` - Component integration example
+- `client/app/(main)/create/personas/new/page.tsx` - Server page example
+- `client/app/(main)/create/personas/p/[personaId]/page.tsx` - Edit page example
+
+### Migration Checklist
+
+When migrating other resources (scenarios, benchmarks, etc.) to use draft autosave:
+
+- [ ] **Create draft endpoint** (`server/app/api/v4/{resource}/draft.py`)
+  - [ ] Follow standard draft endpoint pattern
+  - [ ] Use `api_patch_{resource}_draft_v4` function name
+  - [ ] Define resource-specific defaults in SQL
+  - [ ] Add audit logging (`{resource}.draft.patched`)
+  - [ ] Add cache invalidation (`["{resource}", "drafts", "profile"]`)
+
+- [ ] **Create SQL file** (`server/app/sql/v4/{resource}/patch_{resource}_draft_complete.sql`)
+  - [ ] Use idempotent drop/recreate pattern
+  - [ ] Accept `patch text` parameter (not `jsonb`)
+  - [ ] Return `(draft_id uuid, new_version int, draft_exists boolean)`
+  - [ ] Define resource-specific defaults in `WITH defaults AS` CTE
+  - [ ] Use `'{resource}'::draft_resource_type` for resource_type
+
+- [ ] **Add component props** (`client/components/{resource}/{Resource}.tsx`)
+  - [ ] Add `patch{Resource}DraftAction` prop to component interface
+  - [ ] Import `Patch{Resource}DraftIn` and `Patch{Resource}DraftOut` types from page file
+
+- [ ] **Integrate `useDraftAutosave` hook**
+  - [ ] Define `DraftState` type with resource-specific fields
+  - [ ] Initialize `draftState` from server data
+  - [ ] Add `draftId` to URL parsers (`parseAsString`)
+  - [ ] Sync `draftId` between URL and profile context
+  - [ ] Wrap `patch{Resource}DraftAction` in transformation function
+  - [ ] Add `onDraftCreated` callback to update URL
+
+- [ ] **Update server pages**
+  - [ ] Add `draftId` parser to server-side search params
+  - [ ] Pass `draft_id` to detail/new API calls
+  - [ ] Export `Patch{Resource}DraftIn` and `Patch{Resource}DraftOut` types
+  - [ ] Create `patch{Resource}Draft` server action
+  - [ ] Pass `patch{Resource}DraftAction` prop to component
+
+- [ ] **Test draft functionality**
+  - [ ] Verify draft creates on first change
+  - [ ] Verify draft patches on subsequent changes
+  - [ ] Verify draftId appears in URL
+  - [ ] Verify draftId syncs to profile context
+  - [ ] Verify draft state initializes from server data
+  - [ ] Verify version conflicts handled correctly
+  - [ ] Verify cache invalidation works
+
