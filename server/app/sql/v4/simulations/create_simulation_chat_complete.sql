@@ -35,7 +35,7 @@ RETURNS TABLE (
     scenario_id uuid,
     attempt_id uuid,
     completed boolean,
-    trace_id uuid
+    trace_id text
 )
 LANGUAGE sql
 VOLATILE

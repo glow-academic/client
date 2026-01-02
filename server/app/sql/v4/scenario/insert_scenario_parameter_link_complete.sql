@@ -35,11 +35,11 @@ LANGUAGE sql
 VOLATILE
 AS $$
 INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
-VALUES (scenario_id, field_id, active, NOW(), NOW())
+VALUES (api_insert_scenario_parameter_link_v4.scenario_id, api_insert_scenario_parameter_link_v4.field_id, api_insert_scenario_parameter_link_v4.active, NOW(), NOW())
 ON CONFLICT (scenario_id, field_id) DO UPDATE SET
-    active = api_insert_scenario_parameter_link_v4.active,
+    active = EXCLUDED.active,
     updated_at = NOW()
-RETURNING *
+RETURNING scenario_id, field_id, active, created_at, updated_at
 $$;
 
 COMMIT;

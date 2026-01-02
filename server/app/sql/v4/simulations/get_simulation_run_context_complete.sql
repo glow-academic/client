@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION api_get_simulation_run_context_v4(
 RETURNS TABLE (
     chat_id text,
     chat_title text,
-    trace_id uuid,
+    trace_id text,
     attempt_id text,
     simulation_id text,
     scenario_id text,
@@ -365,7 +365,7 @@ CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept
 WHERE sc.id = chat_id
-GROUP BY sc.id, sc.title, g.trace_id,
+GROUP BY sc.id, sc.title,
          sa.id, sa.simulation_id,
          s.id, ps.problem_statement,
          first_persona.persona_id, first_persona.persona_name,

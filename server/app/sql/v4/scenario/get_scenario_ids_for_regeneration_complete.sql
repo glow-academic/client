@@ -46,7 +46,7 @@ SELECT
 FROM scenarios s
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
 LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
-WHERE s.id = scenario_id
+WHERE s.id = api_get_scenario_ids_for_regeneration_v4.scenario_id
 GROUP BY s.id, s.scenario_agent_id
 $$;
 

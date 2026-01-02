@@ -47,13 +47,13 @@ finalize_tool_call AS (
 ),
 -- Get message from tool_call or use provided message_id
 get_message_from_tool_call AS (
-    SELECT DISTINCT m.id as message_id
+    SELECT DISTINCT ON (m.id) m.id as message_id
     FROM get_tool_call gtc
     JOIN tool_call_runs tcr ON tcr.tool_call_id = gtc.tool_call_id
     JOIN message_runs mr ON mr.run_id = tcr.run_id
     JOIN messages m ON m.id = mr.message_id
     WHERE m.role = 'assistant'::message_role
-    ORDER BY m.created_at DESC
+    ORDER BY m.id, m.created_at DESC
     LIMIT 1
 ),
 selected_message AS (
@@ -65,12 +65,12 @@ selected_message AS (
 ),
 -- Update message content with final content
 update_message_content_final AS (
-    UPDATE message_content
+    UPDATE message_content mc
     SET content = p.final_content,
         updated_at = NOW()
     FROM params p
-    WHERE message_id = (SELECT message_id FROM selected_message LIMIT 1)
-      AND idx = 0
+    WHERE mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
+      AND mc.idx = 0
 ),
 -- Mark message as completed
 complete_message AS (
@@ -82,11 +82,10 @@ complete_message AS (
 ),
 -- Link message to persona if provided
 link_message_to_persona AS (
-    INSERT INTO message_personas (message_id, persona_id, active, created_at, updated_at)
+    INSERT INTO message_personas (message_id, persona_id, created_at, updated_at)
     SELECT 
         (SELECT message_id FROM selected_message LIMIT 1),
         p.persona_id,
-        true,
         NOW(),
         NOW()
     FROM params p
@@ -94,8 +93,7 @@ link_message_to_persona AS (
       AND NOT EXISTS (
           SELECT 1 FROM message_personas mp 
           WHERE mp.message_id = (SELECT message_id FROM selected_message LIMIT 1)
-          AND mp.persona_id = p.persona_id 
-          AND mp.active = true
+          AND mp.persona_id = p.persona_id
       )
 )
 SELECT 

@@ -57,8 +57,12 @@ INSERT INTO scenarios (
     scenario_agent_id,
     image_agent_id
 )
-VALUES (name, generated, active, objectives_enabled, images_enabled, scenario_agent_id, image_agent_id)
-RETURNING *
+VALUES (api_insert_scenario_variant_v4.name, api_insert_scenario_variant_v4.generated, api_insert_scenario_variant_v4.active, api_insert_scenario_variant_v4.objectives_enabled, api_insert_scenario_variant_v4.images_enabled, api_insert_scenario_variant_v4.scenario_agent_id, api_insert_scenario_variant_v4.image_agent_id)
+RETURNING id, name, generated, active, objectives_enabled, images_enabled, scenario_agent_id, image_agent_id, description, 
+    (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = scenarios.id AND st.parent_id != scenarios.id LIMIT 1) as root_scenario_id,
+    (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = scenarios.id AND st.parent_id != scenarios.id LIMIT 1) as parent_scenario_id,
+    created_at, updated_at, NULL::uuid as profile_id,
+    (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = scenarios.id AND sd.active = true LIMIT 1) as department_id
 $$;
 
 COMMIT;

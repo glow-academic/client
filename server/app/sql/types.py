@@ -13162,6 +13162,42 @@ class UpdatePersonaApiResponse(BaseModel):
 
 
 
+# Generated from: find_practice_simulation_with_persona
+
+class FindPracticeSimulationWithPersonaSqlParams(BaseModel):
+
+    persona_id: UUID
+    department_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.persona_id,
+            self.department_ids,
+        )
+
+class FindPracticeSimulationWithPersonaSqlRow(BaseModel):
+
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    simulation_title: str | None = None
+    scenario_name: str | None = None
+    position_val: int | None = None
+
+class FindPracticeSimulationWithPersonaApiRequest(BaseModel):
+
+    persona_id: UUID
+    department_ids: list[UUID]
+
+class FindPracticeSimulationWithPersonaApiResponse(BaseModel):
+
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    simulation_title: str | None = None
+    scenario_name: str | None = None
+    position_val: int | None = None
+
+
+
 # Generated from: get_practice_history
 
 class GetPracticeHistorySqlParams(BaseModel):
@@ -17668,6 +17704,49 @@ class GetRootScenarioIdApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario_by_id
+
+class GetScenarioByIdSqlParams(BaseModel):
+
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+        )
+
+class GetScenarioByIdSqlRow(BaseModel):
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    root_scenario_id: UUID | None = None
+    parent_scenario_id: UUID | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    active: bool | None = None
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+
+class GetScenarioByIdApiRequest(BaseModel):
+
+    scenario_id: UUID
+
+class GetScenarioByIdApiResponse(BaseModel):
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    root_scenario_id: UUID | None = None
+    parent_scenario_id: UUID | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    active: bool | None = None
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+
+
+
 # Generated from: get_scenario_departments
 
 class GetScenarioDepartmentsSqlParams(BaseModel):
@@ -18096,6 +18175,37 @@ class GetScenarioDetailApiResponse(BaseModel):
     objectives_history: list[QGetScenarioDetailV4ObjectiveWithDepartments] | None = None
     document_details: list[QGetScenarioDetailV4DocumentDetail] | None = None
     parameters_detail: list[QGetScenarioDetailV4ParameterDetail] | None = None
+
+
+
+# Generated from: get_scenario_ids_for_regeneration
+
+class GetScenarioIdsForRegenerationSqlParams(BaseModel):
+
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+        )
+
+class GetScenarioIdsForRegenerationSqlRow(BaseModel):
+
+    persona_id: UUID | None = None
+    scenario_agent_id: str | None = None
+    document_ids: dict[str, Any] | None = None
+    parameter_item_ids: dict[str, Any] | None = None
+
+class GetScenarioIdsForRegenerationApiRequest(BaseModel):
+
+    scenario_id: UUID
+
+class GetScenarioIdsForRegenerationApiResponse(BaseModel):
+
+    persona_id: UUID | None = None
+    scenario_agent_id: str | None = None
+    document_ids: dict[str, Any] | None = None
+    parameter_item_ids: dict[str, Any] | None = None
 
 
 
@@ -19003,6 +19113,311 @@ class GetScenariosListApiResponse(BaseModel):
 
 
 
+# Generated from: insert_scenario_department_link
+
+class InsertScenarioDepartmentLinkSqlParams(BaseModel):
+
+    scenario_id: UUID
+    department_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+            self.department_id,
+            self.active,
+        )
+
+class InsertScenarioDepartmentLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertScenarioDepartmentLinkApiRequest(BaseModel):
+
+    scenario_id: UUID
+    department_id: UUID
+    active: bool
+
+class InsertScenarioDepartmentLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: insert_scenario_document_link
+
+class InsertScenarioDocumentLinkSqlParams(BaseModel):
+
+    scenario_id: UUID
+    document_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+            self.document_id,
+            self.active,
+        )
+
+class InsertScenarioDocumentLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    document_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertScenarioDocumentLinkApiRequest(BaseModel):
+
+    scenario_id: UUID
+    document_id: UUID
+    active: bool
+
+class InsertScenarioDocumentLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    document_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: insert_scenario_image_link
+
+class InsertScenarioImageLinkSqlParams(BaseModel):
+
+    scenario_id: UUID
+    image_id: UUID
+    active: bool | None = True
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+            self.image_id,
+            self.active,
+        )
+
+class InsertScenarioImageLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    image_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertScenarioImageLinkApiRequest(BaseModel):
+
+    scenario_id: UUID
+    image_id: UUID
+    active: bool | None = True
+
+class InsertScenarioImageLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    image_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: insert_scenario_parameter_link
+
+class InsertScenarioParameterLinkSqlParams(BaseModel):
+
+    scenario_id: UUID
+    field_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+            self.field_id,
+            self.active,
+        )
+
+class InsertScenarioParameterLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    field_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertScenarioParameterLinkApiRequest(BaseModel):
+
+    scenario_id: UUID
+    field_id: UUID
+    active: bool
+
+class InsertScenarioParameterLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    field_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: insert_scenario_persona_link
+
+class InsertScenarioPersonaLinkSqlParams(BaseModel):
+
+    scenario_id: UUID
+    persona_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+            self.persona_id,
+            self.active,
+        )
+
+class InsertScenarioPersonaLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    persona_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertScenarioPersonaLinkApiRequest(BaseModel):
+
+    scenario_id: UUID
+    persona_id: UUID
+    active: bool
+
+class InsertScenarioPersonaLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    persona_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: insert_scenario_tree_edge
+
+class InsertScenarioTreeEdgeSqlParams(BaseModel):
+
+    parent_id: UUID
+    child_id: UUID
+    active: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.parent_id,
+            self.child_id,
+            self.active,
+        )
+
+class InsertScenarioTreeEdgeSqlRow(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class InsertScenarioTreeEdgeApiRequest(BaseModel):
+
+    parent_id: UUID
+    child_id: UUID
+    active: bool
+
+class InsertScenarioTreeEdgeApiResponse(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: insert_scenario_variant
+
+class InsertScenarioVariantSqlParams(BaseModel):
+
+    name: str
+    generated: bool
+    active: bool
+    objectives_enabled: bool
+    images_enabled: bool
+    scenario_agent_id: UUID
+    image_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.generated,
+            self.active,
+            self.objectives_enabled,
+            self.images_enabled,
+            self.scenario_agent_id,
+            self.image_agent_id,
+        )
+
+class InsertScenarioVariantSqlRow(BaseModel):
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+    active: bool | None = None
+    objectives_enabled: bool | None = None
+    images_enabled: bool | None = None
+    scenario_agent_id: UUID | None = None
+    image_agent_id: UUID | None = None
+    description: str | None = None
+    root_scenario_id: UUID | None = None
+    parent_scenario_id: UUID | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+
+class InsertScenarioVariantApiRequest(BaseModel):
+
+    name: str
+    generated: bool
+    active: bool
+    objectives_enabled: bool
+    images_enabled: bool
+    scenario_agent_id: UUID
+    image_agent_id: UUID
+
+class InsertScenarioVariantApiResponse(BaseModel):
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+    active: bool | None = None
+    objectives_enabled: bool | None = None
+    images_enabled: bool | None = None
+    scenario_agent_id: UUID | None = None
+    image_agent_id: UUID | None = None
+    description: str | None = None
+    root_scenario_id: UUID | None = None
+    parent_scenario_id: UUID | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+
+
+
 # Generated from: link_questions_to_scenario
 
 class LinkQuestionsToScenarioSqlParams(BaseModel):
@@ -19866,6 +20281,53 @@ class UpdateSettingsApiResponse(BaseModel):
 
 
 
+# Generated from: text_complete_finalize
+
+class TextCompleteFinalizeSqlParams(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: UUID
+    call_id: str
+    message_id: UUID
+    final_content: str
+    persona_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.message_id,
+            self.final_content,
+            self.persona_id,
+        )
+
+class TextCompleteFinalizeSqlRow(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+class TextCompleteFinalizeApiRequest(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: UUID
+    call_id: str
+    message_id: UUID
+    final_content: str
+    persona_id: UUID
+
+class TextCompleteFinalizeApiResponse(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+
+
 # Generated from: get_voice_regeneration_run_context_and_create_run
 
 class GetVoiceRegenerationRunContextAndCreateRunSqlParams(BaseModel):
@@ -20246,6 +20708,57 @@ class CreateHintsApiRequest(BaseModel):
 class CreateHintsApiResponse(BaseModel):
 
     hints: list[ICreateHintsV4HintResult] | None = None
+
+
+
+# Generated from: create_simulation_chat
+
+class CreateSimulationChatSqlParams(BaseModel):
+
+    created_at: str
+    title: str
+    scenario_id: UUID
+    attempt_id: UUID
+    completed: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.created_at,
+            self.title,
+            self.scenario_id,
+            self.attempt_id,
+            self.completed,
+        )
+
+class CreateSimulationChatSqlRow(BaseModel):
+
+    id: UUID | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    title: str | None = None
+    scenario_id: UUID | None = None
+    attempt_id: UUID | None = None
+    completed: bool | None = None
+    trace_id: str | None = None
+
+class CreateSimulationChatApiRequest(BaseModel):
+
+    created_at: str
+    title: str
+    scenario_id: UUID
+    attempt_id: UUID
+    completed: bool
+
+class CreateSimulationChatApiResponse(BaseModel):
+
+    id: UUID | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    title: str | None = None
+    scenario_id: UUID | None = None
+    attempt_id: UUID | None = None
+    completed: bool | None = None
+    trace_id: str | None = None
 
 
 
@@ -20682,6 +21195,34 @@ class GetLatestRunForChatApiRequest(BaseModel):
 class GetLatestRunForChatApiResponse(BaseModel):
 
     run_id: str | None = None
+
+
+
+# Generated from: get_message_id_from_tool_call
+
+class GetMessageIdFromToolCallSqlParams(BaseModel):
+
+    tool_call_id: UUID
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.tool_call_id,
+            self.run_id,
+        )
+
+class GetMessageIdFromToolCallSqlRow(BaseModel):
+
+    message_id: UUID | None = None
+
+class GetMessageIdFromToolCallApiRequest(BaseModel):
+
+    tool_call_id: UUID
+    run_id: UUID
+
+class GetMessageIdFromToolCallApiResponse(BaseModel):
+
+    message_id: UUID | None = None
 
 
 
@@ -21645,6 +22186,136 @@ class GetSimulationRunContextAndCreateRunApiResponse(BaseModel):
     documents: list[QGetSimulationRunContextAndCreateRunV4Document] | None = None
     run_id: str | None = None
     group_id: UUID | None = None
+
+
+
+# Generated from: get_simulation_run_context
+
+class GetSimulationRunContextSqlParams(BaseModel):
+
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+        )
+
+class GetSimulationRunContextSqlRow(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    voice_model_id: str | None = None
+    voice_model_name: str | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    voice_api_key: str | None = None
+    voice_custom_model: str | None = None
+    voice_provider_name: str | None = None
+    voice_agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: dict[str, Any] | None = None
+
+class GetSimulationRunContextApiRequest(BaseModel):
+
+    chat_id: UUID
+
+class GetSimulationRunContextApiResponse(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    voice_model_id: str | None = None
+    voice_model_name: str | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    voice_api_key: str | None = None
+    voice_custom_model: str | None = None
+    voice_provider_name: str | None = None
+    voice_agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    documents: dict[str, Any] | None = None
+
+
+
+# Generated from: get_simulation_scenarios_ordered
+
+class GetSimulationScenariosOrderedSqlParams(BaseModel):
+
+    simulation_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_id,
+        )
+
+class GetSimulationScenariosOrderedSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    position_val: int | None = None
+
+class GetSimulationScenariosOrderedApiRequest(BaseModel):
+
+    simulation_id: UUID
+
+class GetSimulationScenariosOrderedApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    position_val: int | None = None
 
 
 
@@ -24631,6 +25302,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdatePersonaApiRequest",
         "UpdatePersonaApiResponse",
     ),
+    "app/sql/v4/practice/find_practice_simulation_with_persona_complete.sql": (
+        "FindPracticeSimulationWithPersonaSqlParams",
+        "FindPracticeSimulationWithPersonaSqlRow",
+        "FindPracticeSimulationWithPersonaApiRequest",
+        "FindPracticeSimulationWithPersonaApiResponse",
+    ),
     "app/sql/v4/practice/get_practice_history_complete.sql": (
         "GetPracticeHistorySqlParams",
         "GetPracticeHistorySqlRow",
@@ -24991,6 +25668,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRootScenarioIdApiRequest",
         "GetRootScenarioIdApiResponse",
     ),
+    "app/sql/v4/scenario/get_scenario_by_id_complete.sql": (
+        "GetScenarioByIdSqlParams",
+        "GetScenarioByIdSqlRow",
+        "GetScenarioByIdApiRequest",
+        "GetScenarioByIdApiResponse",
+    ),
     "app/sql/v4/scenario/get_scenario_departments_complete.sql": (
         "GetScenarioDepartmentsSqlParams",
         "GetScenarioDepartmentsSqlRow",
@@ -25002,6 +25685,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioDetailSqlRow",
         "GetScenarioDetailApiRequest",
         "GetScenarioDetailApiResponse",
+    ),
+    "app/sql/v4/scenario/get_scenario_ids_for_regeneration_complete.sql": (
+        "GetScenarioIdsForRegenerationSqlParams",
+        "GetScenarioIdsForRegenerationSqlRow",
+        "GetScenarioIdsForRegenerationApiRequest",
+        "GetScenarioIdsForRegenerationApiResponse",
     ),
     "app/sql/v4/scenario/get_scenario_images_complete.sql": (
         "GetScenarioImagesSqlParams",
@@ -25056,6 +25745,48 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenariosListSqlRow",
         "GetScenariosListApiRequest",
         "GetScenariosListApiResponse",
+    ),
+    "app/sql/v4/scenario/insert_scenario_department_link_complete.sql": (
+        "InsertScenarioDepartmentLinkSqlParams",
+        "InsertScenarioDepartmentLinkSqlRow",
+        "InsertScenarioDepartmentLinkApiRequest",
+        "InsertScenarioDepartmentLinkApiResponse",
+    ),
+    "app/sql/v4/scenario/insert_scenario_document_link_complete.sql": (
+        "InsertScenarioDocumentLinkSqlParams",
+        "InsertScenarioDocumentLinkSqlRow",
+        "InsertScenarioDocumentLinkApiRequest",
+        "InsertScenarioDocumentLinkApiResponse",
+    ),
+    "app/sql/v4/scenario/insert_scenario_image_link_complete.sql": (
+        "InsertScenarioImageLinkSqlParams",
+        "InsertScenarioImageLinkSqlRow",
+        "InsertScenarioImageLinkApiRequest",
+        "InsertScenarioImageLinkApiResponse",
+    ),
+    "app/sql/v4/scenario/insert_scenario_parameter_link_complete.sql": (
+        "InsertScenarioParameterLinkSqlParams",
+        "InsertScenarioParameterLinkSqlRow",
+        "InsertScenarioParameterLinkApiRequest",
+        "InsertScenarioParameterLinkApiResponse",
+    ),
+    "app/sql/v4/scenario/insert_scenario_persona_link_complete.sql": (
+        "InsertScenarioPersonaLinkSqlParams",
+        "InsertScenarioPersonaLinkSqlRow",
+        "InsertScenarioPersonaLinkApiRequest",
+        "InsertScenarioPersonaLinkApiResponse",
+    ),
+    "app/sql/v4/scenario/insert_scenario_tree_edge_complete.sql": (
+        "InsertScenarioTreeEdgeSqlParams",
+        "InsertScenarioTreeEdgeSqlRow",
+        "InsertScenarioTreeEdgeApiRequest",
+        "InsertScenarioTreeEdgeApiResponse",
+    ),
+    "app/sql/v4/scenario/insert_scenario_variant_complete.sql": (
+        "InsertScenarioVariantSqlParams",
+        "InsertScenarioVariantSqlRow",
+        "InsertScenarioVariantApiRequest",
+        "InsertScenarioVariantApiResponse",
     ),
     "app/sql/v4/scenario/link_questions_to_scenario_complete.sql": (
         "LinkQuestionsToScenarioSqlParams",
@@ -25135,6 +25866,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateSettingsApiRequest",
         "UpdateSettingsApiResponse",
     ),
+    "app/sql/v4/simulation_text/text_complete_finalize_complete.sql": (
+        "TextCompleteFinalizeSqlParams",
+        "TextCompleteFinalizeSqlRow",
+        "TextCompleteFinalizeApiRequest",
+        "TextCompleteFinalizeApiResponse",
+    ),
     "app/sql/v4/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql": (
         "GetVoiceRegenerationRunContextAndCreateRunSqlParams",
         "GetVoiceRegenerationRunContextAndCreateRunSqlRow",
@@ -25170,6 +25907,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateHintsSqlRow",
         "CreateHintsApiRequest",
         "CreateHintsApiResponse",
+    ),
+    "app/sql/v4/simulations/create_simulation_chat_complete.sql": (
+        "CreateSimulationChatSqlParams",
+        "CreateSimulationChatSqlRow",
+        "CreateSimulationChatApiRequest",
+        "CreateSimulationChatApiResponse",
     ),
     "app/sql/v4/simulations/create_simulation_complete.sql": (
         "CreateSimulationSqlParams",
@@ -25218,6 +25961,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLatestRunForChatSqlRow",
         "GetLatestRunForChatApiRequest",
         "GetLatestRunForChatApiResponse",
+    ),
+    "app/sql/v4/simulations/get_message_id_from_tool_call_complete.sql": (
+        "GetMessageIdFromToolCallSqlParams",
+        "GetMessageIdFromToolCallSqlRow",
+        "GetMessageIdFromToolCallApiRequest",
+        "GetMessageIdFromToolCallApiResponse",
     ),
     "app/sql/v4/simulations/get_messages_count_by_chat_ids_complete.sql": (
         "GetMessagesCountByChatIdsSqlParams",
@@ -25290,6 +26039,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationRunContextAndCreateRunSqlRow",
         "GetSimulationRunContextAndCreateRunApiRequest",
         "GetSimulationRunContextAndCreateRunApiResponse",
+    ),
+    "app/sql/v4/simulations/get_simulation_run_context_complete.sql": (
+        "GetSimulationRunContextSqlParams",
+        "GetSimulationRunContextSqlRow",
+        "GetSimulationRunContextApiRequest",
+        "GetSimulationRunContextApiResponse",
+    ),
+    "app/sql/v4/simulations/get_simulation_scenarios_ordered_complete.sql": (
+        "GetSimulationScenariosOrderedSqlParams",
+        "GetSimulationScenariosOrderedSqlRow",
+        "GetSimulationScenariosOrderedApiRequest",
+        "GetSimulationScenariosOrderedApiResponse",
     ),
     "app/sql/v4/simulations/get_simulations_list_complete.sql": (
         "GetSimulationsListSqlParams",
@@ -26604,6 +27365,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/practice/find_practice_simulation_with_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/practice/get_practice_history_complete.sql"]
     ) -> SqlString: ...
 
@@ -26904,12 +27670,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/get_scenario_by_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/get_scenario_departments_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/get_scenario_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/get_scenario_ids_for_regeneration_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -26955,6 +27731,41 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/get_scenarios_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/insert_scenario_department_link_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/insert_scenario_document_link_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/insert_scenario_image_link_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/insert_scenario_parameter_link_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/insert_scenario_persona_link_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/insert_scenario_tree_edge_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/insert_scenario_variant_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27024,6 +27835,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/simulation_text/text_complete_finalize_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -27050,6 +27866,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/create_hints_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/create_simulation_chat_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27090,6 +27911,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_latest_run_for_chat_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_message_id_from_tool_call_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27150,6 +27976,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_simulation_scenarios_ordered_complete.sql"]
     ) -> SqlString: ...
 
     @overload

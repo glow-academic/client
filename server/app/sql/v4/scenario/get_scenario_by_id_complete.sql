@@ -37,7 +37,19 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT * FROM scenarios WHERE id = scenario_id
+SELECT 
+    s.id,
+    s.name,
+    s.description,
+    (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = s.id AND st.parent_id != s.id LIMIT 1) as root_scenario_id,
+    (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = s.id AND st.parent_id != s.id LIMIT 1) as parent_scenario_id,
+    s.created_at,
+    s.updated_at,
+    s.active,
+    NULL::uuid as profile_id,
+    (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
+FROM scenarios s
+WHERE s.id = api_get_scenario_by_id_v4.scenario_id
 $$;
 
 COMMIT;

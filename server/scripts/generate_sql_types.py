@@ -907,8 +907,16 @@ async def generate_types_for_sql_file(
     try:
         # Skip introspection for DDL-only files (no function definitions)
         # These files are executed but don't need type generation
+        # Exception: analytics view is legitimate DDL and should not show warning
         sql_text = load_sql(sql_path)
         if not _detect_function_in_sql(sql_text):
+            # Analytics view is legitimate DDL - execute it but don't show warning
+            if "analytics/create_analytics_view_complete.sql" in sql_path:
+                return (
+                    True,
+                    f"Executed {sql_path} (materialized view - DDL only)",
+                    None,
+                )
             return (
                 True,
                 f"Skipping {sql_path} (no function definition - DDL only)",

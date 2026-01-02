@@ -29,7 +29,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT DISTINCT m.id as message_id
+SELECT m.id as message_id
 FROM tool_calls tc
 JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
 JOIN message_runs mr ON mr.run_id = tcr.run_id

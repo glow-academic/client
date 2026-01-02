@@ -24,12 +24,12 @@ CREATE OR REPLACE FUNCTION api_get_simulation_scenarios_ordered_v4(
 )
 RETURNS TABLE (
     scenario_id uuid,
-    position integer
+    position_val integer
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT ss.scenario_id, ss.position 
+SELECT ss.scenario_id, ss.position as position_val
 FROM simulation_scenarios ss
 WHERE ss.simulation_id = api_get_simulation_scenarios_ordered_v4.simulation_id
 ORDER BY ss.position

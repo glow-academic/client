@@ -29,7 +29,7 @@ RETURNS TABLE (
     scenario_id text,
     simulation_title text,
     scenario_name text,
-    position integer
+    position_val integer
 )
 LANGUAGE sql
 STABLE
@@ -39,33 +39,33 @@ WITH practice_simulations AS (
         sim.id as simulation_id,
         sim.title as simulation_title,
         ss.scenario_id,
-        ss.position
+        ss.position as position_val
     FROM simulations sim
     JOIN simulation_scenarios ss ON ss.simulation_id = sim.id AND ss.active = true
     JOIN scenarios s ON s.id = ss.scenario_id AND s.active = true
     JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
     WHERE sim.active = true
       AND sim.practice_simulation = true
-      AND sp.persona_id = persona_id
+      AND sp.persona_id = api_find_practice_simulation_with_persona_v4.persona_id
 ),
 filtered_by_department AS (
     SELECT 
         ps.simulation_id,
         ps.simulation_title,
         ps.scenario_id,
-        ps.position
+        ps.position_val
     FROM practice_simulations ps
     LEFT JOIN scenario_departments sd ON sd.scenario_id = ps.scenario_id AND sd.active = true
     LEFT JOIN simulation_departments simd ON simd.simulation_id = ps.simulation_id AND simd.active = true
     WHERE 
         -- If no department filter, show all
-        (cardinality(department_ids) = 0)
+        (cardinality(api_find_practice_simulation_with_persona_v4.department_ids) = 0)
         -- Or scenario has matching department
         OR EXISTS (
             SELECT 1 FROM scenario_departments sd2 
             WHERE sd2.scenario_id = ps.scenario_id 
             AND sd2.active = true 
-            AND sd2.department_id = ANY(department_ids)
+            AND sd2.department_id = ANY(api_find_practice_simulation_with_persona_v4.department_ids)
         )
         -- Or scenario has no departments (cross-department)
         OR NOT EXISTS (
@@ -78,7 +78,7 @@ filtered_by_department AS (
             SELECT 1 FROM simulation_departments simd2 
             WHERE simd2.simulation_id = ps.simulation_id 
             AND simd2.active = true 
-            AND simd2.department_id = ANY(department_ids)
+            AND simd2.department_id = ANY(api_find_practice_simulation_with_persona_v4.department_ids)
         )
         -- Or simulation has no departments (cross-department)
         OR NOT EXISTS (
@@ -86,14 +86,14 @@ filtered_by_department AS (
             WHERE simd3.simulation_id = ps.simulation_id 
             AND simd3.active = true
         )
-    GROUP BY ps.simulation_id, ps.simulation_title, ps.scenario_id, ps.position
+    GROUP BY ps.simulation_id, ps.simulation_title, ps.scenario_id, ps.position_val
 ),
 scenario_with_name AS (
     SELECT 
         fbd.simulation_id,
         fbd.simulation_title,
         fbd.scenario_id,
-        fbd.position,
+        fbd.position_val,
         s.name as scenario_name
     FROM filtered_by_department fbd
     JOIN scenarios s ON s.id = fbd.scenario_id
@@ -103,9 +103,9 @@ SELECT
     scenario_id::text,
     simulation_title,
     scenario_name,
-    position
+    position_val as position
 FROM scenario_with_name
-ORDER BY position ASC
+ORDER BY position_val ASC
 LIMIT 1
 $$;
 
