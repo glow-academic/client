@@ -853,10 +853,10 @@ available_sections_computed AS (
     SELECT 
         CASE 
             WHEN epr.role IS NULL THEN ARRAY[]::text[]
-            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management', 'engine', 'system', 'health', 'benchmark', 'settings']::text[]
-            WHEN epr.role = 'admin'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create', 'management', 'engine', 'settings']::text[]
-            WHEN epr.role = 'instructional'::profile_role THEN ARRAY['home', 'practice', 'analytics', 'create']::text[]
-            WHEN epr.role = 'member'::profile_role THEN ARRAY['home', 'practice']::text[]
+            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['home', 'leaderboard', 'practice', 'analytics', 'create', 'management', 'engine', 'system', 'health', 'benchmark', 'settings']::text[]
+            WHEN epr.role = 'admin'::profile_role THEN ARRAY['home', 'leaderboard', 'practice', 'analytics', 'create', 'management', 'engine', 'settings']::text[]
+            WHEN epr.role = 'instructional'::profile_role THEN ARRAY['home', 'leaderboard', 'practice', 'analytics', 'create']::text[]
+            WHEN epr.role = 'member'::profile_role THEN ARRAY['home', 'leaderboard', 'practice']::text[]
             ELSE ARRAY['practice']::text[]  -- guest
         END as available_sections
     FROM effective_profile_role epr
