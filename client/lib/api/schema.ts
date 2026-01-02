@@ -1468,6 +1468,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/evals/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Eval Draft
+         * @description Patch eval draft (creates if not exists).
+         */
+        patch: operations["patch_eval_draft_api_v4_evals_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/rubrics/list": {
         parameters: {
             query?: never;
@@ -11066,6 +11086,8 @@ export interface components {
              * @default 50
              */
             available_model_runs_page_size: number | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetEvalDetailApiResponse */
         GetEvalDetailApiResponse: {
@@ -11131,6 +11153,14 @@ export interface components {
             available_model_runs_page_size?: number | null;
             /** Available Model Runs Total Pages */
             available_model_runs_total_pages?: number | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Rubric Grade Agent Pairs */
+            rubric_grade_agent_pairs?: unknown | null;
+            /** Rubric Grade Agent Active States */
+            rubric_grade_agent_active_states?: unknown | null;
+            /** Rubric Grade Agent Positions */
+            rubric_grade_agent_positions?: unknown | null;
         };
         /** GetEvalNewApiRequest */
         GetEvalNewApiRequest: {
@@ -11148,6 +11178,8 @@ export interface components {
              * @default 50
              */
             available_model_runs_page_size: number | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetEvalNewApiResponse */
         GetEvalNewApiResponse: {
@@ -11201,6 +11233,14 @@ export interface components {
             available_model_runs_page_size?: number | null;
             /** Available Model Runs Total Pages */
             available_model_runs_total_pages?: number | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Rubric Grade Agent Pairs */
+            rubric_grade_agent_pairs?: unknown | null;
+            /** Rubric Grade Agent Active States */
+            rubric_grade_agent_active_states?: unknown | null;
+            /** Rubric Grade Agent Positions */
+            rubric_grade_agent_positions?: unknown | null;
         };
         /** GetEvalsListApiRequest */
         GetEvalsListApiRequest: Record<string, never>;
@@ -14081,6 +14121,26 @@ export interface components {
         };
         /** PatchDepartmentDraftApiResponse */
         PatchDepartmentDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchEvalDraftApiRequest */
+        PatchEvalDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchEvalDraftApiResponse */
+        PatchEvalDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -25155,6 +25215,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateEvalApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_eval_draft_api_v4_evals_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchEvalDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchEvalDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

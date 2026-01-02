@@ -82,7 +82,8 @@ CREATE OR REPLACE FUNCTION api_get_eval_new_v4(
     available_model_runs_search text DEFAULT NULL,
     available_model_runs_agent_ids uuid[] DEFAULT ARRAY[]::uuid[],
     available_model_runs_page int DEFAULT 1,
-    available_model_runs_page_size int DEFAULT 50
+    available_model_runs_page_size int DEFAULT 50,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
@@ -109,7 +110,11 @@ RETURNS TABLE (
     available_model_runs_total_count bigint,
     available_model_runs_page int,
     available_model_runs_page_size int,
-    available_model_runs_total_pages bigint
+    available_model_runs_total_pages bigint,
+    draft_version int,
+    rubric_grade_agent_pairs jsonb,
+    rubric_grade_agent_active_states jsonb,
+    rubric_grade_agent_positions jsonb
 )
 LANGUAGE sql
 STABLE
@@ -120,7 +125,19 @@ WITH params AS (
         available_model_runs_search AS available_model_runs_search,
         available_model_runs_agent_ids AS available_model_runs_agent_ids,
         available_model_runs_page AS available_model_runs_page,
-        available_model_runs_page_size AS available_model_runs_page_size
+        available_model_runs_page_size AS available_model_runs_page_size,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'evals'::draft_resource_type
+    LIMIT 1
 ),
 user_profile AS (
     SELECT 
@@ -341,13 +358,53 @@ available_model_runs_array AS (
 SELECT 
     up.actor_name::text as actor_name,
     NULL::uuid as eval_id,
-    ''::text as name,
-    ''::text as description,
-    ARRAY[]::text[] as agent_ids,
-    ARRAY[]::text[] as model_run_ids,
-    true as active,
-    false as dynamic,
-    ARRAY[]::text[] as department_ids,
+    -- Default values for new eval (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        ''::text
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''::text
+    ) as description,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'agent_ids' IS NOT NULL AND jsonb_typeof(payload->'agent_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'agent_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        ARRAY[]::text[]
+    ) as agent_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'model_run_ids' IS NOT NULL AND jsonb_typeof(payload->'model_run_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'model_run_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        ARRAY[]::text[]
+    ) as model_run_ids,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true::boolean
+    ) as active,
+    COALESCE(
+        (SELECT (payload->>'dynamic')::boolean FROM draft_payload_data),
+        false::boolean
+    ) as dynamic,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        ARRAY[]::text[]
+    ) as department_ids,
     COALESCE((SELECT ids FROM valid_dept_ids), ARRAY[]::text[]) as valid_department_ids,
     COALESCE(da.departments, '{}'::types.q_get_eval_detail_v4_department[]) as departments,
     COALESCE(eaa.eval_agents, '{}'::types.q_get_eval_detail_v4_agent[]) as eval_agents,
@@ -356,14 +413,30 @@ SELECT
     COALESCE(aa.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     COALESCE(ra.rubrics, '{}'::types.q_get_eval_detail_v4_rubric[]) as rubrics,
     COALESCE(ra.rubric_ids, ARRAY[]::text[]) as valid_rubric_ids,
-    false as use_groups,
+    COALESCE(
+        (SELECT (payload->>'use_groups')::boolean FROM draft_payload_data),
+        false::boolean
+    ) as use_groups,
     CASE WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END as can_edit,
     CASE WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END as can_delete,
     COALESCE(amra.available_model_runs, '{}'::types.q_get_eval_detail_v4_available_model_run[]) as available_model_runs,
     COALESCE(amra.total_count, 0) as available_model_runs_total_count,
     COALESCE(amra.page, 1) as available_model_runs_page,
     COALESCE(amra.page_size, 50) as available_model_runs_page_size,
-    COALESCE(amra.total_pages, 0) as available_model_runs_total_pages
+    COALESCE(amra.total_pages, 0) as available_model_runs_total_pages,
+    COALESCE((SELECT version FROM draft_payload_data), 0) as draft_version,
+    COALESCE(
+        (SELECT payload->'rubric_grade_agent_pairs' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as rubric_grade_agent_pairs,
+    COALESCE(
+        (SELECT payload->'rubric_grade_agent_active_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as rubric_grade_agent_active_states,
+    COALESCE(
+        (SELECT payload->'rubric_grade_agent_positions' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as rubric_grade_agent_positions
 FROM user_profile up
 CROSS JOIN valid_dept_ids vdi
 CROSS JOIN departments_array da

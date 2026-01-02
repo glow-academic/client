@@ -5284,6 +5284,7 @@ class GetEvalDetailSqlParams(BaseModel):
     available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     available_model_runs_page: int | None = 1
     available_model_runs_page_size: int | None = 50
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -5293,6 +5294,7 @@ class GetEvalDetailSqlParams(BaseModel):
             self.available_model_runs_agent_ids,
             self.available_model_runs_page,
             self.available_model_runs_page_size,
+            self.draft_id,
         )
 
 class QGetEvalDetailV4Agent(BaseModel):
@@ -5402,6 +5404,10 @@ class GetEvalDetailSqlRow(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    draft_version: int | None = None
+    rubric_grade_agent_pairs: Any | None = None
+    rubric_grade_agent_active_states: Any | None = None
+    rubric_grade_agent_positions: Any | None = None
 
 class GetEvalDetailApiRequest(BaseModel):
 
@@ -5410,6 +5416,7 @@ class GetEvalDetailApiRequest(BaseModel):
     available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     available_model_runs_page: int | None = 1
     available_model_runs_page_size: int | None = 50
+    draft_id: UUID | None = None
 
 class GetEvalDetailApiResponse(BaseModel):
 
@@ -5444,6 +5451,10 @@ class GetEvalDetailApiResponse(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    draft_version: int | None = None
+    rubric_grade_agent_pairs: Any | None = None
+    rubric_grade_agent_active_states: Any | None = None
+    rubric_grade_agent_positions: Any | None = None
 
 
 
@@ -5456,6 +5467,7 @@ class GetEvalNewSqlParams(BaseModel):
     available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     available_model_runs_page: int | None = 1
     available_model_runs_page_size: int | None = 50
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -5464,6 +5476,7 @@ class GetEvalNewSqlParams(BaseModel):
             self.available_model_runs_agent_ids,
             self.available_model_runs_page,
             self.available_model_runs_page_size,
+            self.draft_id,
         )
 
 class GetEvalNewSqlRow(BaseModel):
@@ -5493,6 +5506,10 @@ class GetEvalNewSqlRow(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    draft_version: int | None = None
+    rubric_grade_agent_pairs: Any | None = None
+    rubric_grade_agent_active_states: Any | None = None
+    rubric_grade_agent_positions: Any | None = None
 
 class GetEvalNewApiRequest(BaseModel):
 
@@ -5500,6 +5517,7 @@ class GetEvalNewApiRequest(BaseModel):
     available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     available_model_runs_page: int | None = 1
     available_model_runs_page_size: int | None = 50
+    draft_id: UUID | None = None
 
 class GetEvalNewApiResponse(BaseModel):
 
@@ -5528,6 +5546,10 @@ class GetEvalNewApiResponse(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    draft_version: int | None = None
+    rubric_grade_agent_pairs: Any | None = None
+    rubric_grade_agent_active_states: Any | None = None
+    rubric_grade_agent_positions: Any | None = None
 
 
 
@@ -5785,6 +5807,43 @@ class GetRubricGradeAgentForRunOrGroupApiRequest(BaseModel):
 class GetRubricGradeAgentForRunOrGroupApiResponse(BaseModel):
 
     rubric_grade_agent_id: UUID | None = None
+
+
+
+# Generated from: patch_eval_draft
+
+class PatchEvalDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchEvalDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchEvalDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchEvalDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25045,6 +25104,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricGradeAgentForRunOrGroupApiRequest",
         "GetRubricGradeAgentForRunOrGroupApiResponse",
     ),
+    "app/sql/v4/benchmark/patch_eval_draft_complete.sql": (
+        "PatchEvalDraftSqlParams",
+        "PatchEvalDraftSqlRow",
+        "PatchEvalDraftApiRequest",
+        "PatchEvalDraftApiResponse",
+    ),
     "app/sql/v4/benchmark/start_benchmark_attempt_complete.sql": (
         "StartBenchmarkAttemptSqlParams",
         "StartBenchmarkAttemptSqlRow",
@@ -27271,6 +27336,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/get_rubric_grade_agent_for_run_or_group_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/patch_eval_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

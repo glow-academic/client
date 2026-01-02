@@ -106,7 +106,8 @@ CREATE OR REPLACE FUNCTION api_get_eval_detail_v4(
     available_model_runs_search text DEFAULT NULL,
     available_model_runs_agent_ids uuid[] DEFAULT ARRAY[]::uuid[],
     available_model_runs_page int DEFAULT 1,
-    available_model_runs_page_size int DEFAULT 50
+    available_model_runs_page_size int DEFAULT 50,
+    draft_id uuid DEFAULT NULL
 )
     RETURNS TABLE (
     eval_exists boolean,
@@ -139,7 +140,11 @@ CREATE OR REPLACE FUNCTION api_get_eval_detail_v4(
     available_model_runs_total_count bigint,
     available_model_runs_page int,
     available_model_runs_page_size int,
-    available_model_runs_total_pages bigint
+    available_model_runs_total_pages bigint,
+    draft_version int,
+    rubric_grade_agent_pairs jsonb,
+    rubric_grade_agent_active_states jsonb,
+    rubric_grade_agent_positions jsonb
 )
 LANGUAGE sql
 STABLE
@@ -151,7 +156,19 @@ WITH params AS (
         available_model_runs_search AS available_model_runs_search,
         available_model_runs_agent_ids AS available_model_runs_agent_ids,
         available_model_runs_page AS available_model_runs_page,
-        available_model_runs_page_size AS available_model_runs_page_size
+        available_model_runs_page_size AS available_model_runs_page_size,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'evals'::draft_resource_type
+    LIMIT 1
 ),
 eval_exists_check AS (
     SELECT EXISTS(SELECT 1 FROM evals WHERE id = (SELECT eval_id FROM params))::boolean as eval_exists
@@ -542,14 +559,45 @@ SELECT
     eec.eval_exists,
     up.actor_name::text as actor_name,
     ed.eval_id,
-    ed.name,
-    ed.description,
-    COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
-    ed.active,
-    ed.dynamic,
+    -- Merge draft payload over existing eval data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        ed.name
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ed.description
+    ) as description,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'agent_ids' IS NOT NULL AND jsonb_typeof(payload->'agent_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'agent_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(ead.agent_ids, ARRAY[]::text[])
+    ) as agent_ids,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        ed.active
+    ) as active,
+    COALESCE(
+        (SELECT (payload->>'dynamic')::boolean FROM draft_payload_data),
+        ed.dynamic
+    ) as dynamic,
     ed.created_at,
     ed.updated_at,
-    COALESCE(edd.department_ids, ARRAY[]::text[]) as department_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(edd.department_ids, ARRAY[]::text[])
+    ) as department_ids,
     COALESCE(ess.total_runs, 0) as total_runs,
     COALESCE(ess.completed_runs, 0) as completed_runs,
     COALESCE(ess.pending_runs, 0) as pending_runs,
@@ -574,7 +622,20 @@ SELECT
     COALESCE(amra.total_count, 0) as available_model_runs_total_count,
     COALESCE(amra.page, 1) as available_model_runs_page,
     COALESCE(amra.page_size, 50) as available_model_runs_page_size,
-    COALESCE(amra.total_pages, 0) as available_model_runs_total_pages
+    COALESCE(amra.total_pages, 0) as available_model_runs_total_pages,
+    COALESCE((SELECT version FROM draft_payload_data), 0) as draft_version,
+    COALESCE(
+        (SELECT payload->'rubric_grade_agent_pairs' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as rubric_grade_agent_pairs,
+    COALESCE(
+        (SELECT payload->'rubric_grade_agent_active_states' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as rubric_grade_agent_active_states,
+    COALESCE(
+        (SELECT payload->'rubric_grade_agent_positions' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as rubric_grade_agent_positions
 FROM eval_exists_check eec
 CROSS JOIN params
 CROSS JOIN eval_data ed

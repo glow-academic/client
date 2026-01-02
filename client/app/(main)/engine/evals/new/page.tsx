@@ -8,29 +8,24 @@ import Eval from "@/components/evals/Eval";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { isHardRefresh } from "@/lib/cache-utils";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type EvalNewIn = InputOf<"/api/v4/evals/new", "post">;
 type EvalNewOut = OutputOf<"/api/v4/evals/new", "post">;
 type CreateEvalIn = InputOf<"/api/v4/evals/create", "post">;
 type CreateEvalOut = OutputOf<"/api/v4/evals/create", "post">;
+type PatchEvalDraftIn = InputOf<"/api/v4/evals/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/api/v4/evals/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getEvalDefault = async (): Promise<EvalNewOut> => {
-  const bypassCache = await isHardRefresh();
-  return api.post(
-    "/evals/new",
-    { body: {} },
-    {
-      cache: "no-store",
-      ...(bypassCache && {
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }),
+const getEvalDefault = async (input: EvalNewIn): Promise<EvalNewOut> => {
+  return api.post("/evals/new", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
     },
-  );
+  });
 };
 
 /** ---- Metadata ---- */
@@ -49,12 +44,49 @@ async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   return api.post("/evals/create", input);
 }
 
+async function patchEvalDraft(
+  input: PatchEvalDraftIn
+): Promise<PatchEvalDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/evals/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
-export default async function NewEvalPage() {
+export default async function NewEvalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch eval default data (for dropdowns and defaults)
-  const evalDetailDefault = await getEvalDefault();
+  // Parse search params using nuqs
+  const params = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for eval search params
+  const evalSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadEvalSearchParams = createLoader(evalSearchParams);
+  const q = loadEvalSearchParams(searchParamsObj);
+
+  // Fetch eval default data (for dropdowns and defaults) with draft_id
+  const input: EvalNewIn = {
+    body: {
+      draft_id: q.draftId ?? null,
+    } as EvalNewIn["body"],
+  };
+  const evalDetailDefault = await getEvalDefault(input);
 
   return (
     <div
@@ -65,10 +97,18 @@ export default async function NewEvalPage() {
       <Eval
         evalDetailDefault={evalDetailDefault}
         createEvalAction={createEval}
+        patchEvalDraftAction={patchEvalDraft}
       />
     </div>
   );
 }
 
 /** ---- Export types for client component ---- */
-export type { EvalNewIn, EvalNewOut, CreateEvalIn, CreateEvalOut };
+export type {
+  EvalNewIn,
+  EvalNewOut,
+  CreateEvalIn,
+  CreateEvalOut,
+  PatchEvalDraftIn,
+  PatchEvalDraftOut,
+};
