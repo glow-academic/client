@@ -5,44 +5,24 @@
  * 05/20/2025
  */
 "use client";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// RubricPicker is now used in SimulationContentTable, not here
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import {
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { ScenarioCardGrid } from "@/components/common/simulations/ScenarioCardGrid";
-import type { ContentItem } from "@/components/common/simulations/SimulationContentTable";
-import { SimulationScenarioSection } from "@/components/common/simulations/SimulationScenarioSection";
-import { Switch } from "@/components/ui/switch";
-import { Accordion } from "@/components/ui/accordion";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { StepCard } from "@/components/common/forms/StepCard";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
@@ -50,8 +30,29 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Check, GraduationCap, Loader2, Power } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  Clock,
+  Copy,
+  FileText,
+  GraduationCap,
+  GripVertical,
+  Lightbulb,
+  Mic,
+  Power,
+  Text,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+  useQueryStates,
+  type Parser,
+  type Values,
+} from "nuqs";
 
 // Type-only import from server page
 import type {
@@ -69,44 +70,11 @@ export interface SimulationProps {
   simulationDetail?: SimulationDetailOut;
   simulationDetailDefault?: SimulationNewOut;
   createSimulationAction?: (
-    input: CreateSimulationIn,
+    input: CreateSimulationIn
   ) => Promise<CreateSimulationOut>;
   updateSimulationAction?: (
-    input: UpdateSimulationIn,
+    input: UpdateSimulationIn
   ) => Promise<UpdateSimulationOut>;
-}
-
-interface RubricGradeAgent {
-  rubric_id: string;
-  grade_text_agent_id: string;
-  grade_voice_agent_id?: string | null;
-}
-
-interface FormData {
-  title?: string;
-  description?: string;
-  cohortIds?: string[];
-  active?: boolean;
-  practiceSimulation?: boolean;
-  departmentIds?: string[] | null;
-  hint_agent_id?: string | null;
-  simulation_text_agent_id?: string | null;
-  simulation_voice_agent_id?: string | null;
-}
-
-interface FormErrors {
-  title?: string;
-  cohortIds?: string[];
-  departmentIds?: string[];
-}
-
-type StepStatus = "pending" | "active" | "completed";
-
-interface Step {
-  id: string;
-  title: string;
-  description: string;
-  status: StepStatus;
 }
 
 export default function Simulation({
@@ -119,45 +87,25 @@ export default function Simulation({
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null,
-  );
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
   const isEditMode = !!simulationId;
 
-  // Helper function to update URL with query parameters
-  const updateUrlParams = useCallback(
-    (updates: Record<string, string | string[] | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
+  // Inline parsers for URL-backed state
+  const simulationSearchParamsClient = {
+    draftId: parseAsString,
+    scenarioIds: parseAsArrayOf(parseAsString),
+    scenarioSearch: parseAsString,
+    scenarioShowSelected: parseAsBoolean,
+  } as const;
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || (Array.isArray(value) && value.length === 0)) {
-          params.delete(key);
-        } else if (Array.isArray(value)) {
-          // Use comma-separated values to match how page.tsx reads them
-          params.set(key, value.join(","));
-        } else {
-          params.set(key, value);
-        }
-      });
-
-      const newParamsString = params.toString();
-      router.replace(`${pathname}?${newParamsString}`, { scroll: false });
-    },
-    [searchParams, pathname, router],
+  // URL-backed state using nuqs
+  const [urlParams, setUrlParams] = useQueryStates(
+    simulationSearchParamsClient,
+    {
+      history: "replace",
+      shallow: true,
+    }
   );
-
-  // Use server-provided data (no React Query needed when server data is provided)
-  const simulationDetail = serverSimulationDetail;
-  const simulationDetailDefault = serverSimulationDetailDefault;
-  const simulationData = isEditMode
-    ? simulationDetail
-    : simulationDetailDefault;
 
   // Extract body types from server action types for type safety
   type CreateSimulationBody = CreateSimulationIn extends { body: infer B }
@@ -168,32 +116,38 @@ export default function Simulation({
     : never;
 
   // Use server actions directly (no mutations needed)
-  const handleCreateSimulation = async (body: CreateSimulationBody) => {
-    if (!createSimulationAction) {
-      throw new Error("createSimulationAction is required");
-    }
-    await createSimulationAction({ body });
-  };
+  const handleCreateSimulation = useCallback(
+    async (body: CreateSimulationBody) => {
+      if (!createSimulationAction) {
+        throw new Error("createSimulationAction is required");
+      }
+      await createSimulationAction({ body });
+    },
+    [createSimulationAction]
+  );
 
-  const handleUpdateSimulation = async (body: UpdateSimulationBody) => {
-    if (!updateSimulationAction) {
-      throw new Error("updateSimulationAction is required");
-    }
-    await updateSimulationAction({ body });
-  };
+  const handleUpdateSimulation = useCallback(
+    async (body: UpdateSimulationBody) => {
+      if (!updateSimulationAction) {
+        throw new Error("updateSimulationAction is required");
+      }
+      await updateSimulationAction({ body });
+    },
+    [updateSimulationAction]
+  );
 
   // Set breadcrumb context when simulation data is loaded
   useEffect(() => {
-    if (simulationDetail?.name && simulationId && isEditMode) {
+    if (serverSimulationDetail?.name && simulationId && isEditMode) {
       setEntityMetadata({
         entityId: simulationId,
-        entityName: simulationDetail.name,
+        entityName: serverSimulationDetail.name,
         entityType: "simulation",
       });
     }
     return () => clearEntityMetadata();
   }, [
-    simulationDetail,
+    serverSimulationDetail,
     simulationId,
     isEditMode,
     setEntityMetadata,
@@ -204,26 +158,166 @@ export default function Simulation({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primary_department_id ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primary_department_id]
   );
 
-  const initialFormData: FormData = useMemo(
-    () => ({
-      title: "New Simulation",
-      description: "",
-      cohortIds: [],
-      active: true,
-      practiceSimulation: false,
-      departmentIds: defaultDepartmentIds,
-    }),
-    [defaultDepartmentIds],
+  // Use server-provided data
+  const simulationDetail = serverSimulationDetail;
+  const simulationDetailDefault = serverSimulationDetailDefault;
+  const simulationData = isEditMode
+    ? simulationDetail
+    : simulationDetailDefault;
+
+  // Form data from nuqs (URL-backed - only search params)
+  const formData = urlParams;
+
+  // Helper to update form data (URL-backed)
+  const setFormData = useCallback(
+    (updates: Partial<typeof urlParams>) => {
+      setUrlParams((prev) => ({ ...prev, ...updates }));
+    },
+    [setUrlParams]
   );
 
-  const [formData, setFormData] = useState<FormData>();
-  const [originalFormData, setOriginalFormData] = useState<FormData>();
-  const [errors, setErrors] = useState<FormErrors>({});
+  // Local draft state (not in URL) - for form fields like title, description, etc.
+  type DraftState = {
+    title: string;
+    description: string;
+    active: boolean;
+    practiceSimulation: boolean;
+    departmentIds: string[];
+    hint_agent_id: string | null;
+    simulation_text_agent_id: string | null;
+    simulation_voice_agent_id: string | null;
+    scenarioIds: string[]; // Track selected scenario IDs (for ordering)
+    scenarioActiveStates: Record<string, boolean>;
+    scenarioSettings: Record<
+      string,
+      {
+        hints_enabled?: boolean;
+        copy_paste_allowed?: boolean;
+        audio_enabled?: boolean;
+        text_enabled?: boolean;
+        rubric_id?: string | null;
+        time_limit_seconds?: number | null;
+      }
+    >;
+  };
+
+  // Initialize draft state from server data
+  const initialDraftState = useMemo((): DraftState => {
+    const data = isEditMode ? simulationDetail : simulationDetailDefault;
+
+    // Get scenarioIds from URL params if available, otherwise from server data
+    const urlScenarioIds = urlParams.scenarioIds || [];
+    const serverScenarioIds =
+      isEditMode && data && "scenario_ids" in data
+        ? (data as SimulationDetailOut).scenario_ids || []
+        : [];
+
+    // Prioritize URL params if available, otherwise use server data
+    const initialScenarioIds =
+      urlScenarioIds.length > 0 ? urlScenarioIds : serverScenarioIds;
+
+    if (!data) {
+      return {
+        title: "New Simulation",
+        description: "",
+        active: true,
+        practiceSimulation: false,
+        departmentIds: defaultDepartmentIds,
+        hint_agent_id: null,
+        simulation_text_agent_id: null,
+        simulation_voice_agent_id: null,
+        scenarioIds: initialScenarioIds,
+        scenarioActiveStates: {},
+        scenarioSettings: {},
+      };
+    }
+
+    // Initialize scenario active states and settings from server data
+    const scenarioActiveStates: Record<string, boolean> = {};
+    const scenarioSettings: Record<
+      string,
+      {
+        hints_enabled?: boolean;
+        copy_paste_allowed?: boolean;
+        audio_enabled?: boolean;
+        text_enabled?: boolean;
+        rubric_id?: string | null;
+        time_limit_seconds?: number | null;
+      }
+    > = {};
+
+    if (
+      isEditMode &&
+      simulationDetail &&
+      "scenarios" in simulationDetail &&
+      simulationDetail.scenarios
+    ) {
+      // Use ordered scenario IDs from server (by position) if URL params not available
+      simulationDetail.scenarios
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .forEach((scenario) => {
+          const key = scenario.scenario_id;
+          if (key) {
+            scenarioActiveStates[key] = scenario.active ?? false;
+            scenarioSettings[key] = {
+              hints_enabled: scenario.hints_enabled ?? false,
+              copy_paste_allowed:
+                ("copy_paste_allowed" in scenario
+                  ? scenario.copy_paste_allowed
+                  : false) ?? false,
+              audio_enabled:
+                ("audio_enabled" in scenario
+                  ? scenario.audio_enabled
+                  : false) ?? false,
+              text_enabled:
+                ("text_enabled" in scenario ? scenario.text_enabled : true) ??
+                true,
+              rubric_id: null, // rubric_id is now per-scenario via rubric_grade_agents
+              time_limit_seconds: scenario.time_limit_seconds ?? null,
+            };
+          }
+        });
+    }
+
+    return {
+      title: data.name || "New Simulation",
+      description: data.description || "",
+      active: data.active ?? true,
+      practiceSimulation: data.practice_simulation ?? false,
+      departmentIds: data.department_ids || defaultDepartmentIds,
+      hint_agent_id: isEditMode
+        ? simulationDetail?.hint_agent_id || null
+        : null,
+      simulation_text_agent_id: isEditMode
+        ? simulationDetail?.simulation_text_agent_id || null
+        : null,
+      simulation_voice_agent_id: isEditMode
+        ? simulationDetail?.simulation_voice_agent_id || null
+        : null,
+      scenarioIds: initialScenarioIds,
+      scenarioActiveStates,
+      scenarioSettings,
+    };
+  }, [
+    isEditMode,
+    simulationDetail,
+    simulationDetailDefault,
+    defaultDepartmentIds,
+    urlParams.scenarioIds,
+  ]);
+
+  // Local draft state (not in URL)
+  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+  // Update draft state when server data changes
+  useEffect(() => {
+    setDraftState(initialDraftState);
+  }, [initialDraftState]);
 
   // Readonly logic using server-provided can_edit flag
   const isReadonly = useMemo(() => {
@@ -234,16 +328,28 @@ export default function Simulation({
   // Extract department mapping - create dict from array (composite types)
   const departmentMapping = useMemo(() => {
     const departments = simulationData?.departments || [];
-    return departments.reduce((acc, dept) => {
-      acc[String(dept.department_id)] = {
-        name: dept.name || "",
-        description: dept.description || "",
-        scenario_ids: dept.scenario_ids?.map(String) || null,
-        rubric_ids: dept.rubric_ids?.map(String) || null,
-        cohort_ids: dept.cohort_ids?.map(String) || null,
-      };
-      return acc;
-    }, {} as Record<string, { name: string; description: string; scenario_ids: string[] | null; rubric_ids: string[] | null; cohort_ids: string[] | null }>);
+    return departments.reduce(
+      (acc, dept) => {
+        acc[String(dept.department_id)] = {
+          name: dept.name || "",
+          description: dept.description || "",
+          scenario_ids: dept.scenario_ids?.map(String) || null,
+          rubric_ids: dept.rubric_ids?.map(String) || null,
+          cohort_ids: dept.cohort_ids?.map(String) || null,
+        };
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          name: string;
+          description: string;
+          scenario_ids: string[] | null;
+          rubric_ids: string[] | null;
+          cohort_ids: string[] | null;
+        }
+      >
+    );
   }, [simulationData?.departments]);
   // Extract agent mapping - create dict from array (composite types)
   // Map to the expected type format: Record<string, { name: string; description: string; roles?: string[] }>
@@ -255,10 +361,11 @@ export default function Simulation({
     > = {};
 
     // Add agents from API response (arrays now)
-    const agents = (isEditMode && simulationDetail && "agents" in simulationDetail
-      ? simulationDetail.agents
-      : simulationData?.agents) || [];
-    
+    const agents =
+      (isEditMode && simulationDetail && "agents" in simulationDetail
+        ? simulationDetail.agents
+        : simulationData?.agents) || [];
+
     agents.forEach((agent) => {
       const key = String(agent.agent_id);
       mapped[key] =
@@ -274,49 +381,29 @@ export default function Simulation({
     // Add selected agents that aren't in the mapping (for backward compatibility)
     // This ensures GenericPicker can display selected agents even if they're not in valid_agent_ids
     if (
-      formData?.simulation_text_agent_id &&
-      !mapped[formData.simulation_text_agent_id]
+      draftState.simulation_text_agent_id &&
+      !mapped[draftState.simulation_text_agent_id]
     ) {
-      mapped[formData.simulation_text_agent_id] = {
-        name: `Agent ${formData.simulation_text_agent_id.slice(0, 8)}...`,
-        description: "Selected simulation text agent",
+      mapped[draftState.simulation_text_agent_id] = {
+        name: `Agent ${draftState.simulation_text_agent_id.slice(0, 8)}...`,
+        description: "Selected simulation agent",
         roles: [],
       };
     }
     if (
-      formData?.simulation_voice_agent_id &&
-      !mapped[formData.simulation_voice_agent_id]
+      draftState.simulation_voice_agent_id &&
+      !mapped[draftState.simulation_voice_agent_id]
     ) {
-      mapped[formData.simulation_voice_agent_id] = {
-        name: `Agent ${formData.simulation_voice_agent_id.slice(0, 8)}...`,
-        description: "Selected simulation voice agent",
+      mapped[draftState.simulation_voice_agent_id] = {
+        name: `Agent ${draftState.simulation_voice_agent_id.slice(0, 8)}...`,
+        description: "Selected voice agent",
         roles: [],
       };
     }
-    if (formData?.hint_agent_id && !mapped[formData.hint_agent_id]) {
-      mapped[formData.hint_agent_id] = {
-        name: `Agent ${formData.hint_agent_id.slice(0, 8)}...`,
+    if (draftState.hint_agent_id && !mapped[draftState.hint_agent_id]) {
+      mapped[draftState.hint_agent_id] = {
+        name: `Agent ${draftState.hint_agent_id.slice(0, 8)}...`,
         description: "Selected hint agent",
-        roles: [],
-      };
-    }
-    if (
-      formData?.grade_text_agent_id &&
-      !mapped[formData.grade_text_agent_id]
-    ) {
-      mapped[formData.grade_text_agent_id] = {
-        name: `Agent ${formData.grade_text_agent_id.slice(0, 8)}...`,
-        description: "Selected grade text agent",
-        roles: [],
-      };
-    }
-    if (
-      formData?.grade_voice_agent_id &&
-      !mapped[formData.grade_voice_agent_id]
-    ) {
-      mapped[formData.grade_voice_agent_id] = {
-        name: `Agent ${formData.grade_voice_agent_id.slice(0, 8)}...`,
-        description: "Selected grade voice agent",
         roles: [],
       };
     }
@@ -326,104 +413,100 @@ export default function Simulation({
     isEditMode,
     simulationDetail,
     simulationData?.agents,
-    formData?.simulation_text_agent_id,
-    formData?.simulation_voice_agent_id,
-    formData?.hint_agent_id,
-    formData?.grade_text_agent_id,
-    formData?.grade_voice_agent_id,
+    draftState.simulation_text_agent_id,
+    draftState.simulation_voice_agent_id,
+    draftState.hint_agent_id,
   ]);
-  
+
   // Extract scenario mapping - create dict from scenarios_full array (composite types)
   const scenarioMapping = useMemo(() => {
-    const scenariosFull = (isEditMode && simulationDetail && "scenarios_full" in simulationDetail
-      ? simulationDetail.scenarios_full
-      : simulationData?.scenarios_full) || [];
-    
-    return scenariosFull.reduce((acc, scenario) => {
-      acc[String(scenario.scenario_id)] = {
-        name: scenario.name || "",
-        description: scenario.description || "",
-        persona_ids: scenario.persona_ids?.map(String) || [],
-        persona_mapping: scenario.persona_mapping || [],
-        document_mapping: scenario.document_mapping || [],
-        parameter_item_mapping: scenario.parameter_item_mapping || [],
-        parameter_item_ids: scenario.parameter_item_ids?.map(String) || [],
-        document_ids: scenario.document_ids?.map(String) || [],
-      };
-      return acc;
-    }, {} as Record<string, {
-      name: string;
-      description: string;
-      persona_ids: string[];
-      persona_mapping: Array<{ persona_id: string | { toString(): string }; name?: string | null; description?: string | null; color?: string | null; icon?: string | null; image_model?: boolean | null }>;
-      document_mapping: Array<{ document_id: string | { toString(): string }; name?: string | null; description?: string | null }>;
-      parameter_item_mapping: Array<{ field_id: string | { toString(): string }; name?: string | null; description?: string | null; parameter_id?: string | { toString(): string } | null; parameter_name?: string | null }>;
-      parameter_item_ids: string[];
-      document_ids: string[];
-    }>);
+    const scenariosFull =
+      (isEditMode && simulationDetail && "scenarios_full" in simulationDetail
+        ? simulationDetail.scenarios_full
+        : simulationData?.scenarios_full) || [];
+
+    return scenariosFull.reduce(
+      (acc, scenario) => {
+        acc[String(scenario.scenario_id)] = {
+          name: scenario.name || "",
+          description: scenario.description || "",
+          persona_ids: scenario.persona_ids?.map(String) || [],
+          persona_mapping: (scenario.persona_mapping || []) as Array<{
+            persona_id: string | { toString(): string };
+            name?: string | null;
+            description?: string | null;
+            color?: string | null;
+            icon?: string | null;
+            image_model?: boolean | null;
+          }>,
+          document_mapping: (scenario.document_mapping || []) as Array<{
+            document_id: string | { toString(): string };
+            name?: string | null;
+            description?: string | null;
+          }>,
+          parameter_item_mapping: (scenario.parameter_item_mapping ||
+            []) as Array<{
+            field_id: string | { toString(): string };
+            name?: string | null;
+            description?: string | null;
+            parameter_id?: string | { toString(): string } | null;
+            parameter_name?: string | null;
+          }>,
+          parameter_item_ids: scenario.parameter_item_ids?.map(String) || [],
+          document_ids: scenario.document_ids?.map(String) || [],
+        };
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          name: string;
+          description: string;
+          persona_ids: string[];
+          persona_mapping: Array<{
+            persona_id: string | { toString(): string };
+            name?: string | null;
+            description?: string | null;
+            color?: string | null;
+            icon?: string | null;
+            image_model?: boolean | null;
+          }>;
+          document_mapping: Array<{
+            document_id: string | { toString(): string };
+            name?: string | null;
+            description?: string | null;
+          }>;
+          parameter_item_mapping: Array<{
+            field_id: string | { toString(): string };
+            name?: string | null;
+            description?: string | null;
+            parameter_id?: string | { toString(): string } | null;
+            parameter_name?: string | null;
+          }>;
+          parameter_item_ids: string[];
+          document_ids: string[];
+        }
+      >
+    );
   }, [isEditMode, simulationDetail, simulationData?.scenarios_full]);
-  
+
   const validAgentIds = useMemo(
     () =>
       (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
-    [simulationData],
+    [simulationData]
   );
 
-  // State for managing content (scenarios only)
-  const [stagedContentItems, setStagedContentItems] = useState<ContentItem[]>(
-    [],
-  ); // New items not yet saved
-  const [contentActiveStates, setContentActiveStates] = useState<
-    Record<string, boolean>
-  >({});
-  const [originalContentActiveStates, setOriginalContentActiveStates] =
-    useState<Record<string, boolean>>({});
-
-  // State for accordion (only one section open at a time)
-  const [openAccordionItem, setOpenAccordionItem] = useState<string | null>(
-    null,
-  );
-
-  // Switch field states (includes agent IDs)
-  const [contentSwitchStates, setContentSwitchStates] = useState<
-    Record<
-      string,
-      {
-        hints_enabled?: boolean;
-        copy_paste_allowed?: boolean;
-        audio_enabled?: boolean;
-        text_enabled?: boolean;
-        rubric_id?: string | null;
-        time_limit_seconds?: number | null;
-      }
-    >
-  >({});
-  const [originalContentSwitchStates, setOriginalContentSwitchStates] =
-    useState<
-      Record<
-        string,
-        {
-          hints_enabled?: boolean;
-          copy_paste_allowed?: boolean;
-          audio_enabled?: boolean;
-          text_enabled?: boolean;
-          rubric_id?: string | null;
-          time_limit_seconds?: number | null;
-        }
-      >
-    >({});
-
-  // Legacy state for backward compatibility during migration
-  const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
+  // Get scenario IDs from URL params (source of truth) - defined earlier
+  // const currentScenarioIds = urlParams.scenarioIds || [];
 
   // Extract valid scenario IDs from V2 response, filtered by selected departments
   // Includes: items from selected departments + cross-department items + currently selected items
   const validScenarioIds = useMemo(() => {
     const baseIds = simulationData?.valid_scenario_ids || [];
-    const selectedDeptIds = formData?.departmentIds || [];
+    const selectedDeptIds = draftState.departmentIds || [];
 
     // Always include currently selected scenarios (for edit mode - ensures selected items are visible)
-    const selectedScenarioIdsSet = new Set(currentScenarioIds);
+    const selectedScenarioIdsSet = new Set(draftState.scenarioIds || []);
 
     // If no departments selected, return all valid IDs plus selected ones
     if (selectedDeptIds.length === 0) {
@@ -440,7 +523,7 @@ export default function Simulation({
         Array.isArray(deptData.scenario_ids)
       ) {
         deptData.scenario_ids.forEach((id: string) =>
-          allDeptScenarioIds.add(id),
+          allDeptScenarioIds.add(id)
         );
       }
     });
@@ -456,7 +539,7 @@ export default function Simulation({
         Array.isArray(deptData.scenario_ids)
       ) {
         deptData.scenario_ids.forEach((id: string) =>
-          selectedDeptScenarioIds.add(id),
+          selectedDeptScenarioIds.add(id)
         );
       }
     });
@@ -474,180 +557,43 @@ export default function Simulation({
     return Array.from(new Set([...filtered, ...selectedScenarioIdsSet]));
   }, [
     simulationData?.valid_scenario_ids,
-    formData?.departmentIds,
+    draftState.departmentIds,
     departmentMapping,
-    currentScenarioIds,
+    draftState.scenarioIds,
   ]);
 
-  // Extract valid rubric IDs from V2 response, filtered by selected departments
-  // Includes: items from selected departments + cross-department items + currently selected items from content
-  // Compute content items directly (DHH-style: inline, no memo chains)
-  // Must be computed before useMemos that depend on it
-  // Use searchParams to determine ordering (like Scenario.tsx) - guarantees consistent ordering
-  const contentItems = useMemo(() => {
-    const items: ContentItem[] = [];
-    const itemsMap = new Map<string, ContentItem>();
-
-    // Get ordered scenario IDs from searchParams (source of truth for ordering)
-    // Prioritize URL params if they exist, otherwise derive order from simulationData.scenarios (ordered by position)
-    const scenarioIdsFromUrl =
-      searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [];
-    const orderedScenarioIdsFromUrl =
-      scenarioIdsFromUrl.length > 0
-        ? scenarioIdsFromUrl // Use URL params if available (source of truth)
-        : isEditMode
-          ? simulationData?.scenarios
-              ?.filter((s) => currentScenarioIds.includes(s.scenario_id))
-              .sort((a, b) => a.position - b.position)
-              .map((s) => s.scenario_id) || currentScenarioIds
-          : currentScenarioIds;
-
-    // Track which scenario IDs are in server data
-    const serverScenarioIds = new Set(
-      simulationData?.scenarios?.map((s) => s.scenario_id) || [],
-    );
-
-    // Add scenarios from server data (only those in currentScenarioIds)
-    if (simulationData?.scenarios && orderedScenarioIdsFromUrl.length > 0) {
-      const currentScenarioIdsSet = new Set(orderedScenarioIdsFromUrl);
-      simulationData.scenarios
-        .filter((scenario) => currentScenarioIdsSet.has(scenario.scenario_id))
-        .forEach((scenario) => {
-          const key = `scenario:${scenario.scenario_id}`;
-          const switchState = contentSwitchStates[key];
-          const item: ContentItem = {
-            type: "scenario",
-            id: scenario.scenario_id,
-            title: scenario.title,
-            description: scenario.description,
-            active: contentActiveStates[key] ?? scenario.active,
-            position: scenario.position,
-            usage_count: scenario.usage_count,
-            success_rate: scenario.success_rate,
-            last_used: scenario.last_used,
-            can_remove: scenario.can_remove,
-            isNew: false,
-            hints_enabled:
-              switchState?.hints_enabled ?? scenario.hints_enabled ?? false,
-            copy_paste_allowed:
-              switchState?.copy_paste_allowed ??
-              ("copy_paste_allowed" in scenario
-                ? scenario.copy_paste_allowed
-                : false) ??
-              false,
-            audio_enabled:
-              switchState?.audio_enabled ??
-              ("audio_enabled" in scenario ? scenario.audio_enabled : false) ??
-              false,
-            text_enabled:
-              switchState?.text_enabled ??
-              ("text_enabled" in scenario ? scenario.text_enabled : true) ??
-              true,
-            rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
-            time_limit_seconds:
-              switchState?.time_limit_seconds ??
-              scenario.time_limit_seconds ??
-              null,
-            has_active_video:
-              ("has_active_video" in scenario
-                ? scenario.has_active_video
-                : false) ?? false,
-          };
-          itemsMap.set(scenario.scenario_id, item);
-        });
-    }
-
-    // Add staged items (newly added, not yet saved)
-    stagedContentItems.forEach((item) => {
-      const key = `${item.type}:${item.id}`;
-      itemsMap.set(item.id, {
-        ...item,
-        active: contentActiveStates[key] ?? item.active,
-      });
-    });
-
-    // Add scenarios from URL params that aren't in server data (NEW scenarios)
-    orderedScenarioIdsFromUrl.forEach((scenarioId) => {
-      if (!itemsMap.has(scenarioId) && !serverScenarioIds.has(scenarioId)) {
-        // This scenario is in URL params but not in server data - it's NEW
-        const scenarioData = scenarioMapping[scenarioId];
-        const maxPosition = Math.max(
-          ...Array.from(itemsMap.values()).map((item) => item.position),
-          0,
-        );
-        const item: ContentItem = {
-          type: "scenario",
-          id: scenarioId,
-          title: scenarioData?.name || "Unnamed Scenario",
-          description: scenarioData?.description || "",
-          active: contentActiveStates[`scenario:${scenarioId}`] ?? true,
-          position: maxPosition + 1,
-          usage_count: 0,
-          success_rate: 0,
-          last_used: null,
-          can_remove: true,
-          isNew: true,
-          hints_enabled:
-            contentSwitchStates[`scenario:${scenarioId}`]?.hints_enabled ??
-            false,
-          copy_paste_allowed:
-            contentSwitchStates[`scenario:${scenarioId}`]?.copy_paste_allowed ??
-            false,
-          audio_enabled:
-            contentSwitchStates[`scenario:${scenarioId}`]?.audio_enabled ??
-            false,
-          text_enabled:
-            contentSwitchStates[`scenario:${scenarioId}`]?.text_enabled ?? true,
-          rubric_id:
-            contentSwitchStates[`scenario:${scenarioId}`]?.rubric_id ?? null,
-          time_limit_seconds:
-            contentSwitchStates[`scenario:${scenarioId}`]?.time_limit_seconds ??
-            null,
-          has_active_video: false,
+  // Build scenarios array from scenarioMapping (similar to Cohort's simulationsArray)
+  const scenariosArray = useMemo(() => {
+    return validScenarioIds
+      .map((id) => {
+        const scenario = scenarioMapping[id];
+        if (!scenario) return null;
+        return {
+          scenario_id: id,
+          name: scenario.name || "",
+          description: scenario.description || "",
         };
-        itemsMap.set(scenarioId, item);
-      }
-    });
-
-    // Build ordered list based on searchParams order (or currentScenarioIds in edit mode)
-    orderedScenarioIdsFromUrl.forEach((scenarioId, index) => {
-      const item = itemsMap.get(scenarioId);
-      if (item) {
-        items.push({
-          ...item,
-          position: index + 1, // Update position based on URL order
-        });
-      }
-    });
-
-    // Add any items not in the ordered list (shouldn't happen, but safety check)
-    itemsMap.forEach((item, id) => {
-      if (!orderedScenarioIdsFromUrl.includes(id)) {
-        items.push(item);
-      }
-    });
-
-    return items;
-  }, [
-    isEditMode,
-    currentScenarioIds,
-    searchParams,
-    simulationData?.scenarios,
-    scenarioMapping,
-    contentSwitchStates,
-    contentActiveStates,
-    stagedContentItems,
-  ]);
+      })
+      .filter(
+        (
+          scenario
+        ): scenario is {
+          scenario_id: string;
+          name: string;
+          description: string;
+        } => scenario !== null
+      );
+  }, [validScenarioIds, scenarioMapping]);
 
   const validRubricIds = useMemo(() => {
     const baseIds = simulationData?.valid_rubric_ids || [];
-    const selectedDeptIds = formData?.departmentIds || [];
+    const selectedDeptIds = draftState.departmentIds || [];
 
-    // Always include currently selected rubrics from content items (for edit mode - ensures selected items are visible)
+    // Always include currently selected rubrics from draftState (for edit mode - ensures selected items are visible)
     const selectedRubricIdSet = new Set<string>();
-    contentItems.forEach((item) => {
-      if (item.type === "scenario" && item.rubric_id) {
-        selectedRubricIdSet.add(item.rubric_id);
+    Object.values(draftState.scenarioSettings).forEach((settings) => {
+      if (settings.rubric_id) {
+        selectedRubricIdSet.add(settings.rubric_id);
       }
     });
 
@@ -680,7 +626,7 @@ export default function Simulation({
         Array.isArray(deptData.rubric_ids)
       ) {
         deptData.rubric_ids.forEach((id: string) =>
-          selectedDeptRubricIds.add(id),
+          selectedDeptRubricIds.add(id)
         );
       }
     });
@@ -698,20 +644,20 @@ export default function Simulation({
     return Array.from(new Set([...filtered, ...selectedRubricIdSet]));
   }, [
     simulationData?.valid_rubric_ids,
-    formData?.departmentIds,
-    contentItems,
+    draftState.departmentIds,
+    draftState.scenarioSettings,
     departmentMapping,
   ]);
 
   // Extract rubric mapping - create dict from rubrics array (composite types)
   // Always include selected rubrics (for backward compatibility)
   // This ensures GenericPicker can display selected rubrics even if they're not in valid_rubric_ids
-  // MUST be defined after contentItems since it depends on it
   const rubricMapping = useMemo(() => {
-    const rubrics = (isEditMode && simulationDetail && "rubrics" in simulationDetail
-      ? simulationDetail.rubrics
-      : simulationData?.rubrics) || [];
-    
+    const rubrics =
+      (isEditMode && simulationDetail && "rubrics" in simulationDetail
+        ? simulationDetail.rubrics
+        : simulationData?.rubrics) || [];
+
     const mapped: Record<
       string,
       { id: string; name: string; description?: string }
@@ -727,16 +673,12 @@ export default function Simulation({
       };
     });
 
-    // Add selected rubrics from content items that aren't in the mapping
-    contentItems.forEach((item) => {
-      if (
-        item.type === "scenario" &&
-        item.rubric_id &&
-        !mapped[item.rubric_id]
-      ) {
-        mapped[item.rubric_id] = {
-          id: item.rubric_id,
-          name: `Rubric ${item.rubric_id.slice(0, 8)}...`,
+    // Add selected rubrics from draftState that aren't in the mapping
+    Object.values(draftState.scenarioSettings).forEach((settings) => {
+      if (settings.rubric_id && !mapped[settings.rubric_id]) {
+        mapped[settings.rubric_id] = {
+          id: settings.rubric_id,
+          name: `Rubric ${settings.rubric_id.slice(0, 8)}...`,
           description: "Selected rubric",
         };
       }
@@ -747,7 +689,7 @@ export default function Simulation({
     isEditMode,
     simulationDetail,
     simulationData?.rubrics,
-    contentItems,
+    draftState.scenarioSettings,
   ]);
 
   // Note: Cohort filtering is not currently used in Simulation component
@@ -774,201 +716,18 @@ export default function Simulation({
   //   return baseIds.filter((id) => deptCohortIds.has(id));
   // }, [simulationData?.valid_cohort_ids, formData?.departmentIds, departmentMapping]);
 
-  // Track if we've initialized to prevent resetting on searchParams changes
-  const hasInitializedRef = useRef(false);
-  // Track if we've set the initial accordion state to prevent reopening when user closes it
-  const hasSetInitialAccordionRef = useRef(false);
-
+  // Sync draftState.scenarioIds with URL params when they change
   useEffect(() => {
-    if (simulationData && isEditMode) {
-      // Only initialize once in edit mode
-      if (!hasInitializedRef.current) {
-        const deptIds = simulationData.department_ids || [];
-        const formDataFromServer = {
-          title: simulationData.name,
-          description: simulationData.description,
-          active: simulationData.active,
-          practiceSimulation: simulationData.practice_simulation ?? false,
-          departmentIds: deptIds,
-          hint_agent_id: isEditMode
-            ? simulationDetail?.hint_agent_id || null
-            : null,
-          simulation_text_agent_id: isEditMode
-            ? simulationDetail?.simulation_text_agent_id || null
-            : null,
-          simulation_voice_agent_id: isEditMode
-            ? simulationDetail?.simulation_voice_agent_id || null
-            : null,
-        };
-        setFormData(formDataFromServer);
-        setOriginalFormData(formDataFromServer);
-        // Prioritize URL params if they exist, otherwise use server data (already ordered by position)
-        const scenarioIdsFromUrl =
-          searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [];
-        const initialScenarioIds =
-          scenarioIdsFromUrl.length > 0
-            ? scenarioIdsFromUrl
-            : simulationData.scenario_ids;
-        setCurrentScenarioIds(initialScenarioIds);
-        // Initialize previousDepartmentIds when loading simulation data
-        setPreviousDepartmentIds((prev) =>
-          prev.length === 0 ? deptIds : prev,
-        );
-        hasInitializedRef.current = true;
-      }
-    } else if (!isEditMode && simulationData) {
-      // Only initialize once in create mode, and only if currentScenarioIds is empty
-      if (!hasInitializedRef.current || currentScenarioIds.length === 0) {
-        setFormData(initialFormData);
-        setOriginalFormData(initialFormData);
-
-        // Initialize scenario IDs from URL params in create mode (only if not already set)
-        const scenarioIdsFromUrl =
-          searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [];
-        if (scenarioIdsFromUrl.length > 0 && currentScenarioIds.length === 0) {
-          setCurrentScenarioIds(scenarioIdsFromUrl);
-        }
-        if (!hasInitializedRef.current) {
-          hasInitializedRef.current = true;
-        }
-      }
+    const urlScenarioIds = urlParams.scenarioIds || [];
+    if (
+      urlScenarioIds.length > 0 &&
+      urlScenarioIds.join(",") !== draftState.scenarioIds.join(",")
+    ) {
+      setDraftState((prev) => ({ ...prev, scenarioIds: urlScenarioIds }));
     }
-  }, [
-    simulationData,
-    isEditMode,
-    initialFormData,
-    simulationDetail,
-    currentScenarioIds.length,
-    searchParams,
-    // Note: searchParams is included but effect uses hasInitializedRef to prevent loops
-  ]);
-
-  const handleInputChange = (
-    field: keyof FormData,
-    value: string | number | boolean | string[] | null,
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  // Staged selections per department (preserved when departments are deselected)
-  type StagedSelections = {
-    scenario_ids?: string[];
-    rubric_id?: string | undefined;
-  };
-  const [_stagedSelections, setStagedSelections] = useState<
-    Record<string, StagedSelections>
-  >({});
-  const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    [],
-  );
+  }, [urlParams.scenarioIds, draftState.scenarioIds]);
 
   // Initialize content active states and switch states from server data
-  useEffect(() => {
-    if (isEditMode && simulationData) {
-      const newActiveStates: Record<string, boolean> = {};
-      const newOriginalActiveStates: Record<string, boolean> = {};
-      const newSwitchStates: Record<
-        string,
-        {
-          hints_enabled?: boolean;
-          objectives_enabled?: boolean;
-          image_input_enabled?: boolean;
-          copy_paste_allowed?: boolean;
-          audio_enabled?: boolean;
-          text_enabled?: boolean;
-          rubric_id?: string | null;
-          time_limit_seconds?: number | null;
-        }
-      > = {};
-      const newOriginalSwitchStates: Record<
-        string,
-        {
-          hints_enabled?: boolean;
-          objectives_enabled?: boolean;
-          image_input_enabled?: boolean;
-          copy_paste_allowed?: boolean;
-          audio_enabled?: boolean;
-          text_enabled?: boolean;
-          rubric_id?: string | null;
-          time_limit_seconds?: number | null;
-        }
-      > = {};
-
-      // Initialize active states and switch states from scenarios
-      if (simulationData.scenarios) {
-        simulationData.scenarios.forEach((scenario) => {
-          const key = `scenario:${scenario.scenario_id}`;
-          newActiveStates[key] = scenario.active;
-          newOriginalActiveStates[key] = scenario.active;
-          newSwitchStates[key] = {
-            hints_enabled: scenario.hints_enabled ?? false,
-            copy_paste_allowed:
-              ("copy_paste_allowed" in scenario
-                ? scenario.copy_paste_allowed
-                : false) ?? false,
-            audio_enabled:
-              ("audio_enabled" in scenario ? scenario.audio_enabled : false) ??
-              false,
-            text_enabled:
-              ("text_enabled" in scenario ? scenario.text_enabled : true) ??
-              true,
-            rubric_id: scenario.rubric_id ?? null,
-            time_limit_seconds: scenario.time_limit_seconds ?? null,
-          };
-          newOriginalSwitchStates[key] = {
-            hints_enabled: scenario.hints_enabled ?? false,
-            copy_paste_allowed:
-              ("copy_paste_allowed" in scenario
-                ? scenario.copy_paste_allowed
-                : false) ?? false,
-            audio_enabled:
-              ("audio_enabled" in scenario ? scenario.audio_enabled : false) ??
-              false,
-            text_enabled:
-              ("text_enabled" in scenario ? scenario.text_enabled : true) ??
-              true,
-            rubric_id: scenario.rubric_id ?? null,
-            time_limit_seconds: scenario.time_limit_seconds ?? null,
-          };
-        });
-      }
-
-      setContentActiveStates((prev) => {
-        // Merge with existing states to preserve user changes
-        return { ...newActiveStates, ...prev };
-      });
-      setOriginalContentActiveStates(newOriginalActiveStates);
-      setContentSwitchStates((prev) => {
-        // Merge with existing states to preserve user changes
-        return { ...newSwitchStates, ...prev };
-      });
-      setOriginalContentSwitchStates(newOriginalSwitchStates);
-    } else if (!isEditMode) {
-      // Reset for create mode
-      setContentActiveStates({});
-      setOriginalContentActiveStates({});
-      setContentSwitchStates({});
-      setOriginalContentSwitchStates({});
-    }
-  }, [isEditMode, simulationData]);
-
-  // Set first accordion item as open by default when contentItems are available (only once)
-  useEffect(() => {
-    if (!hasSetInitialAccordionRef.current && contentItems.length > 0) {
-      const firstScenarioItem = contentItems.find(
-        (item) => item.type === "scenario",
-      );
-      if (firstScenarioItem) {
-        setOpenAccordionItem(
-          `${firstScenarioItem.type}:${firstScenarioItem.id}`,
-        );
-        hasSetInitialAccordionRef.current = true;
-      }
-    }
-  }, [contentItems]);
 
   // Auto-select agents when there's only one option available (similar to Scenario.tsx)
   useEffect(() => {
@@ -980,49 +739,36 @@ export default function Simulation({
         return agent?.roles?.includes("hint");
       }) || [];
 
-    const gradeTextAgentIds =
-      validAgentIds.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("grade");
-      }) || [];
-
-    const gradeVoiceAgentIds =
-      validAgentIds.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("audio");
-      }) || [];
-
     const simulationTextAgentIds =
       validAgentIds.filter((id) => {
         const agent = agentMapping[id];
-        return agent?.roles?.includes("simulation-text");
+        return agent?.roles?.includes("simulation");
       }) || [];
 
     const simulationVoiceAgentIds =
       validAgentIds.filter((id) => {
         const agent = agentMapping[id];
-        return agent?.roles?.includes("simulation-voice");
+        return agent?.roles?.includes("voice");
       }) || [];
 
     // Auto-select first hint agent if only one option and not already set
     if (
       hintAgentIds.length === 1 &&
-      (!formData?.hint_agent_id || formData.hint_agent_id === null)
+      (!draftState.hint_agent_id || draftState.hint_agent_id === null)
     ) {
-      setFormData((prev) => ({
+      setDraftState((prev) => ({
         ...prev,
         hint_agent_id: hintAgentIds[0] || null,
       }));
     }
 
-
     // Auto-select first simulation text agent if only one option and not already set
     if (
       simulationTextAgentIds.length === 1 &&
-      (!formData?.simulation_text_agent_id ||
-        formData.simulation_text_agent_id === null)
+      (!draftState.simulation_text_agent_id ||
+        draftState.simulation_text_agent_id === null)
     ) {
-      setFormData((prev) => ({
+      setDraftState((prev) => ({
         ...prev,
         simulation_text_agent_id: simulationTextAgentIds[0] || null,
       }));
@@ -1031,10 +777,10 @@ export default function Simulation({
     // Auto-select first simulation voice agent if only one option and not already set
     if (
       simulationVoiceAgentIds.length === 1 &&
-      (!formData?.simulation_voice_agent_id ||
-        formData.simulation_voice_agent_id === null)
+      (!draftState.simulation_voice_agent_id ||
+        draftState.simulation_voice_agent_id === null)
     ) {
-      setFormData((prev) => ({
+      setDraftState((prev) => ({
         ...prev,
         simulation_voice_agent_id: simulationVoiceAgentIds[0] || null,
       }));
@@ -1043,133 +789,20 @@ export default function Simulation({
     simulationData,
     agentMapping,
     validAgentIds,
-    formData?.hint_agent_id,
-    formData?.grade_text_agent_id,
-    formData?.grade_voice_agent_id,
-    formData?.simulation_text_agent_id,
-    formData?.simulation_voice_agent_id,
+    draftState.hint_agent_id,
+    draftState.simulation_text_agent_id,
+    draftState.simulation_voice_agent_id,
   ]);
 
-  // Use ref to capture currentScenarioIds before they get filtered (legacy)
-  const currentScenarioIdsRef = useRef<string[]>([]);
-  useEffect(() => {
-    currentScenarioIdsRef.current = currentScenarioIds;
-  }, [currentScenarioIds]);
-
-  // Track department changes and manage staged selections
-  useEffect(() => {
-    const currentDeptIds = formData?.departmentIds || [];
-    const prevDeptIds = previousDepartmentIds || [];
-
-    // Skip if no change (initial load or same selection)
-    if (
-      currentDeptIds.length === prevDeptIds.length &&
-      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
-    ) {
-      // Initialize on first load
-      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
-        setPreviousDepartmentIds(currentDeptIds);
-      }
-      return;
-    }
-
-    // CRITICAL: Use ref to capture currentScenarioIds BEFORE they get filtered by the clearing effect
-    // This ensures we save the full list before validScenarioIds changes filter them out
-    // The ref contains the value from the previous render, before department changes affected validScenarioIds
-    const scenariosToSave = [...currentScenarioIdsRef.current];
-    // Note: rubric_id is now per-scenario, not simulation-level, so we don't save it here
-
-    // Find departments that were deselected
-    const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id),
-    );
-
-    // Find departments that were newly selected
-    const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id),
-    );
-
-    // Save selections for deselected departments
-    // Use the captured values to ensure we save before clearing happens
-    if (deselectedDepts.length > 0) {
-      setStagedSelections((prev) => {
-        const updated = { ...prev };
-        deselectedDepts.forEach((deptId) => {
-          updated[deptId] = {
-            scenario_ids: scenariosToSave,
-            // rubric_id is now per-scenario, not simulation-level
-          };
-        });
-        return updated;
-      });
-    }
-
-    // Restore selections for newly selected departments
-    if (newlySelectedDepts.length > 0) {
-      setStagedSelections((prev) => {
-        newlySelectedDepts.forEach((deptId) => {
-          const staged = prev[deptId];
-          if (staged) {
-            // Restore scenarios if valid
-            if (staged.scenario_ids && staged.scenario_ids.length > 0) {
-              const validScenarioSet = new Set(validScenarioIds);
-              const validScenarios = staged.scenario_ids.filter((id) =>
-                validScenarioSet.has(id),
-              );
-              if (validScenarios.length > 0) {
-                setCurrentScenarioIds((prevScenarios) => {
-                  const combined = new Set([
-                    ...prevScenarios,
-                    ...validScenarios,
-                  ]);
-                  return Array.from(combined);
-                });
-              }
-            }
-
-            // Note: rubric_id is now per-scenario, not simulation-level, so we don't restore it here
-          }
-        });
-        return prev; // Return unchanged since we're using separate setters
-      });
-    }
-
-    // Update previous department IDs
-    setPreviousDepartmentIds(currentDeptIds);
-  }, [
-    formData?.departmentIds,
-    previousDepartmentIds,
-    // Note: We don't include currentScenarioIds in dependencies to avoid race conditions
-    // with the clearing effect. We capture the value at the start of the effect instead.
-    validScenarioIds,
-    validRubricIds,
-  ]);
-
-  // Clean up staged selections for departments that are no longer valid
-  useEffect(() => {
-    const validDeptIds = new Set(simulationData?.valid_department_ids || []);
-    setStagedSelections((prev) => {
-      const cleaned: Record<string, StagedSelections> = {};
-      Object.keys(prev).forEach((deptId) => {
-        const staged = prev[deptId];
-        if (validDeptIds.has(deptId) && staged) {
-          cleaned[deptId] = staged;
-        }
-      });
-      return cleaned;
-    });
-  }, [simulationData?.valid_department_ids]);
-
-  // Clear selections when they become invalid after department changes
-  // (but preserve cross-department entities and staged selections)
+  // Clear scenarios that are no longer valid after department changes
   // Use ref to track previous validScenarioIds to prevent loops
   const prevValidScenarioIdsRef = useRef<string[]>([]);
   useEffect(() => {
-    // Only run if validScenarioIds actually changed (not just currentScenarioIds)
+    // Only run if validScenarioIds actually changed
     const validScenarioIdsChanged =
       prevValidScenarioIdsRef.current.length !== validScenarioIds.length ||
       !prevValidScenarioIdsRef.current.every(
-        (id, idx) => id === validScenarioIds[idx],
+        (id, idx) => id === validScenarioIds[idx]
       );
 
     if (!validScenarioIdsChanged) {
@@ -1177,771 +810,1524 @@ export default function Simulation({
     }
 
     // Clear scenarios that are no longer valid
-    if (currentScenarioIds.length > 0) {
+    if (draftState.scenarioIds.length > 0) {
       const validSet = new Set(validScenarioIds);
-      const filtered = currentScenarioIds.filter((id) => validSet.has(id));
-      if (filtered.length !== currentScenarioIds.length) {
-        setCurrentScenarioIds(filtered);
+      const filtered = draftState.scenarioIds.filter((id) => validSet.has(id));
+      if (filtered.length !== draftState.scenarioIds.length) {
+        setDraftState((prev) => ({ ...prev, scenarioIds: filtered }));
         // Also update URL params to keep them in sync
-        updateUrlParams({
-          scenarioIds: filtered.length > 0 ? filtered : null,
-        });
+        setUrlParams({ scenarioIds: filtered.length > 0 ? filtered : null });
       }
     }
 
     // Update ref to track current validScenarioIds
     prevValidScenarioIdsRef.current = [...validScenarioIds];
-  }, [currentScenarioIds, validScenarioIds, updateUrlParams]);
+  }, [draftState.scenarioIds, validScenarioIds, setUrlParams]);
 
   // Note: rubric_id is now per-scenario, not simulation-level, so we don't clear it here
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData?.title?.trim()) {
-      newErrors.title = "Title is required";
-    }
-
-    // Validate scenarios: each scenario must have at least one of text_enabled or audio_enabled
-    // Also validate that if time limit is enabled, it must have a valid value
-    const scenarioItems = contentItems.filter(
-      (item) => item.type === "scenario",
-    );
-    const invalidScenarios: string[] = [];
-    const invalidTimeLimitScenarios: string[] = [];
-    scenarioItems.forEach((item) => {
-      const key = `scenario:${item.id}`;
-      const switchState = contentSwitchStates[key];
-      const textEnabled =
-        switchState?.text_enabled ?? item.text_enabled ?? true;
-      const audioEnabled =
-        switchState?.audio_enabled ?? item.audio_enabled ?? false;
-      const timeLimitSeconds =
-        switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
-      const hasTimeLimit = timeLimitSeconds !== null && timeLimitSeconds > 0;
-
-      if (!textEnabled && !audioEnabled) {
-        invalidScenarios.push(item.title || item.id);
+  // Submit handler for GenericForm
+  const handleSubmit = useCallback(
+    async (_formDataLocal: unknown) => {
+      // Validate form
+      if (!draftState.title?.trim()) {
+        toast.error("Title is required");
+        return;
       }
 
-      // Check if time limit is enabled but has invalid value
-      if (hasTimeLimit && (!timeLimitSeconds || timeLimitSeconds <= 0)) {
-        invalidTimeLimitScenarios.push(item.title || item.id);
+      const scenarioIds = draftState.scenarioIds || [];
+      if (scenarioIds.length === 0) {
+        toast.error("At least one scenario is required");
+        return;
       }
-    });
 
-    if (invalidScenarios.length > 0) {
-      toast.error(
-        `Each scenario must have at least one input method enabled (text or audio). Please fix: ${invalidScenarios.join(", ")}`,
-      );
-      setErrors(newErrors);
-      return false;
-    }
-
-    if (invalidTimeLimitScenarios.length > 0) {
-      toast.error(
-        `Time limit is enabled but has no value. Please enter a time limit or disable it for: ${invalidTimeLimitScenarios.join(", ")}`,
-      );
-      setErrors(newErrors);
-      return false;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const resetFormAndState = () => {
-    setFormData(initialFormData);
-    setOriginalFormData(initialFormData);
-    setEditingSimulationId(null);
-    setErrors({});
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const validDepartmentIds = simulationData?.valid_department_ids || [];
-      const finalDepartmentIds = transformDepartmentIdsForSubmit(
-        formData?.departmentIds || [],
-        isSuperadmin,
-        validDepartmentIds,
-      );
-
-      const targetSimulationId = simulationId || editingSimulationId;
-
-      // Convert unified content items to API format
-      // Separate scenarios and videos while preserving order
-      // Extract flat arrays from content items (scenarios only)
-      const scenarioItems = contentItems.filter(
-        (item): item is ContentItem & { type: "scenario" } =>
-          item.type === "scenario",
-      );
-
-      const scenario_ids: string[] = [];
-      const scenario_active_flags: boolean[] = [];
-      const scenario_hints_enabled: boolean[] = [];
-      const scenario_audio_enabled: boolean[] = [];
-      const scenario_text_enabled: boolean[] = [];
-      const scenario_time_limit_seconds: number[] = [];
-      const scenario_rubric_grade_agents: Array<{
-        scenario_id: string;
-        rubric_id: string;
-        grade_text_agent_id: string;
-        grade_voice_agent_id?: string | null;
-      }> = [];
-
-      scenarioItems.forEach((item) => {
-        const key = `${item.type}:${item.id}`;
-        const switchState = contentSwitchStates[key];
-        const active = contentActiveStates[key] ?? item.active;
-
-        scenario_ids.push(item.id);
-        scenario_active_flags.push(active);
-        scenario_hints_enabled.push(
-          switchState?.hints_enabled ?? item.hints_enabled ?? false,
-        );
-        scenario_audio_enabled.push(
-          switchState?.audio_enabled ?? item.audio_enabled ?? false,
-        );
-        scenario_text_enabled.push(
-          switchState?.text_enabled ?? item.text_enabled ?? true,
-        );
-        // Convert null/undefined to 0 for time limit
-        const timeLimit =
-          switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
-        scenario_time_limit_seconds.push(timeLimit ?? 0);
-        
-        // Build rubric_grade_agents array from rubric_grade_agents on item
-        // For now, use rubric_id if available (backward compatibility during migration)
-        const rubricId = switchState?.rubric_id ?? item.rubric_id ?? null;
-        const rubricGradeAgents = switchState?.rubric_grade_agents ?? item.rubric_grade_agents ?? [];
-        
-        if (rubricGradeAgents.length > 0) {
-          // Use new structure
-          rubricGradeAgents.forEach((rga: RubricGradeAgent) => {
-            if (rga.rubric_id && rga.grade_text_agent_id) {
-              scenario_rubric_grade_agents.push({
-                scenario_id: item.id,
-                rubric_id: rga.rubric_id,
-                grade_text_agent_id: rga.grade_text_agent_id,
-                grade_voice_agent_id: rga.grade_voice_agent_id || null,
-              });
-            }
-          });
-        } else if (rubricId && rubricId !== "00000000-0000-0000-0000-000000000000") {
-          // Fallback: use rubric_id if no rubric_grade_agents (backward compatibility)
-          // This will need grade_text_agent_id - for now, skip if not available
-          // TODO: Add UI to select agents per rubric
+      // Validate each scenario has at least one input method enabled
+      const invalidScenarios: string[] = [];
+      scenarioIds.forEach((scenarioId) => {
+        const settings = draftState.scenarioSettings[scenarioId] || {};
+        const textEnabled = settings.text_enabled ?? true;
+        const audioEnabled = settings.audio_enabled ?? false;
+        if (!textEnabled && !audioEnabled) {
+          const scenario = scenarioMapping[scenarioId];
+          invalidScenarios.push(scenario?.name || scenarioId);
         }
       });
 
-      if (targetSimulationId) {
-        // UPDATE mode - flat arrays
-        const updatePayload = {
-          simulation_id: targetSimulationId,
-          title: formData?.title || "",
-          description: formData?.description ?? "",
-          department_ids: finalDepartmentIds,
-          active: formData?.active ?? true,
-          practice_simulation: formData?.practiceSimulation || false,
-          scenario_ids,
-          scenario_active_flags,
-          video_ids: [] as string[], // Empty for now
-          video_active_flags: [] as boolean[], // Empty for now
-          scenario_hints_enabled,
-          scenario_rubric_grade_agents,
-          scenario_time_limit_seconds,
-          scenario_audio_enabled,
-          scenario_text_enabled,
-          video_show_problem_statement: [] as boolean[], // Empty for now
-          video_show_objectives: [] as boolean[], // Empty for now
-          video_show_image: [] as boolean[], // Empty for now
-          hint_agent_id: formData?.hint_agent_id || "00000000-0000-0000-0000-000000000000",
-          simulation_text_agent_id: formData?.simulation_text_agent_id || "00000000-0000-0000-0000-000000000000",
-          simulation_voice_agent_id:
-            formData?.simulation_voice_agent_id || "00000000-0000-0000-0000-000000000000",
-        };
-
-        await handleUpdateSimulation(updatePayload);
-        toast.success("Simulation updated successfully!");
-      } else {
-        // CREATE mode - flat arrays
-        const createPayload = {
-          title: formData?.title || "",
-          description: formData?.description ?? "",
-          department_ids: finalDepartmentIds,
-          active: formData?.active || true,
-          practice_simulation: formData?.practiceSimulation || false,
-          scenario_ids,
-          scenario_active_flags,
-          scenario_hints_enabled,
-          scenario_rubric_grade_agents,
-          scenario_time_limit_seconds,
-          scenario_audio_enabled,
-          scenario_text_enabled,
-          simulation_text_agent_id: formData?.simulation_text_agent_id || "00000000-0000-0000-0000-000000000000",
-          simulation_voice_agent_id:
-            formData?.simulation_voice_agent_id || "00000000-0000-0000-0000-000000000000",
-        };
-
-        await handleCreateSimulation(createPayload);
-        toast.success("Simulation created successfully!");
+      if (invalidScenarios.length > 0) {
+        toast.error(
+          `Each scenario must have at least one input method enabled (text or audio). Please fix: ${invalidScenarios.join(", ")}`
+        );
+        return;
       }
 
-      resetFormAndState();
-      router.push(`/create/simulations`);
-    } catch (error) {
-      const targetSimulationId = simulationId || editingSimulationId;
-      toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      try {
+        const validDepartmentIds = simulationData?.valid_department_ids || [];
+        const finalDepartmentIds = transformDepartmentIdsForSubmit(
+          draftState.departmentIds || [],
+          isSuperadmin,
+          validDepartmentIds
+        );
 
-  const handleUpdateClick = () => {
-    handleSubmit();
-  };
+        // Convert to API format - use draftState.scenarioIds order
+        const scenario_ids: string[] = [];
+        const scenario_active_flags: boolean[] = [];
+        const scenario_hints_enabled: boolean[] = [];
+        const scenario_audio_enabled: boolean[] = [];
+        const scenario_text_enabled: boolean[] = [];
+        const scenario_time_limit_seconds: number[] = [];
+        const scenario_rubric_grade_agents: Array<{
+          scenario_id: string | null;
+          rubric_id: string | null;
+          grade_agent_id: string | null;
+          audio_agent_id: string | null;
+        }> = [];
 
-  const handleConfirmUpdate = () => {
-    setShowUpdateDialog(false);
-    handleSubmit();
-  };
+        scenarioIds.forEach((scenarioId) => {
+          const settings = draftState.scenarioSettings[scenarioId] || {};
+          const active =
+            draftState.scenarioActiveStates[scenarioId] ??
+            simulationData?.scenarios?.find((s) => s.scenario_id === scenarioId)
+              ?.active ??
+            true;
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleUpdateClick();
-  };
+          scenario_ids.push(scenarioId);
+          scenario_active_flags.push(active);
+          scenario_hints_enabled.push(settings.hints_enabled ?? false);
+          scenario_audio_enabled.push(settings.audio_enabled ?? false);
+          scenario_text_enabled.push(settings.text_enabled ?? true);
+          scenario_time_limit_seconds.push(settings.time_limit_seconds ?? 0);
 
-  // Handler for editing scenario - opens in new tab
-  const editScenario = (scenarioId: string) => {
-    window.open(`/create/scenarios/s/${scenarioId}`, "_blank");
-  };
-
-  // Check if form has changes
-  const hasChanges = useMemo(() => {
-    if (!isEditMode || !formData || !originalFormData || !simulationData)
-      return false;
-
-    const current = formData;
-    const original = originalFormData;
-
-    // Get original content IDs from server data
-    const originalScenarioIds = simulationData.scenario_ids || [];
-    const currentScenarioIdsFromContent = contentItems
-      .filter((item) => item.type === "scenario")
-      .map((item) => item.id);
-
-    return (
-      current.title !== original.title ||
-      current.description !== original.description ||
-      current.active !== original.active ||
-      current.practiceSimulation !== original.practiceSimulation ||
-      JSON.stringify(current.departmentIds?.sort()) !==
-        JSON.stringify(original.departmentIds?.sort()) ||
-      JSON.stringify(currentScenarioIdsFromContent) !==
-        JSON.stringify(originalScenarioIds) ||
-      JSON.stringify(contentActiveStates) !==
-        JSON.stringify(originalContentActiveStates) ||
-      JSON.stringify(contentSwitchStates) !==
-        JSON.stringify(originalContentSwitchStates)
-    );
-  }, [
-    formData,
-    originalFormData,
-    isEditMode,
-    contentItems,
-    simulationData,
-    contentActiveStates,
-    originalContentActiveStates,
-    contentSwitchStates,
-    originalContentSwitchStates,
-  ]);
-
-  // Step status logic
-  const getStepStatus = useCallback(
-    (stepId: string): StepStatus => {
-      const hasTitle = !!formData?.title?.trim();
-      const hasScenarios = currentScenarioIds.length > 0;
-      const scenarioItems = contentItems.filter(
-        (item) => item.type === "scenario",
-      );
-
-      switch (stepId) {
-        case "basic":
-          return hasTitle ? "completed" : "active";
-        case "scenarios":
-          if (!hasTitle) return "pending";
-          return hasScenarios ? "completed" : "active";
-        default:
-          // Handle scenario-specific steps (format: "scenario-{scenarioId}")
-          if (stepId.startsWith("scenario-")) {
-            if (!hasScenarios) return "pending";
-            const scenarioId = stepId.replace("scenario-", "");
-            const scenarioIndex = scenarioItems.findIndex(
-              (item) => item.id === scenarioId,
-            );
-            if (scenarioIndex === -1) return "pending";
-
-            // Previous scenarios must be completed before this one is active
-            const previousScenariosCompleted = scenarioItems
-              .slice(0, scenarioIndex)
-              .every((item) => {
-                const key = `scenario:${item.id}`;
-                const switchState = contentSwitchStates[key];
-                const textEnabled =
-                  switchState?.text_enabled ?? item.text_enabled ?? true;
-                const audioEnabled =
-                  switchState?.audio_enabled ?? item.audio_enabled ?? false;
-                const hasRubric =
-                  (switchState?.rubric_id ?? item.rubric_id) !== null;
-                const timeLimitSeconds =
-                  switchState?.time_limit_seconds ??
-                  item.time_limit_seconds ??
-                  null;
-                const hasTimeLimit =
-                  timeLimitSeconds !== null && timeLimitSeconds > 0;
-
-                // Scenario is "completed" if:
-                // 1. Has at least one input method enabled (text or audio)
-                // 2. Has a rubric selected
-                // 3. If time limit switch is on, must have a valid time limit value
-                const hasValidTimeLimit =
-                  !hasTimeLimit ||
-                  (timeLimitSeconds !== null && timeLimitSeconds > 0);
-                return (
-                  (textEnabled || audioEnabled) &&
-                  hasRubric &&
-                  hasValidTimeLimit
-                );
-              });
-
-            if (!previousScenariosCompleted) return "pending";
-
-            // Check if current scenario is completed
-            const currentScenario = scenarioItems[scenarioIndex];
-            if (!currentScenario) return "pending";
-            const currentKey = `scenario:${currentScenario.id}`;
-            const currentSwitchState = contentSwitchStates[currentKey];
-            const currentTextEnabled =
-              currentSwitchState?.text_enabled ??
-              currentScenario.text_enabled ??
-              true;
-            const currentAudioEnabled =
-              currentSwitchState?.audio_enabled ??
-              currentScenario.audio_enabled ??
-              false;
-            const currentHasRubric =
-              (currentSwitchState?.rubric_id ?? currentScenario.rubric_id) !==
-              null;
-            const currentTimeLimitSeconds =
-              currentSwitchState?.time_limit_seconds ??
-              currentScenario.time_limit_seconds ??
-              null;
-            const currentHasTimeLimit =
-              currentTimeLimitSeconds !== null && currentTimeLimitSeconds > 0;
-
-            // Scenario is completed if:
-            // 1. Has at least one input method enabled (text or audio)
-            // 2. Has a rubric selected
-            // 3. If time limit switch is on, must have a valid time limit value
-            const hasValidTimeLimit =
-              !currentHasTimeLimit ||
-              (currentTimeLimitSeconds !== null && currentTimeLimitSeconds > 0);
-            const isCurrentCompleted =
-              (currentTextEnabled || currentAudioEnabled) &&
-              currentHasRubric &&
-              hasValidTimeLimit;
-
-            return isCurrentCompleted ? "completed" : "active";
+          // Build rubric_grade_agents (for now, just use rubric_id)
+          const rubricId = settings.rubric_id;
+          if (rubricId && rubricId !== "00000000-0000-0000-0000-000000000000") {
+            // TODO: Add UI to select agents per rubric
+            // For now, use default agents or skip if no grade_agent_id available
+            scenario_rubric_grade_agents.push({
+              scenario_id: scenarioId,
+              rubric_id: rubricId,
+              grade_agent_id: null, // TODO: Add UI to select grade agent
+              audio_agent_id: null, // TODO: Add UI to select audio agent
+            });
           }
-          return "pending";
+        });
+
+        if (simulationId) {
+          // UPDATE mode
+          const updatePayload = {
+            simulation_id: simulationId,
+            title: draftState.title,
+            description: draftState.description ?? "",
+            department_ids: finalDepartmentIds || [],
+            active: draftState.active ?? true,
+            practice_simulation: draftState.practiceSimulation || false,
+            scenario_ids,
+            scenario_active_flags,
+            video_ids: [] as string[],
+            video_active_flags: [] as boolean[],
+            scenario_hints_enabled,
+            scenario_rubric_grade_agents,
+            scenario_time_limit_seconds,
+            scenario_audio_enabled,
+            scenario_text_enabled,
+            video_show_problem_statement: [] as boolean[],
+            video_show_objectives: [] as boolean[],
+            video_show_image: [] as boolean[],
+            hint_agent_id:
+              draftState.hint_agent_id ||
+              "00000000-0000-0000-0000-000000000000",
+            simulation_text_agent_id:
+              draftState.simulation_text_agent_id ||
+              "00000000-0000-0000-0000-000000000000",
+            simulation_voice_agent_id:
+              draftState.simulation_voice_agent_id ||
+              "00000000-0000-0000-0000-000000000000",
+          };
+
+          await handleUpdateSimulation(updatePayload);
+          toast.success("Simulation updated successfully!");
+        } else {
+          // CREATE mode
+          const createPayload = {
+            title: draftState.title,
+            description: draftState.description ?? "",
+            department_ids: finalDepartmentIds || [],
+            active: draftState.active || true,
+            practice_simulation: draftState.practiceSimulation || false,
+            scenario_ids,
+            scenario_active_flags,
+            scenario_hints_enabled,
+            scenario_rubric_grade_agents,
+            scenario_time_limit_seconds,
+            scenario_audio_enabled,
+            scenario_text_enabled,
+            simulation_text_agent_id:
+              draftState.simulation_text_agent_id ||
+              "00000000-0000-0000-0000-000000000000",
+            simulation_voice_agent_id:
+              draftState.simulation_voice_agent_id ||
+              "00000000-0000-0000-0000-000000000000",
+          };
+
+          await handleCreateSimulation(createPayload);
+          toast.success("Simulation created successfully!");
+        }
+
+        router.push(`/create/simulations`);
+      } catch (error) {
+        toast.error(
+          `Failed to ${simulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
       }
     },
     [
-      formData?.title,
-      currentScenarioIds.length,
-      contentItems,
-      contentSwitchStates,
-    ],
+      draftState,
+      simulationId,
+      simulationData,
+      scenarioMapping,
+      isSuperadmin,
+      handleCreateSimulation,
+      handleUpdateSimulation,
+      router,
+    ]
   );
 
-  // Steps array - dynamically includes steps for each scenario
-  const steps: Step[] = useMemo(() => {
-    const baseSteps: Step[] = [
+  // Step status logic for GenericForm
+  const getStepStatus = useCallback(
+    (stepId: string, _formDataLocal: unknown): StepStatus => {
+      // Use draftState.scenarioIds for step status (not URL-backed formData)
+      const hasScenarios = (draftState.scenarioIds?.length || 0) > 0;
+
+      switch (stepId) {
+        case "basic":
+          // Basic step is always active/completed based on whether scenarios are selected
+          return hasScenarios ? "completed" : "active";
+        case "scenarios":
+          return hasScenarios ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [draftState.scenarioIds]
+  );
+
+  // Steps configuration for GenericForm
+  const steps = useMemo(
+    () => [
       {
         id: "basic",
         title: "Basic Information",
         description:
           "Set the simulation name, description, departments, and agents.",
-        status: getStepStatus("basic"),
+        resetFields: [
+          "title",
+          "description",
+          "departmentIds",
+          "active",
+          "practiceSimulation",
+        ],
       },
       {
         id: "scenarios",
         title: "Scenarios",
         description: "Select scenarios to include in this simulation.",
-        status: getStepStatus("scenarios"),
+        resetFields: ["scenarioIds", "scenarioSearch", "scenarioShowSelected"],
+        filters: [
+          {
+            key: "scenarioShowSelected",
+            label: "Show selected",
+          },
+        ],
       },
-    ];
-
-    // Add individual scenario configuration steps
-    const scenarioItems = contentItems.filter(
-      (item) => item.type === "scenario",
-    );
-    const scenarioSteps: Step[] = scenarioItems.map((item) => ({
-      id: `scenario-${item.id}`,
-      title: item.title,
-      description: item.description || "Configure settings for this scenario.",
-      status: getStepStatus(`scenario-${item.id}`),
-    }));
-
-    return [...baseSteps, ...scenarioSteps];
-  }, [getStepStatus, contentItems]);
-
-  const handleContentActiveToggle = useCallback(
-    (contentId: string, active: boolean) => {
-      setContentActiveStates((prev) => ({
-        ...prev,
-        [contentId]: active,
-      }));
-    },
-    [],
+    ],
+    []
   );
 
-  // Switch toggle handlers
-  const handleHintsToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          hints_enabled: enabled,
-        },
-      }));
-    },
-    [],
-  );
-
-  const handleCopyPasteToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          copy_paste_allowed: enabled,
-        },
-      }));
-    },
-    [],
-  );
-
-  const handleRubricChange = useCallback(
-    (contentId: string, rubricId: string | null) => {
-      // Legacy handler - kept for backward compatibility but should use handleRubricGradeAgentsChange
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          rubric_id: rubricId,
-        },
-      }));
-    },
-    [],
-  );
-
-  const handleRubricGradeAgentsChange = useCallback(
-    (contentId: string, rubricGradeAgents: Array<{
-      rubric_id: string;
-      grade_text_agent_id: string;
-      grade_voice_agent_id?: string | null;
-    }>) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          rubric_grade_agents: rubricGradeAgents,
-        },
-      }));
-    },
-    [],
-  );
-
-  const handleTimeLimitChange = useCallback(
-    (contentId: string, timeLimitMinutes: number | null) => {
-      // Convert minutes to seconds for storage
-      const timeLimitSeconds = timeLimitMinutes ? timeLimitMinutes * 60 : null;
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          time_limit_seconds: timeLimitSeconds,
-        },
-      }));
-    },
-    [],
-  );
-
-  const handleContentMoveUp = useCallback(
-    (contentId: string) => {
-      const [type, id] = contentId.split(":");
-      if (type !== "scenario" || !id) return;
-
-      // Get ordered scenario IDs from searchParams (source of truth)
-      const orderedIds = isEditMode
-        ? [...currentScenarioIds]
-        : searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [
-            ...currentScenarioIds,
-          ];
-
-      const index = orderedIds.indexOf(id);
-      if (index <= 0) return;
-
-      // Swap with previous item
-      const reorderedIds = [...orderedIds];
-      const prevId = reorderedIds[index - 1];
-      const currentId = reorderedIds[index];
-      if (!prevId || !currentId) return;
-      [reorderedIds[index - 1], reorderedIds[index]] = [
-        currentId,
-        prevId,
-      ];
-
-      // Update state and URL params (URL params are source of truth)
-      setCurrentScenarioIds(reorderedIds);
-      updateUrlParams({
-        scenarioIds: reorderedIds.length > 0 ? reorderedIds : null,
-      });
-    },
-    [currentScenarioIds, isEditMode, searchParams, updateUrlParams],
-  );
-
-  const handleContentMoveDown = useCallback(
-    (contentId: string) => {
-      const [type, id] = contentId.split(":");
-      if (type !== "scenario" || !id) return;
-
-      // Get ordered scenario IDs from searchParams (source of truth)
-      const orderedIds = isEditMode
-        ? [...currentScenarioIds]
-        : searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [
-            ...currentScenarioIds,
-          ];
-
-      const index = orderedIds.indexOf(id);
-      if (index < 0 || index >= orderedIds.length - 1) return;
-
-      // Swap with next item
-      const reorderedIds = [...orderedIds];
-      const currentId = reorderedIds[index];
-      const nextId = reorderedIds[index + 1];
-      if (!currentId || !nextId) return;
-      [reorderedIds[index], reorderedIds[index + 1]] = [
-        nextId,
-        currentId,
-      ];
-
-      // Update state and URL params (URL params are source of truth)
-      setCurrentScenarioIds(reorderedIds);
-      updateUrlParams({
-        scenarioIds: reorderedIds.length > 0 ? reorderedIds : null,
-      });
-    },
-    [currentScenarioIds, isEditMode, searchParams, updateUrlParams],
-  );
-
-  const handleContentRemove = useCallback(
-    (contentId: string) => {
-      const [type, id] = contentId.split(":");
-      if (type === "scenario") {
-        const newScenarioIds = currentScenarioIds.filter((sid) => sid !== id);
-        setCurrentScenarioIds(newScenarioIds);
-        // Update URL params
-        updateUrlParams({
-          scenarioIds: newScenarioIds.length > 0 ? newScenarioIds : null,
-        });
+  // Form initialization function for GenericForm
+  const initializeForm = useCallback(
+    (serverData: unknown, editMode: boolean) => {
+      // Initialize scenarioIds from server data if in edit mode
+      if (
+        editMode &&
+        serverData &&
+        typeof serverData === "object" &&
+        "scenario_ids" in serverData
+      ) {
+        const simulationDetail = serverData as SimulationDetailOut;
+        const scenarioIds = simulationDetail.scenario_ids || [];
+        return {
+          scenarioIds: scenarioIds.length > 0 ? scenarioIds : undefined,
+        };
       }
-      setStagedContentItems((prev) =>
-        prev.filter((item) => `${item.type}:${item.id}` !== contentId),
-      );
-      setContentActiveStates((prev) => {
-        const newStates = { ...prev };
-        delete newStates[contentId];
-        return newStates;
-      });
-      setContentSwitchStates((prev) => {
-        const newStates = { ...prev };
-        delete newStates[contentId];
-        return newStates;
-      });
+      return {};
     },
-    [currentScenarioIds, updateUrlParams],
+    []
   );
 
-  const handleAudioToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => {
-        const currentState = prev[contentId] || {};
-        const currentTextEnabled = currentState.text_enabled;
+  // Render step callback for GenericForm
+  const renderStep = useCallback(
+    ({
+      stepId,
+      stepTitle,
+      stepDescription,
+      stepNumber,
+      stepStatus,
+      formData: stepFormData,
+      setFormData: setStepFormData,
+      onReset,
+    }: {
+      stepId: string;
+      stepTitle: string;
+      stepDescription: string;
+      stepNumber: number;
+      stepStatus: StepStatus;
+      isOptional: boolean;
+      formData: Record<string, unknown>;
+      setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      filters?: Array<{
+        key: string;
+        label: string;
+        value: boolean;
+        onChange: (value: boolean) => void;
+      }>;
+      onReset?: () => void;
+    }) => {
+      if (stepId === "basic") {
+        return (
+          <StepCard
+            stepStatus={stepStatus}
+            stepNumber={stepNumber}
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+            editableTitle={{
+              value: draftState.title,
+              onChange: (value) =>
+                setDraftState((prev) => ({ ...prev, title: value })),
+              placeholder: "New Simulation",
+              defaultName: "New Simulation",
+              required: true,
+            }}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  data-testid="input-simulation-description"
+                  value={draftState.description}
+                  onChange={(e) =>
+                    setDraftState((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter a brief description (optional)"
+                  rows={3}
+                  disabled={isReadonly}
+                />
+              </div>
 
-        // Find the item in contentItems to get base/default state
-        const item = contentItems.find(
-          (i) => `${i.type}:${i.id}` === contentId,
+              {/* Department Selection */}
+              {simulationData?.valid_department_ids &&
+                simulationData.valid_department_ids.length > 1 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <GenericPicker
+                      items={departmentMapping}
+                      itemIds={simulationData?.valid_department_ids || []}
+                      selectedIds={draftState.departmentIds || []}
+                      onSelect={(ids) =>
+                        setDraftState((prev) => ({
+                          ...prev,
+                          departmentIds: ids,
+                        }))
+                      }
+                      getId={(dept) => (dept as unknown as { id: string }).id}
+                      getLabel={(dept) => dept.name || ""}
+                      getSearchText={(dept) =>
+                        `${dept.name} ${dept.description || ""}`
+                      }
+                      placeholder="All Departments"
+                      disabled={isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                    />
+                  </div>
+                )}
+
+              {/* Agent Selection */}
+              {validAgentIds.length > 0 && (
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {/* Hint Agent Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="hint_agent_id">Hint Agent</Label>
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={validAgentIds.filter((id) => {
+                        const agent = agentMapping[id];
+                        return agent?.roles?.includes("hint");
+                      })}
+                      selectedIds={
+                        draftState.hint_agent_id
+                          ? [draftState.hint_agent_id]
+                          : []
+                      }
+                      onSelect={(ids) =>
+                        setDraftState((prev) => ({
+                          ...prev,
+                          hint_agent_id: ids[0] || null,
+                        }))
+                      }
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No agent selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, _isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      placeholder="Select hint agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
+                    />
+                  </div>
+
+                  {/* Simulation Agent Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="simulation_text_agent_id">
+                      Simulation Agent
+                    </Label>
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={(() => {
+                        const roleFilteredIds = validAgentIds.filter((id) => {
+                          const agent = agentMapping[id];
+                          return agent?.roles?.includes("simulation");
+                        });
+                        if (
+                          draftState.simulation_text_agent_id &&
+                          agentMapping[draftState.simulation_text_agent_id] &&
+                          !roleFilteredIds.includes(
+                            draftState.simulation_text_agent_id
+                          )
+                        ) {
+                          return [
+                            ...roleFilteredIds,
+                            draftState.simulation_text_agent_id,
+                          ];
+                        }
+                        return roleFilteredIds;
+                      })()}
+                      selectedIds={(() => {
+                        const agentId = draftState.simulation_text_agent_id;
+                        const hasAgent = agentId && agentMapping[agentId];
+                        return hasAgent ? [agentId] : [];
+                      })()}
+                      onSelect={(ids) => {
+                        setDraftState((prev) => ({
+                          ...prev,
+                          simulation_text_agent_id: ids[0] || null,
+                        }));
+                      }}
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No agent selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, _isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      placeholder="Select simulation agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
+                    />
+                  </div>
+
+                  {/* Voice Agent Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="simulation_voice_agent_id">
+                      Voice Agent
+                    </Label>
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={(() => {
+                        const roleFilteredIds = validAgentIds.filter((id) => {
+                          const agent = agentMapping[id];
+                          return agent?.roles?.includes("voice");
+                        });
+                        if (
+                          draftState.simulation_voice_agent_id &&
+                          agentMapping[draftState.simulation_voice_agent_id] &&
+                          !roleFilteredIds.includes(
+                            draftState.simulation_voice_agent_id
+                          )
+                        ) {
+                          return [
+                            ...roleFilteredIds,
+                            draftState.simulation_voice_agent_id,
+                          ];
+                        }
+                        return roleFilteredIds;
+                      })()}
+                      selectedIds={(() => {
+                        const agentId = draftState.simulation_voice_agent_id;
+                        const hasAgent = agentId && agentMapping[agentId];
+                        return hasAgent ? [agentId] : [];
+                      })()}
+                      onSelect={(ids) => {
+                        setDraftState((prev) => ({
+                          ...prev,
+                          simulation_voice_agent_id: ids[0] || null,
+                        }));
+                      }}
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No agent selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, _isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      placeholder="Select voice agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Active and Practice Simulation Switches */}
+              <div className="space-y-2 pt-2">
+                {/* Active Switch */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="active"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                      Active
+                    </Label>
+                    <Switch
+                      id="active"
+                      data-testid="switch-simulation-active"
+                      checked={draftState.active ?? true}
+                      onCheckedChange={(checked) =>
+                        setDraftState((prev) => ({ ...prev, active: checked }))
+                      }
+                      disabled={isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Inactive simulations will not be available for cohorts
+                  </p>
+                </div>
+
+                {/* Practice Simulation Switch - Only for superadmin */}
+                {effectiveProfile?.role === "superadmin" && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="practiceSimulation"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                        Practice
+                      </Label>
+                      <Switch
+                        id="practiceSimulation"
+                        data-testid="switch-simulation-practice"
+                        checked={draftState.practiceSimulation ?? false}
+                        onCheckedChange={(checked) =>
+                          setDraftState((prev) => ({
+                            ...prev,
+                            practiceSimulation: checked,
+                          }))
+                        }
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Show this simulation on the practice page
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </StepCard>
         );
-        const baseTextEnabled = item?.text_enabled ?? true;
+      }
 
-        // Determine actual text_enabled state (switch state overrides base)
-        const actualTextEnabled = currentTextEnabled ?? baseTextEnabled;
+      if (stepId === "scenarios") {
+        const scenarioShowSelected =
+          (stepFormData["scenarioShowSelected"] as
+            | boolean
+            | null
+            | undefined) ?? false;
+        const selectedScenarioIds =
+          (stepFormData["scenarioIds"] as string[] | null | undefined) || [];
+        const scenarioSearch =
+          (stepFormData["scenarioSearch"] as string | null | undefined) || "";
 
-        // If disabling audio and text is also disabled, enable text
-        const newTextEnabled =
-          !enabled && !actualTextEnabled ? true : undefined;
+        // Filter scenarios: department-based + client-side search/show_selected for immediate UI feedback
+        // Note: SQL also filters server-side, but client-side filtering provides immediate feedback
+        let filteredScenarios = scenariosArray.filter((scenario) =>
+          validScenarioIds.includes(scenario.scenario_id)
+        );
 
-        return {
-          ...prev,
-          [contentId]: {
-            ...prev[contentId],
-            audio_enabled: enabled,
-            ...(newTextEnabled !== undefined && {
-              text_enabled: newTextEnabled,
-            }),
-          },
+        // Apply client-side search filter (for immediate UI feedback while server request is in flight)
+        if (scenarioSearch.trim()) {
+          const searchLower = scenarioSearch.toLowerCase();
+          filteredScenarios = filteredScenarios.filter(
+            (scenario) =>
+              scenario.name.toLowerCase().includes(searchLower) ||
+              (scenario.description || "").toLowerCase().includes(searchLower)
+          );
+        }
+
+        // Apply client-side "show selected" filter (for immediate UI feedback)
+        if (scenarioShowSelected && selectedScenarioIds.length > 0) {
+          filteredScenarios = filteredScenarios.filter((scenario) =>
+            selectedScenarioIds.includes(scenario.scenario_id)
+          );
+        }
+
+        // Create filter onChange handler (inline function, not useCallback)
+        const createScenarioFilterOnChange = (value: boolean) => {
+          setStepFormData({ scenarioShowSelected: value });
         };
-      });
-    },
-    [contentItems],
-  );
 
-  const handleTextToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => {
-        const currentState = prev[contentId] || {};
-        const currentAudioEnabled = currentState.audio_enabled;
-
-        // Find the item in contentItems to get base/default state
-        const item = contentItems.find(
-          (i) => `${i.type}:${i.id}` === contentId,
-        );
-        const baseAudioEnabled = item?.audio_enabled ?? false;
-
-        // Determine actual audio_enabled state (switch state overrides base)
-        const actualAudioEnabled = currentAudioEnabled ?? baseAudioEnabled;
-
-        // If disabling text and audio is also disabled, enable audio
-        const newAudioEnabled =
-          !enabled && !actualAudioEnabled ? true : undefined;
-
-        return {
-          ...prev,
-          [contentId]: {
-            ...prev[contentId],
-            text_enabled: enabled,
-            ...(newAudioEnabled !== undefined && {
-              audio_enabled: newAudioEnabled,
-            }),
-          },
-        };
-      });
-    },
-    [contentItems],
-  );
-
-  // Handler for scenario picker selection - adds scenarios directly
-  const handleScenarioSelect = useCallback(
-    (scenarioIds: string[]) => {
-      // Update URL params with selected scenario IDs
-      updateUrlParams({
-        scenarioIds: scenarioIds.length > 0 ? scenarioIds : null,
-      });
-
-      // Find newly selected scenarios (not already in contentItems)
-      const existingScenarioIds = new Set(
-        contentItems
-          .filter((item) => item.type === "scenario")
-          .map((item) => item.id),
-      );
-      const newScenarioIds = scenarioIds.filter(
-        (id) => !existingScenarioIds.has(id),
-      );
-
-      // Handle removal: remove scenarios that are no longer selected
-      // Only remove scenarios that are in stagedContentItems (newly added), not server data
-      const stagedScenarioIds = new Set(
-        stagedContentItems
-          .filter((item) => item.type === "scenario")
-          .map((item) => item.id),
-      );
-      const removedScenarioIds = Array.from(existingScenarioIds).filter(
-        (id) => !scenarioIds.includes(id) && stagedScenarioIds.has(id),
-      );
-
-      if (removedScenarioIds.length > 0) {
-        // Remove from staged content items only (not server data)
-        setStagedContentItems((prev) =>
-          prev.filter(
-            (item) =>
-              !removedScenarioIds.includes(item.id) || item.type !== "scenario",
-          ),
-        );
-        // Clean up state
-        removedScenarioIds.forEach((id) => {
-          const contentId = `scenario:${id}`;
-          setContentActiveStates((prev) => {
-            const newStates = { ...prev };
-            delete newStates[contentId];
-            return newStates;
+        // Build canRemoveMap
+        const scenarioCanRemoveMap: Record<string, boolean> = {};
+        if (simulationData?.scenarios) {
+          simulationData.scenarios.forEach((scenario) => {
+            if (scenario.scenario_id) {
+              scenarioCanRemoveMap[scenario.scenario_id] =
+                scenario.can_remove ?? false;
+            }
           });
-          setContentSwitchStates((prev) => {
-            const newStates = { ...prev };
-            delete newStates[contentId];
-            return newStates;
-          });
-        });
+        }
+
+        return (
+          <StepCard
+            stepStatus={stepStatus}
+            stepNumber={stepNumber}
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
+            searchTerm={scenarioSearch}
+            onSearchChange={(term: string) =>
+              setStepFormData({ scenarioSearch: term || null })
+            }
+            searchPlaceholder="Search scenarios..."
+            debounceMs={300}
+            filters={[
+              {
+                key: "showSelected",
+                label: "Show selected",
+                value: scenarioShowSelected,
+                onChange: createScenarioFilterOnChange,
+              },
+            ]}
+            resetFields={[
+              "scenarioIds",
+              "scenarioSearch",
+              "scenarioShowSelected",
+            ]}
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
+          >
+            <SelectableGrid
+              items={filteredScenarios}
+              selectedId={null}
+              selectedIds={selectedScenarioIds}
+              onSelect={(scenarioId) => {
+                const isSelected = selectedScenarioIds.includes(scenarioId);
+                // Prevent unselection if can_remove is false
+                if (isSelected && scenarioCanRemoveMap[scenarioId] === false) {
+                  return;
+                }
+                const newIds = isSelected
+                  ? selectedScenarioIds.filter((id) => id !== scenarioId)
+                  : [...selectedScenarioIds, scenarioId];
+                // Update both URL-backed state (for search/filter) and draftState
+                setStepFormData({
+                  scenarioIds: newIds.length > 0 ? newIds : null,
+                });
+                setDraftState((prev) => ({ ...prev, scenarioIds: newIds }));
+              }}
+              getId={(scenario) => scenario.scenario_id}
+              renderItem={(scenario, isSelected) => (
+                <div
+                  className={cn(
+                    "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                    "hover:shadow-md hover:bg-accent/50",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    isSelected && "ring-2 ring-primary bg-accent",
+                    isSelected &&
+                      scenarioCanRemoveMap[scenario.scenario_id] === false &&
+                      "opacity-75 cursor-not-allowed"
+                  )}
+                >
+                  {/* Check icon - top right */}
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                      <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-3">
+                    <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm leading-tight">
+                        {scenario.name || "Unnamed Scenario"}
+                      </h3>
+                      {scenario.description && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {scenario.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              emptyMessage="No scenarios found. Try adjusting your search or filters."
+              disabled={isReadonly}
+            />
+          </StepCard>
+        );
       }
 
-      if (newScenarioIds.length === 0) {
-        // Update currentScenarioIds even if no new items (handles removals)
-        setCurrentScenarioIds(scenarioIds);
-        return;
-      }
-
-      const maxPosition = Math.max(
-        ...contentItems.map((item) => item.position),
-        0,
-      );
-      const newItems: ContentItem[] = newScenarioIds.map((scenarioId, idx) => {
-        const scenarioData = scenarioMapping[scenarioId];
-        return {
-          type: "scenario" as const,
-          id: scenarioId,
-          title: scenarioData?.name || "Unnamed Scenario",
-          description: scenarioData?.description || "",
-          active: true,
-          position: maxPosition + idx + 1,
-          usage_count: 0,
-          success_rate: 0,
-          last_used: null,
-          can_remove: true,
-          isNew: true,
-        };
-      });
-
-      setStagedContentItems((prev) => [...prev, ...newItems]);
-      setCurrentScenarioIds(scenarioIds);
+      return null;
     },
     [
-      contentItems,
-      stagedContentItems,
-      scenarioMapping,
-      updateUrlParams,
-    ],
+      isReadonly,
+      isEditMode,
+      draftState,
+      setDraftState,
+      simulationData,
+      departmentMapping,
+      validAgentIds,
+      agentMapping,
+      effectiveProfile?.role,
+      scenariosArray,
+      validScenarioIds,
+    ]
   );
+
+  // Helper function to get scenario settings with defaults
+  const getScenarioSettings = useCallback(
+    (scenarioId: string) => {
+      const simulationScenario = simulationData?.scenarios?.find(
+        (s) => s.scenario_id === scenarioId
+      );
+      return (
+        draftState.scenarioSettings[scenarioId] ||
+        (simulationScenario
+          ? {
+              hints_enabled: simulationScenario.hints_enabled ?? false,
+              copy_paste_allowed:
+                ("copy_paste_allowed" in simulationScenario
+                  ? simulationScenario.copy_paste_allowed
+                  : false) ?? false,
+              audio_enabled:
+                ("audio_enabled" in simulationScenario
+                  ? simulationScenario.audio_enabled
+                  : false) ?? false,
+              text_enabled:
+                ("text_enabled" in simulationScenario
+                  ? simulationScenario.text_enabled
+                  : true) ?? true,
+              rubric_id: null, // rubric_id is now per-scenario via rubric_grade_agents
+              time_limit_seconds: simulationScenario.time_limit_seconds ?? null,
+            }
+          : {
+              hints_enabled: false,
+              copy_paste_allowed: false,
+              audio_enabled: false,
+              text_enabled: true,
+              rubric_id: null,
+              time_limit_seconds: null,
+            })
+      );
+    },
+    [draftState.scenarioSettings, simulationData?.scenarios]
+  );
+
+  // Content sections for nested scenario management
+  const contentSections = useMemo(() => {
+    const scenarioIds = draftState.scenarioIds || [];
+    if (scenarioIds.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        id: "active-scenarios",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          const activeStates = draftState.scenarioActiveStates;
+
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={3}
+              stepTitle="Active Scenarios"
+              stepDescription="Enable or disable scenarios in this simulation."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarioIds.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const simulationScenario = simulationData?.scenarios?.find(
+                    (s) => s.scenario_id === scenarioId
+                  );
+                  const active =
+                    activeStates[scenarioId] ??
+                    simulationScenario?.active ??
+                    true;
+
+                  return (
+                    <Card key={scenarioId} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight truncate">
+                            {scenario?.name || "Unnamed Scenario"}
+                          </h3>
+                          {scenario?.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {scenario.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          <Label
+                            htmlFor={`${scenarioId}-active`}
+                            className="text-sm flex items-center gap-1.5"
+                          >
+                            <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Label>
+                          <Switch
+                            id={`${scenarioId}-active`}
+                            checked={active}
+                            onCheckedChange={(checked) => {
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioActiveStates: {
+                                  ...prev.scenarioActiveStates,
+                                  [scenarioId]: checked,
+                                },
+                              }));
+                            }}
+                            disabled={isReadonly}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+      {
+        id: "scenario-positions",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          const orderedIds = draftState.scenarioIds || [];
+
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={4}
+              stepTitle="Scenario Positions"
+              stepDescription="Reorder scenarios to set their display order."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="space-y-2">
+                {orderedIds.map((scenarioId, index) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const canMoveUp = index > 0;
+                  const canMoveDown = index < orderedIds.length - 1;
+
+                  return (
+                    <Card key={scenarioId} className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-muted-foreground w-6">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight truncate">
+                            {scenario?.name || "Unnamed Scenario"}
+                          </h3>
+                          {scenario?.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {scenario.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              const reorderedIds = [...orderedIds];
+                              if (index > 0) {
+                                const prev = reorderedIds[index - 1];
+                                const curr = reorderedIds[index];
+                                if (prev !== undefined && curr !== undefined) {
+                                  reorderedIds[index - 1] = curr;
+                                  reorderedIds[index] = prev;
+                                  setDraftState((prev) => ({
+                                    ...prev,
+                                    scenarioIds: reorderedIds,
+                                  }));
+                                }
+                              }
+                            }}
+                            disabled={!canMoveUp || isReadonly}
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              const reorderedIds = [...orderedIds];
+                              if (index < orderedIds.length - 1) {
+                                const curr = reorderedIds[index];
+                                const next = reorderedIds[index + 1];
+                                if (curr !== undefined && next !== undefined) {
+                                  reorderedIds[index] = next;
+                                  reorderedIds[index + 1] = curr;
+                                  setDraftState((prev) => ({
+                                    ...prev,
+                                    scenarioIds: reorderedIds,
+                                  }));
+                                }
+                              }
+                            }}
+                            disabled={!canMoveDown || isReadonly}
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+      {
+        id: "hints-settings",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          // Only show if not practice simulation
+          if (draftState.practiceSimulation) {
+            return null;
+          }
+
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={5}
+              stepTitle="Hints Settings"
+              stepDescription="Enable or disable hints for each scenario."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarioIds.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const settings = getScenarioSettings(scenarioId);
+
+                  return (
+                    <Card key={scenarioId} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight truncate">
+                            {scenario?.name || "Unnamed Scenario"}
+                          </h3>
+                          {scenario?.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {scenario.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          <Label
+                            htmlFor={`${scenarioId}-hints`}
+                            className="text-sm flex items-center gap-1.5"
+                          >
+                            <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Label>
+                          <Switch
+                            id={`${scenarioId}-hints`}
+                            checked={settings.hints_enabled ?? false}
+                            onCheckedChange={(checked) => {
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioSettings: {
+                                  ...prev.scenarioSettings,
+                                  [scenarioId]: {
+                                    ...prev.scenarioSettings[scenarioId],
+                                    hints_enabled: checked,
+                                  },
+                                },
+                              }));
+                            }}
+                            disabled={isReadonly}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+      {
+        id: "copy-paste-settings",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={6}
+              stepTitle="Copy/Paste Settings"
+              stepDescription="Enable or disable copy/paste for each scenario (only applies when text is enabled)."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarioIds.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const settings = getScenarioSettings(scenarioId);
+                  const textEnabled = settings.text_enabled ?? true;
+
+                  return (
+                    <Card
+                      key={scenarioId}
+                      className={cn("p-4", !textEnabled && "opacity-50")}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight truncate">
+                            {scenario?.name || "Unnamed Scenario"}
+                          </h3>
+                          {scenario?.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {scenario.description}
+                            </p>
+                          )}
+                          {!textEnabled && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Text must be enabled
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          <Label
+                            htmlFor={`${scenarioId}-copy-paste`}
+                            className="text-sm flex items-center gap-1.5"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Label>
+                          <Switch
+                            id={`${scenarioId}-copy-paste`}
+                            checked={settings.copy_paste_allowed ?? false}
+                            onCheckedChange={(checked) => {
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioSettings: {
+                                  ...prev.scenarioSettings,
+                                  [scenarioId]: {
+                                    ...prev.scenarioSettings[scenarioId],
+                                    copy_paste_allowed: checked,
+                                  },
+                                },
+                              }));
+                            }}
+                            disabled={isReadonly || !textEnabled}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+      {
+        id: "audio-settings",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={7}
+              stepTitle="Audio Settings"
+              stepDescription="Enable or disable audio input for each scenario."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarioIds.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const settings = getScenarioSettings(scenarioId);
+
+                  return (
+                    <Card key={scenarioId} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight truncate">
+                            {scenario?.name || "Unnamed Scenario"}
+                          </h3>
+                          {scenario?.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {scenario.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          <Label
+                            htmlFor={`${scenarioId}-audio`}
+                            className="text-sm flex items-center gap-1.5"
+                          >
+                            <Mic className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Label>
+                          <Switch
+                            id={`${scenarioId}-audio`}
+                            checked={settings.audio_enabled ?? false}
+                            onCheckedChange={(checked) => {
+                              const currentSettings =
+                                getScenarioSettings(scenarioId);
+                              const newSettings = {
+                                ...currentSettings,
+                                audio_enabled: checked,
+                              };
+                              // If disabling audio and text is also disabled, enable text
+                              if (
+                                !checked &&
+                                !(currentSettings.text_enabled ?? true)
+                              ) {
+                                newSettings.text_enabled = true;
+                              }
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioSettings: {
+                                  ...prev.scenarioSettings,
+                                  [scenarioId]: newSettings,
+                                },
+                              }));
+                            }}
+                            disabled={isReadonly}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+      {
+        id: "text-settings",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={8}
+              stepTitle="Text Settings"
+              stepDescription="Enable or disable text input for each scenario."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarioIds.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const settings = getScenarioSettings(scenarioId);
+
+                  return (
+                    <Card key={scenarioId} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight truncate">
+                            {scenario?.name || "Unnamed Scenario"}
+                          </h3>
+                          {scenario?.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {scenario.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          <Label
+                            htmlFor={`${scenarioId}-text`}
+                            className="text-sm flex items-center gap-1.5"
+                          >
+                            <Text className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Label>
+                          <Switch
+                            id={`${scenarioId}-text`}
+                            checked={settings.text_enabled ?? true}
+                            onCheckedChange={(checked) => {
+                              const currentSettings =
+                                getScenarioSettings(scenarioId);
+                              const newSettings = {
+                                ...currentSettings,
+                                text_enabled: checked,
+                              };
+                              // If disabling text and audio is also disabled, enable audio
+                              if (
+                                !checked &&
+                                !(currentSettings.audio_enabled ?? false)
+                              ) {
+                                newSettings.audio_enabled = true;
+                              }
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioSettings: {
+                                  ...prev.scenarioSettings,
+                                  [scenarioId]: newSettings,
+                                },
+                              }));
+                            }}
+                            disabled={isReadonly}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+      {
+        id: "time-limits",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={9}
+              stepTitle="Time Limits"
+              stepDescription="Set time limits (in minutes) for each scenario."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarioIds.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const settings = getScenarioSettings(scenarioId);
+                  const timeLimitMinutes = settings.time_limit_seconds
+                    ? Math.round(settings.time_limit_seconds / 60)
+                    : null;
+                  const hasTimeLimit =
+                    timeLimitMinutes !== null && timeLimitMinutes > 0;
+
+                  return (
+                    <Card key={scenarioId} className="p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm leading-tight truncate">
+                              {scenario?.name || "Unnamed Scenario"}
+                            </h3>
+                            {scenario?.description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                {scenario.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 ml-4 shrink-0">
+                            <Label
+                              htmlFor={`${scenarioId}-time-limit-toggle`}
+                              className="text-sm flex items-center gap-1.5"
+                            >
+                              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Label>
+                            <Switch
+                              id={`${scenarioId}-time-limit-toggle`}
+                              checked={hasTimeLimit}
+                              onCheckedChange={(checked) => {
+                                setDraftState((prev) => ({
+                                  ...prev,
+                                  scenarioSettings: {
+                                    ...prev.scenarioSettings,
+                                    [scenarioId]: {
+                                      ...prev.scenarioSettings[scenarioId],
+                                      time_limit_seconds: checked ? 60 : null, // Default to 1 minute if enabling
+                                    },
+                                  },
+                                }));
+                              }}
+                              disabled={isReadonly}
+                            />
+                          </div>
+                        </div>
+                        {hasTimeLimit && (
+                          <Input
+                            type="number"
+                            min="1"
+                            max="120"
+                            value={timeLimitMinutes || ""}
+                            onChange={(e) => {
+                              const minutes = parseInt(e.target.value, 10);
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioSettings: {
+                                  ...prev.scenarioSettings,
+                                  [scenarioId]: {
+                                    ...prev.scenarioSettings[scenarioId],
+                                    time_limit_seconds:
+                                      minutes && minutes > 0
+                                        ? minutes * 60
+                                        : null,
+                                  },
+                                },
+                              }));
+                            }}
+                            placeholder="Enter minutes"
+                            disabled={isReadonly}
+                            className="w-full"
+                          />
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+      {
+        id: "rubric-settings",
+        insertAfter: "scenarios",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={10}
+              stepTitle="Rubric Settings"
+              stepDescription="Select rubrics for each scenario."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarioIds.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  const settings = getScenarioSettings(scenarioId);
+
+                  return (
+                    <Card key={scenarioId} className="p-4">
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-sm leading-tight truncate">
+                          {scenario?.name || "Unnamed Scenario"}
+                        </h3>
+                        {scenario?.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {scenario.description}
+                          </p>
+                        )}
+                        <GenericPicker
+                          items={rubricMapping}
+                          itemIds={validRubricIds}
+                          selectedIds={
+                            settings.rubric_id ? [settings.rubric_id] : []
+                          }
+                          onSelect={(ids) => {
+                            setDraftState((prev) => ({
+                              ...prev,
+                              scenarioSettings: {
+                                ...prev.scenarioSettings,
+                                [scenarioId]: {
+                                  ...prev.scenarioSettings[scenarioId],
+                                  rubric_id: ids[0] || null,
+                                },
+                              },
+                            }));
+                          }}
+                          getId={(item) => item.id}
+                          getLabel={(item) => item.name || ""}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
+                          placeholder="Select rubric"
+                          disabled={isReadonly}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                        />
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      },
+    ];
+  }, [
+    draftState.scenarioIds,
+    draftState.scenarioActiveStates,
+    draftState.practiceSimulation,
+    scenarioMapping,
+    simulationData?.scenarios,
+    rubricMapping,
+    validRubricIds,
+    isReadonly,
+    isEditMode,
+    getScenarioSettings,
+  ]);
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
 
@@ -1981,556 +2367,48 @@ export default function Simulation({
           </div>
         </div>
       )}
-      <form onSubmit={handleFormSubmit} className="space-y-8">
-        {/* Step 1: Basic Information */}
-        <Card className="transition-all">
-          <CardContent className="pt-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-green-500 text-white shrink-0">
-                <Check className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                {formData?.title !== undefined ? (
-                  <input
-                    type="text"
-                    id="title"
-                    data-testid="input-simulation-title"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange("title", e.target.value)}
-                    onFocus={(e) => {
-                      if (e.target.value === "New Simulation") {
-                        e.target.select();
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // If empty on blur, revert to default name
-                      if (!e.target.value || e.target.value.trim() === "") {
-                        handleInputChange("title", "New Simulation");
-                      }
-                    }}
-                    className={cn(
-                      "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.title && "border-destructive",
-                    )}
-                    placeholder="New Simulation"
-                    disabled={isReadonly}
-                  />
-                ) : null}
-                <p className="text-xs text-muted-foreground mt-1 px-2">
-                  Click to edit
-                </p>
-                {errors.title && (
-                  <p className="text-sm text-destructive mt-1 px-2">
-                    {errors.title}
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-          <CardContent className="pt-0 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              {formData?.description !== undefined ? (
-                <Textarea
-                  id="description"
-                  data-testid="input-simulation-description"
-                  value={formData.description || ""}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  placeholder="Enter a brief description (optional)"
-                  rows={3}
-                  disabled={isReadonly}
-                />
-              ) : null}
-            </div>
-
-            {/* Department Selection */}
-            {simulationData?.valid_department_ids &&
-              simulationData.valid_department_ids.length > 1 && (
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  {formData?.departmentIds !== undefined ? (
-                    <GenericPicker
-                      items={departmentMapping}
-                      itemIds={simulationData?.valid_department_ids || []}
-                      selectedIds={formData.departmentIds || []}
-                      onSelect={(ids) =>
-                        handleInputChange("departmentIds", ids)
-                      }
-                      getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => dept.name || ""}
-                      getSearchText={(dept) =>
-                        `${dept.name} ${dept.description || ""}`
-                      }
-                      placeholder="All Departments"
-                      disabled={isReadonly}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                    />
-                  ) : null}
-                  {errors.departmentIds && (
-                    <p className="text-sm text-destructive">
-                      {errors.departmentIds}
-                    </p>
-                  )}
-                </div>
-              )}
-
-            {/* Agent Selection */}
-            {validAgentIds.length > 0 && (
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {/* Hint Agent Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="hint_agent_id">Hint Agent</Label>
-                  {formData?.hint_agent_id !== undefined ? (
-                    <GenericPicker
-                      items={agentMapping}
-                      itemIds={validAgentIds.filter((id) => {
-                        const agent = agentMapping[id];
-                        return agent?.roles?.includes("hint");
-                      })}
-                      selectedIds={
-                        formData.hint_agent_id ? [formData.hint_agent_id] : []
-                      }
-                      onSelect={(ids) =>
-                        handleInputChange("hint_agent_id", ids[0] || null)
-                      }
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) =>
-                        `${item.name} ${item.description || ""}`
-                      }
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">
-                            {item.name || "No agent selected"}
-                          </h4>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select hint agent"
-                      disabled={isReadonly}
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                      groupHeading="Agents"
-                    />
-                  ) : null}
-                </div>
-
-                {/* Grade agents are now configured per-scenario in the scenario sections */}
-
-                {/* Simulation Text Agent Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="simulation_text_agent_id">
-                    Simulation Text Agent
-                  </Label>
-                  {formData?.simulation_text_agent_id !== undefined ? (
-                    <GenericPicker
-                      items={agentMapping}
-                      itemIds={(() => {
-                        const roleFilteredIds = validAgentIds.filter((id) => {
-                          const agent = agentMapping[id];
-                          return agent?.roles?.includes("simulation");
-                        });
-                        // Always include selected agent ID even if it doesn't have the role
-                        // (for backward compatibility with agents that may not have roles set)
-                        if (
-                          formData.simulation_text_agent_id &&
-                          agentMapping[formData.simulation_text_agent_id] &&
-                          !roleFilteredIds.includes(
-                            formData.simulation_text_agent_id,
-                          )
-                        ) {
-                          return [
-                            ...roleFilteredIds,
-                            formData.simulation_text_agent_id,
-                          ];
-                        }
-                        return roleFilteredIds;
-                      })()}
-                      selectedIds={(() => {
-                        const agentId = formData.simulation_text_agent_id;
-                        const hasAgent = agentId && agentMapping[agentId];
-                        return hasAgent ? [agentId] : [];
-                      })()}
-                      onSelect={(ids) => {
-                        handleInputChange(
-                          "simulation_text_agent_id",
-                          ids[0] || null,
-                        );
-                      }}
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) =>
-                        `${item.name} ${item.description || ""}`
-                      }
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">
-                            {item.name || "No agent selected"}
-                          </h4>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select simulation text agent"
-                      disabled={isReadonly}
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                      groupHeading="Agents"
-                    />
-                  ) : null}
-                </div>
-
-                {/* Simulation Voice Agent Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="simulation_voice_agent_id">
-                    Simulation Voice Agent
-                  </Label>
-                  {formData?.simulation_voice_agent_id !== undefined ? (
-                    <GenericPicker
-                      items={agentMapping}
-                      itemIds={(() => {
-                        const roleFilteredIds = validAgentIds.filter((id) => {
-                          const agent = agentMapping[id];
-                          return agent?.roles?.includes("voice");
-                        });
-                        // Always include selected agent ID even if it doesn't have the role
-                        // (for backward compatibility with agents that may not have roles set)
-                        if (
-                          formData.simulation_voice_agent_id &&
-                          agentMapping[formData.simulation_voice_agent_id] &&
-                          !roleFilteredIds.includes(
-                            formData.simulation_voice_agent_id,
-                          )
-                        ) {
-                          return [
-                            ...roleFilteredIds,
-                            formData.simulation_voice_agent_id,
-                          ];
-                        }
-                        return roleFilteredIds;
-                      })()}
-                      selectedIds={(() => {
-                        const agentId = formData.simulation_voice_agent_id;
-                        const hasAgent = agentId && agentMapping[agentId];
-                        return hasAgent ? [agentId] : [];
-                      })()}
-                      onSelect={(ids) => {
-                        handleInputChange(
-                          "simulation_voice_agent_id",
-                          ids[0] || null,
-                        );
-                      }}
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) =>
-                        `${item.name} ${item.description || ""}`
-                      }
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">
-                            {item.name || "No agent selected"}
-                          </h4>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select simulation voice agent"
-                      disabled={isReadonly}
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                      groupHeading="Agents"
-                    />
-                  ) : null}
-                </div>
-              </div>
-            )}
-
-            {/* Active and Practice Simulation Switches */}
-            <div className="space-y-2 pt-2">
-              {/* Active Switch */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="active"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                  {formData?.active !== undefined ? (
-                    <Switch
-                      id="active"
-                      data-testid="switch-simulation-active"
-                      checked={formData.active ?? true}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("active", checked)
-                      }
-                      disabled={isReadonly}
-                    />
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Inactive simulations will not be available for cohorts
-                </p>
-              </div>
-
-              {/* Practice Simulation Switch - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="practiceSimulation"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
-                      Practice
-                    </Label>
-                    {formData?.practiceSimulation !== undefined ? (
-                      <Switch
-                        id="practiceSimulation"
-                        data-testid="switch-simulation-practice"
-                        checked={formData.practiceSimulation ?? false}
-                        onCheckedChange={(checked) =>
-                          handleInputChange("practiceSimulation", checked)
-                        }
-                        disabled={isReadonly}
-                      />
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Show this simulation on the practice page
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Step 2: Scenarios Selection */}
-        <Card
-          className={cn(
-            "transition-all",
-            !isEditMode &&
-              steps[1]?.status === "active" &&
-              "ring-2 ring-primary",
-            !isEditMode && steps[1]?.status === "pending" && "opacity-50",
-          )}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-            <div className="flex items-center space-x-3">
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                  steps[1]?.status === "completed"
-                    ? "bg-green-500 text-white"
-                    : steps[1]?.status === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted",
-                )}
-              >
-                {steps[1]?.status === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <span>2</span>
-                )}
-              </div>
-              <div>
-                <CardTitle className="text-lg">
-                  {steps[1]?.title || "Scenarios"}
-                </CardTitle>
-                <CardDescription>
-                  {steps[1]?.description ||
-                    "Select scenarios to include in this simulation."}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 px-6">
-            <ScenarioCardGrid
-              scenarioMapping={scenarioMapping}
-              validScenarioIds={validScenarioIds}
-              selectedScenarioIds={
-                // Use searchParams as source of truth for ordering
-                searchParams.get("scenarioIds")?.split(",").filter(Boolean) ||
-                currentScenarioIds
-              }
-              onSelect={handleScenarioSelect}
-              readonly={isReadonly}
-              canRemoveMap={useMemo(() => {
-                const map: Record<string, boolean> = {};
-                if (simulationData?.scenarios) {
-                  simulationData.scenarios.forEach((scenario) => {
-                    map[scenario.scenario_id] = scenario.can_remove;
-                  });
-                }
-                return map;
-              }, [simulationData?.scenarios])}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Individual Scenario Configuration Steps */}
-        <Accordion
-          type="single"
-          collapsible
-          value={openAccordionItem ?? ""}
-          onValueChange={(value) => setOpenAccordionItem(value || null)}
-          className="space-y-4"
-        >
-          {contentItems
-            .filter((item) => item.type === "scenario")
-            .map((item, index) => {
-              const stepIndex = 2 + index; // After basic (0), scenarios (1)
-              const stepId = `scenario-${item.id}`;
-              const stepStatus = getStepStatus(stepId);
-              const scenarioItems = contentItems.filter(
-                (i) => i.type === "scenario",
-              );
-              const accordionValue = `${item.type}:${item.id}`;
-
-              return (
-                <SimulationScenarioSection
-                  key={`${item.type}:${item.id}`}
-                  item={item}
-                  position={item.position}
-                  totalItems={scenarioItems.length}
-                  rubricMapping={rubricMapping}
-                  validRubricIds={validRubricIds}
-                  onActiveToggle={handleContentActiveToggle}
-                  onMoveUp={handleContentMoveUp}
-                  onMoveDown={handleContentMoveDown}
-                  onRemove={handleContentRemove}
-                  onEditScenario={editScenario}
-                  onHintsToggle={handleHintsToggle}
-                  onCopyPasteToggle={handleCopyPasteToggle}
-                  onAudioToggle={handleAudioToggle}
-                  onTextToggle={handleTextToggle}
-                  onRubricChange={handleRubricChange}
-                  onTimeLimitChange={handleTimeLimitChange}
-                  readonly={isReadonly}
-                  stepStatus={stepStatus}
-                  stepNumber={stepIndex + 1}
-                  isEditMode={isEditMode}
-                  practiceSimulation={formData?.practiceSimulation ?? false}
-                  accordionValue={accordionValue}
-                  isAccordionOpen={openAccordionItem === accordionValue}
-                  onAccordionToggle={(open) =>
-                    setOpenAccordionItem(open ? accordionValue : null)
-                  }
-                />
-              );
-            })}
-        </Accordion>
-
-        {/* Submit Button */}
-        <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            type="button"
-            data-testid="btn-back-simulation"
-            onClick={() => router.push("/create/simulations")}
-          >
-            Back
-          </Button>
-          <Button
-            type="submit"
-            data-testid="btn-submit-simulation"
-            disabled={isSubmitting || isReadonly || (isEditMode && !hasChanges)}
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {simulationId || editingSimulationId
-                  ? "Updating..."
-                  : "Creating..."}
-              </>
-            ) : simulationId || editingSimulationId ? (
-              "Update Simulation"
-            ) : (
-              "Create Simulation"
-            )}
-          </Button>
-        </div>
-      </form>
-
-      {/* Update Confirmation Dialog */}
-      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Update Simulation</AlertDialogTitle>
-            <AlertDialogDescription>
-              This simulation is currently being used by a cohort. Are you sure
-              you want to proceed?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmUpdate}
-              disabled={isSubmitting}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {isSubmitting ? "Updating..." : "Update"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <GenericForm
+        nuqsParsers={
+          simulationSearchParamsClient as Record<string, Parser<unknown>>
+        }
+        steps={steps}
+        getStepStatus={getStepStatus}
+        formData={
+          formData as unknown as Values<Record<string, Parser<unknown>>>
+        }
+        setFormData={
+          setFormData as unknown as (
+            updates:
+              | Partial<Values<Record<string, Parser<unknown>>>>
+              | ((
+                  prev: Values<Record<string, Parser<unknown>>>
+                ) => Partial<Values<Record<string, Parser<unknown>>>>)
+          ) => void
+        }
+        serverData={simulationData}
+        initializeForm={initializeForm}
+        formFieldKeys={[
+          "scenarioIds",
+          "scenarioSearch",
+          "scenarioShowSelected",
+        ]}
+        resetSuccessMessage={(stepId) => {
+          if (stepId === "basic") return "Basic information reset";
+          if (stepId === "scenarios") return "Scenarios reset";
+          return `${stepId} reset`;
+        }}
+        onSubmit={handleSubmit}
+        submitButton={{
+          createLabel: "Create Simulation",
+          updateLabel: "Update Simulation",
+          backUrl: "/create/simulations",
+          backLabel: "Back",
+        }}
+        isReadonly={isReadonly}
+        isEditMode={isEditMode}
+        renderStep={renderStep}
+        contentSections={contentSections}
+      />
     </div>
   );
 }

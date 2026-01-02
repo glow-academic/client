@@ -1486,7 +1486,31 @@ const contentSections = useMemo(() => {
 
 ### Reference Implementation
 
-See `client/components/cohorts/Cohort.tsx` for a complete example:
+See `client/components/cohorts/Cohort.tsx` for a complete example.
+
+### Example: Simulation.tsx - Multiple Setting Types
+
+`client/components/simulations/Simulation.tsx` demonstrates a more complex use of `contentSections` with **8 separate sections** organized by setting type rather than per-scenario:
+
+1. **Active Scenarios** - Grid of switches for scenario active states
+2. **Scenario Positions** - Reorderable list for scenario ordering
+3. **Hints Settings** - Grid of switches for hints_enabled (only shown if not practice simulation)
+4. **Copy/Paste Settings** - Grid of switches for copy_paste_allowed (only enabled when text is enabled)
+5. **Audio Settings** - Grid of switches for audio_enabled
+6. **Text Settings** - Grid of switches for text_enabled
+7. **Time Limits** - Grid of inputs for time_limit_seconds (with toggle switches)
+8. **Rubric Settings** - Grid of pickers for rubric_id
+
+**Key Pattern**: Instead of creating one section per scenario (which would create N sections), Simulation.tsx creates 8 sections (one per setting type) and iterates over scenarios within each section. This provides a better UX where users can configure all scenarios' hints at once, then all scenarios' audio settings, etc.
+
+**Implementation Notes**:
+- Each section uses `draftState.scenarioIds` to iterate over scenarios
+- Settings are stored per-scenario in `draftState.scenarioSettings[scenarioId]`
+- Each section updates `draftState.scenarioSettings` when settings change
+- Position reordering updates `draftState.scenarioIds` directly
+- Submit handler extracts arrays from `draftState.scenarioSettings` in the order specified by `draftState.scenarioIds`
+
+See `client/components/simulations/Simulation.tsx` for the complete implementation:
 - Active Simulations section (grid of switches)
 - Simulation Positions section (reorderable list)
 
