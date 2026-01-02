@@ -74,7 +74,9 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
         const lastSavedVal = lastSaved[k];
 
         // Deep comparison for arrays and objects
-        if (JSON.stringify(currentVal) !== JSON.stringify(lastSavedVal)) {
+        const currentStr = JSON.stringify(currentVal);
+        const lastSavedStr = JSON.stringify(lastSavedVal);
+        if (currentStr !== lastSavedStr) {
           patch[k] = currentVal;
           hasChanges = true;
         }
@@ -161,17 +163,22 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
 
     // Skip if content hash hasn't changed (content is the same, only reference changed)
     if (draftStateContentHash === prevContentHashRef.current) {
+      // Skip on initial mount only if hash hasn't changed
+      if (isInitialMountRef.current) {
+        isInitialMountRef.current = false;
+        lastSavedStateRef.current = draftState;
+      }
       return;
     }
 
     // Update previous hash
     prevContentHashRef.current = draftStateContentHash;
 
-    // Skip on initial mount
+    // If this is the initial mount but hash changed, mark as no longer initial mount
+    // and proceed with patch computation (user made a change)
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
-      lastSavedStateRef.current = draftState;
-      return;
+      // Don't update lastSavedStateRef here - let it be updated after successful save
     }
 
     // Use stable computePatch from ref
@@ -179,6 +186,7 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
       draftState,
       lastSavedStateRef.current
     );
+    
     if (!patch) return; // No changes
 
     // Clear existing timer

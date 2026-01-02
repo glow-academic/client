@@ -289,8 +289,11 @@ function CohortComponent({
   };
 
   // Initialize draft state from server data or draft payload
+  // Use stable refs (cohortDetail/cohortDetailDefault) instead of raw props to prevent recomputation on every server render
+  // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
   const initialDraftState = useMemo((): DraftState => {
     const data = isEditMode ? cohortDetail : cohortDetailDefault;
+
     if (!data) {
       return {
         title: "",
@@ -314,7 +317,7 @@ function CohortComponent({
 
     // If draftId exists, server should have merged draft payload into data
     // Otherwise, use server defaults
-    return {
+    const result = {
       title: data.title || "",
       description: data.description || "",
       active: data.active ?? true,
@@ -322,7 +325,30 @@ function CohortComponent({
       simulationIds: data.simulation_ids || [],
       simulationActiveStates: activeStates,
     };
-  }, [isEditMode, cohortDetail, cohortDetailDefault, defaultDepartmentIds]);
+
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isEditMode,
+    cohortDetail,
+    cohortDetailDefault,
+    cohortDetailId,
+    cohortDetailDefaultId,
+    draftId, // Add draftId to dependencies so it recomputes when draft changes
+    urlDraftId, // Add urlDraftId to dependencies so it recomputes when URL draft changes
+    defaultDepartmentIds,
+    // Include actual content fields so it recomputes when server data changes (not just object reference)
+    cohortDetailDefault?.title,
+    cohortDetailDefault?.description,
+    cohortDetailDefault?.active,
+    cohortDetailDefault?.department_ids,
+    cohortDetailDefault?.simulation_ids,
+    cohortDetail?.title,
+    cohortDetail?.description,
+    cohortDetail?.active,
+    cohortDetail?.department_ids,
+    cohortDetail?.simulation_ids,
+  ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
 
@@ -438,12 +464,26 @@ function CohortComponent({
     draftState,
     patchDraftAction: patchCohortDraftAction
       ? async (input) => {
+          // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case)
+          const camelToSnake: Record<string, string> = {
+            departmentIds: "department_ids",
+            simulationIds: "simulation_ids",
+            simulationActiveStates: "simulation_active_states",
+          };
+          const transformedPatch: Record<string, unknown> = {};
+          Object.entries(input.body.patch as Record<string, unknown>).forEach(
+            ([key, value]) => {
+              const snakeKey = camelToSnake[key] || key;
+              transformedPatch[snakeKey] = value;
+            }
+          );
+
           // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
           // Note: profile_id is added server-side from header
           const result = await patchCohortDraftAction({
             body: {
               input_draft_id: input.body.draft_id || null,
-              patch: input.body.patch as Record<string, unknown>,
+              patch: transformedPatch,
               expected_version: input.body.expected_version,
             } as PatchCohortDraftIn["body"],
           });
@@ -1166,11 +1206,12 @@ function CohortComponent({
                             id={`${simulationId}-active`}
                             checked={active}
                             onCheckedChange={(checked) => {
+                              const newActiveStates = {
+                                ...activeStates,
+                                [simulationId]: checked,
+                              };
                               setContentFormData({
-                                simulationActiveStates: {
-                                  ...activeStates,
-                                  [simulationId]: checked,
-                                },
+                                simulationActiveStates: newActiveStates,
                               });
                             }}
                             disabled={isReadonly}

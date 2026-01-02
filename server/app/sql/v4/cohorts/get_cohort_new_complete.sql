@@ -214,16 +214,62 @@ cohort_profile_ids AS (
     FROM default_cohort dc
     JOIN cohort_profiles cp ON cp.cohort_id = dc.id AND cp.active = true
 ),
+draft_simulation_active_states AS (
+    -- Extract simulation_active_states from draft payload if it exists
+    SELECT 
+        key::uuid as simulation_id,
+        value::boolean as active
+    FROM params x
+    CROSS JOIN draft_payload_data dpd
+    CROSS JOIN jsonb_each_text(dpd.payload->'simulation_active_states')
+    WHERE EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'simulation_active_states')
+),
+draft_simulation_positions AS (
+    -- Extract positions from draft simulation_ids array order (if draft exists)
+    SELECT 
+        sim_id::uuid as simulation_id,
+        ROW_NUMBER() OVER (ORDER BY ordinality) as position
+    FROM params x
+    CROSS JOIN draft_payload_data dpd
+    CROSS JOIN jsonb_array_elements_text(dpd.payload->'simulation_ids') WITH ORDINALITY AS t(sim_id, ordinality)
+    WHERE EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'simulation_ids')
+),
 cohort_simulation_ids AS (
     SELECT cs.simulation_id, cs.active, cs.position
     FROM default_cohort dc
     JOIN cohort_simulations cs ON cs.cohort_id = dc.id
 ),
+-- Build simulation list from draft if it exists, otherwise from default cohort
+all_simulation_ids AS (
+    -- If draft has simulation_ids, use those; otherwise use default cohort simulations
+    SELECT DISTINCT sim_id::uuid as simulation_id
+    FROM (
+        SELECT sim_id
+        FROM params x
+        CROSS JOIN draft_payload_data dpd
+        CROSS JOIN jsonb_array_elements_text(dpd.payload->'simulation_ids') AS t(sim_id)
+        WHERE EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'simulation_ids')
+        UNION
+        SELECT cs.simulation_id::text as sim_id
+        FROM cohort_simulation_ids cs
+        WHERE NOT EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'simulation_ids')
+    ) combined
+),
 cohort_simulation_stats AS (
     SELECT 
-        cs.simulation_id,
-        cs.active,
-        cs.position,
+        asi.simulation_id,
+        -- Use draft active state if available, otherwise use default cohort active state, default to true
+        COALESCE(
+            (SELECT active FROM draft_simulation_active_states WHERE simulation_id = asi.simulation_id),
+            (SELECT active FROM cohort_simulation_ids WHERE simulation_id = asi.simulation_id),
+            true
+        ) as active,
+        -- Use draft position if available, otherwise use default cohort position, default to array position
+        COALESCE(
+            (SELECT position FROM draft_simulation_positions WHERE simulation_id = asi.simulation_id),
+            (SELECT position FROM cohort_simulation_ids WHERE simulation_id = asi.simulation_id),
+            0
+        ) as position,
         s.title as name,
         COALESCE(s.description, '') as description,
         COALESCE(
@@ -242,9 +288,9 @@ cohort_simulation_stats AS (
             0
         ) as success_rate,
         MAX(sa.created_at) as last_used
-    FROM cohort_simulation_ids cs
-    JOIN simulations s ON s.id = cs.simulation_id
-    LEFT JOIN simulation_attempts sa ON sa.simulation_id = cs.simulation_id 
+    FROM all_simulation_ids asi
+    JOIN simulations s ON s.id = asi.simulation_id
+    LEFT JOIN simulation_attempts sa ON sa.simulation_id = asi.simulation_id 
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
@@ -268,7 +314,7 @@ cohort_simulation_stats AS (
         WHERE r.id = r_cohort_new.id AND c.id = sc.id
         LIMIT 1
     ) chat_lookup_cohort ON true
-    GROUP BY cs.simulation_id, cs.active, cs.position, s.id, s.title, s.description
+    GROUP BY asi.simulation_id, s.id, s.title, s.description
 ),
 valid_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -584,9 +630,16 @@ SELECT
     (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
      FROM cohort_profile_ids) as profile_ids,
     CASE 
-        -- If draft exists and has simulation_ids, use draft
+        -- If draft exists and has simulation_ids, use draft (preserve order with WITH ORDINALITY)
         WHEN EXISTS (SELECT 1 FROM draft_payload_data WHERE payload ? 'simulation_ids') 
-        THEN (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'simulation_ids')) FROM draft_payload_data)
+        THEN (
+            SELECT ARRAY(
+                SELECT sim_id 
+                FROM draft_payload_data dpd
+                CROSS JOIN jsonb_array_elements_text(dpd.payload->'simulation_ids') WITH ORDINALITY AS t(sim_id, ordinality)
+                ORDER BY ordinality
+            )
+        )
         -- Otherwise, return empty array for new cohort (no draft)
         ELSE ARRAY[]::text[]
     END as simulation_ids,
