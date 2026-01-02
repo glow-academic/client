@@ -69,6 +69,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "Practice Attempt",
         redirectTo: "/practice",
       },
+      {
+        path: "/practice/custom",
+        roles: ["member", "instructional", "admin", "superadmin"],
+        title: "Customize Practice",
+        redirectTo: "/practice",
+      },
     ],
   },
   {

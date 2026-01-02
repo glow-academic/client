@@ -81,7 +81,8 @@ CREATE TYPE types.q_get_document_detail_v4_template AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_document_detail_v4(
     document_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     document_exists boolean,
@@ -116,14 +117,27 @@ RETURNS TABLE (
     template_file_path text,
     template_html text,
     templates types.q_get_document_detail_v4_template[],
-    actor_name text
+    actor_name text,
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
     SELECT document_id AS document_id,
-           profile_id AS profile_id
+           profile_id AS profile_id,
+           draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'documents'::draft_resource_type
+    LIMIT 1
 ),
 document_exists_check AS (
     -- Check if document exists independently of access control
@@ -348,9 +362,19 @@ SELECT
     dec.document_exists::boolean as document_exists,
     -- Document fields
     dd.document_id::uuid as document_id,
-    dd.name::text as name,
-    COALESCE(dd.description, '')::text as description,
-    dd.active::boolean as active,
+    -- Merge draft payload over existing document data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        dd.name
+    )::text as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        COALESCE(dd.description, '')
+    )::text as description,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        dd.active
+    )::boolean as active,
     CASE 
         WHEN dd.file_path IS NOT NULL THEN SUBSTRING(dd.file_path FROM '\\.([^\\.]+)$')
         ELSE ''
@@ -373,7 +397,16 @@ SELECT
         ELSE false
     END::boolean as can_delete,
     ARRAY['homework', 'exam', 'lab', 'project']::text[] as document_type_options,
-    COALESCE(dd.department_ids, ARRAY[]::text[])::text[] as department_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(dd.department_ids, ARRAY[]::text[])
+    )::text[] as department_ids,
     COALESCE((SELECT ARRAY_AGG(dd2.department_id::text ORDER BY dd2.department_id::text) FROM department_data dd2), ARRAY[]::text[])::text[] as valid_department_ids,
     -- Aggregate departments separately
     COALESCE(
@@ -383,7 +416,16 @@ SELECT
         ) FROM department_data dd2),
         '{}'::types.q_get_document_detail_v4_department[]
     ) as departments,
-    COALESCE(dd.field_ids, ARRAY[]::uuid[])::uuid[] as field_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'parameter_item_ids' IS NOT NULL AND jsonb_typeof(payload->'parameter_item_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'parameter_item_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(dd.field_ids, ARRAY[]::uuid[])
+    )::uuid[] as field_ids,
     COALESCE(vfid.valid_field_ids, ARRAY[]::text[])::text[] as valid_field_ids,
     -- Aggregate fields separately
     COALESCE(
@@ -402,8 +444,26 @@ SELECT
         ) FROM parameter_data pd),
         '{}'::types.q_get_document_detail_v4_parameter[]
     ) as parameters,
-    dd.classify_agent_id::uuid as classify_agent_id,
-    dd.document_agent_id::uuid as document_agent_id,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->>'classify_agent_id' IS NOT NULL AND payload->>'classify_agent_id' != 'null' THEN
+                    (payload->>'classify_agent_id')::uuid
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        dd.classify_agent_id
+    )::uuid as classify_agent_id,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->>'document_agent_id' IS NOT NULL AND payload->>'document_agent_id' != 'null' THEN
+                    (payload->>'document_agent_id')::uuid
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        dd.document_agent_id
+    )::uuid as document_agent_id,
     -- Aggregate agents separately
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -427,7 +487,8 @@ SELECT
         ) FROM document_all_templates dat2),
         '{}'::types.q_get_document_detail_v4_template[]
     ) as templates,
-    up.actor_name::text as actor_name
+    up.actor_name::text as actor_name,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0)::int as draft_version
 FROM document_exists_check dec
 CROSS JOIN user_profile up
 LEFT JOIN document_data dd ON dec.document_exists = true

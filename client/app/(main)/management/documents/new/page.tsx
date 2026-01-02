@@ -9,6 +9,7 @@ import Document from "@/components/documents/Document";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type DocumentsListIn = InputOf<"/api/v4/documents/list", "post">;
@@ -23,6 +24,8 @@ type FinalizeUploadOut = OutputOf<
 >;
 type CreateDocumentIn = InputOf<"/api/v4/documents/create", "post">;
 type CreateDocumentOut = OutputOf<"/api/v4/documents/create", "post">;
+type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
@@ -58,6 +61,14 @@ async function createDocument(
   return api.post("/documents/create", input);
 }
 
+async function patchDocumentDraft(
+  input: PatchDocumentDraftIn
+): Promise<PatchDocumentDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/documents/draft", input);
+}
+
 // generateTemplate removed - component now uses WebSocket directly
 
 // renderTemplate removed - not used on new page since we don't have documentId yet
@@ -70,10 +81,35 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function NewDocumentPage() {
+export default async function NewDocumentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // Parse search params using nuqs
+  const params = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for document search params (draftId only)
+  const documentSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadDocumentSearchParams = createLoader(documentSearchParams);
+  const q = loadDocumentSearchParams(searchParamsObj);
+
   // Fetch list data server-side for mappings
+  // Note: Documents don't have a separate "new" endpoint - list endpoint provides mappings
   const listData = await getDocumentsList();
 
   // Note: Server-side rendering on new page is not implemented since we don't have a documentId yet
@@ -88,10 +124,12 @@ export default async function NewDocumentPage() {
       aria-label="Create new document page"
     >
       <Document
+        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         mode="create"
         documentDetailDefault={listData}
         finalizeUploadAction={finalizeUpload}
         createDocumentAction={createDocument}
+        patchDocumentDraftAction={patchDocumentDraft}
         renderedHtml={renderedHtml}
       />
     </div>
@@ -108,4 +146,6 @@ export type {
   FinalizeUploadOut,
   GenerateTemplateIn,
   GenerateTemplateOut,
+  PatchDocumentDraftIn,
+  PatchDocumentDraftOut,
 };

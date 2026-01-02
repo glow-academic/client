@@ -12,6 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type DocumentDetailIn = InputOf<"/api/v4/documents/detail", "post">;
@@ -20,15 +21,20 @@ type UpdateDocumentIn = InputOf<"/api/v4/documents/update", "post">;
 type UpdateDocumentOut = OutputOf<"/api/v4/documents/update", "post">;
 type RenderTemplateIn = InputOf<"/api/v4/documents/render", "post">;
 type RenderTemplateOut = OutputOf<"/api/v4/documents/render", "post">;
+type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getDocument = async (documentId: string): Promise<DocumentDetailOut> => {
+const getDocument = async (
+  documentId: string,
+  draftId: string | null
+): Promise<DocumentDetailOut> => {
   return api.post(
     "/documents/detail",
-    { body: { documentId } },
+    { body: { documentId, draftId: draftId || null } },
     {
       cache: "no-store",
       headers: {
@@ -78,6 +84,14 @@ async function renderTemplate(
   return api.post("/documents/render", input);
 }
 
+async function patchDocumentDraft(
+  input: PatchDocumentDraftIn
+): Promise<PatchDocumentDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/documents/draft", input);
+}
+
 // generateTemplate removed - component now uses WebSocket directly
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -91,9 +105,29 @@ export default async function DocumentEditPage({
   const { documentId } = await params;
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch document detail (always fresh - source of truth)
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for document search params (draftId only)
+  const documentSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadDocumentSearchParams = createLoader(documentSearchParams);
+  const q = loadDocumentSearchParams(searchParamsObj);
+
+  // Fetch document detail (always fresh - source of truth) with draft_id
   try {
-    const documentDetail = await getDocument(documentId);
+    const documentDetail = await getDocument(documentId, q.draftId ?? null);
 
     // Parse search params for template args and render server-side if template document
     let renderedHtml: string | null = null;
@@ -159,11 +193,13 @@ export default async function DocumentEditPage({
         data-document-id={documentId}
       >
         <Document
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           documentId={documentId}
           mode="edit"
           documentDetail={documentDetail}
           updateDocumentAction={updateDocument}
           renderTemplateAction={renderTemplate}
+          patchDocumentDraftAction={patchDocumentDraft}
           renderedHtml={renderedHtml}
         />
       </div>
@@ -195,6 +231,8 @@ export type {
   DocumentDetailOut,
   GenerateTemplateIn,
   GenerateTemplateOut,
+  PatchDocumentDraftIn,
+  PatchDocumentDraftOut,
   RenderTemplateIn,
   RenderTemplateOut,
   UpdateDocumentIn,

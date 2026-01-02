@@ -1348,6 +1348,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/documents/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Document Draft
+         * @description Patch document draft (creates if not exists).
+         */
+        patch: operations["patch_document_draft_api_v4_documents_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/evals/create": {
         parameters: {
             query?: never;
@@ -11061,6 +11081,8 @@ export interface components {
              * Format: uuid
              */
             document_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetDocumentDetailApiResponse */
         GetDocumentDetailApiResponse: {
@@ -11130,6 +11152,8 @@ export interface components {
             templates?: components["schemas"]["QGetDocumentDetailV4Template"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetDocumentsListApiRequest */
         GetDocumentsListApiRequest: Record<string, never>;
@@ -14309,6 +14333,26 @@ export interface components {
         };
         /** PatchDepartmentDraftApiResponse */
         PatchDepartmentDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchDocumentDraftApiRequest */
+        PatchDocumentDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchDocumentDraftApiResponse */
+        PatchDocumentDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -25247,6 +25291,42 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_document_draft_api_v4_documents_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchDocumentDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchDocumentDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

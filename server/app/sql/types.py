@@ -8073,11 +8073,13 @@ class GetDocumentDetailSqlParams(BaseModel):
 
     document_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.document_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetDocumentDetailV4Agent(BaseModel):
@@ -8167,10 +8169,12 @@ class GetDocumentDetailSqlRow(BaseModel):
     template_html: str | None = None
     templates: list[QGetDocumentDetailV4Template] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 class GetDocumentDetailApiRequest(BaseModel):
 
     document_id: UUID
+    draft_id: UUID | None = None
 
 class GetDocumentDetailApiResponse(BaseModel):
 
@@ -8207,6 +8211,7 @@ class GetDocumentDetailApiResponse(BaseModel):
     template_html: str | None = None
     templates: list[QGetDocumentDetailV4Template] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
 
 
 
@@ -8716,6 +8721,43 @@ class InsertDocumentUploadApiResponse(BaseModel):
     active: bool | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+
+# Generated from: patch_document_draft
+
+class PatchDocumentDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchDocumentDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchDocumentDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchDocumentDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -25592,6 +25634,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertDocumentUploadApiRequest",
         "InsertDocumentUploadApiResponse",
     ),
+    "app/sql/v4/documents/patch_document_draft_complete.sql": (
+        "PatchDocumentDraftSqlParams",
+        "PatchDocumentDraftSqlRow",
+        "PatchDocumentDraftApiRequest",
+        "PatchDocumentDraftApiResponse",
+    ),
     "app/sql/v4/documents/render_template_complete.sql": (
         "RenderTemplateSqlParams",
         "RenderTemplateSqlRow",
@@ -27806,6 +27854,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/documents/insert_document_upload_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/patch_document_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
