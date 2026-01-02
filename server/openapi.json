@@ -8349,6 +8349,87 @@
         ]
       }
     },
+    "/api/v4/agents/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "agents"
+        ],
+        "summary": "Patch Agent Draft",
+        "description": "Patch agent draft (creates if not exists).",
+        "operationId": "patch_agent_draft_api_v4_agents_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchAgentDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchAgentDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
+      }
+    },
     "/api/v4/keys/list": {
       "post": {
         "tags": [
@@ -9543,6 +9624,87 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DuplicateModelApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
+      }
+    },
+    "/api/v4/models/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "models"
+        ],
+        "summary": "Patch Model Draft",
+        "description": "Patch model draft (creates if not exists).",
+        "operationId": "patch_model_draft_api_v4_models_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchModelDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchModelDraftApiResponse"
                 }
               }
             }
@@ -34243,6 +34405,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Agent Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -34621,13 +34795,37 @@
               }
             ],
             "title": "Available Voices"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           }
         },
         "type": "object",
         "title": "GetAgentDetailApiResponse"
       },
       "GetAgentNewApiRequest": {
-        "properties": {},
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
         "type": "object",
         "title": "GetAgentNewApiRequest"
       },
@@ -34721,6 +34919,144 @@
               }
             ],
             "title": "Departments"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "prompt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Id"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "model_temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Temperature Level Id"
+          },
+          "model_reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Reasoning Level Id"
+          },
+          "model_voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Voice Ids"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           }
         },
         "type": "object",
@@ -54160,6 +54496,77 @@
         "title": "ObjectivesToolCompletePayload",
         "description": "Response indicating objectives tool completed successfully."
       },
+      "PatchAgentDraftApiRequest": {
+        "properties": {
+          "patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Patch"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patch",
+          "expected_version"
+        ],
+        "title": "PatchAgentDraftApiRequest"
+      },
+      "PatchAgentDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchAgentDraftApiResponse"
+      },
       "PatchAuthDraftApiRequest": {
         "properties": {
           "patch": {
@@ -54585,6 +54992,77 @@
         },
         "type": "object",
         "title": "PatchKeyDraftApiResponse"
+      },
+      "PatchModelDraftApiRequest": {
+        "properties": {
+          "patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Patch"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patch",
+          "expected_version"
+        ],
+        "title": "PatchModelDraftApiRequest"
+      },
+      "PatchModelDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchModelDraftApiResponse"
       },
       "PatchParameterDraftApiRequest": {
         "properties": {

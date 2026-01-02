@@ -69,8 +69,15 @@ async def get_agent_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Extract draft_id from API request
+        draft_id = getattr(request, 'draft_id', None)
+
         # Convert API request to SQL params (add profile_id from header)
-        params = GetAgentDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = GetAgentDetailSqlParams(
+            agent_id=request.agent_id,
+            profile_id=profile_id,
+            draft_id=draft_id,
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper (single row result)

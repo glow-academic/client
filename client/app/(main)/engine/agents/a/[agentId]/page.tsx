@@ -10,8 +10,10 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
+type AgentDetailIn = InputOf<"/api/v4/agents/detail", "post">;
 type AgentDetailOut = OutputOf<"/api/v4/agents/detail", "post">;
 type AgentNewIn = InputOf<"/api/v4/agents/new", "post">;
 type AgentNewOut = OutputOf<"/api/v4/agents/new", "post">;
@@ -21,23 +23,21 @@ type UpdateAgentIn = InputOf<"/api/v4/agents/update", "post">;
 type UpdateAgentOut = OutputOf<"/api/v4/agents/update", "post">;
 type DeleteAgentPromptIn = InputOf<"/api/v4/prompts/delete", "post">;
 type DeleteAgentPromptOut = OutputOf<"/api/v4/prompts/delete", "post">;
+type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
+type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAgent = async (
-  agentId: string,
+  input: AgentDetailIn
 ): Promise<AgentDetailOut> => {
-  return api.post(
-    "/agents/detail",
-    { body: { agent_id: agentId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
+  return api.post("/agents/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
     },
-  );
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -48,14 +48,19 @@ export async function generateMetadata(
   const { agentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const agent = await getAgent(agentId);
-      return {
-        title: `${agent?.name || "Agent"} Agent`,
-        description: `${agent?.name ? `${agent.name} - ` : ""}AI agent configuration for teaching assistant training simulations.${agent?.description ? ` ${agent.description}` : ""} Customize intelligent agents to power student personas and enhance simulation-based learning experiences.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    const input: AgentDetailIn = {
+      body: {
+        agent_id: agentId,
+      } as AgentDetailIn["body"],
+    };
+    const agent = await getAgent(input);
+    return {
+      title: `${agent?.name || "Agent"} Agent`,
+      description: `${agent?.name ? `${agent.name} - ` : ""}AI agent configuration for teaching assistant training simulations.${agent?.description ? ` ${agent.description}` : ""} Customize intelligent agents to power student personas and enhance simulation-based learning experiences.`,
+    };
+  } catch {
+    // Fall through to default metadata
+  }
 
   return {
     title: "Agent",
@@ -87,18 +92,54 @@ async function deleteAgentPrompt(
   return api.post("/prompts/delete", input);
 }
 
+async function patchAgentDraft(
+  input: PatchAgentDraftIn
+): Promise<PatchAgentDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/agents/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AgentEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ agentId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { agentId } = await params;
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch agent detail (always fresh - source of truth)
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for agent search params
+  const agentSearchParams = {
+    draftId: parseAsString,
+  };
+  const loadAgentSearchParams = createLoader(agentSearchParams);
+  const q = loadAgentSearchParams(searchParamsObj);
+
+  // Fetch agent detail (always fresh - source of truth) with draft_id
   try {
-    const agentDetail = agentId ? await getAgent(agentId) : null;
+    const input: AgentDetailIn = {
+      body: {
+        agent_id: agentId,
+        draft_id: q.draftId ?? null,
+      } as AgentDetailIn["body"],
+    };
+    const agentDetail = agentId ? await getAgent(input) : null;
 
     return (
       <div className="space-y-6" data-page="agent-edit" data-agent-id={agentId}>
@@ -108,6 +149,7 @@ export default async function AgentEditPage({
           createAgentAction={createAgent}
           updateAgentAction={updateAgent}
           deleteAgentPromptAction={deleteAgentPrompt}
+          patchAgentDraftAction={patchAgentDraft}
         />
       </div>
     );
@@ -134,6 +176,7 @@ export default async function AgentEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  AgentDetailIn,
   AgentDetailOut,
   AgentNewIn,
   AgentNewOut,
@@ -141,6 +184,8 @@ export type {
   CreateAgentOut,
   DeleteAgentPromptIn,
   DeleteAgentPromptOut,
+  PatchAgentDraftIn,
+  PatchAgentDraftOut,
   UpdateAgentIn,
   UpdateAgentOut,
 };

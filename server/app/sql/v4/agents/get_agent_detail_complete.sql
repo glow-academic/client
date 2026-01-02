@@ -98,7 +98,8 @@ CREATE TYPE types.q_get_agent_detail_v4_available_voice AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_agent_detail_v4(
     agent_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     agent_exists boolean,
@@ -130,14 +131,28 @@ RETURNS TABLE (
     models types.q_get_agent_detail_v4_model[],
     reasoning_options types.q_get_agent_detail_v4_reasoning_option[],
     temperature_levels types.q_get_agent_detail_v4_temperature_level[],
-    available_voices types.q_get_agent_detail_v4_available_voice[]
+    available_voices types.q_get_agent_detail_v4_available_voice[],
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT agent_id AS agent_id,
-           profile_id AS profile_id
+    SELECT 
+        agent_id AS agent_id,
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'agents'::draft_resource_type
+    LIMIT 1
 ),
 agent_exists_check AS (
     -- Check if agent exists independently of access control
@@ -415,23 +430,74 @@ models_agg AS (
 SELECT 
     -- Agent existence check (always returned)
     aec.agent_exists::boolean as agent_exists,
-    -- Top-level agent fields
+    -- Top-level agent fields (merged with draft payload if draft_id provided)
     ai.agent_id::text as agent_id,
-    ai.name::text as name,
-    ai.description::text as description,
-    COALESCE(aap.system_prompt, '')::text as system_prompt,
-    COALESCE(aap.prompt_id, NULL)::text as prompt_id,
-    ai.model_id::text as model_id,
-    ai.active::boolean as active,
-    ai.role::text as role,
-    -- Selected options from junction tables
-    COALESCE(ast.selected_temperature_level_id, '')::text as selected_temperature_level_id,
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        ai.name
+    )::text as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ai.description
+    )::text as description,
+    COALESCE(
+        (SELECT payload->>'systemPrompt' FROM draft_payload_data),
+        (SELECT payload->>'system_prompt' FROM draft_payload_data),
+        COALESCE(aap.system_prompt, '')
+    )::text as system_prompt,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->>'promptId' FROM draft_payload_data) IS NOT NULL THEN
+                (SELECT payload->>'promptId' FROM draft_payload_data)
+            WHEN (SELECT payload->>'prompt_id' FROM draft_payload_data) IS NOT NULL THEN
+                (SELECT payload->>'prompt_id' FROM draft_payload_data)
+            ELSE COALESCE(aap.prompt_id, NULL)
+        END,
+        NULL
+    )::text as prompt_id,
+    COALESCE(
+        (SELECT payload->>'modelId' FROM draft_payload_data),
+        (SELECT payload->>'model_id' FROM draft_payload_data),
+        ai.model_id
+    )::text as model_id,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        ai.active
+    )::boolean as active,
+    COALESCE(
+        (SELECT payload->>'role' FROM draft_payload_data),
+        ai.role
+    )::text as role,
+    -- Selected options from junction tables (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'model_temperature_level_id' FROM draft_payload_data),
+        COALESCE(ast.selected_temperature_level_id, '')
+    )::text as selected_temperature_level_id,
     COALESCE(ast.selected_temperature, 0.7)::float as temperature,
-    COALESCE(asr.selected_reasoning_level_id, '')::text as selected_reasoning_level_id,
+    COALESCE(
+        (SELECT payload->>'model_reasoning_level_id' FROM draft_payload_data),
+        COALESCE(asr.selected_reasoning_level_id, '')
+    )::text as selected_reasoning_level_id,
     COALESCE(asr.selected_reasoning, '')::text as reasoning,
-    COALESCE((SELECT array_agg(asv2.voice_id::text ORDER BY asv2.voice) FROM agent_selected_voices asv2 WHERE asv2.agent_id = ai.agent_id), ARRAY[]::text[])::text[] as selected_voice_ids,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->'model_voice_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'model_voice_ids' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'model_voice_ids' FROM draft_payload_data)))::text[]
+            ELSE COALESCE((SELECT array_agg(asv2.voice_id::text ORDER BY asv2.voice) FROM agent_selected_voices asv2 WHERE asv2.agent_id = ai.agent_id), ARRAY[]::text[])
+        END,
+        ARRAY[]::text[]
+    )::text[] as selected_voice_ids,
     COALESCE((SELECT array_agg(asv3.voice::text ORDER BY asv3.voice) FROM agent_selected_voices asv3 WHERE asv3.agent_id = ai.agent_id), ARRAY[]::text[])::text[] as valid_voices,
-    COALESCE(add.department_ids, ARRAY[]::text[])::text[] as department_ids,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->'departmentIds' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'departmentIds' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'departmentIds' FROM draft_payload_data)))::text[]
+            WHEN (SELECT payload->'department_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'department_ids' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'department_ids' FROM draft_payload_data)))::text[]
+            ELSE COALESCE(add.department_ids, ARRAY[]::text[])
+        END,
+        ARRAY[]::text[]
+    )::text[] as department_ids,
     COALESCE((SELECT dept_ids FROM valid_department_ids_list LIMIT 1), ARRAY[]::text[])::text[] as valid_department_ids,
     CASE 
         -- Default agents (no department_ids) are read-only for non-superadmin
@@ -516,7 +582,8 @@ SELECT
             ORDER BY mvf_selected.voice_value
         ) FILTER (WHERE uhaa.has_access = true AND mvf_selected.voice_id IS NOT NULL),
         '{}'::types.q_get_agent_detail_v4_available_voice[]
-    ) as available_voices
+    ) as available_voices,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0)::int as draft_version
 FROM agent_exists_check aec
 CROSS JOIN user_profile up
 CROSS JOIN user_has_agent_access uhaa

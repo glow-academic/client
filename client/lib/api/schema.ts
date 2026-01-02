@@ -2068,6 +2068,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/agents/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Agent Draft
+         * @description Patch agent draft (creates if not exists).
+         */
+        patch: operations["patch_agent_draft_api_v4_agents_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/keys/list": {
         parameters: {
             query?: never;
@@ -2366,6 +2386,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/models/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Model Draft
+         * @description Patch model draft (creates if not exists).
+         */
+        patch: operations["patch_model_draft_api_v4_models_draft_patch"];
         trace?: never;
     };
     "/api/v4/providers/list": {
@@ -10410,6 +10450,8 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetAgentDetailApiResponse */
         GetAgentDetailApiResponse: {
@@ -10473,9 +10515,14 @@ export interface components {
             temperature_levels?: components["schemas"]["QGetAgentDetailV4TemperatureLevel"][] | null;
             /** Available Voices */
             available_voices?: components["schemas"]["QGetAgentDetailV4AvailableVoice"][] | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetAgentNewApiRequest */
-        GetAgentNewApiRequest: Record<string, never>;
+        GetAgentNewApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+        };
         /** GetAgentNewApiResponse */
         GetAgentNewApiResponse: {
             /** Actor Name */
@@ -10492,6 +10539,30 @@ export interface components {
             models?: components["schemas"]["QGetAgentNewV4Model"][] | null;
             /** Departments */
             departments?: components["schemas"]["QGetAgentNewV4Department"][] | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Role */
+            role?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Model Temperature Level Id */
+            model_temperature_level_id?: string | null;
+            /** Model Reasoning Level Id */
+            model_reasoning_level_id?: string | null;
+            /** Model Voice Ids */
+            model_voice_ids?: string[] | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;
@@ -14165,6 +14236,26 @@ export interface components {
             /** Message */
             message?: string | null;
         };
+        /** PatchAgentDraftApiRequest */
+        PatchAgentDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchAgentDraftApiResponse */
+        PatchAgentDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PatchAuthDraftApiRequest */
         PatchAuthDraftApiRequest: {
             /** Patch */
@@ -14278,6 +14369,26 @@ export interface components {
         };
         /** PatchKeyDraftApiResponse */
         PatchKeyDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchModelDraftApiRequest */
+        PatchModelDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchModelDraftApiResponse */
+        PatchModelDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -26445,6 +26556,42 @@ export interface operations {
             };
         };
     };
+    patch_agent_draft_api_v4_agents_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchAgentDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchAgentDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_keys_list_api_v4_keys_list_post: {
         parameters: {
             query?: never;
@@ -26972,6 +27119,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DuplicateModelApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_model_draft_api_v4_models_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchModelDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchModelDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

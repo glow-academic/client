@@ -453,7 +453,11 @@ SELECT
     COALESCE(da.departments, '{}'::types.q_get_model_detail_v4_department[]) as departments,
     -- Merge draft payload department_ids over existing model department_ids if draft_id provided
     COALESCE(
-        (SELECT (payload->'department_ids')::uuid[] FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT payload->'department_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'department_ids' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'department_ids' FROM draft_payload_data)))::uuid[]
+            ELSE NULL
+        END,
         COALESCE(mdd.department_ids, mdf.department_ids, ARRAY[]::uuid[])
     ) as department_ids,
     COALESCE(ka.valid_key_ids, ARRAY[]::uuid[]) as valid_key_ids,

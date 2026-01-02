@@ -59,7 +59,10 @@ CREATE TYPE types.q_get_agent_new_v4_department AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_agent_new_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_agent_new_v4(
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
+)
 RETURNS TABLE (
     actor_name text,
     user_role text,
@@ -67,13 +70,38 @@ RETURNS TABLE (
     valid_model_ids text[],
     valid_department_ids text[],
     models types.q_get_agent_new_v4_model[],
-    departments types.q_get_agent_new_v4_department[]
+    departments types.q_get_agent_new_v4_department[],
+    name text,
+    description text,
+    system_prompt text,
+    prompt_id text,
+    model_id text,
+    active boolean,
+    role text,
+    department_ids text[],
+    model_temperature_level_id text,
+    model_reasoning_level_id text,
+    model_voice_ids text[],
+    draft_version int
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id AS profile_id
+    SELECT 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'agents'::draft_resource_type
+    LIMIT 1
 ),
 user_profile AS (
     SELECT 
@@ -241,7 +269,79 @@ SELECT
             ORDER BY vdd.department_name
         ),
         '{}'::types.q_get_agent_new_v4_department[]
-    ) as departments
+    ) as departments,
+    -- Default values for new agent (merged with draft payload if draft_id provided)
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        'New Agent'::text
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        ''::text
+    ) as description,
+    COALESCE(
+        (SELECT payload->>'systemPrompt' FROM draft_payload_data),
+        (SELECT payload->>'system_prompt' FROM draft_payload_data),
+        ''::text
+    ) as system_prompt,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->>'promptId' FROM draft_payload_data) IS NOT NULL THEN
+                (SELECT payload->>'promptId' FROM draft_payload_data)
+            WHEN (SELECT payload->>'prompt_id' FROM draft_payload_data) IS NOT NULL THEN
+                (SELECT payload->>'prompt_id' FROM draft_payload_data)
+            ELSE NULL
+        END,
+        NULL
+    )::text as prompt_id,
+    COALESCE(
+        (SELECT payload->>'modelId' FROM draft_payload_data),
+        (SELECT payload->>'model_id' FROM draft_payload_data),
+        ''::text
+    ) as model_id,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        true::boolean
+    ) as active,
+    COALESCE(
+        (SELECT payload->>'role' FROM draft_payload_data),
+        'assistant'::text
+    ) as role,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->'departmentIds' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'departmentIds' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'departmentIds' FROM draft_payload_data)))::text[]
+            WHEN (SELECT payload->'department_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'department_ids' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'department_ids' FROM draft_payload_data)))::text[]
+            ELSE NULL
+        END,
+        ARRAY[]::text[]
+    ) as department_ids,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->>'model_temperature_level_id' FROM draft_payload_data) IS NOT NULL THEN
+                (SELECT payload->>'model_temperature_level_id' FROM draft_payload_data)
+            ELSE NULL
+        END,
+        NULL
+    )::text as model_temperature_level_id,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->>'model_reasoning_level_id' FROM draft_payload_data) IS NOT NULL THEN
+                (SELECT payload->>'model_reasoning_level_id' FROM draft_payload_data)
+            ELSE NULL
+        END,
+        NULL
+    )::text as model_reasoning_level_id,
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->'model_voice_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'model_voice_ids' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'model_voice_ids' FROM draft_payload_data)))::text[]
+            ELSE NULL
+        END,
+        ARRAY[]::text[]
+    ) as model_voice_ids,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0)::int as draft_version
 FROM user_profile up
 CROSS JOIN models_agg ma
 CROSS JOIN valid_departments_data vdd
