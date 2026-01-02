@@ -4,11 +4,14 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateDocumentDepartmentLinkSqlParams,
-                             CreateDocumentDepartmentLinkSqlRow,
-                             CreateTestDocumentSqlParams,
-                             CreateTestDocumentSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow)
+from tests.sql.types import (
+    CreateDocumentDepartmentLinkSqlParams,
+    CreateDocumentDepartmentLinkSqlRow,
+    CreateTestDocumentSqlParams,
+    CreateTestDocumentSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -119,4 +122,3 @@ async def test_get_document_detail_bulk_not_found(
         "no documents found" in data["detail"].lower()
         or "not found" in data["detail"].lower()
     )
-

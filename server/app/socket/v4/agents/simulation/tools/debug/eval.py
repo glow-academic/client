@@ -20,7 +20,9 @@ from app.sql.types import (
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/agents/agents_simulation_tools_debug_debug_eval_start_complete.sql"
+)
 
 
 async def _debug_eval_impl(

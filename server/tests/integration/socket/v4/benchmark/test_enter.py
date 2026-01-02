@@ -17,6 +17,7 @@ async def test_benchmark_enter_success(
     """Test successful benchmark_enter event."""
     # Create test
     from tests.integration.socket.v4.helpers import create_test_test
+
     test_id = await create_test_test(db)
 
     sid = "test_sid_123"
@@ -51,4 +52,3 @@ async def test_benchmark_enter_missing_test_id(
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("benchmarks_enter_error")
     assert len(error_events) >= 1
-

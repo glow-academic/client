@@ -136,4 +136,3 @@ class TestRunServiceChecks:
         # But pool might be busy with test transactions, so just verify it ran
         assert isinstance(results["database"].ok, bool)
         assert results["database"].latency_ms >= 0
-

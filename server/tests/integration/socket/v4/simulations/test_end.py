@@ -23,6 +23,7 @@ async def test_simulation_text_end_success(
 
     # Create scenario
     from tests.integration.socket.v4.helpers import create_test_scenario
+
     scenario_id = await create_test_scenario(db)
 
     # Create attempt
@@ -49,6 +50,7 @@ async def test_simulation_text_end_success(
 
     # Create chat
     from tests.integration.socket.v4.helpers import create_test_chat
+
     chat_id = await create_test_chat(db, scenario_id)
 
     sid = "test_sid_123"
@@ -63,6 +65,7 @@ async def test_simulation_text_end_success(
 
     # Assert - verify chat was marked as completed
     from tests.integration.socket.v4.helpers import get_chat_by_id
+
     chat_result = await get_chat_by_id(db, str(chat_id))
     assert chat_result is not None
     # Chat should be marked as completed
@@ -92,4 +95,3 @@ async def test_simulation_text_end_missing_chat_id(
     error_events = mock_sio.get_events("simulations_text_end_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

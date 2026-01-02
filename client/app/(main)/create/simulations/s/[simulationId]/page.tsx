@@ -119,16 +119,17 @@ export default async function EditSimulationPage({
   });
 
   // Inline server-side parsers for simulation search params
+  // Only include search/filter params, not draft data (scenarioIds comes from draft payload)
   const simulationSearchParams = {
     draftId: parseAsString,
     scenarioSearch: parseAsString,
     scenarioShowSelected: parseAsBoolean,
-    scenarioIds: parseAsArrayOf(parseAsString),
   };
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
 
   // Fetch simulation detail (always fresh - source of truth) with draft_id and filters
+  // filter_scenario_ids will come from draft payload if draft_id is provided
   try {
     const input: SimulationDetailIn = {
       body: {
@@ -136,10 +137,8 @@ export default async function EditSimulationPage({
         draft_id: q.draftId ?? null,
         scenario_search: q.scenarioSearch ?? null,
         scenario_show_selected: q.scenarioShowSelected ?? null,
-        filter_scenario_ids:
-          q.scenarioIds && q.scenarioIds.length > 0
-            ? q.scenarioIds
-            : null,
+        // filter_scenario_ids comes from draft payload, not URL params
+        filter_scenario_ids: null,
       } as SimulationDetailIn["body"],
     };
     const simulationDetail = await getSimulation(input);

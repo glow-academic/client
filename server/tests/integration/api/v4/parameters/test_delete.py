@@ -4,15 +4,18 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateTestParameterItemSqlParams,
-                             CreateTestParameterItemSqlRow,
-                             CreateTestParameterSqlParams,
-                             CreateTestParameterSqlRow,
-                             CreateTestScenarioWithParameterItemSqlParams,
-                             CreateTestScenarioWithParameterItemSqlRow,
-                             GetParameterByIdSqlParams, GetParameterByIdSqlRow,
-                             GetParameterItemsSqlParams,
-                             GetParameterItemsSqlRow)
+from tests.sql.types import (
+    CreateTestParameterItemSqlParams,
+    CreateTestParameterItemSqlRow,
+    CreateTestParameterSqlParams,
+    CreateTestParameterSqlRow,
+    CreateTestScenarioWithParameterItemSqlParams,
+    CreateTestScenarioWithParameterItemSqlRow,
+    GetParameterByIdSqlParams,
+    GetParameterByIdSqlRow,
+    GetParameterItemsSqlParams,
+    GetParameterItemsSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -37,7 +40,9 @@ async def test_delete_parameter(
             parameter_simulation_parameter=False,
         ),
     )
-    typed_parameter = CreateTestParameterSqlRow.model_validate(parameter_result.model_dump())
+    typed_parameter = CreateTestParameterSqlRow.model_validate(
+        parameter_result.model_dump()
+    )
     assert typed_parameter.parameter_id is not None
     parameter_id = typed_parameter.parameter_id
 
@@ -103,7 +108,9 @@ async def test_delete_parameter_in_use(
             parameter_simulation_parameter=False,
         ),
     )
-    typed_parameter = CreateTestParameterSqlRow.model_validate(parameter_result.model_dump())
+    typed_parameter = CreateTestParameterSqlRow.model_validate(
+        parameter_result.model_dump()
+    )
     assert typed_parameter.parameter_id is not None
     parameter_id = typed_parameter.parameter_id
 
@@ -159,4 +166,3 @@ async def test_delete_parameter_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

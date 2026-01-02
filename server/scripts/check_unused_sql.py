@@ -71,20 +71,24 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
     # Pattern to match load_sql("path") or load_sql('path')
     # Captures the path inside quotes
     load_sql_pattern = re.compile(r'load_sql\s*\(\s*["\']([^"\']+)["\']\s*\)')
-    
+
     # Pattern to match execute_sql_typed(conn, "path", ...) or execute_sql_typed(conn, 'path', ...)
-    execute_sql_pattern = re.compile(r'execute_sql_typed\s*\(\s*[^,]+,\s*["\']([^"\']+)["\']')
-    
+    execute_sql_pattern = re.compile(
+        r'execute_sql_typed\s*\(\s*[^,]+,\s*["\']([^"\']+)["\']'
+    )
+
     # Pattern to match load_sql_query("path") or load_sql_query('path')
-    load_sql_query_pattern = re.compile(r'load_sql_query\s*\(\s*["\']([^"\']+)["\']\s*\)')
-    
+    load_sql_query_pattern = re.compile(
+        r'load_sql_query\s*\(\s*["\']([^"\']+)["\']\s*\)'
+    )
+
     # Pattern to match SQL_PATH = "path" or SQL_PATH = 'path' (constant assignments)
     sql_path_pattern = re.compile(r'SQL_PATH\s*=\s*["\']([^"\']+)["\']')
 
     for py_file in python_files:
         try:
             content = py_file.read_text(encoding="utf-8")
-            
+
             # Find load_sql() calls
             matches = load_sql_pattern.findall(content)
             for match in matches:
@@ -93,7 +97,7 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
                 if match.startswith(f"sql/{VERSION}/"):
                     normalized = "app/" + match
                 referenced_paths.add(normalized)
-            
+
             # Find execute_sql_typed() calls
             execute_matches = execute_sql_pattern.findall(content)
             for match in execute_matches:
@@ -102,7 +106,7 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
                 if match.startswith(f"sql/{VERSION}/"):
                     normalized = "app/" + match
                 referenced_paths.add(normalized)
-            
+
             # Find load_sql_query() calls
             load_sql_query_matches = load_sql_query_pattern.findall(content)
             for match in load_sql_query_matches:
@@ -111,7 +115,7 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
                 if match.startswith(f"sql/{VERSION}/"):
                     normalized = "app/" + match
                 referenced_paths.add(normalized)
-            
+
             # Find SQL_PATH constant assignments
             sql_path_matches = sql_path_pattern.findall(content)
             for match in sql_path_matches:
@@ -129,30 +133,32 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
 
 def get_types_registry_paths() -> set[str]:
     """Extract SQL file paths from the types.py registry.
-    
+
     Returns a set of all SQL file paths that are registered in the types.py file.
     This indicates they are compiled and likely being used.
     """
     types_file = server_dir / "app" / "sql" / "types.py"
     if not types_file.exists():
         return set()
-    
+
     referenced_paths = set()
-    
+
     try:
         content = types_file.read_text(encoding="utf-8")
-        
+
         # Pattern to match registry entries: "app/sql/v4/...": (
         # This matches the _registry dictionary entries
-        registry_pattern = re.compile(r'["\'](app/sql/' + VERSION + r'/[^"\']+)["\']\s*:')
-        
+        registry_pattern = re.compile(
+            r'["\'](app/sql/' + VERSION + r'/[^"\']+)["\']\s*:'
+        )
+
         matches = registry_pattern.findall(content)
         for match in matches:
             referenced_paths.add(match)
     except Exception:
         # Skip if file can't be read
         pass
-    
+
     return referenced_paths
 
 
@@ -188,7 +194,7 @@ def main() -> int:
 
     referenced_paths = extract_all_load_sql_paths(python_files)
     print(f"Found {len(referenced_paths)} referenced SQL files from Python code")
-    
+
     # Also check types.py registry
     types_registry_paths = get_types_registry_paths()
     print(f"Found {len(types_registry_paths)} SQL files in types.py registry")

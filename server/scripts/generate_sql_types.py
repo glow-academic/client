@@ -56,7 +56,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
     """
     app_sql_prefix = f"app/sql/{VERSION}/"
     tests_sql_prefix = f"tests/sql/{VERSION}/integration/"
-    
+
     # Pattern: app/sql/{VERSION}/[resource]/[operation]_complete.sql
     # Pattern: app/sql/{VERSION}/infrastructure/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
     if sql_path.startswith(app_sql_prefix):
@@ -160,7 +160,7 @@ def generate_registry_entry(
     """
     app_sql_prefix = f"app/sql/{VERSION}/"
     tests_sql_prefix = f"tests/sql/{VERSION}/integration/"
-    
+
     # Process app/sql/{VERSION}/ files
     if sql_path.startswith(app_sql_prefix):
         # Generate class names
@@ -1037,7 +1037,9 @@ async def main() -> int:
         sql_files.extend(tests_sql_dir.rglob("*.sql"))
 
     if not sql_files:
-        print(f"⚠️  No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/")
+        print(
+            f"⚠️  No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
+        )
         return 0
 
     print(f"🔍 Found {len(sql_files)} SQL files to process")
@@ -1056,7 +1058,10 @@ async def main() -> int:
         sql_path = str(sql_file.relative_to(server_root))
 
         # Analytics view creation file must be first
-        if sql_path == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql":
+        if (
+            sql_path
+            == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
+        ):
             return (0, sql_path)
 
         # Other analytics routes come next
@@ -1182,7 +1187,9 @@ async def main() -> int:
             td for td in type_definitions if td[0].startswith(f"app/sql/{VERSION}/")
         ]
         test_type_definitions = [
-            td for td in type_definitions if td[0].startswith(f"tests/sql/{VERSION}/integration/")
+            td
+            for td in type_definitions
+            if td[0].startswith(f"tests/sql/{VERSION}/integration/")
         ]
 
         # Write app consolidated types file if we have entries

@@ -67,4 +67,3 @@ async def test_list_documents_empty(
     assert data is not None
     assert "documents" in data
     assert isinstance(data["documents"], list)
-

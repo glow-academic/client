@@ -51,4 +51,3 @@ class TestDebugInfo:
 
         # Assert
         assert result == "Saved debug info"
-

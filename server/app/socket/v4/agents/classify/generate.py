@@ -103,7 +103,7 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
     """Handle upload classification requests via WebSocket."""
     try:
         upload_id = data.uploadId
-        
+
         # Get profile_id from socket lookup
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
@@ -128,7 +128,9 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
             )
 
             # Get user's department for agent selection (use first department or None)
-            SQL_PATH_DEPT = "app/sql/v4/profile/get_first_department_for_profile_complete.sql"
+            SQL_PATH_DEPT = (
+                "app/sql/v4/profile/get_first_department_for_profile_complete.sql"
+            )
             dept_params = GetFirstDepartmentForProfileSqlParams(profile_id=profile_id)
             dept_result = cast(
                 GetFirstDepartmentForProfileSqlRow,
@@ -148,7 +150,9 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 )
                 context_result = cast(
                     GetUploadClassificationRunContextAndCreateRunSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
+                    await execute_sql_typed(
+                        conn, SQL_PATH_CONTEXT, params=context_params
+                    ),
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
@@ -250,14 +254,18 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
             if data.parameterIds:
                 parameter_ids_filter = [uuid.UUID(pid) for pid in data.parameterIds]
 
-            SQL_PATH_PARAM_ITEMS = "app/sql/v4/uploads/get_classification_context_complete.sql"
+            SQL_PATH_PARAM_ITEMS = (
+                "app/sql/v4/uploads/get_classification_context_complete.sql"
+            )
             param_items_params = GetClassificationContextSqlParams(
                 parameter_ids=parameter_ids_filter if parameter_ids_filter else [],
                 profile_id=profile_id,
             )
             param_items_results = cast(
                 list[GetClassificationContextSqlRow],
-                await execute_sql_typed(conn, SQL_PATH_PARAM_ITEMS, params=param_items_params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_PARAM_ITEMS, params=param_items_params
+                ),
             )
 
             parameter_items = [
@@ -463,7 +471,9 @@ Use the provided classification tools to indicate which files match each paramet
                     department_id=department_id,
                     chat_id=None,  # chat_id not provided for upload classification
                 )
-                await execute_sql_typed(conn, SQL_PATH_LINK_SYS_DEV, params=link_sys_dev_params)
+                await execute_sql_typed(
+                    conn, SQL_PATH_LINK_SYS_DEV, params=link_sys_dev_params
+                )
 
             # Link developer messages from input_items if provided
             developer_contents: list[str] = []
@@ -483,7 +493,9 @@ Use the provided classification tools to indicate which files match each paramet
                             developer_contents.append(stripped)
 
             # Link each developer message to the run
-            SQL_PATH_LINK_DEV = "app/sql/v4/simulations/link_developer_message_to_run_complete.sql"
+            SQL_PATH_LINK_DEV = (
+                "app/sql/v4/simulations/link_developer_message_to_run_complete.sql"
+            )
             developer_message_ids: list[uuid.UUID] = []
             for content in developer_contents:
                 link_dev_params = LinkDeveloperMessageToRunSqlParams(
@@ -492,7 +504,9 @@ Use the provided classification tools to indicate which files match each paramet
                 )
                 result = cast(
                     LinkDeveloperMessageToRunSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH_LINK_DEV, params=link_dev_params),
+                    await execute_sql_typed(
+                        conn, SQL_PATH_LINK_DEV, params=link_dev_params
+                    ),
                 )
                 if result and result.message_id:
                     developer_message_ids.append(result.message_id)

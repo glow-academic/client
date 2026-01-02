@@ -101,4 +101,3 @@ class TestParseCsvFile:
             assert len(result["users"]) == 0
         finally:
             Path(temp_path).unlink()
-

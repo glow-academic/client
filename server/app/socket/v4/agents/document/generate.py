@@ -3,14 +3,22 @@
 import uuid
 from typing import Any, cast
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    trace,
+)
 from agents.items import TResponseInputItem
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.documents.format_document_template_context import \
-    format_document_template_context
+from app.infra.v4.documents.format_document_template_context import (
+    format_document_template_context,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
@@ -23,17 +31,19 @@ from utils.sql_helper import execute_sql_typed, load_sql
 # Types will be auto-generated from SQL introspection
 # For now, using try/except to handle missing types gracefully
 try:
-    from app.sql.types import (CreateTemplateAndLinkSqlParams,
-                               CreateTemplateAndLinkSqlRow,
-                               DocumentGenerationCompleteApiRequest,
-                               DocumentGenerationErrorApiRequest,
-                               DocumentGenerationErrorSqlRow,
-                               DocumentGenerationProgressApiRequest,
-                               GetDocumentRunContextAndCreateRunApiRequest,
-                               GetDocumentRunContextAndCreateRunSqlParams,
-                               GetDocumentRunContextAndCreateRunSqlRow,
-                               GetDocumentTemplateContextSqlParams,
-                               GetDocumentTemplateContextSqlRow)
+    from app.sql.types import (
+        CreateTemplateAndLinkSqlParams,
+        CreateTemplateAndLinkSqlRow,
+        DocumentGenerationCompleteApiRequest,
+        DocumentGenerationErrorApiRequest,
+        DocumentGenerationErrorSqlRow,
+        DocumentGenerationProgressApiRequest,
+        GetDocumentRunContextAndCreateRunApiRequest,
+        GetDocumentRunContextAndCreateRunSqlParams,
+        GetDocumentRunContextAndCreateRunSqlRow,
+        GetDocumentTemplateContextSqlParams,
+        GetDocumentTemplateContextSqlRow,
+    )
 except ImportError:
     # Types not generated yet - will be created when SQL files are processed
     # Using BaseModel as fallback for now
@@ -117,11 +127,14 @@ except ImportError:
         progress_type: str
         message: str | None = None
 
+
 client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql"
-SQL_TEMPLATE_CONTEXT_PATH = "app/sql/v4/documents/get_document_template_context_complete.sql"
+SQL_TEMPLATE_CONTEXT_PATH = (
+    "app/sql/v4/documents/get_document_template_context_complete.sql"
+)
 SQL_CREATE_TEMPLATE_PATH = "app/sql/v4/documents/create_template_and_link_complete.sql"
 
 internal_sio = get_internal_sio()
@@ -139,8 +152,16 @@ async def _document_generate_impl(
     try:
         # data fields are already validated as UUIDs by GetDocumentRunContextAndCreateRunApiRequest
         # (Pydantic auto-converts strings to UUIDs)
-        department_id = uuid.UUID(data.department_id) if isinstance(data.department_id, str) else data.department_id
-        document_id = uuid.UUID(data.document_id) if data.document_id and isinstance(data.document_id, str) else data.document_id
+        department_id = (
+            uuid.UUID(data.department_id)
+            if isinstance(data.department_id, str)
+            else data.department_id
+        )
+        document_id = (
+            uuid.UUID(data.document_id)
+            if data.document_id and isinstance(data.document_id, str)
+            else data.document_id
+        )
         document_name = data.document_name
         document_description = data.document_description
         field_ids = data.field_ids
@@ -156,7 +177,9 @@ async def _document_generate_impl(
                     document_id=document_id,
                     document_name=document_name,
                     document_description=document_description,
-                    field_ids=[uuid.UUID(fid) for fid in field_ids] if field_ids else None,
+                    field_ids=[uuid.UUID(fid) for fid in field_ids]
+                    if field_ids
+                    else None,
                 )
                 result = cast(
                     GetDocumentRunContextAndCreateRunSqlRow,
@@ -375,7 +398,9 @@ async def _document_generate_impl(
                     template_context_result = cast(
                         GetDocumentTemplateContextSqlRow,
                         await execute_sql_typed(
-                            conn, SQL_TEMPLATE_CONTEXT_PATH, params=template_context_params
+                            conn,
+                            SQL_TEMPLATE_CONTEXT_PATH,
+                            params=template_context_params,
                         ),
                     )
                     # Convert composite type array to dict format for format_document_template_context
@@ -383,9 +408,13 @@ async def _document_generate_impl(
                         fields_data = [
                             {
                                 "item_name": getattr(field, "item_name", ""),
-                                "item_description": getattr(field, "item_description", ""),
+                                "item_description": getattr(
+                                    field, "item_description", ""
+                                ),
                                 "param_name": getattr(field, "param_name", ""),
-                                "param_description": getattr(field, "param_description", ""),
+                                "param_description": getattr(
+                                    field, "param_description", ""
+                                ),
                             }
                             for field in template_context_result.fields
                         ]
@@ -447,7 +476,9 @@ async def _document_generate_impl(
             with trace(
                 "Document Agent",
                 trace_id=trace_id,  # From groups table
-                group_id=str(document_id) if document_id else None,  # Resource ID, not database group_id
+                group_id=str(document_id)
+                if document_id
+                else None,  # Resource ID, not database group_id
             ):
                 run_result = await Runner.run(
                     document_agent.agent(),
@@ -553,7 +584,9 @@ async def _document_generate_impl(
                         template_result = cast(
                             CreateTemplateAndLinkSqlRow,
                             await execute_sql_typed(
-                                conn, SQL_CREATE_TEMPLATE_PATH, params=create_template_params
+                                conn,
+                                SQL_CREATE_TEMPLATE_PATH,
+                                params=create_template_params,
                             ),
                         )
 
@@ -564,7 +597,9 @@ async def _document_generate_impl(
                         sql_templates = load_sql(
                             "app/sql/v4/documents/get_document_templates.sql"
                         )
-                        template_rows = await conn.fetch(sql_templates, str(document_id))
+                        template_rows = await conn.fetch(
+                            sql_templates, str(document_id)
+                        )
 
                         # Build mapping from array
                         template_mapping = {}

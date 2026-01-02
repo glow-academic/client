@@ -32,10 +32,12 @@ async def test_rubric_regenerate_success(
     agent_id = await get_or_create_test_agent(db, name="Rubric Agent")
 
     from tests.integration.socket.v4.helpers import create_test_rubric
+
     rubric_id = await create_test_rubric(db)
 
     # Create a group for regeneration
     from tests.integration.socket.v4.helpers import create_test_group
+
     group_id = await create_test_group(db, rubric_id)
 
     data = {
@@ -52,4 +54,3 @@ async def test_rubric_regenerate_success(
     error_events = mock_sio.get_events("rubrics_generation_error")
     # May emit error if group not found or AI generation fails
     assert len(error_events) >= 0
-

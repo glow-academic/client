@@ -4,21 +4,26 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateRubricDepartmentLinkSqlParams,
-                             CreateRubricDepartmentLinkSqlRow,
-                             CreateTestRubricSqlParams, CreateTestRubricSqlRow,
-                             CreateTestStandardGroupSqlParams,
-                             CreateTestStandardGroupSqlRow,
-                             CreateTestStandardSqlParams, CreateTestStandardSqlRow,
-                             GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow, GetRubricByIdSqlParams,
-                             GetRubricByIdSqlRow,
-                             GetRubricDepartmentLinkSqlParams,
-                             GetRubricDepartmentLinkSqlRow,
-                             GetRubricStandardGroupsSqlParams,
-                             GetRubricStandardGroupsSqlRow,
-                             GetRubricStandardsSqlParams,
-                             GetRubricStandardsSqlRow)
+from tests.sql.types import (
+    CreateRubricDepartmentLinkSqlParams,
+    CreateRubricDepartmentLinkSqlRow,
+    CreateTestRubricSqlParams,
+    CreateTestRubricSqlRow,
+    CreateTestStandardGroupSqlParams,
+    CreateTestStandardGroupSqlRow,
+    CreateTestStandardSqlParams,
+    CreateTestStandardSqlRow,
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+    GetRubricByIdSqlParams,
+    GetRubricByIdSqlRow,
+    GetRubricDepartmentLinkSqlParams,
+    GetRubricDepartmentLinkSqlRow,
+    GetRubricStandardGroupsSqlParams,
+    GetRubricStandardGroupsSqlRow,
+    GetRubricStandardsSqlParams,
+    GetRubricStandardsSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -77,7 +82,9 @@ async def test_duplicate_rubric(
             group_pass_points=35,
         ),
     )
-    typed_group = CreateTestStandardGroupSqlRow.model_validate(group_result.model_dump())
+    typed_group = CreateTestStandardGroupSqlRow.model_validate(
+        group_result.model_dump()
+    )
     assert typed_group.standard_group_id is not None
     group_id = typed_group.standard_group_id
 
@@ -132,7 +139,9 @@ async def test_duplicate_rubric(
     assert new_typed_rubric.description == original_typed_rubric.description
     assert new_typed_rubric.points == original_typed_rubric.points
     assert new_typed_rubric.pass_points == original_typed_rubric.pass_points
-    assert new_typed_rubric.active is False  # Duplicated rubrics are inactive by default
+    assert (
+        new_typed_rubric.active is False
+    )  # Duplicated rubrics are inactive by default
 
     # Verify department link was duplicated using SQL file
     new_dept_link_result = await execute_sql_typed(
@@ -163,7 +172,9 @@ async def test_duplicate_rubric(
     new_standards_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standards_v4_complete.sql",
-        params=GetRubricStandardsSqlParams(standard_group_id=typed_new_groups[0].standard_group_id),
+        params=GetRubricStandardsSqlParams(
+            standard_group_id=typed_new_groups[0].standard_group_id
+        ),
     )
     typed_new_standards = GetRubricStandardsSqlRow.model_validate(
         new_standards_result.model_dump()
@@ -239,4 +250,3 @@ async def test_duplicate_rubric_not_found(
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
-

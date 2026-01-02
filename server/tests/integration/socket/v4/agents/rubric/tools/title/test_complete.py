@@ -4,7 +4,9 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.v4.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v4.agents.rubric.tools.title.complete import rubric_tool_title_complete_internal
+from app.socket.v4.agents.rubric.tools.title.complete import (
+    rubric_tool_title_complete_internal,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -24,4 +26,3 @@ async def test_rubric_title_tool_complete_success(
 
     # Assert - verify handler completes
     assert True  # Handler should complete without error
-

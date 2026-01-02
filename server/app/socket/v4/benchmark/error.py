@@ -81,4 +81,3 @@ register_server_endpoint(
     BenchmarkErrorSqlRow,
     "Error occurred during benchmark execution",
 )
-

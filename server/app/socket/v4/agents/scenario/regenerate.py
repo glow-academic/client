@@ -195,8 +195,12 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         group_id=group_id,  # REQUIRED for regeneration (uses existing group)
                         persona_id=persona_id,
                         document_ids=document_ids if document_ids else None,
-                        parameter_item_ids=parameter_item_ids if parameter_item_ids else None,
-                        user_instructions=data.userInstructions if data.userInstructions else None,
+                        parameter_item_ids=parameter_item_ids
+                        if parameter_item_ids
+                        else None,
+                        user_instructions=data.userInstructions
+                        if data.userInstructions
+                        else None,
                     )
                     result = cast(
                         GetScenarioRegenerationRunContextAndCreateRunSqlRow,
@@ -269,7 +273,9 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # No JSON parsing needed - they're already Pydantic models
             documents = result.documents if result.documents else []
             parameter_items = result.parameter_items if result.parameter_items else []
-            document_templates = result.document_templates if result.document_templates else []
+            document_templates = (
+                result.document_templates if result.document_templates else []
+            )
 
             # Emit start event
             await scenario_regeneration_progress(

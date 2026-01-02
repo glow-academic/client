@@ -15,4 +15,3 @@ class TestGenerateImageBackground:
         # This function is complex and requires image generation setup
         # For now, we verify it exists and is callable
         assert callable(generate_image_background)
-

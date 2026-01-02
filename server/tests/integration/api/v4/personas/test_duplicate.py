@@ -99,7 +99,9 @@ async def test_duplicate_persona(
         sql_path="tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql",
         params=GetPersonaByIdSqlParams(persona_id=UUID(data["personaId"])),
     )
-    typed_duplicated = GetPersonaByIdSqlRow.model_validate(duplicated_result.model_dump())
+    typed_duplicated = GetPersonaByIdSqlRow.model_validate(
+        duplicated_result.model_dump()
+    )
     assert typed_duplicated.persona_id is not None
     assert typed_duplicated.name == "Original Persona Copy"  # SQL adds " Copy"
     assert typed_duplicated.description == "Original Description"
@@ -119,4 +121,3 @@ async def test_duplicate_persona_not_found(
 
     assert response.status_code == 400
     assert "not found" in response.json()["detail"].lower()
-

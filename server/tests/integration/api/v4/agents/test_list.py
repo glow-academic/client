@@ -378,4 +378,3 @@ async def test_list_agents_can_duplicate(
     # All agents should have can_duplicate = true
     for agent in data["agents"]:
         assert agent["can_duplicate"] is True
-

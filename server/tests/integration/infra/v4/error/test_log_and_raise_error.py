@@ -79,4 +79,3 @@ class TestLogAndRaiseError:
             )
 
         assert exc_info.value.status_code == 500
-

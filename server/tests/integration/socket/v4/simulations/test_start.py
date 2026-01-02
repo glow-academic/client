@@ -23,6 +23,7 @@ async def test_start_simulation_success(
 
     # Get a simulation_id
     from tests.integration.socket.v4.helpers import get_simulation_by_active
+
     simulation_id = await get_simulation_by_active(db)
     if not simulation_id:
         pytest.skip("No active simulations found in test database")
@@ -82,6 +83,7 @@ async def test_start_simulation_missing_profile(
     """Test start_simulation with missing profile (no socket ownership)."""
     # Get a simulation_id
     from tests.integration.socket.v4.helpers import get_simulation_by_active
+
     simulation_id = await get_simulation_by_active(db)
     if not simulation_id:
         pytest.skip("No active simulations found in test database")
@@ -97,4 +99,3 @@ async def test_start_simulation_missing_profile(
     # Verify error was emitted
     error_events = mock_sio.get_events("simulations_start_error")
     assert len(error_events) >= 1
-

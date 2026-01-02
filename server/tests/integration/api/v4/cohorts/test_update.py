@@ -80,4 +80,3 @@ async def test_update_cohort(
     assert typed_cohort.title == "Updated Title"
     assert typed_cohort.description == "Updated Description"
     assert typed_cohort.active is False
-

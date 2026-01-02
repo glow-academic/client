@@ -19,9 +19,7 @@ from app.sql.types import (
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = (
-    "app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql"
-)
+SQL_PATH = "app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql"
 
 internal_sio = get_internal_sio()
 
@@ -32,7 +30,7 @@ async def _classify_regenerate_impl(
     profile_id: uuid.UUID,
 ) -> None:
     """Handle classification regeneration requests via WebSocket.
-    
+
     Note: Classification regeneration creates a new run and links it to the group,
     but the actual regeneration logic (file extraction, parameter items, tool creation, etc.)
     may need to be handled separately based on classification-specific requirements.
@@ -49,12 +47,14 @@ async def _classify_regenerate_impl(
         async with get_db_connection() as conn:
             # Get all context data AND create run in single atomic transaction
             try:
-                params = GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams(
-                    upload_id=upload_id,
-                    profile_id=profile_id,
-                    department_id=department_id,
-                    group_id=group_id_param,  # REQUIRED for regeneration
-                    user_instructions=user_instructions,
+                params = (
+                    GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams(
+                        upload_id=upload_id,
+                        profile_id=profile_id,
+                        department_id=department_id,
+                        group_id=group_id_param,  # REQUIRED for regeneration
+                        user_instructions=user_instructions,
+                    )
                 )
                 result = cast(
                     GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow,
@@ -184,4 +184,3 @@ register_client_endpoint(
     GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest,
     "Regenerate upload classification using AI",
 )
-

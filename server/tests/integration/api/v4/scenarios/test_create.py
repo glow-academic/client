@@ -109,4 +109,3 @@ async def test_create_scenario_with_departments(
     )
     assert dept_link is not None
     assert dept_link["active"] is True
-

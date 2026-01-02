@@ -4,14 +4,18 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateTestParameterItemSqlParams,
-                             CreateTestParameterItemSqlRow,
-                             CreateTestParameterSqlParams,
-                             CreateTestParameterSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow,
-                             GetParameterByIdSqlParams, GetParameterByIdSqlRow,
-                             GetParameterItemsSqlParams,
-                             GetParameterItemsSqlRow)
+from tests.sql.types import (
+    CreateTestParameterItemSqlParams,
+    CreateTestParameterItemSqlRow,
+    CreateTestParameterSqlParams,
+    CreateTestParameterSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+    GetParameterByIdSqlParams,
+    GetParameterByIdSqlRow,
+    GetParameterItemsSqlParams,
+    GetParameterItemsSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -46,7 +50,9 @@ async def test_update_parameter(
             parameter_simulation_parameter=False,
         ),
     )
-    typed_parameter = CreateTestParameterSqlRow.model_validate(parameter_result.model_dump())
+    typed_parameter = CreateTestParameterSqlRow.model_validate(
+        parameter_result.model_dump()
+    )
     assert typed_parameter.parameter_id is not None
     parameter_id = typed_parameter.parameter_id
 
@@ -106,7 +112,9 @@ async def test_update_parameter(
         sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=parameter_id),
     )
-    typed_parameter = GetParameterByIdSqlRow.model_validate(parameter_result.model_dump())
+    typed_parameter = GetParameterByIdSqlRow.model_validate(
+        parameter_result.model_dump()
+    )
     assert typed_parameter.name == "Updated Parameter"
     assert typed_parameter.description == "Updated Description"
     assert typed_parameter.numerical is True
@@ -160,4 +168,3 @@ async def test_update_parameter_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

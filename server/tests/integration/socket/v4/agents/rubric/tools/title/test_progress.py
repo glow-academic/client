@@ -24,4 +24,3 @@ async def test_rubric_tool_title_progress_success(
 
     # Assert - verify handler completes
     assert True  # Handler should complete without error
-

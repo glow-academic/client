@@ -4,7 +4,9 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.v4.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v4.agents.image.tools.title.progress import image_tool_title_progress_internal
+from app.socket.v4.agents.image.tools.title.progress import (
+    image_tool_title_progress_internal,
+)
 
 pytestmark = pytest.mark.asyncio
 

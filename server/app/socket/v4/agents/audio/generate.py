@@ -8,12 +8,13 @@ from typing import Any, cast
 from agents import Runner, trace
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import UPLOAD_FOLDER, get_internal_sio, sio
-from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
-                           GetAudioRunContextAndCreateRunSqlRow)
+from app.sql.types import (
+    GetAudioRunContextAndCreateRunSqlParams,
+    GetAudioRunContextAndCreateRunSqlRow,
+)
 from fastapi import APIRouter
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
@@ -224,9 +225,7 @@ async def _audio_generate_impl(sid: str, data: GenerateAudioPayload) -> None:
 
             # Prepare input for chat completions
             # For gpt-audio, we can pass audio files as input
-            messages: list[dict[str, Any]] = [
-                {"role": "user", "content": data.prompt}
-            ]
+            messages: list[dict[str, Any]] = [{"role": "user", "content": data.prompt}]
 
             # If upload_id is provided, add audio file to input
             audio_file_path = None
@@ -248,7 +247,9 @@ async def _audio_generate_impl(sid: str, data: GenerateAudioPayload) -> None:
             audio_agent = GenericAgent(
                 agent_name=result.agent_name or "Audio Agent",
                 system_prompt=result.system_prompt or "",
-                temperature=float(result.temperature) if result.temperature is not None else 0.0,
+                temperature=float(result.temperature)
+                if result.temperature is not None
+                else 0.0,
                 model_name=model_name,
                 provider=result.provider_name or "openai",
                 base_url=result.base_url,
@@ -298,17 +299,23 @@ async def _audio_generate_impl(sid: str, data: GenerateAudioPayload) -> None:
             # TODO: When OpenAI API supports audio output in chat completions,
             # extract audio from response and save to file
             # For now, we'll create a placeholder upload record
-            audio_filename = f"audio_{uuid.uuid4()}.txt"  # Placeholder - should be .mp3 or .wav
+            audio_filename = (
+                f"audio_{uuid.uuid4()}.txt"  # Placeholder - should be .mp3 or .wav
+            )
             audio_relative_path = f"audio/{audio_filename}"
             AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
             audio_path = AUDIO_FOLDER / audio_filename
 
             # Save text output for now (replace with audio when API supports it)
-            await asyncio.to_thread(audio_path.write_text, assistant_output, encoding="utf-8")
+            await asyncio.to_thread(
+                audio_path.write_text, assistant_output, encoding="utf-8"
+            )
 
             async with conn.transaction():
                 # Create upload record
-                mime_type = "text/plain"  # Placeholder - should be audio/mpeg or audio/wav
+                mime_type = (
+                    "text/plain"  # Placeholder - should be audio/mpeg or audio/wav
+                )
                 file_size = len(assistant_output.encode("utf-8"))
                 sql_query = load_sql("app/sql/v4/uploads/insert_upload.sql")
                 output_upload_id_str = await conn.fetchval(
@@ -357,7 +364,9 @@ async def _audio_generate_impl(sid: str, data: GenerateAudioPayload) -> None:
             )
 
     except Exception as e:
-        upload_id_str = str(data.uploadId) if hasattr(data, "uploadId") and data.uploadId else None
+        upload_id_str = (
+            str(data.uploadId) if hasattr(data, "uploadId") and data.uploadId else None
+        )
         await audio_generation_error(
             AudioGenerationErrorPayload(
                 success=False, message=str(e), upload_id=upload_id_str

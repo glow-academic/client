@@ -203,13 +203,32 @@ WITH params AS (
 ),
 draft_payload_data AS (
     SELECT 
-        d.payload
+        d.payload,
+        CASE 
+            WHEN d.payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(d.payload->'scenarioIds') = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text(d.payload->'scenarioIds'))::uuid[]
+            WHEN d.payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(d.payload->'scenario_ids') = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text(d.payload->'scenario_ids'))::uuid[]
+            ELSE ARRAY[]::uuid[]
+        END as draft_scenario_ids
     FROM params x
     JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
     AND d.resource_type = 'simulations'::draft_resource_type
     LIMIT 1
+),
+scenario_filter_ids AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT scenario_show_selected FROM params LIMIT 1) = true 
+                AND (SELECT draft_scenario_ids FROM draft_payload_data LIMIT 1) IS NOT NULL
+                AND array_length((SELECT draft_scenario_ids FROM draft_payload_data LIMIT 1), 1) > 0
+            THEN (SELECT draft_scenario_ids FROM draft_payload_data LIMIT 1)
+            WHEN (SELECT array_length(filter_scenario_ids, 1) FROM params LIMIT 1) > 0
+            THEN (SELECT filter_scenario_ids FROM params LIMIT 1)
+            ELSE ARRAY[]::uuid[]
+        END as ids
 ),
 resolve_profile_id AS (
     SELECT 
@@ -675,12 +694,12 @@ scenarios_full_data AS (
             OR LOWER(vsl.name) LIKE '%' || LOWER((SELECT scenario_search FROM params LIMIT 1)) || '%'
             OR LOWER(COALESCE(vsl.description, '')) LIKE '%' || LOWER((SELECT scenario_search FROM params LIMIT 1)) || '%'
         )
-        -- Show selected filter
+        -- Show selected filter (use scenario_filter_ids which comes from draft payload or filter_scenario_ids param)
         AND (
             (SELECT scenario_show_selected FROM params LIMIT 1) = false
-            OR (SELECT array_length(filter_scenario_ids, 1) FROM params LIMIT 1) IS NULL
-            OR (SELECT array_length(filter_scenario_ids, 1) FROM params LIMIT 1) = 0
-            OR vsl.id = ANY((SELECT filter_scenario_ids FROM params LIMIT 1)::uuid[])
+            OR (SELECT array_length(ids, 1) FROM scenario_filter_ids LIMIT 1) IS NULL
+            OR (SELECT array_length(ids, 1) FROM scenario_filter_ids LIMIT 1) = 0
+            OR vsl.id = ANY((SELECT ids FROM scenario_filter_ids LIMIT 1)::uuid[])
         )
 ),
 department_scenario_ids AS (
@@ -766,6 +785,15 @@ selected_agents_from_simulation AS (
     JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
     JOIN agents a ON a.id = rgav.audio_agent_id AND a.role IN ('audio'::agent_role)
     WHERE a.active = true
+    UNION
+    -- Get rubric agents (member role) from rubrics.rubric_agent_id
+    SELECT DISTINCT a.id, a.name, a.description, a.role
+    FROM simulation_base sb
+    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
+    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    JOIN rubrics r ON r.id = rga.rubric_id
+    JOIN agents a ON a.id = r.rubric_agent_id AND a.role = 'member'::agent_role
+    WHERE a.active = true AND r.rubric_agent_id IS NOT NULL
 ),
 agents_data AS (
     SELECT 
@@ -779,7 +807,7 @@ agents_data AS (
         FROM agents a
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND a.role IN ('hint'::agent_role, 'grade'::agent_role, 'audio'::agent_role, 'simulation'::agent_role, 'voice'::agent_role)
+        AND a.role IN ('hint'::agent_role, 'grade'::agent_role, 'audio'::agent_role, 'simulation'::agent_role, 'voice'::agent_role, 'member'::agent_role)
         GROUP BY a.id, a.name, a.description, a.role
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0

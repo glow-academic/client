@@ -140,4 +140,3 @@ async def test_create_cohort_with_links(
     assert typed_cohort.cohort_id is not None
     assert typed_cohort.title == "Test Cohort"
     assert typed_cohort.description == "Test Description"
-

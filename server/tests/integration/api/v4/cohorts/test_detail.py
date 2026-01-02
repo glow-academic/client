@@ -65,4 +65,3 @@ async def test_get_cohort_detail_not_found(
     )
 
     assert response.status_code == 404
-

@@ -85,7 +85,9 @@ async def _grading_tool_message_improvement_impl(
             }
 
             if data.message_number not in number_to_id_map:
-                error_msg = f"Message number {data.message_number} not found in message_id_map"
+                error_msg = (
+                    f"Message number {data.message_number} not found in message_id_map"
+                )
                 await emit_to_client(
                     "grading_tools_message_improvement_error",
                     MessageImprovementToolErrorPayload(
@@ -116,7 +118,9 @@ async def _grading_tool_message_improvement_impl(
                 return
 
             # Create message feedback record
-            SQL_CREATE_FEEDBACK_PATH = "app/sql/v4/grading_create_message_feedback_complete.sql"
+            SQL_CREATE_FEEDBACK_PATH = (
+                "app/sql/v4/grading_create_message_feedback_complete.sql"
+            )
             feedback_params = CreateMessageFeedbackSqlParams(
                 grade_id=grade_id_uuid,
                 message_id=message_id_uuid,
@@ -126,7 +130,9 @@ async def _grading_tool_message_improvement_impl(
             )
             feedback_result = cast(
                 CreateMessageFeedbackSqlRow,
-                await execute_sql_typed(conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params),
+                await execute_sql_typed(
+                    conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params
+                ),
             )
 
             message_feedback_id = uuid.UUID(feedback_result.id)
@@ -145,12 +151,16 @@ async def _grading_tool_message_improvement_impl(
                     for item in data.strike
                 ]
 
-                SQL_CREATE_REPLACES_PATH = "app/sql/v4/grading/create_message_feedback_replace_complete.sql"
+                SQL_CREATE_REPLACES_PATH = (
+                    "app/sql/v4/grading/create_message_feedback_replace_complete.sql"
+                )
                 replace_params = CreateMessageFeedbackReplaceSqlParams(
                     message_feedback_id=message_feedback_id,
                     replaces=replace_objects,
                 )
-                await execute_sql_typed(conn, SQL_CREATE_REPLACES_PATH, params=replace_params)
+                await execute_sql_typed(
+                    conn, SQL_CREATE_REPLACES_PATH, params=replace_params
+                )
 
             await emit_to_client(
                 "grading_tools_message_improvement_complete",

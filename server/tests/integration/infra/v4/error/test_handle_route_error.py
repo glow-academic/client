@@ -73,4 +73,3 @@ class TestHandleRouteError:
                 operation=operation,
                 request=request,
             )
-

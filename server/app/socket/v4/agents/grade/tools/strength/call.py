@@ -78,7 +78,9 @@ async def _grading_tool_message_strength_impl(
             }
 
             if data.message_number not in number_to_id_map:
-                error_msg = f"Message number {data.message_number} not found in message_id_map"
+                error_msg = (
+                    f"Message number {data.message_number} not found in message_id_map"
+                )
                 await emit_to_client(
                     "grading_tools_message_strength_error",
                     MessageStrengthToolErrorPayload(
@@ -109,7 +111,9 @@ async def _grading_tool_message_strength_impl(
                 return
 
             # Create message feedback record
-            SQL_CREATE_FEEDBACK_PATH = "app/sql/v4/grading/create_message_feedback_complete.sql"
+            SQL_CREATE_FEEDBACK_PATH = (
+                "app/sql/v4/grading/create_message_feedback_complete.sql"
+            )
             feedback_params = CreateMessageFeedbackSqlParams(
                 grade_id=grade_id_uuid,
                 message_id=message_id_uuid,
@@ -119,7 +123,9 @@ async def _grading_tool_message_strength_impl(
             )
             feedback_result = cast(
                 CreateMessageFeedbackSqlRow,
-                await execute_sql_typed(conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params),
+                await execute_sql_typed(
+                    conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params
+                ),
             )
 
             message_feedback_id = uuid.UUID(feedback_result.id)
@@ -136,12 +142,16 @@ async def _grading_tool_message_strength_impl(
                     for section in data.highlight
                 ]
 
-                SQL_CREATE_HIGHLIGHTS_PATH = "app/sql/v4/grading/create_message_feedback_highlight_complete.sql"
+                SQL_CREATE_HIGHLIGHTS_PATH = (
+                    "app/sql/v4/grading/create_message_feedback_highlight_complete.sql"
+                )
                 highlight_params = CreateMessageFeedbackHighlightSqlParams(
                     message_feedback_id=message_feedback_id,
                     highlights=highlight_objects,
                 )
-                await execute_sql_typed(conn, SQL_CREATE_HIGHLIGHTS_PATH, params=highlight_params)
+                await execute_sql_typed(
+                    conn, SQL_CREATE_HIGHLIGHTS_PATH, params=highlight_params
+                )
 
             await emit_to_client(
                 "grading_tools_message_strength_complete",

@@ -4,12 +4,16 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateDocumentDepartmentLinkSqlParams,
-                             CreateDocumentDepartmentLinkSqlRow,
-                             CreateTestDocumentSqlParams,
-                             CreateTestDocumentSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow,
-                             GetDocumentByIdSqlParams, GetDocumentByIdSqlRow)
+from tests.sql.types import (
+    CreateDocumentDepartmentLinkSqlParams,
+    CreateDocumentDepartmentLinkSqlRow,
+    CreateTestDocumentSqlParams,
+    CreateTestDocumentSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+    GetDocumentByIdSqlParams,
+    GetDocumentByIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -41,7 +45,9 @@ async def test_get_document_detail(
             document_active=True,
         ),
     )
-    typed_document = CreateTestDocumentSqlRow.model_validate(document_result.model_dump())
+    typed_document = CreateTestDocumentSqlRow.model_validate(
+        document_result.model_dump()
+    )
     assert typed_document.document_id is not None
     document_id = typed_document.document_id
 
@@ -99,4 +105,3 @@ async def test_get_document_detail_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

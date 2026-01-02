@@ -61,4 +61,3 @@ class TestProfileExists:
 
         # Assert
         assert result is False
-

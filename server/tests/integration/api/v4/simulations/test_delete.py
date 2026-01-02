@@ -44,6 +44,7 @@ async def test_delete_simulation(
     assert "deleted successfully" in data["message"].lower()
 
     # Verify simulation was deleted - using inline SQL temporarily
-    simulation = await db.fetchrow("SELECT * FROM simulations WHERE id = $1", simulation_id)
+    simulation = await db.fetchrow(
+        "SELECT * FROM simulations WHERE id = $1", simulation_id
+    )
     assert simulation is None
-

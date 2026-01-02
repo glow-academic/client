@@ -143,13 +143,17 @@ async def _member_progress_impl(
             group_id = result.group_id
 
             # Get created_at for message_sent event
-            SQL_PATH_CREATED_AT = "app/sql/v4/messages/get_message_created_at_complete.sql"
+            SQL_PATH_CREATED_AT = (
+                "app/sql/v4/messages/get_message_created_at_complete.sql"
+            )
             created_at_params = GetMessageCreatedAtSqlParams(
                 message_id=uuid.UUID(message_id)
             )
             created_at_result = cast(
                 GetMessageCreatedAtSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CREATED_AT, params=created_at_params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_CREATED_AT, params=created_at_params
+                ),
             )
             created_at = created_at_result.created_at if created_at_result else None
 

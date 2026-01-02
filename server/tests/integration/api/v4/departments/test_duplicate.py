@@ -56,7 +56,9 @@ async def test_duplicate_department(
         sql_path="tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql",
         params=GetDepartmentByIdSqlParams(department_id=UUID(data["departmentId"])),
     )
-    typed_duplicate = GetDepartmentByIdSqlRow.model_validate(duplicate_result.model_dump())
+    typed_duplicate = GetDepartmentByIdSqlRow.model_validate(
+        duplicate_result.model_dump()
+    )
     assert typed_duplicate.department_id is not None
     # Duplicate adds " Copy" to the title
     assert typed_duplicate.title == "Original Department Copy"
@@ -81,4 +83,3 @@ async def test_duplicate_department_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

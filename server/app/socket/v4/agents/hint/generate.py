@@ -231,7 +231,9 @@ async def _generate_hints_impl(
 
             # Get all messages for the chat using function call (RETURNS TABLE returns multiple rows)
             # execute_sql_typed uses fetchrow which only gets one row, so we use fetch directly for multi-row results
-            function_call_sql = "SELECT * FROM socket_get_simulation_messages_v4($1::uuid)"
+            function_call_sql = (
+                "SELECT * FROM socket_get_simulation_messages_v4($1::uuid)"
+            )
             message_rows = await conn.fetch(function_call_sql, chat_id)
             all_messages = [dict(row) for row in message_rows]
 
@@ -521,17 +523,17 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
     chat_id = uuid.UUID(data["chat_id"])
     message_id = uuid.UUID(data["message_id"])
     department_id = uuid.UUID(data["department_id"])
-    
+
     # Create request object for handler
     request = GenerateHintsApiRequest(
         chat_id=str(chat_id),
         message_id=str(message_id),
         department_id=str(department_id),
     )
-    
+
     # Get profile_id from sid lookup
     from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-    
+
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         await emit_to_internal(
@@ -543,7 +545,7 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
             sid=sid,
         )
         return
-    
+
     profile_id = uuid.UUID(profile_id_str)
     await _generate_hints_impl(sid, request, profile_id)
 

@@ -4,10 +4,14 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateTestRubricSqlParams, CreateTestRubricSqlRow,
-                             CreateTestSimulationWithRubricSqlParams,
-                             CreateTestSimulationWithRubricSqlRow,
-                             GetRubricByIdSqlParams, GetRubricByIdSqlRow)
+from tests.sql.types import (
+    CreateTestRubricSqlParams,
+    CreateTestRubricSqlRow,
+    CreateTestSimulationWithRubricSqlParams,
+    CreateTestSimulationWithRubricSqlRow,
+    GetRubricByIdSqlParams,
+    GetRubricByIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -128,4 +132,3 @@ async def test_delete_rubric_not_found(
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
-

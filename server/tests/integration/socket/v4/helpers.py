@@ -96,9 +96,7 @@ async def create_test_chat(
         TestCreateTestChatV4SqlRow,
     )
 
-    params = TestCreateTestChatV4SqlParams(
-        scenario_id=scenario_id, trace_id=trace_id
-    )
+    params = TestCreateTestChatV4SqlParams(scenario_id=scenario_id, trace_id=trace_id)
     result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql",
@@ -173,9 +171,7 @@ async def get_eval_by_active(db: asyncpg.Connection) -> str | None:
     return str(result.id) if result.id else None
 
 
-async def get_chat_by_id(
-    db: asyncpg.Connection, chat_id: str
-) -> dict[str, any] | None:
+async def get_chat_by_id(db: asyncpg.Connection, chat_id: str) -> dict[str, any] | None:
     """Get chat by ID using SQL helper."""
     from app.sql.types import (
         TestGetChatByIdV4SqlParams,
@@ -187,16 +183,18 @@ async def get_chat_by_id(
         sql_path="tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql",
         params=TestGetChatByIdV4SqlParams(chat_id=chat_id),
     )
-    return {
-        "id": str(result.id),
-        "completed": result.completed,
-        "created_at": result.created_at,
-    } if result.id else None
+    return (
+        {
+            "id": str(result.id),
+            "completed": result.completed,
+            "created_at": result.created_at,
+        }
+        if result.id
+        else None
+    )
 
 
-async def create_test_attempt(
-    db: asyncpg.Connection, simulation_id: str
-) -> str:
+async def create_test_attempt(db: asyncpg.Connection, simulation_id: str) -> str:
     """Create a test attempt using SQL helper."""
     from app.sql.types import (
         TestCreateTestAttemptV4SqlParams,
@@ -212,9 +210,7 @@ async def create_test_attempt(
     return str(result.attempt_id)
 
 
-async def create_test_benchmark_attempt(
-    db: asyncpg.Connection, eval_id: str
-) -> str:
+async def create_test_benchmark_attempt(db: asyncpg.Connection, eval_id: str) -> str:
     """Create a test benchmark attempt using SQL helper."""
     from app.sql.types import (
         TestCreateTestBenchmarkAttemptV4SqlParams,
@@ -246,4 +242,3 @@ async def create_test_test(
         params=params,
     )
     return str(result.test_id)
-

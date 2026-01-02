@@ -85,4 +85,3 @@ async def test_create_simulation(
         scenario_id,
     )
     assert scenario_link is not None
-

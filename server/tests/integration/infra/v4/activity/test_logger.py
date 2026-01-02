@@ -108,4 +108,3 @@ class TestActivityLogger:
         # Assert
         # Function should execute without error
         # Error flag should be set (tested via database check if needed)
-

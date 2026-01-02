@@ -4,7 +4,9 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.v4.conftest import MockInternalBus, MockSocketIO
 
-from app.socket.v4.agents.rubric.tools.rubric.error import standard_description_error_internal
+from app.socket.v4.agents.rubric.tools.rubric.error import (
+    standard_description_error_internal,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -24,4 +26,3 @@ async def test_standard_description_error_success(
 
     # Assert - verify handler completes
     assert True  # Handler should complete without error
-

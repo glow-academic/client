@@ -173,7 +173,9 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
             # Extract department_id from chat/scenario for grading
             # SQL query includes fallback: scenario -> profile -> any active department
-            SQL_PATH_CONTEXT = "app/sql/v4/simulations/get_simulation_run_context_complete.sql"
+            SQL_PATH_CONTEXT = (
+                "app/sql/v4/simulations/get_simulation_run_context_complete.sql"
+            )
             context_params = GetSimulationRunContextSqlParams(chat_id=chat_id_uuid)
             run_context_result = cast(
                 GetSimulationRunContextSqlRow,

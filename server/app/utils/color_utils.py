@@ -163,4 +163,3 @@ def filter_icons(
 
     search_lower = search_term.lower().strip()
     return [icon for icon in icons if search_lower in icon.lower()]
-

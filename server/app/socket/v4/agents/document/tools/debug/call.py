@@ -35,6 +35,7 @@ except ImportError:
         success: bool
         message: str
 
+
 internal_sio = get_internal_sio()
 
 server_router = APIRouter()

@@ -19,9 +19,7 @@ from app.sql.types import (
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = (
-    "app/sql/v4/grading/get_grading_regeneration_run_context_and_create_run_complete.sql"
-)
+SQL_PATH = "app/sql/v4/grading/get_grading_regeneration_run_context_and_create_run_complete.sql"
 
 internal_sio = get_internal_sio()
 
@@ -32,7 +30,7 @@ async def _grade_regenerate_impl(
     profile_id: uuid.UUID,
 ) -> None:
     """Handle grading regeneration requests via WebSocket.
-    
+
     Note: Grading regeneration creates a new run and links it to the group,
     but the actual regeneration logic (standard grading, tool calls, etc.)
     may need to be handled separately based on grading-specific requirements.
@@ -197,4 +195,3 @@ register_client_endpoint(
     GetGradingRegenerationRunContextAndCreateRunApiRequest,
     "Regenerate grading using AI",
 )
-

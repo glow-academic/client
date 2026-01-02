@@ -10,7 +10,9 @@ from app.sql.types import (
 )
 from utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/infrastructure/infrastructure_activity_insert_websocket_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/infrastructure/infrastructure_activity_insert_websocket_complete.sql"
+)
 
 
 async def insert_activity_websocket(

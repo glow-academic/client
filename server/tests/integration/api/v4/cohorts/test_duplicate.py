@@ -79,4 +79,3 @@ async def test_duplicate_cohort(
     assert typed_duplicate.cohort_id is not None
     assert typed_duplicate.title == "Original Cohort Copy"  # SQL adds " Copy"
     assert typed_duplicate.description == "Original Description"
-

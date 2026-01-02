@@ -69,6 +69,8 @@ async def scenario_questions_tool_complete(
     await sio.emit(
         "scenarios_tools_questions_complete", payload.model_dump(), room=room
     )
+
+
 async def scenario_questions_tool_error(
     payload: ScenarioQuestionsToolErrorPayload, room: str
 ) -> None:

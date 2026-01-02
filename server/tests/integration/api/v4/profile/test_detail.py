@@ -4,11 +4,14 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateProfileEmailSqlParams,
-                             CreateProfileEmailSqlRow,
-                             CreateTestProfileSqlParams,
-                             CreateTestProfileSqlRow,
-                             GetProfileByIdSqlParams, GetProfileByIdSqlRow)
+from tests.sql.types import (
+    CreateProfileEmailSqlParams,
+    CreateProfileEmailSqlRow,
+    CreateTestProfileSqlParams,
+    CreateTestProfileSqlRow,
+    GetProfileByIdSqlParams,
+    GetProfileByIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -127,4 +130,3 @@ async def test_get_profile_detail_invalid_string(
 
     # Should return 400 or 404 for invalid profile ID string
     assert response.status_code in [400, 404]
-

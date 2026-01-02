@@ -89,4 +89,3 @@ class TestBuildTemplateModel:
         # Should raise ValidationError for extra fields
         with pytest.raises(ValidationError):
             model(field1="test", extra_field="should_fail")
-

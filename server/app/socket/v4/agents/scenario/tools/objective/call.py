@@ -47,6 +47,8 @@ async def objectives_tool_complete(
     await sio.emit(
         "scenarios_tools_objectives_complete", payload.model_dump(), room=room
     )
+
+
 async def objectives_tool_error(payload: ObjectivesToolErrorPayload, room: str) -> None:
     await sio.emit("scenarios_tools_objectives_error", payload.model_dump(), room=room)
 
@@ -104,7 +106,6 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
                     room=sid,
                 )
                 return
-
 
             await objectives_tool_complete(
                 ObjectivesToolCompletePayload(

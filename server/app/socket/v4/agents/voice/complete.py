@@ -17,6 +17,7 @@ from app.infra.v4.websocket.handler_wrapper import (
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio, sio
+
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -155,9 +156,7 @@ async def _simulation_voice_complete_impl(
     except Exception as e:
         await emit_to_client(
             "simulations_voice_complete",
-            SimulationVoiceCompleteResponsePayload(
-                success=False, message=str(e)
-            ),
+            SimulationVoiceCompleteResponsePayload(success=False, message=str(e)),
             room=sid,
         )
 

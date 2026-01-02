@@ -159,4 +159,3 @@ class TestInsertActivity:
         assert typed_activity.id is not None
         # Profile ID should be NULL since profile doesn't exist
         assert typed_activity.profile_id is None
-

@@ -4,14 +4,18 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateRubricDepartmentLinkSqlParams,
-                             CreateRubricDepartmentLinkSqlRow,
-                             CreateTestRubricSqlParams, CreateTestRubricSqlRow,
-                             CreateTestStandardGroupSqlParams,
-                             CreateTestStandardGroupSqlRow,
-                             CreateTestStandardSqlParams, CreateTestStandardSqlRow,
-                             GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow)
+from tests.sql.types import (
+    CreateRubricDepartmentLinkSqlParams,
+    CreateRubricDepartmentLinkSqlRow,
+    CreateTestRubricSqlParams,
+    CreateTestRubricSqlRow,
+    CreateTestStandardGroupSqlParams,
+    CreateTestStandardGroupSqlRow,
+    CreateTestStandardSqlParams,
+    CreateTestStandardSqlRow,
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -183,7 +187,9 @@ async def test_get_rubric_detail_with_standard_groups(
             group_pass_points=35,
         ),
     )
-    typed_group = CreateTestStandardGroupSqlRow.model_validate(group_result.model_dump())
+    typed_group = CreateTestStandardGroupSqlRow.model_validate(
+        group_result.model_dump()
+    )
     assert typed_group.standard_group_id is not None
     group_id = typed_group.standard_group_id
 
@@ -217,4 +223,3 @@ async def test_get_rubric_detail_with_standard_groups(
         assert "name" in group_item
         assert len(group_item["name"]) > 0
         assert "description" in group_item
-

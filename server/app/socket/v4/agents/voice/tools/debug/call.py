@@ -7,6 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -39,6 +40,8 @@ async def debug_info_tool_complete(
     payload: DebugInfoToolCompletePayload, room: str
 ) -> None:
     await sio.emit("debug_info_complete", payload.model_dump(), room=room)
+
+
 async def debug_info_tool_error(payload: DebugInfoToolErrorPayload, room: str) -> None:
     await sio.emit("debug_info_error", payload.model_dump(), room=room)
 

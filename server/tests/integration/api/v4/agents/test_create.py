@@ -7,14 +7,18 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateTestPromptSqlParams, CreateTestPromptSqlRow,
-                             GetAgentDepartmentLinkSqlParams,
-                             GetAgentDepartmentLinkSqlRow,
-                             GetAgentPromptLinkSqlParams,
-                             GetAgentPromptLinkSqlRow,
-                             GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow, GetFirstModelSqlParams,
-                             GetFirstModelSqlRow)
+from tests.sql.types import (
+    CreateTestPromptSqlParams,
+    CreateTestPromptSqlRow,
+    GetAgentDepartmentLinkSqlParams,
+    GetAgentDepartmentLinkSqlRow,
+    GetAgentPromptLinkSqlParams,
+    GetAgentPromptLinkSqlRow,
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+    GetFirstModelSqlParams,
+    GetFirstModelSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -91,7 +95,9 @@ async def test_create_agent(
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql",
         params=GetAgentPromptLinkSqlParams(agent_id=UUID(data["agentId"])),
     )
-    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(prompt_link_result.model_dump())
+    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(
+        prompt_link_result.model_dump()
+    )
     assert typed_prompt_link.prompt_id is not None
 
     # Verify department link was created using SQL file
@@ -161,7 +167,9 @@ async def test_create_agent_with_existing_prompt(
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql",
         params=GetAgentPromptLinkSqlParams(agent_id=UUID(data["agentId"])),
     )
-    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(prompt_link_result.model_dump())
+    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(
+        prompt_link_result.model_dump()
+    )
     assert typed_prompt_link.prompt_id is not None
     assert typed_prompt_link.prompt_id == prompt_id
 
@@ -204,8 +212,10 @@ async def test_create_agent_without_departments(
     assert data["success"] is True
 
     # Verify no department links were created using SQL file
-    from tests.sql.types import (GetAgentDepartmentLinksSqlParams,
-                                 GetAgentDepartmentLinksSqlRow)
+    from tests.sql.types import (
+        GetAgentDepartmentLinksSqlParams,
+        GetAgentDepartmentLinksSqlRow,
+    )
 
     dept_links_result = await execute_sql_typed(
         conn=db,
@@ -247,4 +257,3 @@ async def test_create_agent_invalid_model(
 
     # Should fail due to foreign key constraint or validation
     assert response.status_code in [400, 422, 500]
-

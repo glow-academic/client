@@ -472,25 +472,24 @@ async def _randomize_missing_scenario_values(
     dept_uuids: list[uuid.UUID] = (
         [] if not selected_department_id else [selected_department_id]
     )
-    
+
     # Use typed SQL function instead of raw SQL
     try:
         from app.sql.types import (
             GetRandomizationDataSqlParams,
             GetRandomizationDataSqlRow,
         )
-        
+
         sql_params = GetRandomizationDataSqlParams(
-            department_ids=dept_uuids,
-            scenario_id=scenario_id_uuid
+            department_ids=dept_uuids, scenario_id=scenario_id_uuid
         )
         result = await execute_sql_typed(
             conn,
             "app/sql/v4/scenario/get_randomization_data_complete.sql",
-            params=sql_params
+            params=sql_params,
         )
         result_row = cast(GetRandomizationDataSqlRow, result)
-        
+
         # Extract arrays from composite types (now arrays of composite types, not JSONB)
         # Convert composite type arrays to dict lists for compatibility
         personas_data = [
@@ -527,7 +526,7 @@ async def _randomize_missing_scenario_values(
             }
             for dpi in result_row.document_parameter_items
         ]
-        
+
         # Get existing scenario links if scenario_id provided
         existing_scenario_persona_ids = result_row.persona_ids or []
         existing_scenario_document_ids = result_row.document_ids or []
@@ -538,7 +537,7 @@ async def _randomize_missing_scenario_values(
         result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
         if not result:
             raise ValueError("Failed to fetch randomization data")
-        
+
         # Parse JSONB aggregations (fallback)
         personas_data = parse_jsonb(result.get("personas", []))
         documents_data = parse_jsonb(result.get("documents", []))
@@ -547,11 +546,13 @@ async def _randomize_missing_scenario_values(
         document_parameter_items_data = parse_jsonb(
             result.get("document_parameter_items", [])
         )
-        
+
         # Get existing scenario links if scenario_id provided
         existing_scenario_persona_ids = result.get("persona_ids", []) or []
         existing_scenario_document_ids = result.get("document_ids", []) or []
-        existing_scenario_parameter_item_ids = result.get("parameter_item_ids", []) or []
+        existing_scenario_parameter_item_ids = (
+            result.get("parameter_item_ids", []) or []
+        )
 
     # Build lookup maps
     active_personas = []
@@ -1221,7 +1222,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # No JSON parsing needed - they're already Pydantic models
             documents = result.documents if result.documents else []
             parameter_items = result.parameter_items if result.parameter_items else []
-            document_templates = result.document_templates if result.document_templates else []
+            document_templates = (
+                result.document_templates if result.document_templates else []
+            )
 
             agent_role = result.agent_role or "scenario"
 
@@ -1574,7 +1577,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
                     if len(objectives) < 1 or len(objectives) > max_objectives:
                         # Validation failed - skip creation
-                        return f"Objectives count must be between 1 and {max_objectives}"
+                        return (
+                            f"Objectives count must be between 1 and {max_objectives}"
+                        )
 
                     # Emit to internal bus for objectives creation
                     await internal_sio.emit(
@@ -1888,6 +1893,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         # Fallback: create function with dict parameter (for backward compatibility)
                         # This is handled in the main create_document function above
                         pass
+
                         async def create_document_fallback(
                             template_args: dict[str, Any],
                         ) -> str:
@@ -2142,7 +2148,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # Add debug info tool
             scenario_tools.append(debug_info_tool)
 
-
             # Create tool use behavior to check when all required tools are called
             def tool_use_behavior(
                 tool_context: RunContextWrapper[Any],
@@ -2165,7 +2170,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 completed_tools = []
 
                 for idx, result in enumerate(tool_results):
-
                     # Try multiple ways to get tool name (FunctionToolResult structure may vary)
                     tool_name = None
 
@@ -2228,7 +2232,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
                 # Check if all required tools have been completed
                 all_completed = all(tool in completed_tools for tool in required_tools)
-
 
                 # If no tools detected but we have results, log what we got
                 if len(tool_results) > 0 and len(completed_tools) == 0:

@@ -95,4 +95,3 @@ async def test_update_department_not_found(
     )
     typed_dept = GetDepartmentByIdSqlRow.model_validate(dept_result.model_dump())
     assert typed_dept.department_id is None
-

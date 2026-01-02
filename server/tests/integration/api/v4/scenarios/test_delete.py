@@ -130,4 +130,3 @@ async def test_delete_scenario_not_found(
     assert response.status_code == 404
     data = response.json()
     assert "not found" in data["detail"].lower()
-

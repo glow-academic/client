@@ -15,4 +15,3 @@ class TestRunEvalSingleRun:
         # This function is complex and requires full eval setup
         # For now, we verify it exists and is callable
         assert callable(run_eval_single_run)
-

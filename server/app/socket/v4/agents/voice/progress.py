@@ -393,25 +393,39 @@ async def _simulation_voice_assistant_delta_impl(
                         VoiceProgressUpsertV3SqlRow,
                     )
 
-                    SQL_PATH = "app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql"
+                    SQL_PATH = (
+                        "app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql"
+                    )
                     params = VoiceProgressUpsertV3SqlParams(
                         chat_id=chat_id_uuid,
-                        run_id=uuid.UUID(tool_call_state["run_id"]) if tool_call_state.get("run_id") else None,
+                        run_id=uuid.UUID(tool_call_state["run_id"])
+                        if tool_call_state.get("run_id")
+                        else None,
                         call_id=call_id,
                         tool_name="speak",
                         arguments_raw=new_raw,
                         message_content=tool_call_state["message_so_far"],
                         persona_id=persona_id_uuid,
-                        parent_message_id=uuid.UUID(tool_call_state["parent_message_id"]) if tool_call_state.get("parent_message_id") else None,
+                        parent_message_id=uuid.UUID(
+                            tool_call_state["parent_message_id"]
+                        )
+                        if tool_call_state.get("parent_message_id")
+                        else None,
                         upload_id=None,
-                        message_id=uuid.UUID(tool_call_state["db_message_id"]) if tool_call_state.get("db_message_id") else None,
+                        message_id=uuid.UUID(tool_call_state["db_message_id"])
+                        if tool_call_state.get("db_message_id")
+                        else None,
                         is_complete=False,
                     )
                     result = cast(
                         VoiceProgressUpsertV3SqlRow,
                         await execute_sql_typed(conn, SQL_PATH, params=params),
                     )
-                    result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+                    result_row = (
+                        result.model_dump()
+                        if hasattr(result, "model_dump")
+                        else dict(result)
+                    )
                 except ImportError:
                     # Fallback to load_sql if types not generated yet
                     sql_upsert = load_sql(
@@ -591,7 +605,11 @@ async def _simulation_voice_assistant_done_impl(
                             VoiceProgressUpsertV3SqlRow,
                             await execute_sql_typed(conn, SQL_PATH, params=params),
                         )
-                        result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+                        result_row = (
+                            result.model_dump()
+                            if hasattr(result, "model_dump")
+                            else dict(result)
+                        )
                     except ImportError:
                         # Fallback to load_sql if types not generated yet
                         sql_upsert = load_sql(
@@ -698,25 +716,39 @@ async def _simulation_voice_assistant_done_impl(
                         VoiceProgressUpsertV3SqlRow,
                     )
 
-                    SQL_PATH = "app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql"
+                    SQL_PATH = (
+                        "app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql"
+                    )
                     params = VoiceProgressUpsertV3SqlParams(
                         chat_id=chat_id_uuid,
-                        run_id=uuid.UUID(tool_call_state["run_id"]) if tool_call_state.get("run_id") else None,
+                        run_id=uuid.UUID(tool_call_state["run_id"])
+                        if tool_call_state.get("run_id")
+                        else None,
                         call_id=call_id,
                         tool_name="speak",
                         arguments_raw=data.arguments,
                         message_content=final_content,
                         persona_id=persona_id_uuid,
-                        parent_message_id=uuid.UUID(tool_call_state["parent_message_id"]) if tool_call_state.get("parent_message_id") else None,
+                        parent_message_id=uuid.UUID(
+                            tool_call_state["parent_message_id"]
+                        )
+                        if tool_call_state.get("parent_message_id")
+                        else None,
                         upload_id=None,
-                        message_id=uuid.UUID(tool_call_state["db_message_id"]) if tool_call_state.get("db_message_id") else None,
+                        message_id=uuid.UUID(tool_call_state["db_message_id"])
+                        if tool_call_state.get("db_message_id")
+                        else None,
                         is_complete=True,
                     )
                     result = cast(
                         VoiceProgressUpsertV3SqlRow,
                         await execute_sql_typed(conn, SQL_PATH, params=params),
                     )
-                    result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+                    result_row = (
+                        result.model_dump()
+                        if hasattr(result, "model_dump")
+                        else dict(result)
+                    )
                 except ImportError:
                     # Fallback to load_sql if types not generated yet
                     sql_upsert = load_sql(
@@ -881,7 +913,9 @@ async def _simulation_voice_assistant_audio_link_impl(
                     VoiceProgressUpsertV3SqlRow,
                 )
 
-                SQL_PATH = "app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql"
+                SQL_PATH = (
+                    "app/sql/v4/simulation_voice/voice_progress_upsert_complete.sql"
+                )
                 params = VoiceProgressUpsertV3SqlParams(
                     chat_id=chat_id_uuid,
                     run_id=uuid.UUID(run_id) if run_id else None,
@@ -899,7 +933,11 @@ async def _simulation_voice_assistant_audio_link_impl(
                     VoiceProgressUpsertV3SqlRow,
                     await execute_sql_typed(conn, SQL_PATH, params=params),
                 )
-                result_row = result.model_dump() if hasattr(result, 'model_dump') else dict(result)
+                result_row = (
+                    result.model_dump()
+                    if hasattr(result, "model_dump")
+                    else dict(result)
+                )
             except ImportError:
                 # Fallback to load_sql if types not generated yet
                 sql_upsert = load_sql(
@@ -960,7 +998,6 @@ async def _simulation_voice_debug_info_impl(
     When debug_info tool is called, save it to the current model run.
     """
     try:
-
         chat_id = data.chat_id
         if not chat_id:
             await simulation_voice_debug_info_error(

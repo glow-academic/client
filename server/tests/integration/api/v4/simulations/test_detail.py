@@ -47,4 +47,3 @@ async def test_get_simulation_detail(
     assert "can_duplicate" in data
     assert "scenarios" in data
     assert isinstance(data["scenarios"], list)
-

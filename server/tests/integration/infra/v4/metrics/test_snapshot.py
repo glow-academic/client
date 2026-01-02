@@ -58,4 +58,3 @@ class TestLogMetricsSnapshot:
 
         # Assert
         # Function should execute without error
-

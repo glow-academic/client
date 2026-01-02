@@ -107,16 +107,22 @@ async def test_update_agent(
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql",
         params=GetAgentPromptLinkSqlParams(agent_id=agent_id),
     )
-    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(prompt_link_result.model_dump())
+    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(
+        prompt_link_result.model_dump()
+    )
     assert typed_prompt_link.prompt_id is not None
 
     # Verify department link was updated using SQL file
     dept_link_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
-        params=GetAgentDepartmentLinkSqlParams(agent_id=agent_id, department_id=dept_id),
+        params=GetAgentDepartmentLinkSqlParams(
+            agent_id=agent_id, department_id=dept_id
+        ),
     )
-    typed_dept_link = GetAgentDepartmentLinkSqlRow.model_validate(dept_link_result.model_dump())
+    typed_dept_link = GetAgentDepartmentLinkSqlRow.model_validate(
+        dept_link_result.model_dump()
+    )
     assert typed_dept_link.department_id is not None
 
 
@@ -188,7 +194,9 @@ async def test_update_agent_with_existing_prompt(
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql",
         params=GetAgentPromptLinkSqlParams(agent_id=agent_id),
     )
-    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(prompt_link_result.model_dump())
+    typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(
+        prompt_link_result.model_dump()
+    )
     assert typed_prompt_link.prompt_id is not None
     assert typed_prompt_link.prompt_id == prompt_id
 
@@ -243,7 +251,9 @@ async def test_update_agent_removes_department_links(
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
-        params=CreateAgentDepartmentLinkSqlParams(agent_id=agent_id, department_id=old_dept_id),
+        params=CreateAgentDepartmentLinkSqlParams(
+            agent_id=agent_id, department_id=old_dept_id
+        ),
     )
 
     # Get a different department using SQL file
@@ -287,9 +297,13 @@ async def test_update_agent_removes_department_links(
     old_link_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
-        params=GetAgentDepartmentLinkSqlParams(agent_id=agent_id, department_id=old_dept_id),
+        params=GetAgentDepartmentLinkSqlParams(
+            agent_id=agent_id, department_id=old_dept_id
+        ),
     )
-    typed_old_link = GetAgentDepartmentLinkSqlRow.model_validate(old_link_result.model_dump())
+    typed_old_link = GetAgentDepartmentLinkSqlRow.model_validate(
+        old_link_result.model_dump()
+    )
     # If link was removed, department_id should be None
     assert typed_old_link.department_id is None or typed_old_link.active is False
 
@@ -298,9 +312,13 @@ async def test_update_agent_removes_department_links(
         new_link_result = await execute_sql_typed(
             conn=db,
             sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
-            params=GetAgentDepartmentLinkSqlParams(agent_id=agent_id, department_id=new_dept_id),
+            params=GetAgentDepartmentLinkSqlParams(
+                agent_id=agent_id, department_id=new_dept_id
+            ),
         )
-        typed_new_link = GetAgentDepartmentLinkSqlRow.model_validate(new_link_result.model_dump())
+        typed_new_link = GetAgentDepartmentLinkSqlRow.model_validate(
+            new_link_result.model_dump()
+        )
         assert typed_new_link.department_id is not None
 
 
@@ -396,4 +414,3 @@ async def test_update_agent_empty_model_id(
     assert response.status_code == 400
     error_detail = response.json().get("detail", "")
     assert "model_id" in error_detail.lower() or "required" in error_detail.lower()
-

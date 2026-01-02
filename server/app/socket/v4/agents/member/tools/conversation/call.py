@@ -45,6 +45,8 @@ async def conversation_end_tool_complete(
     payload: ConversationEndToolCompletePayload, room: str
 ) -> None:
     await sio.emit("conversation_end_complete", payload.model_dump(), room=room)
+
+
 async def conversation_end_tool_error(
     payload: ConversationEndToolErrorPayload, room: str
 ) -> None:

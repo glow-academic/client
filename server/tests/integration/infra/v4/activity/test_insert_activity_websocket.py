@@ -134,4 +134,3 @@ class TestInsertActivityWebsocket:
         )
         assert typed_activity.id is not None
         assert typed_activity.profile_id is None
-

@@ -36,4 +36,3 @@ async def test_get_persona_new(
     assert "preset_colors" in data
     assert "suggested_icons" in data
     assert "valid_icons" in data
-

@@ -70,4 +70,3 @@ async def test_list_parameters_empty(
     assert "parameters" in data
     assert isinstance(data["parameters"], list)
     assert len(data["parameters"]) >= 0
-

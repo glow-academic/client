@@ -99,4 +99,3 @@ class TestRenderTemplate:
 
         # Assert
         assert result == "Hello, World!"
-

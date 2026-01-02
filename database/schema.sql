@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 2DfNWBZJJ76Trr6qEshOgiM4HvzYg5heMYTIkoAG5MdfmJ4EJFiWeglFJk3hwx8
+\restrict hL2lcalDptoT8Gu9AFWQPx2foVy0FIRueoyGzziXPE3lnvxWAgUFj2PTxwG7gkB
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -2112,7 +2112,8 @@ CREATE TABLE public.rubrics (
     pass_points integer NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
-    rubric_agent_id uuid
+    rubric_agent_id uuid,
+    agent_role public.agent_role NOT NULL
 );
 
 
@@ -5819,6 +5820,13 @@ CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_stand
 
 
 --
+-- Name: rubrics_agent_role_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubrics_agent_role_idx ON public.rubrics USING btree (agent_role);
+
+
+--
 -- Name: rubrics_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8939,5 +8947,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2DfNWBZJJ76Trr6qEshOgiM4HvzYg5heMYTIkoAG5MdfmJ4EJFiWeglFJk3hwx8
+\unrestrict hL2lcalDptoT8Gu9AFWQPx2foVy0FIRueoyGzziXPE3lnvxWAgUFj2PTxwG7gkB
 

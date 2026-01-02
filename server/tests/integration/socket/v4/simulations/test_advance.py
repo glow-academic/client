@@ -19,6 +19,7 @@ async def test_simulation_advance_success(
 
     # Create scenario
     from tests.integration.socket.v4.helpers import create_test_scenario
+
     scenario_id = await create_test_scenario(db)
 
     # Create attempt
@@ -81,4 +82,3 @@ async def test_simulation_advance_missing_scenario_id(
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("simulations_advance_error")
     assert len(error_events) >= 1
-

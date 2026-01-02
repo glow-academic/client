@@ -20,9 +20,7 @@ from app.sql.types import (
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = (
-    "app/sql/v4/simulation_voice_get_voice_regeneration_run_context_and_create_run_complete.sql"
-)
+SQL_PATH = "app/sql/v4/simulation_voice_get_voice_regeneration_run_context_and_create_run_complete.sql"
 
 internal_sio = get_internal_sio()
 
@@ -33,7 +31,7 @@ async def _voice_regenerate_impl(
     profile_id: uuid.UUID,
 ) -> None:
     """Handle voice regeneration requests via WebSocket.
-    
+
     Note: Voice regeneration creates a new run and links it to the group,
     but the actual regeneration logic (ephemeral key generation, etc.)
     may need to be handled separately based on voice-specific requirements.
@@ -208,4 +206,3 @@ register_client_endpoint(
     GetVoiceRegenerationRunContextAndCreateRunApiRequest,
     "Regenerate voice simulation using AI",
 )
-

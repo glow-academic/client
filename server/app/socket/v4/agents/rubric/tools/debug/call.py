@@ -14,19 +14,24 @@ from app.infra.v4.websocket.typed_emit import emit_to_client, emit_to_internal
 from app.main import get_internal_sio
 from pydantic import BaseModel
 
+
 # Types for debug_info function - defined locally since SQL path doesn't match type generation pattern
 class DebugInfoSqlParams(BaseModel):
     """Parameters for socket_debug_info_v4 function."""
+
     profile_id: uuid.UUID
     info: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (self.profile_id, self.info)
 
+
 class DebugInfoSqlRow(BaseModel):
     """Response from socket_debug_info_v4 function."""
+
     success: bool
     message: str
+
 
 internal_sio = get_internal_sio()
 

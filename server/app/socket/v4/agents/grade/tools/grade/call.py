@@ -73,14 +73,18 @@ async def _grading_tool_feedback_impl(
             standard_group_id_uuid = uuid.UUID(data.standard_group_id)
 
             # Find the standard that matches the score for this standard group
-            SQL_FIND_STANDARD_PATH = "app/sql/v4/grading/find_standard_by_group_and_score_complete.sql"
+            SQL_FIND_STANDARD_PATH = (
+                "app/sql/v4/grading/find_standard_by_group_and_score_complete.sql"
+            )
             find_standard_params = FindStandardByGroupAndScoreSqlParams(
                 standard_group_id=standard_group_id_uuid,
                 score=data.score,
             )
             standard_result = cast(
                 FindStandardByGroupAndScoreSqlRow | None,
-                await execute_sql_typed(conn, SQL_FIND_STANDARD_PATH, params=find_standard_params),
+                await execute_sql_typed(
+                    conn, SQL_FIND_STANDARD_PATH, params=find_standard_params
+                ),
             )
 
             if not standard_result or not standard_result.id:
@@ -112,7 +116,9 @@ async def _grading_tool_feedback_impl(
             )
             feedback_result = cast(
                 CreateFeedbackSqlRow,
-                await execute_sql_typed(conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params),
+                await execute_sql_typed(
+                    conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params
+                ),
             )
 
             feedback_id = uuid.UUID(feedback_result.id)

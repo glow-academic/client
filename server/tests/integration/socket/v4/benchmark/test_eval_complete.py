@@ -18,6 +18,7 @@ async def test_benchmark_eval_complete_success(
         get_eval_by_active,
         create_test_benchmark_attempt,
     )
+
     eval_id = await get_eval_by_active(db)
     if not eval_id:
         pytest.skip("No active evals found in test database")
@@ -36,4 +37,3 @@ async def test_benchmark_eval_complete_success(
     # Assert - verify handler completes
     # Handler processes eval completion logic
     # May emit events or complete silently
-

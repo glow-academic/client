@@ -58,4 +58,3 @@ async def test_delete_cohort(
     typed_cohort = GetCohortByIdSqlRow.model_validate(cohort_result.model_dump())
     # Should return None or empty result when not found
     assert typed_cohort.cohort_id is None
-

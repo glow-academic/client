@@ -9,7 +9,9 @@ from app.sql.types import (
 )
 from utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"
+)
 
 
 async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:

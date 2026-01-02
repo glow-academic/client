@@ -86,7 +86,7 @@ async def _rubric_eval_impl(
                     "tool_id": None,
                     "success": True,
                     "message": "Rubric eval completed successfully",
-                                        "sid": sid,
+                    "sid": sid,
                 },
             )
     except RuntimeError:
@@ -100,7 +100,7 @@ async def _rubric_eval_impl(
                 "run_id": data.run_id,
                 "group_id": data.group_id,
                 "error_message": "Database connection pool not available",
-                                    "sid": sid,
+                "sid": sid,
             },
         )
     except Exception as e:
@@ -114,7 +114,7 @@ async def _rubric_eval_impl(
                 "run_id": data.run_id,
                 "group_id": data.group_id,
                 "error_message": str(e),
-                                    "sid": sid,
+                "sid": sid,
             },
         )
 

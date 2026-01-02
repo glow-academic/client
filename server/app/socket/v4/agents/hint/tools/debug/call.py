@@ -14,19 +14,24 @@ from app.main import get_internal_sio
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
 
+
 # Types for debug_info function - defined locally since SQL path doesn't match type generation pattern
 class DebugInfoSqlParams(BaseModel):
     """Parameters for socket_debug_info_v4 function."""
+
     profile_id: uuid.UUID
     info: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (self.profile_id, self.info)
 
+
 class DebugInfoSqlRow(BaseModel):
     """Response from socket_debug_info_v4 function."""
+
     success: bool
     message: str
+
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()

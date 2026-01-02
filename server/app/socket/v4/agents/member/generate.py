@@ -31,7 +31,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_CONTEXT = "app/sql/v4/member/get_member_run_context_and_create_run_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/member/get_member_run_context_and_create_run_complete.sql"
+)
 SQL_PATH_MESSAGES = "app/sql/v4/simulations/get_simulation_messages_complete.sql"
 
 
@@ -51,9 +53,7 @@ class MemberGenerateErrorPayload(BaseModel):
 
 
 # Emit helper functions
-async def member_generate_error(
-    payload: MemberGenerateErrorPayload, room: str
-) -> None:
+async def member_generate_error(payload: MemberGenerateErrorPayload, room: str) -> None:
     await sio.emit("member_generate_error", payload.model_dump(), room=room)
 
 
@@ -202,7 +202,9 @@ async def _member_generate_impl(
             messages_params = GetSimulationMessagesSqlParams(chat_id=chat_id_uuid)
             messages_result = cast(
                 GetSimulationMessagesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_MESSAGES, params=messages_params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_MESSAGES, params=messages_params
+                ),
             )
             # Convert composite type messages to dict format
             messages = [

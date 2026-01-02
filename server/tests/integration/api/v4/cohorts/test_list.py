@@ -55,4 +55,3 @@ async def test_list_cohorts_empty(
     assert data is not None
     assert "cohorts" in data
     assert isinstance(data["cohorts"], list)
-

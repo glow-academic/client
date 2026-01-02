@@ -60,12 +60,15 @@ except ImportError:
         group_id: uuid.UUID
         previous_messages: list[Any] | None = None
 
+
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/audio/get_audio_regeneration_run_context_and_create_run_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/audio/get_audio_regeneration_run_context_and_create_run_complete.sql"
+)
 
 
 # Pydantic models for server-to-client events
@@ -279,26 +282,30 @@ async def _audio_regenerate_impl(sid: str, data: RegenerateAudioPayload) -> None
             input_items.extend(previous_messages)
 
             # Prepare input for chat completions
-            messages: list[dict[str, Any]] = [
-                {"role": "user", "content": data.prompt}
-            ]
+            messages: list[dict[str, Any]] = [{"role": "user", "content": data.prompt}]
 
             # If upload_id is provided, add audio file to input
             audio_file_path = None
             if upload_id and result.file_path:
                 audio_file_path = UPLOAD_FOLDER / result.file_path
                 if audio_file_path.exists():
-                    messages[0]["content"] += f"\n\nAudio file to process: {audio_file_path}"
+                    messages[0]["content"] += (
+                        f"\n\nAudio file to process: {audio_file_path}"
+                    )
 
             # Add user instructions on top
             if data.userInstructions and data.userInstructions.strip():
-                messages[0]["content"] += f"\n\nUser Instructions: {data.userInstructions.strip()}"
+                messages[0]["content"] += (
+                    f"\n\nUser Instructions: {data.userInstructions.strip()}"
+                )
 
             # Use GenericAgent to generate audio via chat completions (same as generate.py)
             audio_agent = GenericAgent(
                 agent_name=result.agent_name or "Audio Agent",
                 system_prompt=result.system_prompt or "",
-                temperature=float(result.temperature) if result.temperature is not None else 0.0,
+                temperature=float(result.temperature)
+                if result.temperature is not None
+                else 0.0,
                 model_name=model_name,
                 provider=result.provider_name or "openai",
                 base_url=result.base_url,
@@ -347,7 +354,9 @@ async def _audio_regenerate_impl(sid: str, data: RegenerateAudioPayload) -> None
             AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
             audio_path = AUDIO_FOLDER / audio_filename
 
-            await asyncio.to_thread(audio_path.write_text, assistant_output, encoding="utf-8")
+            await asyncio.to_thread(
+                audio_path.write_text, assistant_output, encoding="utf-8"
+            )
 
             async with conn.transaction():
                 # Create upload record
@@ -399,7 +408,9 @@ async def _audio_regenerate_impl(sid: str, data: RegenerateAudioPayload) -> None
             )
 
     except Exception as e:
-        upload_id_str = str(data.uploadId) if hasattr(data, "uploadId") and data.uploadId else None
+        upload_id_str = (
+            str(data.uploadId) if hasattr(data, "uploadId") and data.uploadId else None
+        )
         await audio_regeneration_error(
             AudioRegenerationErrorPayload(
                 success=False, message=str(e), upload_id=upload_id_str
@@ -428,4 +439,3 @@ async def audio_regenerate(sid: str, data: dict[str, Any]) -> None:
 async def audio_regenerate_api(request: RegenerateAudioPayload) -> dict[str, bool]:
     """Client-to-server event: Regenerate audio using AI."""
     return {"success": True}
-

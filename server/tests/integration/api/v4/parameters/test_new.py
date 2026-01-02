@@ -46,4 +46,3 @@ async def test_get_parameter_new(
             "not found" in data["detail"].lower()
             or "no default parameter" in data["detail"].lower()
         )
-

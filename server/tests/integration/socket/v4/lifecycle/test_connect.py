@@ -186,4 +186,3 @@ async def test_connect_invalid_guest_profile_id_string(
     assert confirmed_events[0]["sid"] == sid
     # The profile_id should be None since invalid UUID strings are treated as invalid
     assert confirmed_events[0]["profile_id"] is None
-

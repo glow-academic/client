@@ -60,4 +60,3 @@ class TestBuildPydanticFields:
         # Assert
         assert isinstance(result, dict)
         assert "field1" in result
-

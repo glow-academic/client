@@ -68,11 +68,12 @@ async def test_update_simulation(
     assert data["message"] == "Simulation 'Updated Simulation' updated successfully"
 
     # Verify simulation was updated - using inline SQL temporarily
-    simulation = await db.fetchrow("SELECT * FROM simulations WHERE id = $1", simulation_id)
+    simulation = await db.fetchrow(
+        "SELECT * FROM simulations WHERE id = $1", simulation_id
+    )
     assert simulation is not None
     assert simulation["title"] == "Updated Simulation"
     assert simulation["description"] == "Updated Description"
     assert simulation["active"] is False
     assert simulation["practice_simulation"] is True
     assert simulation["time_limit"] == 90
-

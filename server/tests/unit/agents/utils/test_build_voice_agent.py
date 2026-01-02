@@ -60,4 +60,3 @@ class TestBuildVoiceAgent:
         assert agent is not None
         assert isinstance(instructions, str)
         assert "persona1" in instructions or "persona2" in instructions
-

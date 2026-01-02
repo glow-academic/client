@@ -20,15 +20,28 @@ BEGIN
 END $$;
 
 -- 2) Drop types WITHOUT CASCADE
+-- Drop in reverse dependency order: parent types first, then child types
 DO $$
 DECLARE
     r RECORD;
 BEGIN
+    -- First drop parent types (those that depend on other types)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
         WHERE typname LIKE 'i_add_eval_groups_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+          AND typname = 'i_add_eval_groups_v4_group'  -- Parent type that depends on rubric_grade_agent
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+    -- Then drop child types
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'i_add_eval_groups_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+          AND typname != 'i_add_eval_groups_v4_group'  -- Child types
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
     END LOOP;

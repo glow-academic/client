@@ -24,4 +24,3 @@ async def test_debug_info_error_success(
 
     # Assert - verify handler completes
     assert True  # Handler should complete without error
-

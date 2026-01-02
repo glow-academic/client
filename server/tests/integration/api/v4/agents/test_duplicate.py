@@ -92,7 +92,9 @@ async def test_duplicate_agent(
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
-        params=CreateAgentDepartmentLinkSqlParams(agent_id=agent_id, department_id=dept_id),
+        params=CreateAgentDepartmentLinkSqlParams(
+            agent_id=agent_id, department_id=dept_id
+        ),
     )
 
     # v4 routes get profile_id from router dependency
@@ -151,7 +153,9 @@ async def test_duplicate_agent(
     new_dept_link_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
-        params=GetAgentDepartmentLinkSqlParams(agent_id=new_agent_id, department_id=dept_id),
+        params=GetAgentDepartmentLinkSqlParams(
+            agent_id=new_agent_id, department_id=dept_id
+        ),
     )
     typed_new_dept_link = GetAgentDepartmentLinkSqlRow.model_validate(
         new_dept_link_result.model_dump()
@@ -261,4 +265,3 @@ async def test_duplicate_agent_not_found(
     assert response.status_code == 500
     data = response.json()
     assert "detail" in data
-

@@ -18,6 +18,7 @@ async def test_benchmark_next_success(
         get_eval_by_active,
         create_test_benchmark_attempt,
     )
+
     eval_id = await get_eval_by_active(db)
     if not eval_id:
         pytest.skip("No active evals found in test database")
@@ -38,4 +39,3 @@ async def test_benchmark_next_success(
     error_events = mock_sio.get_events("benchmarks_next_error")
     # Handler may emit error if no pending runs/groups
     assert len(error_events) >= 0
-

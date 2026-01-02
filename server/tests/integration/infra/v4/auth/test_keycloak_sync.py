@@ -21,4 +21,3 @@ class TestKeycloakSync:
         # This function is complex and requires Keycloak setup
         # For now, we verify it exists and is callable
         assert callable(perform_keycloak_sync)
-

@@ -6,11 +6,14 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateCohortDepartmentLinkSqlParams,
-                             CreateCohortDepartmentLinkSqlRow,
-                             CreateTestCohortSqlParams, CreateTestCohortSqlRow,
-                             GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow)
+from tests.sql.types import (
+    CreateCohortDepartmentLinkSqlParams,
+    CreateCohortDepartmentLinkSqlRow,
+    CreateTestCohortSqlParams,
+    CreateTestCohortSqlRow,
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -50,7 +53,9 @@ async def test_search_profiles_for_cohort(
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql",
-        params=CreateCohortDepartmentLinkSqlParams(cohort_id=cohort_id, department_id=dept_id),
+        params=CreateCohortDepartmentLinkSqlParams(
+            cohort_id=cohort_id, department_id=dept_id
+        ),
     )
 
     # v4 routes get profile_id from router dependency
@@ -93,4 +98,3 @@ async def test_search_profiles_for_cohort_not_found(
 
     # Should return 200 with empty results or 404
     assert response.status_code in [200, 404]
-

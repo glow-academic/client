@@ -73,4 +73,3 @@ async def test_remove_profiles_from_cohort(
     data = response.json()
 
     assert data["success"] is True
-

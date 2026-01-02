@@ -81,4 +81,3 @@ class TestValidateCsvFormat:
             assert result["row_count"] == 0
         finally:
             Path(temp_path).unlink()
-

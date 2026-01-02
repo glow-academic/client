@@ -41,6 +41,8 @@ async def debug_info_tool_complete(
     payload: DebugInfoToolCompletePayload, room: str
 ) -> None:
     await sio.emit("debug_info_complete", payload.model_dump(), room=room)
+
+
 async def debug_info_tool_error(payload: DebugInfoToolErrorPayload, room: str) -> None:
     await sio.emit("debug_info_error", payload.model_dump(), room=room)
 

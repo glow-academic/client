@@ -18,6 +18,7 @@ async def test_benchmark_leave_success(
         get_eval_by_active,
         create_test_benchmark_attempt,
     )
+
     eval_id = await get_eval_by_active(db)
     if not eval_id:
         pytest.skip("No active evals found in test database")
@@ -38,4 +39,3 @@ async def test_benchmark_leave_success(
 
     # Assert - verify socket left room
     assert sid not in mock_sio.rooms.get(room_name, set())
-

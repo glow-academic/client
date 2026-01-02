@@ -4,20 +4,24 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateDocumentDepartmentLinkSqlParams,
-                             CreateDocumentDepartmentLinkSqlRow,
-                             CreateDocumentParameterItemLinkSqlParams,
-                             CreateDocumentParameterItemLinkSqlRow,
-                             CreateTestDocumentSqlParams,
-                             CreateTestDocumentSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow,
-                             GetDocumentByIdSqlParams, GetDocumentByIdSqlRow,
-                             GetDocumentDepartmentLinkExistsSqlParams,
-                             GetDocumentDepartmentLinkExistsSqlRow,
-                             GetDocumentParameterItemLinkExistsSqlParams,
-                             GetDocumentParameterItemLinkExistsSqlRow,
-                             GetFirstParameterItemSqlParams,
-                             GetFirstParameterItemSqlRow)
+from tests.sql.types import (
+    CreateDocumentDepartmentLinkSqlParams,
+    CreateDocumentDepartmentLinkSqlRow,
+    CreateDocumentParameterItemLinkSqlParams,
+    CreateDocumentParameterItemLinkSqlRow,
+    CreateTestDocumentSqlParams,
+    CreateTestDocumentSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+    GetDocumentByIdSqlParams,
+    GetDocumentByIdSqlRow,
+    GetDocumentDepartmentLinkExistsSqlParams,
+    GetDocumentDepartmentLinkExistsSqlRow,
+    GetDocumentParameterItemLinkExistsSqlParams,
+    GetDocumentParameterItemLinkExistsSqlRow,
+    GetFirstParameterItemSqlParams,
+    GetFirstParameterItemSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -263,4 +267,3 @@ async def test_bulk_update_documents_empty_list(
         assert data is not None
         assert data["success"] is True
         assert "0 document(s)" in data["message"]
-

@@ -7,9 +7,12 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (PatchSimulationDraftApiResponse,
-                           PatchSimulationDraftSqlParams, PatchSimulationDraftSqlRow,
-                           load_sql_query)
+from app.sql.types import (
+    PatchSimulationDraftApiResponse,
+    PatchSimulationDraftSqlParams,
+    PatchSimulationDraftSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
@@ -22,6 +25,7 @@ class PatchSimulationDraftApiRequest(BaseModel):
     patch: dict[str, Any]
     expected_version: int
     input_draft_id: UUID | None = None
+
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/simulations/patch_simulation_draft_complete.sql"
@@ -66,7 +70,7 @@ async def patch_simulation_draft(
             # Encode patch dict as JSON string since SQL function accepts text (not jsonb)
             # This allows asyncpg to pass JSON strings directly without manual encoding
             import json
-            
+
             patch_json = json.dumps(request.patch) if request.patch else "{}"
             params = PatchSimulationDraftSqlParams(
                 profile_id=profile_id,
@@ -98,14 +102,16 @@ async def patch_simulation_draft(
                 )
 
         # Convert SQL result to API response (use mode='json' to serialize UUIDs)
-        api_response = PatchSimulationDraftApiResponse.model_validate(result.model_dump(mode="json"))
+        api_response = PatchSimulationDraftApiResponse.model_validate(
+            result.model_dump(mode="json")
+        )
 
         # Invalidate cache after mutation
         # When creating a new draft, also invalidate profile context cache
         # so the client can refresh and get the new draft_id in the profile context
         if not result.draft_exists:
             tags.append("profile")
-        
+
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
@@ -123,4 +129,3 @@ async def patch_simulation_draft(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -106,7 +106,9 @@ async def _simulation_grading_start_impl(
             # This validates rate limits and creates run atomically
             # Pattern: All AI operations use atomic context+run creation SQL files
             # See WEBSOCKET_STANDARDS.md for details
-            SQL_PATH = "app/sql/v4/grading/get_grading_run_context_and_create_run_complete.sql"
+            SQL_PATH = (
+                "app/sql/v4/grading/get_grading_run_context_and_create_run_complete.sql"
+            )
             try:
                 params = GetGradingRunContextAndCreateRunSqlParams(
                     chat_id=simulation_chat_id,
@@ -186,7 +188,9 @@ async def _simulation_grading_start_impl(
                     "id": result.agent_id,
                     "name": result.agent_name,
                     "system_prompt": result.system_prompt,
-                    "temperature": float(result.temperature) if result.temperature is not None else 0.0,
+                    "temperature": float(result.temperature)
+                    if result.temperature is not None
+                    else 0.0,
                     "reasoning": result.reasoning,
                 },
                 "model": {
@@ -270,7 +274,10 @@ async def _simulation_grading_start_impl(
                 GetSimulationMessagesSqlParams,
                 GetSimulationMessagesSqlRow,
             )
-            SQL_MESSAGES_PATH = "app/sql/v4/simulations/get_simulation_messages_complete.sql"
+
+            SQL_MESSAGES_PATH = (
+                "app/sql/v4/simulations/get_simulation_messages_complete.sql"
+            )
             message_params = GetSimulationMessagesSqlParams(chat_id=simulation_chat_id)
             message_result = cast(
                 GetSimulationMessagesSqlRow,
@@ -521,6 +528,7 @@ async def _simulation_grading_start_impl(
             # Create grade record at START with placeholder values
             # Tools will insert feedbacks as they're called
             from app.sql.types import CreateGradeSqlParams, CreateGradeSqlRow
+
             SQL_CREATE_GRADE_PATH = "app/sql/v4/grading/create_grade_complete.sql"
             rubric_grade_agent_id = result.rubric_grade_agent_id
             if not rubric_grade_agent_id:
@@ -535,7 +543,9 @@ async def _simulation_grading_start_impl(
             )
             grade_result = cast(
                 CreateGradeSqlRow,
-                await execute_sql_typed(conn, SQL_CREATE_GRADE_PATH, params=grade_params),
+                await execute_sql_typed(
+                    conn, SQL_CREATE_GRADE_PATH, params=grade_params
+                ),
             )
             grade_id = uuid.UUID(grade_result.id)
 
@@ -980,9 +990,14 @@ async def _simulation_grading_start_impl(
                 GetFeedbackTotalsForGradeSqlParams,
                 GetFeedbackTotalsForGradeSqlRow,
             )
-            SQL_GET_FEEDBACKS_PATH = "app/sql/v4/grading/get_feedback_totals_for_grade_complete.sql"
+
+            SQL_GET_FEEDBACKS_PATH = (
+                "app/sql/v4/grading/get_feedback_totals_for_grade_complete.sql"
+            )
             feedback_params = GetFeedbackTotalsForGradeSqlParams(grade_id=grade_id)
-            feedback_rows = await execute_sql_typed(conn, SQL_GET_FEEDBACKS_PATH, params=feedback_params)
+            feedback_rows = await execute_sql_typed(
+                conn, SQL_GET_FEEDBACKS_PATH, params=feedback_params
+            )
             if isinstance(feedback_rows, list):
                 overall_score = sum(row.total for row in feedback_rows)
             else:
@@ -995,6 +1010,7 @@ async def _simulation_grading_start_impl(
 
             # Update grade record with final values
             from app.sql.types import UpdateGradeFinalSqlParams
+
             SQL_UPDATE_GRADE_PATH = "app/sql/v4/grading/update_grade_final_complete.sql"
             update_grade_params = UpdateGradeFinalSqlParams(
                 grade_id=grade_id,
@@ -1002,14 +1018,22 @@ async def _simulation_grading_start_impl(
                 passed=passed,
                 score=overall_score,
             )
-            await execute_sql_typed(conn, SQL_UPDATE_GRADE_PATH, params=update_grade_params)
+            await execute_sql_typed(
+                conn, SQL_UPDATE_GRADE_PATH, params=update_grade_params
+            )
 
             # 3. Mark chat as completed
             from app.sql.types import MarkChatCompletedSqlParams
-            SQL_MARK_COMPLETED_PATH = "app/sql/v4/simulations/mark_chat_completed_complete.sql"
-            mark_completed_params = MarkChatCompletedSqlParams(chat_id=simulation_chat_id)
-            await execute_sql_typed(conn, SQL_MARK_COMPLETED_PATH, params=mark_completed_params)
 
+            SQL_MARK_COMPLETED_PATH = (
+                "app/sql/v4/simulations/mark_chat_completed_complete.sql"
+            )
+            mark_completed_params = MarkChatCompletedSqlParams(
+                chat_id=simulation_chat_id
+            )
+            await execute_sql_typed(
+                conn, SQL_MARK_COMPLETED_PATH, params=mark_completed_params
+            )
 
             # Emit grading completion event
             await simulation_grading_progress(
@@ -1069,9 +1093,9 @@ async def simulation_grading_start(sid: str, data: dict[str, Any]) -> None:
             room=f"simulation_{data.get('chat_id', 'unknown')}",
         )
         return
-    
+
     profile_id = uuid.UUID(profile_id_str)
-    
+
     # Validate payload
     try:
         validated = SimulationGradingStartPayload(**data)
@@ -1086,7 +1110,7 @@ async def simulation_grading_start(sid: str, data: dict[str, Any]) -> None:
             room=f"simulation_{data.get('chat_id', 'unknown')}",
         )
         return
-    
+
     await _simulation_grading_start_impl(sid, validated, profile_id)
 
 

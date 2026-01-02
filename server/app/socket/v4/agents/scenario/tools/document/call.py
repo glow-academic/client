@@ -53,6 +53,8 @@ async def document_tool_complete(
     payload: DocumentToolCompletePayload, room: str
 ) -> None:
     await sio.emit("scenarios_tools_document_complete", payload.model_dump(), room=room)
+
+
 async def document_tool_error(payload: DocumentToolErrorPayload, room: str) -> None:
     await sio.emit("scenarios_tools_document_error", payload.model_dump(), room=room)
 
@@ -106,7 +108,6 @@ async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
 
             child_scenario_id = result["child_scenario_id"]
             upload_id = result["upload_id"]
-
 
             await document_tool_complete(
                 DocumentToolCompletePayload(

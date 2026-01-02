@@ -4,15 +4,18 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow,
-                             GetRubricByIdSqlParams, GetRubricByIdSqlRow,
-                             GetRubricDepartmentLinkSqlParams,
-                             GetRubricDepartmentLinkSqlRow,
-                             GetRubricStandardGroupsSqlParams,
-                             GetRubricStandardGroupsSqlRow,
-                             GetRubricStandardsSqlParams,
-                             GetRubricStandardsSqlRow)
+from tests.sql.types import (
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+    GetRubricByIdSqlParams,
+    GetRubricByIdSqlRow,
+    GetRubricDepartmentLinkSqlParams,
+    GetRubricDepartmentLinkSqlRow,
+    GetRubricStandardGroupsSqlParams,
+    GetRubricStandardGroupsSqlRow,
+    GetRubricStandardsSqlParams,
+    GetRubricStandardsSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -278,4 +281,3 @@ async def test_create_rubric_minimal(
     assert typed_rubric.rubric_id == rubric_id
     assert typed_rubric.name == "Minimal Rubric"
     assert typed_rubric.description == ""
-

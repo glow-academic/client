@@ -224,4 +224,3 @@ async def test_log_run_missing_run_id(
 
     # Assert - should handle missing runId gracefully
     # Validation error should be logged but not raise
-

@@ -65,4 +65,3 @@ async def test_add_profiles_to_cohort(
     data = response.json()
 
     assert data["success"] is True
-

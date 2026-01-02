@@ -6,13 +6,16 @@ import pytest
 from datetime import UTC, datetime
 
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateProfileEmailSqlParams,
-                             CreateProfileEmailSqlRow,
-                             CreateTestProfileSqlParams,
-                             CreateTestProfileSqlRow,
-                             GetProfileActivityLatestSqlParams,
-                             GetProfileActivityLatestSqlRow,
-                             GetProfileByIdSqlParams, GetProfileByIdSqlRow)
+from tests.sql.types import (
+    CreateProfileEmailSqlParams,
+    CreateProfileEmailSqlRow,
+    CreateTestProfileSqlParams,
+    CreateTestProfileSqlRow,
+    GetProfileActivityLatestSqlParams,
+    GetProfileActivityLatestSqlRow,
+    GetProfileByIdSqlParams,
+    GetProfileByIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -171,4 +174,3 @@ async def test_update_profile_last_active(
         activity_result.model_dump()
     )
     assert typed_activity.profile_id == profile_id
-

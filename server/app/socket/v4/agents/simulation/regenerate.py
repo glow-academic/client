@@ -27,9 +27,7 @@ from app.sql.types import (
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = (
-    "app/sql/v4/simulations_get_simulation_regeneration_run_context_and_create_run_complete.sql"
-)
+SQL_PATH = "app/sql/v4/simulations_get_simulation_regeneration_run_context_and_create_run_complete.sql"
 
 internal_sio = get_internal_sio()
 
@@ -256,7 +254,9 @@ async def _simulation_regenerate_impl(
                 from app.sql.types import GetAgentToolsSqlRow
 
                 # Function returns multiple rows, so we call it directly with fetch()
-                function_call_sql = 'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+                function_call_sql = (
+                    'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+                )
                 rows = await conn.fetch(function_call_sql, simulation_agent_id_uuid)
                 agent_tools_config = [
                     GetAgentToolsSqlRow.model_validate(dict(row)).model_dump()
@@ -478,4 +478,3 @@ register_client_endpoint(
     GetSimulationRegenerationRunContextAndCreateRunApiRequest,
     "Regenerate simulation response using AI",
 )
-

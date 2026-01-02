@@ -51,6 +51,8 @@ async def scenario_video_tool_complete(
     payload: ScenarioVideoToolCompletePayload, room: str
 ) -> None:
     await sio.emit("scenarios_tools_video_complete", payload.model_dump(), room=room)
+
+
 async def scenario_video_tool_error(
     payload: ScenarioVideoToolErrorPayload, room: str
 ) -> None:
@@ -174,7 +176,6 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                 imageReferenceId=None,
             ),
         )
-
 
         await scenario_video_tool_complete(
             ScenarioVideoToolCompletePayload(

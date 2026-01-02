@@ -31,7 +31,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_CONTEXT = "app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql"
+)
 SQL_PATH_MESSAGES = "app/sql/v4/simulations_get_simulation_messages_complete.sql"
 
 
@@ -321,7 +323,9 @@ async def _simulation_text_generate_impl(
                 "persona_id": result.persona_id,
                 "persona_name": result.persona_name,
                 "system_prompt": result.system_prompt,
-                "temperature": float(result.temperature) if result.temperature is not None else 0.0,
+                "temperature": float(result.temperature)
+                if result.temperature is not None
+                else 0.0,
                 "reasoning": result.reasoning,
                 "model_id": result.model_id,
                 "model_name": result.model_name,
@@ -333,7 +337,9 @@ async def _simulation_text_generate_impl(
                 "provider_name": result.provider_name,
                 "agent_id": result.agent_id,
                 "voice_system_prompt": result.voice_system_prompt,
-                "voice_temperature": float(result.voice_temperature) if result.voice_temperature is not None else 0.0,
+                "voice_temperature": float(result.voice_temperature)
+                if result.voice_temperature is not None
+                else 0.0,
                 "voice_reasoning": result.voice_reasoning,
                 "voice_model_id": result.voice_model_id,
                 "voice_model_name": result.voice_model_name,
@@ -373,7 +379,9 @@ async def _simulation_text_generate_impl(
             messages_params = GetSimulationMessagesSqlParams(chat_id=chat_id_uuid)
             messages_result = cast(
                 GetSimulationMessagesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_MESSAGES, params=messages_params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_MESSAGES, params=messages_params
+                ),
             )
             # Convert composite type messages to dict format
             messages = [
@@ -436,7 +444,9 @@ async def _simulation_text_generate_impl(
 
                 simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
                 # Function returns multiple rows, so we call it directly with fetch()
-                function_call_sql = 'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+                function_call_sql = (
+                    'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+                )
                 rows = await conn.fetch(function_call_sql, simulation_agent_id_uuid)
                 agent_tools_config = [
                     GetAgentToolsSqlRow.model_validate(dict(row)).model_dump()
@@ -895,7 +905,7 @@ Tool Usage Instructions:
                                     # Use already-extracted values, only parse JSON if needed for final values
                                     final_message = tool_call_state["message_so_far"]
                                     final_persona = tool_call_state["persona_so_far"]
-                                    
+
                                     # Try to extract final values from JSON if arguments_raw is complete
                                     # This is safe because we're parsing a complete JSON string, not streaming
                                     if tool_call_state["arguments_raw"]:
@@ -906,15 +916,23 @@ Tool Usage Instructions:
                                             # Only update if we got valid values
                                             if "message" in final_args:
                                                 final_message = final_args["message"]
-                                            if "persona" in final_args and not final_persona:
+                                            if (
+                                                "persona" in final_args
+                                                and not final_persona
+                                            ):
                                                 final_persona = final_args["persona"]
                                         except json.JSONDecodeError:
                                             # If JSON parsing fails, use already-extracted values
                                             pass
 
                                     tool_call_state["message_so_far"] = final_message
-                                    if final_persona and not tool_call_state["persona_so_far"]:
-                                        tool_call_state["persona_so_far"] = final_persona
+                                    if (
+                                        final_persona
+                                        and not tool_call_state["persona_so_far"]
+                                    ):
+                                        tool_call_state["persona_so_far"] = (
+                                            final_persona
+                                        )
 
                                     # Emit completion to complete handler
                                     await internal_sio.emit(
@@ -937,9 +955,7 @@ Tool Usage Instructions:
 
                                     completed_tool_messages.append(
                                         {
-                                            "id": tool_call_state.get(
-                                                "db_message_id"
-                                            ),
+                                            "id": tool_call_state.get("db_message_id"),
                                             "content": final_message,
                                         }
                                     )
@@ -963,63 +979,63 @@ Tool Usage Instructions:
                             for tool_call_id, tool_call_state in list(
                                 tool_calls_dict[chat_id_str].items()
                             ):
-                                    try:
-                                        db_message_id = tool_call_state.get(
-                                            "db_message_id"
-                                        )
-                                        if db_message_id and tool_call_state.get(
+                                try:
+                                    db_message_id = tool_call_state.get("db_message_id")
+                                    if db_message_id and tool_call_state.get(
+                                        "message_so_far"
+                                    ):
+                                        final_message = tool_call_state[
                                             "message_so_far"
-                                        ):
-                                            final_message = tool_call_state[
-                                                "message_so_far"
-                                            ]
+                                        ]
 
-                                            # Try to extract final message from JSON if available
-                                            # This is safe because we're parsing a complete JSON string, not streaming
-                                            if tool_call_state.get("arguments_raw"):
-                                                try:
-                                                    final_args = json.loads(
-                                                        tool_call_state["arguments_raw"]
-                                                    )
-                                                    if "message" in final_args:
-                                                        final_message = final_args["message"]
-                                                except json.JSONDecodeError:
-                                                    # If JSON parsing fails, use already-extracted value
-                                                    pass
+                                        # Try to extract final message from JSON if available
+                                        # This is safe because we're parsing a complete JSON string, not streaming
+                                        if tool_call_state.get("arguments_raw"):
+                                            try:
+                                                final_args = json.loads(
+                                                    tool_call_state["arguments_raw"]
+                                                )
+                                                if "message" in final_args:
+                                                    final_message = final_args[
+                                                        "message"
+                                                    ]
+                                            except json.JSONDecodeError:
+                                                # If JSON parsing fails, use already-extracted value
+                                                pass
 
-                                            await internal_sio.emit(
-                                                "simulation_text_complete",
-                                                {
-                                                    "sid": sid,
-                                                    "type": "tool_call_complete",
-                                                    "chat_id": chat_id_str,
-                                                    "run_id": str(run_id_uuid),
-                                                    "tool_call_id": tool_call_id,
-                                                    "call_id": tool_call_state.get(
-                                                        "call_id"
-                                                    )
-                                                    or tool_call_id,
-                                                    "tool_name": tool_call_state.get(
-                                                        "name", "speak"
-                                                    ),
-                                                    "final_message": final_message,
-                                                    "final_persona": tool_call_state.get(
-                                                        "persona_so_far"
-                                                    ),
-                                                    "arguments_raw": tool_call_state.get(
-                                                        "arguments_raw", ""
-                                                    ),
-                                                },
-                                            )
+                                        await internal_sio.emit(
+                                            "simulation_text_complete",
+                                            {
+                                                "sid": sid,
+                                                "type": "tool_call_complete",
+                                                "chat_id": chat_id_str,
+                                                "run_id": str(run_id_uuid),
+                                                "tool_call_id": tool_call_id,
+                                                "call_id": tool_call_state.get(
+                                                    "call_id"
+                                                )
+                                                or tool_call_id,
+                                                "tool_name": tool_call_state.get(
+                                                    "name", "speak"
+                                                ),
+                                                "final_message": final_message,
+                                                "final_persona": tool_call_state.get(
+                                                    "persona_so_far"
+                                                ),
+                                                "arguments_raw": tool_call_state.get(
+                                                    "arguments_raw", ""
+                                                ),
+                                            },
+                                        )
 
-                                            completed_tool_messages.append(
-                                                {
-                                                    "id": db_message_id,
-                                                    "content": final_message,
-                                                }
-                                            )
-                                    except Exception:
-                                        pass
+                                        completed_tool_messages.append(
+                                            {
+                                                "id": db_message_id,
+                                                "content": final_message,
+                                            }
+                                        )
+                                except Exception:
+                                    pass
                     except Exception:
                         pass
                 # Clean up tool call states
@@ -1082,7 +1098,9 @@ Tool Usage Instructions:
                 if sim_metadata["practice_simulation"]:
                     # Note: get_simulation_run_context.sql is a simple query - we'll keep it as is for now
                     # but should convert to function if needed
-                    sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
+                    sql = load_sql(
+                        "app/sql/v4/simulations/get_simulation_run_context.sql"
+                    )
                     run_context_for_hints = await conn.fetchrow(sql, str(chat_id_uuid))
                     hint_dept_id = (
                         run_context_for_hints.get("department_id")

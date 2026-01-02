@@ -4,15 +4,18 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateRubricDepartmentLinkSqlParams,
-                             CreateRubricDepartmentLinkSqlRow,
-                             CreateTestRubricSqlParams, CreateTestRubricSqlRow,
-                             CreateTestSimulationWithRubricSqlParams,
-                             CreateTestSimulationWithRubricSqlRow,
-                             GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow,
-                             GetRubricSimulationCountSqlParams,
-                             GetRubricSimulationCountSqlRow)
+from tests.sql.types import (
+    CreateRubricDepartmentLinkSqlParams,
+    CreateRubricDepartmentLinkSqlRow,
+    CreateTestRubricSqlParams,
+    CreateTestRubricSqlRow,
+    CreateTestSimulationWithRubricSqlParams,
+    CreateTestSimulationWithRubricSqlRow,
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+    GetRubricSimulationCountSqlParams,
+    GetRubricSimulationCountSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -291,4 +294,3 @@ async def test_list_rubrics_can_delete_allowed(
         assert deletable_rubric["can_edit"] is True
         assert deletable_rubric["can_duplicate"] is True
         assert deletable_rubric["can_delete"] is True
-

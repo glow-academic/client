@@ -45,4 +45,3 @@ async def test_rubric_generate_success(
     log_events = mock_internal_sio.get_events("log_run")
     # May or may not have log_run event depending on AI agent execution
     assert len(log_events) >= 0
-

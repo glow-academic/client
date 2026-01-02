@@ -12,7 +12,9 @@ from app.sql.types import (
 )
 from utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
+)
 
 
 @dataclass
@@ -49,9 +51,7 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
             run_id=run_id,
             content=content,
         )
-        asyncio.create_task(
-            execute_sql_typed(conn, SQL_PATH, params=params)
-        )
+        asyncio.create_task(execute_sql_typed(conn, SQL_PATH, params=params))
     except Exception as e:
         print(f"Error saving debug info: {e}")
         return f"Error saving debug info: {e}"

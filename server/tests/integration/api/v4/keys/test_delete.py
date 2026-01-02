@@ -4,12 +4,16 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateKeyDepartmentLinkSqlParams,
-                             CreateKeyDepartmentLinkSqlRow,
-                             CreateTestKeySqlParams, CreateTestKeySqlRow,
-                             GetKeyByIdSqlParams, GetKeyByIdSqlRow,
-                             GetKeyDepartmentLinksSqlParams,
-                             GetKeyDepartmentLinksSqlRow)
+from tests.sql.types import (
+    CreateKeyDepartmentLinkSqlParams,
+    CreateKeyDepartmentLinkSqlRow,
+    CreateTestKeySqlParams,
+    CreateTestKeySqlRow,
+    GetKeyByIdSqlParams,
+    GetKeyByIdSqlRow,
+    GetKeyDepartmentLinksSqlParams,
+    GetKeyDepartmentLinksSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -86,4 +90,3 @@ async def test_delete_key_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

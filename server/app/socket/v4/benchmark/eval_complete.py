@@ -84,4 +84,3 @@ register_server_endpoint(
     BenchmarkEvalCompleteSqlRow,
     "Benchmark eval completed",
 )
-

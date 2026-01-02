@@ -122,4 +122,3 @@ async def test_simulation_join_missing_chat_id(
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("simulations_join_error")
     assert len(error_events) >= 1
-

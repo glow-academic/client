@@ -145,7 +145,11 @@ async def get_profile_context(
             # Skip the authorization check below by continuing past the is_authorized check
             # Note: The SQL query may return settings data even when is_authorized is NULL
             pass
-        elif not actual_profile_id and not effective_profile_id and not department_id_cookie:
+        elif (
+            not actual_profile_id
+            and not effective_profile_id
+            and not department_id_cookie
+        ):
             # No profile IDs, no department_id, and not a settings-only request
             # This happens after login when session isn't fully established yet
             # Return 404 with a helpful message
@@ -156,7 +160,11 @@ async def get_profile_context(
 
         # Only check authorization for non-settings-only requests (when we have profile IDs or auth_mode)
         # Skip authorization check if we already handled settings-only or no-profile case above
-        if not is_settings_only_request and (actual_profile_id or effective_profile_id) and (not result or not result.is_authorized):
+        if (
+            not is_settings_only_request
+            and (actual_profile_id or effective_profile_id)
+            and (not result or not result.is_authorized)
+        ):
             # For actual profile resolution requests, require valid profile
             resolved_actual = actual_profile_id
             resolved_effective = effective_profile_id

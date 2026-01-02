@@ -4,18 +4,22 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateRubricDepartmentLinkSqlParams,
-                             CreateRubricDepartmentLinkSqlRow,
-                             CreateTestRubricSqlParams, CreateTestRubricSqlRow,
-                             GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow, GetRubricByIdSqlParams,
-                             GetRubricByIdSqlRow,
-                             GetRubricDepartmentLinkSqlParams,
-                             GetRubricDepartmentLinkSqlRow,
-                             GetRubricStandardGroupsSqlParams,
-                             GetRubricStandardGroupsSqlRow,
-                             GetRubricStandardsSqlParams,
-                             GetRubricStandardsSqlRow)
+from tests.sql.types import (
+    CreateRubricDepartmentLinkSqlParams,
+    CreateRubricDepartmentLinkSqlRow,
+    CreateTestRubricSqlParams,
+    CreateTestRubricSqlRow,
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+    GetRubricByIdSqlParams,
+    GetRubricByIdSqlRow,
+    GetRubricDepartmentLinkSqlParams,
+    GetRubricDepartmentLinkSqlRow,
+    GetRubricStandardGroupsSqlParams,
+    GetRubricStandardGroupsSqlRow,
+    GetRubricStandardsSqlParams,
+    GetRubricStandardsSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -131,7 +135,9 @@ async def test_update_rubric(
     standards_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standards_v4_complete.sql",
-        params=GetRubricStandardsSqlParams(standard_group_id=typed_groups[0].standard_group_id),
+        params=GetRubricStandardsSqlParams(
+            standard_group_id=typed_groups[0].standard_group_id
+        ),
     )
     typed_standards = GetRubricStandardsSqlRow.model_validate(
         standards_result.model_dump()
@@ -236,4 +242,3 @@ async def test_update_rubric_remove_departments(
         dept_link_result.model_dump()
     )
     assert typed_dept_link.active is False
-

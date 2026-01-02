@@ -4,18 +4,22 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateParameterItemDepartmentLinkSqlParams,
-                             CreateParameterItemDepartmentLinkSqlRow,
-                             CreateTestParameterItemSqlParams,
-                             CreateTestParameterItemSqlRow,
-                             CreateTestParameterSqlParams,
-                             CreateTestParameterSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow,
-                             GetParameterByIdSqlParams, GetParameterByIdSqlRow,
-                             GetParameterItemDepartmentLinksSqlParams,
-                             GetParameterItemDepartmentLinksSqlRow,
-                             GetParameterItemsSqlParams,
-                             GetParameterItemsSqlRow)
+from tests.sql.types import (
+    CreateParameterItemDepartmentLinkSqlParams,
+    CreateParameterItemDepartmentLinkSqlRow,
+    CreateTestParameterItemSqlParams,
+    CreateTestParameterItemSqlRow,
+    CreateTestParameterSqlParams,
+    CreateTestParameterSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+    GetParameterByIdSqlParams,
+    GetParameterByIdSqlRow,
+    GetParameterItemDepartmentLinksSqlParams,
+    GetParameterItemDepartmentLinksSqlRow,
+    GetParameterItemsSqlParams,
+    GetParameterItemsSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -67,7 +71,9 @@ async def test_duplicate_parameter(
             item_value="value1",
         ),
     )
-    typed_item1 = CreateTestParameterItemSqlRow.model_validate(item1_result.model_dump())
+    typed_item1 = CreateTestParameterItemSqlRow.model_validate(
+        item1_result.model_dump()
+    )
     assert typed_item1.parameter_item_id is not None
     item1_id = typed_item1.parameter_item_id
 
@@ -81,7 +87,9 @@ async def test_duplicate_parameter(
             item_value="value2",
         ),
     )
-    typed_item2 = CreateTestParameterItemSqlRow.model_validate(item2_result.model_dump())
+    typed_item2 = CreateTestParameterItemSqlRow.model_validate(
+        item2_result.model_dump()
+    )
     assert typed_item2.parameter_item_id is not None
     item2_id = typed_item2.parameter_item_id
 
@@ -264,4 +272,3 @@ async def test_duplicate_parameter_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

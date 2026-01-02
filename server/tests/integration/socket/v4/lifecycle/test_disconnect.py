@@ -128,4 +128,3 @@ async def test_disconnect_anonymous_connection(
     # Assert
     # Disconnect should complete without error even for anonymous connections
     # No specific assertions needed - just verify it doesn't raise
-

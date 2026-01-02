@@ -61,4 +61,3 @@ class TestWebsocketLogger:
 
         # Assert
         # Function should execute without error
-

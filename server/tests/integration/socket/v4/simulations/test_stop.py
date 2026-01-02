@@ -16,9 +16,11 @@ async def test_simulation_text_stop_success(
     # Arrange
     # Create test scenario and chat
     from tests.integration.socket.v4.helpers import create_test_scenario
+
     scenario_id = await create_test_scenario(db)
 
     from tests.integration.socket.v4.helpers import create_test_chat
+
     chat_id = await create_test_chat(db, scenario_id, trace_id="test-trace")
 
     sid = "test_sid_123"
@@ -51,4 +53,3 @@ async def test_simulation_text_stop_missing_chat_id(
     error_events = mock_sio.get_events("simulations_text_stop_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

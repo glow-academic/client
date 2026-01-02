@@ -50,6 +50,7 @@ except ImportError:
         message: str
         trace_id: str
 
+
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
@@ -69,9 +70,7 @@ async def _document_tool_title_impl(
 
     try:
         async with get_db_connection() as conn:
-            document_id_uuid = (
-                uuid.UUID(data.document_id) if data.document_id else None
-            )
+            document_id_uuid = uuid.UUID(data.document_id) if data.document_id else None
 
             if not document_id_uuid:
                 await emit_to_client(

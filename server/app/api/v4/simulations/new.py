@@ -88,7 +88,9 @@ async def get_simulation_new(
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
         # Use mode='json' to serialize UUIDs properly
-        api_response = GetSimulationNewApiResponse.model_validate(result.model_dump(mode="json"))
+        api_response = GetSimulationNewApiResponse.model_validate(
+            result.model_dump(mode="json")
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

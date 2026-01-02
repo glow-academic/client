@@ -4,30 +4,34 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateAgentDepartmentPromptLinkSqlParams,
-                             CreateAgentDepartmentPromptLinkSqlRow,
-                             CreateAgentPromptLinkInactiveSqlParams,
-                             CreateAgentPromptLinkInactiveSqlRow,
-                             CreateAgentPromptLinkSqlParams,
-                             CreateAgentPromptLinkSqlRow,
-                             CreatePersonaDepartmentPromptLinkSqlParams,
-                             CreatePersonaDepartmentPromptLinkSqlRow,
-                             CreatePersonaPromptLinkSqlParams,
-                             CreatePersonaPromptLinkSqlRow,
-                             CreateTestAgentSqlParams, CreateTestAgentSqlRow,
-                             CreateTestPersonaSqlParams,
-                             CreateTestPersonaSqlRow,
-                             CreateTestPromptSqlParams, CreateTestPromptSqlRow,
-                             GetAgentDepartmentPromptLinkStatusSqlParams,
-                             GetAgentDepartmentPromptLinkStatusSqlRow,
-                             GetAgentPromptLinkStatusSqlParams,
-                             GetAgentPromptLinkStatusSqlRow,
-                             GetFirstDepartmentSqlParams,
-                             GetFirstDepartmentSqlRow,
-                             GetPersonaDepartmentPromptLinkStatusSqlParams,
-                             GetPersonaDepartmentPromptLinkStatusSqlRow,
-                             GetPersonaPromptLinkStatusSqlParams,
-                             GetPersonaPromptLinkStatusSqlRow)
+from tests.sql.types import (
+    CreateAgentDepartmentPromptLinkSqlParams,
+    CreateAgentDepartmentPromptLinkSqlRow,
+    CreateAgentPromptLinkInactiveSqlParams,
+    CreateAgentPromptLinkInactiveSqlRow,
+    CreateAgentPromptLinkSqlParams,
+    CreateAgentPromptLinkSqlRow,
+    CreatePersonaDepartmentPromptLinkSqlParams,
+    CreatePersonaDepartmentPromptLinkSqlRow,
+    CreatePersonaPromptLinkSqlParams,
+    CreatePersonaPromptLinkSqlRow,
+    CreateTestAgentSqlParams,
+    CreateTestAgentSqlRow,
+    CreateTestPersonaSqlParams,
+    CreateTestPersonaSqlRow,
+    CreateTestPromptSqlParams,
+    CreateTestPromptSqlRow,
+    GetAgentDepartmentPromptLinkStatusSqlParams,
+    GetAgentDepartmentPromptLinkStatusSqlRow,
+    GetAgentPromptLinkStatusSqlParams,
+    GetAgentPromptLinkStatusSqlRow,
+    GetFirstDepartmentSqlParams,
+    GetFirstDepartmentSqlRow,
+    GetPersonaDepartmentPromptLinkStatusSqlParams,
+    GetPersonaDepartmentPromptLinkStatusSqlRow,
+    GetPersonaPromptLinkStatusSqlParams,
+    GetPersonaPromptLinkStatusSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -95,7 +99,9 @@ async def test_delete_agent_prompt_default(
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql",
-        params=CreateAgentPromptLinkInactiveSqlParams(agent_id=agent_id, prompt_id=prompt2_id),
+        params=CreateAgentPromptLinkInactiveSqlParams(
+            agent_id=agent_id, prompt_id=prompt2_id
+        ),
     )
 
     # v4 routes get profile_id from router dependency
@@ -119,9 +125,13 @@ async def test_delete_agent_prompt_default(
     link_status_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql",
-        params=GetAgentPromptLinkStatusSqlParams(agent_id=agent_id, prompt_id=prompt1_id),
+        params=GetAgentPromptLinkStatusSqlParams(
+            agent_id=agent_id, prompt_id=prompt1_id
+        ),
     )
-    typed_status = GetAgentPromptLinkStatusSqlRow.model_validate(link_status_result.model_dump())
+    typed_status = GetAgentPromptLinkStatusSqlRow.model_validate(
+        link_status_result.model_dump()
+    )
     assert typed_status.active is False
 
 
@@ -283,9 +293,13 @@ async def test_delete_agent_prompt_last_default(
     link_status_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql",
-        params=GetAgentPromptLinkStatusSqlParams(agent_id=agent_id, prompt_id=prompt_id),
+        params=GetAgentPromptLinkStatusSqlParams(
+            agent_id=agent_id, prompt_id=prompt_id
+        ),
     )
-    typed_status = GetAgentPromptLinkStatusSqlRow.model_validate(link_status_result.model_dump())
+    typed_status = GetAgentPromptLinkStatusSqlRow.model_validate(
+        link_status_result.model_dump()
+    )
     assert typed_status.active is False
 
 
@@ -325,7 +339,9 @@ async def test_delete_persona_prompt_default(
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql",
-        params=CreatePersonaPromptLinkSqlParams(persona_id=persona_id, prompt_id=prompt_id),
+        params=CreatePersonaPromptLinkSqlParams(
+            persona_id=persona_id, prompt_id=prompt_id
+        ),
     )
 
     # v4 routes get profile_id from router dependency
@@ -349,9 +365,13 @@ async def test_delete_persona_prompt_default(
     link_status_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/personas/test_get_persona_prompt_link_status_v4_complete.sql",
-        params=GetPersonaPromptLinkStatusSqlParams(persona_id=persona_id, prompt_id=prompt_id),
+        params=GetPersonaPromptLinkStatusSqlParams(
+            persona_id=persona_id, prompt_id=prompt_id
+        ),
     )
-    typed_status = GetPersonaPromptLinkStatusSqlRow.model_validate(link_status_result.model_dump())
+    typed_status = GetPersonaPromptLinkStatusSqlRow.model_validate(
+        link_status_result.model_dump()
+    )
     assert typed_status.link_exists is False
 
 
@@ -434,4 +454,3 @@ async def test_delete_persona_prompt_department(
         dept_link_status_result.model_dump()
     )
     assert typed_dept_status.link_exists is False
-

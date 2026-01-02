@@ -91,4 +91,3 @@ async def test_get_simulation_new_includes_rubrics(
 
     # Verify rubric_mapping contains rubrics
     assert len(data["rubric_mapping"]) >= 0
-

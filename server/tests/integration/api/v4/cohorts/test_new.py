@@ -80,14 +80,18 @@ async def test_get_cohort_new_with_default_cohort(
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql",
-        params=CreateCohortDepartmentLinkSqlParams(cohort_id=cohort_id, department_id=dept_id),
+        params=CreateCohortDepartmentLinkSqlParams(
+            cohort_id=cohort_id, department_id=dept_id
+        ),
     )
 
     # Link profile to department using SQL file
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql",
-        params=CreateProfileDepartmentLinkSqlParams(profile_id=profile_id, department_id=dept_id),
+        params=CreateProfileDepartmentLinkSqlParams(
+            profile_id=profile_id, department_id=dept_id
+        ),
     )
 
     # v4 routes get profile_id from router dependency
@@ -140,4 +144,3 @@ async def test_get_cohort_new_not_found(
 
     # Should return 404 if no cohort found, or 200 with empty/default data
     assert response.status_code in [200, 404]
-

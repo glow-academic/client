@@ -94,4 +94,3 @@ async def test_create_department_minimal(
     assert typed_dept.department_id is not None
     assert typed_dept.title == "Minimal Department"
     assert typed_dept.description == ""  # Empty string
-

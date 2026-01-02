@@ -16,10 +16,12 @@ async def test_simulation_leave_success(
     # Arrange
     # Create scenario
     from tests.integration.socket.v4.helpers import create_test_scenario
+
     scenario_id = await create_test_scenario(db)
 
     # Create chat
     from tests.integration.socket.v4.helpers import create_test_chat
+
     chat_id = await create_test_chat(db, scenario_id)
 
     # Join room first
@@ -45,8 +47,10 @@ async def test_simulation_leave_custom_chat_type(
     """Test simulation_leave with custom chat_type."""
     # Arrange
     from tests.integration.socket.v4.helpers import create_test_scenario
+
     scenario_id = await create_test_scenario(db)
     from tests.integration.socket.v4.helpers import create_test_chat
+
     chat_id = await create_test_chat(db, scenario_id)
 
     # Join room first
@@ -82,4 +86,3 @@ async def test_simulation_leave_missing_chat_id(
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("simulations_leave_error")
     assert len(error_events) >= 1
-

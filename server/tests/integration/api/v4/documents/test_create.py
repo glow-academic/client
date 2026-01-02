@@ -4,14 +4,18 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateDocumentDepartmentLinkSqlParams,
-                             CreateDocumentDepartmentLinkSqlRow,
-                             CreateTestDocumentSqlParams,
-                             CreateTestDocumentSqlRow,
-                             GetDocumentByIdSqlParams, GetDocumentByIdSqlRow,
-                             GetDocumentDepartmentLinkExistsSqlParams,
-                             GetDocumentDepartmentLinkExistsSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow)
+from tests.sql.types import (
+    CreateDocumentDepartmentLinkSqlParams,
+    CreateDocumentDepartmentLinkSqlRow,
+    CreateTestDocumentSqlParams,
+    CreateTestDocumentSqlRow,
+    GetDocumentByIdSqlParams,
+    GetDocumentByIdSqlRow,
+    GetDocumentDepartmentLinkExistsSqlParams,
+    GetDocumentDepartmentLinkExistsSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -53,4 +57,3 @@ async def test_create_document(
     assert typed_document.document_id == document_id
     assert typed_document.name == "Test Document"
     assert typed_document.type == "homework"
-

@@ -22,7 +22,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
+)
 
 # Try to import litellm, fall back gracefully if not available
 try:
@@ -62,7 +64,9 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
         profile_id_str = await find_profile_by_socket(sid)
         profile_id = uuid.UUID(profile_id_str) if profile_id_str else None
     else:
-        profile_id = uuid.UUID(profile_id_from_payload) if profile_id_from_payload else None
+        profile_id = (
+            uuid.UUID(profile_id_from_payload) if profile_id_from_payload else None
+        )
 
     try:
         async with get_db_connection() as conn:
@@ -136,7 +140,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     api_key=decrypted_api_key,
                     base_url=base_url if base_url else None,
                 )
-
 
                 # Extract image URL or bytes from response
                 image_url = None
@@ -256,7 +259,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             file_path = f"image/{file_name}"
             full_path = IMAGE_FOLDER / file_name
 
-
             # Ensure image directory exists
             IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
 
@@ -276,7 +278,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 return
 
             file_size = len(image_bytes)
-
 
             # Call log_run via internal bus (similar to scenario generation)
             # Note: Image generation via litellm doesn't provide token counts,
@@ -366,9 +367,7 @@ async def _emit_image_error(
     # Update image record: mark as completed (even on error) to prevent retries
     try:
         async with get_db_connection() as conn:
-            sql_update_image = load_sql(
-                "app/sql/v4/images/update_image_completed.sql"
-            )
+            sql_update_image = load_sql("app/sql/v4/images/update_image_completed.sql")
             await conn.execute(sql_update_image, image_id, True)
     except Exception:
         pass

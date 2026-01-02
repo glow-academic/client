@@ -4,18 +4,22 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateParameterItemDepartmentLinkSqlParams,
-                             CreateParameterItemDepartmentLinkSqlRow,
-                             CreateTestParameterItemSqlParams,
-                             CreateTestParameterItemSqlRow,
-                             CreateTestParameterSqlParams,
-                             CreateTestParameterSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow,
-                             GetParameterByIdSqlParams, GetParameterByIdSqlRow,
-                             GetParameterItemDepartmentLinksSqlParams,
-                             GetParameterItemDepartmentLinksSqlRow,
-                             GetParameterItemsSqlParams,
-                             GetParameterItemsSqlRow)
+from tests.sql.types import (
+    CreateParameterItemDepartmentLinkSqlParams,
+    CreateParameterItemDepartmentLinkSqlRow,
+    CreateTestParameterItemSqlParams,
+    CreateTestParameterItemSqlRow,
+    CreateTestParameterSqlParams,
+    CreateTestParameterSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+    GetParameterByIdSqlParams,
+    GetParameterByIdSqlRow,
+    GetParameterItemDepartmentLinksSqlParams,
+    GetParameterItemDepartmentLinksSqlRow,
+    GetParameterItemsSqlParams,
+    GetParameterItemsSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -80,7 +84,9 @@ async def test_create_parameter(
         sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=parameter_id),
     )
-    typed_parameter = GetParameterByIdSqlRow.model_validate(parameter_result.model_dump())
+    typed_parameter = GetParameterByIdSqlRow.model_validate(
+        parameter_result.model_dump()
+    )
     assert typed_parameter.parameter_id == parameter_id
     assert typed_parameter.name == "Test Parameter"
     assert typed_parameter.description == "Test Description"
@@ -159,7 +165,9 @@ async def test_create_parameter_minimal(
         sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=parameter_id),
     )
-    typed_parameter = GetParameterByIdSqlRow.model_validate(parameter_result.model_dump())
+    typed_parameter = GetParameterByIdSqlRow.model_validate(
+        parameter_result.model_dump()
+    )
     assert typed_parameter.name == "Minimal Parameter"
     assert typed_parameter.numerical is True
 
@@ -171,4 +179,3 @@ async def test_create_parameter_minimal(
     )
     typed_items = GetParameterItemsSqlRow.model_validate(items_result.model_dump())
     assert len(typed_items) == 0
-

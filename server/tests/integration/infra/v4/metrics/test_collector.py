@@ -67,4 +67,3 @@ class TestMetricsCollector:
 
         # Assert
         # Function should execute without error
-

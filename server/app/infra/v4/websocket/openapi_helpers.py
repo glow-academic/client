@@ -26,44 +26,44 @@ def _generate_unique_function_name(router: APIRouter, path: str) -> str:
     if frame and frame.f_back and frame.f_back.f_back:
         caller_frame = frame.f_back.f_back
         calling_module = caller_frame.f_globals.get("__name__", "")
-    
+
     # Extract relevant parts from module path (e.g., "app.socket.v4.agents.rubric.generate")
     # Remove "app." prefix and normalize
     if calling_module:
         module_parts = calling_module.replace("app.", "").split(".")
     else:
         module_parts = []
-    
+
     # Get router prefix (defaults to empty string if None)
     prefix = getattr(router, "prefix", "") or ""
-    
+
     # Combine module parts + prefix + path
     parts = []
-    
+
     # Add relevant module parts (skip common prefixes like "socket", "v4")
     # Keep agent/resource names (e.g., "rubric", "scenario", "document")
     for part in module_parts:
         if part not in ["socket", "v4", "agents", "tools"]:
             parts.append(part)
-    
+
     # Add router prefix if available
     if prefix:
         prefix_clean = prefix.strip("/").replace("/", "_")
         if prefix_clean:
             parts.append(prefix_clean)
-    
+
     # Add path
     path_clean = path.strip("/").replace("/", "_")
     if path_clean:
         parts.append(path_clean)
-    
+
     # Combine and normalize
     full_path = "_".join(parts)
-    
+
     # Normalize: remove special chars, lowercase
     normalized = re.sub(r"[^a-z0-9_]", "", full_path.lower())
     normalized = normalized.strip("_")
-    
+
     # Create function name
     return f"handle_{normalized}" if normalized else "handle_endpoint"
 

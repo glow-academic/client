@@ -19,6 +19,7 @@ async def test_benchmark_advance_success(
         create_test_benchmark_attempt,
         create_test_test,
     )
+
     eval_id = await get_eval_by_active(db)
     if not eval_id:
         pytest.skip("No active evals found in test database")
@@ -39,4 +40,3 @@ async def test_benchmark_advance_success(
     error_events = mock_sio.get_events("benchmarks_advance_error")
     # Handler may emit error if test not found
     assert len(error_events) >= 0
-

@@ -19,6 +19,7 @@ from app.socket.v4.agents.simulation.generate import (
     get_simulation_conversation_history,
 )
 from app.main import get_internal_sio, sio
+
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
@@ -76,12 +77,15 @@ except ImportError:
     class GetSimulationMessagesSqlRow(BaseModel):
         messages: list[Any] | None = None
 
+
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_CONTEXT = "app/sql/v4/member/get_member_regeneration_run_context_and_create_run_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/member/get_member_regeneration_run_context_and_create_run_complete.sql"
+)
 SQL_PATH_MESSAGES = "app/sql/v4/simulations/get_simulation_messages_complete.sql"
 
 
@@ -253,7 +257,9 @@ async def _member_regenerate_impl(
             if context["documents"]:
                 documents_dict = [
                     {
-                        "id": doc.id if hasattr(doc, "id") else str(getattr(doc, "document_id", "")),
+                        "id": doc.id
+                        if hasattr(doc, "id")
+                        else str(getattr(doc, "document_id", "")),
                         "name": getattr(doc, "name", ""),
                         "file_path": getattr(doc, "file_path", ""),
                         "mime_type": getattr(doc, "mime_type", ""),
@@ -274,7 +280,9 @@ async def _member_regenerate_impl(
             messages_params = GetSimulationMessagesSqlParams(chat_id=chat_id_uuid)
             messages_result = cast(
                 GetSimulationMessagesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_MESSAGES, params=messages_params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_MESSAGES, params=messages_params
+                ),
             )
             messages = [
                 {
@@ -412,4 +420,3 @@ async def member_regenerate(sid: str, data: dict[str, Any]) -> None:
 async def member_regenerate_api(request: MemberRegeneratePayload) -> dict[str, bool]:
     """Client-to-server event: Regenerate member agent response."""
     return {"success": True}
-

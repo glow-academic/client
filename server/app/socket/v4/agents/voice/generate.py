@@ -190,7 +190,9 @@ async def _simulation_voice_generate_impl(
                     GetVoiceRunContextV3SqlRow,
                 )
 
-                SQL_PATH = "app/sql/v4/simulation_voice/get_voice_run_context_complete.sql"
+                SQL_PATH = (
+                    "app/sql/v4/simulation_voice/get_voice_run_context_complete.sql"
+                )
                 params = GetVoiceRunContextV3SqlParams(
                     chat_id=chat_id_uuid,
                     run_id=run_id_uuid,
@@ -201,11 +203,17 @@ async def _simulation_voice_generate_impl(
                 )
 
                 if not context_result:
-                    await emit_error(f"Chat {chat_id_str} or run {data.run_id} not found")
+                    await emit_error(
+                        f"Chat {chat_id_str} or run {data.run_id} not found"
+                    )
                     return
 
                 # Convert result to dict for compatibility with existing code
-                context_row = context_result.model_dump() if hasattr(context_result, 'model_dump') else dict(context_result)
+                context_row = (
+                    context_result.model_dump()
+                    if hasattr(context_result, "model_dump")
+                    else dict(context_result)
+                )
             except ImportError:
                 # Fallback to load_sql if types not generated yet
                 sql_context = load_sql(
@@ -216,7 +224,9 @@ async def _simulation_voice_generate_impl(
                 )
 
                 if not context_row:
-                    await emit_error(f"Chat {chat_id_str} or run {data.run_id} not found")
+                    await emit_error(
+                        f"Chat {chat_id_str} or run {data.run_id} not found"
+                    )
                     return
                 context_row = dict(context_row)
 
@@ -652,7 +662,6 @@ async def _simulation_voice_generate_impl(
 
             realtime_history = [RealtimeItem(**item) for item in cleaned_history_dicts]
 
-
             # Emit response to client
             await simulation_voice_start_response(
                 StartVoiceResponsePayload(
@@ -905,6 +914,8 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             )
         except Exception:
             pass
+
+
 @sio.event  # type: ignore
 async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler (client event)."""
@@ -928,6 +939,8 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
             )
         except Exception:
             pass
+
+
 @internal_sio.on("simulation_voice_generate")  # type: ignore
 async def simulation_voice_generate_internal(
     data: dict[str, Any],

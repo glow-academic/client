@@ -4,20 +4,24 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateDocumentDepartmentLinkSqlParams,
-                             CreateDocumentDepartmentLinkSqlRow,
-                             CreateDocumentParameterItemLinkSqlParams,
-                             CreateDocumentParameterItemLinkSqlRow,
-                             CreateTestDocumentSqlParams,
-                             CreateTestDocumentSqlRow,
-                             GetCsDeptIdSqlParams, GetCsDeptIdSqlRow,
-                             GetDocumentByIdSqlParams, GetDocumentByIdSqlRow,
-                             GetDocumentDepartmentLinkExistsSqlParams,
-                             GetDocumentDepartmentLinkExistsSqlRow,
-                             GetDocumentParameterItemLinkExistsSqlParams,
-                             GetDocumentParameterItemLinkExistsSqlRow,
-                             GetFirstParameterItemSqlParams,
-                             GetFirstParameterItemSqlRow)
+from tests.sql.types import (
+    CreateDocumentDepartmentLinkSqlParams,
+    CreateDocumentDepartmentLinkSqlRow,
+    CreateDocumentParameterItemLinkSqlParams,
+    CreateDocumentParameterItemLinkSqlRow,
+    CreateTestDocumentSqlParams,
+    CreateTestDocumentSqlRow,
+    GetCsDeptIdSqlParams,
+    GetCsDeptIdSqlRow,
+    GetDocumentByIdSqlParams,
+    GetDocumentByIdSqlRow,
+    GetDocumentDepartmentLinkExistsSqlParams,
+    GetDocumentDepartmentLinkExistsSqlRow,
+    GetDocumentParameterItemLinkExistsSqlParams,
+    GetDocumentParameterItemLinkExistsSqlRow,
+    GetFirstParameterItemSqlParams,
+    GetFirstParameterItemSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -49,7 +53,9 @@ async def test_update_document(
             document_active=True,
         ),
     )
-    typed_document = CreateTestDocumentSqlRow.model_validate(document_result.model_dump())
+    typed_document = CreateTestDocumentSqlRow.model_validate(
+        document_result.model_dump()
+    )
     assert typed_document.document_id is not None
     document_id = typed_document.document_id
 
@@ -137,7 +143,9 @@ async def test_update_document_minimal(
             document_active=True,
         ),
     )
-    typed_document = CreateTestDocumentSqlRow.model_validate(document_result.model_dump())
+    typed_document = CreateTestDocumentSqlRow.model_validate(
+        document_result.model_dump()
+    )
     assert typed_document.document_id is not None
     document_id = typed_document.document_id
 
@@ -191,4 +199,3 @@ async def test_update_document_not_found(
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
-

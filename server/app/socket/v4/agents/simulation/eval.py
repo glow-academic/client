@@ -66,37 +66,37 @@ async def _simulation_eval_impl(
                     "tool_id": None,
                     "success": True,
                     "message": "Simulation eval completed successfully",
-                                                        "sid": sid,
+                    "sid": sid,
                 },
             )
     except RuntimeError:
         # Pool not initialized - propagate to benchmark_error handler
         await internal_sio.emit(
-                "benchmark_error",
-                {
+            "benchmark_error",
+            {
                 "attempt_id": data.attempt_id,
                 "eval_id": data.eval_id,
                 "test_id": data.test_id,
                 "run_id": data.run_id,
                 "group_id": data.group_id,
                 "error_message": "Database connection pool not available",
-                                                    "sid": sid,
-                },
-            )
+                "sid": sid,
+            },
+        )
     except Exception as e:
         # Propagate to benchmark_error handler
         await internal_sio.emit(
-                "benchmark_error",
-                {
+            "benchmark_error",
+            {
                 "attempt_id": data.attempt_id,
                 "eval_id": data.eval_id,
                 "test_id": data.test_id,
                 "run_id": data.run_id,
                 "group_id": data.group_id,
                 "error_message": str(e),
-                                                    "sid": sid,
-                },
-            )
+                "sid": sid,
+            },
+        )
 
 
 @internal_sio.on("simulation_eval_start")  # type: ignore

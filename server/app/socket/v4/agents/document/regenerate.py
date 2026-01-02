@@ -28,6 +28,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
@@ -121,11 +122,14 @@ except ImportError:
         progress_type: str
         message: str | None = None
 
+
 client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/documents/get_document_regeneration_run_context_and_create_run_complete.sql"
-SQL_TEMPLATE_CONTEXT_PATH = "app/sql/v4/documents/get_document_template_context_complete.sql"
+SQL_TEMPLATE_CONTEXT_PATH = (
+    "app/sql/v4/documents/get_document_template_context_complete.sql"
+)
 SQL_CREATE_TEMPLATE_PATH = "app/sql/v4/documents/create_template_and_link_complete.sql"
 
 internal_sio = get_internal_sio()
@@ -141,10 +145,22 @@ async def _document_regenerate_impl(
 
     try:
         # Extract required fields (already validated as UUIDs by ApiRequest)
-        department_id = uuid.UUID(data["department_id"]) if isinstance(data["department_id"], str) else data["department_id"]
-        document_agent_id = uuid.UUID(data["document_agent_id"]) if isinstance(data["document_agent_id"], str) else data["document_agent_id"]
+        department_id = (
+            uuid.UUID(data["department_id"])
+            if isinstance(data["department_id"], str)
+            else data["department_id"]
+        )
+        document_agent_id = (
+            uuid.UUID(data["document_agent_id"])
+            if isinstance(data["document_agent_id"], str)
+            else data["document_agent_id"]
+        )
         group_id = uuid.UUID(data["group_id"])  # REQUIRED for regeneration
-        document_id = uuid.UUID(data["document_id"]) if data.get("document_id") and isinstance(data["document_id"], str) else data.get("document_id")
+        document_id = (
+            uuid.UUID(data["document_id"])
+            if data.get("document_id") and isinstance(data["document_id"], str)
+            else data.get("document_id")
+        )
         document_name = data.get("document_name")
         document_description = data.get("document_description")
         field_ids = data.get("field_ids")
@@ -164,7 +180,9 @@ async def _document_regenerate_impl(
                     document_id=document_id,
                     document_name=document_name,
                     document_description=document_description,
-                    field_ids=[uuid.UUID(fid) for fid in field_ids] if field_ids else None,
+                    field_ids=[uuid.UUID(fid) for fid in field_ids]
+                    if field_ids
+                    else None,
                     user_instructions=user_instructions,
                 )
                 result = cast(
@@ -389,7 +407,9 @@ async def _document_regenerate_impl(
             # Fetch fields information if fieldIds provided
             fields_data: list[dict[str, Any]] | None = None
             if field_ids and len(field_ids) > 0:
-                field_ids_uuid = [uuid.UUID(fid) if isinstance(fid, str) else fid for fid in field_ids]
+                field_ids_uuid = [
+                    uuid.UUID(fid) if isinstance(fid, str) else fid for fid in field_ids
+                ]
                 try:
                     # Use execute_sql_typed() - returns composite type array
                     template_context_params = GetDocumentTemplateContextSqlParams(
@@ -398,7 +418,9 @@ async def _document_regenerate_impl(
                     template_context_result = cast(
                         GetDocumentTemplateContextSqlRow,
                         await execute_sql_typed(
-                            conn, SQL_TEMPLATE_CONTEXT_PATH, params=template_context_params
+                            conn,
+                            SQL_TEMPLATE_CONTEXT_PATH,
+                            params=template_context_params,
                         ),
                     )
                     # Convert composite type array to dict format for format_document_template_context
@@ -406,9 +428,13 @@ async def _document_regenerate_impl(
                         fields_data = [
                             {
                                 "item_name": getattr(field, "item_name", ""),
-                                "item_description": getattr(field, "item_description", ""),
+                                "item_description": getattr(
+                                    field, "item_description", ""
+                                ),
                                 "param_name": getattr(field, "param_name", ""),
-                                "param_description": getattr(field, "param_description", ""),
+                                "param_description": getattr(
+                                    field, "param_description", ""
+                                ),
                             }
                             for field in template_context_result.fields
                         ]
@@ -479,7 +505,9 @@ async def _document_regenerate_impl(
             with trace(
                 "Document Agent Regeneration",
                 trace_id=trace_id,  # From groups table
-                group_id=str(document_id) if document_id else None,  # Resource ID, not database group_id
+                group_id=str(document_id)
+                if document_id
+                else None,  # Resource ID, not database group_id
             ):
                 run_result = await Runner.run(
                     document_agent.agent(),
@@ -586,7 +614,9 @@ async def _document_regenerate_impl(
                         template_result = cast(
                             CreateTemplateAndLinkSqlRow,
                             await execute_sql_typed(
-                                conn, SQL_CREATE_TEMPLATE_PATH, params=create_template_params
+                                conn,
+                                SQL_CREATE_TEMPLATE_PATH,
+                                params=create_template_params,
                             ),
                         )
 
@@ -597,7 +627,9 @@ async def _document_regenerate_impl(
                         sql_templates = load_sql(
                             "app/sql/v4/documents/get_document_templates.sql"
                         )
-                        template_rows = await conn.fetch(sql_templates, str(document_id))
+                        template_rows = await conn.fetch(
+                            sql_templates, str(document_id)
+                        )
 
                         # Build mapping from array
                         template_mapping = {}
@@ -720,13 +752,16 @@ async def document_regenerate(sid: str, data: dict[str, Any]) -> None:
     # Convert camelCase to snake_case for ApiRequest
     converted_data = {
         "department_id": data.get("departmentId") or data.get("department_id"),
-        "document_agent_id": data.get("documentAgentId") or data.get("document_agent_id"),
+        "document_agent_id": data.get("documentAgentId")
+        or data.get("document_agent_id"),
         "group_id": data.get("groupId") or data.get("group_id"),  # REQUIRED
         "document_id": data.get("documentId") or data.get("document_id"),
         "document_name": data.get("documentName") or data.get("document_name"),
-        "document_description": data.get("documentDescription") or data.get("document_description"),
+        "document_description": data.get("documentDescription")
+        or data.get("document_description"),
         "field_ids": data.get("fieldIds") or data.get("field_ids"),
-        "user_instructions": data.get("userInstructions") or data.get("user_instructions"),
+        "user_instructions": data.get("userInstructions")
+        or data.get("user_instructions"),
     }
     await handle_client_event(
         sid=sid,
@@ -744,4 +779,3 @@ register_client_endpoint(
     DocumentRegeneratePayload,
     "Regenerate document template using AI",
 )
-

@@ -18,6 +18,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
@@ -84,6 +85,7 @@ except ImportError:
     class GetSimulationMessagesSqlRow(BaseModel):
         messages: list[Any] | None = None
 
+
 from app.socket.v4.agents.hint.error import HintErrorPayload
 from app.socket.v4.agents.hint.generate import HintGenerationProgressPayload, HintItem
 
@@ -103,10 +105,26 @@ async def _hint_regenerate_impl(
     profile_id: uuid.UUID,
 ) -> None:
     """Internal implementation for hint regeneration."""
-    chat_id = uuid.UUID(data["chat_id"]) if isinstance(data["chat_id"], str) else data["chat_id"]
-    message_id = uuid.UUID(data["message_id"]) if isinstance(data["message_id"], str) else data["message_id"]
-    department_id = uuid.UUID(data["department_id"]) if isinstance(data["department_id"], str) else data["department_id"]
-    hint_agent_id = uuid.UUID(data["hint_agent_id"]) if isinstance(data["hint_agent_id"], str) else data["hint_agent_id"]
+    chat_id = (
+        uuid.UUID(data["chat_id"])
+        if isinstance(data["chat_id"], str)
+        else data["chat_id"]
+    )
+    message_id = (
+        uuid.UUID(data["message_id"])
+        if isinstance(data["message_id"], str)
+        else data["message_id"]
+    )
+    department_id = (
+        uuid.UUID(data["department_id"])
+        if isinstance(data["department_id"], str)
+        else data["department_id"]
+    )
+    hint_agent_id = (
+        uuid.UUID(data["hint_agent_id"])
+        if isinstance(data["hint_agent_id"], str)
+        else data["hint_agent_id"]
+    )
     group_id = uuid.UUID(data["group_id"])  # REQUIRED for regeneration
     user_instructions = data.get("user_instructions")
 
@@ -280,7 +298,9 @@ async def _hint_regenerate_impl(
                 # Convert composite type objects to dict format for format_document_info
                 documents_dict = [
                     {
-                        "id": str(doc.document_id) if hasattr(doc, "document_id") else str(getattr(doc, "id", "")),
+                        "id": str(doc.document_id)
+                        if hasattr(doc, "document_id")
+                        else str(getattr(doc, "id", "")),
                         "name": getattr(doc, "name", ""),
                         "file_path": getattr(doc, "file_path", "") or "",
                         "mime_type": getattr(doc, "mime_type", "") or "",
@@ -512,4 +532,3 @@ register_client_endpoint(
     HintRegeneratePayload,
     "Regenerate hints for a simulation message",
 )
-

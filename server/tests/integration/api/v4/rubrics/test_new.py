@@ -42,4 +42,3 @@ async def test_get_rubric_new(
     assert isinstance(data["standard_groups_detail"], dict)
     assert isinstance(data["department_mapping"], dict)
     assert isinstance(data["valid_department_ids"], list)
-

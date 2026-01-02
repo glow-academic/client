@@ -47,7 +47,6 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
   useQueryStates,
@@ -100,9 +99,9 @@ export default function Simulation({
   const isEditMode = !!simulationId;
 
   // Inline parsers for URL-backed state
+  // Only include search/filter params, not draft data (scenarioIds is draft data)
   const simulationSearchParamsClient = {
     draftId: parseAsString,
-    scenarioIds: parseAsArrayOf(parseAsString),
     scenarioSearch: parseAsString,
     scenarioShowSelected: parseAsBoolean,
   } as const;
@@ -212,6 +211,7 @@ export default function Simulation({
     hint_agent_id: string | null;
     simulation_text_agent_id: string | null;
     simulation_voice_agent_id: string | null;
+    member_agent_id: string | null; // Member agent for rubric grade agents
     scenarioIds: string[]; // Track selected scenario IDs (for ordering)
     scenarioActiveStates: Record<string, boolean>;
     scenarioSettings: Record<
@@ -222,6 +222,7 @@ export default function Simulation({
         audio_enabled?: boolean;
         text_enabled?: boolean;
         rubric_id?: string | null;
+        grade_agent_id?: string | null; // Grade agent for this scenario's rubric
         time_limit_seconds?: number | null;
       }
     >;
@@ -231,16 +232,11 @@ export default function Simulation({
   const initialDraftState = useMemo((): DraftState => {
     const data = isEditMode ? simulationDetail : simulationDetailDefault;
 
-    // Get scenarioIds from URL params if available, otherwise from server data
-    const urlScenarioIds = urlParams.scenarioIds || [];
+    // Get scenarioIds from server data (draft payload if available, otherwise simulation data)
     const serverScenarioIds =
       isEditMode && data && "scenario_ids" in data
         ? (data as SimulationDetailOut).scenario_ids || []
         : [];
-
-    // Prioritize URL params if available, otherwise use server data
-    const initialScenarioIds =
-      urlScenarioIds.length > 0 ? urlScenarioIds : serverScenarioIds;
 
     if (!data) {
       return {
@@ -252,7 +248,8 @@ export default function Simulation({
         hint_agent_id: null,
         simulation_text_agent_id: null,
         simulation_voice_agent_id: null,
-        scenarioIds: initialScenarioIds,
+        member_agent_id: null,
+        scenarioIds: serverScenarioIds,
         scenarioActiveStates: {},
         scenarioSettings: {},
       };
@@ -268,9 +265,32 @@ export default function Simulation({
         audio_enabled?: boolean;
         text_enabled?: boolean;
         rubric_id?: string | null;
+        grade_agent_id?: string | null;
         time_limit_seconds?: number | null;
       }
     > = {};
+
+    // Extract member_agent_id from first rubric_grade_agent (if available)
+    let memberAgentId: string | null = null;
+    if (
+      isEditMode &&
+      simulationDetail &&
+      "scenarios" in simulationDetail &&
+      simulationDetail.scenarios
+    ) {
+      // Find first scenario with rubric_grade_agents to get member agent
+      const firstScenarioWithRubric = simulationDetail.scenarios.find(
+        (s) =>
+          s.rubric_grade_agents &&
+          Array.isArray(s.rubric_grade_agents) &&
+          s.rubric_grade_agents.length > 0 &&
+          s.rubric_grade_agents[0]?.grade_agent_id
+      );
+      if (firstScenarioWithRubric?.rubric_grade_agents?.[0]?.grade_agent_id) {
+        memberAgentId =
+          firstScenarioWithRubric.rubric_grade_agents[0].grade_agent_id;
+      }
+    }
 
     if (
       isEditMode &&
@@ -285,6 +305,13 @@ export default function Simulation({
           const key = scenario.scenario_id;
           if (key) {
             scenarioActiveStates[key] = scenario.active ?? false;
+            // Extract rubric_id and grade_agent_id from rubric_grade_agents
+            const rubricGradeAgent =
+              scenario.rubric_grade_agents &&
+              Array.isArray(scenario.rubric_grade_agents) &&
+              scenario.rubric_grade_agents.length > 0
+                ? scenario.rubric_grade_agents[0]
+                : null;
             scenarioSettings[key] = {
               hints_enabled: scenario.hints_enabled ?? false,
               copy_paste_allowed:
@@ -298,7 +325,8 @@ export default function Simulation({
               text_enabled:
                 ("text_enabled" in scenario ? scenario.text_enabled : true) ??
                 true,
-              rubric_id: null, // rubric_id is now per-scenario via rubric_grade_agents
+              rubric_id: rubricGradeAgent?.rubric_id || null,
+              grade_agent_id: rubricGradeAgent?.grade_agent_id || null,
               time_limit_seconds: scenario.time_limit_seconds ?? null,
             };
           }
@@ -320,7 +348,8 @@ export default function Simulation({
       simulation_voice_agent_id: isEditMode
         ? simulationDetail?.simulation_voice_agent_id || null
         : null,
-      scenarioIds: initialScenarioIds,
+      member_agent_id: memberAgentId,
+      scenarioIds: serverScenarioIds,
       scenarioActiveStates,
       scenarioSettings,
     };
@@ -329,7 +358,6 @@ export default function Simulation({
     simulationDetail,
     simulationDetailDefault,
     defaultDepartmentIds,
-    urlParams.scenarioIds,
     // Note: draftId/urlDraftId not needed here - server data already includes merged draft payload
   ]);
 
@@ -578,11 +606,11 @@ export default function Simulation({
     );
   }, [isEditMode, simulationDetail, simulationData?.scenarios_full]);
 
-  const validAgentIds = useMemo(
-    () =>
-      (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
-    [simulationData]
-  );
+  const validAgentIds = useMemo(() => {
+    const ids =
+      (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [];
+    return ids;
+  }, [simulationData]);
 
   // Get scenario IDs from URL params (source of truth) - defined earlier
   // const currentScenarioIds = urlParams.scenarioIds || [];
@@ -804,22 +832,15 @@ export default function Simulation({
   //   return baseIds.filter((id) => deptCohortIds.has(id));
   // }, [simulationData?.valid_cohort_ids, formData?.departmentIds, departmentMapping]);
 
-  // Sync draftState.scenarioIds with URL params when they change
-  useEffect(() => {
-    const urlScenarioIds = urlParams.scenarioIds || [];
-    if (
-      urlScenarioIds.length > 0 &&
-      urlScenarioIds.join(",") !== draftState.scenarioIds.join(",")
-    ) {
-      setDraftState((prev) => ({ ...prev, scenarioIds: urlScenarioIds }));
-    }
-  }, [urlParams.scenarioIds, draftState.scenarioIds]);
+  // Note: scenarioIds is now only in draftState, not URL params
 
   // Initialize content active states and switch states from server data
 
   // Auto-select agents when there's only one option available (similar to Scenario.tsx)
   useEffect(() => {
-    if (!simulationData || !agentMapping) return;
+    if (!simulationData || !agentMapping) {
+      return;
+    }
 
     const hintAgentIds =
       validAgentIds.filter((id) => {
@@ -837,6 +858,12 @@ export default function Simulation({
       validAgentIds.filter((id) => {
         const agent = agentMapping[id];
         return agent?.roles?.includes("voice");
+      }) || [];
+
+    const memberAgentIds =
+      validAgentIds.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("member");
       }) || [];
 
     // Auto-select first hint agent if only one option and not already set
@@ -873,6 +900,17 @@ export default function Simulation({
         simulation_voice_agent_id: simulationVoiceAgentIds[0] || null,
       }));
     }
+
+    // Auto-select first member agent if only one option and not already set
+    if (
+      memberAgentIds.length === 1 &&
+      (!draftState.member_agent_id || draftState.member_agent_id === null)
+    ) {
+      setDraftState((prev) => ({
+        ...prev,
+        member_agent_id: memberAgentIds[0] || null,
+      }));
+    }
   }, [
     simulationData,
     agentMapping,
@@ -880,6 +918,7 @@ export default function Simulation({
     draftState.hint_agent_id,
     draftState.simulation_text_agent_id,
     draftState.simulation_voice_agent_id,
+    draftState.member_agent_id,
   ]);
 
   // Clear scenarios that are no longer valid after department changes
@@ -903,14 +942,12 @@ export default function Simulation({
       const filtered = draftState.scenarioIds.filter((id) => validSet.has(id));
       if (filtered.length !== draftState.scenarioIds.length) {
         setDraftState((prev) => ({ ...prev, scenarioIds: filtered }));
-        // Also update URL params to keep them in sync
-        setUrlParams({ scenarioIds: filtered.length > 0 ? filtered : null });
       }
     }
 
     // Update ref to track current validScenarioIds
     prevValidScenarioIdsRef.current = [...validScenarioIds];
-  }, [draftState.scenarioIds, validScenarioIds, setUrlParams]);
+  }, [draftState.scenarioIds, validScenarioIds]);
 
   // Note: rubric_id is now per-scenario, not simulation-level, so we don't clear it here
 
@@ -985,16 +1022,23 @@ export default function Simulation({
           scenario_text_enabled.push(settings.text_enabled ?? true);
           scenario_time_limit_seconds.push(settings.time_limit_seconds ?? 0);
 
-          // Build rubric_grade_agents (for now, just use rubric_id)
+          // Build rubric_grade_agents with rubric_id and grade_agent_id
           const rubricId = settings.rubric_id;
-          if (rubricId && rubricId !== "00000000-0000-0000-0000-000000000000") {
-            // TODO: Add UI to select agents per rubric
-            // For now, use default agents or skip if no grade_agent_id available
+          // Use grade_agent_id from scenario settings, or fall back to member_agent_id for saving
+          // (member_agent_id is used as fallback when creating rubric_grade_agents entries)
+          const gradeAgentId =
+            settings.grade_agent_id || draftState.member_agent_id || null;
+          if (
+            rubricId &&
+            rubricId !== "00000000-0000-0000-0000-000000000000" &&
+            gradeAgentId &&
+            gradeAgentId !== "00000000-0000-0000-0000-000000000000"
+          ) {
             scenario_rubric_grade_agents.push({
               scenario_id: scenarioId,
               rubric_id: rubricId,
-              grade_agent_id: null, // TODO: Add UI to select grade agent
-              audio_agent_id: null, // TODO: Add UI to select audio agent
+              grade_agent_id: gradeAgentId,
+              audio_agent_id: null, // TODO: Add UI to select audio agent if needed
             });
           }
         });
@@ -1119,7 +1163,7 @@ export default function Simulation({
         id: "scenarios",
         title: "Scenarios",
         description: "Select scenarios to include in this simulation.",
-        resetFields: ["scenarioIds", "scenarioSearch", "scenarioShowSelected"],
+        resetFields: ["scenarioSearch", "scenarioShowSelected"],
         filters: [
           {
             key: "scenarioShowSelected",
@@ -1133,20 +1177,8 @@ export default function Simulation({
 
   // Form initialization function for GenericForm
   const initializeForm = useCallback(
-    (serverData: unknown, editMode: boolean) => {
-      // Initialize scenarioIds from server data if in edit mode
-      if (
-        editMode &&
-        serverData &&
-        typeof serverData === "object" &&
-        "scenario_ids" in serverData
-      ) {
-        const simulationDetail = serverData as SimulationDetailOut;
-        const scenarioIds = simulationDetail.scenario_ids || [];
-        return {
-          scenarioIds: scenarioIds.length > 0 ? scenarioIds : undefined,
-        };
-      }
+    (_serverData: unknown, _editMode: boolean) => {
+      // scenarioIds is draft data, not URL-backed form data
       return {};
     },
     []
@@ -1465,6 +1497,64 @@ export default function Simulation({
                       groupHeading="Agents"
                     />
                   </div>
+
+                  {/* Member Agent Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="member_agent_id">Member Agent</Label>
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={validAgentIds.filter((id) => {
+                        const agent = agentMapping[id];
+                        return agent?.roles?.includes("member");
+                      })}
+                      selectedIds={
+                        draftState.member_agent_id
+                          ? [draftState.member_agent_id]
+                          : []
+                      }
+                      onSelect={(ids) =>
+                        setDraftState((prev) => ({
+                          ...prev,
+                          member_agent_id: ids[0] || null,
+                        }))
+                      }
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No agent selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, _isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      placeholder="Select member agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1531,10 +1621,10 @@ export default function Simulation({
       }
 
       if (stepId === "scenarios") {
-        // Read from urlParams (nuqs-backed state) for proper URL sync
+        // Read from urlParams (nuqs-backed state) for search/filter, draftState for selected IDs
         // Note: stepFormData is still needed for setStepFormData calls to GenericForm
         const scenarioShowSelected = urlParams.scenarioShowSelected ?? false;
-        const selectedScenarioIds = urlParams.scenarioIds || [];
+        const selectedScenarioIds = draftState.scenarioIds || [];
         const scenarioSearch = urlParams.scenarioSearch || "";
 
         // Filter scenarios: department-based + client-side search/show_selected for immediate UI feedback
@@ -1607,11 +1697,7 @@ export default function Simulation({
                 onChange: createScenarioFilterOnChange,
               },
             ]}
-            resetFields={[
-              "scenarioIds",
-              "scenarioSearch",
-              "scenarioShowSelected",
-            ]}
+            resetFields={["scenarioSearch", "scenarioShowSelected"]}
             {...(onReset ? { onReset } : {})}
             resetLabel="Reset"
           >
@@ -1628,14 +1714,10 @@ export default function Simulation({
                 const newIds = isSelected
                   ? selectedScenarioIds.filter((id) => id !== scenarioId)
                   : [...selectedScenarioIds, scenarioId];
-                // Update both URL-backed state (for search/filter) and draftState
+                // Update draftState (scenarioIds is draft data, not URL param)
                 setStepFormData({
                   scenarioIds: newIds.length > 0 ? newIds : null,
                 });
-                setUrlParams((prev) => ({
-                  ...prev,
-                  scenarioIds: newIds.length > 0 ? newIds : null,
-                }));
                 setDraftState((prev) => ({ ...prev, scenarioIds: newIds }));
               }}
               getId={(scenario) => scenario.scenario_id}
@@ -2374,9 +2456,22 @@ export default function Simulation({
                   const scenario = scenarioMapping[scenarioId];
                   const settings = getScenarioSettings(scenarioId);
 
+                  // Grade agent picker only shows grade agents (no member_agent_id fallback)
+                  // Validate that gradeAgentId is actually a grade agent before showing as selected
+                  const gradeAgentIds = validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("grade");
+                  });
+                  const gradeAgentId = settings.grade_agent_id || null;
+                  // Only show as selected if it's actually a grade agent
+                  const validGradeAgentId =
+                    gradeAgentId && gradeAgentIds.includes(gradeAgentId)
+                      ? gradeAgentId
+                      : null;
+
                   return (
                     <Card key={scenarioId} className="p-4">
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <h3 className="font-medium text-sm leading-tight truncate">
                           {scenario?.name || "Unnamed Scenario"}
                         </h3>
@@ -2385,35 +2480,72 @@ export default function Simulation({
                             {scenario.description}
                           </p>
                         )}
-                        <GenericPicker
-                          items={rubricMapping}
-                          itemIds={validRubricIds}
-                          selectedIds={
-                            settings.rubric_id ? [settings.rubric_id] : []
-                          }
-                          onSelect={(ids) => {
-                            setDraftState((prev) => ({
-                              ...prev,
-                              scenarioSettings: {
-                                ...prev.scenarioSettings,
-                                [scenarioId]: {
-                                  ...prev.scenarioSettings[scenarioId],
-                                  rubric_id: ids[0] || null,
+                        <div className="space-y-2">
+                          <Label className="text-xs">Rubric</Label>
+                          <GenericPicker
+                            items={rubricMapping}
+                            itemIds={validRubricIds}
+                            selectedIds={
+                              settings.rubric_id ? [settings.rubric_id] : []
+                            }
+                            onSelect={(ids) => {
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioSettings: {
+                                  ...prev.scenarioSettings,
+                                  [scenarioId]: {
+                                    ...prev.scenarioSettings[scenarioId],
+                                    rubric_id: ids[0] || null,
+                                  },
                                 },
-                              },
-                            }));
-                          }}
-                          getId={(item) => item.id}
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          placeholder="Select rubric"
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                        />
+                              }));
+                            }}
+                            getId={(item) => item.id}
+                            getLabel={(item) => item.name || ""}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description || ""}`
+                            }
+                            placeholder="Select rubric"
+                            disabled={isReadonly}
+                            multiSelect={false}
+                            hideSelectedChips={true}
+                            buttonClassName="w-full"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Grade Agent</Label>
+                          <GenericPicker
+                            items={agentMapping}
+                            itemIds={gradeAgentIds}
+                            selectedIds={
+                              validGradeAgentId ? [validGradeAgentId] : []
+                            }
+                            onSelect={(ids) => {
+                              setDraftState((prev) => ({
+                                ...prev,
+                                scenarioSettings: {
+                                  ...prev.scenarioSettings,
+                                  [scenarioId]: {
+                                    ...prev.scenarioSettings[scenarioId],
+                                    grade_agent_id: ids[0] || null,
+                                  },
+                                },
+                              }));
+                            }}
+                            getId={(item) =>
+                              (item as unknown as { id: string }).id
+                            }
+                            getLabel={(item) => item.name || ""}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description || ""}`
+                            }
+                            placeholder="Select grade agent"
+                            disabled={isReadonly}
+                            multiSelect={false}
+                            hideSelectedChips={true}
+                            buttonClassName="w-full"
+                          />
+                        </div>
                       </div>
                     </Card>
                   );
@@ -2432,6 +2564,8 @@ export default function Simulation({
     simulationData?.scenarios,
     rubricMapping,
     validRubricIds,
+    agentMapping,
+    validAgentIds,
     isReadonly,
     isEditMode,
     getScenarioSettings,
@@ -2495,11 +2629,7 @@ export default function Simulation({
         }
         serverData={simulationData}
         initializeForm={initializeForm}
-        formFieldKeys={[
-          "scenarioIds",
-          "scenarioSearch",
-          "scenarioShowSelected",
-        ]}
+        formFieldKeys={["scenarioSearch", "scenarioShowSelected"]}
         resetSuccessMessage={(stepId) => {
           if (stepId === "basic") return "Basic information reset";
           if (stepId === "scenarios") return "Scenarios reset";

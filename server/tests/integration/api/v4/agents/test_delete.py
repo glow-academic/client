@@ -122,7 +122,9 @@ async def test_delete_agent_in_use(
     await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
-        params=CreateAgentDepartmentLinkSqlParams(agent_id=agent_id, department_id=dept_id),
+        params=CreateAgentDepartmentLinkSqlParams(
+            agent_id=agent_id, department_id=dept_id
+        ),
     )
 
     # v4 routes get profile_id from router dependency
@@ -164,4 +166,3 @@ async def test_delete_agent_not_found(
 
     # Should succeed (no error from SQL DELETE on non-existent row)
     assert response.status_code == 200
-

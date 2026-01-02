@@ -84,4 +84,3 @@ class TestResolveFromDepartment:
 
         # Assert
         assert resolved is None
-

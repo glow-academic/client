@@ -28,7 +28,9 @@ async def test_delete_department(
     dept_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql",
-        params=CreateTestDepartmentSqlParams(title="Test Department", description="Test"),
+        params=CreateTestDepartmentSqlParams(
+            title="Test Department", description="Test"
+        ),
     )
     typed_dept = CreateTestDepartmentSqlRow.model_validate(dept_result.model_dump())
     assert typed_dept.department_id is not None
@@ -68,7 +70,9 @@ async def test_delete_department_in_use(
     dept_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql",
-        params=CreateTestDepartmentSqlParams(title="Test Department", description="Test"),
+        params=CreateTestDepartmentSqlParams(
+            title="Test Department", description="Test"
+        ),
     )
     typed_dept = CreateTestDepartmentSqlRow.model_validate(dept_result.model_dump())
     assert typed_dept.department_id is not None
@@ -127,4 +131,3 @@ async def test_delete_department_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

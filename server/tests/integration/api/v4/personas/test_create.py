@@ -129,4 +129,3 @@ async def test_create_persona_validation_error(
 
     # Should fail due to validation
     assert response.status_code in [400, 422]
-

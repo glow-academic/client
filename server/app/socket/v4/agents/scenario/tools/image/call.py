@@ -67,6 +67,8 @@ class ImageToolErrorPayload(BaseModel):
 
 async def image_tool_complete(payload: ImageToolCompletePayload, room: str) -> None:
     await sio.emit("scenarios_tools_image_complete", payload.model_dump(), room=room)
+
+
 async def image_tool_error(payload: ImageToolErrorPayload, room: str) -> None:
     await sio.emit("scenarios_tools_image_error", payload.model_dump(), room=room)
 
@@ -138,7 +140,6 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
                     "trace_id": trace_id,  # Preserve trace_id for completion event
                 },
             )
-
 
             # Check if there's a pending video generation waiting for this image
             if validated.scenario_id:

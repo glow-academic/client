@@ -63,4 +63,3 @@ async def test_list_simulations_empty(
 
     assert "simulations" in data
     assert isinstance(data["simulations"], list)
-

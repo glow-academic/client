@@ -4,10 +4,12 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import (CreateProfileEmailSqlParams,
-                             CreateProfileEmailSqlRow,
-                             CreateTestProfileSqlParams,
-                             CreateTestProfileSqlRow)
+from tests.sql.types import (
+    CreateProfileEmailSqlParams,
+    CreateProfileEmailSqlRow,
+    CreateTestProfileSqlParams,
+    CreateTestProfileSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -224,4 +226,3 @@ async def test_get_profile_context_not_found(
     assert (
         "not found" in data["detail"].lower() or "permission" in data["detail"].lower()
     )
-

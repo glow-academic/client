@@ -13,6 +13,7 @@ from utils.sql_helper import execute_sql_typed, load_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import VIDEO_FOLDER, get_internal_sio, sio
+
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
@@ -51,12 +52,15 @@ except ImportError:
         group_id: uuid.UUID
         previous_messages: list[Any] | None = None
 
+
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql"
+)
 
 
 # Pydantic models for server-to-client events
@@ -363,9 +367,7 @@ async def _video_regenerate_impl(sid: str, data: RegenerateVideoPayload) -> None
                             "inputTextTokens": 0,
                             "outputTextTokens": 0,
                             "systemPrompt": result.system_prompt or "",
-                            "inputItems": [
-                                {"role": "user", "content": final_prompt}
-                            ],
+                            "inputItems": [{"role": "user", "content": final_prompt}],
                             "assistantOutput": f"Video regenerated: {video_filename}",
                             "departmentId": str(department_id)
                             if department_id
@@ -440,4 +442,3 @@ async def video_regenerate(sid: str, data: dict[str, Any]) -> None:
 async def video_regenerate_api(request: RegenerateVideoPayload) -> dict[str, bool]:
     """Client-to-server event: Regenerate a video using AI."""
     return {"success": True}
-

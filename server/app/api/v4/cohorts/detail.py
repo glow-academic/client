@@ -80,7 +80,7 @@ async def get_cohort_detail(
             draft_id=request.draft_id,
             simulation_search=simulation_search,
             simulation_show_selected=simulation_show_selected,
-            current_simulation_ids=current_simulation_ids
+            current_simulation_ids=current_simulation_ids,
         )
         sql_params = params.to_tuple()
 

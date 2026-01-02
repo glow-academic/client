@@ -289,8 +289,7 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import \
-            PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:18")
         _test_container.start()
@@ -431,29 +430,20 @@ async def transaction(
 
 
 # Import v4 socket handlers to register decorators
-from app.socket.v4.agents.document.tools.title.call import \
-    document_tool_title_internal  # noqa: F401
-from app.socket.v4.agents.hint.generate import \
-    simulation_hints_generate_internal  # noqa: F401
-from app.socket.v4.agents.image.complete import \
-    image_generation_complete_internal  # noqa: F401
+from app.socket.v4.agents.document.tools.title.call import document_tool_title_internal  # noqa: F401
+from app.socket.v4.agents.hint.generate import simulation_hints_generate_internal  # noqa: F401
+from app.socket.v4.agents.image.complete import image_generation_complete_internal  # noqa: F401
 from app.socket.v4.agents.image.generate import generate_image  # noqa: F401
-from app.socket.v4.agents.rubric.tools.title.call import \
-    rubric_tool_title_internal  # noqa: F401
-from app.socket.v4.agents.scenario.tools.document.call import \
-    scenario_tool_document  # noqa: F401
-from app.socket.v4.agents.scenario.tools.image.call import \
-    scenario_tool_image  # noqa: F401
-from app.socket.v4.agents.scenario.tools.objective.call import \
-    scenario_tool_objectives  # noqa: F401
-from app.socket.v4.agents.scenario.tools.question.call import \
-    scenario_tool_questions  # noqa: F401
-from app.socket.v4.agents.scenario.tools.statement.call import \
-    scenario_tool_problem_statement_internal  # noqa: F401
-from app.socket.v4.agents.scenario.tools.title.call import \
-    scenario_tool_title_internal  # noqa: F401
-from app.socket.v4.agents.scenario.tools.video.call import \
-    scenario_tool_video  # noqa: F401
+from app.socket.v4.agents.rubric.tools.title.call import rubric_tool_title_internal  # noqa: F401
+from app.socket.v4.agents.scenario.tools.document.call import scenario_tool_document  # noqa: F401
+from app.socket.v4.agents.scenario.tools.image.call import scenario_tool_image  # noqa: F401
+from app.socket.v4.agents.scenario.tools.objective.call import scenario_tool_objectives  # noqa: F401
+from app.socket.v4.agents.scenario.tools.question.call import scenario_tool_questions  # noqa: F401
+from app.socket.v4.agents.scenario.tools.statement.call import (
+    scenario_tool_problem_statement_internal,
+)  # noqa: F401
+from app.socket.v4.agents.scenario.tools.title.call import scenario_tool_title_internal  # noqa: F401
+from app.socket.v4.agents.scenario.tools.video.call import scenario_tool_video  # noqa: F401
 from app.socket.v4.log import log_run  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
@@ -526,8 +516,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
         if pool:
             # Setup activity logger
-            from app.infra.v4.activity.logger import \
-                setup_activity_logger  # noqa: E402
+            from app.infra.v4.activity.logger import setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
@@ -536,8 +525,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.infra.v4.metrics.collector import \
-            initialize_metrics  # noqa: E402
+        from app.infra.v4.metrics.collector import initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)
@@ -834,7 +822,7 @@ async def init_system() -> JSONResponse:
 
     try:
         result = await perform_keycloak_sync(department_id=None)
-        
+
         if result.success:
             return JSONResponse(
                 content={
@@ -851,7 +839,7 @@ async def init_system() -> JSONResponse:
                     "success": False,
                     "message": result.message,
                     "error": result.error,
-                }
+                },
             )
     except Exception as e:
         logger.error(f"Error during system initialization: {e}", exc_info=True)

@@ -24,9 +24,7 @@ class TestResolveFromDepartmentCookies:
         # Assert
         assert resolved is None
 
-    async def test_resolve_from_department_cookies_invalid_auth_mode(
-        self, db
-    ) -> None:
+    async def test_resolve_from_department_cookies_invalid_auth_mode(self, db) -> None:
         """Test resolving profile with invalid auth mode."""
         # Arrange
         pool = get_pool()
@@ -69,4 +67,3 @@ class TestResolveFromDepartmentCookies:
         # Assert
         # May return None if no default account profile is configured
         assert resolved is None or isinstance(resolved, str)
-

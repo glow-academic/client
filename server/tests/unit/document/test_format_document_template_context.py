@@ -69,4 +69,3 @@ class TestFormatDocumentTemplateContext:
         # Assert
         assert isinstance(result, list)
         assert len(result) > 0
-

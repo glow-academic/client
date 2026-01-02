@@ -78,4 +78,3 @@ class TestAuditIntent:
         # Assert
         assert intent.event_key == "test.event"
         assert intent.template == "Test template"
-

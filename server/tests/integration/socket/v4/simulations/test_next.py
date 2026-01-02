@@ -19,6 +19,7 @@ async def test_simulation_next_success(
 
     # Create scenario
     from tests.integration.socket.v4.helpers import create_test_scenario
+
     scenario_id = await create_test_scenario(db)
 
     # Create attempt
@@ -58,6 +59,7 @@ async def test_simulation_next_missing_attempt_id(
     profile_id = await get_or_create_test_profile(db)
 
     from tests.integration.socket.v4.helpers import create_test_scenario
+
     scenario_id = await create_test_scenario(db)
 
     sid = "test_sid_123"
@@ -72,4 +74,3 @@ async def test_simulation_next_missing_attempt_id(
     # Assert - verify error was emitted
     error_events = mock_sio.get_events("simulations_next_error")
     assert len(error_events) >= 1
-

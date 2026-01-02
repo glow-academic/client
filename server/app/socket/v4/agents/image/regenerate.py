@@ -12,6 +12,7 @@ from utils.sql_helper import execute_sql_typed, load_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import IMAGE_FOLDER, get_internal_sio, sio
+
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
@@ -50,12 +51,15 @@ except ImportError:
         group_id: uuid.UUID
         previous_messages: list[Any] | None = None
 
+
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/images/get_image_regeneration_run_context_and_create_run_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/images/get_image_regeneration_run_context_and_create_run_complete.sql"
+)
 
 # Try to import litellm, fall back gracefully if not available
 try:
@@ -98,7 +102,9 @@ async def _regenerate_image_impl(sid: str, data: RegenerateImagePayload) -> None
         profile_id_str = await find_profile_by_socket(sid)
         profile_id = uuid.UUID(profile_id_str) if profile_id_str else None
     else:
-        profile_id = uuid.UUID(profile_id_from_payload) if profile_id_from_payload else None
+        profile_id = (
+            uuid.UUID(profile_id_from_payload) if profile_id_from_payload else None
+        )
 
     try:
         async with get_db_connection() as conn:
@@ -154,7 +160,9 @@ async def _regenerate_image_impl(sid: str, data: RegenerateImagePayload) -> None
             # For images, we mainly use the prompt, but can include context from previous messages
             final_prompt = prompt
             if user_instructions and user_instructions.strip():
-                final_prompt = f"{prompt}\n\nUser Instructions: {user_instructions.strip()}"
+                final_prompt = (
+                    f"{prompt}\n\nUser Instructions: {user_instructions.strip()}"
+                )
 
             # Use model_name directly from database (set via image_agent_id)
             image_model = model_name
@@ -399,9 +407,7 @@ async def _emit_image_error(
     # Update image record: mark as completed (even on error) to prevent retries
     try:
         async with get_db_connection() as conn:
-            sql_update_image = load_sql(
-                "app/sql/v4/images/update_image_completed.sql"
-            )
+            sql_update_image = load_sql("app/sql/v4/images/update_image_completed.sql")
             await conn.execute(sql_update_image, image_id, True)
     except Exception:
         pass
@@ -453,4 +459,3 @@ async def regenerate_image(sid: str, data: dict[str, Any]) -> None:
 async def regenerate_image_api(request: RegenerateImagePayload) -> dict[str, bool]:
     """Client-to-server event: Regenerate an image."""
     return {"success": True}
-

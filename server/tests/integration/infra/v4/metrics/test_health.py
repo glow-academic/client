@@ -56,4 +56,3 @@ class TestLogServiceHealth:
 
         # Assert
         # Function should execute without error
-

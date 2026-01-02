@@ -25,4 +25,3 @@ async def test_rubric_error_success(
     # Assert - verify handler completes
     # Internal events may emit error to rooms
     assert True  # Handler should complete without error
-

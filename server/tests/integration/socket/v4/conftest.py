@@ -437,9 +437,7 @@ def patch_get_db_connection(
     # Patch get_db_connection in the infra module
     from app.infra.v4.websocket import get_db_connection  # type: ignore
 
-    monkeypatch.setattr(
-        get_db_connection, "get_db_connection", mock_get_db_connection
-    )
+    monkeypatch.setattr(get_db_connection, "get_db_connection", mock_get_db_connection)
 
     # Also patch in modules that import get_db_connection directly
     import_modules = [
@@ -549,4 +547,3 @@ def patch_get_db_connection(
                 monkeypatch.setattr(module, "get_db_connection", mock_get_db_connection)
         except ImportError:
             pass  # Module might not exist or might not import get_db_connection
-

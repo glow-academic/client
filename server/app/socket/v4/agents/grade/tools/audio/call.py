@@ -145,7 +145,9 @@ async def _grading_tool_audio_impl(
                         pass
 
             if not message_ids:
-                error_msg = "No valid message IDs found for the specified message numbers"
+                error_msg = (
+                    "No valid message IDs found for the specified message numbers"
+                )
                 if is_synchronous and result_callback:
                     await result_callback(None, error_msg)
                     return None
@@ -162,12 +164,16 @@ async def _grading_tool_audio_impl(
                 return None
 
             # Get audio uploads for the specified messages
-            SQL_GET_AUDIO_PATH = "app/sql/v4/simulations/get_messages_with_audio_complete.sql"
+            SQL_GET_AUDIO_PATH = (
+                "app/sql/v4/simulations/get_messages_with_audio_complete.sql"
+            )
             get_audio_params = GetMessagesWithAudioSqlParams(
                 chat_id=chat_id_uuid,
                 message_ids=message_ids,
             )
-            audio_rows = await execute_sql_typed(conn, SQL_GET_AUDIO_PATH, params=get_audio_params)
+            audio_rows = await execute_sql_typed(
+                conn, SQL_GET_AUDIO_PATH, params=get_audio_params
+            )
             # execute_sql_typed returns a list for RETURNS TABLE functions
             if isinstance(audio_rows, list):
                 audio_results = audio_rows
@@ -192,14 +198,18 @@ async def _grading_tool_audio_impl(
                 return None
 
             # Get audio agent context
-            SQL_AUDIO_CONTEXT_PATH = "app/sql/v4/grading/get_audio_grading_run_context_complete.sql"
+            SQL_AUDIO_CONTEXT_PATH = (
+                "app/sql/v4/grading/get_audio_grading_run_context_complete.sql"
+            )
             audio_context_params = GetAudioGradingRunContextSqlParams(
                 agent_id=agent_id_uuid,
                 department_id=department_id_uuid,
             )
             audio_context_result = cast(
                 GetAudioGradingRunContextSqlRow | None,
-                await execute_sql_typed(conn, SQL_AUDIO_CONTEXT_PATH, params=audio_context_params),
+                await execute_sql_typed(
+                    conn, SQL_AUDIO_CONTEXT_PATH, params=audio_context_params
+                ),
             )
 
             if not audio_context_result:
@@ -304,7 +314,9 @@ Please provide a detailed analysis based on this request. Consider aspects such 
             )
             create_run_result = cast(
                 CreateModelRunSqlRow,
-                await execute_sql_typed(conn, SQL_CREATE_RUN_PATH, params=create_run_params),
+                await execute_sql_typed(
+                    conn, SQL_CREATE_RUN_PATH, params=create_run_params
+                ),
             )
             model_run_id = uuid.UUID(create_run_result.run_id)
 

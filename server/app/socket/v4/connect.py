@@ -149,14 +149,14 @@ async def connect(
         else:
             pass
         await connection_confirmed(
-        ConnectionConfirmedPayload(
-            sid=sid,
-            profile_id=profile_id,
-            guest_id=guest_id,
-            server_time=time.time(),
-        ),
-        room=sid,
-    )
+            ConnectionConfirmedPayload(
+                sid=sid,
+                profile_id=profile_id,
+                guest_id=guest_id,
+                server_time=time.time(),
+            ),
+            room=sid,
+        )
     # Log activity (after set_socket_owner so find_profile_by_socket works)
     try:
         await log_websocket_activity(

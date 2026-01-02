@@ -95,7 +95,9 @@ async def test_delete_persona_in_use(
             scenario_problem_statement="Test problem statement",
         ),
     )
-    typed_scenario = CreateTestScenarioSqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioSqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -131,4 +133,3 @@ async def test_delete_persona_not_found(
 
     assert response.status_code == 400
     assert "not found" in response.json()["detail"].lower()
-
