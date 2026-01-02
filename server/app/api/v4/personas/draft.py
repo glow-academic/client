@@ -1,17 +1,27 @@
 """Persona draft endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (PatchPersonaDraftApiRequest,
-                           PatchPersonaDraftApiResponse,
+from app.sql.types import (PatchPersonaDraftApiResponse,
                            PatchPersonaDraftSqlParams, PatchPersonaDraftSqlRow,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
+from utils.sql_helper import execute_sql_typed
+
+
+# Custom API request model - accepts dict for patch (client sends dict)
+# SQL function accepts text, so we encode dict to JSON string when creating SQL params
+class PatchPersonaDraftApiRequest(BaseModel):
+    patch: dict[str, Any]
+    expected_version: int
+    input_draft_id: UUID | None = None
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/personas/patch_persona_draft_complete.sql"
@@ -53,37 +63,31 @@ async def patch_persona_draft(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Map draft_id from API to input_draft_id for SQL (to avoid conflict with return column)
-            params = PatchPersonaDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
-            )
-
-            # Manually construct tuple with JSON-encoded patch for asyncpg
-            # asyncpg accepts dict for jsonb, but we need to ensure proper encoding
+            # Encode patch dict as JSON string since SQL function accepts text (not jsonb)
+            # This allows asyncpg to pass JSON strings directly without manual encoding
             import json
-
-            sql_params_tuple = (
-                params.profile_id,
-                json.dumps(params.patch) if params.patch else "{}",  # Encode dict as JSON string for jsonb
-                params.expected_version,
-                params.input_draft_id,
+            
+            patch_json = json.dumps(request.patch) if request.patch else "{}"
+            params = PatchPersonaDraftSqlParams(
+                profile_id=profile_id,
+                patch=patch_json,  # SQL function accepts text, so pass JSON string
+                expected_version=request.expected_version,
+                input_draft_id=request.input_draft_id,
             )
-            sql_params = sql_params_tuple  # For error tracking
+            sql_params = params.to_tuple()
 
-            # Execute SQL manually with encoded params (bypass execute_sql_typed's to_tuple())
-            # Note: We bypass execute_sql_typed because we need to encode patch as JSON string for jsonb
-            from app.sql.types import get_sql_types
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                PatchPersonaDraftSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
-            function_call_sql = 'SELECT * FROM "public"."api_patch_persona_draft_v4"($1, $2, $3, $4)'
-            row = await conn.fetchrow(function_call_sql, *sql_params_tuple)
-
-            if not row:
+            if not result or result.draft_id is None:
                 raise ValueError("Failed to patch persona draft")
-
-            # Convert row to dict and parse result
-            InputType, OutputType = get_sql_types(SQL_PATH)
-            row_dict = dict(row)
-            result = cast(PatchPersonaDraftSqlRow, OutputType.model_validate(row_dict))
 
             # Set audit context
             if profile_id:
@@ -94,14 +98,7 @@ async def patch_persona_draft(
                 )
 
         # Convert SQL result to API response
-        # API response model uses snake_case (draft_id, new_version, draft_exists)
-        api_response = PatchPersonaDraftApiResponse.model_validate(
-            {
-                "draft_id": result.draft_id,
-                "new_version": result.new_version,
-                "draft_exists": result.draft_exists,
-            }
-        )
+        api_response = PatchPersonaDraftApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         # When creating a new draft, also invalidate profile context cache

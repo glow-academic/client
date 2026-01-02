@@ -20,9 +20,10 @@ END $$;
 
 -- 2) Recreate function (same as migration, but with parameter names matching API)
 -- Note: input_draft_id parameter renamed to avoid conflict with return column draft_id
+-- Note: patch parameter is text (not jsonb) to allow asyncpg to pass JSON strings directly
 CREATE OR REPLACE FUNCTION api_patch_persona_draft_v4(
     profile_id uuid,
-    patch jsonb,
+    patch text,
     expected_version int,
     input_draft_id uuid DEFAULT NULL
 )
@@ -34,12 +35,13 @@ DECLARE
     v_draft_id uuid;
     v_new_version int;
     v_profile_id uuid := profile_id;  -- Store function parameter in local variable to avoid ambiguity
+    v_patch jsonb := patch::jsonb;  -- Cast text to jsonb at the start
 BEGIN
     -- If input_draft_id provided, try to patch existing draft
     IF input_draft_id IS NOT NULL THEN
         UPDATE drafts
         SET
-            payload = drafts.payload || patch,
+            payload = drafts.payload || v_patch,
             version = drafts.version + 1,
             updated_at = now()
         WHERE
@@ -69,7 +71,7 @@ BEGIN
         ) AS d
     ),
     payload AS (
-        SELECT (d || patch) AS p
+        SELECT (d || v_patch) AS p
         FROM defaults
     ),
     params AS (

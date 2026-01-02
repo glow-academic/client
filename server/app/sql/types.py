@@ -12029,7 +12029,7 @@ class GetPersonasListApiResponse(BaseModel):
 class PatchPersonaDraftSqlParams(BaseModel):
 
     profile_id: UUID
-    patch: dict[str, Any]
+    patch: str
     expected_version: int
     input_draft_id: UUID | None = None
 
@@ -12049,7 +12049,7 @@ class PatchPersonaDraftSqlRow(BaseModel):
 
 class PatchPersonaDraftApiRequest(BaseModel):
 
-    patch: dict[str, Any]
+    patch: str
     expected_version: int
     input_draft_id: UUID | None = None
 
