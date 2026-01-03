@@ -1,16 +1,21 @@
 """Handler for benchmark_start WebSocket event."""
 
-from typing import Any
+import uuid
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.main import get_internal_sio, get_pool, sio
+from app.sql.types import (
+    StartBenchmarkAttemptSqlParams,
+    StartBenchmarkAttemptSqlRow,
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -82,10 +87,16 @@ async def _benchmark_start_impl(
 
         async with get_db_connection() as conn:
             # Create attempt and get eval data + pending runs/groups
-            sql = load_sql(SQL_PATH)
-            result = await conn.fetchrow(sql, eval_id, infinite_mode)
+            params = StartBenchmarkAttemptSqlParams(
+                eval_id=uuid.UUID(eval_id),
+                infinite_mode=infinite_mode,
+            )
+            result = cast(
+                StartBenchmarkAttemptSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
 
-            if not result:
+            if not result or not result.attempt_id:
                 await benchmark_start_error(
                     BenchmarkStartErrorPayload(
                         success=False,
@@ -95,7 +106,7 @@ async def _benchmark_start_impl(
                 )
                 return
 
-            attempt_id = result["attempt_id"]
+            attempt_id = result.attempt_id
 
             # Emit success event
             await benchmark_started(

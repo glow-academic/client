@@ -11524,6 +11524,8 @@ export interface components {
             available_model_runs_page_size?: number | null;
             /** Available Model Runs Total Pages */
             available_model_runs_total_pages?: number | null;
+            /** Available Groups */
+            available_groups?: components["schemas"]["QGetEvalDetailV4AvailableGroup"][] | null;
             /** Draft Version */
             draft_version?: number | null;
             /** Rubric Grade Agent Pairs */
@@ -11612,6 +11614,8 @@ export interface components {
             available_model_runs_page_size?: number | null;
             /** Available Model Runs Total Pages */
             available_model_runs_total_pages?: number | null;
+            /** Available Groups */
+            available_groups?: components["schemas"]["QGetEvalDetailV4AvailableGroup"][] | null;
             /** Draft Version */
             draft_version?: number | null;
             /** Rubric Grade Agent Pairs */
@@ -16512,6 +16516,19 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
+        /** QGetEvalDetailV4AvailableGroup */
+        QGetEvalDetailV4AvailableGroup: {
+            /** Group Id */
+            group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Member Count */
+            member_count: number | null;
+        };
         /** QGetEvalDetailV4AvailableModelRun */
         QGetEvalDetailV4AvailableModelRun: {
             /** Model Run Id */
@@ -16593,6 +16610,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Agent Role */
+            agent_role: string | null;
         };
         /** QGetEvalDetailV4RubricGradeAgent */
         QGetEvalDetailV4RubricGradeAgent: {

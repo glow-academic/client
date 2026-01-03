@@ -50,7 +50,7 @@ export function ModelRunCardGrid({
           const requestBody: EvalDetailIn["body"] = {
             evalId,
             available_model_runs_search: searchTerm || null,
-            available_model_runs_agent_ids: null, // No longer filtering by agents
+            available_model_runs_agent_ids: [], // Empty array to show all runs (not null)
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };
@@ -62,7 +62,7 @@ export function ModelRunCardGrid({
         } else {
           const requestBody: EvalNewIn["body"] = {
             available_model_runs_search: searchTerm || null,
-            available_model_runs_agent_ids: null, // No longer filtering by agents
+            available_model_runs_agent_ids: [], // Empty array to show all runs (not null)
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };

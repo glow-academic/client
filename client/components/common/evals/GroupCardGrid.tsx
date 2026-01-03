@@ -34,22 +34,46 @@ export function GroupCardGrid({
 }: GroupCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [groups, setGroups] = React.useState<
-    Array<{
-      group_id: string;
-      name: string;
-      description?: string;
-      created_at: string;
-      member_count?: number;
-    }>
+    EvalNewOut["available_groups"] | EvalDetailOut["available_groups"]
   >([]);
   const [loading, setLoading] = React.useState(false);
 
-  // TODO: Fetch groups when API endpoint is available
-  // For now, this is a placeholder component
+  // Fetch groups when filters change
   React.useEffect(() => {
-    // Placeholder - groups API not yet implemented
-    setGroups([]);
-    setLoading(false);
+    const fetchGroups = async () => {
+      setLoading(true);
+      try {
+        // Use /evals/detail if evalId provided, otherwise /evals/new
+        if (evalId) {
+          const requestBody: EvalDetailIn["body"] = {
+            eval_id: evalId,
+            group_search: searchTerm || null,
+          };
+          const response = await api.post("/evals/detail", {
+            body: requestBody,
+          });
+          const typedResponse = response as EvalDetailOut;
+          setGroups(typedResponse.available_groups || []);
+        } else {
+          const requestBody: EvalNewIn["body"] = {
+            group_search: searchTerm || null,
+          };
+          const response = await api.post("/evals/new", {
+            body: requestBody,
+          });
+          const typedResponse = response as EvalNewOut;
+          setGroups(typedResponse.available_groups || []);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to fetch groups:", error);
+        setGroups([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroups();
   }, [profileId, searchTerm, evalId]);
 
   // Apply search filter and sort selected first
@@ -111,7 +135,7 @@ export function GroupCardGrid({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[272px] overflow-y-auto py-2 px-2">
               {filteredGroups.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No groups found. Groups API not yet implemented.
+                  No groups found. Try adjusting your search.
                 </div>
               ) : (
                 filteredGroups.map((group) => {
@@ -142,10 +166,18 @@ export function GroupCardGrid({
                           <div className="flex items-start gap-3">
                             <Users className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-sm mb-1 truncate">
+                                {group.name || "Unnamed Group"}
+                              </h3>
+                              {group.description && (
+                                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                                  {group.description}
+                                </p>
+                              )}
                               <div className="flex flex-wrap gap-1 mb-2">
-                                {group.member_count !== undefined && (
+                                {group.member_count !== undefined && group.member_count !== null && (
                                   <Badge variant="outline" className="text-xs">
-                                    {group.member_count} members
+                                    {group.member_count} {group.member_count === 1 ? "member" : "members"}
                                   </Badge>
                                 )}
                               </div>

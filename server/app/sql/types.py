@@ -5379,6 +5379,17 @@ class QGetEvalDetailV4Agent(BaseModel):
 
 
 
+class QGetEvalDetailV4AvailableGroup(BaseModel):
+
+    group_id: UUID | None
+    name: str | None
+    description: str | None
+    created_at: str | None
+    member_count: int | None
+
+
+
+
 class QGetEvalDetailV4AvailableModelRun(BaseModel):
 
     model_run_id: UUID | None
@@ -5442,6 +5453,7 @@ class QGetEvalDetailV4Rubric(BaseModel):
     rubric_id: UUID | None
     name: str | None
     description: str | None
+    agent_role: str | None
 
 class GetEvalDetailSqlRow(BaseModel):
 
@@ -5476,6 +5488,7 @@ class GetEvalDetailSqlRow(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    available_groups: list[QGetEvalDetailV4AvailableGroup] | None = None
     draft_version: int | None = None
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None
@@ -5527,6 +5540,7 @@ class GetEvalDetailApiResponse(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    available_groups: list[QGetEvalDetailV4AvailableGroup] | None = None
     draft_version: int | None = None
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None
@@ -5588,6 +5602,7 @@ class GetEvalNewSqlRow(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    available_groups: list[QGetEvalDetailV4AvailableGroup] | None = None
     draft_version: int | None = None
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None
@@ -5632,6 +5647,7 @@ class GetEvalNewApiResponse(BaseModel):
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
+    available_groups: list[QGetEvalDetailV4AvailableGroup] | None = None
     draft_version: int | None = None
     rubric_grade_agent_pairs: Any | None = None
     rubric_grade_agent_active_states: Any | None = None

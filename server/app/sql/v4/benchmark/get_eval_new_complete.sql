@@ -47,7 +47,8 @@ BEGIN
         CREATE TYPE types.q_get_eval_detail_v4_rubric AS (
             rubric_id uuid,
             name text,
-            description text
+            description text,
+            agent_role text
         );
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'q_get_eval_detail_v4_available_model_run' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')) THEN
@@ -63,6 +64,15 @@ BEGIN
             persona_id uuid,
             persona_name text,
             actor_type text
+        );
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'q_get_eval_detail_v4_available_group' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')) THEN
+        CREATE TYPE types.q_get_eval_detail_v4_available_group AS (
+            group_id uuid,
+            name text,
+            description text,
+            created_at timestamptz,
+            member_count bigint
         );
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'q_get_eval_detail_v4_rubric_grade_agent' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')) THEN
@@ -113,6 +123,7 @@ RETURNS TABLE (
     available_model_runs_page int,
     available_model_runs_page_size int,
     available_model_runs_total_pages bigint,
+    available_groups types.q_get_eval_detail_v4_available_group[],
     draft_version int,
     rubric_grade_agent_pairs jsonb,
     rubric_grade_agent_active_states jsonb,
@@ -127,7 +138,7 @@ WITH params AS (
     SELECT 
         profile_id AS profile_id,
         available_model_runs_search AS available_model_runs_search,
-        available_model_runs_agent_ids AS available_model_runs_agent_ids,
+        COALESCE(available_model_runs_agent_ids, ARRAY[]::uuid[]) AS available_model_runs_agent_ids,
         available_model_runs_page AS available_model_runs_page,
         available_model_runs_page_size AS available_model_runs_page_size,
         draft_id AS draft_id,
@@ -231,7 +242,8 @@ valid_rubrics_data AS (
     SELECT DISTINCT
         r.id,
         r.name,
-        COALESCE(r.description, '') as description
+        COALESCE(r.description, '') as description,
+        CASE WHEN r.agent_role IS NULL THEN NULL ELSE r.agent_role::text END as agent_role
     FROM params x
     JOIN rubrics r ON r.active = true
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
@@ -243,7 +255,7 @@ valid_rubrics_data AS (
 ),
 rubrics_array AS (
     SELECT COALESCE(
-        ARRAY_AGG((vr.id, vr.name, vr.description)::types.q_get_eval_detail_v4_rubric),
+        ARRAY_AGG((vr.id, vr.name, vr.description, vr.agent_role)::types.q_get_eval_detail_v4_rubric),
         '{}'::types.q_get_eval_detail_v4_rubric[]
     ) as rubrics,
     COALESCE(ARRAY_AGG(vr.id::text), ARRAY[]::text[]) as rubric_ids
@@ -306,12 +318,14 @@ runs_filtered AS (
     FROM runs_with_names rwn
     CROSS JOIN available_model_runs_params amp
     WHERE (
+        -- Show all runs when both filters are null/empty (default case)
         (
-            amp.available_model_runs_search IS NULL 
+            (amp.available_model_runs_search IS NULL OR amp.available_model_runs_search = '')
             AND (amp.available_model_runs_agent_ids IS NULL 
                  OR COALESCE(array_length(amp.available_model_runs_agent_ids, 1), 0) = 0)
         )
         OR (
+            -- Apply search filter when search term is provided
             amp.available_model_runs_search IS NOT NULL
             AND amp.available_model_runs_search != ''
             AND (
@@ -320,12 +334,21 @@ runs_filtered AS (
                 OR LOWER(COALESCE(rwn.persona_name, '')) LIKE '%' || LOWER(amp.available_model_runs_search) || '%'
                 OR LOWER(COALESCE(rwn.profile_name, '')) LIKE '%' || LOWER(amp.available_model_runs_search) || '%'
             )
+            -- If agent_ids filter is also provided, combine filters (run must match search AND be in agent_ids)
+            AND (
+                amp.available_model_runs_agent_ids IS NULL 
+                OR COALESCE(array_length(amp.available_model_runs_agent_ids, 1), 0) = 0
+                OR (rwn.agent_id IS NOT NULL AND rwn.agent_id = ANY(amp.available_model_runs_agent_ids))
+            )
         )
         OR (
+            -- Apply agent_ids filter when agent_ids are provided (without search)
             amp.available_model_runs_agent_ids IS NOT NULL
             AND COALESCE(array_length(amp.available_model_runs_agent_ids, 1), 0) > 0
             AND rwn.agent_id IS NOT NULL 
             AND rwn.agent_id = ANY(amp.available_model_runs_agent_ids)
+            -- Only apply agent_ids filter if search is null/empty
+            AND (amp.available_model_runs_search IS NULL OR amp.available_model_runs_search = '')
         )
     )
 ),
@@ -356,14 +379,42 @@ available_model_runs_array AS (
         CEIL(COALESCE(MAX(pr.total_count), 0)::float / NULLIF(MAX(amp.available_model_runs_page_size), 0)) as total_pages
     FROM paginated_runs pr
     CROSS JOIN available_model_runs_params amp
+),
+-- Available groups query (filtered by group_search)
+groups_base AS (
+    SELECT
+        g.id as group_id,
+        g.created_at,
+        COUNT(gr.run_id) as member_count
+    FROM groups g
+    LEFT JOIN group_runs gr ON gr.group_id = g.id
+    GROUP BY g.id, g.created_at
+),
+groups_filtered AS (
+    SELECT *
+    FROM groups_base gb
+    CROSS JOIN params x
     WHERE (
-        amp.available_model_runs_search IS NOT NULL 
-        AND amp.available_model_runs_search != ''
+        x.group_search IS NULL 
+        OR x.group_search = ''
+        OR LOWER(gb.group_id::text) LIKE '%' || LOWER(x.group_search) || '%'
+        OR LOWER(gb.group_id::text) LIKE '%' || LOWER(REPLACE(x.group_search, '-', '')) || '%'
     )
-    OR (
-        amp.available_model_runs_agent_ids IS NOT NULL
-        AND COALESCE(array_length(amp.available_model_runs_agent_ids, 1), 0) > 0
-    )
+),
+available_groups_array AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (gf.group_id, 
+                 'Group ' || SUBSTRING(gf.group_id::text, 1, 8),
+                 COALESCE(gf.member_count::text, '0') || ' members',
+                 gf.created_at,
+                 gf.member_count)::types.q_get_eval_detail_v4_available_group
+                ORDER BY gf.created_at DESC
+            ),
+            '{}'::types.q_get_eval_detail_v4_available_group[]
+        ) as available_groups
+    FROM groups_filtered gf
 )
 SELECT 
     up.actor_name::text as actor_name,
@@ -434,6 +485,7 @@ SELECT
     COALESCE(amra.page, 1) as available_model_runs_page,
     COALESCE(amra.page_size, 50) as available_model_runs_page_size,
     COALESCE(amra.total_pages, 0) as available_model_runs_total_pages,
+    COALESCE(aga.available_groups, '{}'::types.q_get_eval_detail_v4_available_group[]) as available_groups,
     COALESCE((SELECT version FROM draft_payload_data), 0) as draft_version,
     COALESCE(
         (SELECT payload->'rubric_grade_agent_pairs' FROM draft_payload_data),
@@ -466,6 +518,7 @@ LEFT JOIN available_model_runs_array amra ON (
     OR (SELECT available_model_runs_agent_ids FROM params) IS NOT NULL
     OR COALESCE(array_length((SELECT available_model_runs_agent_ids FROM params), 1), 0) > 0
 )
+CROSS JOIN available_groups_array aga
 $$;
 
 COMMIT;

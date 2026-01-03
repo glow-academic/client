@@ -39480,6 +39480,20 @@
             ],
             "title": "Available Model Runs Total Pages"
           },
+          "available_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetEvalDetailV4AvailableGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Groups"
+          },
           "draft_version": {
             "anyOf": [
               {
@@ -39943,6 +39957,20 @@
               }
             ],
             "title": "Available Model Runs Total Pages"
+          },
+          "available_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetEvalDetailV4AvailableGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Groups"
           },
           "draft_version": {
             "anyOf": [
@@ -65588,6 +65616,75 @@
         ],
         "title": "QGetEvalDetailV4Agent"
       },
+      "QGetEvalDetailV4AvailableGroup": {
+        "properties": {
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "name",
+          "description",
+          "created_at",
+          "member_count"
+        ],
+        "title": "QGetEvalDetailV4AvailableGroup"
+      },
       "QGetEvalDetailV4AvailableModelRun": {
         "properties": {
           "model_run_id": {
@@ -66045,13 +66142,25 @@
               }
             ],
             "title": "Description"
+          },
+          "agent_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Role"
           }
         },
         "type": "object",
         "required": [
           "rubric_id",
           "name",
-          "description"
+          "description",
+          "agent_role"
         ],
         "title": "QGetEvalDetailV4Rubric"
       },
