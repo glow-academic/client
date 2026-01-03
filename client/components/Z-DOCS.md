@@ -2157,8 +2157,10 @@ See `client/components/personas/Persona.tsx` for a complete reference implementa
 - `client/hooks/use-draft-autosave.ts` - Generic draft autosave hook
 - `client/components/personas/Persona.tsx` - Component integration example (uses inline generic components, no separate section components)
 - `client/components/departments/Department.tsx` - Simple form example (single step, no search/filter)
+- `client/components/practice/PracticeCustomize.tsx` - WebSocket-based form submission example (uses GenericForm + draft autosave, but submits via WebSocket instead of API)
 - `client/app/(main)/create/personas/new/page.tsx` - Server page example
 - `client/app/(main)/create/personas/p/[personaId]/page.tsx` - Edit page example
+- `client/app/(main)/practice/custom/page.tsx` - Practice customization page example
 
 **Component Structure Example**:
 The Persona component demonstrates the inline pattern - all step rendering is done inline using `StepCard`, `SelectableGrid`, and `ReorderableList` with inline `renderItem` functions. No separate `PersonaColorSection` or `PersonaIconSection` components exist - everything is handled inline for cleaner logic and better maintainability.
@@ -2274,7 +2276,28 @@ useEffect(() => {
 4. **Test thoroughly**: Verify that boolean toggles reflect server state correctly after page refresh
 
 **Reference Implementation**: See `client/components/simulations/Simulation.tsx` for a complete example of boolean field sync pattern.
-  - [ ] Verify boolean fields (active, practiceSimulation) sync correctly from server state
+
+### WebSocket-Based Form Submission Pattern
+
+**⚠️ NOTE: Some forms use WebSocket for submission instead of API create/update endpoints.**
+
+**Pattern**: GenericForm + draft autosave + WebSocket submission (not API create/update)
+
+**Example**: `client/components/practice/PracticeCustomize.tsx`
+
+**Key Differences**:
+1. **No create/update API**: Form uses WebSocket (`emitCreatePracticeScenario`) instead of API endpoints
+2. **Draft support**: Still uses draft autosave for form state persistence
+3. **Submit handler**: `handleSubmit` calls WebSocket emit function instead of API action
+4. **Configuration form**: Not creating/editing a resource, configuring a session
+
+**Implementation**:
+- Uses `GenericForm` with `onSubmit` handler that emits WebSocket events
+- Still uses `useDraftAutosave` hook for form state persistence
+- Draft state includes configuration fields (personaIds, parameterItemIds, departmentIds)
+- WebSocket submission uses draft state to create practice scenario
+
+**Reference Implementation**: See `client/components/practice/PracticeCustomize.tsx` for a complete example of WebSocket-based form submission with draft autosave.
 
 ### Boolean Field Sync Pattern
 

@@ -13879,11 +13879,13 @@ class GetPracticeOverviewSqlParams(BaseModel):
 
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.department_ids,
+            self.draft_id,
         )
 
 class QGetPracticeOverviewV4Department(BaseModel):
@@ -14012,10 +14014,15 @@ class GetPracticeOverviewSqlRow(BaseModel):
     fields: list[QGetPracticeOverviewV4Field] | None = None
     departments: list[QGetPracticeOverviewV4Department] | None = None
     valid_department_ids: list[str] | None = None
+    draft_version: int | None = None
+    draft_persona_ids: Any | None = None
+    draft_parameter_item_ids: Any | None = None
+    draft_department_ids: Any | None = None
 
 class GetPracticeOverviewApiRequest(BaseModel):
 
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
 
 class GetPracticeOverviewApiResponse(BaseModel):
 
@@ -14032,6 +14039,47 @@ class GetPracticeOverviewApiResponse(BaseModel):
     fields: list[QGetPracticeOverviewV4Field] | None = None
     departments: list[QGetPracticeOverviewV4Department] | None = None
     valid_department_ids: list[str] | None = None
+    draft_version: int | None = None
+    draft_persona_ids: Any | None = None
+    draft_parameter_item_ids: Any | None = None
+    draft_department_ids: Any | None = None
+
+
+
+# Generated from: patch_practice_draft
+
+class PatchPracticeDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchPracticeDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchPracticeDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchPracticeDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -26174,6 +26222,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPracticeOverviewApiRequest",
         "GetPracticeOverviewApiResponse",
     ),
+    "app/sql/v4/practice/patch_practice_draft_complete.sql": (
+        "PatchPracticeDraftSqlParams",
+        "PatchPracticeDraftSqlRow",
+        "PatchPracticeDraftApiRequest",
+        "PatchPracticeDraftApiResponse",
+    ),
     "app/sql/v4/pricing/get_pricing_analytics_complete.sql": (
         "GetPricingAnalyticsSqlParams",
         "GetPricingAnalyticsSqlRow",
@@ -28304,6 +28358,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/practice/get_practice_overview_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/practice/patch_practice_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

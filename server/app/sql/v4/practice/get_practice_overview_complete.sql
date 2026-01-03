@@ -128,7 +128,8 @@ CREATE TYPE types.q_get_practice_overview_v4_department AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_practice_overview_v4(
     profile_id uuid,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
@@ -143,7 +144,11 @@ RETURNS TABLE (
     parameters types.q_get_practice_overview_v4_parameter[],
     fields types.q_get_practice_overview_v4_field[],
     departments types.q_get_practice_overview_v4_department[],
-    valid_department_ids text[]
+    valid_department_ids text[],
+    draft_version int,
+    draft_persona_ids jsonb,
+    draft_parameter_item_ids jsonb,
+    draft_department_ids jsonb
 )
 LANGUAGE sql
 STABLE
@@ -151,7 +156,19 @@ AS $$
 WITH params AS (
     SELECT 
         profile_id AS profile_id,
-        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids
+        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'practice'::draft_resource_type
+    LIMIT 1
 ),
 resolve_profile_id AS (
     -- Resolve profile ID from parameter
@@ -650,7 +667,27 @@ SELECT
     COALESCE((SELECT parameters FROM parameters_agg), '{}'::types.q_get_practice_overview_v4_parameter[]) as parameters,
     COALESCE((SELECT fields FROM fields_agg), '{}'::types.q_get_practice_overview_v4_field[]) as fields,
     COALESCE((SELECT departments FROM departments_agg), '{}'::types.q_get_practice_overview_v4_department[]) as departments,
-    COALESCE((SELECT valid_department_ids FROM valid_department_ids_data), ARRAY[]::text[]) as valid_department_ids
+    COALESCE((SELECT valid_department_ids FROM valid_department_ids_data), ARRAY[]::text[]) as valid_department_ids,
+    -- Draft version (from draft payload if exists)
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract personaIds from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'personaIds' FROM draft_payload_data),
+        (SELECT payload->'persona_ids' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as draft_persona_ids,
+    -- Extract parameterItemIds from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'parameterItemIds' FROM draft_payload_data),
+        (SELECT payload->'parameter_item_ids' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as draft_parameter_item_ids,
+    -- Extract departmentIds from draft payload if available (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'departmentIds' FROM draft_payload_data),
+        (SELECT payload->'department_ids' FROM draft_payload_data),
+        '[]'::jsonb
+    ) as draft_department_ids
 FROM user_profile up
 $$;
 

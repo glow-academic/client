@@ -3375,6 +3375,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/practice/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Practice Draft
+         * @description Patch practice draft (creates if not exists).
+         */
+        patch: operations["patch_practice_draft_api_v4_practice_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/pricing/analytics": {
         parameters: {
             query?: never;
@@ -12255,6 +12275,8 @@ export interface components {
         GetPracticeOverviewApiRequest: {
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetPracticeOverviewApiResponse */
         GetPracticeOverviewApiResponse: {
@@ -12284,6 +12306,14 @@ export interface components {
             departments?: components["schemas"]["QGetPracticeOverviewV4Department"][] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Draft Persona Ids */
+            draft_persona_ids?: unknown | null;
+            /** Draft Parameter Item Ids */
+            draft_parameter_item_ids?: unknown | null;
+            /** Draft Department Ids */
+            draft_department_ids?: unknown | null;
         };
         /** GetPricingAnalyticsApiRequest */
         GetPricingAnalyticsApiRequest: {
@@ -14473,6 +14503,26 @@ export interface components {
         };
         /** PatchPersonaDraftApiResponse */
         PatchPersonaDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchPracticeDraftApiRequest */
+        PatchPracticeDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchPracticeDraftApiResponse */
+        PatchPracticeDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -28927,6 +28977,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPracticeHistoryApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_practice_draft_api_v4_practice_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchPracticeDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchPracticeDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
