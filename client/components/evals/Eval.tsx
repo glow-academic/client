@@ -284,7 +284,7 @@ function EvalComponent({
     dynamic: boolean;
     use_groups: boolean;
     departmentIds: string[];
-    agentIds: string[]; // Agents being evaluated
+    agentSelectionsByRole: Record<string, string[]>; // Role -> agent IDs (replaces agentIds)
     modelRunIds: string[]; // Selected model runs
     groupIds: string[]; // Selected groups (if use_groups)
     // Per-agent settings (like scenarioSettings in Simulation)
@@ -311,7 +311,7 @@ function EvalComponent({
       dynamic: false,
       use_groups: false,
         departmentIds: defaultDepartmentIds || [],
-        agentIds: [],
+        agentSelectionsByRole: {},
         modelRunIds: [],
         groupIds: [],
         agentSettings: {},
@@ -433,6 +433,54 @@ function EvalComponent({
       });
     }
 
+    // Convert agentIds to agentSelectionsByRole (group agents by role)
+    let agentSelectionsByRole: Record<string, string[]> = {};
+    
+    // Try to read from draft payload first (new format)
+    if (data && "agent_selections_by_role" in data && data.agent_selections_by_role) {
+      try {
+        const parsed = typeof data.agent_selections_by_role === "string"
+          ? JSON.parse(data.agent_selections_by_role)
+          : data.agent_selections_by_role;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          agentSelectionsByRole = parsed as Record<string, string[]>;
+        }
+      } catch (e) {
+        // Ignore parse errors, fall back to extracting from agent_ids
+      }
+    }
+    
+    // Fallback: Extract from agent_ids and group by role
+    if (Object.keys(agentSelectionsByRole).length === 0 && data.agent_ids && Array.isArray(data.agent_ids)) {
+      // Get agents from evalDetail or evalDetailDefault
+      const agents = (isEditMode ? evalDetail : evalDetailDefault)?.agents || [];
+      const agentRolesMap: Record<string, string[]> = {};
+      
+      data.agent_ids.forEach((agentId: string) => {
+        const agent = agents.find((a: any) => a.agent_id === agentId);
+        if (agent?.roles && Array.isArray(agent.roles) && agent.roles.length > 0) {
+          agent.roles.forEach((role: string) => {
+            if (!agentRolesMap[role]) {
+              agentRolesMap[role] = [];
+            }
+            if (!agentRolesMap[role].includes(agentId)) {
+              agentRolesMap[role].push(agentId);
+            }
+          });
+        } else {
+          // If agent has no roles, put in a default "unknown" role
+          if (!agentRolesMap["unknown"]) {
+            agentRolesMap["unknown"] = [];
+          }
+          if (!agentRolesMap["unknown"].includes(agentId)) {
+            agentRolesMap["unknown"].push(agentId);
+          }
+        }
+      });
+      
+      agentSelectionsByRole = agentRolesMap;
+    }
+
     // If draftId exists, server should have merged draft payload into data
     // Otherwise, use server defaults
     const result = {
@@ -442,7 +490,7 @@ function EvalComponent({
       dynamic: data.dynamic ?? false,
       use_groups: data.use_groups ?? false,
       departmentIds: data.department_ids || defaultDepartmentIds || [],
-      agentIds: data.agent_ids || [],
+      agentSelectionsByRole,
       modelRunIds: data.model_run_ids || [],
       groupIds: [], // TODO: Extract when groups are implemented
       agentSettings,
@@ -474,6 +522,8 @@ function EvalComponent({
     evalDetail?.department_ids,
     evalDetail?.agent_ids,
     evalDetail?.model_runs,
+    evalDetail?.agents, // Need agents for role grouping
+    evalDetailDefault?.agents, // Need agents for role grouping
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
@@ -537,7 +587,7 @@ function EvalComponent({
           key === "dynamic" ||
           key === "use_groups" ||
           key === "departmentIds" ||
-          key === "agentIds" ||
+          key === "agentSelectionsByRole" ||
           key === "modelRunIds" ||
           key === "groupIds" ||
           key === "agentSettings" ||
@@ -616,7 +666,7 @@ function EvalComponent({
           // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case)
           const camelToSnake: Record<string, string> = {
             departmentIds: "department_ids",
-            agentIds: "agent_ids",
+            agentSelectionsByRole: "agent_selections_by_role",
             modelRunIds: "model_run_ids",
             groupIds: "group_ids",
             agentSettings: "agent_settings",
@@ -706,6 +756,92 @@ function EvalComponent({
     return evalData?.valid_eval_agent_ids || evalData?.valid_agent_ids || [];
   }, [evalData?.valid_eval_agent_ids, evalData?.valid_agent_ids]);
 
+  // Extract agent mapping - create dict from array (composite types) - similar to Simulation.tsx
+  const agentMapping = useMemo(() => {
+    const mapped: Record<
+      string,
+      { id: string; name: string; description: string; roles?: string[] }
+    > = {};
+
+    // Add agents from API response (arrays now)
+    const agents = evalData?.agents || [];
+
+    agents.forEach((agent: any) => {
+      const key = String(agent.agent_id);
+      mapped[key] =
+        agent.roles && agent.roles.length > 0
+          ? {
+              id: key,
+              name: agent.name || "",
+              description: agent.description || "",
+              roles: agent.roles.map(String),
+            }
+          : {
+              id: key,
+              name: agent.name || "",
+              description: agent.description || "",
+            };
+    });
+
+    // Add selected agents that aren't in the mapping (for backward compatibility)
+    const allSelectedAgentIds = Object.values(draftState.agentSelectionsByRole || {}).flat();
+    allSelectedAgentIds.forEach((agentId) => {
+      if (!mapped[agentId]) {
+        mapped[agentId] = {
+          id: agentId,
+          name: `Agent ${agentId.slice(0, 8)}...`,
+          description: "Selected agent",
+          roles: [],
+        };
+      }
+    });
+
+    return mapped;
+  }, [evalData?.agents, draftState.agentSelectionsByRole]);
+
+  // Extract unique agent roles from selected model runs/groups
+  const extractedAgentRoles = useMemo(() => {
+    const rolesSet = new Set<string>();
+    const useGroups = draftState.use_groups ?? false;
+
+    if (useGroups) {
+      // For groups, we need to extract agent roles from model runs within groups
+      // For now, we'll need to fetch group details or extract from available_model_runs
+      // This is a placeholder - groups may need special handling
+      const groupIds = draftState.groupIds || [];
+      if (groupIds.length === 0) return [];
+      
+      // TODO: Extract agent roles from groups when group data structure is available
+      // For now, return empty array - groups may not have direct agent info
+      return [];
+    } else {
+      // Extract agent roles from selected model runs
+      const modelRunIds = draftState.modelRunIds || [];
+      if (modelRunIds.length === 0) return [];
+
+      // Get model runs from evalData
+      const availableModelRuns = evalData?.available_model_runs || [];
+      
+      modelRunIds.forEach((runId) => {
+        const run = availableModelRuns.find((mr: any) => mr.model_run_id === runId);
+        if (run?.agent_id) {
+          const agent = agentMapping[run.agent_id];
+          if (agent?.roles && agent.roles.length > 0) {
+            agent.roles.forEach((role) => rolesSet.add(role));
+          }
+        }
+      });
+    }
+
+    return Array.from(rolesSet).sort();
+  }, [draftState.modelRunIds, draftState.groupIds, draftState.use_groups, evalData?.available_model_runs, agentMapping]);
+
+  // Helper to get unique selected agents across all roles
+  const getUniqueSelectedAgents = useCallback((): string[] => {
+    const allAgentIds = Object.values(draftState.agentSelectionsByRole || {}).flat();
+    return Array.from(new Set(allAgentIds));
+  }, [draftState.agentSelectionsByRole]);
+
   // Form initialization function for GenericForm
   const initializeForm = useCallback(
     (serverData: unknown, editMode: boolean) => {
@@ -722,6 +858,31 @@ function EvalComponent({
       const deptIds = evalDetailData.department_ids || [];
       const agentIds = evalDetailData.agent_ids || [];
       const modelRunIds = evalDetailData.model_runs?.map((mr: any) => mr.model_run_id) || [];
+
+      // Convert agentIds to agentSelectionsByRole (group by role)
+      const agents = evalDetailData.agents || [];
+      const agentSelectionsByRole: Record<string, string[]> = {};
+      agentIds.forEach((agentId: string) => {
+        const agent = agents.find((a: any) => a.agent_id === agentId);
+        if (agent?.roles && Array.isArray(agent.roles) && agent.roles.length > 0) {
+          agent.roles.forEach((role: string) => {
+            if (!agentSelectionsByRole[role]) {
+              agentSelectionsByRole[role] = [];
+            }
+            if (!agentSelectionsByRole[role].includes(agentId)) {
+              agentSelectionsByRole[role].push(agentId);
+            }
+          });
+        } else {
+          // If agent has no roles, put in a default "unknown" role
+          if (!agentSelectionsByRole["unknown"]) {
+            agentSelectionsByRole["unknown"] = [];
+          }
+          if (!agentSelectionsByRole["unknown"].includes(agentId)) {
+            agentSelectionsByRole["unknown"].push(agentId);
+          }
+        }
+      });
 
       // Initialize rubric_grade_agents from model_runs
       const runRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> = {};
@@ -751,7 +912,7 @@ function EvalComponent({
       if (evalDetailData.use_groups !== undefined)
         draftUpdates.use_groups = evalDetailData.use_groups ?? false;
       if (deptIds.length > 0) draftUpdates["departmentIds"] = deptIds;
-      if (agentIds.length > 0) draftUpdates["agentIds"] = agentIds;
+      if (Object.keys(agentSelectionsByRole).length > 0) draftUpdates["agentSelectionsByRole"] = agentSelectionsByRole;
       if (modelRunIds.length > 0) draftUpdates["modelRunIds"] = modelRunIds;
       if (Object.keys(runRubricGradeAgents).length > 0)
         draftUpdates.runRubricGradeAgents = runRubricGradeAgents;
@@ -775,13 +936,28 @@ function EvalComponent({
         throw new Error("Eval name is required");
       }
 
-      if (draftState.agentIds.length === 0) {
-      toast.error("Please select at least one agent");
+      // Validate that at least one model run/group is selected first
+      if (draftState.use_groups) {
+        if (draftState.groupIds.length === 0) {
+          toast.error("Please select at least one group");
+          throw new Error("At least one group is required");
+        }
+      } else {
+        if (draftState.modelRunIds.length === 0) {
+          toast.error("Please select at least one model run");
+          throw new Error("At least one model run is required");
+        }
+      }
+
+      // Validate that at least one agent is selected (across all role pickers)
+      const uniqueAgentIds = getUniqueSelectedAgents();
+      if (uniqueAgentIds.length === 0) {
+        toast.error("Please select at least one agent");
         throw new Error("At least one agent is required");
       }
 
       // Validate agentSettings - each agent must have at least one rubric and one grade agent
-      for (const agentId of draftState.agentIds) {
+      for (const agentId of uniqueAgentIds) {
         const settings = draftState.agentSettings[agentId] || {};
         const rubricIds = settings.rubric_ids || [];
         const gradeAgentIds = settings.grade_agent_ids || [];
@@ -803,10 +979,6 @@ function EvalComponent({
 
       // Validate rubric_grade_agents based on use_groups
       if (draftState.use_groups) {
-        if (draftState.groupIds.length === 0) {
-        toast.error("Please select at least one group");
-          throw new Error("At least one group is required");
-      }
         for (const groupId of draftState.groupIds) {
           const pairs = draftState.groupRubricGradeAgents[groupId] || [];
           if (pairs.length === 0) {
@@ -823,10 +995,6 @@ function EvalComponent({
         }
       }
     } else {
-        if (draftState.modelRunIds.length === 0) {
-        toast.error("Please select at least one model run");
-          throw new Error("At least one model run is required");
-      }
         for (const runId of draftState.modelRunIds) {
           const pairs = draftState.runRubricGradeAgents[runId] || [];
           if (pairs.length === 0) {
@@ -865,11 +1033,12 @@ function EvalComponent({
           throw new Error("Update action not available");
         }
         try {
+        const uniqueAgentIds = getUniqueSelectedAgents();
         const updateRequest: UpdateEvalBody = {
             eval_id: evalId!,
             name: draftState.name || "",
             description: draftState.description || "",
-            agent_ids: draftState.agentIds,
+            agent_ids: uniqueAgentIds,
             use_groups: draftState.use_groups ?? false,
           department_ids: finalDepartmentIds || [],
             active: draftState.active ?? true,
@@ -896,10 +1065,11 @@ function EvalComponent({
           throw new Error("Create action not available");
         }
         try {
+        const uniqueAgentIds = getUniqueSelectedAgents();
         const createRequest: CreateEvalBody = {
             name: draftState.name || "",
             description: draftState.description || "",
-            agent_ids: draftState.agentIds,
+            agent_ids: uniqueAgentIds,
             use_groups: draftState.use_groups ?? false,
           department_ids: finalDepartmentIds || [],
             active: draftState.active || true,
@@ -931,6 +1101,7 @@ function EvalComponent({
       updateEvalAction,
       createEvalAction,
       router,
+      getUniqueSelectedAgents,
     ]
   );
 
@@ -940,17 +1111,26 @@ function EvalComponent({
       const hasName = !!(
         formData["name"] as string | null | undefined
       )?.trim();
-      const hasAgents =
-        ((formData["agentIds"] as string[] | null | undefined) || []).length >
-        0;
-      const agentSettings = (formData["agentSettings"] as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }> | null | undefined) || {};
       const useGroups = (formData["use_groups"] as boolean | null | undefined) ?? false;
+      
+      // Check if model runs/groups are selected
+      const hasRunsOrGroups = useGroups
+        ? ((formData["groupIds"] as string[] | null | undefined) || []).length > 0
+        : ((formData["modelRunIds"] as string[] | null | undefined) || []).length > 0;
+      
+      // Check if agents are selected (across all roles)
+      const agentSelectionsByRole = (formData["agentSelectionsByRole"] as Record<string, string[]> | null | undefined) || {};
+      const uniqueAgentIds = Object.values(agentSelectionsByRole).flat();
+      const hasAgents = uniqueAgentIds.length > 0;
+      
+      const agentSettings = (formData["agentSettings"] as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }> | null | undefined) || {};
       
       // Check if agents have rubric/agent settings configured
       const hasAgentRubricSettings = hasAgents && Object.keys(agentSettings).length > 0 &&
-        Object.values(agentSettings).some((settings) => 
-          (settings.rubric_ids?.length || 0) > 0 && (settings.grade_agent_ids?.length || 0) > 0
-        );
+        uniqueAgentIds.every((agentId) => {
+          const settings = agentSettings[agentId] || {};
+          return (settings.rubric_ids?.length || 0) > 0 && (settings.grade_agent_ids?.length || 0) > 0;
+        });
       
       // Check if runs/groups have rubric_grade_agents based on use_groups
       let hasRunOrGroupRubricGradeAgents = false;
@@ -972,22 +1152,18 @@ function EvalComponent({
           });
       }
 
-      const hasRunsOrGroups = useGroups
-        ? ((formData["groupIds"] as string[] | null | undefined) || []).length > 0
-        : ((formData["modelRunIds"] as string[] | null | undefined) || []).length > 0;
-
       switch (stepId) {
         case "basic":
           return hasName ? "completed" : "active";
-        case "agents":
-          if (!hasName) return "pending";
-          return hasAgents ? "completed" : "active";
         case "modelRuns":
-          if (!hasAgents || !hasAgentRubricSettings) return "pending";
-          return hasRunsOrGroups && hasRunOrGroupRubricGradeAgents ? "completed" : "active";
+          if (!hasName) return "pending";
+          return hasRunsOrGroups ? "completed" : "active";
         case "groups":
-          if (!hasAgents || !hasAgentRubricSettings) return "pending";
-          return hasRunsOrGroups && hasRunOrGroupRubricGradeAgents ? "completed" : "active";
+          if (!hasName) return "pending";
+          return hasRunsOrGroups ? "completed" : "active";
+        case "agents":
+          if (!hasName || !hasRunsOrGroups) return "pending";
+          return hasAgents ? "completed" : "active";
         default:
           return "pending";
       }
@@ -1012,16 +1188,6 @@ function EvalComponent({
         ] as string[],
       },
       {
-        id: "agents",
-        title: "Agents",
-        description: "Select agents to evaluate.",
-        resetFields: [
-          "agentIds",
-          "agentSearch",
-          "agentShowSelected",
-        ] as (keyof typeof evalSearchParamsClient)[],
-      },
-      {
         id: "modelRuns",
         title: "Model Runs",
         description: "Select model runs to evaluate.",
@@ -1043,6 +1209,16 @@ function EvalComponent({
           "groupShowSelected",
         ] as (keyof typeof evalSearchParamsClient | string)[],
       },
+      {
+        id: "agents",
+        title: "Agents",
+        description: "Select agents to evaluate based on roles in selected model runs/groups.",
+        resetFields: [
+          "agentSelectionsByRole",
+          "agentSearch",
+          "agentShowSelected",
+        ] as (keyof typeof evalSearchParamsClient | string)[],
+      },
     ],
     []
   );
@@ -1056,7 +1232,7 @@ function EvalComponent({
       "dynamic",
       "use_groups",
       "departmentIds",
-      "agentIds",
+      "agentSelectionsByRole",
       "modelRunIds",
       "groupIds",
       "agentSettings",
@@ -1071,12 +1247,12 @@ function EvalComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
-      case "agents":
-        return "Agents reset";
       case "modelRuns":
         return "Model runs reset";
       case "groups":
         return "Groups reset";
+      case "agents":
+        return "Agents reset";
       default:
         return "Reset";
     }
@@ -1433,42 +1609,31 @@ function EvalComponent({
           );
 
         case "agents": {
-          const agentShowSelected =
-            (stepFormData["agentShowSelected"] as
-              | boolean
-              | null
-              | undefined) ?? false;
-          const selectedAgentIds =
-            (stepFormData["agentIds"] as string[] | null | undefined) || [];
-          const agentSearch =
-            (stepFormData["agentSearch"] as string | null | undefined) || "";
+          // Show message if no model runs/groups selected yet
+          const useGroups = (stepFormData["use_groups"] as boolean | null | undefined) ?? false;
+          const hasRunsOrGroups = useGroups
+            ? ((stepFormData["groupIds"] as string[] | null | undefined) || []).length > 0
+            : ((stepFormData["modelRunIds"] as string[] | null | undefined) || []).length > 0;
 
-          // Filter agents: department-based + client-side search/show_selected
-          let filteredAgents = (evalData?.agents || []).filter((agent) =>
-            validAgentIds.includes(agent.agent_id)
-          );
-
-          // Apply client-side search filter
-          if (agentSearch.trim()) {
-            const searchLower = agentSearch.toLowerCase();
-            filteredAgents = filteredAgents.filter(
-              (agent) =>
-                agent.name?.toLowerCase().includes(searchLower) ||
-                (agent.description || "").toLowerCase().includes(searchLower)
+          if (!hasRunsOrGroups) {
+            return (
+              <StepCard
+                stepStatus={stepStatus}
+                stepNumber={stepNumber}
+                stepTitle={stepTitle}
+                stepDescription={stepDescription}
+                isReadonly={isReadonly}
+                isEditMode={isEditMode}
+              >
+                <div className="text-center py-8 text-muted-foreground">
+                  Please select model runs or groups first to see available agent roles.
+                </div>
+              </StepCard>
             );
           }
 
-          // Apply client-side "show selected" filter
-          if (agentShowSelected && selectedAgentIds.length > 0) {
-            filteredAgents = filteredAgents.filter((agent) =>
-              selectedAgentIds.includes(agent.agent_id)
-            );
-          }
-
-          const createAgentFilterOnChange = (value: boolean) => {
-            setStepFormData({ agentShowSelected: value });
-          };
-
+          // Dynamic role pickers are shown in contentSection after modelRuns/groups
+          // This step just shows a placeholder
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1477,78 +1642,17 @@ function EvalComponent({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              searchTerm={
-                (stepFormData["agentSearch"] as
-                  | string
-                  | null
-                  | undefined) || ""
-              }
-              onSearchChange={(term: string) =>
-                setStepFormData({ agentSearch: term || null })
-              }
-              searchPlaceholder="Search agents..."
-              debounceMs={300}
-              filters={[
-                {
-                  key: "showSelected",
-                  label: "Show selected",
-                  value: agentShowSelected,
-                  onChange: createAgentFilterOnChange,
-                },
-              ]}
               resetFields={[
-                "agentIds",
+                "agentSelectionsByRole",
                 "agentSearch",
                 "agentShowSelected",
               ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <SelectableGrid
-                items={filteredAgents}
-                selectedId={null}
-                selectedIds={selectedAgentIds}
-                onSelect={(agentId) => {
-                  const isSelected = selectedAgentIds.includes(agentId);
-                  const newIds = isSelected
-                    ? selectedAgentIds.filter((id) => id !== agentId)
-                    : [...selectedAgentIds, agentId];
-                  setStepFormData({
-                    agentIds: newIds.length > 0 ? newIds : null,
-                  });
-                }}
-                getId={(agent) => agent.agent_id}
-                renderItem={(agent, isSelected) => (
-                <div
-                  className={cn(
-                      "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                      "hover:shadow-md hover:bg-accent/50",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isSelected && "ring-2 ring-primary bg-accent"
-                    )}
-                  >
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                      </div>
-                    )}
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm leading-tight">
-                          {agent.name || "Unnamed Agent"}
-                        </h3>
-                        {agent.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {agent.description}
-                          </p>
-                  )}
-                </div>
-                </div>
+              <div className="text-center py-8 text-muted-foreground">
+                Agent role pickers will appear below after selecting model runs or groups.
               </div>
-                )}
-                emptyMessage="No agents found. Try adjusting your search or filters."
-                disabled={isReadonly}
-              />
             </StepCard>
           );
         }
@@ -1562,8 +1666,6 @@ function EvalComponent({
 
           const selectedModelRunIds =
             (stepFormData["modelRunIds"] as string[] | null | undefined) || [];
-          const selectedAgentIds =
-            (stepFormData["agentIds"] as string[] | null | undefined) || [];
 
           return (
             <StepCard
@@ -1616,7 +1718,6 @@ function EvalComponent({
                     // Also update formData for GenericForm
                     setStepFormData({ modelRunIds: ids.length > 0 ? ids : null });
                   }}
-                  agentIds={selectedAgentIds}
                   readonly={isReadonly}
                   evalId={evalId || undefined}
                 />
@@ -1712,10 +1813,11 @@ function EvalComponent({
 
   // Content sections for nested rubric/agent pair management
   const contentSections = useMemo(() => {
-    const agentIds = draftState.agentIds || [];
     const useGroups = draftState.use_groups ?? false;
     const modelRunIds = draftState.modelRunIds || [];
     const groupIds = draftState.groupIds || [];
+    const agentSelectionsByRole = draftState.agentSelectionsByRole || {};
+    const uniqueAgentIds = getUniqueSelectedAgents();
 
     const sections: Array<{
       id: string;
@@ -1726,8 +1828,107 @@ function EvalComponent({
       }) => React.ReactNode;
     }> = [];
 
-    // Add rubric/agent settings section after agents step (like scenarios in Simulation)
-    if (agentIds.length > 0) {
+    // Add dynamic agent role pickers section after modelRuns/groups step
+    const hasRunsOrGroups = useGroups ? groupIds.length > 0 : modelRunIds.length > 0;
+    if (hasRunsOrGroups && extractedAgentRoles.length > 0) {
+      sections.push({
+        id: "agent-roles",
+        insertAfter: useGroups ? "groups" : "modelRuns",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={3}
+              stepTitle="Agents by Role"
+              stepDescription="Select agents for each role found in the selected model runs/groups."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {extractedAgentRoles.map((role) => {
+                  const roleAgentIds = agentSelectionsByRole[role] || [];
+                  const roleFilteredIds = validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes(role);
+                  });
+                  
+                  // Include selected agents even if they're not in filtered list (for backward compatibility)
+                  const allRoleAgentIds = roleFilteredIds.includes(roleAgentIds[0]) || roleAgentIds.length === 0
+                    ? roleFilteredIds
+                    : [...roleFilteredIds, ...roleAgentIds.filter(id => !roleFilteredIds.includes(id))];
+
+                  return (
+                    <div key={role} className="space-y-2">
+                      <Label htmlFor={`agent-role-${role}`}>
+                        {role.charAt(0).toUpperCase() + role.slice(1)} Agents
+                      </Label>
+                      <GenericPicker
+                        items={agentMapping}
+                        itemIds={allRoleAgentIds}
+                        selectedIds={roleAgentIds}
+                        onSelect={(ids) => {
+                          setDraftState((prev) => ({
+                            ...prev,
+                            agentSelectionsByRole: {
+                              ...prev.agentSelectionsByRole,
+                              [role]: ids.length > 0 ? ids : [],
+                            },
+                          }));
+                        }}
+                        getId={(item) => (item as unknown as { id: string }).id}
+                        getLabel={(item) => item.name || ""}
+                        getSearchText={(item) =>
+                          `${item.name} ${item.description || ""}`
+                        }
+                        renderPreview={(item) => (
+                          <div className="grid gap-2">
+                            <h4 className="font-medium leading-none">
+                              {item.name || "No agent selected"}
+                            </h4>
+                            <div className="text-sm text-muted-foreground">
+                              {item.description || "No description available"}
+                            </div>
+                          </div>
+                        )}
+                        renderItem={(item, _isSelected) => (
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate">{item.name}</div>
+                                {item.description && (
+                                  <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                    {item.description}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        placeholder={`Select ${role} agents`}
+                        disabled={isReadonly}
+                        multiSelect={true}
+                        hideSelectedChips={false}
+                        buttonClassName="w-full"
+                        groupHeading="Agents"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      });
+    }
+
+    // Add rubric/agent settings section after agents step (for unique agents)
+    if (uniqueAgentIds.length > 0) {
       sections.push({
         id: "rubric-agents",
         insertAfter: "agents",
@@ -1741,14 +1942,14 @@ function EvalComponent({
           return (
             <StepCard
               stepStatus="completed"
-              stepNumber={3}
+              stepNumber={4}
               stepTitle="Rubrics and Grading Agents"
-              stepDescription="Select rubrics and grading agents for each agent being evaluated."
+              stepDescription="Select rubrics and grading agents for each unique agent being evaluated."
               isReadonly={isReadonly}
               isEditMode={isEditMode}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {agentIds.map((agentId) => {
+                {uniqueAgentIds.map((agentId) => {
                   const agent = (evalData?.agents || []).find(
                     (a: any) => a.agent_id === agentId
                   );
@@ -2195,19 +2396,23 @@ function EvalComponent({
 
     return sections;
   }, [
-    draftState.agentIds,
     draftState.use_groups,
     draftState.modelRunIds,
     draftState.groupIds,
+    draftState.agentSelectionsByRole,
+    extractedAgentRoles,
     evalData?.model_runs,
     evalData?.rubrics,
     evalData?.agents,
     validRubricIds,
+    validAgentIds,
     evalAgentsArray,
     validEvalAgentIds,
+    agentMapping,
     isReadonly,
     isEditMode,
     getAgentSettings,
+    getUniqueSelectedAgents,
     handleAddRubricGradeAgentToRun,
     handleRemoveRubricGradeAgentFromRun,
     handleUpdateRubricGradeAgentInRun,
