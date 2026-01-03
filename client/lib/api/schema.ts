@@ -4367,6 +4367,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/benchmark/run_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
+         */
+        post: operations["handle_benchmark_run_start_run_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/benchmark/runs_start_all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
+         */
+        post: operations["handle_benchmark_runs_start_all_runs_start_all"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/connection_confirmed": {
         parameters: {
             query?: never;
@@ -8547,6 +8587,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/benchmark/run_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Run Started Api
+         * @description Server-to-client event: Run started successfully.
+         */
+        post: operations["benchmark_run_started_api_socket_v4_server_benchmark_run_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/benchmark/run_start_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Run Start Error Api
+         * @description Server-to-client event: Error occurred while starting run.
+         */
+        post: operations["benchmark_run_start_error_api_socket_v4_server_benchmark_run_start_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/benchmark/runs_start_all_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Runs Start All Started Api
+         * @description Server-to-client event: Runs started successfully.
+         */
+        post: operations["benchmark_runs_start_all_started_api_socket_v4_server_benchmark_runs_start_all_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/benchmark/runs_start_all_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Runs Start All Error Api
+         * @description Server-to-client event: Error occurred while starting runs.
+         */
+        post: operations["benchmark_runs_start_all_error_api_socket_v4_server_benchmark_runs_start_all_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -8888,6 +9008,58 @@ export interface components {
              * @default false
              */
             use_groups: boolean;
+        };
+        /**
+         * BenchmarkRunStartErrorPayload
+         * @description Response indicating an error occurred while starting run.
+         */
+        BenchmarkRunStartErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * BenchmarkRunStartedPayload
+         * @description Response indicating run started successfully.
+         */
+        BenchmarkRunStartedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * BenchmarkRunsStartAllErrorPayload
+         * @description Response indicating an error occurred while starting runs.
+         */
+        BenchmarkRunsStartAllErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /**
+         * BenchmarkRunsStartAllStartedPayload
+         * @description Response indicating runs started successfully.
+         */
+        BenchmarkRunsStartAllStartedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Started Count */
+            started_count: number;
         };
         /**
          * BenchmarkStopErrorPayload
@@ -30904,6 +31076,76 @@ export interface operations {
             };
         };
     };
+    handle_benchmark_run_start_run_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_benchmark_runs_start_all_runs_start_all: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     connection_confirmed_api_socket_v4_server_connection_confirmed_post: {
         parameters: {
             query?: never;
@@ -38194,6 +38436,146 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["BenchmarkEndErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_run_started_api_socket_v4_server_benchmark_run_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkRunStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_run_start_error_api_socket_v4_server_benchmark_run_start_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkRunStartErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_runs_start_all_started_api_socket_v4_server_benchmark_runs_start_all_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkRunsStartAllStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_runs_start_all_error_api_socket_v4_server_benchmark_runs_start_all_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkRunsStartAllErrorPayload"];
             };
         };
         responses: {

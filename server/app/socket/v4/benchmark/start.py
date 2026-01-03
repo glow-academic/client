@@ -8,8 +8,8 @@ from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
-from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 
 client_router = APIRouter()
@@ -61,7 +61,7 @@ async def _benchmark_start_impl(
 ) -> None:
     """Handle benchmark start requests via WebSocket.
 
-    Creates attempt and checks for next pending run/group, then emits to next.py if found.
+    Creates attempt only - does not auto-start runs.
     """
     try:
         eval_id = data.eval_id
@@ -96,9 +96,6 @@ async def _benchmark_start_impl(
                 return
 
             attempt_id = result["attempt_id"]
-            use_groups = result.get("use_groups", False)
-            pending_run_ids = result.get("pending_run_ids", []) or []
-            pending_group_ids = result.get("pending_group_ids", []) or []
 
             # Emit success event
             await benchmark_started(
@@ -109,34 +106,6 @@ async def _benchmark_start_impl(
                 ),
                 room=sid,
             )
-
-            # If there's a next run/group, emit to next.py handler
-            if use_groups:
-                if pending_group_ids:
-                    next_group_id = pending_group_ids[0]
-                    await emit_to_internal(
-                        "benchmark_next",
-                        {
-                            "attempt_id": attempt_id,
-                            "eval_id": eval_id,
-                            "group_id": str(next_group_id),
-                            "use_groups": True,
-                        },
-                        sid=sid,
-                    )
-            else:
-                if pending_run_ids:
-                    next_run_id = pending_run_ids[0]
-                    await emit_to_internal(
-                        "benchmark_next",
-                        {
-                            "attempt_id": attempt_id,
-                            "eval_id": eval_id,
-                            "run_id": str(next_run_id),
-                            "use_groups": False,
-                        },
-                        sid=sid,
-                    )
 
             # Log activity
             try:
@@ -155,7 +124,7 @@ async def _benchmark_start_impl(
             BenchmarkStartErrorPayload(
                 success=False, message=f"Failed to start benchmark: {str(e)}"
             ),
-            sid=sid,
+            room=sid,
         )
 
 

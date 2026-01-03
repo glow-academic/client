@@ -16695,6 +16695,112 @@
         ]
       }
     },
+    "/socket/v4/client/benchmark/run_start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "handle_benchmark_run_start_run_start",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Benchmark Run Start Run Start"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v4/client/benchmark/runs_start_all": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "handle_benchmark_runs_start_all_runs_start_all",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Benchmark Runs Start All Runs Start All"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v4/server/connection_confirmed": {
       "post": {
         "tags": [
@@ -28348,6 +28454,218 @@
         ]
       }
     },
+    "/socket/v4/server/benchmark/run_started": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Benchmark Run Started Api",
+        "description": "Server-to-client event: Run started successfully.",
+        "operationId": "benchmark_run_started_api_socket_v4_server_benchmark_run_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkRunStartedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Run Started Api Socket V4 Server Benchmark Run Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/benchmark/run_start_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Benchmark Run Start Error Api",
+        "description": "Server-to-client event: Error occurred while starting run.",
+        "operationId": "benchmark_run_start_error_api_socket_v4_server_benchmark_run_start_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkRunStartErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Run Start Error Api Socket V4 Server Benchmark Run Start Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/benchmark/runs_start_all_started": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Benchmark Runs Start All Started Api",
+        "description": "Server-to-client event: Runs started successfully.",
+        "operationId": "benchmark_runs_start_all_started_api_socket_v4_server_benchmark_runs_start_all_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkRunsStartAllStartedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Runs Start All Started Api Socket V4 Server Benchmark Runs Start All Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/benchmark/runs_start_all_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Benchmark Runs Start All Error Api",
+        "description": "Server-to-client event: Error occurred while starting runs.",
+        "operationId": "benchmark_runs_start_all_error_api_socket_v4_server_benchmark_runs_start_all_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkRunsStartAllErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Runs Start All Error Api Socket V4 Server Benchmark Runs Start All Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root Info",
@@ -29009,6 +29327,112 @@
         ],
         "title": "BenchmarkNextPayload",
         "description": "Request to process next run/group for benchmark attempt."
+      },
+      "BenchmarkRunStartErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "run_id"
+        ],
+        "title": "BenchmarkRunStartErrorPayload",
+        "description": "Response indicating an error occurred while starting run."
+      },
+      "BenchmarkRunStartedPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "attempt_id",
+          "run_id"
+        ],
+        "title": "BenchmarkRunStartedPayload",
+        "description": "Response indicating run started successfully."
+      },
+      "BenchmarkRunsStartAllErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "attempt_id"
+        ],
+        "title": "BenchmarkRunsStartAllErrorPayload",
+        "description": "Response indicating an error occurred while starting runs."
+      },
+      "BenchmarkRunsStartAllStartedPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "started_count": {
+            "type": "integer",
+            "title": "Started Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "attempt_id",
+          "started_count"
+        ],
+        "title": "BenchmarkRunsStartAllStartedPayload",
+        "description": "Response indicating runs started successfully."
       },
       "BenchmarkStopErrorPayload": {
         "properties": {

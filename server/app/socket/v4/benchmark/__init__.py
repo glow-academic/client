@@ -44,6 +44,18 @@ from .start import (
 from .start import (
     server_router as start_server_router,
 )
+from .run_start import (
+    client_router as run_start_client_router,
+)
+from .run_start import (
+    server_router as run_start_server_router,
+)
+from .runs_start_all import (
+    client_router as runs_start_all_client_router,
+)
+from .runs_start_all import (
+    server_router as runs_start_all_server_router,
+)
 from .stop import (
     client_router as stop_client_router,
 )
@@ -62,6 +74,8 @@ client_router.include_router(advance_client_router)
 client_router.include_router(stop_client_router)
 client_router.include_router(next_client_router)
 client_router.include_router(end_client_router)
+client_router.include_router(run_start_client_router)
+client_router.include_router(runs_start_all_client_router)
 
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
@@ -71,3 +85,5 @@ server_router.include_router(advance_server_router)
 server_router.include_router(stop_server_router)
 server_router.include_router(next_server_router)
 server_router.include_router(end_server_router)
+server_router.include_router(run_start_server_router)
+server_router.include_router(runs_start_all_server_router)
