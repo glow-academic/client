@@ -5,14 +5,10 @@
  * 05/20/2025
  */
 "use client";
-import {
-  parseJsonDict,
-  stringifyJsonDict,
-} from "@/app/(main)/create/scenarios/searchParams";
+import { stringifyJsonDict } from "@/app/(main)/create/scenarios/searchParams";
 import { Loader2, RotateCcw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  parseAsArrayOf,
   parseAsBoolean,
   parseAsInteger,
   parseAsString,
@@ -48,6 +44,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
+import { type StepStatus } from "@/components/common/forms/GenericForm";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { StepCard } from "@/components/common/forms/StepCard";
 import { ContentSection } from "@/components/scenarios/ContentSection";
 import { DocumentSection } from "@/components/scenarios/DocumentSection";
 import { ParameterItemSection } from "@/components/scenarios/ParameterItemSection";
@@ -61,6 +60,8 @@ import type {
   CreateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
+  PatchScenarioDraftIn,
+  PatchScenarioDraftOut,
   ScenarioDetailOut,
   ScenarioNewOut,
   UpdateScenarioIn,
@@ -68,6 +69,7 @@ import type {
 } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
@@ -91,17 +93,13 @@ export interface ScenarioProps {
   updateScenarioAction?: (
     input: UpdateScenarioIn
   ) => Promise<UpdateScenarioOut>;
+  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
+  patchScenarioDraftAction?: (
+    input: PatchScenarioDraftIn
+  ) => Promise<PatchScenarioDraftOut>;
 }
 
-type StepStatus = "pending" | "active" | "completed";
-
-interface Step {
-  id: string;
-  title: string;
-  description: string;
-  status: StepStatus;
-  optional?: boolean;
-}
+// StepStatus type imported from GenericForm
 
 export default function Scenario({
   mode = "create",
@@ -110,72 +108,61 @@ export default function Scenario({
   scenarioDetailDefault: serverScenarioDetailDefault,
   createScenarioAction,
   updateScenarioAction,
+  patchScenarioDraftAction,
 }: ScenarioProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { effectiveProfile, socket, isConnected } = useProfile();
+  const {
+    effectiveProfile,
+    socket,
+    isConnected,
+    selectedDraftId,
+    setSelectedDraftId,
+  } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!scenarioId;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
-  // Inline parsers for URL-backed state (client-side only - server-side parsing in searchParams.ts)
+  // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
   const scenarioSearchParamsClient = {
-    departmentIds: parseAsArrayOf(parseAsString),
-    personaIds: parseAsArrayOf(parseAsString),
-    documentIds: parseAsArrayOf(parseAsString),
-    templateDocumentIds: parseAsArrayOf(parseAsString),
-    parameterIds: parseAsArrayOf(parseAsString),
-    fieldIds: parseAsArrayOf(parseAsString),
-
-    imageIds: parseAsArrayOf(parseAsString),
-    objectiveIds: parseAsArrayOf(parseAsString),
-    problemStatementIds: parseAsArrayOf(parseAsString),
-
+    // Draft ID (URL-backed, updated when draft is created)
+    draftId: parseAsString,
+    // Search params (URL-backed, updated via debounced callback in StepCard)
     personaSearch: parseAsString,
     documentSearch: parseAsString,
     parameterSearch: parseAsString,
-
+    // Filter params (URL-backed)
     documentShowSelected: parseAsBoolean,
     documentShowTemplate: parseAsBoolean,
     personaShowSelected: parseAsBoolean,
     parameterShowSelected: parseAsBoolean,
-
+    // Range params (URL-backed for filtering)
     personaMin: parseAsInteger,
     personaMax: parseAsInteger,
     documentMin: parseAsInteger,
     documentMax: parseAsInteger,
     parameterSelectionMin: parseAsInteger,
     parameterSelectionMax: parseAsInteger,
-
-    useImage: parseAsBoolean,
-    useVideo: parseAsBoolean,
-    useObjectives: parseAsBoolean,
-    useQuestions: parseAsBoolean,
-    useProblemStatement: parseAsBoolean,
-
-    // Text fields
-    name: parseAsString,
-    problemStatement: parseAsString,
-    objectives: parseAsString, // JSON-encoded array: string[]
-    videoLength: parseAsInteger, // 4, 8, or 12
-
-    randomize: parseAsString,
-    randomizePersonas: parseAsString,
-    randomizeDocuments: parseAsString,
-    randomizeParameters: parseAsString,
-
-    // Dict types (JSON-encoded strings)
-    fieldShowSelected: parseAsString, // JSON: Record<string, boolean>
-    fieldRanges: parseAsString, // JSON: Record<string, { min: number; max: number }>
-    randomizeParameterItems: parseAsString, // JSON: Record<string, string>
   } as const;
 
-  // URL-backed state using nuqs (replaces manual useState + updateUrlParams)
-  const [q, setQ] = useQueryStates(scenarioSearchParamsClient, {
-    history: "replace", // Don't spam back button for every keystroke
-    shallow: false, // Trigger server-side re-fetch when params change
+  // URL-backed state using nuqs (only navigation/search params)
+  const [urlParams, setUrlParams] = useQueryStates(scenarioSearchParamsClient, {
+    history: "replace",
+    shallow: true, // Use shallow routing to prevent server component re-renders
   });
+
+  // Get draftId from URL (managed by nuqs via urlParams)
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const scenarioDetail = serverScenarioDetail;
@@ -183,6 +170,45 @@ export default function Scenario({
 
   // Use edit detail when editing, default detail when creating
   const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
+
+  // Local draft state (not in URL) - initialized from server data or draft payload
+  type DraftState = {
+    name: string;
+    problemStatement: string;
+    objectives: string[];
+    departmentIds: string[];
+    personaIds: string[];
+    documentIds: string[];
+    templateDocumentIds: string[];
+    parameterIds: string[];
+    fieldIds: string[];
+    imageIds: string[];
+    objectiveIds: string[];
+    problemStatementIds: string[];
+    useImage: boolean;
+    useVideo: boolean;
+    useObjectives: boolean;
+    useQuestions: boolean;
+    useProblemStatement: boolean;
+    videoLength: number | null;
+    active: boolean;
+    randomize: string | null;
+    randomizePersonas: string | null;
+    randomizeDocuments: string | null;
+    randomizeParameters: string | null;
+    fieldShowSelected: Record<string, boolean>;
+    fieldRanges: Record<string, { min: number; max: number }>;
+    randomizeParameterItems: Record<string, string>;
+    personaMin: number | null;
+    personaMax: number | null;
+    documentMin: number | null;
+    documentMax: number | null;
+    parameterSelectionMin: number | null;
+    parameterSelectionMax: number | null;
+    scenarioAgentId: string | null;
+    imageAgentId: string | null;
+    videoAgentId: string | null;
+  };
 
   // Centralized query parameter configuration (DHH-style: URL as source of truth)
   // Only include params in URL when they differ from defaults
@@ -237,6 +263,289 @@ export default function Scenario({
       },
     };
   }, [scenarioData, isEditMode]);
+
+  // Initialize draft state from server data or draft payload
+  // Use stable refs (scenarioDetail/scenarioDetailDefault) instead of raw props to prevent recomputation on every server render
+  // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
+  const initialDraftState = useMemo((): DraftState => {
+    const data = isEditMode ? scenarioDetail : scenarioDetailDefault;
+    if (!data) {
+      return {
+        name: "",
+        problemStatement: "",
+        objectives: [],
+        departmentIds: [],
+        personaIds: [],
+        documentIds: [],
+        templateDocumentIds: [],
+        parameterIds: [],
+        fieldIds: [],
+        imageIds: [],
+        objectiveIds: [],
+        problemStatementIds: [],
+        useImage: false,
+        useVideo: false,
+        useObjectives: true,
+        useQuestions: false,
+        useProblemStatement: false,
+        videoLength: null,
+        active: true,
+        randomize: null,
+        randomizePersonas: null,
+        randomizeDocuments: null,
+        randomizeParameters: null,
+        fieldShowSelected: {},
+        fieldRanges: {},
+        randomizeParameterItems: {},
+        personaMin: null,
+        personaMax: null,
+        documentMin: null,
+        documentMax: null,
+        parameterSelectionMin: null,
+        parameterSelectionMax: null,
+        scenarioAgentId: null,
+        imageAgentId: null,
+        videoAgentId: null,
+      };
+    }
+
+    // Initialize nested objects from draft payload fields first (if draft exists)
+    let fieldShowSelected: Record<string, boolean> = {};
+    let fieldRanges: Record<string, { min: number; max: number }> = {};
+    let randomizeParameterItems: Record<string, string> = {};
+
+    // Try to read from draft payload fields (returned by SQL when draft exists)
+    if (
+      data &&
+      "draft_field_show_selected" in data &&
+      data.draft_field_show_selected
+    ) {
+      try {
+        const parsed =
+          typeof data.draft_field_show_selected === "string"
+            ? JSON.parse(data.draft_field_show_selected)
+            : data.draft_field_show_selected;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          fieldShowSelected = parsed as Record<string, boolean>;
+        }
+      } catch (e) {
+        // Ignore parse errors, fall back to empty object
+      }
+    }
+
+    if (data && "draft_field_ranges" in data && data.draft_field_ranges) {
+      try {
+        const parsed =
+          typeof data.draft_field_ranges === "string"
+            ? JSON.parse(data.draft_field_ranges)
+            : data.draft_field_ranges;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          fieldRanges = parsed as Record<string, { min: number; max: number }>;
+        }
+      } catch (e) {
+        // Ignore parse errors, fall back to empty object
+      }
+    }
+
+    if (
+      data &&
+      "draft_randomize_parameter_items" in data &&
+      data.draft_randomize_parameter_items
+    ) {
+      try {
+        const parsed =
+          typeof data.draft_randomize_parameter_items === "string"
+            ? JSON.parse(data.draft_randomize_parameter_items)
+            : data.draft_randomize_parameter_items;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          randomizeParameterItems = parsed as Record<string, string>;
+        }
+      } catch (e) {
+        // Ignore parse errors, fall back to empty object
+      }
+    }
+
+    // If draftId exists, server should have merged draft payload into data
+    // Otherwise, use server defaults
+    return {
+      name: data.name || "",
+      problemStatement: (data as ScenarioDetailOut).problem_statement || "",
+      objectives: [], // Will be populated from objective_ids if needed
+      departmentIds: (data.department_ids || []).map((id) => String(id)),
+      personaIds: data.persona_ids || [],
+      documentIds: data.document_ids || [],
+      templateDocumentIds:
+        (data as ScenarioNewOut).selected_template_document_ids || [],
+      parameterIds: (data as ScenarioDetailOut).parameter_ids || [],
+      fieldIds: [], // Will be populated from scenario fields if needed
+      imageIds:
+        (data as ScenarioNewOut).scenario_images?.map((img) =>
+          String(img.upload_id)
+        ) || [],
+      objectiveIds: (data as ScenarioDetailOut).objective_ids || [],
+      problemStatementIds: (data as ScenarioDetailOut).problem_statement_id
+        ? [String((data as ScenarioDetailOut).problem_statement_id)]
+        : [],
+      useImage: (data as ScenarioDetailOut).image_input_enabled ?? false,
+      useVideo: (data as ScenarioNewOut).video_enabled ?? false,
+      useObjectives: (data as ScenarioDetailOut).objectives_enabled ?? true,
+      useQuestions: (data as ScenarioNewOut).questions_enabled ?? false,
+      useProblemStatement: false, // Not directly available in data
+      videoLength: null, // Will be set from selected video
+      active: (data as ScenarioDetailOut).active ?? true,
+      randomize: null,
+      randomizePersonas: null,
+      randomizeDocuments: null,
+      randomizeParameters: null,
+      fieldShowSelected,
+      fieldRanges,
+      randomizeParameterItems,
+      personaMin: (data as ScenarioDetailOut).persona_range_min ?? null,
+      personaMax: (data as ScenarioDetailOut).persona_range_max ?? null,
+      documentMin: (data as ScenarioDetailOut).document_range_min ?? null,
+      documentMax: (data as ScenarioDetailOut).document_range_max ?? null,
+      parameterSelectionMin:
+        (data as ScenarioDetailOut).parameter_range_min ?? null,
+      parameterSelectionMax:
+        (data as ScenarioDetailOut).parameter_range_max ?? null,
+      scenarioAgentId: data.scenario_agent_id || null,
+      imageAgentId: data.image_agent_id || null,
+      videoAgentId:
+        (data as ScenarioDetailOut & { video_agent_id?: string })
+          .video_agent_id || null,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isEditMode,
+    scenarioDetail,
+    scenarioDetailDefault,
+    draftId,
+    urlDraftId,
+    // Include actual content fields so it recomputes when server data changes (not just object reference)
+    scenarioDetailDefault?.name,
+    scenarioDetailDefault?.department_ids,
+    scenarioDetail?.name,
+    scenarioDetail?.problem_statement,
+    scenarioDetail?.department_ids,
+    scenarioDetail?.persona_ids,
+    scenarioDetail?.document_ids,
+    scenarioDetail?.objective_ids,
+  ]);
+
+  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+  // Track previous initialDraftState content to avoid unnecessary updates
+  const prevInitialDraftStateRef = useRef<string>(
+    JSON.stringify(initialDraftState)
+  );
+
+  // Update draft state when server data changes (e.g., draft selected)
+  // Only update if content actually changed (deep comparison to prevent unnecessary re-renders)
+  useEffect(() => {
+    // Deep compare to avoid unnecessary state updates
+    const currentStateStr = prevInitialDraftStateRef.current;
+    const newStateStr = JSON.stringify(initialDraftState);
+
+    // Only update if content actually changed
+    if (currentStateStr !== newStateStr) {
+      prevInitialDraftStateRef.current = newStateStr;
+      setDraftState(initialDraftState);
+    }
+  }, [initialDraftState]);
+
+  // Integrate autosave hook
+  // Pattern: Transform hook API (draft_id, patch, expected_version) to backend API (input_draft_id, patch, expected_version)
+  // See Z-DOCS.md "Draft Autosave Pattern" section for type transformation details
+  const {
+    saveStatus: _saveStatus,
+    saveNow: _saveNow,
+    lastSavedVersion: _lastSavedVersion,
+  } = useDraftAutosave({
+    draftId,
+    draftState,
+    patchDraftAction: patchScenarioDraftAction
+      ? async (input) => {
+          // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case)
+          const camelToSnake: Record<string, string> = {
+            departmentIds: "department_ids",
+            personaIds: "persona_ids",
+            documentIds: "document_ids",
+            templateDocumentIds: "template_document_ids",
+            parameterIds: "parameter_ids",
+            fieldIds: "field_ids",
+            imageIds: "image_ids",
+            objectiveIds: "objective_ids",
+            problemStatementIds: "problem_statement_ids",
+            useImage: "use_image",
+            useVideo: "use_video",
+            useObjectives: "use_objectives",
+            useQuestions: "use_questions",
+            useProblemStatement: "use_problem_statement",
+            videoLength: "video_length",
+            problemStatement: "problem_statement",
+            fieldShowSelected: "field_show_selected",
+            fieldRanges: "field_ranges",
+            randomizeParameterItems: "randomize_parameter_items",
+            randomizePersonas: "randomize_personas",
+            randomizeDocuments: "randomize_documents",
+            randomizeParameters: "randomize_parameters",
+            personaMin: "persona_min",
+            personaMax: "persona_max",
+            documentMin: "document_min",
+            documentMax: "document_max",
+            parameterSelectionMin: "parameter_selection_min",
+            parameterSelectionMax: "parameter_selection_max",
+            scenarioAgentId: "scenario_agent_id",
+            imageAgentId: "image_agent_id",
+            videoAgentId: "video_agent_id",
+          };
+          const transformedPatch: Record<string, unknown> = {};
+          Object.entries(input.body.patch as Record<string, unknown>).forEach(
+            ([key, value]) => {
+              const snakeKey = camelToSnake[key] || key;
+              transformedPatch[snakeKey] = value;
+            }
+          );
+
+          // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
+          // Note: profile_id is added server-side from header
+          const result = await patchScenarioDraftAction({
+            body: {
+              input_draft_id: input.body.draft_id || null,
+              patch: transformedPatch,
+              expected_version: input.body.expected_version,
+            } as PatchScenarioDraftIn["body"],
+          });
+          // Transform backend API → hook API
+          // Backend API: { draft_id, new_version, draft_exists }
+          // Hook API: { draftId, newVersion, draftExists }
+          return {
+            draftId: result.draft_id || "",
+            newVersion: result.new_version || 0,
+            draftExists: result.draft_exists || false,
+          };
+        }
+      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    debounceMs: 1000,
+    onDraftCreated: useCallback(
+      (newDraftId: string) => {
+        // Only update URL if draftId actually changed
+        const currentUrlDraftId = searchParams.get("draftId");
+        if (newDraftId === currentUrlDraftId) {
+          return;
+        }
+        // Update URL with new draftId and trigger server-side refetch
+        // This ensures the server component gets fresh data with the new draft
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("draftId", newDraftId);
+        const newUrl = `?${params.toString()}`;
+        router.replace(newUrl, { scroll: false });
+        // Force server components to re-render with updated search params
+        router.refresh();
+      },
+      [router, searchParams]
+    ),
+  });
 
   // Set breadcrumb context when scenario data is loaded
   useEffect(() => {
@@ -610,73 +919,58 @@ export default function Scenario({
     active: true,
   });
 
-  // Derived values from nuqs (name and problemStatement now managed by nuqs)
-  const name = q.name ?? "New Scenario";
-  const problemStatement = q.problemStatement ?? "";
+  // Form data from nuqs (URL-backed - only search/filter params)
+  // Following Simulation.tsx pattern: formData = urlParams, draftState separate
+  const formData = urlParams;
 
-  const [formData, setFormData] = useState(initialFormData);
+  // Helper to update form data (URL-backed)
+  const setFormData = useCallback(
+    (updates: Partial<typeof urlParams>) => {
+      setUrlParams((prev) => ({ ...prev, ...updates }));
+    },
+    [setUrlParams]
+  );
 
-  // Track if form data has been initialized from scenarioData to prevent resetting user changes
+  // Merged object for WebSocket emits (combines draftState and urlParams)
+  // Used by randomize handlers to send current filter/search/range params to server
+  const q = useMemo(() => {
+    return {
+      ...draftState,
+      ...urlParams,
+    };
+  }, [draftState, urlParams]);
+
+  // Track if form data has been initialized (prevents re-initialization on re-renders)
   const formDataInitializedRef = useRef<boolean>(false);
 
-  // Event handler for form input changes (defined early for use in useEffect)
+  // Helper to update draft state (form fields)
   const handleInputChange = useCallback(
-    (field: string, value: string | string[] | boolean | null) => {
-      // Handle name and problemStatement via nuqs
-      if (field === "name") {
-        setQ({ name: (value as string) || null });
-      } else if (field === "problemStatement") {
-        setQ({ problemStatement: (value as string) || null });
-      } else {
-        setFormData((prev) => ({ ...prev, [field]: value }));
-      }
+    (key: keyof DraftState, value: unknown) => {
+      setDraftState((prev) => ({ ...prev, [key]: value }));
     },
-    [setQ]
+    []
   );
 
-  // URL-backed state is now managed by nuqs (q object above)
-  // Extract values with defaults for easier use
-  const personaSearchTerm = q.personaSearch ?? "";
-  const documentSearchTerm = q.documentSearch ?? "";
-  const parameterSearchTerm = q.parameterSearch ?? "";
-  const documentShowSelected = q.documentShowSelected ?? false;
-  const documentShowTemplate = q.documentShowTemplate ?? false;
-  const personaShowSelected = q.personaShowSelected ?? false;
-  const parameterShowSelected = q.parameterShowSelected ?? false;
+  // Extract values from formData (URL params) and draftState (form fields)
+  const personaSearchTerm = formData.personaSearch || "";
+  const documentSearchTerm = formData.documentSearch || "";
+  const parameterSearchTerm = formData.parameterSearch || "";
+  const documentShowSelected = formData.documentShowSelected ?? false;
+  const documentShowTemplate = formData.documentShowTemplate ?? false;
+  const personaShowSelected = formData.personaShowSelected ?? false;
+  const parameterShowSelected = formData.parameterShowSelected ?? false;
 
-  // Derived from URL params (arrays) - memoized to prevent unnecessary re-renders
-  const selectedPersonaIds = useMemo(() => q.personaIds ?? [], [q.personaIds]);
-  const currentDocumentIds = useMemo(
-    () => q.documentIds ?? [],
-    [q.documentIds]
-  );
-  const templateDocumentIds = useMemo(
-    () => q.templateDocumentIds ?? [],
-    [q.templateDocumentIds]
-  );
-  const currentFieldIds = useMemo(() => q.fieldIds ?? [], [q.fieldIds]);
-  const currentProblemStatementIds = useMemo(
-    () => q.problemStatementIds ?? [],
-    [q.problemStatementIds]
-  );
-  const currentObjectiveIds = useMemo(
-    () => q.objectiveIds ?? [],
-    [q.objectiveIds]
-  );
-
-  // Derived from URL params (JSON-encoded dicts)
-  const fieldShowSelectedByParam = useMemo(
-    () => parseJsonDict(q.fieldShowSelected, {}),
-    [q.fieldShowSelected]
-  );
-  const fieldMinMax = useMemo(
-    () =>
-      parseJsonDict<Record<string, { min: number; max: number }>>(
-        q.fieldRanges,
-        {}
-      ),
-    [q.fieldRanges]
-  );
+  // Derived from draft state (form fields)
+  const name = draftState.name || "New Scenario";
+  const problemStatement = draftState.problemStatement || "";
+  const selectedPersonaIds = draftState.personaIds || [];
+  const currentDocumentIds = draftState.documentIds || [];
+  const templateDocumentIds = draftState.templateDocumentIds || [];
+  const currentFieldIds = draftState.fieldIds || [];
+  const currentProblemStatementIds = draftState.problemStatementIds || [];
+  const currentObjectiveIds = draftState.objectiveIds || [];
+  const fieldShowSelectedByParam = draftState.fieldShowSelected || {};
+  const fieldMinMax = draftState.fieldRanges || {};
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
   );
@@ -703,31 +997,18 @@ export default function Scenario({
   const [regenerationInstructions, setRegenerationInstructions] = useState("");
   const [regenerateObjectives, setRegenerateObjectives] = useState(true);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
-  // URL-backed flags (now managed by nuqs)
-  const useObjectives = q.useObjectives ?? false;
-  const useImage = q.useImage ?? false;
-  const useVideo = q.useVideo ?? false;
-  const useQuestions = q.useQuestions ?? false;
-  const useProblemStatement = q.useProblemStatement ?? false;
+  // Feature flags from draft state
+  const useObjectives = draftState.useObjectives ?? false;
+  const useImage = draftState.useImage ?? false;
+  const useVideo = draftState.useVideo ?? false;
+  const useQuestions = draftState.useQuestions ?? false;
+  const useProblemStatement = draftState.useProblemStatement ?? false;
 
-  // Video length - now managed by nuqs
-  const selectedVideoLength = q.videoLength ?? null;
+  // Video length from draft state
+  const selectedVideoLength = draftState.videoLength ?? null;
 
-  // State for junction data (managed separately from scenario)
-  // Objectives now managed by nuqs
-  const currentObjectives = useMemo(() => {
-    if (q.objectives) {
-      try {
-        const parsed = JSON.parse(q.objectives);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      } catch {
-        // Invalid JSON - ignore, use empty array
-      }
-    }
-    return [];
-  }, [q.objectives]);
+  // Objectives from draft state (array, not JSON-encoded)
+  const currentObjectives = draftState.objectives || [];
   // State for content section (image, video, questions, objectives)
   const [contentState, setContentState] = useState<{
     image: { id: string; name: string; upload_id: string } | null;
@@ -775,11 +1056,18 @@ export default function Scenario({
     "persona" | "document" | "parameters" | `parameter_${string}` | "all" | null
   >(null);
 
-  // Min/max state for randomization (URL-backed via nuqs, fallback to server values)
-  // Initialize from URL params, fallback to server's current values
+  // Min/max state for randomization (from draft state, fallback to server values)
+  // Initialize from draft state, fallback to server's current values
   const personaMinMax = useMemo(() => {
-    if (q.personaMin !== null && q.personaMax !== null) {
-      return { min: q.personaMin, max: q.personaMax };
+    const personaMin = draftState.personaMin;
+    const personaMax = draftState.personaMax;
+    if (
+      personaMin !== null &&
+      personaMin !== undefined &&
+      personaMax !== null &&
+      personaMax !== undefined
+    ) {
+      return { min: personaMin, max: personaMax };
     }
     // Fallback to server values
     if (scenarioData && "persona_min" in scenarioData) {
@@ -790,11 +1078,18 @@ export default function Scenario({
       };
     }
     return { min: 1, max: 1 };
-  }, [q.personaMin, q.personaMax, scenarioData]);
+  }, [draftState.personaMin, draftState.personaMax, scenarioData]);
 
   const documentMinMax = useMemo(() => {
-    if (q.documentMin !== null && q.documentMax !== null) {
-      return { min: q.documentMin, max: q.documentMax };
+    const documentMin = draftState.documentMin;
+    const documentMax = draftState.documentMax;
+    if (
+      documentMin !== null &&
+      documentMin !== undefined &&
+      documentMax !== null &&
+      documentMax !== undefined
+    ) {
+      return { min: documentMin, max: documentMax };
     }
     // Fallback to server values
     if (scenarioData && "document_min" in scenarioData) {
@@ -805,11 +1100,18 @@ export default function Scenario({
       };
     }
     return { min: 0, max: 1 };
-  }, [q.documentMin, q.documentMax, scenarioData]);
+  }, [draftState.documentMin, draftState.documentMax, scenarioData]);
 
   const parameterSelectionMinMax = useMemo(() => {
-    if (q.parameterSelectionMin !== null && q.parameterSelectionMax !== null) {
-      return { min: q.parameterSelectionMin, max: q.parameterSelectionMax };
+    const parameterSelectionMin = draftState.parameterSelectionMin;
+    const parameterSelectionMax = draftState.parameterSelectionMax;
+    if (
+      parameterSelectionMin !== null &&
+      parameterSelectionMin !== undefined &&
+      parameterSelectionMax !== null &&
+      parameterSelectionMax !== undefined
+    ) {
+      return { min: parameterSelectionMin, max: parameterSelectionMax };
     }
     // Fallback to server values
     if (scenarioData && "parameter_selection_min" in scenarioData) {
@@ -826,7 +1128,11 @@ export default function Scenario({
           max: ranges.parameter_selection.max,
         }
       : { min: 0, max: 3 };
-  }, [q.parameterSelectionMin, q.parameterSelectionMax, scenarioData]);
+  }, [
+    draftState.parameterSelectionMin,
+    draftState.parameterSelectionMax,
+    scenarioData,
+  ]);
   // fieldMinMax is now derived from URL params above
 
   // Staged selections per department (preserved when departments are deselected)
@@ -879,80 +1185,76 @@ export default function Scenario({
     return map;
   }, [scenarioData]);
 
-  // Helper functions to update URL-backed state via setQ
+  // Helper functions to update draft state directly
   const updatePersonaIds = useCallback(
     (ids: string[] | ((prev: string[]) => string[])) => {
       const newIds = typeof ids === "function" ? ids(selectedPersonaIds) : ids;
-      setQ({ personaIds: newIds.length > 0 ? newIds : null });
+      setDraftState((prev) => ({ ...prev, personaIds: newIds }));
     },
-    [selectedPersonaIds, setQ]
+    [selectedPersonaIds]
   );
 
   const updateDocumentIds = useCallback(
     (ids: string[] | ((prev: string[]) => string[])) => {
       const newIds = typeof ids === "function" ? ids(currentDocumentIds) : ids;
-      setQ({ documentIds: newIds.length > 0 ? newIds : null });
+      setDraftState((prev) => ({ ...prev, documentIds: newIds }));
     },
-    [currentDocumentIds, setQ]
+    [currentDocumentIds]
   );
 
   const updateTemplateDocumentIds = useCallback(
     (ids: string[] | ((prev: string[]) => string[])) => {
       const newIds = typeof ids === "function" ? ids(templateDocumentIds) : ids;
-      setQ({ templateDocumentIds: newIds.length > 0 ? newIds : null });
+      setDraftState((prev) => ({ ...prev, templateDocumentIds: newIds }));
     },
-    [templateDocumentIds, setQ]
+    [templateDocumentIds]
   );
 
   const updateFieldIds = useCallback(
     (ids: string[] | ((prev: string[]) => string[])) => {
       const newIds = typeof ids === "function" ? ids(currentFieldIds) : ids;
-      setQ({ fieldIds: newIds.length > 0 ? newIds : null });
+      setDraftState((prev) => ({ ...prev, fieldIds: newIds }));
     },
-    [currentFieldIds, setQ]
+    [currentFieldIds]
   );
 
   const updateProblemStatementIds = useCallback(
     (ids: string[] | ((prev: string[]) => string[])) => {
       const newIds =
         typeof ids === "function" ? ids(currentProblemStatementIds) : ids;
-      setQ({ problemStatementIds: newIds.length > 0 ? newIds : null });
+      setDraftState((prev) => ({ ...prev, problemStatementIds: newIds }));
     },
-    [currentProblemStatementIds, setQ]
+    [currentProblemStatementIds]
   );
 
   const updateObjectiveIds = useCallback(
     (ids: string[] | ((prev: string[]) => string[])) => {
       const newIds = typeof ids === "function" ? ids(currentObjectiveIds) : ids;
-      setQ({ objectiveIds: newIds.length > 0 ? newIds : null });
+      setDraftState((prev) => ({ ...prev, objectiveIds: newIds }));
     },
-    [currentObjectiveIds, setQ]
+    [currentObjectiveIds]
   );
 
-  // Helper to update objectives (JSON-encoded array) via nuqs
+  // Helper to update objectives (array in draft state)
   const updateObjectives = useCallback(
     (objectives: string[] | ((prev: string[]) => string[])) => {
       const newObjectives =
         typeof objectives === "function"
           ? objectives(currentObjectives)
           : objectives;
-      const objectivesJson = JSON.stringify(newObjectives);
-      setQ({ objectives: objectivesJson || null });
+      setDraftState((prev) => ({ ...prev, objectives: newObjectives }));
     },
-    [currentObjectives, setQ]
+    [currentObjectives]
   );
 
-  // Helper to update videoLength via nuqs
-  const updateVideoLength = useCallback(
-    (length: number | null) => {
-      // Validate length is 4, 8, or 12, or null
-      if (length !== null && ![4, 8, 12].includes(length)) {
-        return;
-      }
-      setQ({ videoLength: length });
-    },
-    [setQ]
-  );
+  // Helper to update videoLength (in draft state)
+  const updateVideoLength = useCallback((length: number | null) => {
+    // Validate length is 4, 8, or 12, or null
+    if (length !== null && ![4, 8, 12].includes(length)) {
+      return;
+    }
+    setDraftState((prev) => ({ ...prev, videoLength: length }));
+  }, []);
 
   const updateFieldShowSelected = useCallback(
     (
@@ -962,11 +1264,9 @@ export default function Scenario({
     ) => {
       const newValue =
         typeof value === "function" ? value(fieldShowSelectedByParam) : value;
-      setQ({
-        fieldShowSelected: stringifyJsonDict(newValue) || null,
-      });
+      setDraftState((prev) => ({ ...prev, fieldShowSelected: newValue }));
     },
-    [fieldShowSelectedByParam, setQ]
+    [fieldShowSelectedByParam]
   );
 
   const updateFieldRanges = useCallback(
@@ -978,11 +1278,9 @@ export default function Scenario({
           ) => Record<string, { min: number; max: number }>)
     ) => {
       const newValue = typeof value === "function" ? value(fieldMinMax) : value;
-      setQ({
-        fieldRanges: stringifyJsonDict(newValue) || null,
-      });
+      setDraftState((prev) => ({ ...prev, fieldRanges: newValue }));
     },
-    [fieldMinMax, setQ]
+    [fieldMinMax]
   );
 
   // Helper function to build search params including filters, search terms, ranges, and randomize param
@@ -992,9 +1290,9 @@ export default function Scenario({
     // Add filter params (always include if non-empty)
     // Arrays are handled by nuqs automatically, but we still need to set them for URLSearchParams
     // Note: This function is used for manual URL building, nuqs handles arrays automatically
-    if (formData.departmentIds && formData.departmentIds.length > 0) {
+    if (draftState.departmentIds && draftState.departmentIds.length > 0) {
       // nuqs will handle array serialization
-      formData.departmentIds.forEach((id) => {
+      draftState.departmentIds.forEach((id) => {
         params.append("departmentIds", id);
       });
     }
@@ -1013,8 +1311,8 @@ export default function Scenario({
         params.append("templateDocumentIds", id);
       });
     }
-    if (formData.parameterIds && formData.parameterIds.length > 0) {
-      formData.parameterIds.forEach((id) => {
+    if (draftState.parameterIds && draftState.parameterIds.length > 0) {
+      draftState.parameterIds.forEach((id) => {
         params.append("parameterIds", id);
       });
     }
@@ -1110,7 +1408,7 @@ export default function Scenario({
 
     // Per-parameter field ranges - compare against server's current values
     // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
-    const selectedParamIds = formData.parameterIds || [];
+    const selectedParamIds = draftState.parameterIds || [];
     const isRandomizing = searchParams.get("randomize") === "all";
     const serverFieldRanges = serverCurrentValues?.field_ranges || {};
 
@@ -1239,11 +1537,11 @@ export default function Scenario({
     return params;
   }, [
     scenarioData, // Include full scenarioData to access current values (persona_min, persona_max, etc.)
-    formData.departmentIds,
+    draftState.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
     templateDocumentIds,
-    formData.parameterIds,
+    draftState.parameterIds,
     currentFieldIds,
     currentProblemStatementIds,
     currentObjectiveIds,
@@ -1267,7 +1565,7 @@ export default function Scenario({
     queryParamConfig, // Include queryParamConfig for server value comparisons
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
-    // Text fields for URL sync (now managed by nuqs)
+    // Text fields from draft state
     problemStatement,
     currentObjectives,
     name,
@@ -1662,7 +1960,7 @@ export default function Scenario({
   // Filter objectives_history based on selected departments
   const objectivesHistory = useMemo(() => {
     const rawHistory = scenarioData?.objectives_history || [];
-    const selectedDeptIds = formData.departmentIds || [];
+    const selectedDeptIds = draftState.departmentIds || [];
 
     // Convert to array of strings for autocomplete
     const objectives: string[] = [];
@@ -1711,7 +2009,7 @@ export default function Scenario({
     });
 
     return objectives;
-  }, [scenarioData?.objectives_history, formData.departmentIds]);
+  }, [scenarioData?.objectives_history, draftState.departmentIds]);
 
   // Use server-provided filtered valid IDs (replacing client-side filtering)
   // Server now handles all filtering logic based on query parameters
@@ -1748,7 +2046,7 @@ export default function Scenario({
     // Top parameter selection is the source of truth for section 4
     // Show all selected parameters (or none if empty), regardless of whether they have fields
     // This allows debugging - parameters with 0 fields will still be visible
-    const selectedParamIds = formData.parameterIds || [];
+    const selectedParamIds = draftState.parameterIds || [];
     const conditionalParamIds = new Set<string>();
 
     // Get conditional parameters from currently selected fields
@@ -1795,11 +2093,16 @@ export default function Scenario({
       }
     });
     return filtered;
-  }, [parameterMapping, formData.parameterIds, currentFieldIds, fieldMapping]);
+  }, [
+    parameterMapping,
+    draftState.parameterIds,
+    currentFieldIds,
+    fieldMapping,
+  ]);
 
   // Track department changes and manage staged selections
   useEffect(() => {
-    const currentDeptIds = formData.departmentIds || [];
+    const currentDeptIds = draftState.departmentIds || [];
     const prevDeptIds = previousDepartmentIds || [];
 
     // Skip if no change (initial load or same selection)
@@ -1899,7 +2202,7 @@ export default function Scenario({
     setPreviousDepartmentIds(currentDeptIds);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    formData.departmentIds,
+    draftState.departmentIds,
     previousDepartmentIds,
     selectedPersonaIds,
     currentDocumentIds,
@@ -2108,25 +2411,8 @@ export default function Scenario({
         });
       }
 
-      // Update URL params with randomized selections
-      requestAnimationFrame(() => {
-        setQ({
-          personaIds:
-            randomized.personaIds && randomized.personaIds.length > 0
-              ? randomized.personaIds
-              : null,
-          documentIds:
-            randomized.documentIds && randomized.documentIds.length > 0
-              ? randomized.documentIds
-              : null,
-          parameterIds:
-            randomized.parameterIds && randomized.parameterIds.length > 0
-              ? randomized.parameterIds
-              : null,
-          fieldIds:
-            finalFieldIds && finalFieldIds.length > 0 ? finalFieldIds : null,
-        });
-      });
+      // Update draft state with randomized selections (no URL update needed - form fields are in draft state)
+      // Note: URL params are only for search/filter, not form fields
 
       if (data.message) {
         toast.success(data.message);
@@ -2158,7 +2444,6 @@ export default function Scenario({
     updateDocumentIds,
     updateFieldIds,
     handleInputChange,
-    setQ,
   ]);
 
   // Debounce timeout ref for URL updates
@@ -2221,11 +2506,11 @@ export default function Scenario({
     // Remove searchParams and router from dependencies to prevent loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    formData.departmentIds,
+    draftState.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
     templateDocumentIds,
-    formData.parameterIds,
+    draftState.parameterIds,
     currentFieldIds, // Renamed from currentParameterItemIds
     currentProblemStatementIds,
     currentObjectiveIds,
@@ -2256,11 +2541,12 @@ export default function Scenario({
     if (scenarioData && isEditMode && !formDataInitializedRef.current) {
       // Edit mode: load existing scenario data (only once)
       const deptIds = scenarioData.department_ids || [];
-      // Initialize name and problemStatement via nuqs
-      setQ({
-        name: scenarioData.name || null,
-        problemStatement: scenarioData.problem_statement || null,
-      });
+      // Initialize name and problemStatement in draft state
+      handleInputChange("name", scenarioData.name || null);
+      handleInputChange(
+        "problemStatement",
+        scenarioData.problem_statement || null
+      );
       // Initialize basic info state
       setBasicInfoState({
         scenarioAgentId: scenarioData.scenario_agent_id || null,
@@ -2270,10 +2556,11 @@ export default function Scenario({
             .video_agent_id || null,
         active: scenarioData.active ?? true,
       });
-      setFormData({
-        departmentIds: deptIds,
-        parameterIds: scenarioData.scenario_parameter_ids || [],
-      });
+      handleInputChange("departmentIds", deptIds);
+      handleInputChange(
+        "parameterIds",
+        scenarioData.scenario_parameter_ids || []
+      );
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
         setPreviousDepartmentIds(deptIds);
@@ -2336,12 +2623,10 @@ export default function Scenario({
       const problemStatementEnabled =
         scenarioDataWithFlags.problem_statement_enabled ?? true;
 
-      // Update URL-backed flags via nuqs
-      setQ({
-        useObjectives: objectivesEnabled || null,
-        useImage: imagesEnabled || null,
-        useProblemStatement: problemStatementEnabled || null,
-      });
+      // Update feature flags in draft state
+      handleInputChange("useObjectives", objectivesEnabled || null);
+      handleInputChange("useImage", imagesEnabled || null);
+      handleInputChange("useProblemStatement", problemStatementEnabled || null);
       // In edit mode, load saved images from scenario (scenario_images represents saved images)
       // In create mode, don't auto-select - user must explicitly choose or upload via picker
       const scenarioImages = scenarioDataWithFlags.scenario_images;
@@ -2378,7 +2663,7 @@ export default function Scenario({
 
       // Load video_enabled and scenario video (only active video)
       const videoEnabled = scenarioDataWithFlags.video_enabled ?? false;
-      setQ({ useVideo: videoEnabled || null });
+      handleInputChange("useVideo", videoEnabled || null);
       const scenarioVideos = scenarioDataWithFlags.scenario_videos;
       if (
         videoEnabled &&
@@ -2428,7 +2713,7 @@ export default function Scenario({
 
       // Load questions_enabled and questions
       const questionsEnabled = scenarioDataWithFlags.questions_enabled ?? false;
-      setQ({ useQuestions: questionsEnabled || null });
+      handleInputChange("useQuestions", questionsEnabled || null);
       const questionIds = scenarioDataWithFlags.question_ids || [];
       const questionsData = scenarioDataWithFlags.questions || [];
       if (
@@ -2498,10 +2783,10 @@ export default function Scenario({
       // Preserve problem statement and name if they were set from URL params (don't reset to empty/default)
       // Name and problemStatement are now managed by nuqs, so they're already in q
       // Only initialize if not already set in URL
-      if (!q.problemStatement) {
+      if (!problemStatement) {
         // No problem statement in URL - keep empty or use default
       }
-      if (!q.name || q.name === "New Scenario") {
+      if (!name || name === "New Scenario") {
         // Name is default or not set - keep as is (nuqs will handle default)
       }
       // Initialize basic info state
@@ -2513,15 +2798,17 @@ export default function Scenario({
             .video_agent_id || null,
         active: true, // Default for create mode
       });
-      setFormData({
+      // Initialize draft state from initialFormData and server response
+      setDraftState((prev) => ({
+        ...prev,
         ...initialFormData,
         parameterIds: newData.selected_parameter_ids || [],
-      });
+      }));
 
       // Initialize selections from server response (filtered to valid IDs)
       // Only update URL if server values differ from current URL values
       if (newData.selected_persona_ids) {
-        const currentPersonaIds = q.personaIds ?? [];
+        const currentPersonaIds = selectedPersonaIds;
         if (
           JSON.stringify([...currentPersonaIds].sort()) !==
           JSON.stringify([...newData.selected_persona_ids].sort())
@@ -2530,7 +2817,7 @@ export default function Scenario({
         }
       }
       if (newData.selected_document_ids) {
-        const currentDocIds = q.documentIds ?? [];
+        const currentDocIds = currentDocumentIds;
         if (
           JSON.stringify([...currentDocIds].sort()) !==
           JSON.stringify([...newData.selected_document_ids].sort())
@@ -2548,7 +2835,7 @@ export default function Scenario({
         updateTemplateDocumentIds(newData.selected_template_document_ids);
       }
       if (newData.selected_field_ids) {
-        const currentFieldIdsFromQ = q.fieldIds ?? [];
+        const currentFieldIdsFromQ = currentFieldIds;
         if (
           JSON.stringify([...currentFieldIdsFromQ].sort()) !==
           JSON.stringify([...newData.selected_field_ids].sort())
@@ -2561,7 +2848,7 @@ export default function Scenario({
 
       // Initialize objective IDs from URL params (server doesn't return selected_objective_ids)
       // URL params are the source of truth (DHH-style)
-      const currentObjectiveIdsFromQ = q.objectiveIds ?? [];
+      const currentObjectiveIdsFromQ = currentObjectiveIds;
       if (currentObjectiveIdsFromQ.length > 0) {
         // Populate currentObjectives from objective IDs using objective mapping
         // Use the helper function that prefers arrays, falls back to mapping
@@ -2579,7 +2866,7 @@ export default function Scenario({
       }
 
       // Initialize problem statement IDs from URL params (server doesn't return selected_problem_statement_ids)
-      const currentProblemStatementIdsFromQ = q.problemStatementIds ?? [];
+      const currentProblemStatementIdsFromQ = currentProblemStatementIds;
       if (currentProblemStatementIdsFromQ.length > 0) {
         // Set first as active and update name if needed
         // Use problemStatementMapping which prefers arrays, falls back to mapping
@@ -2605,17 +2892,17 @@ export default function Scenario({
               !problemStatementFromUrl &&
               (!problemStatement || !problemStatement.trim())
             ) {
-              setQ({
-                problemStatement:
-                  firstProblemStatement.problem_statement || null,
-              });
+              handleInputChange(
+                "problemStatement",
+                firstProblemStatement.problem_statement || null
+              );
             }
             // Set name in new mode (using name field)
             const isNewMode =
               !isEditMode &&
               (!name || name === "New Scenario" || name.trim() === "");
             if (isNewMode && firstProblemStatement.name) {
-              setQ({ name: firstProblemStatement.name || null });
+              handleInputChange("name", firstProblemStatement.name || null);
             }
           }
         }
@@ -2626,19 +2913,19 @@ export default function Scenario({
       const updates: Partial<typeof q> = {};
       if (
         newData.persona_search &&
-        newData.persona_search !== q.personaSearch
+        newData.persona_search !== personaSearchTerm
       ) {
         updates.personaSearch = newData.persona_search;
       }
       if (
         newData.document_search &&
-        newData.document_search !== q.documentSearch
+        newData.document_search !== documentSearchTerm
       ) {
         updates.documentSearch = newData.document_search;
       }
       if (
         newData.parameter_search &&
-        newData.parameter_search !== q.parameterSearch
+        newData.parameter_search !== parameterSearchTerm
       ) {
         updates.parameterSearch = newData.parameter_search;
       }
@@ -2647,8 +2934,8 @@ export default function Scenario({
       const serverPersonaMin = newData.persona_min ?? 1;
       const serverPersonaMax = newData.persona_max ?? 1;
       if (
-        q.personaMin !== serverPersonaMin ||
-        q.personaMax !== serverPersonaMax
+        personaMinMax.min !== serverPersonaMin ||
+        personaMinMax.max !== serverPersonaMax
       ) {
         updates.personaMin = serverPersonaMin;
         updates.personaMax = serverPersonaMax;
@@ -2657,8 +2944,8 @@ export default function Scenario({
       const serverDocumentMin = newData.document_min ?? 0;
       const serverDocumentMax = newData.document_max ?? 1;
       if (
-        q.documentMin !== serverDocumentMin ||
-        q.documentMax !== serverDocumentMax
+        documentMinMax.min !== serverDocumentMin ||
+        documentMinMax.max !== serverDocumentMax
       ) {
         updates.documentMin = serverDocumentMin;
         updates.documentMax = serverDocumentMax;
@@ -2672,15 +2959,15 @@ export default function Scenario({
       const serverParameterMax =
         newData.parameter_selection_max ?? parameterDefault.max;
       if (
-        q.parameterSelectionMin !== serverParameterMin ||
-        q.parameterSelectionMax !== serverParameterMax
+        parameterSelectionMinMax.min !== serverParameterMin ||
+        parameterSelectionMinMax.max !== serverParameterMax
       ) {
         updates.parameterSelectionMin = serverParameterMin;
         updates.parameterSelectionMax = serverParameterMax;
       }
 
       if (Object.keys(updates).length > 0) {
-        setQ(updates);
+        setFormData(updates);
       }
 
       // Initialize per-parameter item ranges from server response
@@ -2696,9 +2983,7 @@ export default function Scenario({
           };
         });
         // Update URL with field ranges if they differ from current URL values
-        const currentFieldRanges = parseJsonDict<
-          Record<string, { min: number; max: number }>
-        >(q.fieldRanges, {});
+        const currentFieldRanges = fieldMinMax;
         if (JSON.stringify(result) !== JSON.stringify(currentFieldRanges)) {
           updateFieldRanges(result);
         }
@@ -2711,9 +2996,7 @@ export default function Scenario({
         Object.keys(parameterMapping).forEach((paramId) => {
           defaultFieldRanges[paramId] = { min: 1, max: 3 };
         });
-        const currentFieldRanges = parseJsonDict<
-          Record<string, { min: number; max: number }>
-        >(q.fieldRanges, {});
+        const currentFieldRanges = fieldMinMax;
         if (
           JSON.stringify(defaultFieldRanges) !==
           JSON.stringify(currentFieldRanges)
@@ -2734,14 +3017,11 @@ export default function Scenario({
     searchParams,
     q.documentMax,
     q.documentMin,
-    q.documentSearch,
-    q.parameterSearch,
-    q.parameterSelectionMax,
-    q.parameterSelectionMin,
-    q.personaMax,
-    q.personaMin,
-    q.personaSearch,
-    setQ,
+    documentSearchTerm,
+    parameterSearchTerm,
+    parameterSelectionMinMax,
+    personaMinMax,
+    personaSearchTerm,
     parameterMapping,
     fieldMapping,
     parameterSelectionMinMax, // Used as fallback value in effect
@@ -2947,9 +3227,10 @@ export default function Scenario({
     });
   }, [scenarioData, simulationMapping]);
 
-  // Calculate step status
+  // Calculate step status for GenericForm
+  // Note: formData parameter is urlParams (search/filter only), but status is calculated from draftState (form fields)
   const getStepStatus = useCallback(
-    (stepId: string): StepStatus => {
+    (stepId: string, formData: Record<string, unknown>): StepStatus => {
       // If we have a scenario description, mark all sections as completed
       if (problemStatement && problemStatement.trim()) {
         return "completed";
@@ -2971,7 +3252,7 @@ export default function Scenario({
         case "parameters":
           return selectedPersonaIds.length === 0
             ? "pending"
-            : (formData.parameterIds || []).length > 0
+            : (draftState.parameterIds || []).length > 0
               ? "completed"
               : "active";
         case "content":
@@ -2998,68 +3279,149 @@ export default function Scenario({
       currentFieldIds, // Renamed from currentParameterItemIds
       fieldMapping, // Renamed from parameterItemMapping
       problemStatement,
-      formData.parameterIds,
+      draftState.parameterIds,
     ]
   );
 
-  // Removed useEffect - server values are initialized in useState and useEffect at line 1436
-  // Server is source of truth, no need to sync via useEffect (DHH approach)
-
-  // Dynamic steps array based on available parameters
-  const steps: Step[] = useMemo(() => {
-    const baseSteps: Step[] = [
+  // Steps configuration for GenericForm
+  const steps = useMemo(
+    () => [
       {
         id: "basic",
-        title: "",
-        description: "",
-        status: getStepStatus("basic"),
+        title: "Basic Information",
+        description:
+          "Set scenario name, departments, agents, and active status.",
+        resetFields: [
+          "name",
+          "departmentIds",
+          "scenarioAgentId",
+          "imageAgentId",
+          "videoAgentId",
+          "active",
+        ],
       },
       {
         id: "persona",
-        title: "Personas",
-        description:
-          "Define the personality, background, or behavior of the participants in the scenario.",
-        status: getStepStatus("persona"),
+        title: "Persona Selection",
+        description: "Select personas for this scenario.",
+        resetFields: ["personaIds"],
+        filters: [{ key: "personaShowSelected", label: "Show selected" }],
       },
       {
         id: "documents",
-        title: "Documents",
-        description:
-          "Select key documents or reference materials to ground scenario responses.",
-        status: getStepStatus("documents"),
-        optional: true,
+        title: "Document Selection",
+        description: "Select documents and templates for this scenario.",
+        resetFields: ["documentIds", "templateDocumentIds"],
+        filters: [
+          { key: "documentShowSelected", label: "Show selected" },
+          { key: "documentShowTemplate", label: "Show templates" },
+        ],
       },
       {
         id: "parameters",
-        title: "Parameters",
-        description: "Select which parameters to include in the scenario.",
-        status: getStepStatus("parameters"),
+        title: "Parameter Selection",
+        description: "Select parameters for this scenario.",
+        resetFields: ["parameterIds"],
+        filters: [{ key: "parameterShowSelected", label: "Show selected" }],
       },
-    ];
+      // Dynamic parameter item steps added via contentSections
+      {
+        id: "content",
+        title: "Content",
+        description:
+          "Define problem statement, objectives, images, videos, and questions.",
+        resetFields: [
+          "problemStatement",
+          "objectives",
+          "useImage",
+          "useVideo",
+          "useObjectives",
+          "useQuestions",
+          "useProblemStatement",
+        ],
+      },
+    ],
+    []
+  );
 
-    // Add individual parameter steps
-    const parameterSteps: Step[] = Object.entries(generalParameterMapping).map(
-      ([paramId, param]) => {
-        const p = param as { name: string; description?: string };
-        return {
-          id: `parameter-${paramId}`,
-          title: p.name,
-          description: p.description || "",
-          status: getStepStatus(`parameter-${paramId}`),
-        };
+  // Form initialization function for GenericForm
+  // Updates draftState directly (like Cohort.tsx), returns empty object for GenericForm
+  const initializeForm = useCallback(
+    (serverData: unknown, editMode: boolean) => {
+      if (
+        !editMode ||
+        !serverData ||
+        typeof serverData !== "object" ||
+        !("department_ids" in serverData)
+      ) {
+        return {};
       }
-    );
 
-    const contentStep: Step = {
-      id: "content",
-      title: "Scenario",
-      description:
-        "This is what will be seen when entering the scenario. Leave blank for auto-generation.",
-      status: getStepStatus("content"),
-    };
+      const scenarioDetail = serverData as ScenarioDetailOut;
+      const deptIds = scenarioDetail.department_ids || [];
 
-    return [...baseSteps, ...parameterSteps, contentStep];
-  }, [generalParameterMapping, getStepStatus]);
+      // Update draftState directly
+      const draftUpdates: Partial<DraftState> = {};
+
+      if (scenarioDetail.name) draftUpdates.name = scenarioDetail.name;
+      if (scenarioDetail.problem_statement)
+        draftUpdates.problemStatement = scenarioDetail.problem_statement;
+      if (deptIds.length > 0)
+        draftUpdates.departmentIds = deptIds.map((id) => String(id));
+      if (scenarioDetail.persona_ids && scenarioDetail.persona_ids.length > 0)
+        draftUpdates.personaIds = scenarioDetail.persona_ids;
+      if (scenarioDetail.document_ids && scenarioDetail.document_ids.length > 0)
+        draftUpdates.documentIds = scenarioDetail.document_ids;
+      if (
+        scenarioDetail.parameter_ids &&
+        scenarioDetail.parameter_ids.length > 0
+      )
+        draftUpdates.parameterIds = scenarioDetail.parameter_ids;
+      if (scenarioDetail.active !== undefined)
+        draftUpdates.active = scenarioDetail.active ?? true;
+      if (scenarioDetail.scenario_agent_id)
+        draftUpdates.scenarioAgentId = scenarioDetail.scenario_agent_id;
+      if (scenarioDetail.image_agent_id)
+        draftUpdates.imageAgentId = scenarioDetail.image_agent_id;
+      if (
+        (scenarioDetail as ScenarioDetailOut & { video_agent_id?: string })
+          .video_agent_id
+      )
+        draftUpdates.videoAgentId =
+          (scenarioDetail as ScenarioDetailOut & { video_agent_id?: string })
+            .video_agent_id || null;
+      if (scenarioDetail.image_input_enabled !== undefined)
+        draftUpdates.useImage = scenarioDetail.image_input_enabled ?? false;
+      if (
+        (scenarioDetail as ScenarioDetailOut & { video_enabled?: boolean })
+          .video_enabled !== undefined
+      )
+        draftUpdates.useVideo =
+          (scenarioDetail as ScenarioDetailOut & { video_enabled?: boolean })
+            .video_enabled ?? false;
+      if (scenarioDetail.objectives_enabled !== undefined)
+        draftUpdates.useObjectives = scenarioDetail.objectives_enabled ?? true;
+      if (
+        (scenarioDetail as ScenarioDetailOut & { questions_enabled?: boolean })
+          .questions_enabled !== undefined
+      )
+        draftUpdates.useQuestions =
+          (
+            scenarioDetail as ScenarioDetailOut & {
+              questions_enabled?: boolean;
+            }
+          ).questions_enabled ?? false;
+
+      // Apply updates to draftState
+      if (Object.keys(draftUpdates).length > 0) {
+        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
+      }
+
+      // Return empty object for GenericForm compatibility (form fields are handled via draftState)
+      return {};
+    },
+    []
+  );
 
   // Parameter actions - WebSocket randomization per parameter
   const handleRandomizeParameterClient = (paramId: string) => {
@@ -3123,11 +3485,9 @@ export default function Scenario({
       urlUpdates[`fieldMin_${paramId}`] = null;
       urlUpdates[`fieldMax_${paramId}`] = null;
 
-      // Clear URL params using nuqs and router for dynamic params
-      setQ({
-        fieldIds: null,
-        randomize: null,
-      });
+      // Clear draft state (form fields are in draft state, not URL params)
+      handleInputChange("fieldIds", null);
+      handleInputChange("randomize", null);
       // Clear dynamic field range params manually
       const params = new URLSearchParams(searchParams.toString());
       params.delete(`fieldMin_${paramId}`);
@@ -3206,13 +3566,13 @@ export default function Scenario({
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
 
-      // Clear URL params and reset to defaults using nuqs
-      setQ({
-        personaIds: null,
+      // Clear draft state and URL params, reset to defaults
+      handleInputChange("personaIds", null);
+      handleInputChange("personaMin", defaultMin);
+      handleInputChange("personaMax", defaultMax);
+      handleInputChange("randomize", null);
+      setUrlParams({
         personaSearch: null,
-        personaMin: defaultMin,
-        personaMax: defaultMax,
-        randomize: null,
       });
 
       // Update local state after URL update completes (next frame)
@@ -3279,13 +3639,13 @@ export default function Scenario({
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
 
-      // Clear URL params and reset to defaults using nuqs
-      setQ({
-        documentIds: null,
+      // Clear draft state and URL params, reset to defaults
+      handleInputChange("documentIds", null);
+      handleInputChange("documentMin", defaultMin);
+      handleInputChange("documentMax", defaultMax);
+      handleInputChange("randomize", null);
+      setUrlParams({
         documentSearch: null,
-        documentMin: defaultMin,
-        documentMax: defaultMax,
-        randomize: null,
       });
 
       // Update local state after URL update completes (next frame)
@@ -3378,15 +3738,15 @@ export default function Scenario({
       // Clear field ranges (now JSON-encoded dict)
       urlUpdates["fieldRanges"] = null;
 
-      // Clear URL params using nuqs
-      setQ({
-        parameterIds: null,
+      // Clear draft state and URL params
+      handleInputChange("parameterIds", null);
+      handleInputChange("fieldRanges", null);
+      handleInputChange("parameterSelectionMin", defaultMin);
+      handleInputChange("parameterSelectionMax", defaultMax);
+      handleInputChange("fieldIds", null);
+      handleInputChange("randomize", null);
+      setUrlParams({
         parameterSearch: null,
-        fieldRanges: null,
-        parameterSelectionMin: defaultMin,
-        parameterSelectionMax: defaultMax,
-        fieldIds: null,
-        randomize: null,
       });
 
       // Clear dynamic field range params manually
@@ -3503,23 +3863,23 @@ export default function Scenario({
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
 
-      // Clear URL params using nuqs (static params) and router (dynamic params)
-      setQ({
-        departmentIds: null,
-        personaIds: null,
-        documentIds: null,
-        parameterIds: null,
-        fieldIds: null,
+      // Clear draft state (form fields) and URL params (search/filter)
+      handleInputChange("departmentIds", null);
+      handleInputChange("personaIds", null);
+      handleInputChange("documentIds", null);
+      handleInputChange("parameterIds", null);
+      handleInputChange("fieldIds", null);
+      handleInputChange("personaMin", null);
+      handleInputChange("personaMax", null);
+      handleInputChange("documentMin", null);
+      handleInputChange("documentMax", null);
+      handleInputChange("parameterSelectionMin", null);
+      handleInputChange("parameterSelectionMax", null);
+      handleInputChange("randomize", null);
+      setUrlParams({
         personaSearch: null,
         documentSearch: null,
         parameterSearch: null,
-        personaMin: null,
-        personaMax: null,
-        documentMin: null,
-        documentMax: null,
-        parameterSelectionMin: null,
-        parameterSelectionMax: null,
-        randomize: null,
       });
 
       // Clear dynamic field range params manually
@@ -3572,7 +3932,7 @@ export default function Scenario({
   const handleResetContent = () => {
     try {
       // Clear problem statement and turn off objectives
-      setQ({ problemStatement: null });
+      handleInputChange("problemStatement", null);
       // Clear objectives array via contentState
       setContentState((prev) => ({ ...prev, objectives: [] }));
       // Clear selected problem statement ID
@@ -3814,7 +4174,7 @@ export default function Scenario({
     try {
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
-        formData.departmentIds || [],
+        draftState.departmentIds || [],
         isSuperadmin,
         scenarioData?.valid_department_ids || []
       );
@@ -3991,6 +4351,394 @@ export default function Scenario({
     updatePersonaIds(ids);
   };
 
+  // Render step callback for GenericForm
+  // Migrates all custom sections inline using StepCard/SelectableGrid pattern
+  const renderStep = useCallback(
+    ({
+      stepId,
+      stepStatus,
+      stepTitle,
+      stepDescription,
+      stepNumber,
+      formData: stepFormData,
+      setFormData: setStepFormData,
+      onReset,
+    }: {
+      stepId: string;
+      stepTitle: string;
+      stepDescription: string;
+      stepNumber: number;
+      stepStatus: StepStatus;
+      isOptional: boolean;
+      formData: Record<string, unknown>;
+      setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      filters?: Array<{
+        key: string;
+        label: string;
+        value: boolean;
+        onChange: (value: boolean) => void;
+      }>;
+      onReset?: () => void;
+    }) => {
+      switch (stepId) {
+        case "basic": {
+          // Migrate ScenarioBasicInfoSection inline
+          const filteredScenarioAgentIds =
+            (scenarioData?.valid_agent_ids || []).filter((id) => {
+              const agent = agentMapping[id];
+              return agent?.roles?.includes("scenario");
+            }) || [];
+
+          const imageAgentIds =
+            (scenarioData?.valid_agent_ids || []).filter((id) => {
+              const agent = agentMapping[id];
+              return agent?.roles?.includes("image");
+            }) || [];
+
+          const videoAgentIds =
+            (scenarioData?.valid_agent_ids || []).filter((id) => {
+              const agent = agentMapping[id];
+              return agent?.roles?.includes("video");
+            }) || [];
+
+          const showScenarioPicker = filteredScenarioAgentIds.length > 0;
+          const showImagePicker = imageAgentIds.length > 0;
+          const showVideoPicker = videoAgentIds.length > 0;
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              editableTitle={{
+                value: name || "New Scenario",
+                onChange: (value) => handleInputChange("name", value),
+                placeholder: "New Scenario",
+                defaultName: "New Scenario",
+                required: false,
+              }}
+              onReset={onReset}
+              resetFields={[
+                "name",
+                "departmentIds",
+                "scenarioAgentId",
+                "imageAgentId",
+                "videoAgentId",
+                "active",
+              ]}
+              actions={
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleRandomizeAll}
+                    disabled={isReadonly}
+                  >
+                    Randomize All
+                  </Button>
+                </div>
+              }
+            >
+              <div className="space-y-4">
+                {/* Department Selection */}
+                {(scenarioData?.valid_department_ids || []).length > 1 ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <GenericPicker
+                      items={departmentMapping}
+                      itemIds={Array.from(
+                        new Set([
+                          ...(scenarioData?.valid_department_ids || []),
+                          ...(draftState.departmentIds || []),
+                        ])
+                      )}
+                      selectedIds={draftState.departmentIds || []}
+                      onSelect={(ids) =>
+                        handleInputChange("departmentIds", ids)
+                      }
+                      getId={(dept) => (dept as unknown as { id: string }).id}
+                      getLabel={(dept) => dept.name || ""}
+                      getSearchText={(dept) =>
+                        `${dept.name} ${dept.description || ""}`
+                      }
+                      placeholder="All Departments"
+                      disabled={isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                    />
+                  </div>
+                ) : null}
+
+                {/* Agent Selection */}
+                {(showScenarioPicker || showImagePicker || showVideoPicker) && (
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {/* Scenario Agent Selection */}
+                    {showScenarioPicker && (
+                      <div className="space-y-2">
+                        <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
+                        <GenericPicker
+                          items={agentMapping}
+                          itemIds={filteredScenarioAgentIds}
+                          selectedIds={
+                            basicInfoState.scenarioAgentId
+                              ? [basicInfoState.scenarioAgentId]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            setBasicInfoState((prev) => ({
+                              ...prev,
+                              scenarioAgentId: ids[0] || null,
+                            }))
+                          }
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
+                          getLabel={(item) => item.name || ""}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
+                          renderPreview={(item) => (
+                            <div className="grid gap-2">
+                              <h4 className="font-medium leading-none">
+                                {item.name || "No agent selected"}
+                              </h4>
+                              <div className="text-sm text-muted-foreground">
+                                {item.description || "No description available"}
+                              </div>
+                            </div>
+                          )}
+                          renderItem={(item, _isSelected) => (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate">{item.name}</div>
+                                  {item.description && (
+                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                      {item.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          placeholder="Select scenario agent"
+                          disabled={isReadonly}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                          groupHeading="Agents"
+                        />
+                      </div>
+                    )}
+
+                    {/* Image Agent Selection */}
+                    {showImagePicker && (
+                      <div className="space-y-2">
+                        <Label htmlFor="imageAgentId">Image Agent</Label>
+                        <GenericPicker
+                          items={agentMapping}
+                          itemIds={imageAgentIds}
+                          selectedIds={
+                            basicInfoState.imageAgentId
+                              ? [basicInfoState.imageAgentId]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            setBasicInfoState((prev) => ({
+                              ...prev,
+                              imageAgentId: ids[0] || null,
+                            }))
+                          }
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
+                          getLabel={(item) => item.name || ""}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
+                          renderPreview={(item) => (
+                            <div className="grid gap-2">
+                              <h4 className="font-medium leading-none">
+                                {item.name || "No agent selected"}
+                              </h4>
+                              <div className="text-sm text-muted-foreground">
+                                {item.description || "No description available"}
+                              </div>
+                            </div>
+                          )}
+                          renderItem={(item, _isSelected) => (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate">{item.name}</div>
+                                  {item.description && (
+                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                      {item.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          placeholder="Select image agent"
+                          disabled={isReadonly}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                          groupHeading="Agents"
+                        />
+                      </div>
+                    )}
+
+                    {/* Video Agent Selection */}
+                    {showVideoPicker && (
+                      <div className="space-y-2">
+                        <Label htmlFor="videoAgentId">Video Agent</Label>
+                        <GenericPicker
+                          items={agentMapping}
+                          itemIds={videoAgentIds}
+                          selectedIds={
+                            basicInfoState.videoAgentId
+                              ? [basicInfoState.videoAgentId]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            setBasicInfoState((prev) => ({
+                              ...prev,
+                              videoAgentId: ids[0] || null,
+                            }))
+                          }
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
+                          getLabel={(item) => item.name || ""}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
+                          renderPreview={(item) => (
+                            <div className="grid gap-2">
+                              <h4 className="font-medium leading-none">
+                                {item.name || "No agent selected"}
+                              </h4>
+                              <div className="text-sm text-muted-foreground">
+                                {item.description || "No description available"}
+                              </div>
+                            </div>
+                          )}
+                          renderItem={(item, _isSelected) => (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate">{item.name}</div>
+                                  {item.description && (
+                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                      {item.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          placeholder="Select video agent"
+                          disabled={isReadonly}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                          groupHeading="Agents"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Active Switch */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="active">Active</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Inactive scenarios will not be available for other
+                      simulations
+                    </p>
+                  </div>
+                  <Switch
+                    id="active"
+                    checked={basicInfoState.active}
+                    onCheckedChange={(checked) =>
+                      setBasicInfoState((prev) => ({
+                        ...prev,
+                        active: checked,
+                      }))
+                    }
+                    disabled={isReadonly}
+                  />
+                </div>
+
+                {/* Video Enabled Switch */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="useVideo">Enable Video</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Enable video support for this scenario
+                    </p>
+                  </div>
+                  <Switch
+                    id="useVideo"
+                    checked={useVideo}
+                    onCheckedChange={(enabled) => {
+                      handleInputChange("useVideo", enabled || null);
+                      if (!enabled) {
+                        setContentState((prev) => ({
+                          ...prev,
+                          selectedVideo: null,
+                          activeVideoId: null,
+                        }));
+                        handleInputChange("useQuestions", null);
+                      }
+                    }}
+                    disabled={isReadonly}
+                  />
+                </div>
+              </div>
+            </StepCard>
+          );
+        }
+        case "persona":
+        case "documents":
+        case "parameters":
+        case "content":
+          // TODO: Migrate these sections inline
+          // For now, return null to prevent errors
+          return null;
+        default:
+          // Handle dynamic parameter steps (parameter-{paramId})
+          if (stepId.startsWith("parameter-")) {
+            // TODO: Migrate ParameterItemSection inline via contentSections
+            return null;
+          }
+          return null;
+      }
+    },
+    [
+      name,
+      draftState.departmentIds,
+      scenarioData,
+      departmentMapping,
+      agentMapping,
+      basicInfoState,
+      setBasicInfoState,
+      useVideo,
+      setContentState,
+      handleInputChange,
+      handleRandomizeAll,
+      isReadonly,
+      isEditMode,
+    ]
+  );
+
   return (
     <div className="w-full p-6 space-y-8">
       {isReadonly && (
@@ -4048,7 +4796,7 @@ export default function Scenario({
         {/* Step 1: Basic Information */}
         <ScenarioBasicInfoSection
           name={name || ""}
-          departmentIds={formData.departmentIds || []}
+          departmentIds={draftState.departmentIds || []}
           validDepartmentIds={scenarioData?.valid_department_ids || []}
           departmentMapping={departmentMapping}
           initialScenarioAgentId={basicInfoState.scenarioAgentId}
@@ -4063,14 +4811,14 @@ export default function Scenario({
             handleInputChange("departmentIds", ids)
           }
           onUseVideoChange={(enabled) => {
-            setQ({ useVideo: enabled || null });
+            handleInputChange("useVideo", enabled || null);
             if (!enabled) {
               setContentState((prev) => ({
                 ...prev,
                 selectedVideo: null,
                 activeVideoId: null,
               }));
-              setQ({ useQuestions: null });
+              handleInputChange("useQuestions", null);
             }
           }}
           onRandomizeAll={handleRandomizeAll}
@@ -4095,18 +4843,21 @@ export default function Scenario({
           }
           showSelected={personaShowSelected}
           onPersonaIdsChange={handlePersonaSelect}
-          onSearchTermChange={(term) => setQ({ personaSearch: term || null })}
-          onMinMaxChange={(minMax) =>
-            setQ({ personaMin: minMax.min, personaMax: minMax.max })
+          onSearchTermChange={(term) =>
+            setUrlParams({ personaSearch: term || null })
           }
+          onMinMaxChange={(minMax) => {
+            handleInputChange("personaMin", minMax.min);
+            handleInputChange("personaMax", minMax.max);
+          }}
           onRandomize={handleRandomizePersonaClient}
           onReset={handleResetPersona}
           onShowSelectedChange={(value) =>
-            setQ({ personaShowSelected: value || null })
+            setUrlParams({ personaShowSelected: value || null })
           }
-          stepStatus={getStepStatus("persona")}
-          stepTitle={steps[1]?.title || ""}
-          stepDescription={steps[1]?.description || ""}
+          stepStatus={getStepStatus("persona", urlParams)}
+          stepTitle="Persona Selection"
+          stepDescription="Select personas for this scenario."
           stepNumber={2}
           isReadonly={isReadonly}
           disabled={isPending}
@@ -4157,22 +4908,25 @@ export default function Scenario({
           showTemplate={documentShowTemplate}
           onDocumentIdsChange={updateDocumentIds}
           onTemplateDocumentIdsChange={updateTemplateDocumentIds}
-          onSearchTermChange={(term) => setQ({ documentSearch: term || null })}
+          onSearchTermChange={(term) =>
+            setUrlParams({ documentSearch: term || null })
+          }
           onShowSelectedChange={(value) =>
-            setQ({ documentShowSelected: value || null })
+            setUrlParams({ documentShowSelected: value || null })
           }
           onShowTemplateChange={(value) =>
-            setQ({ documentShowTemplate: value || null })
+            setUrlParams({ documentShowTemplate: value || null })
           }
-          onMinMaxChange={(minMax) =>
-            setQ({ documentMin: minMax.min, documentMax: minMax.max })
-          }
+          onMinMaxChange={(minMax) => {
+            handleInputChange("documentMin", minMax.min);
+            handleInputChange("documentMax", minMax.max);
+          }}
           onPreviewDocument={setPreviewDocumentId}
           onRandomize={handleRandomizeDocumentsClient}
           onReset={handleResetDocuments}
-          stepStatus={getStepStatus("documents")}
-          stepTitle={steps[2]?.title || ""}
-          stepDescription={steps[2]?.description || ""}
+          stepStatus={getStepStatus("documents", urlParams)}
+          stepTitle="Document Selection"
+          stepDescription="Select documents and templates for this scenario."
           stepNumber={3}
           isReadonly={isReadonly}
           isRandomizing={
@@ -4185,7 +4939,7 @@ export default function Scenario({
         <ParameterSection
           validParameterIds={scenarioData?.valid_parameter_ids || []}
           parameterMapping={parameterMapping}
-          selectedParameterIds={formData.parameterIds || []}
+          selectedParameterIds={draftState.parameterIds || []}
           searchTerm={parameterSearchTerm}
           minMax={parameterSelectionMinMax}
           allowedRange={
@@ -4197,13 +4951,13 @@ export default function Scenario({
               : undefined
           }
           onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
-          onSearchTermChange={(term) => setQ({ parameterSearch: term || null })}
-          onMinMaxChange={(minMax) =>
-            setQ({
-              parameterSelectionMin: minMax.min,
-              parameterSelectionMax: minMax.max,
-            })
+          onSearchTermChange={(term) =>
+            setUrlParams({ parameterSearch: term || null })
           }
+          onMinMaxChange={(minMax) => {
+            handleInputChange("parameterSelectionMin", minMax.min);
+            handleInputChange("parameterSelectionMax", minMax.max);
+          }}
           onRandomize={handleRandomizeParametersClient}
           onReset={handleResetParameters}
           onParameterUnselect={(paramId) => {
@@ -4216,11 +4970,11 @@ export default function Scenario({
           }}
           showSelected={parameterShowSelected}
           onShowSelectedChange={(value) =>
-            setQ({ parameterShowSelected: value || null })
+            setUrlParams({ parameterShowSelected: value || null })
           }
-          stepStatus={getStepStatus("parameters")}
-          stepTitle={steps[3]?.title || ""}
-          stepDescription={steps[3]?.description || ""}
+          stepStatus={getStepStatus("parameters", urlParams)}
+          stepTitle="Parameter Selection"
+          stepDescription="Select parameters for this scenario."
           stepNumber={4}
           isReadonly={isReadonly}
           isRandomizing={
@@ -4234,7 +4988,7 @@ export default function Scenario({
           ([paramId, param], index) => {
             const stepIndex = 4 + index; // After basic (0), persona (1), documents (2), parameters (3)
             const stepId = `parameter-${paramId}`;
-            const stepStatus = getStepStatus(stepId);
+            const stepStatus = getStepStatus(stepId, urlParams);
             const validItemsForParam = validGeneralParameterItemIds.filter(
               (itemId) => fieldMapping[itemId]?.parameter_id === paramId
             );
@@ -4307,118 +5061,102 @@ export default function Scenario({
         )}
 
         {/* Content Step */}
-        {(() => {
-          const contentStepIndex = steps.findIndex(
-            (step) => step.id === "content"
-          );
-          const contentStepNumber =
-            contentStepIndex >= 0 ? contentStepIndex + 1 : steps.length;
-          return (
-            <ContentSection
-              problemStatement={problemStatement || ""}
-              problemStatementMapping={problemStatementMapping}
-              currentProblemStatementIds={currentProblemStatementIds}
-              {...(selectedProblemStatementId
-                ? { selectedProblemStatementId }
-                : {})}
-              hasProblemStatementChanges={hasProblemStatementChanges}
-              originalProblemStatement={originalProblemStatement}
-              useProblemStatement={useProblemStatement}
-              initialObjectives={contentState.objectives}
-              objectivesHistory={objectivesHistory}
-              useObjectives={useObjectives}
-              onUseObjectivesChange={(enabled) => {
-                setQ({ useObjectives: enabled || null });
-              }}
-              useImage={useImage}
-              initialImage={contentState.image}
-              imageMapping={imageMapping}
-              isUploadingImage={isUploadingImage}
-              allPreviewDocumentIds={allPreviewDocumentIds}
-              documentMapping={documentMapping}
-              initialScenarioPreviewDocumentId={
-                contentState.scenarioPreviewDocumentId
+        <ContentSection
+          problemStatement={problemStatement || ""}
+          problemStatementMapping={problemStatementMapping}
+          currentProblemStatementIds={currentProblemStatementIds}
+          {...(selectedProblemStatementId
+            ? { selectedProblemStatementId }
+            : {})}
+          hasProblemStatementChanges={hasProblemStatementChanges}
+          originalProblemStatement={originalProblemStatement}
+          useProblemStatement={useProblemStatement}
+          initialObjectives={contentState.objectives}
+          objectivesHistory={objectivesHistory}
+          useObjectives={useObjectives}
+          onUseObjectivesChange={(enabled) => {
+            handleInputChange("useObjectives", enabled || null);
+          }}
+          useImage={useImage}
+          initialImage={contentState.image}
+          imageMapping={imageMapping}
+          isUploadingImage={isUploadingImage}
+          allPreviewDocumentIds={allPreviewDocumentIds}
+          documentMapping={documentMapping}
+          initialScenarioPreviewDocumentId={
+            contentState.scenarioPreviewDocumentId
+          }
+          {...(scenarioData?.document_details
+            ? {
+                documentDetails: scenarioData.document_details as Array<{
+                  document_id: string;
+                  upload_id?: string | null;
+                  [key: string]: unknown;
+                }>,
               }
-              {...(scenarioData?.document_details
-                ? {
-                    documentDetails: scenarioData.document_details as Array<{
-                      document_id: string;
-                      upload_id?: string | null;
-                      [key: string]: unknown;
-                    }>,
-                  }
-                : {})}
-              templateDocumentIds={filteredTemplateDocumentIds}
-              selectedPersonaIds={selectedPersonaIds}
-              personaMapping={personaMapping}
-              onProblemStatementChange={(value) =>
-                handleInputChange("problemStatement", value)
-              }
-              onProblemStatementVersionSelect={
-                handleProblemStatementVersionSelect
-              }
-              onResetProblemStatement={() =>
-                setQ({ problemStatement: originalProblemStatement || null })
-              }
-              onUseProblemStatementChange={(enabled) => {
-                setQ({ useProblemStatement: enabled || null });
-                if (!enabled) {
-                  setQ({ problemStatement: null });
-                }
-              }}
-              onUseImageChange={(enabled) => {
-                setQ({ useImage: enabled || null });
-              }}
-              onImageUpload={handleImageUpload}
-              useVideo={useVideo}
-              initialSelectedVideo={contentState.selectedVideo}
-              videoMapping={videoMapping}
-              initialActiveVideoId={contentState.activeVideoId}
-              onUseVideoChange={(enabled) => {
-                setQ({ useVideo: enabled || null });
-                if (!enabled) {
-                  setQ({ useQuestions: null });
-                }
-              }}
-              selectedVideoLength={selectedVideoLength}
-              onVideoLengthChange={updateVideoLength}
-              useQuestions={useQuestions}
-              initialQuestions={contentState.questions}
-              initialCurrentQuestionIds={contentState.currentQuestionIds}
-              onUseQuestionsChange={(enabled) => {
-                setQ({ useQuestions: enabled || null });
-              }}
-              onStateChange={setContentState}
-              onScenarioPreviewDocumentChange={(docId) => {
-                setContentState((prev) => ({
-                  ...prev,
-                  scenarioPreviewDocumentId: docId,
-                }));
-              }}
-              onDocumentRemove={handleDocumentRemove}
-              onGenerate={handleGenerateScenario}
-              onResetContent={handleResetContent}
-              onShowRegenerationDialog={() => setShowRegenerationDialog(true)}
-              stepStatus={getStepStatus("content")}
-              stepTitle={
-                contentStepIndex >= 0
-                  ? steps[contentStepIndex]?.title || ""
-                  : ""
-              }
-              stepDescription={
-                contentStepIndex >= 0
-                  ? steps[contentStepIndex]?.description || ""
-                  : ""
-              }
-              stepNumber={contentStepNumber}
-              isReadonly={isReadonly}
-              isGeneratingScenario={isGeneratingScenario}
-              isSubmitting={isSubmitting}
-              imageInputRef={imageInputRef as React.RefObject<HTMLInputElement>}
-              isEditMode={isEditMode}
-            />
-          );
-        })()}
+            : {})}
+          templateDocumentIds={filteredTemplateDocumentIds}
+          selectedPersonaIds={selectedPersonaIds}
+          personaMapping={personaMapping}
+          onProblemStatementChange={(value) =>
+            handleInputChange("problemStatement", value)
+          }
+          onProblemStatementVersionSelect={handleProblemStatementVersionSelect}
+          onResetProblemStatement={() =>
+            handleInputChange(
+              "problemStatement",
+              originalProblemStatement || null
+            )
+          }
+          onUseProblemStatementChange={(enabled) => {
+            handleInputChange("useProblemStatement", enabled || null);
+            if (!enabled) {
+              handleInputChange("problemStatement", null);
+            }
+          }}
+          onUseImageChange={(enabled) => {
+            handleInputChange("useImage", enabled || null);
+          }}
+          onImageUpload={handleImageUpload}
+          useVideo={useVideo}
+          initialSelectedVideo={contentState.selectedVideo}
+          videoMapping={videoMapping}
+          initialActiveVideoId={contentState.activeVideoId}
+          onUseVideoChange={(enabled) => {
+            handleInputChange("useVideo", enabled || null);
+            if (!enabled) {
+              handleInputChange("useQuestions", null);
+            }
+          }}
+          selectedVideoLength={selectedVideoLength}
+          onVideoLengthChange={updateVideoLength}
+          useQuestions={useQuestions}
+          initialQuestions={contentState.questions}
+          initialCurrentQuestionIds={contentState.currentQuestionIds}
+          onUseQuestionsChange={(enabled) => {
+            handleInputChange("useQuestions", enabled || null);
+          }}
+          onStateChange={setContentState}
+          onScenarioPreviewDocumentChange={(docId) => {
+            setContentState((prev) => ({
+              ...prev,
+              scenarioPreviewDocumentId: docId,
+            }));
+          }}
+          onDocumentRemove={handleDocumentRemove}
+          onGenerate={handleGenerateScenario}
+          onResetContent={handleResetContent}
+          onShowRegenerationDialog={() => setShowRegenerationDialog(true)}
+          stepStatus={getStepStatus("content", urlParams)}
+          stepTitle="Content"
+          stepDescription="Define problem statement, objectives, images, videos, and questions."
+          stepNumber={5}
+          isReadonly={isReadonly}
+          isGeneratingScenario={isGeneratingScenario}
+          isSubmitting={isSubmitting}
+          imageInputRef={imageInputRef as React.RefObject<HTMLInputElement>}
+          isEditMode={isEditMode}
+        />
       </div>
 
       {/* Action Buttons */}

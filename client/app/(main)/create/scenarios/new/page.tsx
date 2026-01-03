@@ -22,6 +22,8 @@ type CreateScenarioIn = InputOf<"/api/v4/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v4/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v4/scenarios/update", "post">;
+type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -44,6 +46,13 @@ async function createScenario(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/scenarios/create", input);
+}
+
+async function patchScenarioDraft(
+  input: PatchScenarioDraftIn
+): Promise<PatchScenarioDraftOut> {
+  "use server";
+  return api.post("/scenarios/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -84,6 +93,7 @@ export default async function NewScenarioPage({
   // Fetch default scenario detail server-side with filter params
   const scenarioDetailDefault = await getScenarioDefault({
     body: {
+      draft_id: q.draftId ?? null,
       filter_department_ids: csvToArray(q.departmentIds) ?? null,
       filter_persona_ids: csvToArray(q.personaIds) ?? null,
       filter_document_ids: csvToArray(q.documentIds) ?? null,
@@ -115,6 +125,7 @@ export default async function NewScenarioPage({
         mode="create"
         scenarioDetailDefault={scenarioDetailDefault}
         createScenarioAction={createScenario}
+        patchScenarioDraftAction={patchScenarioDraft}
       />
     </div>
   );
@@ -124,6 +135,8 @@ export default async function NewScenarioPage({
 export type {
   CreateScenarioIn,
   CreateScenarioOut,
+  PatchScenarioDraftIn,
+  PatchScenarioDraftOut,
   ScenarioNewIn,
   ScenarioNewOut,
   UpdateScenarioIn,

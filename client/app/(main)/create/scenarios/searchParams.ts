@@ -14,6 +14,8 @@ import {
 
 // Server-side parsers for both create and edit modes
 export const scenarioSearchParams = {
+  // Draft ID (URL-backed, updated when draft is created)
+  draftId: parseAsString,
   // ID arrays (using nuqs array parsing)
   departmentIds: parseAsArrayOf(parseAsString),
   personaIds: parseAsArrayOf(parseAsString),

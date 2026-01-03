@@ -209,7 +209,8 @@ CREATE OR REPLACE FUNCTION api_get_scenario_new_v4(
     persona_show_selected boolean DEFAULT NULL,
     document_show_selected boolean DEFAULT NULL,
     parameter_show_selected boolean DEFAULT NULL,
-    field_show_selected_by_param types.q_get_scenario_new_v4_field_param_filter[] DEFAULT ARRAY[]::types.q_get_scenario_new_v4_field_param_filter[]
+    field_show_selected_by_param types.q_get_scenario_new_v4_field_param_filter[] DEFAULT ARRAY[]::types.q_get_scenario_new_v4_field_param_filter[],
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
@@ -247,7 +248,11 @@ RETURNS TABLE (
     questions types.q_get_scenario_new_v4_question[],
     objectives_history types.q_get_scenario_new_v4_objective_with_departments[],
     document_details types.q_get_scenario_new_v4_document_detail[],
-    parameters_detail types.q_get_scenario_new_v4_parameter_detail[]
+    parameters_detail types.q_get_scenario_new_v4_parameter_detail[],
+    draft_version int,
+    draft_field_show_selected jsonb,
+    draft_field_ranges jsonb,
+    draft_randomize_parameter_items jsonb
 )
 LANGUAGE sql
 STABLE
@@ -277,7 +282,19 @@ WITH params AS (
         COALESCE(persona_show_selected, false) AS persona_show_selected,
         COALESCE(document_show_selected, false) AS document_show_selected,
         COALESCE(parameter_show_selected, false) AS parameter_show_selected,
-        COALESCE(field_show_selected_by_param, ARRAY[]::types.q_get_scenario_new_v4_field_param_filter[]) AS field_show_selected_by_param
+        COALESCE(field_show_selected_by_param, ARRAY[]::types.q_get_scenario_new_v4_field_param_filter[]) AS field_show_selected_by_param,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'scenario'::draft_resource_type
+    LIMIT 1
 ),
 params_single AS (
     SELECT * FROM params LIMIT 1
@@ -1456,7 +1473,24 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG((apd.param_id, apd.selected_items, apd.valid_items)::types.q_get_scenario_new_v4_parameter_detail ORDER BY apd.param_id) FROM all_parameters_detail_array apd),
         '{}'::types.q_get_scenario_new_v4_parameter_detail[]
-    ) as parameters_detail
+    ) as parameters_detail,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract nested objects from draft payload if available
+    COALESCE(
+        (SELECT payload->'fieldShowSelected' FROM draft_payload_data),
+        (SELECT payload->'field_show_selected' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as draft_field_show_selected,
+    COALESCE(
+        (SELECT payload->'fieldRanges' FROM draft_payload_data),
+        (SELECT payload->'field_ranges' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as draft_field_ranges,
+    COALESCE(
+        (SELECT payload->'randomizeParameterItems' FROM draft_payload_data),
+        (SELECT payload->'randomize_parameter_items' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as draft_randomize_parameter_items
 FROM user_profile up
 $$;
 

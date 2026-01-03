@@ -348,6 +348,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/scenarios/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Scenario Draft
+         * @description Patch scenario draft (creates if not exists).
+         */
+        patch: operations["patch_scenario_draft_api_v4_scenarios_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/simulations/list": {
         parameters: {
             query?: never;
@@ -14570,6 +14590,26 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
+        /** PatchScenarioDraftApiRequest */
+        PatchScenarioDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchScenarioDraftApiResponse */
+        PatchScenarioDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PatchSimulationDraftApiRequest */
         PatchSimulationDraftApiRequest: {
             /** Patch */
@@ -23539,6 +23579,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteScenarioApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_scenario_draft_api_v4_scenarios_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchScenarioDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchScenarioDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

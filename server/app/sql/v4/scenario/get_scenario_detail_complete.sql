@@ -224,7 +224,8 @@ CREATE OR REPLACE FUNCTION api_get_scenario_detail_v4(
     persona_show_selected boolean DEFAULT NULL,
     document_show_selected boolean DEFAULT NULL,
     parameter_show_selected boolean DEFAULT NULL,
-    field_show_selected_by_param types.q_get_scenario_detail_v4_field_param_filter[] DEFAULT ARRAY[]::types.q_get_scenario_detail_v4_field_param_filter[]
+    field_show_selected_by_param types.q_get_scenario_detail_v4_field_param_filter[] DEFAULT ARRAY[]::types.q_get_scenario_detail_v4_field_param_filter[],
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_exists boolean,
@@ -285,7 +286,11 @@ RETURNS TABLE (
     questions types.q_get_scenario_detail_v4_question[],
     objectives_history types.q_get_scenario_detail_v4_objective_with_departments[],
     document_details types.q_get_scenario_detail_v4_document_detail[],
-    parameters_detail types.q_get_scenario_detail_v4_parameter_detail[]
+    parameters_detail types.q_get_scenario_detail_v4_parameter_detail[],
+    draft_version int,
+    draft_field_show_selected jsonb,
+    draft_field_ranges jsonb,
+    draft_randomize_parameter_items jsonb
 )
 LANGUAGE sql
 STABLE
@@ -314,7 +319,19 @@ WITH params AS (
         COALESCE(persona_show_selected, false) AS persona_show_selected,
         COALESCE(document_show_selected, false) AS document_show_selected,
         COALESCE(parameter_show_selected, false) AS parameter_show_selected,
-        COALESCE(field_show_selected_by_param, ARRAY[]::types.q_get_scenario_detail_v4_field_param_filter[]) AS field_show_selected_by_param
+        COALESCE(field_show_selected_by_param, ARRAY[]::types.q_get_scenario_detail_v4_field_param_filter[]) AS field_show_selected_by_param,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'scenario'::draft_resource_type
+    LIMIT 1
 ),
 scenario_exists_check AS (
     -- Check if scenario exists independently of access control
@@ -1827,23 +1844,78 @@ valid_agents_array AS (
 SELECT 
     (SELECT scenario_exists FROM scenario_exists_check) as scenario_exists,
     sc.id as scenario_id,
-    sc.name,
-    sc.description,
-    sc.problem_statement,
+    -- Merge draft payload over existing scenario data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        sc.name
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        sc.description
+    ) as description,
+    COALESCE(
+        (SELECT payload->>'problem_statement' FROM draft_payload_data),
+        sc.problem_statement
+    ) as problem_statement,
     sc.problem_statement_id,
-    sc.active,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        sc.active
+    ) as active,
     sc.generated,
-    sc.department_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        sc.department_ids
+    ) as department_ids,
     sc.parent_scenario_id,
     COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
-    sc.objectives_enabled,
-    sc.images_enabled as image_input_enabled,
-    COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
-    COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
-    COALESCE((
-        SELECT ARRAY_AGG(objective_id::text ORDER BY sort_order, idx, created_at DESC)
-        FROM scenario_objectives_array
-    ), ARRAY[]::text[]) as objective_ids,
+    COALESCE(
+        (SELECT (payload->>'use_objectives')::boolean FROM draft_payload_data),
+        sc.objectives_enabled
+    ) as objectives_enabled,
+    COALESCE(
+        (SELECT (payload->>'use_image')::boolean FROM draft_payload_data),
+        sc.images_enabled
+    ) as image_input_enabled,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'persona_ids' IS NOT NULL AND jsonb_typeof(payload->'persona_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'persona_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(spa.persona_ids, ARRAY[]::text[])
+    ) as persona_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'document_ids' IS NOT NULL AND jsonb_typeof(payload->'document_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'document_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE(sd.document_ids, ARRAY[]::text[])
+    ) as document_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'objective_ids' IS NOT NULL AND jsonb_typeof(payload->'objective_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'objective_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        COALESCE((
+            SELECT ARRAY_AGG(objective_id::text ORDER BY sort_order, idx, created_at DESC)
+            FROM scenario_objectives_array
+        ), ARRAY[]::text[])
+    ) as objective_ids,
     COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
     COALESCE((
         SELECT ARRAY_AGG(persona_id::text ORDER BY name)
@@ -1983,7 +2055,24 @@ SELECT
     COALESCE((
         SELECT ARRAY_AGG((apd.param_id, apd.selected_items, apd.valid_items)::types.q_get_scenario_detail_v4_parameter_detail ORDER BY apd.param_id)
         FROM all_parameters_data apd
-    ), '{}'::types.q_get_scenario_detail_v4_parameter_detail[]) as parameters_detail
+    ), '{}'::types.q_get_scenario_detail_v4_parameter_detail[]) as parameters_detail,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract nested objects from draft payload if available
+    COALESCE(
+        (SELECT payload->'fieldShowSelected' FROM draft_payload_data),
+        (SELECT payload->'field_show_selected' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as draft_field_show_selected,
+    COALESCE(
+        (SELECT payload->'fieldRanges' FROM draft_payload_data),
+        (SELECT payload->'field_ranges' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as draft_field_ranges,
+    COALESCE(
+        (SELECT payload->'randomizeParameterItems' FROM draft_payload_data),
+        (SELECT payload->'randomize_parameter_items' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as draft_randomize_parameter_items
 FROM scenario_core sc
 CROSS JOIN user_profile up
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id

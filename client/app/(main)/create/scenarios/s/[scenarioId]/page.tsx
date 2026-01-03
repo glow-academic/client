@@ -26,6 +26,8 @@ type CreateScenarioIn = InputOf<"/api/v4/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v4/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v4/scenarios/update", "post">;
+type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;
@@ -92,6 +94,7 @@ const getScenario = async (
   };
   
   if (filterParams) {
+    if (filterParams.draftId) snakeCaseParams.draft_id = filterParams.draftId;
     if (filterParams.departmentIds) snakeCaseParams.filter_department_ids = filterParams.departmentIds;
     if (filterParams.personaIds) snakeCaseParams.filter_persona_ids = filterParams.personaIds;
     if (filterParams.documentIds) snakeCaseParams.filter_document_ids = filterParams.documentIds;
@@ -167,6 +170,13 @@ async function updateScenario(
   return api.post("/scenarios/update", input);
 }
 
+async function patchScenarioDraft(
+  input: PatchScenarioDraftIn
+): Promise<PatchScenarioDraftOut> {
+  "use server";
+  return api.post("/scenarios/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditScenarioPage({
   params,
@@ -202,6 +212,7 @@ export default async function EditScenarioPage({
   // Fetch scenario detail (always fresh - source of truth) with filter params
   try {
     type FilterParams = {
+      draftId?: string | null;
       departmentIds?: string[];
       personaIds?: string[];
       documentIds?: string[];
@@ -230,6 +241,7 @@ export default async function EditScenarioPage({
       problemStatementIds?: string[];
     };
     const filterParams: FilterParams = {};
+    if (q.draftId) filterParams.draftId = q.draftId;
     const departmentIds = csvToArray(q.departmentIds);
     const personaIds = csvToArray(q.personaIds);
     const documentIds = csvToArray(q.documentIds);
@@ -309,6 +321,7 @@ export default async function EditScenarioPage({
           mode="edit"
           scenarioDetail={scenarioDetail}
           updateScenarioAction={updateScenario}
+          patchScenarioDraftAction={patchScenarioDraft}
         />
       </div>
     );
@@ -339,6 +352,8 @@ export type {
   CreateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
+  PatchScenarioDraftIn,
+  PatchScenarioDraftOut,
   ScenarioDetailIn,
   ScenarioDetailOut,
   ScenarioNewIn,
