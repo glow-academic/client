@@ -102,7 +102,7 @@ BEGIN
         SELECT v_profile_id AS p_profile_id
     )
     INSERT INTO drafts(resource_type, profile_id, payload)
-    SELECT 'scenario'::draft_resource_type, p_profile_id, p
+    SELECT 'scenarios'::draft_resource_type, p_profile_id, p
     FROM payload, params
     RETURNING id, version INTO v_draft_id, v_new_version;
     

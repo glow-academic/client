@@ -5,14 +5,15 @@
  * 05/20/2025
  */
 "use client";
-import { stringifyJsonDict } from "@/app/(main)/create/scenarios/searchParams";
-import { Loader2, RotateCcw } from "lucide-react";
+import { Brain, Check, Eye, Loader2, RotateCcw, Shuffle } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   parseAsBoolean,
   parseAsInteger,
   parseAsString,
   useQueryStates,
+  type Parser,
+  type Values,
 } from "nuqs";
 import {
   useCallback,
@@ -26,6 +27,12 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
 // UI Components
+import DocumentViewer, {
+  type DocumentItem,
+} from "@/components/common/chat/viewers/DocumentViewer";
+import { RangeSlider } from "@/components/common/forms/RangeSlider";
+import { ParameterSelector } from "@/components/parameters/ParameterSelector";
+import { ContentSection } from "@/components/scenarios/ContentSection";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,22 +44,53 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 // Custom Components
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
-import { type StepStatus } from "@/components/common/forms/GenericForm";
+import {
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { ContentSection } from "@/components/scenarios/ContentSection";
-import { DocumentSection } from "@/components/scenarios/DocumentSection";
-import { ParameterItemSection } from "@/components/scenarios/ParameterItemSection";
-import { ParameterSection } from "@/components/scenarios/ParameterSection";
-import { PersonaSection } from "@/components/scenarios/PersonaSection";
-import { ScenarioBasicInfoSection } from "@/components/scenarios/ScenarioBasicInfoSection";
+import { buildSearchParams } from "./scenario-helpers";
+import type { DraftState } from "./scenario-types";
+
+// Utility function to generate gradient from hex color (used for persona cards)
+const generateGradientFromHex = (hexColor: string): string => {
+  const cleanHex = hexColor.replace("#", "");
+  const r = parseInt(cleanHex.substr(0, 2), 16);
+  const g = parseInt(cleanHex.substr(2, 2), 16);
+  const b = parseInt(cleanHex.substr(4, 2), 16);
+  const lighterR = Math.min(255, r + 60);
+  const lighterG = Math.min(255, g + 60);
+  const lighterB = Math.min(255, b + 60);
+  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+};
 
 // Types and API functions
 import type {
@@ -172,43 +210,7 @@ export default function Scenario({
   const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
 
   // Local draft state (not in URL) - initialized from server data or draft payload
-  type DraftState = {
-    name: string;
-    problemStatement: string;
-    objectives: string[];
-    departmentIds: string[];
-    personaIds: string[];
-    documentIds: string[];
-    templateDocumentIds: string[];
-    parameterIds: string[];
-    fieldIds: string[];
-    imageIds: string[];
-    objectiveIds: string[];
-    problemStatementIds: string[];
-    useImage: boolean;
-    useVideo: boolean;
-    useObjectives: boolean;
-    useQuestions: boolean;
-    useProblemStatement: boolean;
-    videoLength: number | null;
-    active: boolean;
-    randomize: string | null;
-    randomizePersonas: string | null;
-    randomizeDocuments: string | null;
-    randomizeParameters: string | null;
-    fieldShowSelected: Record<string, boolean>;
-    fieldRanges: Record<string, { min: number; max: number }>;
-    randomizeParameterItems: Record<string, string>;
-    personaMin: number | null;
-    personaMax: number | null;
-    documentMin: number | null;
-    documentMax: number | null;
-    parameterSelectionMin: number | null;
-    parameterSelectionMax: number | null;
-    scenarioAgentId: string | null;
-    imageAgentId: string | null;
-    videoAgentId: string | null;
-  };
+  // DraftState type imported from scenario-types.ts
 
   // Centralized query parameter configuration (DHH-style: URL as source of truth)
   // Only include params in URL when they differ from defaults
@@ -241,10 +243,14 @@ export default function Scenario({
       if (isEditMode && serverCurrentValues) {
         // Edit mode: compare against server's current value
         if (field === "images_enabled") {
-          return (
-            (serverCurrentValues as ScenarioNewOut).image_input_enabled ??
-            defaults[field]
-          );
+          // In edit mode, check ScenarioDetailOut for image_input_enabled
+          if (isEditMode && "image_input_enabled" in serverCurrentValues) {
+            return (
+              (serverCurrentValues as ScenarioDetailOut).image_input_enabled ??
+              defaults[field]
+            );
+          }
+          return defaults[field];
         }
         return serverCurrentValues[field] ?? defaults[field];
       }
@@ -367,32 +373,34 @@ export default function Scenario({
 
     // If draftId exists, server should have merged draft payload into data
     // Otherwise, use server defaults
+    // Type narrowing: check isEditMode to determine which type we have
+    const isDetail = isEditMode && "problem_statement" in data;
+    const detailData = isDetail ? (data as ScenarioDetailOut) : null;
+    const newData = !isDetail ? (data as ScenarioNewOut) : null;
+
     return {
-      name: data.name || "",
-      problemStatement: (data as ScenarioDetailOut).problem_statement || "",
+      name: (isDetail && detailData?.name) || "",
+      problemStatement: detailData?.problem_statement || "",
       objectives: [], // Will be populated from objective_ids if needed
       departmentIds: (data.department_ids || []).map((id) => String(id)),
-      personaIds: data.persona_ids || [],
-      documentIds: data.document_ids || [],
-      templateDocumentIds:
-        (data as ScenarioNewOut).selected_template_document_ids || [],
-      parameterIds: (data as ScenarioDetailOut).parameter_ids || [],
+      personaIds: detailData?.persona_ids || [],
+      documentIds: detailData?.document_ids || [],
+      templateDocumentIds: newData?.selected_template_document_ids || [],
+      parameterIds: detailData?.parameter_ids || [],
       fieldIds: [], // Will be populated from scenario fields if needed
       imageIds:
-        (data as ScenarioNewOut).scenario_images?.map((img) =>
-          String(img.upload_id)
-        ) || [],
-      objectiveIds: (data as ScenarioDetailOut).objective_ids || [],
-      problemStatementIds: (data as ScenarioDetailOut).problem_statement_id
-        ? [String((data as ScenarioDetailOut).problem_statement_id)]
+        newData?.scenario_images?.map((img) => String(img.upload_id)) || [],
+      objectiveIds: detailData?.objective_ids || [],
+      problemStatementIds: detailData?.problem_statement_id
+        ? [String(detailData.problem_statement_id)]
         : [],
-      useImage: (data as ScenarioDetailOut).image_input_enabled ?? false,
-      useVideo: (data as ScenarioNewOut).video_enabled ?? false,
-      useObjectives: (data as ScenarioDetailOut).objectives_enabled ?? true,
-      useQuestions: (data as ScenarioNewOut).questions_enabled ?? false,
+      useImage: detailData?.image_input_enabled ?? false,
+      useVideo: newData?.video_enabled ?? false,
+      useObjectives: detailData?.objectives_enabled ?? true,
+      useQuestions: newData?.questions_enabled ?? false,
       useProblemStatement: false, // Not directly available in data
       videoLength: null, // Will be set from selected video
-      active: (data as ScenarioDetailOut).active ?? true,
+      active: detailData?.active ?? true,
       randomize: null,
       randomizePersonas: null,
       randomizeDocuments: null,
@@ -400,19 +408,17 @@ export default function Scenario({
       fieldShowSelected,
       fieldRanges,
       randomizeParameterItems,
-      personaMin: (data as ScenarioDetailOut).persona_range_min ?? null,
-      personaMax: (data as ScenarioDetailOut).persona_range_max ?? null,
-      documentMin: (data as ScenarioDetailOut).document_range_min ?? null,
-      documentMax: (data as ScenarioDetailOut).document_range_max ?? null,
-      parameterSelectionMin:
-        (data as ScenarioDetailOut).parameter_range_min ?? null,
-      parameterSelectionMax:
-        (data as ScenarioDetailOut).parameter_range_max ?? null,
+      personaMin: detailData?.persona_range_min ?? null,
+      personaMax: detailData?.persona_range_max ?? null,
+      documentMin: detailData?.document_range_min ?? null,
+      documentMax: detailData?.document_range_max ?? null,
+      parameterSelectionMin: detailData?.parameter_range_min ?? null,
+      parameterSelectionMax: detailData?.parameter_range_max ?? null,
       scenarioAgentId: data.scenario_agent_id || null,
       imageAgentId: data.image_agent_id || null,
       videoAgentId:
-        (data as ScenarioDetailOut & { video_agent_id?: string })
-          .video_agent_id || null,
+        (detailData as ScenarioDetailOut & { video_agent_id?: string })
+          ?.video_agent_id || null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -424,7 +430,7 @@ export default function Scenario({
     // Include actual content fields so it recomputes when server data changes (not just object reference)
     scenarioDetailDefault?.name,
     scenarioDetailDefault?.department_ids,
-    scenarioDetail?.name,
+    isEditMode ? scenarioDetail?.name : undefined,
     scenarioDetail?.problem_statement,
     scenarioDetail?.department_ids,
     scenarioDetail?.persona_ids,
@@ -892,9 +898,9 @@ export default function Scenario({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primary_department_id || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primary_department_id]
   );
 
   // defaultParameterIds removed - not used (empty array means "all parameters")
@@ -919,16 +925,125 @@ export default function Scenario({
     active: true,
   });
 
-  // Form data from nuqs (URL-backed - only search/filter params)
-  // Following Simulation.tsx pattern: formData = urlParams, draftState separate
-  const formData = urlParams;
+  // Form data: merged object of draftState (form fields) + urlParams (search/filter params)
+  // Following Persona.tsx pattern: formData = { ...draftState, ...urlParams }
+  // Note: Range params (personaMin/Max, etc.) exist in both draftState and urlParams
+  // URL params take precedence for filtering, but draftState values are used for form persistence
+  const formData = useMemo(() => {
+    return {
+      ...draftState,
+      // Override range params with URL params if present (for filtering)
+      personaMin: urlParams.personaMin ?? draftState.personaMin ?? null,
+      personaMax: urlParams.personaMax ?? draftState.personaMax ?? null,
+      documentMin: urlParams.documentMin ?? draftState.documentMin ?? null,
+      documentMax: urlParams.documentMax ?? draftState.documentMax ?? null,
+      parameterSelectionMin:
+        urlParams.parameterSelectionMin ??
+        draftState.parameterSelectionMin ??
+        null,
+      parameterSelectionMax:
+        urlParams.parameterSelectionMax ??
+        draftState.parameterSelectionMax ??
+        null,
+      // URL-only params (search/filter)
+      draftId: urlParams.draftId || null,
+      personaSearch: urlParams.personaSearch || null,
+      documentSearch: urlParams.documentSearch || null,
+      parameterSearch: urlParams.parameterSearch || null,
+      documentShowSelected: urlParams.documentShowSelected || null,
+      documentShowTemplate: urlParams.documentShowTemplate || null,
+      personaShowSelected: urlParams.personaShowSelected || null,
+      parameterShowSelected: urlParams.parameterShowSelected || null,
+    } as Record<string, unknown>;
+  }, [draftState, urlParams]);
 
-  // Helper to update form data (URL-backed)
+  // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
   const setFormData = useCallback(
-    (updates: Partial<typeof urlParams>) => {
-      setUrlParams((prev) => ({ ...prev, ...updates }));
+    (
+      updates:
+        | Partial<Record<string, unknown>>
+        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
+    ) => {
+      // Handle function form
+      const resolvedUpdates =
+        typeof updates === "function" ? updates(formData) : updates;
+
+      const draftUpdates: Partial<DraftState> = {};
+      const urlUpdates: Partial<Record<string, unknown>> = {};
+
+      Object.entries(resolvedUpdates).forEach(([key, value]) => {
+        // Form fields go to draftState
+        if (
+          key === "name" ||
+          key === "problemStatement" ||
+          key === "objectives" ||
+          key === "departmentIds" ||
+          key === "personaIds" ||
+          key === "documentIds" ||
+          key === "templateDocumentIds" ||
+          key === "parameterIds" ||
+          key === "fieldIds" ||
+          key === "imageIds" ||
+          key === "objectiveIds" ||
+          key === "problemStatementIds" ||
+          key === "useImage" ||
+          key === "useVideo" ||
+          key === "useObjectives" ||
+          key === "useQuestions" ||
+          key === "useProblemStatement" ||
+          key === "videoLength" ||
+          key === "active" ||
+          key === "randomize" ||
+          key === "randomizePersonas" ||
+          key === "randomizeDocuments" ||
+          key === "randomizeParameters" ||
+          key === "fieldShowSelected" ||
+          key === "fieldRanges" ||
+          key === "randomizeParameterItems" ||
+          key === "scenarioAgentId" ||
+          key === "imageAgentId" ||
+          key === "videoAgentId"
+        ) {
+          draftUpdates[key as keyof DraftState] = value as never;
+        }
+
+        // Range params: update both draftState (for persistence) and urlParams (for filtering)
+        if (
+          key === "personaMin" ||
+          key === "personaMax" ||
+          key === "documentMin" ||
+          key === "documentMax" ||
+          key === "parameterSelectionMin" ||
+          key === "parameterSelectionMax"
+        ) {
+          draftUpdates[key as keyof DraftState] = value as never;
+          urlUpdates[key] = value;
+        }
+
+        // Search/filter params go to urlParams only
+        if (
+          key === "draftId" ||
+          key === "personaSearch" ||
+          key === "documentSearch" ||
+          key === "parameterSearch" ||
+          key === "documentShowSelected" ||
+          key === "documentShowTemplate" ||
+          key === "personaShowSelected" ||
+          key === "parameterShowSelected"
+        ) {
+          urlUpdates[key] = value;
+        }
+      });
+
+      if (Object.keys(draftUpdates).length > 0) {
+        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
+      }
+
+      if (Object.keys(urlUpdates).length > 0) {
+        setUrlParams((prev) => ({ ...prev, ...urlUpdates }));
+      }
     },
-    [setUrlParams]
+    [formData, setUrlParams]
   );
 
   // Merged object for WebSocket emits (combines draftState and urlParams)
@@ -951,14 +1066,20 @@ export default function Scenario({
     []
   );
 
-  // Extract values from formData (URL params) and draftState (form fields)
-  const personaSearchTerm = formData.personaSearch || "";
-  const documentSearchTerm = formData.documentSearch || "";
-  const parameterSearchTerm = formData.parameterSearch || "";
-  const documentShowSelected = formData.documentShowSelected ?? false;
-  const documentShowTemplate = formData.documentShowTemplate ?? false;
-  const personaShowSelected = formData.personaShowSelected ?? false;
-  const parameterShowSelected = formData.parameterShowSelected ?? false;
+  // Extract values from formData (merged draftState + urlParams)
+  const personaSearchTerm = (formData["personaSearch"] as string | null) || "";
+  const documentSearchTerm =
+    (formData["documentSearch"] as string | null) || "";
+  const parameterSearchTerm =
+    (formData["parameterSearch"] as string | null) || "";
+  const documentShowSelected =
+    (formData["documentShowSelected"] as boolean | null) ?? false;
+  const documentShowTemplate =
+    (formData["documentShowTemplate"] as boolean | null) ?? false;
+  const personaShowSelected =
+    (formData["personaShowSelected"] as boolean | null) ?? false;
+  const parameterShowSelected =
+    (formData["parameterShowSelected"] as boolean | null) ?? false;
 
   // Derived from draft state (form fields)
   const name = draftState.name || "New Scenario";
@@ -972,6 +1093,10 @@ export default function Scenario({
   const fieldShowSelectedByParam = draftState.fieldShowSelected || {};
   const fieldMinMax = draftState.fieldRanges || {};
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
+    null
+  );
+  // Local state for preview dialog in documents step (moved outside renderStep)
+  const [localPreviewDocId, setLocalPreviewDocId] = useState<string | null>(
     null
   );
   // Problem statement ID will come from URL parameters, not stored in state
@@ -1069,8 +1194,8 @@ export default function Scenario({
     ) {
       return { min: personaMin, max: personaMax };
     }
-    // Fallback to server values
-    if (scenarioData && "persona_min" in scenarioData) {
+    // Fallback to server values (from ScenarioNewOut)
+    if (scenarioData && !isEditMode && "persona_min" in scenarioData) {
       const newData = scenarioData as ScenarioNewOut;
       return {
         min: newData.persona_min ?? 1,
@@ -1078,7 +1203,7 @@ export default function Scenario({
       };
     }
     return { min: 1, max: 1 };
-  }, [draftState.personaMin, draftState.personaMax, scenarioData]);
+  }, [draftState.personaMin, draftState.personaMax, scenarioData, isEditMode]);
 
   const documentMinMax = useMemo(() => {
     const documentMin = draftState.documentMin;
@@ -1091,8 +1216,8 @@ export default function Scenario({
     ) {
       return { min: documentMin, max: documentMax };
     }
-    // Fallback to server values
-    if (scenarioData && "document_min" in scenarioData) {
+    // Fallback to server values (from ScenarioNewOut)
+    if (scenarioData && !isEditMode && "document_min" in scenarioData) {
       const newData = scenarioData as ScenarioNewOut;
       return {
         min: newData.document_min ?? 0,
@@ -1100,7 +1225,12 @@ export default function Scenario({
       };
     }
     return { min: 0, max: 1 };
-  }, [draftState.documentMin, draftState.documentMax, scenarioData]);
+  }, [
+    draftState.documentMin,
+    draftState.documentMax,
+    scenarioData,
+    isEditMode,
+  ]);
 
   const parameterSelectionMinMax = useMemo(() => {
     const parameterSelectionMin = draftState.parameterSelectionMin;
@@ -1113,15 +1243,19 @@ export default function Scenario({
     ) {
       return { min: parameterSelectionMin, max: parameterSelectionMax };
     }
-    // Fallback to server values
-    if (scenarioData && "parameter_selection_min" in scenarioData) {
+    // Fallback to server values (from ScenarioNewOut)
+    if (
+      scenarioData &&
+      !isEditMode &&
+      "parameter_selection_min" in scenarioData
+    ) {
       const newData = scenarioData as ScenarioNewOut;
       return {
         min: newData.parameter_selection_min ?? 0,
         max: newData.parameter_selection_max ?? 3,
       };
     }
-    const ranges = scenarioData?.allowed_ranges;
+    const ranges = (scenarioData as ScenarioNewOut)?.allowed_ranges;
     return ranges?.parameter_selection
       ? {
           min: ranges.parameter_selection.min,
@@ -1132,6 +1266,7 @@ export default function Scenario({
     draftState.parameterSelectionMin,
     draftState.parameterSelectionMax,
     scenarioData,
+    isEditMode,
   ]);
   // fieldMinMax is now derived from URL params above
 
@@ -1283,265 +1418,46 @@ export default function Scenario({
     [fieldMinMax]
   );
 
-  // Helper function to build search params including filters, search terms, ranges, and randomize param
-  const buildSearchParams = useCallback(() => {
-    const params = new URLSearchParams();
-
-    // Add filter params (always include if non-empty)
-    // Arrays are handled by nuqs automatically, but we still need to set them for URLSearchParams
-    // Note: This function is used for manual URL building, nuqs handles arrays automatically
-    if (draftState.departmentIds && draftState.departmentIds.length > 0) {
-      // nuqs will handle array serialization
-      draftState.departmentIds.forEach((id) => {
-        params.append("departmentIds", id);
-      });
-    }
-    if (selectedPersonaIds.length > 0) {
-      selectedPersonaIds.forEach((id) => {
-        params.append("personaIds", id);
-      });
-    }
-    if (currentDocumentIds.length > 0) {
-      currentDocumentIds.forEach((id) => {
-        params.append("documentIds", id);
-      });
-    }
-    if (templateDocumentIds.length > 0) {
-      templateDocumentIds.forEach((id) => {
-        params.append("templateDocumentIds", id);
-      });
-    }
-    if (draftState.parameterIds && draftState.parameterIds.length > 0) {
-      draftState.parameterIds.forEach((id) => {
-        params.append("parameterIds", id);
-      });
-    }
-    if (currentFieldIds.length > 0) {
-      currentFieldIds.forEach((id) => {
-        params.append("fieldIds", id);
-      });
-    }
-    if (currentProblemStatementIds.length > 0) {
-      currentProblemStatementIds.forEach((id) => {
-        params.append("problemStatementIds", id);
-      });
-    }
-    if (currentObjectiveIds.length > 0) {
-      currentObjectiveIds.forEach((id) => {
-        params.append("objectiveIds", id);
-      });
-    }
-
-    // Add search params when non-empty
-    if (personaSearchTerm.trim()) {
-      params.set("personaSearch", personaSearchTerm);
-    }
-    if (documentSearchTerm.trim()) {
-      params.set("documentSearch", documentSearchTerm);
-    }
-    if (parameterSearchTerm.trim()) {
-      params.set("parameterSearch", parameterSearchTerm);
-    }
-
-    // Add filter params when true (omit when false, following boolean flag pattern)
-    if (documentShowSelected) {
-      params.set("documentShowSelected", "true");
-    }
-    if (documentShowTemplate) {
-      params.set("documentShowTemplate", "true");
-    }
-    if (personaShowSelected) {
-      params.set("personaShowSelected", "true");
-    }
-    if (parameterShowSelected) {
-      params.set("parameterShowSelected", "true");
-    }
-    // Add per-parameter field filters (JSON-encoded dict)
-    const fieldShowSelectedJson = stringifyJsonDict(fieldShowSelectedByParam);
-    if (fieldShowSelectedJson) {
-      params.set("fieldShowSelected", fieldShowSelectedJson);
-    }
-    // Add range params when different from server-provided current values
-    // Compare against server's current values (persona_min/persona_max), not allowed_ranges
-    const serverCurrentValues = scenarioData as ScenarioNewOut | undefined;
-
-    // Persona ranges - compare against server's current values
-    const serverPersonaMin = serverCurrentValues?.persona_min ?? 1;
-    const serverPersonaMax = serverCurrentValues?.persona_max ?? 1;
-    if (
-      personaMinMax.min !== serverPersonaMin ||
-      personaMinMax.max !== serverPersonaMax
-    ) {
-      params.set("personaMin", personaMinMax.min.toString());
-      params.set("personaMax", personaMinMax.max.toString());
-    }
-
-    // Document ranges - compare against server's current values
-    const serverDocumentMin = serverCurrentValues?.document_min ?? 0;
-    const serverDocumentMax = serverCurrentValues?.document_max ?? 1;
-    if (
-      documentMinMax.min !== serverDocumentMin ||
-      documentMinMax.max !== serverDocumentMax
-    ) {
-      params.set("documentMin", documentMinMax.min.toString());
-      params.set("documentMax", documentMinMax.max.toString());
-    }
-
-    // Parameter selection ranges - compare against server's current values
-    const serverParameterMin =
-      serverCurrentValues?.parameter_selection_min ?? 0;
-    const serverParameterMax =
-      serverCurrentValues?.parameter_selection_max ?? 3;
-    if (
-      parameterSelectionMinMax.min !== serverParameterMin ||
-      parameterSelectionMinMax.max !== serverParameterMax
-    ) {
-      params.set(
-        "parameterSelectionMin",
-        parameterSelectionMinMax.min.toString()
-      );
-      params.set(
-        "parameterSelectionMax",
-        parameterSelectionMinMax.max.toString()
-      );
-    }
-
-    // Per-parameter field ranges - compare against server's current values
-    // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
-    const selectedParamIds = draftState.parameterIds || [];
-    const isRandomizing = searchParams.get("randomize") === "all";
-    const serverFieldRanges = serverCurrentValues?.field_ranges || {};
-
-    // Build filtered ranges dict (only include ranges that differ from server or are needed for randomization)
-    const filteredFieldRanges: Record<string, { min: number; max: number }> =
-      {};
-    Object.entries(fieldMinMax).forEach(([paramId, range]) => {
-      // Include range if:
-      // 1. Parameter is selected, OR
-      // 2. We're randomizing all (server will randomize parameters and need these ranges)
-      // AND range differs from server's current value
-      const shouldInclude = isRandomizing || selectedParamIds.includes(paramId);
-      const serverFieldRange = serverFieldRanges[paramId] as
-        | { min?: number; max?: number }
-        | undefined;
-      const fieldDefaultMin = serverFieldRange?.["min"] ?? 1;
-      const fieldDefaultMax = serverFieldRange?.["max"] ?? 3;
-      const fieldDefault: { min: number; max: number } = {
-        min: fieldDefaultMin,
-        max: fieldDefaultMax,
-      };
-      if (
-        shouldInclude &&
-        (range["min"] !== fieldDefault.min || range["max"] !== fieldDefault.max)
-      ) {
-        filteredFieldRanges[paramId] = range;
-      }
+  // Helper function to build search params - imported from scenario-helpers.ts
+  const buildSearchParamsCallback = useCallback(() => {
+    return buildSearchParams({
+      draftState,
+      selectedPersonaIds,
+      currentDocumentIds,
+      templateDocumentIds,
+      currentFieldIds,
+      currentProblemStatementIds,
+      currentObjectiveIds,
+      personaSearchTerm,
+      documentSearchTerm,
+      parameterSearchTerm,
+      documentShowSelected,
+      documentShowTemplate,
+      personaShowSelected,
+      parameterShowSelected,
+      fieldShowSelectedByParam,
+      personaMinMax,
+      documentMinMax,
+      parameterSelectionMinMax,
+      fieldMinMax,
+      useObjectives,
+      useImage,
+      useVideo,
+      useQuestions,
+      useProblemStatement,
+      queryParamConfig,
+      searchParams,
+      problemStatement,
+      currentObjectives,
+      name,
+      isEditMode,
+      scenarioData,
     });
-
-    // Add field ranges as JSON-encoded dict
-    const fieldRangesJson = stringifyJsonDict(filteredFieldRanges);
-    if (fieldRangesJson) {
-      params.set("fieldRanges", fieldRangesJson);
-    }
-
-    // Feature flags - compare against server's current values (edit mode) or defaults (create mode)
-    // Objectives flag - always include when true to preserve user intent, only include false if it differs from default
-    if (useObjectives) {
-      params.set(queryParamConfig.urlParamNames.objectives_enabled, "true");
-    } else {
-      // Only include false if it differs from the default (for edit mode when server value was true)
-      const serverObjectivesEnabled =
-        queryParamConfig.getServerValue("objectives_enabled");
-      if (useObjectives !== serverObjectivesEnabled) {
-        params.set(queryParamConfig.urlParamNames.objectives_enabled, "false");
-      }
-    }
-
-    const serverImageEnabled =
-      queryParamConfig.getServerValue("images_enabled");
-    if (useImage !== serverImageEnabled) {
-      params.set(
-        queryParamConfig.urlParamNames.images_enabled,
-        useImage ? "true" : "false"
-      );
-    }
-
-    const serverVideoEnabled = queryParamConfig.getServerValue("video_enabled");
-    if (useVideo !== serverVideoEnabled) {
-      params.set(
-        queryParamConfig.urlParamNames.video_enabled,
-        useVideo ? "true" : "false"
-      );
-    }
-
-    const serverQuestionsEnabled =
-      queryParamConfig.getServerValue("questions_enabled");
-    if (useQuestions !== serverQuestionsEnabled) {
-      params.set(
-        queryParamConfig.urlParamNames.questions_enabled,
-        useQuestions ? "true" : "false"
-      );
-    }
-
-    // Problem statement flag - no server-side enabled flag, so only include when true
-    if (useProblemStatement) {
-      params.set("useProblemStatement", "true");
-    }
-
-    // Add text fields when they differ from server values
-    // Problem statement text (now managed by nuqs)
-    const serverProblemStatement =
-      isEditMode && scenarioData && "problem_statement" in scenarioData
-        ? (scenarioData as ScenarioDetailOut).problem_statement || ""
-        : "";
-    if (
-      problemStatement &&
-      problemStatement.trim() !== "" &&
-      problemStatement.trim() !== serverProblemStatement
-    ) {
-      params.set("problemStatement", problemStatement);
-    }
-
-    // Objectives text (JSON-encoded array, now managed by nuqs)
-    // Include all objectives (even empty strings) to preserve the count of enabled objective slots
-    const serverObjectives =
-      isEditMode && scenarioData && "objectives_history" in scenarioData
-        ? (scenarioData as ScenarioDetailOut).objectives_history?.map(
-            (obj) => obj.objective
-          ) || []
-        : [];
-    const currentObjectivesString = JSON.stringify(currentObjectives);
-    const serverObjectivesString = JSON.stringify(serverObjectives);
-    // Always include objectives if they differ from server (even if empty strings - preserves count)
-    if (currentObjectivesString !== serverObjectivesString) {
-      params.set("objectives", currentObjectivesString);
-    }
-
-    // Name text (now managed by nuqs)
-    const serverName =
-      isEditMode && scenarioData && "name" in scenarioData
-        ? (scenarioData as ScenarioDetailOut).name || ""
-        : "New Scenario";
-    if (
-      name &&
-      name.trim() !== "" &&
-      name !== "New Scenario" &&
-      name !== serverName
-    ) {
-      params.set("name", name);
-    }
-
-    // Note: randomize param is set separately by randomize handlers, not here
-    // This function builds the base URL state (filters, searches, ranges)
-
-    return params;
   }, [
-    scenarioData, // Include full scenarioData to access current values (persona_min, persona_max, etc.)
-    draftState.departmentIds,
+    draftState,
     selectedPersonaIds,
     currentDocumentIds,
     templateDocumentIds,
-    draftState.parameterIds,
     currentFieldIds,
     currentProblemStatementIds,
     currentObjectiveIds,
@@ -1557,19 +1473,18 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
-    useObjectives, // Include useObjectives for objectives flag
-    useImage, // Include useImage for useImage flag
-    useVideo, // Include useVideo for video flag
-    useQuestions, // Include useQuestions for questions flag
-    useProblemStatement, // Include useProblemStatement for problem statement flag
-    queryParamConfig, // Include queryParamConfig for server value comparisons
-    // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
+    useObjectives,
+    useImage,
+    useVideo,
+    useQuestions,
+    useProblemStatement,
+    queryParamConfig,
     searchParams,
-    // Text fields from draft state
     problemStatement,
     currentObjectives,
     name,
     isEditMode,
+    scenarioData,
   ]);
 
   // Convert arrays to lookup maps for performance (prefer arrays, fallback to mappings for backward compatibility)
@@ -2034,13 +1949,20 @@ export default function Scenario({
 
   // Use server-provided filtered valid general parameter item IDs
   const validGeneralParameterItemIds = useMemo(() => {
-    // Use server-provided filtered IDs if available, otherwise fall back to validParameterItemIds
-    if (scenarioData?.valid_general_field_ids) {
-      return scenarioData.valid_general_field_ids;
+    // Use server-provided filtered IDs if available (from ScenarioNewOut)
+    if (
+      scenarioData &&
+      !isEditMode &&
+      "valid_general_field_ids" in scenarioData
+    ) {
+      const newData = scenarioData as ScenarioNewOut;
+      if (newData.valid_general_field_ids) {
+        return newData.valid_general_field_ids;
+      }
     }
     // Fallback for backward compatibility
     return validParameterItemIds;
-  }, [scenarioData?.valid_general_field_ids, validParameterItemIds]);
+  }, [scenarioData, validParameterItemIds]);
 
   const generalParameterMapping = useMemo(() => {
     // Top parameter selection is the source of truth for section 4
@@ -2215,7 +2137,12 @@ export default function Scenario({
 
   // Clean up staged selections for departments that are no longer valid
   useEffect(() => {
-    const validDeptIds = new Set(scenarioData?.valid_department_ids || []);
+    // valid_department_ids exists on ScenarioNewOut
+    const validDeptIds = new Set(
+      scenarioData && !isEditMode && "valid_department_ids" in scenarioData
+        ? (scenarioData as ScenarioNewOut).valid_department_ids || []
+        : []
+    );
     setStagedSelections((prev) => {
       const cleaned: Record<string, StagedSelections> = {};
       Object.keys(prev).forEach((deptId) => {
@@ -2225,7 +2152,7 @@ export default function Scenario({
       });
       return cleaned;
     });
-  }, [scenarioData?.valid_department_ids]);
+  }, [scenarioData, isEditMode]);
 
   // Clear selections when they become invalid after department changes
   // (but preserve cross-department entities and staged selections)
@@ -2479,7 +2406,7 @@ export default function Scenario({
         return;
       }
 
-      const newParams = buildSearchParams();
+      const newParams = buildSearchParamsCallback();
       const newParamsString = normalizeParamsString(newParams);
       const currentParamsString = normalizeParamsString(searchParams);
 
@@ -2540,46 +2467,50 @@ export default function Scenario({
   useEffect(() => {
     if (scenarioData && isEditMode && !formDataInitializedRef.current) {
       // Edit mode: load existing scenario data (only once)
-      const deptIds = scenarioData.department_ids || [];
+      // In edit mode, scenarioData is ScenarioDetailOut
+      const detailData = scenarioData as ScenarioDetailOut;
+      const deptIds = detailData.department_ids || [];
       // Initialize name and problemStatement in draft state
-      handleInputChange("name", scenarioData.name || null);
+      handleInputChange("name", detailData.name || null);
       handleInputChange(
         "problemStatement",
-        scenarioData.problem_statement || null
+        detailData.problem_statement || null
       );
       // Initialize basic info state
       setBasicInfoState({
-        scenarioAgentId: scenarioData.scenario_agent_id || null,
-        imageAgentId: scenarioData.image_agent_id || null,
+        scenarioAgentId: detailData.scenario_agent_id || null,
+        imageAgentId: detailData.image_agent_id || null,
         videoAgentId:
-          (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
+          (detailData as ScenarioDetailOut & { video_agent_id?: string })
             .video_agent_id || null,
-        active: scenarioData.active ?? true,
+        active: detailData.active ?? true,
       });
       handleInputChange("departmentIds", deptIds);
-      handleInputChange(
-        "parameterIds",
-        scenarioData.scenario_parameter_ids || []
-      );
+      handleInputChange("parameterIds", detailData.parameter_ids || []);
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
-        setPreviousDepartmentIds(deptIds);
+        setPreviousDepartmentIds(deptIds.map(String));
       }
-      updatePersonaIds(scenarioData.persona_ids || []);
+      updatePersonaIds(detailData.persona_ids || []);
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
-      const docIds = scenarioData.document_ids || [];
+      const docIds = detailData.document_ids || [];
       updateDocumentIds(docIds);
       // Extract template document IDs from documentDetails (is_template field) for edit mode
       const templateDocIds =
-        scenarioData.document_details
+        detailData.document_details
           ?.filter((doc) => doc.is_template === true)
-          .map((doc) => doc.document_id) || [];
+          .map((doc) => doc.document_id)
+          .filter((id): id is string => id !== null) || [];
       updateTemplateDocumentIds(templateDocIds);
-      updateFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
+      // Extract field IDs from parameters array
+      const fieldIds = (detailData.parameters || [])
+        .flatMap((p) => p.field_ids || [])
+        .filter((id): id is string => id !== null);
+      updateFieldIds(fieldIds);
       updateObjectives(
         getObjectivesFromMapping(
-          scenarioData.objective_ids,
+          detailData.objective_ids || [],
           getObjectiveMapping
         )
       );
@@ -2762,16 +2693,18 @@ export default function Scenario({
       // Store originals for change tracking (name and problemStatement now tracked via nuqs)
       // Basic info state (agents, active) tracked separately
       setOriginalFormData({
-        departmentIds: scenarioData.department_ids || [],
-        parameterIds: scenarioData.scenario_parameter_ids || [],
+        departmentIds: detailData.department_ids || [],
+        parameterIds: detailData.parameter_ids || [],
       });
-      setOriginalDocumentIds(scenarioData.document_ids || []);
+      setOriginalDocumentIds(detailData.document_ids || []);
       // Store template document IDs for original tracking (already extracted above as templateDocIds)
       setOriginalTemplateDocumentIds(templateDocIds);
-      setOriginalFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
+      setOriginalFieldIds(
+        getFieldIdsFromStructure(detailData.parameters || [])
+      );
       setOriginalObjectives(
         getObjectivesFromMapping(
-          scenarioData.objective_ids,
+          detailData.objective_ids || [],
           getObjectiveMapping
         )
       );
@@ -2802,12 +2735,15 @@ export default function Scenario({
       setDraftState((prev) => ({
         ...prev,
         ...initialFormData,
-        parameterIds: newData.selected_parameter_ids || [],
+        parameterIds:
+          ("selected_parameter_ids" in newData &&
+            newData.selected_parameter_ids) ||
+          [],
       }));
 
       // Initialize selections from server response (filtered to valid IDs)
       // Only update URL if server values differ from current URL values
-      if (newData.selected_persona_ids) {
+      if ("selected_persona_ids" in newData && newData.selected_persona_ids) {
         const currentPersonaIds = selectedPersonaIds;
         if (
           JSON.stringify([...currentPersonaIds].sort()) !==
@@ -2816,7 +2752,7 @@ export default function Scenario({
           updatePersonaIds(newData.selected_persona_ids);
         }
       }
-      if (newData.selected_document_ids) {
+      if ("selected_document_ids" in newData && newData.selected_document_ids) {
         const currentDocIds = currentDocumentIds;
         if (
           JSON.stringify([...currentDocIds].sort()) !==
@@ -2830,11 +2766,14 @@ export default function Scenario({
       const currentTemplateIds = q.templateDocumentIds ?? [];
       if (currentTemplateIds.length > 0) {
         // URL params take precedence - no update needed
-      } else if (newData.selected_template_document_ids) {
+      } else if (
+        "selected_template_document_ids" in newData &&
+        newData.selected_template_document_ids
+      ) {
         // Fallback to server response if no URL params
         updateTemplateDocumentIds(newData.selected_template_document_ids);
       }
-      if (newData.selected_field_ids) {
+      if ("selected_field_ids" in newData && newData.selected_field_ids) {
         const currentFieldIdsFromQ = currentFieldIds;
         if (
           JSON.stringify([...currentFieldIdsFromQ].sort()) !==
@@ -2912,18 +2851,21 @@ export default function Scenario({
       // Only update if server values differ from current URL values
       const updates: Partial<typeof q> = {};
       if (
+        "persona_search" in newData &&
         newData.persona_search &&
         newData.persona_search !== personaSearchTerm
       ) {
         updates.personaSearch = newData.persona_search;
       }
       if (
+        "document_search" in newData &&
         newData.document_search &&
         newData.document_search !== documentSearchTerm
       ) {
         updates.documentSearch = newData.document_search;
       }
       if (
+        "parameter_search" in newData &&
         newData.parameter_search &&
         newData.parameter_search !== parameterSearchTerm
       ) {
@@ -2931,8 +2873,10 @@ export default function Scenario({
       }
 
       // Update ranges if server values differ
-      const serverPersonaMin = newData.persona_min ?? 1;
-      const serverPersonaMax = newData.persona_max ?? 1;
+      const serverPersonaMin =
+        ("persona_min" in newData ? newData.persona_min : null) ?? 1;
+      const serverPersonaMax =
+        ("persona_max" in newData ? newData.persona_max : null) ?? 1;
       if (
         personaMinMax.min !== serverPersonaMin ||
         personaMinMax.max !== serverPersonaMax
@@ -2941,8 +2885,10 @@ export default function Scenario({
         updates.personaMax = serverPersonaMax;
       }
 
-      const serverDocumentMin = newData.document_min ?? 0;
-      const serverDocumentMax = newData.document_max ?? 1;
+      const serverDocumentMin =
+        ("document_min" in newData ? newData.document_min : null) ?? 0;
+      const serverDocumentMax =
+        ("document_max" in newData ? newData.document_max : null) ?? 1;
       if (
         documentMinMax.min !== serverDocumentMin ||
         documentMinMax.max !== serverDocumentMax
@@ -2952,12 +2898,17 @@ export default function Scenario({
       }
 
       const parameterDefault =
-        scenarioData?.allowed_ranges?.parameter_selection ||
+        ("allowed_ranges" in newData &&
+          newData.allowed_ranges?.parameter_selection) ||
         parameterSelectionMinMax;
       const serverParameterMin =
-        newData.parameter_selection_min ?? parameterDefault.min;
+        ("parameter_selection_min" in newData
+          ? newData.parameter_selection_min
+          : null) ?? parameterDefault.min;
       const serverParameterMax =
-        newData.parameter_selection_max ?? parameterDefault.max;
+        ("parameter_selection_max" in newData
+          ? newData.parameter_selection_max
+          : null) ?? parameterDefault.max;
       if (
         parameterSelectionMinMax.min !== serverParameterMin ||
         parameterSelectionMinMax.max !== serverParameterMax
@@ -2972,7 +2923,7 @@ export default function Scenario({
 
       // Initialize per-parameter item ranges from server response
       // Always update field ranges (even if empty) to ensure reset works
-      if (newData.field_ranges) {
+      if ("field_ranges" in newData && newData.field_ranges) {
         const result: Record<string, { min: number; max: number }> = {};
         Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
           // Type assertion needed for index signature - use bracket notation
@@ -3117,7 +3068,11 @@ export default function Scenario({
   // Store original name and problemStatement for change tracking (from server data)
   const originalName = useMemo(() => {
     if (!isEditMode || !scenarioData) return "New Scenario";
-    return scenarioData.name || "New Scenario";
+    // In edit mode, scenarioData is ScenarioDetailOut
+    if ("name" in scenarioData) {
+      return (scenarioData as ScenarioDetailOut).name || "New Scenario";
+    }
+    return "New Scenario";
   }, [isEditMode, scenarioData]);
 
   const originalProblemStatement = useMemo(() => {
@@ -3135,13 +3090,15 @@ export default function Scenario({
         active: true,
       };
     }
+    // In edit mode, scenarioData is ScenarioDetailOut
+    const detailData = scenarioData as ScenarioDetailOut;
     return {
-      scenarioAgentId: scenarioData.scenario_agent_id || null,
-      imageAgentId: scenarioData.image_agent_id || null,
+      scenarioAgentId: detailData.scenario_agent_id || null,
+      imageAgentId: detailData.image_agent_id || null,
       videoAgentId:
-        (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
+        (detailData as ScenarioDetailOut & { video_agent_id?: string })
           .video_agent_id || null,
-      active: scenarioData.active ?? true,
+      active: detailData.active ?? true,
     };
   }, [isEditMode, scenarioData]);
 
@@ -3151,7 +3108,11 @@ export default function Scenario({
 
     const current = formData;
     const original = originalFormData;
-    const originalPersonaIds = scenarioData?.persona_ids || [];
+    // In edit mode, get persona_ids from ScenarioDetailOut
+    const originalPersonaIds =
+      isEditMode && scenarioData && "persona_ids" in scenarioData
+        ? (scenarioData as ScenarioDetailOut).persona_ids || []
+        : [];
 
     return (
       JSON.stringify(selectedPersonaIds.sort()) !==
@@ -3211,26 +3172,40 @@ export default function Scenario({
   // Use server-computed readonly flag from V2 API
   const isReadonly = useMemo(() => {
     if (!isEditMode || !scenarioData) return false;
-    return !scenarioData.can_edit;
+    // can_edit exists on ScenarioDetailOut
+    if ("can_edit" in scenarioData) {
+      return !(scenarioData as ScenarioDetailOut).can_edit;
+    }
+    return false;
   }, [isEditMode, scenarioData]);
 
   // Get affected simulations from V2 data
   const affectedSimulations = useMemo(() => {
-    if (!scenarioData?.active_simulation_ids) return [];
-    return scenarioData.active_simulation_ids.map((id) => {
-      const sim = simulationMapping[id] as { name?: string } | undefined;
-      return {
-        id,
-        name: sim?.name || "",
-        active: true, // These are active simulations from server
-      };
-    });
-  }, [scenarioData, simulationMapping]);
+    // active_simulation_ids exists on ScenarioDetailOut
+    if (
+      isEditMode &&
+      scenarioData &&
+      isEditMode &&
+      "active_simulation_ids" in scenarioData
+    ) {
+      const detailData = scenarioData as ScenarioDetailOut;
+      if (!detailData.active_simulation_ids) return [];
+      return detailData.active_simulation_ids.map((id: string) => {
+        const sim = simulationMapping[id] as { name?: string } | undefined;
+        return {
+          id,
+          name: sim?.name || "",
+          active: true, // These are active simulations from server
+        };
+      });
+    }
+    return [];
+  }, [isEditMode, scenarioData, simulationMapping]);
 
   // Calculate step status for GenericForm
   // Note: formData parameter is urlParams (search/filter only), but status is calculated from draftState (form fields)
   const getStepStatus = useCallback(
-    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       // If we have a scenario description, mark all sections as completed
       if (problemStatement && problemStatement.trim()) {
         return "completed";
@@ -3343,6 +3318,8 @@ export default function Scenario({
     ],
     []
   );
+
+  // Content sections will be defined after renderStep (see below)
 
   // Form initialization function for GenericForm
   // Updates draftState directly (like Cohort.tsx), returns empty object for GenericForm
@@ -3462,7 +3439,10 @@ export default function Scenario({
   const handleResetParameter = (paramId: string) => {
     try {
       // Get default min/max for this parameter from server or use defaults
-      const newData = scenarioData as ScenarioNewOut | undefined;
+      const newData =
+        scenarioData && "field_ranges" in scenarioData
+          ? (scenarioData as ScenarioNewOut)
+          : undefined;
       const serverFieldRanges = newData?.field_ranges || {};
       const serverRange = serverFieldRanges[paramId];
       const defaultMin = serverRange?.["min"] ?? 1;
@@ -3559,9 +3539,14 @@ export default function Scenario({
   const handleResetPersona = () => {
     try {
       // Get default min/max from server or use defaults
-      const newData = scenarioData as ScenarioNewOut | undefined;
-      const defaultMin = newData?.persona_min ?? 1;
-      const defaultMax = newData?.persona_max ?? 1;
+      const newData =
+        scenarioData && "persona_min" in scenarioData
+          ? (scenarioData as ScenarioNewOut)
+          : undefined;
+      const defaultMin =
+        ("persona_min" in (newData || {}) && newData?.persona_min) ?? 1;
+      const defaultMax =
+        ("persona_max" in (newData || {}) && newData?.persona_max) ?? 1;
 
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
@@ -3632,9 +3617,14 @@ export default function Scenario({
   const handleResetDocuments = () => {
     try {
       // Get default min/max from server or use defaults
-      const newData = scenarioData as ScenarioNewOut | undefined;
-      const defaultMin = newData?.document_min ?? 0;
-      const defaultMax = newData?.document_max ?? 1;
+      const newData =
+        scenarioData && "document_min" in scenarioData
+          ? (scenarioData as ScenarioNewOut)
+          : undefined;
+      const defaultMin =
+        ("document_min" in (newData || {}) && newData?.document_min) ?? 0;
+      const defaultMax =
+        ("document_max" in (newData || {}) && newData?.document_max) ?? 1;
 
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
@@ -3718,9 +3708,18 @@ export default function Scenario({
   const handleResetParameters = () => {
     try {
       // Get default min/max from server or use defaults
-      const newData = scenarioData as ScenarioNewOut | undefined;
-      const defaultMin = newData?.parameter_selection_min ?? 0;
-      const defaultMax = newData?.parameter_selection_max ?? 3;
+      const newData =
+        scenarioData && "parameter_selection_min" in scenarioData
+          ? (scenarioData as ScenarioNewOut)
+          : undefined;
+      const defaultMin =
+        ("parameter_selection_min" in (newData || {}) &&
+          newData?.parameter_selection_min) ??
+        0;
+      const defaultMax =
+        ("parameter_selection_max" in (newData || {}) &&
+          newData?.parameter_selection_max) ??
+        3;
 
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
@@ -4081,7 +4080,7 @@ export default function Scenario({
 
     try {
       // Get department ID from first valid department
-      const departmentId = effectiveProfile?.primaryDepartmentId || "";
+      const departmentId = effectiveProfile?.primary_department_id || "";
       if (!departmentId) {
         throw new Error("No valid department found");
       }
@@ -4173,10 +4172,14 @@ export default function Scenario({
 
     try {
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
+      const validDeptIds =
+        scenarioData && !isEditMode && "valid_department_ids" in scenarioData
+          ? (scenarioData as ScenarioNewOut).valid_department_ids || []
+          : [];
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         draftState.departmentIds || [],
         isSuperadmin,
-        scenarioData?.valid_department_ids || []
+        validDeptIds
       );
 
       // Prepare payload for V2 API
@@ -4184,6 +4187,14 @@ export default function Scenario({
         currentFieldIds, // Renamed from currentParameterItemIds
         fieldMapping // Renamed from parameterItemMapping
       );
+      // Convert parameters dict to array format required by API: [{ parameter_id: string, field_ids: string[] }]
+      const parametersArray: Array<{
+        parameter_id: string;
+        field_ids: string[];
+      }> = Object.entries(parametersDict).map(([paramId, fieldIds]) => ({
+        parameter_id: paramId,
+        field_ids: fieldIds,
+      }));
       // Flatten parameters dict to parameter_item_ids array (required by API)
       const parameterItemIds = Object.values(parametersDict).flat();
       const parameterIds = Object.keys(parametersDict);
@@ -4200,7 +4211,7 @@ export default function Scenario({
         objective_ids: string[];
         upload_ids: string[] | null;
         image_names: string[] | null;
-        parameters: Record<string, string[]>;
+        parameters: Array<{ parameter_id: string; field_ids: string[] }>;
         parameter_item_ids: string[];
         parameter_ids?: string[] | null;
         scenario_agent_id?: string | null;
@@ -4236,7 +4247,7 @@ export default function Scenario({
         image_names: contentState.image?.name
           ? [contentState.image.name]
           : null,
-        parameters: parametersDict,
+        parameters: parametersArray,
         parameter_item_ids: parameterItemIds,
         parameter_ids: parameterIds.length > 0 ? parameterIds : null,
         scenario_agent_id: basicInfoState.scenarioAgentId || null,
@@ -4420,7 +4431,7 @@ export default function Scenario({
                 defaultName: "New Scenario",
                 required: false,
               }}
-              onReset={onReset}
+              {...(onReset ? { onReset } : {})}
               resetFields={[
                 "name",
                 "departmentIds",
@@ -4444,216 +4455,253 @@ export default function Scenario({
             >
               <div className="space-y-4">
                 {/* Department Selection */}
-                {(scenarioData?.valid_department_ids || []).length > 1 ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <GenericPicker
-                      items={departmentMapping}
-                      itemIds={Array.from(
-                        new Set([
-                          ...(scenarioData?.valid_department_ids || []),
-                          ...(draftState.departmentIds || []),
-                        ])
-                      )}
-                      selectedIds={draftState.departmentIds || []}
-                      onSelect={(ids) =>
-                        handleInputChange("departmentIds", ids)
-                      }
-                      getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => dept.name || ""}
-                      getSearchText={(dept) =>
-                        `${dept.name} ${dept.description || ""}`
-                      }
-                      placeholder="All Departments"
-                      disabled={isReadonly}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                    />
-                  </div>
-                ) : null}
+                {(() => {
+                  const validDeptIds =
+                    scenarioData && "valid_department_ids" in scenarioData
+                      ? (scenarioData as ScenarioNewOut).valid_department_ids ||
+                        []
+                      : [];
+                  return validDeptIds.length > 1 ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="department">Department</Label>
+                      <GenericPicker
+                        items={departmentMapping}
+                        itemIds={Array.from(
+                          new Set([
+                            ...validDeptIds,
+                            ...(draftState.departmentIds || []),
+                          ])
+                        )}
+                        selectedIds={draftState.departmentIds || []}
+                        onSelect={(ids) =>
+                          handleInputChange("departmentIds", ids)
+                        }
+                        getId={(dept) => (dept as unknown as { id: string }).id}
+                        getLabel={(dept) => dept.name || ""}
+                        getSearchText={(dept) =>
+                          `${dept.name} ${dept.description || ""}`
+                        }
+                        placeholder="All Departments"
+                        disabled={isReadonly}
+                        multiSelect={true}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                      />
+                    </div>
+                  ) : null;
+                })()}
 
                 {/* Agent Selection */}
-                {(showScenarioPicker || showImagePicker || showVideoPicker) && (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {/* Scenario Agent Selection */}
-                    {showScenarioPicker && (
-                      <div className="space-y-2">
-                        <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
-                        <GenericPicker
-                          items={agentMapping}
-                          itemIds={filteredScenarioAgentIds}
-                          selectedIds={
-                            basicInfoState.scenarioAgentId
-                              ? [basicInfoState.scenarioAgentId]
-                              : []
-                          }
-                          onSelect={(ids) =>
-                            setBasicInfoState((prev) => ({
-                              ...prev,
-                              scenarioAgentId: ids[0] || null,
-                            }))
-                          }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          renderPreview={(item) => (
-                            <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">
-                                {item.name || "No agent selected"}
-                              </h4>
-                              <div className="text-sm text-muted-foreground">
-                                {item.description || "No description available"}
-                              </div>
-                            </div>
-                          )}
-                          renderItem={(item, _isSelected) => (
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex-1 min-w-0">
-                                  <div className="truncate">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                      {item.description}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          placeholder="Select scenario agent"
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                          groupHeading="Agents"
-                        />
-                      </div>
-                    )}
+                {(() => {
+                  const agentIds =
+                    scenarioData && "valid_agent_ids" in scenarioData
+                      ? (scenarioData as ScenarioNewOut).valid_agent_ids || []
+                      : [];
+                  const filteredScenarioAgentIds = agentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("scenario");
+                  });
+                  const imageAgentIds = agentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("image");
+                  });
+                  const videoAgentIds = agentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("video");
+                  });
+                  const showScenarioPicker =
+                    filteredScenarioAgentIds.length > 0;
+                  const showImagePicker = imageAgentIds.length > 0;
+                  const showVideoPicker = videoAgentIds.length > 0;
 
-                    {/* Image Agent Selection */}
-                    {showImagePicker && (
-                      <div className="space-y-2">
-                        <Label htmlFor="imageAgentId">Image Agent</Label>
-                        <GenericPicker
-                          items={agentMapping}
-                          itemIds={imageAgentIds}
-                          selectedIds={
-                            basicInfoState.imageAgentId
-                              ? [basicInfoState.imageAgentId]
-                              : []
-                          }
-                          onSelect={(ids) =>
-                            setBasicInfoState((prev) => ({
-                              ...prev,
-                              imageAgentId: ids[0] || null,
-                            }))
-                          }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          renderPreview={(item) => (
-                            <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">
-                                {item.name || "No agent selected"}
-                              </h4>
-                              <div className="text-sm text-muted-foreground">
-                                {item.description || "No description available"}
-                              </div>
-                            </div>
-                          )}
-                          renderItem={(item, _isSelected) => (
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex-1 min-w-0">
-                                  <div className="truncate">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                      {item.description}
-                                    </div>
-                                  )}
+                  return showScenarioPicker ||
+                    showImagePicker ||
+                    showVideoPicker ? (
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                      {/* Scenario Agent Selection */}
+                      {showScenarioPicker && (
+                        <div className="space-y-2">
+                          <Label htmlFor="scenarioAgentId">
+                            Scenario Agent
+                          </Label>
+                          <GenericPicker
+                            items={agentMapping}
+                            itemIds={filteredScenarioAgentIds}
+                            selectedIds={
+                              basicInfoState.scenarioAgentId
+                                ? [basicInfoState.scenarioAgentId]
+                                : []
+                            }
+                            onSelect={(ids) =>
+                              setBasicInfoState((prev) => ({
+                                ...prev,
+                                scenarioAgentId: ids[0] || null,
+                              }))
+                            }
+                            getId={(item) =>
+                              (item as unknown as { id: string }).id
+                            }
+                            getLabel={(item) => item.name || ""}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description || ""}`
+                            }
+                            renderPreview={(item) => (
+                              <div className="grid gap-2">
+                                <h4 className="font-medium leading-none">
+                                  {item.name || "No agent selected"}
+                                </h4>
+                                <div className="text-sm text-muted-foreground">
+                                  {item.description ||
+                                    "No description available"}
                                 </div>
                               </div>
-                            </div>
-                          )}
-                          placeholder="Select image agent"
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                          groupHeading="Agents"
-                        />
-                      </div>
-                    )}
+                            )}
+                            renderItem={(item, _isSelected) => (
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="truncate">{item.name}</div>
+                                    {item.description && (
+                                      <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                        {item.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            placeholder="Select scenario agent"
+                            disabled={isReadonly}
+                            multiSelect={false}
+                            hideSelectedChips={true}
+                            buttonClassName="w-full"
+                            groupHeading="Agents"
+                          />
+                        </div>
+                      )}
 
-                    {/* Video Agent Selection */}
-                    {showVideoPicker && (
-                      <div className="space-y-2">
-                        <Label htmlFor="videoAgentId">Video Agent</Label>
-                        <GenericPicker
-                          items={agentMapping}
-                          itemIds={videoAgentIds}
-                          selectedIds={
-                            basicInfoState.videoAgentId
-                              ? [basicInfoState.videoAgentId]
-                              : []
-                          }
-                          onSelect={(ids) =>
-                            setBasicInfoState((prev) => ({
-                              ...prev,
-                              videoAgentId: ids[0] || null,
-                            }))
-                          }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          renderPreview={(item) => (
-                            <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">
-                                {item.name || "No agent selected"}
-                              </h4>
-                              <div className="text-sm text-muted-foreground">
-                                {item.description || "No description available"}
-                              </div>
-                            </div>
-                          )}
-                          renderItem={(item, _isSelected) => (
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex-1 min-w-0">
-                                  <div className="truncate">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                      {item.description}
-                                    </div>
-                                  )}
+                      {/* Image Agent Selection */}
+                      {showImagePicker && (
+                        <div className="space-y-2">
+                          <Label htmlFor="imageAgentId">Image Agent</Label>
+                          <GenericPicker
+                            items={agentMapping}
+                            itemIds={imageAgentIds}
+                            selectedIds={
+                              basicInfoState.imageAgentId
+                                ? [basicInfoState.imageAgentId]
+                                : []
+                            }
+                            onSelect={(ids) =>
+                              setBasicInfoState((prev) => ({
+                                ...prev,
+                                imageAgentId: ids[0] || null,
+                              }))
+                            }
+                            getId={(item) =>
+                              (item as unknown as { id: string }).id
+                            }
+                            getLabel={(item) => item.name || ""}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description || ""}`
+                            }
+                            renderPreview={(item) => (
+                              <div className="grid gap-2">
+                                <h4 className="font-medium leading-none">
+                                  {item.name || "No agent selected"}
+                                </h4>
+                                <div className="text-sm text-muted-foreground">
+                                  {item.description ||
+                                    "No description available"}
                                 </div>
                               </div>
-                            </div>
-                          )}
-                          placeholder="Select video agent"
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                          groupHeading="Agents"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                            )}
+                            renderItem={(item, _isSelected) => (
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="truncate">{item.name}</div>
+                                    {item.description && (
+                                      <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                        {item.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            placeholder="Select image agent"
+                            disabled={isReadonly}
+                            multiSelect={false}
+                            hideSelectedChips={true}
+                            buttonClassName="w-full"
+                            groupHeading="Agents"
+                          />
+                        </div>
+                      )}
+
+                      {/* Video Agent Selection */}
+                      {showVideoPicker && (
+                        <div className="space-y-2">
+                          <Label htmlFor="videoAgentId">Video Agent</Label>
+                          <GenericPicker
+                            items={agentMapping}
+                            itemIds={videoAgentIds}
+                            selectedIds={
+                              basicInfoState.videoAgentId
+                                ? [basicInfoState.videoAgentId]
+                                : []
+                            }
+                            onSelect={(ids) =>
+                              setBasicInfoState((prev) => ({
+                                ...prev,
+                                videoAgentId: ids[0] || null,
+                              }))
+                            }
+                            getId={(item) =>
+                              (item as unknown as { id: string }).id
+                            }
+                            getLabel={(item) => item.name || ""}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description || ""}`
+                            }
+                            renderPreview={(item) => (
+                              <div className="grid gap-2">
+                                <h4 className="font-medium leading-none">
+                                  {item.name || "No agent selected"}
+                                </h4>
+                                <div className="text-sm text-muted-foreground">
+                                  {item.description ||
+                                    "No description available"}
+                                </div>
+                              </div>
+                            )}
+                            renderItem={(item, _isSelected) => (
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="truncate">{item.name}</div>
+                                    {item.description && (
+                                      <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                        {item.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            placeholder="Select video agent"
+                            disabled={isReadonly}
+                            multiSelect={false}
+                            hideSelectedChips={true}
+                            buttonClassName="w-full"
+                            groupHeading="Agents"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
 
                 {/* Active Switch */}
                 <div className="flex items-center justify-between">
@@ -4706,18 +4754,1023 @@ export default function Scenario({
             </StepCard>
           );
         }
-        case "persona":
-        case "documents":
-        case "parameters":
-        case "content":
-          // TODO: Migrate these sections inline
-          // For now, return null to prevent errors
-          return null;
+        case "persona": {
+          // Inline PersonaSection using StepCard + SelectableGrid pattern
+          const allowedRanges =
+            scenarioData && !isEditMode && "allowed_ranges" in scenarioData
+              ? (scenarioData as ScenarioNewOut).allowed_ranges
+              : undefined;
+          const sliderMin =
+            allowedRanges?.persona?.min ?? personaMinMax.min ?? 1;
+          const sliderMax =
+            allowedRanges?.persona?.max ?? personaMinMax.max ?? 1;
+
+          // Server handles filtering via validPersonaIds (showSelected filter applied server-side)
+          // Client only applies search term filtering (for instant feedback while typing)
+          // Note: Filtering is handled by StepCard's searchTerm prop, so we use validPersonaIds directly
+          // Create persona items for SelectableGrid
+          const personaItems = validPersonaIds
+            .filter((personaId) => {
+              // Client-side search filtering (StepCard also handles this, but we filter here for SelectableGrid)
+              if (!personaSearchTerm.trim()) return true;
+              const persona = personaMapping[personaId];
+              if (!persona) return false;
+              const searchLower = personaSearchTerm.toLowerCase();
+              const searchText =
+                `${persona.name} ${persona.description || ""}`.toLowerCase();
+              return searchText.includes(searchLower);
+            })
+            .map((personaId) => {
+              const persona = personaMapping[personaId];
+              return {
+                id: personaId,
+                persona,
+              };
+            });
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={personaSearchTerm}
+              onSearchChange={(term: string) =>
+                setUrlParams({ personaSearch: term || null })
+              }
+              searchPlaceholder="Search personas..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: personaShowSelected,
+                  onChange: (value: boolean) =>
+                    setUrlParams({ personaShowSelected: value || null }),
+                },
+              ]}
+              actions={
+                <div className="flex items-center gap-2">
+                  <Popover>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={
+                              isReadonly ||
+                              isPending ||
+                              randomizingSection === "persona" ||
+                              randomizingSection === "all"
+                            }
+                          >
+                            {randomizingSection === "persona" ||
+                            randomizingSection === "all" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Shuffle className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>Randomize</TooltipContent>
+                    </Tooltip>
+                    <PopoverContent className="w-80 p-4" align="end">
+                      <div className="space-y-4">
+                        <RangeSlider
+                          min={sliderMin}
+                          max={sliderMax}
+                          value={[
+                            personaMinMax.min ?? sliderMin,
+                            personaMinMax.max ?? sliderMax,
+                          ]}
+                          onValueChange={([min, max]) => {
+                            handleInputChange("personaMin", min ?? sliderMin);
+                            handleInputChange("personaMax", max ?? sliderMax);
+                          }}
+                          disabled={isReadonly}
+                          label="Range"
+                        />
+                        <Button
+                          onClick={handleRandomizePersonaClient}
+                          disabled={
+                            isReadonly ||
+                            randomizingSection === "persona" ||
+                            randomizingSection === "all"
+                          }
+                          className="w-full"
+                          size="sm"
+                        >
+                          {randomizingSection === "persona" ||
+                          randomizingSection === "all" ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Randomizing...
+                            </>
+                          ) : (
+                            "Randomize"
+                          )}
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onReset}
+                        disabled={isReadonly}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reset</TooltipContent>
+                  </Tooltip>
+                </div>
+              }
+              resetFields={["personaIds"]}
+              {...(onReset ? { onReset } : {})}
+            >
+              <SelectableGrid<{
+                id: string;
+                persona: (typeof personaMapping)[string];
+              }>
+                items={personaItems}
+                selectedIds={selectedPersonaIds}
+                onSelect={(ids) =>
+                  handlePersonaSelect(Array.isArray(ids) ? ids : [ids])
+                }
+                getId={(item) => item.id}
+                renderItem={(item, isSelected) => {
+                  const persona = item.persona;
+                  const IconComponent =
+                    getPersonaIconComponent(persona.icon) || Brain;
+                  const hexColor = persona.color || "#64748b";
+
+                  return (
+                    <div
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                        "hover:shadow-md hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        isSelected && "ring-2 ring-primary bg-accent"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                          style={{
+                            background: generateGradientFromHex(hexColor),
+                          }}
+                        >
+                          <IconComponent className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">
+                            {persona.name}
+                          </div>
+                          {persona.description && (
+                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {persona.description}
+                            </div>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                }}
+                emptyMessage="No personas found. Try adjusting your search."
+                disabled={isReadonly}
+              />
+            </StepCard>
+          );
+        }
+        case "documents": {
+          // Inline DocumentSection using StepCard + SelectableGrid pattern
+          const allowedRanges =
+            scenarioData && !isEditMode && "allowed_ranges" in scenarioData
+              ? (scenarioData as ScenarioNewOut).allowed_ranges
+              : undefined;
+          const sliderMin =
+            allowedRanges?.document?.min ?? documentMinMax.min ?? 0;
+          const sliderMax =
+            allowedRanges?.document?.max ?? documentMinMax.max ?? 1;
+
+          // Create document items for SelectableGrid
+          const documentItems = validDocumentIds
+            .filter((docId) => {
+              // Client-side search filtering
+              if (!documentSearchTerm.trim()) return true;
+              const doc = documentMapping[docId];
+              if (!doc) return false;
+              const searchLower = documentSearchTerm.toLowerCase();
+              const searchText =
+                `${doc.name} ${doc.description || ""}`.toLowerCase();
+              return searchText.includes(searchLower);
+            })
+            .map((docId) => {
+              const doc = documentMapping[docId];
+              if (!doc) return null;
+              const fullDoc =
+                scenarioData && "document_details" in scenarioData
+                  ? (scenarioData as ScenarioDetailOut).document_details?.find(
+                      (d) => d.document_id === docId
+                    )
+                  : undefined;
+              return {
+                id: docId,
+                doc,
+                fullDoc,
+              };
+            })
+            .filter(
+              (
+                item
+              ): item is {
+                id: string;
+                doc: DocumentMappingItem;
+                fullDoc?: unknown;
+              } => item !== null
+            );
+
+          return (
+            <>
+              <StepCard
+                stepStatus={stepStatus}
+                stepNumber={stepNumber}
+                stepTitle={stepTitle}
+                stepDescription={stepDescription}
+                isReadonly={isReadonly}
+                isEditMode={isEditMode}
+                searchTerm={documentSearchTerm}
+                onSearchChange={(term: string) =>
+                  setUrlParams({ documentSearch: term || null })
+                }
+                searchPlaceholder="Search documents..."
+                debounceMs={300}
+                filters={[
+                  {
+                    key: "showSelected",
+                    label: "Show selected",
+                    value: documentShowSelected,
+                    onChange: (value: boolean) =>
+                      setUrlParams({ documentShowSelected: value || null }),
+                  },
+                  {
+                    key: "showTemplate",
+                    label: "Show templates",
+                    value: documentShowTemplate,
+                    onChange: (value: boolean) =>
+                      setUrlParams({ documentShowTemplate: value || null }),
+                  },
+                ]}
+                actions={
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={
+                                isReadonly ||
+                                isPending ||
+                                randomizingSection === "document" ||
+                                randomizingSection === "all"
+                              }
+                            >
+                              {randomizingSection === "document" ||
+                              randomizingSection === "all" ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Shuffle className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>Randomize</TooltipContent>
+                      </Tooltip>
+                      <PopoverContent className="w-80 p-4" align="end">
+                        <div className="space-y-4">
+                          <RangeSlider
+                            min={sliderMin}
+                            max={sliderMax}
+                            value={[
+                              documentMinMax.min ?? sliderMin,
+                              documentMinMax.max ?? sliderMax,
+                            ]}
+                            onValueChange={([min, max]) => {
+                              handleInputChange(
+                                "documentMin",
+                                min ?? sliderMin
+                              );
+                              handleInputChange(
+                                "documentMax",
+                                max ?? sliderMax
+                              );
+                            }}
+                            disabled={isReadonly}
+                            label="Range"
+                          />
+                          <Button
+                            onClick={handleRandomizeDocumentsClient}
+                            disabled={
+                              isReadonly ||
+                              randomizingSection === "document" ||
+                              randomizingSection === "all"
+                            }
+                            className="w-full"
+                            size="sm"
+                          >
+                            {randomizingSection === "document" ||
+                            randomizingSection === "all" ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Randomizing...
+                              </>
+                            ) : (
+                              "Randomize"
+                            )}
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={onReset}
+                          disabled={isReadonly}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Reset</TooltipContent>
+                    </Tooltip>
+                  </div>
+                }
+                resetFields={["documentIds", "templateDocumentIds"]}
+                {...(onReset ? { onReset } : {})}
+              >
+                <SelectableGrid<{
+                  id: string;
+                  doc: DocumentMappingItem;
+                  fullDoc?: unknown;
+                }>
+                  items={documentItems}
+                  selectedIds={currentDocumentIds}
+                  onSelect={(ids) =>
+                    updateDocumentIds(Array.isArray(ids) ? ids : [ids])
+                  }
+                  getId={(item) => item.id}
+                  renderItem={(item, isSelected) => {
+                    const fullDocTyped = item.fullDoc as
+                      | {
+                          document_id: string | null;
+                          name: string | null;
+                          updated_at: string | null;
+                          extension: string | null;
+                          scenario_ids: string[] | null;
+                          can_edit: boolean | null;
+                          can_delete: boolean | null;
+                          active: boolean | null;
+                          department_ids: string[] | null;
+                          upload_id: string | null;
+                          field_ids: string[];
+                        }
+                      | undefined;
+                    const docForViewer: DocumentItem = fullDocTyped
+                      ? {
+                          document_id: fullDocTyped.document_id || "",
+                          name: fullDocTyped.name || "",
+                          updatedAt:
+                            fullDocTyped.updated_at || new Date().toISOString(),
+                          extension: fullDocTyped.extension || "",
+                          scenario_ids: fullDocTyped.scenario_ids || [],
+                          can_edit: fullDocTyped.can_edit ?? false,
+                          can_delete: fullDocTyped.can_delete ?? false,
+                          active: fullDocTyped.active ?? true,
+                          department_ids: fullDocTyped.department_ids || [],
+                          upload_id: fullDocTyped.upload_id ?? null,
+                          field_ids: fullDocTyped.field_ids || [],
+                        }
+                      : {
+                          document_id: item.id,
+                          name: item.doc.name || "Document",
+                          updatedAt: new Date().toISOString(),
+                          extension: "",
+                          scenario_ids: [],
+                          can_edit: false,
+                          can_delete: false,
+                          active: true,
+                          department_ids: [],
+                          upload_id: null,
+                          field_ids: [],
+                        };
+
+                    return (
+                      <div
+                        className={cn(
+                          "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
+                          "hover:shadow-md",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          isSelected && "ring-2 ring-primary"
+                        )}
+                      >
+                        {/* Preview button */}
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const docId = item.id;
+                            setLocalPreviewDocId(docId);
+                            setPreviewDocumentId(docId);
+                          }}
+                          className="absolute top-2 left-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+
+                        {/* Check icon */}
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                            <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                          </div>
+                        )}
+
+                        {/* Document preview */}
+                        <div className="w-full h-full">
+                          <DocumentViewer
+                            document={docForViewer}
+                            bare={true}
+                            isFormDocument={false}
+                            compact={true}
+                          />
+                        </div>
+
+                        {/* Document name */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1">
+                          <span className="truncate block">
+                            {item.doc.name}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                  emptyMessage="No documents found. Try adjusting your search."
+                  disabled={isReadonly}
+                  gridCols={4}
+                />
+              </StepCard>
+
+              {/* Preview Dialog */}
+              <Dialog
+                open={localPreviewDocId !== null}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setLocalPreviewDocId(null);
+                    setPreviewDocumentId(null);
+                  }
+                }}
+              >
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {localPreviewDocId
+                        ? documentMapping[localPreviewDocId]?.name
+                        : "Document Preview"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Preview document content
+                    </DialogDescription>
+                  </DialogHeader>
+                  {localPreviewDocId &&
+                    (() => {
+                      const fullDoc =
+                        scenarioData && "document_details" in scenarioData
+                          ? (
+                              scenarioData as ScenarioDetailOut
+                            ).document_details?.find(
+                              (d) => d.document_id === localPreviewDocId
+                            )
+                          : undefined;
+                      const fullDocTyped = fullDoc as
+                        | {
+                            document_id: string | null;
+                            name: string | null;
+                            updated_at: string | null;
+                            extension: string | null;
+                            scenario_ids: string[] | null;
+                            can_edit: boolean | null;
+                            can_delete: boolean | null;
+                            active: boolean | null;
+                            department_ids: string[] | null;
+                            upload_id: string | null;
+                            field_ids: string[];
+                          }
+                        | undefined;
+                      const docForViewer: DocumentItem = fullDocTyped
+                        ? {
+                            document_id: fullDocTyped.document_id || "",
+                            name: fullDocTyped.name || "",
+                            updatedAt:
+                              fullDocTyped.updated_at ||
+                              new Date().toISOString(),
+                            extension: fullDocTyped.extension || "",
+                            scenario_ids: fullDocTyped.scenario_ids || [],
+                            can_edit: fullDocTyped.can_edit ?? false,
+                            can_delete: fullDocTyped.can_delete ?? false,
+                            active: fullDocTyped.active ?? true,
+                            department_ids: fullDocTyped.department_ids || [],
+                            upload_id: fullDocTyped.upload_id ?? null,
+                            field_ids: fullDocTyped.field_ids || [],
+                          }
+                        : {
+                            document_id: localPreviewDocId,
+                            name:
+                              documentMapping[localPreviewDocId]?.name ||
+                              "Document",
+                            updatedAt: new Date().toISOString(),
+                            extension: "",
+                            scenario_ids: [],
+                            can_edit: false,
+                            can_delete: false,
+                            active: true,
+                            department_ids: [],
+                            upload_id: null,
+                            field_ids: [],
+                          };
+                      return (
+                        <DocumentViewer
+                          document={docForViewer}
+                          bare={false}
+                          isFormDocument={false}
+                        />
+                      );
+                    })()}
+                </DialogContent>
+              </Dialog>
+            </>
+          );
+        }
+        case "parameters": {
+          // Inline ParameterSection using StepCard + GenericPicker pattern
+          const allowedRanges =
+            scenarioData && !isEditMode && "allowed_ranges" in scenarioData
+              ? (scenarioData as ScenarioNewOut).allowed_ranges
+              : undefined;
+          const sliderMin =
+            allowedRanges?.parameter_selection?.min ??
+            parameterSelectionMinMax.min ??
+            0;
+          const sliderMax =
+            allowedRanges?.parameter_selection?.max ??
+            parameterSelectionMinMax.max ??
+            3;
+
+          const validParamIds =
+            scenarioData && "valid_parameter_ids" in scenarioData
+              ? (scenarioData as ScenarioNewOut).valid_parameter_ids || []
+              : [];
+          if (validParamIds.length === 0) {
+            return null;
+          }
+
+          // Create parameter items for GenericPicker (filtered but not used directly)
+          const _parameterItems = validParamIds
+            .filter((paramId) => {
+              // Client-side search filtering
+              if (!parameterSearchTerm.trim()) return true;
+              const param = parameterMapping[paramId];
+              if (!param) return false;
+              const searchLower = parameterSearchTerm.toLowerCase();
+              const searchText =
+                `${param.name} ${param.description || ""}`.toLowerCase();
+              return searchText.includes(searchLower);
+            })
+            .map((paramId) => parameterMapping[paramId])
+            .filter(Boolean);
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={parameterSearchTerm}
+              onSearchChange={(term: string) =>
+                setUrlParams({ parameterSearch: term || null })
+              }
+              searchPlaceholder="Search parameters..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: parameterShowSelected,
+                  onChange: (value: boolean) =>
+                    setUrlParams({ parameterShowSelected: value || null }),
+                },
+              ]}
+              actions={
+                <div className="flex items-center gap-2">
+                  <Popover>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={
+                              isReadonly ||
+                              isPending ||
+                              randomizingSection === "parameters" ||
+                              randomizingSection === "all"
+                            }
+                          >
+                            {randomizingSection === "parameters" ||
+                            randomizingSection === "all" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Shuffle className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>Randomize</TooltipContent>
+                    </Tooltip>
+                    <PopoverContent className="w-80 p-4" align="end">
+                      <div className="space-y-4">
+                        <RangeSlider
+                          min={sliderMin}
+                          max={sliderMax}
+                          value={[
+                            parameterSelectionMinMax.min ?? sliderMin,
+                            parameterSelectionMinMax.max ?? sliderMax,
+                          ]}
+                          onValueChange={([min, max]) => {
+                            handleInputChange(
+                              "parameterSelectionMin",
+                              min ?? sliderMin
+                            );
+                            handleInputChange(
+                              "parameterSelectionMax",
+                              max ?? sliderMax
+                            );
+                          }}
+                          disabled={isReadonly}
+                          label="Range"
+                        />
+                        <Button
+                          onClick={handleRandomizeParametersClient}
+                          disabled={
+                            isReadonly ||
+                            randomizingSection === "parameters" ||
+                            randomizingSection === "all"
+                          }
+                          className="w-full"
+                          size="sm"
+                        >
+                          {randomizingSection === "parameters" ||
+                          randomizingSection === "all" ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Randomizing...
+                            </>
+                          ) : (
+                            "Randomize"
+                          )}
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onReset}
+                        disabled={isReadonly}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reset</TooltipContent>
+                  </Tooltip>
+                </div>
+              }
+              resetFields={["parameterIds"]}
+              {...(onReset ? { onReset } : {})}
+            >
+              <GenericPicker
+                items={parameterMapping}
+                itemIds={validParamIds}
+                selectedIds={draftState.parameterIds || []}
+                onSelect={(ids) => {
+                  handleInputChange("parameterIds", ids);
+                  // When unselecting a parameter, also remove all its parameter items (fields)
+                  const unselectedParams = (
+                    draftState.parameterIds || []
+                  ).filter((id) => !ids.includes(id));
+                  if (unselectedParams.length > 0) {
+                    unselectedParams.forEach((paramId) => {
+                      updateFieldIds((prev) =>
+                        prev.filter(
+                          (itemId) =>
+                            fieldMapping[itemId]?.parameter_id !== paramId
+                        )
+                      );
+                    });
+                  }
+                }}
+                getId={(item) => (item as unknown as { id: string }).id}
+                getLabel={(item) => item.name || ""}
+                getSearchText={(item) =>
+                  `${item.name} ${item.description || ""}`
+                }
+                placeholder="Select parameters"
+                disabled={isReadonly}
+                multiSelect={true}
+                hideSelectedChips={true}
+                buttonClassName="w-full"
+              />
+            </StepCard>
+          );
+        }
+        case "content": {
+          // Content section wrapper - uses ContentSection component wrapped in StepCard pattern
+          // Note: Full inline migration would be 2700+ lines, so using component wrapper for now
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              resetFields={[
+                "problemStatement",
+                "objectives",
+                "useImage",
+                "useVideo",
+                "useObjectives",
+                "useQuestions",
+                "useProblemStatement",
+              ]}
+              {...(onReset ? { onReset } : {})}
+            >
+              <ContentSection
+                problemStatement={problemStatement || ""}
+                problemStatementMapping={problemStatementMapping}
+                currentProblemStatementIds={currentProblemStatementIds}
+                {...(selectedProblemStatementId
+                  ? { selectedProblemStatementId }
+                  : {})}
+                hasProblemStatementChanges={hasProblemStatementChanges}
+                originalProblemStatement={originalProblemStatement}
+                useProblemStatement={useProblemStatement}
+                initialObjectives={contentState.objectives}
+                objectivesHistory={objectivesHistory}
+                useObjectives={useObjectives}
+                onUseObjectivesChange={(enabled) => {
+                  handleInputChange("useObjectives", enabled || null);
+                }}
+                useImage={useImage}
+                initialImage={contentState.image}
+                imageMapping={imageMapping}
+                isUploadingImage={isUploadingImage}
+                allPreviewDocumentIds={allPreviewDocumentIds}
+                documentMapping={documentMapping}
+                initialScenarioPreviewDocumentId={
+                  contentState.scenarioPreviewDocumentId
+                }
+                {...(scenarioData?.document_details
+                  ? {
+                      documentDetails: scenarioData.document_details as Array<{
+                        document_id: string;
+                        upload_id?: string | null;
+                        [key: string]: unknown;
+                      }>,
+                    }
+                  : {})}
+                templateDocumentIds={filteredTemplateDocumentIds}
+                selectedPersonaIds={selectedPersonaIds}
+                personaMapping={personaMapping}
+                onProblemStatementChange={(value) =>
+                  handleInputChange("problemStatement", value)
+                }
+                onProblemStatementVersionSelect={
+                  handleProblemStatementVersionSelect
+                }
+                onResetProblemStatement={() =>
+                  handleInputChange(
+                    "problemStatement",
+                    originalProblemStatement || null
+                  )
+                }
+                onUseProblemStatementChange={(enabled) => {
+                  handleInputChange("useProblemStatement", enabled || null);
+                  if (!enabled) {
+                    handleInputChange("problemStatement", null);
+                  }
+                }}
+                onUseImageChange={(enabled) => {
+                  handleInputChange("useImage", enabled || null);
+                }}
+                onImageUpload={handleImageUpload}
+                useVideo={useVideo}
+                initialSelectedVideo={contentState.selectedVideo}
+                videoMapping={videoMapping}
+                initialActiveVideoId={contentState.activeVideoId}
+                onUseVideoChange={(enabled) => {
+                  handleInputChange("useVideo", enabled || null);
+                  if (!enabled) {
+                    handleInputChange("useQuestions", null);
+                  }
+                }}
+                selectedVideoLength={selectedVideoLength}
+                onVideoLengthChange={updateVideoLength}
+                useQuestions={useQuestions}
+                initialQuestions={contentState.questions}
+                initialCurrentQuestionIds={contentState.currentQuestionIds}
+                onUseQuestionsChange={(enabled) => {
+                  handleInputChange("useQuestions", enabled || null);
+                }}
+                onStateChange={setContentState}
+                onScenarioPreviewDocumentChange={(docId) => {
+                  setContentState((prev) => ({
+                    ...prev,
+                    scenarioPreviewDocumentId: docId,
+                  }));
+                }}
+                onDocumentRemove={handleDocumentRemove}
+                onGenerate={handleGenerateScenario}
+                onResetContent={handleResetContent}
+                onShowRegenerationDialog={() => setShowRegenerationDialog(true)}
+                stepStatus={stepStatus}
+                stepTitle={stepTitle}
+                stepDescription={stepDescription}
+                stepNumber={stepNumber}
+                isReadonly={isReadonly}
+                isGeneratingScenario={isGeneratingScenario}
+                isSubmitting={isSubmitting}
+                imageInputRef={
+                  imageInputRef as React.RefObject<HTMLInputElement>
+                }
+                isEditMode={isEditMode}
+              />
+            </StepCard>
+          );
+        }
         default:
           // Handle dynamic parameter steps (parameter-{paramId})
           if (stepId.startsWith("parameter-")) {
-            // TODO: Migrate ParameterItemSection inline via contentSections
-            return null;
+            // Inline ParameterItemSection for dynamic parameter steps
+            const paramId = stepId.replace("parameter-", "");
+            const param = generalParameterMapping[paramId];
+            if (!param) return null;
+
+            const validItemsForParam = validGeneralParameterItemIds.filter(
+              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
+            );
+            const selectedItemsForParam = currentFieldIds.filter(
+              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
+            );
+            const fullParam = parameterMapping[paramId] || param;
+            const allowedRanges =
+              scenarioData && "allowed_ranges" in scenarioData
+                ? (scenarioData as ScenarioNewOut).allowed_ranges
+                : undefined;
+            const sliderMin = allowedRanges?.fields?.[paramId]?.min ?? 1;
+            const sliderMax = allowedRanges?.fields?.[paramId]?.max ?? 3;
+
+            return (
+              <StepCard
+                stepStatus={stepStatus}
+                stepNumber={stepNumber}
+                stepTitle={fullParam.name}
+                stepDescription={fullParam.description || ""}
+                isReadonly={isReadonly}
+                isEditMode={isEditMode}
+                resetFields={[`fieldIds-${paramId}`]}
+                {...(onReset ? { onReset } : {})}
+                actions={
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={
+                                isReadonly ||
+                                isPending ||
+                                randomizingSection === `parameter_${paramId}` ||
+                                randomizingSection === "all"
+                              }
+                            >
+                              {randomizingSection === `parameter_${paramId}` ||
+                              randomizingSection === "all" ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Shuffle className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>Randomize</TooltipContent>
+                      </Tooltip>
+                      <PopoverContent className="w-80 p-4" align="end">
+                        <div className="space-y-4">
+                          <RangeSlider
+                            min={sliderMin}
+                            max={sliderMax}
+                            value={[
+                              fieldMinMax[paramId]?.min ?? sliderMin,
+                              fieldMinMax[paramId]?.max ?? sliderMax,
+                            ]}
+                            onValueChange={([min, max]) =>
+                              updateFieldRanges((prev) => ({
+                                ...prev,
+                                [paramId]: {
+                                  min: min ?? sliderMin,
+                                  max: max ?? sliderMax,
+                                },
+                              }))
+                            }
+                            disabled={isReadonly}
+                            label="Range"
+                          />
+                          <Button
+                            onClick={() =>
+                              handleRandomizeParameterClient(paramId)
+                            }
+                            disabled={
+                              isReadonly ||
+                              randomizingSection === `parameter_${paramId}` ||
+                              randomizingSection === "all"
+                            }
+                            className="w-full"
+                            size="sm"
+                          >
+                            {randomizingSection === `parameter_${paramId}` ||
+                            randomizingSection === "all" ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Randomizing...
+                              </>
+                            ) : (
+                              "Randomize"
+                            )}
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleResetParameter(paramId)}
+                          disabled={isReadonly}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Reset</TooltipContent>
+                    </Tooltip>
+                  </div>
+                }
+              >
+                <ParameterSelector
+                  parameterMapping={{
+                    [paramId]: fullParam as any,
+                  }}
+                  fieldMapping={fieldMapping}
+                  validParameterItemIds={validItemsForParam}
+                  selectedParameterItemIds={selectedItemsForParam}
+                  onParameterItemIdsChange={(newIds) => {
+                    // Update only this parameter's items
+                    const otherFieldIds = currentFieldIds.filter(
+                      (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+                    );
+                    updateFieldIds([...otherFieldIds, ...newIds]);
+                  }}
+                  disabled={isReadonly}
+                />
+              </StepCard>
+            );
           }
           return null;
       }
@@ -4734,10 +5787,118 @@ export default function Scenario({
       setContentState,
       handleInputChange,
       handleRandomizeAll,
+      handleRandomizePersonaClient,
+      handlePersonaSelect,
+      handleResetPersona,
+      handleRandomizeDocumentsClient,
+      handleResetDocuments,
+      handleRandomizeParametersClient,
+      handleResetParameters,
+      handleRandomizeParameterClient,
+      handleResetParameter,
+      updateDocumentIds,
+      updateTemplateDocumentIds,
+      updateFieldIds,
+      updateFieldRanges,
+      updateFieldShowSelected,
+      setPreviewDocumentId,
+      previewDocumentId,
       isReadonly,
       isEditMode,
+      isPending,
+      randomizingSection,
+      personaSearchTerm,
+      personaShowSelected,
+      personaMinMax,
+      validPersonaIds,
+      personaMapping,
+      selectedPersonaIds,
+      documentSearchTerm,
+      documentShowSelected,
+      documentShowTemplate,
+      documentMinMax,
+      validDocumentIds,
+      documentMapping,
+      currentDocumentIds,
+      templateDocumentIds,
+      parameterSearchTerm,
+      parameterShowSelected,
+      parameterSelectionMinMax,
+      parameterMapping,
+      fieldMapping,
+      generalParameterMapping,
+      validGeneralParameterItemIds,
+      currentFieldIds,
+      fieldMinMax,
+      fieldShowSelectedByParam,
+      setUrlParams,
+      handleInputChange,
+      handleGenerateScenario,
+      handleResetContent,
+      handleProblemStatementVersionSelect,
+      handleImageUpload,
+      handleDocumentRemove,
+      problemStatement,
+      problemStatementMapping,
+      currentProblemStatementIds,
+      selectedProblemStatementId,
+      hasProblemStatementChanges,
+      originalProblemStatement,
+      useProblemStatement,
+      useObjectives,
+      useImage,
+      useVideo,
+      useQuestions,
+      objectivesHistory,
+      imageMapping,
+      videoMapping,
+      allPreviewDocumentIds,
+      filteredTemplateDocumentIds,
+      selectedVideoLength,
+      updateVideoLength,
+      contentState,
+      setContentState,
+      isUploadingImage,
+      isGeneratingScenario,
+      isSubmitting,
+      imageInputRef,
+      scenarioId,
+      isEditMode,
+      showRegenerationDialog,
+      setShowRegenerationDialog,
     ]
   );
+
+  // Content sections for dynamic parameter steps (defined after renderStep)
+  const contentSections = useMemo(() => {
+    return Object.entries(generalParameterMapping).map(
+      ([paramId, param], index) => {
+        const stepIndex = 4 + index; // After basic (0), persona (1), documents (2), parameters (3)
+        return {
+          id: `parameter-${paramId}`,
+          render: ({
+            formData,
+            setFormData,
+          }: {
+            formData: Record<string, unknown>;
+            setFormData: (updates: Partial<Record<string, unknown>>) => void;
+          }) => {
+            return renderStep({
+              stepId: `parameter-${paramId}`,
+              stepStatus: getStepStatus(`parameter-${paramId}`, formData),
+              stepTitle: param.name,
+              stepDescription: param.description || "",
+              stepNumber: stepIndex + 1,
+              isOptional: false,
+              formData,
+              setFormData,
+            });
+          },
+          insertAfter: "parameters",
+        };
+      }
+    );
+  }, [generalParameterMapping, getStepStatus, renderStep]);
 
   return (
     <div className="w-full p-6 space-y-8">
@@ -4759,20 +5920,19 @@ export default function Scenario({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-foreground">
-                {scenarioData?.generated
-                  ? "Generated scenario cannot be edited"
-                  : scenarioData?.department_ids?.length === 0
-                    ? "Default scenario cannot be edited"
-                    : "Scenario is in use by active simulations"}
+                {isEditMode &&
+                scenarioData &&
+                "department_ids" in scenarioData &&
+                (scenarioData as ScenarioDetailOut).department_ids?.length === 0
+                  ? "Default scenario cannot be edited"
+                  : "Scenario is in use by active simulations"}
               </h3>
               <div className="mt-2 text-sm text-muted-foreground">
-                {scenarioData?.generated ? (
-                  <p>
-                    This is a generated scenario that cannot be directly edited.
-                    You can duplicate this scenario to create a new editable
-                    version with your desired changes.
-                  </p>
-                ) : scenarioData?.department_ids?.length === 0 ? (
+                {isEditMode &&
+                scenarioData &&
+                "department_ids" in scenarioData &&
+                (scenarioData as ScenarioDetailOut).department_ids?.length ===
+                  0 ? (
                   <p>
                     This is a default scenario that cannot be edited. You can
                     view the details but cannot make changes.
@@ -4792,372 +5952,66 @@ export default function Scenario({
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Step 1: Basic Information */}
-        <ScenarioBasicInfoSection
-          name={name || ""}
-          departmentIds={draftState.departmentIds || []}
-          validDepartmentIds={scenarioData?.valid_department_ids || []}
-          departmentMapping={departmentMapping}
-          initialScenarioAgentId={basicInfoState.scenarioAgentId}
-          initialImageAgentId={basicInfoState.imageAgentId}
-          initialVideoAgentId={basicInfoState.videoAgentId}
-          validAgentIds={scenarioData?.valid_agent_ids || []}
-          agentMapping={agentMapping}
-          initialActive={basicInfoState.active}
-          useVideo={useVideo}
-          onNameChange={(name) => handleInputChange("name", name)}
-          onDepartmentIdsChange={(ids) =>
-            handleInputChange("departmentIds", ids)
+      <GenericForm
+        nuqsParsers={scenarioSearchParamsClient as Record<string, any>}
+        steps={steps}
+        getStepStatus={getStepStatus}
+        formData={
+          formData as unknown as Values<Record<string, Parser<unknown>>>
+        }
+        setFormData={
+          setFormData as unknown as (
+            updates:
+              | Partial<Values<Record<string, Parser<unknown>>>>
+              | ((
+                  prev: Values<Record<string, Parser<unknown>>>
+                ) => Partial<Values<Record<string, Parser<unknown>>>>)
+          ) => void
+        }
+        serverData={scenarioData}
+        initializeForm={initializeForm}
+        formFieldKeys={[
+          "name",
+          "problemStatement",
+          "objectives",
+          "departmentIds",
+          "personaIds",
+          "documentIds",
+          "templateDocumentIds",
+          "parameterIds",
+          "fieldIds",
+          "imageIds",
+          "objectiveIds",
+          "problemStatementIds",
+          "useImage",
+          "useVideo",
+          "useObjectives",
+          "useQuestions",
+          "useProblemStatement",
+          "videoLength",
+          "active",
+          "scenarioAgentId",
+          "imageAgentId",
+          "videoAgentId",
+        ]}
+        onSubmit={async () => {
+          if (isEditMode) {
+            await handleUpdateClick();
+          } else {
+            await handleSubmit();
           }
-          onUseVideoChange={(enabled) => {
-            handleInputChange("useVideo", enabled || null);
-            if (!enabled) {
-              setContentState((prev) => ({
-                ...prev,
-                selectedVideo: null,
-                activeVideoId: null,
-              }));
-              handleInputChange("useQuestions", null);
-            }
-          }}
-          onRandomizeAll={handleRandomizeAll}
-          onResetAll={handleResetAll}
-          onStateChange={setBasicInfoState}
-          isReadonly={isReadonly}
-        />
-        {/* Step 2: Persona Selection */}
-        <PersonaSection
-          validPersonaIds={validPersonaIds}
-          personaMapping={personaMapping}
-          selectedPersonaIds={selectedPersonaIds}
-          searchTerm={personaSearchTerm}
-          minMax={personaMinMax}
-          allowedRange={
-            scenarioData?.allowed_ranges?.persona
-              ? {
-                  min: scenarioData.allowed_ranges.persona.min,
-                  max: scenarioData.allowed_ranges.persona.max,
-                }
-              : undefined
-          }
-          showSelected={personaShowSelected}
-          onPersonaIdsChange={handlePersonaSelect}
-          onSearchTermChange={(term) =>
-            setUrlParams({ personaSearch: term || null })
-          }
-          onMinMaxChange={(minMax) => {
-            handleInputChange("personaMin", minMax.min);
-            handleInputChange("personaMax", minMax.max);
-          }}
-          onRandomize={handleRandomizePersonaClient}
-          onReset={handleResetPersona}
-          onShowSelectedChange={(value) =>
-            setUrlParams({ personaShowSelected: value || null })
-          }
-          stepStatus={getStepStatus("persona", urlParams)}
-          stepTitle="Persona Selection"
-          stepDescription="Select personas for this scenario."
-          stepNumber={2}
-          isReadonly={isReadonly}
-          disabled={isPending}
-          isRandomizing={
-            randomizingSection === "persona" || randomizingSection === "all"
-          }
-          isEditMode={isEditMode}
-        />
-
-        {/* Step 3: Documents */}
-        <DocumentSection
-          validDocumentIds={validDocumentIds}
-          documentMapping={documentMapping}
-          selectedDocumentIds={currentDocumentIds}
-          templateDocumentIds={templateDocumentIds}
-          {...(scenarioData?.document_details
-            ? {
-                documentDetails: (() => {
-                  const details = scenarioData.document_details as Array<{
-                    document_id: string;
-                    name: string;
-                    updatedAt: string;
-                    extension: string;
-                    scenario_ids: string[];
-                    can_edit: boolean;
-                    can_delete: boolean;
-                    active: boolean;
-                    department_ids: string[] | null;
-                    upload_id: string | null;
-                    field_ids: string[];
-                  }>;
-                  return details;
-                })(),
-              }
-            : {})}
-          searchTerm={documentSearchTerm}
-          minMax={documentMinMax}
-          {...(scenarioData?.allowed_ranges?.document
-            ? {
-                allowedRange: {
-                  min: scenarioData.allowed_ranges.document.min,
-                  max: scenarioData.allowed_ranges.document.max,
-                },
-              }
-            : {})}
-          previewDocumentId={previewDocumentId}
-          showSelected={documentShowSelected}
-          showTemplate={documentShowTemplate}
-          onDocumentIdsChange={updateDocumentIds}
-          onTemplateDocumentIdsChange={updateTemplateDocumentIds}
-          onSearchTermChange={(term) =>
-            setUrlParams({ documentSearch: term || null })
-          }
-          onShowSelectedChange={(value) =>
-            setUrlParams({ documentShowSelected: value || null })
-          }
-          onShowTemplateChange={(value) =>
-            setUrlParams({ documentShowTemplate: value || null })
-          }
-          onMinMaxChange={(minMax) => {
-            handleInputChange("documentMin", minMax.min);
-            handleInputChange("documentMax", minMax.max);
-          }}
-          onPreviewDocument={setPreviewDocumentId}
-          onRandomize={handleRandomizeDocumentsClient}
-          onReset={handleResetDocuments}
-          stepStatus={getStepStatus("documents", urlParams)}
-          stepTitle="Document Selection"
-          stepDescription="Select documents and templates for this scenario."
-          stepNumber={3}
-          isReadonly={isReadonly}
-          isRandomizing={
-            randomizingSection === "document" || randomizingSection === "all"
-          }
-          isEditMode={isEditMode}
-        />
-
-        {/* Step 4: Parameters */}
-        <ParameterSection
-          validParameterIds={scenarioData?.valid_parameter_ids || []}
-          parameterMapping={parameterMapping}
-          selectedParameterIds={draftState.parameterIds || []}
-          searchTerm={parameterSearchTerm}
-          minMax={parameterSelectionMinMax}
-          allowedRange={
-            scenarioData?.allowed_ranges?.parameter_selection
-              ? {
-                  min: scenarioData.allowed_ranges.parameter_selection.min,
-                  max: scenarioData.allowed_ranges.parameter_selection.max,
-                }
-              : undefined
-          }
-          onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
-          onSearchTermChange={(term) =>
-            setUrlParams({ parameterSearch: term || null })
-          }
-          onMinMaxChange={(minMax) => {
-            handleInputChange("parameterSelectionMin", minMax.min);
-            handleInputChange("parameterSelectionMax", minMax.max);
-          }}
-          onRandomize={handleRandomizeParametersClient}
-          onReset={handleResetParameters}
-          onParameterUnselect={(paramId) => {
-            // When unselecting a parameter, also remove all its parameter items (fields)
-            updateFieldIds((prev) =>
-              prev.filter(
-                (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-              )
-            );
-          }}
-          showSelected={parameterShowSelected}
-          onShowSelectedChange={(value) =>
-            setUrlParams({ parameterShowSelected: value || null })
-          }
-          stepStatus={getStepStatus("parameters", urlParams)}
-          stepTitle="Parameter Selection"
-          stepDescription="Select parameters for this scenario."
-          stepNumber={4}
-          isReadonly={isReadonly}
-          isRandomizing={
-            randomizingSection === "parameters" || randomizingSection === "all"
-          }
-          isEditMode={isEditMode}
-        />
-
-        {/* Individual Parameter Sections */}
-        {Object.entries(generalParameterMapping).map(
-          ([paramId, param], index) => {
-            const stepIndex = 4 + index; // After basic (0), persona (1), documents (2), parameters (3)
-            const stepId = `parameter-${paramId}`;
-            const stepStatus = getStepStatus(stepId, urlParams);
-            const validItemsForParam = validGeneralParameterItemIds.filter(
-              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
-            );
-            const selectedItemsForParam = currentFieldIds.filter(
-              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
-            );
-            // Get full parameter from parameterMapping (has all required fields)
-            const fullParam = parameterMapping[paramId] || param;
-
-            return (
-              <ParameterItemSection
-                key={paramId}
-                parameterId={paramId}
-                parameter={fullParam as any}
-                validFieldIds={validItemsForParam}
-                fieldMapping={fieldMapping}
-                selectedFieldIds={selectedItemsForParam}
-                minMax={
-                  fieldMinMax[paramId] ||
-                  scenarioData?.allowed_ranges?.fields?.[paramId] || {
-                    min: 1,
-                    max: 3,
-                  }
-                }
-                allowedRange={
-                  scenarioData?.allowed_ranges?.fields?.[paramId]
-                    ? {
-                        min: scenarioData.allowed_ranges.fields[paramId].min,
-                        max: scenarioData.allowed_ranges.fields[paramId].max,
-                      }
-                    : undefined
-                }
-                showSelected={
-                  (fieldShowSelectedByParam as Record<string, boolean>)[
-                    paramId
-                  ] || false
-                }
-                onFieldIdsChange={(newIds) => {
-                  // Update only this parameter's items
-                  const otherFieldIds = currentFieldIds.filter(
-                    (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-                  );
-                  updateFieldIds([...otherFieldIds, ...newIds]);
-                }}
-                onMinMaxChange={(minMax) =>
-                  updateFieldRanges((prev) => ({
-                    ...prev,
-                    [paramId]: minMax,
-                  }))
-                }
-                onRandomize={() => handleRandomizeParameterClient(paramId)}
-                onReset={() => handleResetParameter(paramId)}
-                onShowSelectedChange={(value) =>
-                  updateFieldShowSelected((prev) => ({
-                    ...prev,
-                    [paramId]: value,
-                  }))
-                }
-                stepStatus={stepStatus}
-                stepNumber={stepIndex + 1}
-                isReadonly={isReadonly}
-                isRandomizing={
-                  randomizingSection === `parameter_${paramId}` ||
-                  randomizingSection === "all"
-                }
-                isEditMode={isEditMode}
-              />
-            );
-          }
-        )}
-
-        {/* Content Step */}
-        <ContentSection
-          problemStatement={problemStatement || ""}
-          problemStatementMapping={problemStatementMapping}
-          currentProblemStatementIds={currentProblemStatementIds}
-          {...(selectedProblemStatementId
-            ? { selectedProblemStatementId }
-            : {})}
-          hasProblemStatementChanges={hasProblemStatementChanges}
-          originalProblemStatement={originalProblemStatement}
-          useProblemStatement={useProblemStatement}
-          initialObjectives={contentState.objectives}
-          objectivesHistory={objectivesHistory}
-          useObjectives={useObjectives}
-          onUseObjectivesChange={(enabled) => {
-            handleInputChange("useObjectives", enabled || null);
-          }}
-          useImage={useImage}
-          initialImage={contentState.image}
-          imageMapping={imageMapping}
-          isUploadingImage={isUploadingImage}
-          allPreviewDocumentIds={allPreviewDocumentIds}
-          documentMapping={documentMapping}
-          initialScenarioPreviewDocumentId={
-            contentState.scenarioPreviewDocumentId
-          }
-          {...(scenarioData?.document_details
-            ? {
-                documentDetails: scenarioData.document_details as Array<{
-                  document_id: string;
-                  upload_id?: string | null;
-                  [key: string]: unknown;
-                }>,
-              }
-            : {})}
-          templateDocumentIds={filteredTemplateDocumentIds}
-          selectedPersonaIds={selectedPersonaIds}
-          personaMapping={personaMapping}
-          onProblemStatementChange={(value) =>
-            handleInputChange("problemStatement", value)
-          }
-          onProblemStatementVersionSelect={handleProblemStatementVersionSelect}
-          onResetProblemStatement={() =>
-            handleInputChange(
-              "problemStatement",
-              originalProblemStatement || null
-            )
-          }
-          onUseProblemStatementChange={(enabled) => {
-            handleInputChange("useProblemStatement", enabled || null);
-            if (!enabled) {
-              handleInputChange("problemStatement", null);
-            }
-          }}
-          onUseImageChange={(enabled) => {
-            handleInputChange("useImage", enabled || null);
-          }}
-          onImageUpload={handleImageUpload}
-          useVideo={useVideo}
-          initialSelectedVideo={contentState.selectedVideo}
-          videoMapping={videoMapping}
-          initialActiveVideoId={contentState.activeVideoId}
-          onUseVideoChange={(enabled) => {
-            handleInputChange("useVideo", enabled || null);
-            if (!enabled) {
-              handleInputChange("useQuestions", null);
-            }
-          }}
-          selectedVideoLength={selectedVideoLength}
-          onVideoLengthChange={updateVideoLength}
-          useQuestions={useQuestions}
-          initialQuestions={contentState.questions}
-          initialCurrentQuestionIds={contentState.currentQuestionIds}
-          onUseQuestionsChange={(enabled) => {
-            handleInputChange("useQuestions", enabled || null);
-          }}
-          onStateChange={setContentState}
-          onScenarioPreviewDocumentChange={(docId) => {
-            setContentState((prev) => ({
-              ...prev,
-              scenarioPreviewDocumentId: docId,
-            }));
-          }}
-          onDocumentRemove={handleDocumentRemove}
-          onGenerate={handleGenerateScenario}
-          onResetContent={handleResetContent}
-          onShowRegenerationDialog={() => setShowRegenerationDialog(true)}
-          stepStatus={getStepStatus("content", urlParams)}
-          stepTitle="Content"
-          stepDescription="Define problem statement, objectives, images, videos, and questions."
-          stepNumber={5}
-          isReadonly={isReadonly}
-          isGeneratingScenario={isGeneratingScenario}
-          isSubmitting={isSubmitting}
-          imageInputRef={imageInputRef as React.RefObject<HTMLInputElement>}
-          isEditMode={isEditMode}
-        />
-      </div>
+        }}
+        submitButton={{
+          backUrl: "/create/scenarios",
+          backLabel: "Back",
+          createLabel: "Save Scenario",
+          updateLabel: "Update Scenario",
+        }}
+        isReadonly={isReadonly}
+        isEditMode={isEditMode}
+        renderStep={renderStep}
+        contentSections={contentSections}
+      />
 
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-3">
@@ -5279,11 +6133,13 @@ export default function Scenario({
               This scenario is currently used by {affectedSimulations.length}{" "}
               simulation{affectedSimulations.length !== 1 ? "s" : ""}:
               <ul className="mt-2 list-disc list-inside">
-                {affectedSimulations.map((sim) => (
-                  <li key={sim.id} className="text-sm">
-                    {sim.name}
-                  </li>
-                ))}
+                {affectedSimulations.map(
+                  (sim: { id: string; name: string }) => (
+                    <li key={sim.id} className="text-sm">
+                      {sim.name}
+                    </li>
+                  )
+                )}
               </ul>
               <div className="mt-3 text-sm font-medium">
                 Updating this scenario will affect all of these simulations. Are

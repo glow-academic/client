@@ -1477,6 +1477,38 @@ The key value section demonstrates handling sensitive fields that require specia
 - **Custom Actions**: Uses `StepCard` `actions` prop for preview button in header
 - **Inline Logic**: All key value handling logic is inline in `renderStep` callback
 
+### Example: Eval.tsx Migration
+
+See `client/components/evals/Eval.tsx` for a reference implementation with per-agent nested sections and complex rubric/agent pair management.
+
+**Key Features**:
+- Inline `nuqs` parsers (draftId + search/filter params: agentSearch, modelRunSearch, groupSearch)
+- `GenericForm` with initialization, reset, and submit
+- `StepCard` with editable title for name field
+- Multi-step form (basic, agents, modelRuns/groups)
+- Draft autosave support
+- **ContentSections pattern**: Rubric/agent pairs appear after agents selection (one section for all selected agents)
+- Per-run/per-group rubric/agent pairs in separate contentSections
+
+**Pattern for Per-Agent Sections**:
+Eval demonstrates handling nested sections that appear based on selected items:
+- After "agents" step, show rubric/agent pair management section (appears when agents are selected)
+- Similar to Simulation.tsx showing scenario settings after scenarios selection
+- Uses `contentSections` with `insertAfter: "agents"`
+- Single section manages global rubric/agent pairs (not per-agent, but appears after agents are selected)
+- Per-run/per-group pairs appear in separate contentSections after modelRuns/groups steps
+
+**Pattern for Complex Nested State**:
+Eval demonstrates handling multiple nested structures in draft state:
+- `rubricGradeAgents`: Global rubric/agent pairs (array)
+- `runRubricGradeAgents`: Per-run pairs (Record<string, RubricGradeAgent[]>)
+- `groupRubricGradeAgents`: Per-group pairs (Record<string, RubricGradeAgent[]>)
+- Extract from draft payload JSONB fields first (if draft exists)
+- Fall back to extracting from server data arrays if draft payload doesn't exist
+- Handle both array and object formats for backward compatibility
+
+**Reference Implementation**: See `client/components/evals/Eval.tsx` for a complete example of complex form with nested per-run/per-group sections.
+
 ### Troubleshooting
 
 **Issue**: Type errors with optional props
@@ -2351,3 +2383,31 @@ useEffect(() => {
 
 **Reference Implementation**: See `client/components/simulations/Simulation.tsx` for a complete example of boolean field sync pattern.
 
+
+## Scenario Component Pattern
+
+**Reference Implementation**: See `client/components/scenarios/Scenario.tsx` for a complete example of a complex form with:
+- Merged formData pattern (draftState + urlParams)
+- Dynamic parameter steps via contentSections
+- Multiple selection steps (personas, documents, parameters)
+- Complex content section (problem statement, objectives, images, videos, questions)
+- Range params in both draftState (for persistence) and urlParams (for filtering)
+
+### Key Pattern: Merged formData
+
+Scenario.tsx demonstrates the merged formData pattern where form fields (in `draftState`) and search/filter params (in `urlParams`) are combined. This pattern is used when you need both form field persistence (via drafts) and URL-backed filtering/search.
+
+**Key Points**:
+- Form fields (name, problemStatement, objectives, etc.) are stored in `draftState` and autosaved
+- Search/filter params (personaSearch, documentSearch, etc.) are stored in `urlParams` for URL sync
+- Range params (personaMin/Max, etc.) exist in both - `draftState` for persistence, `urlParams` for filtering
+- `formData` merges both for GenericForm compatibility
+- `setFormData` routes updates to the appropriate state based on field type
+
+See `client/components/scenarios/Scenario.tsx` lines 927-1041 for the complete implementation.
+
+### Dynamic Parameter Steps
+
+Scenario.tsx uses `contentSections` to dynamically add parameter-specific steps after the main "parameters" step. This allows scenarios to have a variable number of steps based on selected parameters.
+
+See `client/components/scenarios/Scenario.tsx` lines 5910-5938 for the complete implementation.

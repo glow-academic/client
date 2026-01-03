@@ -83,7 +83,9 @@ CREATE OR REPLACE FUNCTION api_get_eval_new_v4(
     available_model_runs_agent_ids uuid[] DEFAULT ARRAY[]::uuid[],
     available_model_runs_page int DEFAULT 1,
     available_model_runs_page_size int DEFAULT 50,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    agent_search text DEFAULT NULL,
+    group_search text DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
@@ -128,7 +130,9 @@ WITH params AS (
         available_model_runs_agent_ids AS available_model_runs_agent_ids,
         available_model_runs_page AS available_model_runs_page,
         available_model_runs_page_size AS available_model_runs_page_size,
-        draft_id AS draft_id
+        draft_id AS draft_id,
+        COALESCE(NULLIF(agent_search, ''), NULL) AS agent_search,
+        COALESCE(NULLIF(group_search, ''), NULL) AS group_search
 ),
 draft_payload_data AS (
     SELECT 
@@ -200,6 +204,10 @@ valid_agents_for_eval_list AS (
     FROM params x
     JOIN agents a ON a.active = true
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE 
+        (SELECT agent_search FROM params LIMIT 1) IS NULL
+        OR LOWER(a.name) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
+        OR LOWER(COALESCE(a.description, '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
     GROUP BY a.id, a.name, a.description, a.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0

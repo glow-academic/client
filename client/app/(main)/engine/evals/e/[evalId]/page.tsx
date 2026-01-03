@@ -9,7 +9,11 @@ import Eval from "@/components/evals/Eval";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsString } from "nuqs/server";
+import {
+  createLoader,
+  parseAsBoolean,
+  parseAsString,
+} from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type EvalDetailIn = InputOf<"/api/v4/evals/detail", "post">;
@@ -81,15 +85,25 @@ export default async function EvalDetailPage({
   // Inline server-side parsers for eval search params
   const evalSearchParams = {
     draftId: parseAsString,
+    agentSearch: parseAsString,
+    agentShowSelected: parseAsBoolean,
+    modelRunSearch: parseAsString,
+    modelRunShowSelected: parseAsBoolean,
+    groupSearch: parseAsString,
+    groupShowSelected: parseAsBoolean,
   };
   const loadEvalSearchParams = createLoader(evalSearchParams);
   const q = loadEvalSearchParams(searchParamsObj);
 
-  // Fetch eval detail with draft_id
+  // Fetch eval detail with draft_id and search params
   const input: EvalDetailIn = {
     body: {
       eval_id: evalId,
       draft_id: q.draftId ?? null,
+      agent_search: q.agentSearch ?? null,
+      group_search: q.groupSearch ?? null,
+      // Note: available_model_runs_search uses modelRunSearch from URL
+      available_model_runs_search: q.modelRunSearch ?? null,
     } as EvalDetailIn["body"],
   };
   const evalDetail = await getEvalDetail(input);

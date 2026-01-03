@@ -293,7 +293,7 @@ draft_payload_data AS (
     JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
-    AND d.resource_type = 'scenario'::draft_resource_type
+    AND d.resource_type = 'scenarios'::draft_resource_type
     LIMIT 1
 ),
 params_single AS (

@@ -77,10 +77,7 @@ export interface EvalProps {
   ) => Promise<PatchEvalDraftOut>;
 }
 
-interface RubricGradeAgent {
-  rubric_id: string;
-  grade_text_agent_id: string;
-}
+// Removed RubricGradeAgent interface - using per-agent settings like Simulation
 
 function EvalComponent({
   evalId,
@@ -290,10 +287,16 @@ function EvalComponent({
     agentIds: string[]; // Agents being evaluated
     modelRunIds: string[]; // Selected model runs
     groupIds: string[]; // Selected groups (if use_groups)
-    // Nested structures for rubric_grade_agents
-    rubricGradeAgents: RubricGradeAgent[]; // Global rubric/agent pairs
-    runRubricGradeAgents: Record<string, RubricGradeAgent[]>; // Per-run pairs (run_id -> pairs)
-    groupRubricGradeAgents: Record<string, RubricGradeAgent[]>; // Per-group pairs (group_id -> pairs)
+    // Per-agent settings (like scenarioSettings in Simulation)
+    agentSettings: Record<
+      string,
+      {
+        rubric_ids?: string[]; // Array of rubric IDs (multi-select)
+        grade_agent_ids?: string[]; // Array of grade agent IDs (multi-select) - will generate all permutations
+      }
+    >;
+    runRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>>; // Per-run pairs (run_id -> pairs)
+    groupRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>>; // Per-group pairs (group_id -> pairs)
   };
 
   // Initialize draft state from server data or draft payload
@@ -311,28 +314,56 @@ function EvalComponent({
         agentIds: [],
         modelRunIds: [],
         groupIds: [],
-        rubricGradeAgents: [],
+        agentSettings: {},
         runRubricGradeAgents: {},
         groupRubricGradeAgents: {},
       };
     }
 
-    // Initialize rubric_grade_agents from draft payload if available
-    let rubricGradeAgents: RubricGradeAgent[] = [];
-    let runRubricGradeAgents: Record<string, RubricGradeAgent[]> = {};
-    let groupRubricGradeAgents: Record<string, RubricGradeAgent[]> = {};
+    // Initialize agentSettings from draft payload or server data
+    let agentSettings: Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }> = {};
+    let runRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> = {};
+    let groupRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> = {};
 
     // Try to read from draft payload fields (returned by SQL when draft exists)
-    if (data && "rubric_grade_agent_pairs" in data && data.rubric_grade_agent_pairs) {
+    // Check for agent_settings first (new format)
+    if (data && "agent_settings" in data && data.agent_settings) {
+      try {
+        const parsed = typeof data.agent_settings === "string"
+          ? JSON.parse(data.agent_settings)
+          : data.agent_settings;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          agentSettings = parsed as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }>;
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    // Fallback: Extract from rubric_grade_agent_pairs (old format) - convert to agentSettings
+    if (Object.keys(agentSettings).length === 0 && data && "rubric_grade_agent_pairs" in data && data.rubric_grade_agent_pairs) {
       try {
         const parsed = typeof data.rubric_grade_agent_pairs === "string"
           ? JSON.parse(data.rubric_grade_agent_pairs)
           : data.rubric_grade_agent_pairs;
         if (parsed && typeof parsed === "object" && Array.isArray(parsed)) {
-          rubricGradeAgents = parsed as RubricGradeAgent[];
+          const pairs = parsed as Array<{rubric_id: string; grade_text_agent_id: string}>;
+          // Group pairs by agent_id (assuming pairs are for agents being evaluated)
+          // For now, create a default "global" entry - this will be refined when we have agent_id in pairs
+          const rubricIdsSet = new Set<string>();
+          const gradeAgentIdsSet = new Set<string>();
+          pairs.forEach((pair) => {
+            if (pair.rubric_id) rubricIdsSet.add(pair.rubric_id);
+            if (pair.grade_text_agent_id) gradeAgentIdsSet.add(pair.grade_text_agent_id);
+          });
+          // Store in agentSettings with a default key - will be mapped to actual agents during initialization
+          agentSettings["_global"] = {
+            rubric_ids: Array.from(rubricIdsSet),
+            grade_agent_ids: Array.from(gradeAgentIdsSet),
+          };
         }
       } catch (e) {
-        // Ignore parse errors, fall back to extracting from array data
+        // Ignore parse errors
       }
     }
 
@@ -343,7 +374,7 @@ function EvalComponent({
           ? JSON.parse(data.run_rubric_grade_agents)
           : data.run_rubric_grade_agents;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          runRubricGradeAgents = parsed as Record<string, RubricGradeAgent[]>;
+          runRubricGradeAgents = parsed as Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>>;
         }
       } catch (e) {
         // Ignore parse errors
@@ -357,16 +388,32 @@ function EvalComponent({
           ? JSON.parse(data.group_rubric_grade_agents)
           : data.group_rubric_grade_agents;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          groupRubricGradeAgents = parsed as Record<string, RubricGradeAgent[]>;
+          groupRubricGradeAgents = parsed as Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>>;
         }
       } catch (e) {
         // Ignore parse errors
       }
     }
 
+    // If draft payload didn't have agentSettings, initialize from agentIds
+    // Map _global settings to each agent if present
+    if (Object.keys(agentSettings).length > 0 && agentSettings["_global"]) {
+      const globalSettings = agentSettings["_global"];
+      const agentIds = data.agent_ids || [];
+      agentIds.forEach((agentId: string) => {
+        if (!agentSettings[agentId]) {
+          agentSettings[agentId] = {
+            rubric_ids: globalSettings.rubric_ids || [],
+            grade_agent_ids: globalSettings.grade_agent_ids || [],
+          };
+        }
+      });
+      delete agentSettings["_global"];
+    }
+
     // If draft payload didn't have these fields, fall back to extracting from array data (edit mode only)
     if (
-      rubricGradeAgents.length === 0 &&
+      Object.keys(agentSettings).length === 0 &&
       Object.keys(runRubricGradeAgents).length === 0 &&
       isEditMode &&
       evalDetail &&
@@ -398,7 +445,7 @@ function EvalComponent({
       agentIds: data.agent_ids || [],
       modelRunIds: data.model_run_ids || [],
       groupIds: [], // TODO: Extract when groups are implemented
-      rubricGradeAgents,
+      agentSettings,
       runRubricGradeAgents,
       groupRubricGradeAgents,
     };
@@ -493,7 +540,7 @@ function EvalComponent({
           key === "agentIds" ||
           key === "modelRunIds" ||
           key === "groupIds" ||
-          key === "rubricGradeAgents" ||
+          key === "agentSettings" ||
           key === "runRubricGradeAgents" ||
           key === "groupRubricGradeAgents"
         ) {
@@ -572,7 +619,7 @@ function EvalComponent({
             agentIds: "agent_ids",
             modelRunIds: "model_run_ids",
             groupIds: "group_ids",
-            rubricGradeAgents: "rubric_grade_agents",
+            agentSettings: "agent_settings",
             runRubricGradeAgents: "run_rubric_grade_agents",
             groupRubricGradeAgents: "group_rubric_grade_agents",
           };
@@ -677,7 +724,7 @@ function EvalComponent({
       const modelRunIds = evalDetailData.model_runs?.map((mr: any) => mr.model_run_id) || [];
 
       // Initialize rubric_grade_agents from model_runs
-      const runRubricGradeAgents: Record<string, RubricGradeAgent[]> = {};
+      const runRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> = {};
       if (evalDetailData.model_runs) {
         evalDetailData.model_runs.forEach((run: any) => {
           if (run.model_run_id && run.rubric_grade_agents) {
@@ -731,6 +778,27 @@ function EvalComponent({
       if (draftState.agentIds.length === 0) {
       toast.error("Please select at least one agent");
         throw new Error("At least one agent is required");
+      }
+
+      // Validate agentSettings - each agent must have at least one rubric and one grade agent
+      for (const agentId of draftState.agentIds) {
+        const settings = draftState.agentSettings[agentId] || {};
+        const rubricIds = settings.rubric_ids || [];
+        const gradeAgentIds = settings.grade_agent_ids || [];
+        if (rubricIds.length === 0) {
+          const agent = (evalData?.agents || []).find((a: any) => a.agent_id === agentId);
+          toast.error(
+            `Please select at least one rubric for agent ${agent?.name || agentId.slice(0, 8)}`
+          );
+          throw new Error(`Missing rubrics for agent ${agentId}`);
+        }
+        if (gradeAgentIds.length === 0) {
+          const agent = (evalData?.agents || []).find((a: any) => a.agent_id === agentId);
+          toast.error(
+            `Please select at least one grading agent for agent ${agent?.name || agentId.slice(0, 8)}`
+          );
+          throw new Error(`Missing grade agents for agent ${agentId}`);
+        }
       }
 
       // Validate rubric_grade_agents based on use_groups
@@ -875,15 +943,20 @@ function EvalComponent({
       const hasAgents =
         ((formData["agentIds"] as string[] | null | undefined) || []).length >
         0;
-      const hasRubricGradeAgents =
-        ((formData["rubricGradeAgents"] as RubricGradeAgent[] | null | undefined) || []).length > 0;
+      const agentSettings = (formData["agentSettings"] as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }> | null | undefined) || {};
       const useGroups = (formData["use_groups"] as boolean | null | undefined) ?? false;
+      
+      // Check if agents have rubric/agent settings configured
+      const hasAgentRubricSettings = hasAgents && Object.keys(agentSettings).length > 0 &&
+        Object.values(agentSettings).some((settings) => 
+          (settings.rubric_ids?.length || 0) > 0 && (settings.grade_agent_ids?.length || 0) > 0
+        );
       
       // Check if runs/groups have rubric_grade_agents based on use_groups
       let hasRunOrGroupRubricGradeAgents = false;
       if (useGroups) {
         const groupIds = (formData["groupIds"] as string[] | null | undefined) || [];
-        const groupRubricGradeAgents = (formData["groupRubricGradeAgents"] as Record<string, RubricGradeAgent[]> | null | undefined) || {};
+        const groupRubricGradeAgents = (formData["groupRubricGradeAgents"] as Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> | null | undefined) || {};
         hasRunOrGroupRubricGradeAgents = groupIds.length > 0 &&
           groupIds.every((groupId) => {
             const pairs = groupRubricGradeAgents[groupId] || [];
@@ -891,7 +964,7 @@ function EvalComponent({
           });
       } else {
         const modelRunIds = (formData["modelRunIds"] as string[] | null | undefined) || [];
-        const runRubricGradeAgents = (formData["runRubricGradeAgents"] as Record<string, RubricGradeAgent[]> | null | undefined) || {};
+        const runRubricGradeAgents = (formData["runRubricGradeAgents"] as Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> | null | undefined) || {};
         hasRunOrGroupRubricGradeAgents = modelRunIds.length > 0 &&
           modelRunIds.every((runId) => {
             const pairs = runRubricGradeAgents[runId] || [];
@@ -905,15 +978,15 @@ function EvalComponent({
 
       switch (stepId) {
         case "basic":
-          return hasName && hasRubricGradeAgents ? "completed" : "active";
+          return hasName ? "completed" : "active";
         case "agents":
-          if (!hasName || !hasRubricGradeAgents) return "pending";
+          if (!hasName) return "pending";
           return hasAgents ? "completed" : "active";
         case "modelRuns":
-          if (!hasAgents) return "pending";
+          if (!hasAgents || !hasAgentRubricSettings) return "pending";
           return hasRunsOrGroups && hasRunOrGroupRubricGradeAgents ? "completed" : "active";
         case "groups":
-          if (!hasAgents) return "pending";
+          if (!hasAgents || !hasAgentRubricSettings) return "pending";
           return hasRunsOrGroups && hasRunOrGroupRubricGradeAgents ? "completed" : "active";
         default:
           return "pending";
@@ -936,7 +1009,6 @@ function EvalComponent({
           "departmentIds",
           "active",
           "dynamic",
-          "rubricGradeAgents",
         ] as string[],
       },
       {
@@ -987,7 +1059,7 @@ function EvalComponent({
       "agentIds",
       "modelRunIds",
       "groupIds",
-      "rubricGradeAgents",
+      "agentSettings",
       "runRubricGradeAgents",
       "groupRubricGradeAgents",
     ],
@@ -1021,37 +1093,15 @@ function EvalComponent({
     []
   );
 
-  // Handler functions for rubric/agent pairs
-  const handleAddRubricGradeAgent = useCallback(() => {
-    setDraftState((prev) => ({
-      ...prev,
-      rubricGradeAgents: [
-        ...prev.rubricGradeAgents,
-        { rubric_id: "", grade_text_agent_id: "" },
-      ],
-    }));
-  }, []);
-
-  const handleRemoveRubricGradeAgent = useCallback((index: number) => {
-    setDraftState((prev) => ({
-      ...prev,
-      rubricGradeAgents: prev.rubricGradeAgents.filter((_, i) => i !== index),
-    }));
-  }, []);
-
-  const handleUpdateRubricGradeAgent = useCallback(
-    (
-      index: number,
-      field: "rubric_id" | "grade_text_agent_id",
-      value: string
-    ) => {
-      setDraftState((prev) => {
-        const updated = [...prev.rubricGradeAgents];
-        updated[index] = { ...updated[index], [field]: value };
-        return { ...prev, rubricGradeAgents: updated };
-      });
+  // Helper to get agent settings (like getScenarioSettings in Simulation)
+  const getAgentSettings = useCallback(
+    (agentId: string) => {
+      return draftState.agentSettings[agentId] || {
+        rubric_ids: [],
+        grade_agent_ids: [],
+      };
     },
-    []
+    [draftState.agentSettings]
   );
 
   const handleAddRubricGradeAgentToRun = useCallback((runId: string) => {
@@ -1217,7 +1267,6 @@ function EvalComponent({
                   "departmentIds",
                   "active",
                   "dynamic",
-                  "rubricGradeAgents",
                 ] as string[]
               }
               {...(onReset ? { onReset } : {})}
@@ -1278,115 +1327,6 @@ function EvalComponent({
                     />
                 </div>
                 ) : null}
-
-            {/* Rubrics and Grading Agents */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Rubrics and Grading Agents</Label>
-                {!isReadonly && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddRubricGradeAgent}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Pair
-                  </Button>
-                )}
-              </div>
-                  {((stepFormData["rubricGradeAgents"] as RubricGradeAgent[] | null | undefined) || []).length === 0 ? (
-                <div className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-md">
-                  No rubric/agent pairs added. Click "Add Pair" to add one.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                      {((stepFormData["rubricGradeAgents"] as RubricGradeAgent[] | null | undefined) || []).map((rga, index) => (
-                    <Card key={index} className="p-4">
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            Pair {index + 1}
-                          </span>
-                          {!isReadonly && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleRemoveRubricGradeAgent(index)
-                              }
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Rubric Selection */}
-                          <div className="space-y-2">
-                            <Label htmlFor={`rubric-${index}`}>Rubric</Label>
-                            <GenericPicker
-                              items={evalData?.rubrics || []}
-                              itemIds={validRubricIds}
-                              selectedIds={rga.rubric_id ? [rga.rubric_id] : []}
-                              onSelect={(ids) =>
-                                handleUpdateRubricGradeAgent(
-                                  index,
-                                  "rubric_id",
-                                  ids[0] || ""
-                                )
-                              }
-                              getId={(item) => item.rubric_id}
-                              getLabel={(item) => item.name || ""}
-                              getSearchText={(item) =>
-                                `${item.name} ${item.description || ""}`
-                              }
-                              placeholder="Select rubric"
-                              disabled={isReadonly}
-                              multiSelect={false}
-                              hideSelectedChips={true}
-                              buttonClassName="w-full"
-                            />
-                          </div>
-                          {/* Grading Agent Selection */}
-                          <div className="space-y-2">
-                            <Label htmlFor={`agent-${index}`}>
-                              Grading Agent
-                            </Label>
-                            <GenericPicker
-                              items={evalAgentsArray}
-                              itemIds={validEvalAgentIds}
-                              selectedIds={
-                                rga.grade_text_agent_id
-                                  ? [rga.grade_text_agent_id]
-                                  : []
-                              }
-                              onSelect={(ids) =>
-                                handleUpdateRubricGradeAgent(
-                                  index,
-                                  "grade_text_agent_id",
-                                  ids[0] || ""
-                                )
-                              }
-                              getId={(item) => item.agent_id}
-                              getLabel={(item) => item.name || ""}
-                              getSearchText={(item) =>
-                                `${item.name} ${item.description || ""}`
-                              }
-                              placeholder="Select grading agent"
-                              disabled={isReadonly}
-                              multiSelect={false}
-                              hideSelectedChips={true}
-                              buttonClassName="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Active Switch */}
             <div className="space-y-2 pt-2">
@@ -1653,7 +1593,7 @@ function EvalComponent({
                       const newRunIds = new Set(ids);
                       
                       // Remove runs that are no longer selected
-                      const updatedRunRubricGradeAgents: Record<string, RubricGradeAgent[]> = {};
+                      const updatedRunRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> = {};
                       Object.entries(prev.runRubricGradeAgents).forEach(([runId, pairs]) => {
                         if (newRunIds.has(runId)) {
                           updatedRunRubricGradeAgents[runId] = pairs;
@@ -1723,7 +1663,7 @@ function EvalComponent({
                       const newGroupIds = new Set(ids);
                       
                       // Remove groups that are no longer selected
-                      const updatedGroupRubricGradeAgents: Record<string, RubricGradeAgent[]> = {};
+                      const updatedGroupRubricGradeAgents: Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>> = {};
                       Object.entries(prev.groupRubricGradeAgents).forEach(([groupId, pairs]) => {
                         if (newGroupIds.has(groupId)) {
                           updatedGroupRubricGradeAgents[groupId] = pairs;
@@ -1767,24 +1707,15 @@ function EvalComponent({
       isReadonly,
       isEditMode,
       effectiveProfile?.id,
-      handleAddRubricGradeAgent,
-      handleRemoveRubricGradeAgent,
-      handleUpdateRubricGradeAgent,
     ]
   );
 
   // Content sections for nested rubric/agent pair management
   const contentSections = useMemo(() => {
+    const agentIds = draftState.agentIds || [];
     const useGroups = draftState.use_groups ?? false;
     const modelRunIds = draftState.modelRunIds || [];
     const groupIds = draftState.groupIds || [];
-
-    if (useGroups && groupIds.length === 0) {
-      return [];
-    }
-    if (!useGroups && modelRunIds.length === 0) {
-      return [];
-    }
 
     const sections: Array<{
       id: string;
@@ -1794,6 +1725,139 @@ function EvalComponent({
         setFormData: (updates: Partial<Record<string, unknown>>) => void;
       }) => React.ReactNode;
     }> = [];
+
+    // Add rubric/agent settings section after agents step (like scenarios in Simulation)
+    if (agentIds.length > 0) {
+      sections.push({
+        id: "rubric-agents",
+        insertAfter: "agents",
+        render: ({
+          formData: _contentFormData,
+          setFormData: _setContentFormData,
+        }: {
+          formData: Record<string, unknown>;
+          setFormData: (updates: Partial<Record<string, unknown>>) => void;
+        }) => {
+          return (
+            <StepCard
+              stepStatus="completed"
+              stepNumber={3}
+              stepTitle="Rubrics and Grading Agents"
+              stepDescription="Select rubrics and grading agents for each agent being evaluated."
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {agentIds.map((agentId) => {
+                  const agent = (evalData?.agents || []).find(
+                    (a: any) => a.agent_id === agentId
+                  );
+                  const settings = getAgentSettings(agentId);
+                  const selectedRubricIds = settings.rubric_ids || [];
+                  const selectedGradeAgentIds = settings.grade_agent_ids || [];
+                  // Filter to only valid grade agents
+                  const validGradeAgentIds = selectedGradeAgentIds.filter(
+                    (id: string) => validEvalAgentIds.includes(id)
+                  );
+
+                  return (
+                    <Card key={agentId} className="p-4">
+                      <div className="space-y-3">
+                        <h3 className="font-medium text-sm leading-tight truncate">
+                          {agent?.name || "Unnamed Agent"}
+                        </h3>
+                        {agent?.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {agent.description}
+                          </p>
+                        )}
+                        <div className="space-y-2">
+                          <Label className="text-xs">
+                            Rubrics (Multi-select)
+                          </Label>
+                          <GenericPicker
+                            items={evalData?.rubrics || []}
+                            itemIds={validRubricIds}
+                            selectedIds={selectedRubricIds}
+                            onSelect={(ids) => {
+                              setDraftState((prev) => {
+                                const currentSettings =
+                                  prev.agentSettings[agentId] || {};
+                                const newSettings = {
+                                  ...currentSettings,
+                                  rubric_ids: ids.length > 0 ? ids : [],
+                                };
+                                return {
+                                  ...prev,
+                                  agentSettings: {
+                                    ...prev.agentSettings,
+                                    [agentId]: newSettings,
+                                  },
+                                };
+                              });
+                            }}
+                            getId={(item) => item.rubric_id}
+                            getLabel={(item) => item.name || ""}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description || ""}`
+                            }
+                            placeholder="Select rubrics"
+                            disabled={isReadonly}
+                            multiSelect={true}
+                            hideSelectedChips={false}
+                            buttonClassName="w-full"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">
+                            Grade Agents (Multi-select)
+                          </Label>
+                          <GenericPicker
+                            items={evalAgentsArray}
+                            itemIds={validEvalAgentIds}
+                            selectedIds={validGradeAgentIds}
+                            onSelect={(ids) => {
+                              setDraftState((prev) => ({
+                                ...prev,
+                                agentSettings: {
+                                  ...prev.agentSettings,
+                                  [agentId]: {
+                                    ...prev.agentSettings[agentId],
+                                    grade_agent_ids: ids.length > 0 ? ids : [],
+                                  },
+                                },
+                              }));
+                            }}
+                            getId={(item) => item.agent_id}
+                            getLabel={(item) => item.name || ""}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description || ""}`
+                            }
+                            placeholder="Select grade agents"
+                            disabled={isReadonly}
+                            multiSelect={true}
+                            hideSelectedChips={false}
+                            buttonClassName="w-full"
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </StepCard>
+          );
+        },
+      });
+    }
+
+    // Add per-run/per-group sections (only if runs/groups are selected)
+    if (useGroups && groupIds.length === 0) {
+      return sections;
+    }
+    if (!useGroups && modelRunIds.length === 0) {
+      return sections;
+    }
 
     if (useGroups) {
       // Add section for group rubric/agent pairs
@@ -1809,7 +1873,7 @@ function EvalComponent({
         }) => {
           const groupRubricGradeAgents =
             (contentFormData["groupRubricGradeAgents"] as
-              | Record<string, RubricGradeAgent[]>
+              | Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>>
               | null
               | undefined) || {};
           const groupIds =
@@ -1973,7 +2037,7 @@ function EvalComponent({
         }) => {
           const runRubricGradeAgents =
             (contentFormData["runRubricGradeAgents"] as
-              | Record<string, RubricGradeAgent[]>
+              | Record<string, Array<{rubric_id: string; grade_text_agent_id: string}>>
               | null
               | undefined) || {};
           const modelRunIds =
@@ -2131,21 +2195,26 @@ function EvalComponent({
 
     return sections;
   }, [
+    draftState.agentIds,
     draftState.use_groups,
     draftState.modelRunIds,
     draftState.groupIds,
     evalData?.model_runs,
+    evalData?.rubrics,
+    evalData?.agents,
     validRubricIds,
     evalAgentsArray,
     validEvalAgentIds,
     isReadonly,
     isEditMode,
+    getAgentSettings,
     handleAddRubricGradeAgentToRun,
     handleRemoveRubricGradeAgentFromRun,
     handleUpdateRubricGradeAgentInRun,
     handleAddRubricGradeAgentToGroup,
     handleRemoveRubricGradeAgentFromGroup,
     handleUpdateRubricGradeAgentInGroup,
+    draftState.agentSettings,
   ]);
 
   return (

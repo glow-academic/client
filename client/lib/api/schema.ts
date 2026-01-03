@@ -11263,6 +11263,10 @@ export interface components {
             available_model_runs_page_size: number | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Agent Search */
+            agent_search?: string | null;
+            /** Group Search */
+            group_search?: string | null;
         };
         /** GetEvalDetailApiResponse */
         GetEvalDetailApiResponse: {
@@ -11359,6 +11363,10 @@ export interface components {
             available_model_runs_page_size: number | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Agent Search */
+            agent_search?: string | null;
+            /** Group Search */
+            group_search?: string | null;
         };
         /** GetEvalNewApiResponse */
         GetEvalNewApiResponse: {
@@ -13148,6 +13156,8 @@ export interface components {
             parameter_show_selected?: boolean | null;
             /** Field Show Selected By Param */
             field_show_selected_by_param?: components["schemas"]["QGetScenarioDetailV4FieldParamFilter"][] | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetScenarioDetailApiResponse */
         GetScenarioDetailApiResponse: {
@@ -13269,6 +13279,14 @@ export interface components {
             document_details?: components["schemas"]["QGetScenarioDetailV4DocumentDetail"][] | null;
             /** Parameters Detail */
             parameters_detail?: components["schemas"]["QGetScenarioDetailV4ParameterDetail"][] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Draft Field Show Selected */
+            draft_field_show_selected?: unknown | null;
+            /** Draft Field Ranges */
+            draft_field_ranges?: unknown | null;
+            /** Draft Randomize Parameter Items */
+            draft_randomize_parameter_items?: unknown | null;
         };
         /** GetScenarioNewApiRequest */
         GetScenarioNewApiRequest: {
@@ -13312,6 +13330,8 @@ export interface components {
             parameter_show_selected?: boolean | null;
             /** Field Show Selected By Param */
             field_show_selected_by_param?: components["schemas"]["QGetScenarioNewV4FieldParamFilter"][] | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetScenarioNewApiResponse */
         GetScenarioNewApiResponse: {
@@ -13387,6 +13407,14 @@ export interface components {
             document_details?: components["schemas"]["QGetScenarioNewV4DocumentDetail"][] | null;
             /** Parameters Detail */
             parameters_detail?: components["schemas"]["QGetScenarioNewV4ParameterDetail"][] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Draft Field Show Selected */
+            draft_field_show_selected?: unknown | null;
+            /** Draft Field Ranges */
+            draft_field_ranges?: unknown | null;
+            /** Draft Randomize Parameter Items */
+            draft_randomize_parameter_items?: unknown | null;
         };
         /** GetScenariosListApiRequest */
         GetScenariosListApiRequest: Record<string, never>;

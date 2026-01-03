@@ -38565,6 +38565,28 @@
               }
             ],
             "title": "Draft Id"
+          },
+          "agent_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Search"
+          },
+          "group_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Search"
           }
         },
         "type": "object",
@@ -39076,6 +39098,28 @@
               }
             ],
             "title": "Draft Id"
+          },
+          "agent_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Search"
+          },
+          "group_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Search"
           }
         },
         "type": "object",
@@ -48622,6 +48666,18 @@
               }
             ],
             "title": "Field Show Selected By Param"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -49370,6 +49426,44 @@
               }
             ],
             "title": "Parameters Detail"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "draft_field_show_selected": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Field Show Selected"
+          },
+          "draft_field_ranges": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Field Ranges"
+          },
+          "draft_randomize_parameter_items": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Randomize Parameter Items"
           }
         },
         "type": "object",
@@ -49639,6 +49733,18 @@
               }
             ],
             "title": "Field Show Selected By Param"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -50107,6 +50213,44 @@
               }
             ],
             "title": "Parameters Detail"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "draft_field_show_selected": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Field Show Selected"
+          },
+          "draft_field_ranges": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Field Ranges"
+          },
+          "draft_randomize_parameter_items": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Randomize Parameter Items"
           }
         },
         "type": "object",
