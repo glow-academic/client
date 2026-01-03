@@ -5,7 +5,6 @@
  */
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ProviderCardGrid } from "@/components/common/models/ProviderCardGrid";
 import { VoiceCardGrid } from "@/components/common/models/VoiceCardGrid";
 import { AgentTemperatureSection } from "@/components/agents/AgentTemperatureSection";
@@ -217,7 +216,7 @@ export function AgentConfigCard({
   };
 
   // Helper to get reasoning option ID from reasoning level
-  const getReasoningOptionId = (reasoningLevel: string): string | null => {
+  const _getReasoningOptionId = (reasoningLevel: string): string | null => {
     const option = reasoningOptions.find((opt) => opt.reasoning_level === reasoningLevel);
     return option?.id || null;
   };
@@ -347,7 +346,7 @@ export function AgentConfigCard({
               reasoning={currentReasoning as "none" | "minimal" | "low" | "medium" | "high"}
               reasoningMapping={reasoningMapping}
               reasoningOptions={reasoningOptions}
-              onReasoningChange={(reasoningLevel, optionId) => {
+              onReasoningChange={(_reasoningLevel, optionId) => {
                 onConfigChange({
                   reasoning_level_id: optionId,
                 });

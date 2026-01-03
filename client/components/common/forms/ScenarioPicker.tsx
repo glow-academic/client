@@ -55,7 +55,11 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type SimulationsListOut = OutputOf<"/api/v4/simulations/list", "post">;
-type ScenarioMappingItem = SimulationsListOut["scenario_mapping"][string];
+type ScenarioMappingItem = "scenario_mapping" extends keyof SimulationsListOut
+  ? SimulationsListOut["scenario_mapping"] extends Record<string, infer T>
+    ? T
+    : never
+  : never;
 
 // Filter key constants
 const NO_PERSONA_KEY = "__no_persona__";
@@ -135,7 +139,7 @@ export function ScenarioPicker<
       if (!sc.persona_ids || sc.persona_ids.length === 0) {
         hasNoPersona = true;
       } else {
-        sc.persona_ids.forEach((personaId) => {
+        sc.persona_ids.forEach((personaId: string) => {
           const persona = sc.persona_mapping?.[personaId];
           if (!persona) return;
           const existing = personaMap.get(personaId);
@@ -184,7 +188,7 @@ export function ScenarioPicker<
       if (!sc.document_ids || sc.document_ids.length === 0) {
         hasNoDocuments = true;
       } else {
-        sc.document_ids.forEach((docId) => {
+        sc.document_ids.forEach((docId: string) => {
           const doc = sc.document_mapping?.[docId] as
             | { name?: string; description?: string }
             | undefined;
@@ -239,7 +243,7 @@ export function ScenarioPicker<
       if (!sc.parameter_item_ids || sc.parameter_item_ids.length === 0) {
         hasNoParams = true;
       } else {
-        sc.parameter_item_ids.forEach((paramId) => {
+        sc.parameter_item_ids.forEach((paramId: string) => {
           const param = sc.parameter_item_mapping?.[paramId] as
             | { name?: string; parameter_name?: string; description?: string }
             | undefined;
@@ -292,7 +296,7 @@ export function ScenarioPicker<
       // Persona filter (OR within group)
       if (filterPersonaIds.length > 0) {
         const hasNoPersona = filterPersonaIds.includes(NO_PERSONA_KEY);
-        const matchesPersona = scenario.persona_ids?.some((personaId) =>
+        const matchesPersona = scenario.persona_ids?.some((personaId: string) =>
           filterPersonaIds.includes(personaId),
         );
         if (!hasNoPersona && !matchesPersona) return false;
@@ -308,7 +312,7 @@ export function ScenarioPicker<
       // Document filter (OR within group)
       if (filterDocumentIds.length > 0) {
         const hasNoDocuments = filterDocumentIds.includes(NO_DOCUMENTS_KEY);
-        const matchesDocument = scenario.document_ids?.some((id) =>
+        const matchesDocument = scenario.document_ids?.some((id: string) =>
           filterDocumentIds.includes(id),
         );
         if (!hasNoDocuments && !matchesDocument) return false;
@@ -324,7 +328,7 @@ export function ScenarioPicker<
       // Parameter item filter (OR within group)
       if (filterParameterItemIds.length > 0) {
         const hasNoParams = filterParameterItemIds.includes(NO_PARAMS_KEY);
-        const matchesParam = scenario.parameter_item_ids?.some((id) =>
+        const matchesParam = scenario.parameter_item_ids?.some((id: string) =>
           filterParameterItemIds.includes(id),
         );
         if (!hasNoParams && !matchesParam) return false;
@@ -406,7 +410,7 @@ export function ScenarioPicker<
       value: string;
       parameterId: string;
     }[] = [];
-    scenario.parameter_item_ids.forEach((parameterItemId) => {
+    scenario.parameter_item_ids.forEach((parameterItemId: string) => {
       const parameterItem = scenario.parameter_item_mapping?.[
         parameterItemId
       ] as

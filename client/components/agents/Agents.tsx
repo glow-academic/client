@@ -99,11 +99,11 @@ export default function Agents({
   }, [agentsData?.agents]);
   const modelMapping = useMemo(
     () =>
-      (agentsData?.model_mapping as Record<
+      ((agentsData as any)?.model_mapping as Record<
         string,
         { name: string; description: string }
       >) || {},
-    [agentsData?.model_mapping],
+    [agentsData],
   );
 
   // Filter options (inline)
@@ -129,11 +129,11 @@ export default function Agents({
   // Build department options from mapping
   const departmentMapping = useMemo(
     () =>
-      (agentsData?.department_mapping as Record<
+      ((agentsData as any)?.department_mapping as Record<
         string,
         { name: string; description: string }
       >) || {},
-    [agentsData?.department_mapping],
+    [agentsData],
   );
 
   const departmentOptions = useMemo(() => {
@@ -190,7 +190,9 @@ export default function Agents({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
-          const date = new Date(row.original.updated_at);
+          const updatedAt = row.original.updated_at;
+          if (!updatedAt) return null;
+          const date = new Date(updatedAt);
           return (
             <div className="text-sm text-muted-foreground">
               {date.toLocaleDateString()}
@@ -259,7 +261,7 @@ export default function Agents({
 
     try {
       await duplicateAgentAction({
-        body: { agentId: id },
+        body: { agent_id: id },
       });
       toast.success("Agent duplicated successfully");
       router.refresh();
@@ -274,7 +276,7 @@ export default function Agents({
     setIsDeleting(true);
     try {
       await deleteAgentAction({
-        body: { agentId: deleteItem.id },
+        body: { agent_id: deleteItem.id },
       });
       toast.success("Agent deleted successfully");
       router.refresh();

@@ -54,7 +54,8 @@ import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
 // Extract types from AttemptFullOut
-type ChatDataType = AttemptFullOut["chats"][number];
+type ChatsArray = NonNullable<AttemptFullOut["chats"]>;
+type ChatDataType = ChatsArray extends Array<infer T> ? T : never;
 type Chat = ChatDataType["chat"];
 type ScenarioItem = ChatDataType["scenario"];
 type ScenarioDocumentItem = AttemptFullOut["scenarioDocuments"][number];

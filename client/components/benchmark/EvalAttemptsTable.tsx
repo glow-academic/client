@@ -48,7 +48,8 @@ import {
 /** ---- Strong types from OpenAPI ---- */
 type BenchmarkBundleIn = InputOf<"/api/v4/benchmark/bundle", "post">;
 type BenchmarkBundleOut = OutputOf<"/api/v4/benchmark/bundle", "post">;
-type EvalAttemptItem = BenchmarkBundleOut["attempts"][number];
+type AttemptsArray = NonNullable<BenchmarkBundleOut["attempts"]>;
+type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 
 /** ---- Fetch benchmark bundle (includes attempts) ---- */
 const getBenchmarkBundle = async (

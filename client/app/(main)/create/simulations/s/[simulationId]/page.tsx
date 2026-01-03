@@ -12,7 +12,6 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 import {
   createLoader,
-  parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
 } from "nuqs/server";

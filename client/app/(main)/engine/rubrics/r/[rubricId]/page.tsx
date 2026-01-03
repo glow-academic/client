@@ -32,7 +32,7 @@ const getRubric = async (
 ): Promise<RubricDetailOut> => {
   return api.post(
     "/rubrics/detail",
-    { body: { rubricId, draftId: draftId || null } },
+    { body: { rubric_id: rubricId, draft_id: draftId || null } },
     {
       cache: "no-store",
       headers: {
@@ -47,7 +47,7 @@ const getRubricDefault = async (
 ): Promise<RubricNewOut> => {
   return api.post(
     "/rubrics/new",
-    { body: { draftId: draftId || null } },
+    { body: { draft_id: draftId || null } },
     {
       cache: "no-store",
       headers: {
@@ -65,7 +65,7 @@ export async function generateMetadata(
   const { rubricId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const rubric = await getRubric(rubricId);
+    const rubric = await getRubric(rubricId, null);
     return {
       title: `${rubric?.name || "Rubric"}`,
       description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,

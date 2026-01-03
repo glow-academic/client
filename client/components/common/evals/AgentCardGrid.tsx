@@ -8,11 +8,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Bot, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { components } from "@/lib/api/schema";
-
-// Extract AgentMappingItem type from schema
-type AgentMappingItem =
-  components["schemas"]["app__api__v4__evals__detail__AgentMappingItem"];
 
 export interface AgentCardGridProps {
   agents: Array<{ agent_id: string; name: string; description?: string; roles?: string[] }>;

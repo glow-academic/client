@@ -48,7 +48,7 @@ export function ModelRunCardGrid({
         // Use /evals/detail if evalId provided, otherwise /evals/new
         if (evalId) {
           const requestBody: EvalDetailIn["body"] = {
-            evalId,
+            eval_id: evalId,
             available_model_runs_search: searchTerm || null,
             available_model_runs_agent_ids: [], // Empty array to show all runs (not null)
             available_model_runs_page: 1,

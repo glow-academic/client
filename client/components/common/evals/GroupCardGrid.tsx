@@ -48,6 +48,8 @@ export function GroupCardGrid({
           const requestBody: EvalDetailIn["body"] = {
             eval_id: evalId,
             group_search: searchTerm || null,
+            available_model_runs_page: 1,
+            available_model_runs_page_size: 50,
           };
           const response = await api.post("/evals/detail", {
             body: requestBody,
@@ -57,6 +59,8 @@ export function GroupCardGrid({
         } else {
           const requestBody: EvalNewIn["body"] = {
             group_search: searchTerm || null,
+            available_model_runs_page: 1,
+            available_model_runs_page_size: 50,
           };
           const response = await api.post("/evals/new", {
             body: requestBody,

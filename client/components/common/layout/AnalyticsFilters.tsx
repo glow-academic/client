@@ -185,14 +185,17 @@ export function AnalyticsFilters({
   // Filter to only active cohorts and convert to the format expected by CohortPicker
   const activeCohorts = cohorts.filter((cohort) => cohort.active);
 
-  const cohortOptions = activeCohorts.map((cohort) => ({
-    id: cohort.id,
-    title: cohort.title,
-    description:
-      cohort.description ||
-      `Cohort with ${getCohortMemberCount(cohort.id)} members`,
-    memberCount: getCohortMemberCount(cohort.id),
-  }));
+  const cohortOptions = activeCohorts.map((cohort) => {
+    const cohortId = "cohort_id" in cohort ? cohort.cohort_id : null;
+    return {
+      id: cohortId || "",
+      title: cohort.title,
+      description:
+        cohort.description ||
+        (cohortId ? `Cohort with ${getCohortMemberCount(cohortId)} members` : ""),
+      memberCount: cohortId ? getCohortMemberCount(cohortId) : 0,
+    };
+  }).filter((cohort) => cohort.id);
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
@@ -219,11 +222,14 @@ export function AnalyticsFilters({
   };
 
   // Convert departments to the format expected by DepartmentSelector
-  const departmentOptions = departments.map((department) => ({
-    id: department.id,
-    title: department.title,
-    ...(department.description && { description: department.description }),
-  }));
+  const departmentOptions = departments.map((department) => {
+    const departmentId = "department_id" in department ? department.department_id : null;
+    return {
+      id: departmentId || "",
+      title: department.title,
+      ...(department.description && { description: department.description }),
+    };
+  }).filter((dept) => dept.id);
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>

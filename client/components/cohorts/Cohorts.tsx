@@ -308,7 +308,7 @@ export default function Cohorts({
 
     setIsDeleting(true);
     try {
-      await deleteCohortAction({ body: { cohortId: deleteItem.id } });
+      await deleteCohortAction({ body: { cohort_id: deleteItem.id } });
       toast.success("Cohort deleted successfully");
       router.refresh();
     } catch {
@@ -326,7 +326,7 @@ export default function Cohorts({
     setIsLeaving(true);
     try {
       await leaveCohortAction({
-        body: { cohortId: leaveItem.id },
+        body: { cohort_id: leaveItem.id },
       });
       toast.success("Left cohort successfully");
       router.refresh();
@@ -344,7 +344,7 @@ export default function Cohorts({
 
     setIsDuplicating(cohortId);
     try {
-      await duplicateCohortAction({ body: { cohortId } });
+      await duplicateCohortAction({ body: { cohort_id: cohortId } });
       toast.success(`Cohort "${cohortName}" duplicated successfully`);
       router.refresh();
     } catch {

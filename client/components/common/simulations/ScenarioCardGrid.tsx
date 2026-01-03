@@ -13,7 +13,11 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type SimulationsListOut = OutputOf<"/api/v4/simulations/list", "post">;
-type ScenarioMappingItem = SimulationsListOut["scenario_mapping"][string];
+type ScenarioMappingItem = "scenario_mapping" extends keyof SimulationsListOut
+  ? SimulationsListOut["scenario_mapping"] extends Record<string, infer T>
+    ? T
+    : never
+  : never;
 
 export interface ScenarioCardGridProps<
   T extends ScenarioMappingItem = ScenarioMappingItem,
@@ -42,13 +46,23 @@ export function ScenarioCardGrid<
 
   // Build scenarios from mapping
   const baseScenarios = React.useMemo(() => {
-    const scenarios = validScenarioIds.map((id) => ({
-      id,
-      ...scenarioMapping[id],
-    }));
+    const scenarios = validScenarioIds
+      .map((id) => {
+        const mappingItem = scenarioMapping[id];
+        if (!mappingItem) return null;
+        return {
+          id,
+          ...mappingItem,
+        } as { id: string } & T;
+      })
+      .filter((scenario): scenario is { id: string } & T => scenario !== null);
 
     // Sort by name
-    return scenarios.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return scenarios.sort((a, b) => {
+      const aName = ("name" in a ? a.name : null) || "";
+      const bName = ("name" in b ? b.name : null) || "";
+      return aName.localeCompare(bName);
+    });
   }, [validScenarioIds, scenarioMapping]);
 
   // Apply search filter, then sort selected first
@@ -58,11 +72,14 @@ export function ScenarioCardGrid<
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (scenario) =>
-          scenario.name?.toLowerCase().includes(searchLower) ||
-          scenario.description?.toLowerCase().includes(searchLower),
-      );
+      filtered = filtered.filter((scenario) => {
+        const name = ("name" in scenario ? scenario.name : null) || "";
+        const description = ("description" in scenario ? scenario.description : null) || "";
+        return (
+          name.toLowerCase().includes(searchLower) ||
+          description.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
     // Sort: selected scenarios first (preserving order from selectedScenarioIds array), then unselected by name
@@ -78,7 +95,9 @@ export function ScenarioCardGrid<
         return aIndex - bIndex;
       }
       // Both unselected - sort by name
-      return (a.name || "").localeCompare(b.name || "");
+      const aName = ("name" in a ? a.name : null) || "";
+      const bName = ("name" in b ? b.name : null) || "";
+      return aName.localeCompare(bName);
     });
   }, [baseScenarios, searchTerm, selectedScenarioIds]);
 
@@ -150,11 +169,11 @@ export function ScenarioCardGrid<
                         <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm leading-tight">
-                            {scenario.name || "Unnamed Scenario"}
+                            {("name" in scenario ? scenario.name : null) || "Unnamed Scenario"}
                           </h3>
-                          {scenario.description && (
+                          {("description" in scenario ? scenario.description : null) && (
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {scenario.description}
+                              {"description" in scenario ? scenario.description : null}
                             </p>
                           )}
                         </div>

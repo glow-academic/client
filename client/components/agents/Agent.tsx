@@ -258,7 +258,7 @@ export default function Agent({
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(agentSearchParamsClient, {
+  const [urlParams] = useQueryStates(agentSearchParamsClient, {
     history: "replace",
     shallow: true, // Use shallow routing to prevent server component re-renders
   });
@@ -481,6 +481,42 @@ export default function Agent({
     });
     return mapping;
   }, [agentData?.models]);
+
+  // Compute department_mapping from departments array
+  const departmentMapping = useMemo(() => {
+    if (!agentData?.departments || !Array.isArray(agentData.departments)) {
+      return {} as Record<string, { id: string; name: string; description?: string }>;
+    }
+    const mapping: Record<string, { id: string; name: string; description?: string }> = {};
+    agentData.departments.forEach((dept) => {
+      if (dept.department_id) {
+        const desc = dept.description || undefined;
+        mapping[dept.department_id] = {
+          id: dept.department_id,
+          name: dept.name || "",
+          ...(desc !== undefined ? { description: desc } : {}),
+        };
+      }
+    });
+    return mapping;
+  }, [agentData?.departments]);
+
+  // Compute reasoning_mapping from reasoning_options array
+  const reasoningMapping = useMemo(() => {
+    if (!agentDetail?.reasoning_options || !Array.isArray(agentDetail.reasoning_options)) {
+      return {} as Record<string, { id: string; name: string; description?: string }>;
+    }
+    const mapping: Record<string, { id: string; name: string; description?: string }> = {};
+    agentDetail.reasoning_options.forEach((opt) => {
+      if (opt.id) {
+        mapping[opt.id] = {
+          id: opt.id,
+          name: opt.reasoning_level || "",
+        };
+      }
+    });
+    return mapping;
+  }, [agentDetail?.reasoning_options]);
 
   // Get temperature bounds and levels from selected model
   const temperatureBounds = useMemo(() => {
@@ -988,7 +1024,7 @@ export default function Agent({
 
   // Initialize form from server data (for GenericForm)
   const initializeForm = useCallback(
-    (serverData: AgentDetailOut | AgentNewOut, editMode: boolean): Partial<Values<typeof agentSearchParamsClient>> => {
+    (_serverData: unknown, _isEditMode: boolean): Partial<Values<Record<string, Parser<unknown>>>> => {
       // GenericForm expects URL params, but we use draftState for form fields
       // So we return empty object - form fields are initialized via draftState
       return {};
@@ -998,7 +1034,7 @@ export default function Agent({
 
   // Reset handler for GenericForm - resets draftState fields
   const handleReset = useCallback(
-    (stepId: string, fields: (keyof Values<typeof agentSearchParamsClient>)[]) => {
+    (stepId: string, _fields: string[]) => {
       const step = steps.find((s) => s.id === stepId);
       if (!step || !step.resetFields) return;
 
@@ -1049,7 +1085,7 @@ export default function Agent({
 
   // Handle form submission (for GenericForm)
   const handleSubmit = useCallback(
-    async (formData: Values<typeof agentSearchParamsClient>) => {
+    async (formData: Values<Record<string, Parser<unknown>>>) => {
       // Form data from GenericForm is URL params (search/filter)
       // Actual form fields are in draftState
 
@@ -1112,7 +1148,7 @@ export default function Agent({
             } else {
               // For multiple departments, check which ones are safe to update
               const departmentPromptLinks =
-                agentDetail?.department_prompt_links || {};
+                (agentDetail?.department_prompt_links as Record<string, string | undefined>) || {};
               const existingPromptIds = targetDeptIds
                 .map((deptId) => departmentPromptLinks[deptId])
                 .filter((promptId) => promptId !== undefined);
@@ -1154,7 +1190,7 @@ export default function Agent({
 
         // Note: profileId is added by the server action
         await handleUpdateAgent({
-          agentId,
+          agent_id: agentId,
           name: draftState.name!,
           description: draftState.description!,
           prompt_id: shouldCreateNewPrompt ? null : draftState.promptId || null,
@@ -1230,12 +1266,16 @@ export default function Agent({
   const isReadonly = useMemo(() => {
     if (!isEditMode) return false;
     if (!agentData) return true;
-    return !agentData.can_edit;
+    // can_edit only exists on AgentDetailOut, not AgentNewOut
+    if ("can_edit" in agentData) {
+      return !agentData.can_edit;
+    }
+    return false; // AgentNewOut means creating new, so not readonly
   }, [isEditMode, agentData]);
 
   // Step status calculation for GenericForm
   const getStepStatus = useCallback(
-    (stepId: string, formData: Values<typeof agentSearchParamsClient>): StepStatus => {
+    (stepId: string, formData: Values<Record<string, Parser<unknown>>>): StepStatus => {
       const hasRole = !!draftState.role;
       const hasModel = !!draftState.modelId?.trim();
       const hasName = !!draftState.name?.trim();
@@ -1279,19 +1319,19 @@ export default function Agent({
         id: "basic",
         title: "Basic Information",
         description: "Set the agent name, description, departments, and active status.",
-        resetFields: ["name", "description", "active", "departmentIds"] as (keyof Values<typeof agentSearchParamsClient>)[],
+        resetFields: ["name", "description", "active", "departmentIds"] as string[],
       },
       {
         id: "role",
         title: "Role",
         description: "Select the agent role that defines its capabilities.",
-        resetFields: ["role"] as (keyof Values<typeof agentSearchParamsClient>)[],
+        resetFields: ["role"] as string[],
       },
       {
         id: "model",
         title: "Model",
         description: "Select the AI model for this agent.",
-        resetFields: ["modelId"] as (keyof Values<typeof agentSearchParamsClient>)[],
+        resetFields: ["modelId"] as string[],
       },
     ];
 
@@ -1304,7 +1344,7 @@ export default function Agent({
         title: "Temperature",
         description: "Configure the temperature setting for the model.",
         optional: true,
-        resetFields: ["model_temperature_level_id"] as (keyof Values<typeof agentSearchParamsClient>)[],
+        resetFields: ["model_temperature_level_id"] as string[],
       });
 
       if (selectedModelCapabilities.has_text_output) {
@@ -1313,7 +1353,7 @@ export default function Agent({
           title: "Reasoning Effort",
           description: "Configure the reasoning effort level.",
           optional: true,
-          resetFields: ["model_reasoning_level_id"] as (keyof Values<typeof agentSearchParamsClient>)[],
+          resetFields: ["model_reasoning_level_id"] as string[],
         });
       }
 
@@ -1327,7 +1367,7 @@ export default function Agent({
           title: "Voices",
           description: "Select voices for audio output.",
           optional: true,
-          resetFields: ["model_voice_ids"] as (keyof Values<typeof agentSearchParamsClient>)[],
+          resetFields: ["model_voice_ids"] as string[],
         });
       }
     }
@@ -1336,7 +1376,7 @@ export default function Agent({
       id: "prompt",
       title: "Prompt Instructions",
       description: "Define the system prompt that controls agent behavior.",
-      resetFields: ["systemPrompt", "promptId"] as (keyof Values<typeof agentSearchParamsClient>)[],
+        resetFields: ["systemPrompt", "promptId"] as string[],
     };
 
     return [...baseSteps, ...configSteps, promptStep];
@@ -1558,12 +1598,7 @@ export default function Agent({
                           <div className="space-y-2">
                             <Label htmlFor="department">Department</Label>
                             <GenericPicker
-                              items={
-                                (agentData?.department_mapping || {}) as Record<
-                                  string,
-                                  { id: string; name: string; description?: string }
-                                >
-                              }
+                              items={departmentMapping}
                               itemIds={agentData.valid_department_ids}
                               selectedIds={draftState.departmentIds || []}
                               onSelect={(ids) => {
@@ -2046,10 +2081,6 @@ export default function Agent({
                       return availableReasoningLevels;
                     }
                     const searchLower = reasoningSearch.toLowerCase();
-                    const reasoningMapping = (agentDetail?.reasoning_mapping || {}) as Record<
-                      string,
-                      { id: string; name: string; description?: string }
-                    >;
                     return availableReasoningLevels.filter((level) => {
                       const mappingItem = reasoningMapping[level];
                       if (!mappingItem) return false;
@@ -2057,7 +2088,7 @@ export default function Agent({
                         `${mappingItem.name} ${mappingItem.description || ""}`.toLowerCase();
                       return searchText.includes(searchLower);
                     });
-                  }, [reasoningOptions, reasoningSearch, agentDetail?.reasoning_mapping]);
+                  }, [reasoningOptions, reasoningSearch, reasoningMapping]);
 
                   return (
                     <StepCard
@@ -2076,10 +2107,6 @@ export default function Agent({
                     >
                       <div className="grid grid-cols-4 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2">
                         {filteredReasoningLevels.map((level) => {
-                          const reasoningMapping = (agentDetail?.reasoning_mapping || {}) as Record<
-                            string,
-                            { id: string; name: string; description?: string }
-                          >;
                           const mappingItem = reasoningMapping[level];
                           if (!mappingItem) return null;
 

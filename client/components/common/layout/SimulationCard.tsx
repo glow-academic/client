@@ -36,8 +36,12 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type PracticeOverviewOut = OutputOf<"/api/v4/practice/overview", "post">;
-type StandardGroupsMapping = PracticeOverviewOut["standard_groups_mapping"];
-type StandardsMapping = PracticeOverviewOut["standards_mapping"];
+type StandardGroupsMapping = "standard_groups_mapping" extends keyof PracticeOverviewOut
+  ? PracticeOverviewOut["standard_groups_mapping"]
+  : Record<string, string[]>;
+type StandardsMapping = "standards_mapping" extends keyof PracticeOverviewOut
+  ? PracticeOverviewOut["standards_mapping"]
+  : Record<string, { name: string; description: string | null }>;
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present

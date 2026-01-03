@@ -60,7 +60,7 @@ export default function AttemptChat({
   // Track if we've initialized from server data to prevent overwriting user's current view
   const hasInitializedFromServerRef = useRef(false);
   const [currentChatIndex, setCurrentChatIndex] = useState(
-    initialAttemptData.currentChatIndex ?? 0
+    initialAttemptData.current_chat_index ?? 0
   );
 
   // Content index state - tracks which content item (chat/video) is currently displayed
@@ -78,10 +78,10 @@ export default function AttemptChat({
     // After that, preserve user's current view during refresh to prevent chat switching
     // This prevents messages from disappearing when server's currentChatIndex changes
     // (e.g., due to branching creating new chats)
-    if (initialAttemptData?.currentChatIndex !== undefined) {
+    if (initialAttemptData?.current_chat_index !== undefined) {
       if (!hasInitializedFromServerRef.current) {
         // Initial load: sync from server
-        setCurrentChatIndex(initialAttemptData.currentChatIndex);
+        setCurrentChatIndex(initialAttemptData.current_chat_index);
         hasInitializedFromServerRef.current = true;
       } else if (initialAttemptData.chats) {
         // Subsequent refreshes: only sync if current chat no longer exists or is invalid
@@ -89,11 +89,11 @@ export default function AttemptChat({
         // Use attemptData (current state) to check current chat, not initialAttemptData
         const currentChatId = attemptData?.chats?.[currentChatIndex]?.chat?.id;
         const currentChatStillExists = initialAttemptData.chats.some(
-          (c) => c.chat.id === currentChatId
+          (c) => c.chat?.id === currentChatId
         );
         if (!currentChatStillExists && initialAttemptData.chats.length > 0) {
           // Current chat no longer exists, sync to server's suggestion
-          setCurrentChatIndex(initialAttemptData.currentChatIndex);
+          setCurrentChatIndex(initialAttemptData.current_chat_index);
         }
         // Otherwise, keep current index to preserve user's view
       }
@@ -118,9 +118,9 @@ export default function AttemptChat({
         Object.entries(prev).forEach(([chatId, optimisticState]) => {
           // Keep optimistic state only if server doesn't have grading state for this chat
           const chatData = initialAttemptData?.chats?.find(
-            (c) => c.chat.id === chatId
+            (c) => c.chat?.id === chatId
           );
-          if (!chatData?.gradingState) {
+          if (!chatData?.grading_state) {
             updated[chatId] = optimisticState;
           }
         });
@@ -131,7 +131,7 @@ export default function AttemptChat({
         const updated: Record<string, HintsByMessage[]> = {};
         Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
           const chatData = initialAttemptData?.chats?.find(
-            (c) => c.chat.id === chatId
+            (c) => c.chat?.id === chatId
           );
           const serverHints = chatData?.hints || [];
 
@@ -139,12 +139,14 @@ export default function AttemptChat({
           // A hint is "complete" if it has hints with non-empty text
           const serverHintsMap = new Map<string, HintsByMessage>();
           serverHints.forEach((h) => {
-            serverHintsMap.set(h.messageId, h);
+            if (h.message_id) {
+              serverHintsMap.set(h.message_id, h);
+            }
           });
 
           const missingOrIncompleteHints = optimisticChatHints.filter(
             (optimisticHint) => {
-              const serverHint = serverHintsMap.get(optimisticHint.messageId);
+              const serverHint = optimisticHint.messageId ? serverHintsMap.get(optimisticHint.messageId) : undefined;
               // Keep optimistic hint if:
               // 1. Server doesn't have hints for this messageId, OR
               // 2. Server hints exist but don't have the same count as optimistic, OR
@@ -177,7 +179,7 @@ export default function AttemptChat({
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const [showResults, setShowResults] = useState(
-    initialAttemptData.showResults ?? false
+    initialAttemptData.show_results ?? false
   );
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
@@ -213,7 +215,7 @@ export default function AttemptChat({
 
   // Extract data from v3 response
   const chats = useMemo(
-    () => attemptData?.chats.map((c) => c.chat) || [],
+    () => attemptData?.chats?.map((c) => c.chat).filter((chat): chat is NonNullable<typeof chat> => chat !== null) || [],
     [attemptData]
   );
   const attempt = attemptData?.attempt || null;
@@ -238,18 +240,18 @@ export default function AttemptChat({
   const scenario = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return null;
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat?.id === currentChat.id
     );
     return chatData?.scenario ?? null;
   }, [attemptData, currentChat]);
 
   const scenarioDocuments = useMemo(
-    () => attemptData?.scenarioDocuments || [],
-    [attemptData?.scenarioDocuments]
+    () => attemptData?.scenario_documents || [],
+    [attemptData?.scenario_documents]
   );
   const attemptProfiles = useMemo(
-    () => attemptData?.attemptProfiles || [],
-    [attemptData?.attemptProfiles]
+    () => attemptData?.attempt_profiles || [],
+    [attemptData?.attempt_profiles]
   );
   const attemptProfileId = useMemo(() => {
     const activeProfile = attemptProfiles.find((ap) => ap["active"]);
@@ -261,7 +263,7 @@ export default function AttemptChat({
     if (!attemptData?.chats) return {};
     const map: Record<string, ChatDataType["scenario"]> = {};
     attemptData.chats.forEach((chatData) => {
-      if (chatData.chat.id) {
+      if (chatData.chat?.id) {
         map[chatData.chat.id] = chatData.scenario;
       }
     });
@@ -269,7 +271,7 @@ export default function AttemptChat({
   }, [attemptData]);
 
   // Rubric structure
-  const rubricStructure = attemptData?.rubricStructure ?? null;
+  const rubricStructure = attemptData?.rubric_structure ?? null;
 
   // Optimistic grading states - updated in realtime from WebSocket events
   type OptimisticGradingState = NonNullable<ChatDataType["gradingState"]>;
@@ -1028,7 +1030,7 @@ export default function AttemptChat({
           const standardIds = rubricStructure.standardGroups[groupId] || [];
 
           // Find the standard with matching points (score)
-          const matchingStandard = standardIds.find((stdId) => {
+          const matchingStandard = standardIds.find((stdId: string) => {
             const standard = rubricStructure.standardsMapping[stdId];
             return standard && standard["points"] === data.score;
           });
@@ -1331,7 +1333,7 @@ export default function AttemptChat({
 
     const sortedChats = [...chats].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()
     );
     const idx = sortedChats.findIndex((c) => c.id === desiredNextId);
     if (idx !== -1) {
@@ -1472,11 +1474,11 @@ export default function AttemptChat({
   // Helper function to calculate adjusted time limit for multi-simulation attempts
   const calculateAdjustedTimeLimit = useCallback(
     (_chat: Chat | null): number => {
-      if (!simulation?.timeLimit || !chats) {
+      if (!simulation?.time_limit || !chats) {
         return 0;
       }
 
-      const totalTimeLimitSeconds = simulation.timeLimit * 60;
+      const totalTimeLimitSeconds = simulation.time_limit * 60;
       const totalChats = chats.length;
 
       // For multi-simulation attempts, split time evenly
@@ -1487,7 +1489,7 @@ export default function AttemptChat({
       // For single simulation attempts, use the full time limit
       return totalTimeLimitSeconds;
     },
-    [simulation?.timeLimit, chats]
+    [simulation?.time_limit, chats]
   );
 
   // Helper function to calculate how much time was exceeded for a chat
@@ -1516,8 +1518,8 @@ export default function AttemptChat({
       // Check if we've already reset timestamps for this chat to prevent infinite loops
       if (!chat.id || resetChatTimestampsRef.current.has(chat.id)) return;
 
-      const createdAt = new Date(chat.createdAt);
-      const updatedAt = new Date(chat.updatedAt);
+      const createdAt = new Date(chat.created_at ?? 0);
+      const updatedAt = new Date(chat.updated_at ?? 0);
 
       // Check if createdAt and updatedAt are the same (within 1 second tolerance)
       const timeDiff = Math.abs(createdAt.getTime() - updatedAt.getTime());
@@ -1573,9 +1575,9 @@ export default function AttemptChat({
     }
 
     // Filter documents to only include current chat's documents
-    const currentChatDocIds = displayChat.documentIds || [];
-    const filteredDocs = scenarioDocuments.filter((doc) =>
-      currentChatDocIds.includes(doc.document_id)
+    const currentChatDocIds = displayChat.document_ids || [];
+    const filteredDocs = scenarioDocuments.filter((doc: { document_id: string | null }) =>
+      doc.document_id && currentChatDocIds.includes(doc.document_id)
     );
 
     // Set to first document of current chat, or null if no documents
@@ -1615,10 +1617,10 @@ export default function AttemptChat({
   }
 
   // In infinite mode, force chat view until time has expired OR attempt is inactive
-  const isAttemptInfinite = Boolean(attempt?.infiniteMode);
-  const hasTimeLimit = Boolean(simulation?.timeLimit);
+  const isAttemptInfinite = Boolean(attempt?.infinite_mode);
+  const hasTimeLimit = Boolean(simulation?.time_limit);
   const timeRemaining = timer.remaining;
-  const isAttemptActive = attemptData?.isActive ?? true; // Default to true for backwards compatibility
+  const isAttemptActive = attemptData?.is_active ?? true; // Default to true for backwards compatibility
   const shouldForceChatView =
     isAttemptInfinite &&
     isAttemptActive &&
@@ -1678,7 +1680,7 @@ export default function AttemptChat({
   const currentChatData = attemptData?.chats?.[currentChatIndex];
   const scenarioVideo = currentChatData?.video;
   const scenarioQuestions = currentChatData?.video?.questions || [];
-  const hasVideo = Boolean(scenarioVideo?.uploadId);
+  const hasVideo = Boolean(scenarioVideo?.upload_id);
 
   // If scenario has video, render video view instead of chat
   // Note: Video is now part of scenario, not a separate content type
@@ -1736,7 +1738,7 @@ export default function AttemptChat({
 
         {/* Video player in main area */}
         <div className="flex-1 bg-black flex items-center justify-center">
-          {scenarioVideo?.uploadId ? (
+          {scenarioVideo?.upload_id ? (
             <video
               src={`/api/v4/videos/${scenarioVideo.id}/stream`}
               controls

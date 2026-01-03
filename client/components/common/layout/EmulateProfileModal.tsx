@@ -67,7 +67,7 @@ export function EmulateProfileModal({
   // Search when user types (debounced)
   const handleSearch = useCallback(
     async (query: string) => {
-      if (!activeProfile?.id) return;
+      if (!activeProfile?.profile_id) return;
       setIsLoading(true);
       try {
         const data = await searchSimulatableProfiles({
@@ -229,14 +229,15 @@ export function EmulateProfileModal({
                 </TableHeader>
                 <TableBody>
                   {searchResults.map((profile) => {
-                    const isSelected = selectedProfileId === profile.id;
+                    const profileId = profile.profile_id || "";
+                    const isSelected = selectedProfileId === profileId;
                     return (
                       <TableRow
-                        key={profile.id}
+                        key={profileId}
                         className={`cursor-pointer hover:bg-muted/50 transition-colors ${
                           isSelected ? "bg-muted" : ""
                         }`}
-                        onClick={() => handleSelectProfile(profile.id)}
+                        onClick={() => handleSelectProfile(profileId)}
                       >
                         <TableCell className="w-[50px]">
                           <div
@@ -252,12 +253,12 @@ export function EmulateProfileModal({
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {profile.firstName} {profile.lastName}
+                          {profile.first_name || ""} {profile.last_name || ""}
                         </TableCell>
                         <TableCell>
                           {profile.emails && profile.emails.length > 0
                             ? profile.emails.join(", ")
-                            : profile.primaryEmail || "No email"}
+                            : profile.primary_email || "No email"}
                         </TableCell>
                         <TableCell>
                           {(() => {

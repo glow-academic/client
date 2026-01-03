@@ -426,15 +426,7 @@ export function SimulationScenariosTable({
           {!readonly && onScenarioSelect && (
             <div className="w-[200px]">
               <ScenarioPicker
-                scenarioMapping={
-                  scenarioMapping as Record<
-                    string,
-                    OutputOf<
-                      "/api/v4/simulations/list",
-                      "post"
-                    >["scenario_mapping"][string]
-                  >
-                }
+                scenarioMapping={scenarioMapping}
                 validScenarioIds={validScenarioIds}
                 selectedScenarioIds={selectedScenarioIds}
                 onSelect={onScenarioSelect}

@@ -225,14 +225,21 @@ export default function Dashboard({
     // Normalize Growth chartData to ensure all required fields are present
     const normalizedGrowthChartData = (growthData.chart_data || []).map(
       (point) => ({
-        date: point.date,
+        date: point.date || "",
         averageScore: point.average_score ?? null,
         completionRate: point.completion_rate ?? null,
         firstAttemptPassRate: point.first_attempt_pass_rate ?? null,
         sessionEfficiency: point.session_efficiency ?? null,
         stagnationRate: point.stagnation_rate ?? null,
       }),
-    );
+    ) as Array<{
+      date: string;
+      averageScore: number | null;
+      completionRate: number | null;
+      firstAttemptPassRate: number | null;
+      sessionEfficiency: number | null;
+      stagnationRate: number | null;
+    }>;
 
     // Normalize PersonaPerformance chartData to ensure score is always present
     const normalizedPersonaChartData = (personaPerformance.chart_data || []).map((persona) => ({
@@ -249,12 +256,12 @@ export default function Dashboard({
     // Normalize RubricHeatmap matrices to ensure required fields
     const normalizedRubricMatrices = (rubricHeatmap.matrices || []).map(
       (matrix) => ({
-        ...matrix,
+        rubricId: matrix.rubric_id || "",
         standardGroups: (matrix.standard_groups || []).map((sg) => ({
-          id: sg.id,
-          name: sg.name,
+          id: sg.id || "",
+          name: sg.name || "",
           shortName: sg.short_name ?? null,
-          rubricId: sg.rubric_id,
+          rubricId: sg.rubric_id || "",
         })),
         matrix: Array.isArray(matrix.matrix) 
           ? (matrix.matrix as unknown as Array<Array<{ p_value?: number | null; [key: string]: unknown }>>).map((row) =>
@@ -267,8 +274,15 @@ export default function Dashboard({
             )
           : [],
         insights: matrix.insights ?? null,
+        hasData: matrix.has_data ?? false,
       }),
-    );
+    ) as Array<{
+      rubricId: string;
+      standardGroups: Array<{ id: string; name: string; shortName: string | null; rubricId: string }>;
+      matrix: Array<Array<{ pValue: number | null; [key: string]: unknown }>>;
+      insights: string | null;
+      hasData: boolean;
+    }>;
 
     // Normalize windowAverages to ensure last and prev are always present
     const normalizedWindowAverages = growthData.window_averages ? {
@@ -289,7 +303,14 @@ export default function Dashboard({
       <Growth
         key="growth"
         chartData={normalizedGrowthChartData}
-        availableMetrics={growthData.available_metrics || []}
+        availableMetrics={(growthData.available_metrics || []).map((m) => ({
+          id: m.id || "",
+          name: m.name || "",
+          color: m.color || "",
+          unit: m.unit || "",
+          description: m.description || "",
+          formatterId: (m.formatter_id || "int") as "percent" | "int" | "sec" | "min" | "hours" | "minutes",
+        }))}
         windowAverages={normalizedWindowAverages}
         hasDataAvailable={(growthData.chart_data || []).length > 0}
         actionableInsight={bundle.insights?.growth ?? null}
@@ -302,9 +323,15 @@ export default function Dashboard({
         validSimulationIds={personaPerformance.valid_simulation_ids || []}
         personaColors={personaPerformance.persona_colors || []}
         hasDataAvailable={(personaPerformance.chart_data || []).length > 0}
-        actionableInsights={bundle.insights?.persona}
+        actionableInsights={bundle.insights?.persona ? Object.fromEntries(
+          Object.entries(bundle.insights.persona).map(([k, v]) => [k, v ?? null])
+        ) : undefined}
         performanceStatus="neutral"
-        thresholds={bundle.thresholds}
+        thresholds={bundle.thresholds ? {
+          success: bundle.thresholds.success ?? 0,
+          warning: bundle.thresholds.warning ?? 0,
+          danger: bundle.thresholds.danger ?? 0,
+        } : { success: 0, warning: 0, danger: 0 }}
       />,
       <RubricHeatmap
         key="rubric-heatmap"
@@ -360,22 +387,47 @@ export default function Dashboard({
         simulations={bundle.simulations || []}
         validSimulationIds={cohortPerformance.valid_simulation_ids || []}
         profileId={profileId}
-        actionableInsights={bundle.insights?.cohort}
+        actionableInsights={bundle.insights?.cohort ? Object.fromEntries(
+          Object.entries(bundle.insights.cohort).map(([k, v]) => [k, v ?? null])
+        ) : undefined}
         status={validateStatus(cohortPerformance.status)}
       />,
       <AttemptImprovement
         key="attempt-improvement"
-        chartData={attemptImprovement.chart_data || []}
-        facts={attemptImprovement.facts || []}
-        simulations={bundle.simulations || []}
+        chartData={(attemptImprovement.chart_data || []).map((d) => ({
+          attempt: d.attempt || "",
+          average_score: d.average_score ?? null,
+          average_time: d.average_time ?? null,
+          pass_rate: d.pass_rate ?? null,
+        }))}
+        facts={(attemptImprovement.facts || []).map((f) => ({
+          simulation_id: f.simulation_id || "",
+          attempt_no: f.attempt_no ?? null,
+          avg_grade: f.avg_grade ?? null,
+          avg_minutes: f.avg_minutes ?? null,
+          pass_rate: f.pass_rate ?? null,
+        }))}
+        simulations={(bundle.simulations || []).map((s) => ({
+          simulation_id: s.simulation_id || "",
+          name: s.name || "",
+          description: s.description || "",
+        }))}
         validSimulationIds={attemptImprovement.valid_simulation_ids || []}
         actionableInsight={bundle.insights?.attempt_improvement ?? null}
         status={validateStatus(attemptImprovement.status)}
       />,
       <SkillPerformance
         key="skill-performance"
-        packages={normalizedSkillPackages}
-        rubrics={bundle.rubrics || []}
+        packages={normalizedSkillPackages as Array<{
+          radarData: Array<{ metric: string | null; description: string | undefined; value: number | null; fullMark: number | null }>;
+          groupFacts: Array<{ groupDescription: string | undefined; group_id: string | null; [key: string]: unknown; avg_pct: number | null }>;
+          rubric_id: string | null;
+        }>}
+        rubrics={(bundle.rubrics || []).map((r) => ({
+          rubric_id: r.rubric_id || "",
+          name: r.name || "",
+          description: r.description || "",
+        }))}
         validRubricIds={skillPerformance.valid_rubric_ids || []}
         actionableInsight={bundle.insights?.skill_performance ?? null}
         status={validateStatus(skillPerformance.status)}
@@ -395,19 +447,62 @@ export default function Dashboard({
     return [
       <ScenarioPerformance
         key="scenario-performance"
-        attributeAttemptFacts={scenarioPerformance.attribute_attempt_facts || []}
-        attributeScenarioFacts={scenarioPerformance.attribute_scenario_facts || []}
-        parameters={bundle.parameters || []}
-        fields={bundle.fields || []}
+        attributeAttemptFacts={(scenarioPerformance.attribute_attempt_facts || []).map((f) => ({
+          parameter_id: f.parameter_id || "",
+          parameter_item_id: f.parameter_item_id || "",
+          date: f.date || "",
+          timestamp: f.timestamp ?? null,
+          avg_score: f.avg_score ?? null,
+          attempts: f.attempts ?? null,
+          passed_attempts: f.passed_attempts ?? null,
+        }))}
+        attributeScenarioFacts={(scenarioPerformance.attribute_scenario_facts || []).map((f) => ({
+          parameter_id: f.parameter_id || "",
+          parameter_item_id: f.parameter_item_id || "",
+          scenario_id: f.scenario_id || "",
+        }))}
+        parameters={(bundle.parameters || []).map((p) => ({
+          parameter_id: p.parameter_id || "",
+          name: p.name || "",
+          description: p.description || "",
+          numerical: p.numerical ?? null,
+          document_parameter: p.document_parameter ?? null,
+          persona_parameter: p.persona_parameter ?? null,
+        }))}
+        fields={(bundle.fields || []).map((f) => ({
+          field_id: f.field_id || "",
+          name: f.name || "",
+          description: f.description || "",
+          parameter_id: f.parameter_id || "",
+          parameter_name: f.parameter_name || "",
+        }))}
         validParameterIds={scenarioPerformance.valid_parameter_ids || []}
         actionableInsight={bundle.insights?.scenario_performance ?? null}
         status={validateStatus(scenarioPerformance.status)}
       />,
       <ScenarioStats
         key="scenario-stats"
-        numericAttemptFacts={scenarioStats.numeric_attempt_facts || []}
-        numericScenarioFacts={scenarioStats.numeric_scenario_facts || []}
-        parameters={bundle.parameters || []}
+        numericAttemptFacts={(scenarioStats.numeric_attempt_facts || []).map((f) => ({
+          parameter_id: f.parameter_id || "",
+          level_label: f.level_label || "",
+          level_value: f.level_value ?? null,
+          score: f.score ?? null,
+          attempts: f.attempts ?? null,
+        }))}
+        numericScenarioFacts={(scenarioStats.numeric_scenario_facts || []).map((f) => ({
+          parameter_id: f.parameter_id || "",
+          scenario_id: f.scenario_id || "",
+          level_label: f.level_label || "",
+          level_value: f.level_value ?? null,
+        }))}
+        parameters={(bundle.parameters || []).map((p) => ({
+          parameter_id: p.parameter_id || "",
+          name: p.name || "",
+          description: p.description || "",
+          numerical: p.numerical ?? null,
+          document_parameter: p.document_parameter ?? null,
+          persona_parameter: p.persona_parameter ?? null,
+        }))}
         validNumericParameterIds={scenarioStats.valid_numeric_parameter_ids || []}
         actionableInsight={bundle.insights?.scenario_stats ?? null}
         status={validateStatus(scenarioStats.status)}
@@ -427,23 +522,70 @@ export default function Dashboard({
       <SimulationPerformance
         key="simulation-performance"
         validSimulationIds={simulationPerformance.valid_simulation_ids || []}
-        scenarioFacts={simulationPerformance.scenario_facts || []}
-        simulations={bundle.simulations || []}
+        scenarioFacts={(simulationPerformance.scenario_facts || []).map((f) => ({
+          simulation_id: f.simulation_id || "",
+          scenario_id: f.scenario_id || "",
+          scenario_name: f.scenario_name || "",
+          avg_score: f.avg_score ?? null,
+          success_rate: f.success_rate ?? null,
+          total_attempts: f.total_attempts ?? null,
+          completed_attempts: f.completed_attempts ?? null,
+        }))}
+        simulations={(bundle.simulations || []).map((s) => ({
+          simulation_id: s.simulation_id || "",
+          name: s.name || "",
+          description: s.description || "",
+        }))}
         actionableInsight={bundle.insights?.simulation_performance ?? null}
         status={validateStatus(simulationPerformance.status)}
       />,
       <SimulationComposition
         key="simulation-composition"
-        simulationFacts={simulationComposition.simulation_facts || []}
+        simulationFacts={(simulationComposition.simulation_facts || []).map((f) => ({
+          simulation_id: f.simulation_id || "",
+          title: f.title || "",
+          avg_score: f.avg_score ?? null,
+          completion_rate: f.completion_rate ?? null,
+          total_attempts: f.total_attempts ?? null,
+          scenario_count: f.scenario_count ?? null,
+        }))}
         simulationParameterFactsCategorical={
-          simulationComposition.simulation_parameter_facts_categorical || []
+          (simulationComposition.simulation_parameter_facts_categorical || []).map((f) => ({
+            simulation_id: f.simulation_id || "",
+            parameter_id: f.parameter_id || "",
+            parameter_item_id: f.parameter_item_id || "",
+            scenario_count: f.scenario_count ?? null,
+          }))
         }
         simulationParameterFactsNumeric={
-          simulationComposition.simulation_parameter_facts_numeric || []
+          (simulationComposition.simulation_parameter_facts_numeric || []).map((f) => ({
+            simulation_id: f.simulation_id || "",
+            parameter_id: f.parameter_id || "",
+            avg_level: f.avg_level ?? null,
+            level_label: f.level_label || "",
+            scenario_count: f.scenario_count ?? null,
+          }))
         }
-        simulations={bundle.simulations || []}
-        parameters={bundle.parameters || []}
-        fields={bundle.fields || []}
+        simulations={(bundle.simulations || []).map((s) => ({
+          simulation_id: s.simulation_id || "",
+          name: s.name || "",
+          description: s.description || "",
+        }))}
+        parameters={(bundle.parameters || []).map((p) => ({
+          parameter_id: p.parameter_id || "",
+          name: p.name || "",
+          description: p.description || "",
+          numerical: p.numerical ?? null,
+          document_parameter: p.document_parameter ?? null,
+          persona_parameter: p.persona_parameter ?? null,
+        }))}
+        fields={(bundle.fields || []).map((f) => ({
+          field_id: f.field_id || "",
+          name: f.name || "",
+          description: f.description || "",
+          parameter_id: f.parameter_id || "",
+          parameter_name: f.parameter_name || "",
+        }))}
         validSimulationIds={simulationComposition.valid_simulation_ids || []}
         actionableInsight={bundle.insights?.simulation_composition ?? null}
         status={validateStatus(simulationComposition.status)}

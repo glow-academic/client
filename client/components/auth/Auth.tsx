@@ -32,11 +32,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
-import { cn } from "@/lib/utils";
 import {
   ArrowDown,
   ArrowUp,
-  Check,
   GripVertical,
   Lock,
   LockOpen,
@@ -555,7 +553,7 @@ function AuthComponent({
       const newAuthItemActiveStates: Record<string, boolean> = {};
       const newAuthItemEncryptedStates: Record<string, boolean> = {};
 
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         newAuthItemIds.push(item.id);
         newAuthItemData[item.id] = {
           name: item.name,

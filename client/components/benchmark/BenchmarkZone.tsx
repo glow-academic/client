@@ -9,7 +9,8 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type EvalsListOut = OutputOf<"/api/v4/evals/list", "post">;
-type EvalItem = EvalsListOut["evals"][number];
+type EvalsArray = NonNullable<EvalsListOut["evals"]>;
+type EvalItem = EvalsArray extends Array<infer T> ? T : never;
 
 // Rubric mapping types
 type RubricMapping = {

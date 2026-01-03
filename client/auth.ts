@@ -43,6 +43,8 @@ async function createGuestProfile(
         last_name: lastName,
         emails: [email],
         role: "guest",
+        primary_email_index: 0,
+        active: true,
         cohort_ids: [],
         department_ids: [],
       },
@@ -152,8 +154,9 @@ export const {
           try {
             await api.post("/profile/update", {
               body: {
-                profile_id: existingProfile.id,
+                target_profile_id: existingProfile.id,
                 last_login: new Date().toISOString(),
+                last_active: new Date().toISOString(),
               },
             });
           } catch (error) {
@@ -210,10 +213,11 @@ export const {
             try {
               await api.post("/profile/update", {
                 body: {
-                  profile_id: existingProfile.id,
+                  target_profile_id: existingProfile.id,
                   first_name: firstName,
                   last_name: lastName,
                   last_login: new Date().toISOString(),
+                  last_active: new Date().toISOString(),
                 },
               });
             } catch (error) {

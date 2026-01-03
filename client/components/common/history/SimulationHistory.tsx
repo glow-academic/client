@@ -73,10 +73,13 @@ import { toast } from "sonner";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 // Use strong server types directly (union of all history endpoint types)
+type HomeHistoryData = NonNullable<OutputOf<"/api/v4/home/history", "post">["data"]>;
+type DashboardHistoryData = NonNullable<OutputOf<"/api/v4/dashboard/history", "post">["data"]>;
+type PracticeHistoryData = NonNullable<OutputOf<"/api/v4/practice/history", "post">["data"]>;
 export type HistoryDataItem =
-  | OutputOf<"/api/v4/home/history", "post">["data"][number]
-  | OutputOf<"/api/v4/dashboard/history", "post">["data"][number]
-  | OutputOf<"/api/v4/practice/history", "post">["data"][number];
+  | (HomeHistoryData extends Array<infer T> ? T : never)
+  | (DashboardHistoryData extends Array<infer T> ? T : never)
+  | (PracticeHistoryData extends Array<infer T> ? T : never);
 
 // Inlined row actions component (from DataTableRowActions)
 function HistoryRowActions({ item }: { item: HistoryDataItem }) {
@@ -750,7 +753,7 @@ export default function SimulationHistory({
 
           // Search in persona names
           if (
-            item.personaNames.some((name) =>
+            item.personaNames.some((name: string) =>
               name.toLowerCase().includes(searchValue),
             )
           ) {

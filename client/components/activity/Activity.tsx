@@ -292,13 +292,15 @@ export default function Activity({
   // Extract chart data from bundle and transform to camelCase for ActivityMetricsGraph
   const chartData = useMemo(() => {
     const rawChartData = activityData.bundleData?.chart_data || [];
-    return rawChartData.map((point) => ({
-      date: point.date,
-      activeProfiles: point.active_profiles,
-      feedbackEntries: point.feedback_entries,
-      activityEntries: point.activity_entries,
-      errors: point.errors,
-    }));
+    return rawChartData
+      .filter((point) => point.date !== null && point.date !== undefined)
+      .map((point) => ({
+        date: point.date!,
+        activeProfiles: point.active_profiles ?? 0,
+        feedbackEntries: point.feedback_entries ?? 0,
+        activityEntries: point.activity_entries ?? 0,
+        errors: point.errors ?? 0,
+      }));
   }, [activityData.bundleData?.chart_data]);
 
   // Extract unique profiles for faceted filter
@@ -386,8 +388,8 @@ export default function Activity({
 
   // Activity table
   const activityTable = useReactTable({
-    data: activityList,
-    columns: activityColumns,
+    data: activityList as ActivityRow[],
+    columns: activityColumns as ColumnDef<ActivityRow>[],
     getCoreRowModel: getCoreRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),

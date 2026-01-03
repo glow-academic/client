@@ -39,13 +39,13 @@ export function SimulationControls({
 
   // Extract data from attemptData
   const attempt = attemptData?.attempt || null;
-  const currentChatIndex = attemptData?.currentChatIndex ?? 0;
-  const shouldShowControls = attemptData?.shouldShowControls ?? true;
+  const currentChatIndex = attemptData?.current_chat_index ?? 0;
+  const shouldShowControls = attemptData?.should_show_controls ?? true;
   const isPracticeSimulation =
-    attemptData?.simulation?.practiceSimulation ?? false;
-  const isInfiniteMode = attemptData?.attempt?.infiniteMode ?? false;
-  const showResults = attemptData?.showResults ?? false;
-  const isActive = attemptData?.isActive ?? true;
+    attemptData?.simulation?.practice_simulation ?? false;
+  const isInfiniteMode = attemptData?.attempt?.infinite_mode ?? false;
+  const showResults = attemptData?.show_results ?? false;
+  const isActive = attemptData?.is_active ?? true;
 
   // Find current chat from server data
   const currentChat = useMemo(() => {
@@ -60,7 +60,7 @@ export function SimulationControls({
   const currentMessages = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id,
+      (c) => c.chat?.id === currentChat.id,
     );
     return chatData?.messages ?? [];
   }, [attemptData, currentChat]);
@@ -280,17 +280,18 @@ export function SimulationControls({
   // Get previous chats for current chat to show red dot indicator
   // Must be computed before early returns to maintain hook order
   const currentChatData = useMemo(() => {
-    return attemptData?.chats.find((c) => c.chat.id === currentChat?.id);
+    if (!attemptData?.chats) return undefined;
+    return attemptData.chats.find((c) => c.chat?.id === currentChat?.id);
   }, [attemptData?.chats, currentChat?.id]);
 
   // Check if current content is a video
   const isVideo = useMemo(() => {
-    return currentChatData?.contentType === "video";
+    return currentChatData?.content_type === "video";
   }, [currentChatData]);
 
   // Get available continuation options from server
   const continuationOptions = useMemo(() => {
-    return attemptData?.availableContinuationOptions || null;
+    return attemptData?.available_continuation_options || null;
   }, [attemptData]);
 
   // Generate permutations from continuation options (sequential: 1, 1+2, 1+2+3, etc.)
@@ -313,26 +314,26 @@ export function SimulationControls({
   };
 
   const continuationPermutations = useMemo(() => {
-    if (!continuationOptions?.nextSequentialOptions?.length) return [];
+    if (!continuationOptions?.next_sequential_options?.length) return [];
 
     // Group options by scenario position
     const optionsByPosition = new Map<
       number,
       ContinuationPermutationOption[]
     >();
-    continuationOptions.nextSequentialOptions.forEach((opt) => {
+    continuationOptions.next_sequential_options.forEach((opt: { scenario_id: string; scenario_name: string; previous_chat_id: string | null; title: string; score: number | null; percentage: number | null; time_taken: number | null; position?: number | null }) => {
       const pos = opt.position || 0;
       if (!optionsByPosition.has(pos)) {
         optionsByPosition.set(pos, []);
       }
       optionsByPosition.get(pos)!.push({
-        scenarioId: opt.scenarioId,
-        scenarioName: opt.scenarioName,
-        previousChatId: opt.previousChatId,
+        scenarioId: opt.scenario_id,
+        scenarioName: opt.scenario_name,
+        previousChatId: opt.previous_chat_id,
         title: opt.title,
         score: opt.score ?? null,
         percentage: opt.percentage ?? null,
-        timeTaken: opt.timeTaken ?? null,
+        timeTaken: opt.time_taken ?? null,
       });
     });
 

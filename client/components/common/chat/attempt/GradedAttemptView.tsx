@@ -63,10 +63,10 @@ import AttemptMessages from "./AttemptMessages";
 type ChatDataType = AttemptFullOut["chats"][number];
 type Chat = ChatDataType["chat"];
 type ScenarioItem = ChatDataType["scenario"];
-type ScenarioDocumentItem = AttemptFullOut["scenarioDocuments"][number];
+type ScenarioDocumentItem = AttemptFullOut["scenario_documents"] extends (infer T)[] ? T : never;
 type DynamicRubric = ChatDataType["dynamicRubric"];
-type RubricStructure = AttemptFullOut["rubricStructure"];
-type AggregatedResults = AttemptFullOut["aggregatedResults"];
+type RubricStructure = AttemptFullOut["rubric_structure"];
+type AggregatedResults = AttemptFullOut["aggregated_results"];
 type GradingState = ChatDataType["gradingState"];
 
 type AttemptItem = AttemptFullOut["attempt"];
@@ -183,8 +183,8 @@ export default function GradedAttemptView({
   setSelectedDocumentId,
   hideDocuments = false,
 }: GradedAttemptViewProps) {
-  const isInfiniteMode = attempt?.infiniteMode;
-  const infiniteLimitMinutes = simulation?.timeLimit ?? null;
+  const isInfiniteMode = attempt?.infinite_mode ?? false;
+  const infiniteLimitMinutes = simulation?.time_limit ?? null;
 
   return (
     <div
@@ -214,7 +214,7 @@ export default function GradedAttemptView({
                       {/* Left side: Control buttons */}
                       <div className="flex items-center gap-2 flex-wrap">
                         {/* Objectives Toggle - show on mobile even in grading view */}
-                        {simulation?.objectivesEnabled &&
+                        {simulation?.objectives_enabled &&
                           (() => {
                             const currentScenario = displayChat?.id
                               ? scenariosByChatId[displayChat.id]
@@ -341,7 +341,7 @@ export default function GradedAttemptView({
                                   className={`text-sm font-medium ${
                                     displayChat && displayChat.completed
                                       ? calculateTimeExceeded(displayChat) >
-                                          0 && simulation?.timeLimit
+                                          0 && simulation?.time_limit
                                         ? "text-red-500"
                                         : ""
                                       : ""
@@ -356,7 +356,7 @@ export default function GradedAttemptView({
                                       ? infiniteLimitMinutes
                                         ? formatTime(infiniteLimitMinutes * 60)
                                         : formatTime(timer.elapsed || 0)
-                                      : simulation?.timeLimit && displayChat
+                                      : simulation?.time_limit && displayChat
                                         ? formatTime(
                                             calculateAdjustedTimeLimit(
                                               displayChat,
@@ -382,7 +382,7 @@ export default function GradedAttemptView({
                                         {rubric.totalPossiblePoints})
                                       </span>
                                       {calculateTimeExceeded(displayChat) > 0 &&
-                                        simulation?.timeLimit && (
+                                        simulation?.time_limit && (
                                           <span className="text-xs text-muted-foreground ml-2">
                                             +
                                             {formatTime(
@@ -457,7 +457,7 @@ export default function GradedAttemptView({
                         {/* Buttons and timer row */}
                         <div className="flex items-center gap-2">
                           {/* Objectives Toggle - show on desktop even in grading view */}
-                          {simulation?.objectivesEnabled &&
+                          {simulation?.objectives_enabled &&
                             (() => {
                               const currentScenario = displayChat?.id
                                 ? scenariosByChatId[displayChat.id]
@@ -604,7 +604,7 @@ export default function GradedAttemptView({
                                     className={`text-sm font-medium ${
                                       displayChat && displayChat.completed
                                         ? calculateTimeExceeded(displayChat) >
-                                            0 && simulation?.timeLimit
+                                            0 && simulation?.time_limit
                                           ? "text-red-500"
                                           : ""
                                         : ""
@@ -621,7 +621,7 @@ export default function GradedAttemptView({
                                               infiniteLimitMinutes * 60,
                                             )
                                           : formatTime(timer.elapsed || 0)
-                                        : simulation?.timeLimit && displayChat
+                                        : simulation?.time_limit && displayChat
                                           ? formatTime(
                                               calculateAdjustedTimeLimit(
                                                 displayChat,
@@ -648,7 +648,7 @@ export default function GradedAttemptView({
                                         </span>
                                         {calculateTimeExceeded(displayChat) >
                                           0 &&
-                                          simulation?.timeLimit && (
+                                          simulation?.time_limit && (
                                             <span className="text-xs text-muted-foreground ml-2">
                                               +
                                               {formatTime(
@@ -693,7 +693,7 @@ export default function GradedAttemptView({
                   </div>
 
                   {/* Objectives Collapsible Content - desktop graded view */}
-                  {simulation?.objectivesEnabled &&
+                  {simulation?.objectives_enabled &&
                     (() => {
                       const currentScenario = displayChat?.id
                         ? scenariosByChatId[displayChat.id]
@@ -710,7 +710,7 @@ export default function GradedAttemptView({
                                 : null;
                               const objectives =
                                 currentScenario?.objectives || [];
-                              return objectives.map((objective, index) => (
+                              return objectives.map((objective: string, index: number) => (
                                 <li
                                   key={index}
                                   className="font-normal flex items-start gap-2"
@@ -1078,7 +1078,7 @@ export default function GradedAttemptView({
 
               return (
                 <ul className="space-y-2 list-none">
-                  {objectives.map((objective, index) => (
+                  {objectives.map((objective: string, index: number) => (
                     <li
                       key={index}
                       className="font-normal flex items-start gap-2"

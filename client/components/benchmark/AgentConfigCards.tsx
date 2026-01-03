@@ -43,7 +43,7 @@ type DraftState = {
 };
 
 export function AgentConfigCards({
-  attemptId,
+  attemptId: _attemptId,
   evalInfo,
   agentsList,
   isDynamic,

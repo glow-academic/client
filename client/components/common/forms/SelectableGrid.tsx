@@ -53,14 +53,14 @@ export function SelectableGrid<T>({
         items.map((item) => {
           const id = getId(item);
           const isSelected =
-            selectedId === id || (selectedIds && selectedIds.includes(id));
+            selectedId === id || (selectedIds?.includes(id) ?? false);
 
           return (
             <button
               key={id}
               type="button"
               onClick={() => handleSelect(item)}
-              disabled={disabled}
+              disabled={disabled ?? false}
               className={cn(
                 "relative w-full text-left",
                 disabled && "pointer-events-none opacity-50",

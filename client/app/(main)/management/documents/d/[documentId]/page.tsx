@@ -19,8 +19,17 @@ type DocumentDetailIn = InputOf<"/api/v4/documents/detail", "post">;
 type DocumentDetailOut = OutputOf<"/api/v4/documents/detail", "post">;
 type UpdateDocumentIn = InputOf<"/api/v4/documents/update", "post">;
 type UpdateDocumentOut = OutputOf<"/api/v4/documents/update", "post">;
-type RenderTemplateIn = InputOf<"/api/v4/documents/render", "post">;
-type RenderTemplateOut = OutputOf<"/api/v4/documents/render", "post">;
+// Note: _render endpoint returns dict[str, Any], not a typed response
+type RenderTemplateIn = {
+  body: {
+    document_id: string;
+    template_args: Record<string, unknown>;
+    department_ids?: string[] | null;
+  };
+};
+type RenderTemplateOut = {
+  rendered_html: string;
+};
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
 // GenerateTemplate types removed - now using WebSocket
@@ -34,7 +43,7 @@ const getDocument = async (
 ): Promise<DocumentDetailOut> => {
   return api.post(
     "/documents/detail",
-    { body: { documentId, draftId: draftId || null } },
+    { body: { document_id: documentId, draft_id: draftId || null } },
     {
       cache: "no-store",
       headers: {
@@ -52,7 +61,7 @@ export async function generateMetadata(
   const { documentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const document = await getDocument(documentId);
+    const document = await getDocument(documentId, null);
     return {
       title: `${document?.name || "Document"}`,
       description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
@@ -81,7 +90,7 @@ async function renderTemplate(
   input: RenderTemplateIn
 ): Promise<RenderTemplateOut> {
   "use server";
-  return api.post("/documents/render", input);
+  return api.post("/documents/_render", input);
 }
 
 async function patchDocumentDraft(
@@ -146,7 +155,7 @@ export default async function DocumentEditPage({
 
       // Check if there are template arg params (JSON format)
       const templateSchema =
-        documentDetail.template_schema as TemplateSchema | null;
+        documentDetail.template_args as TemplateSchema | null;
       if (templateSchema) {
         const hasTemplateParams = searchParamsObj.has("templateArgs");
 
@@ -166,15 +175,15 @@ export default async function DocumentEditPage({
               : undefined;
 
           try {
-            const renderResult = await renderTemplate({
+            const renderResult = (await renderTemplate({
               body: {
-                documentId,
-                templateArgs,
+                document_id: documentId,
+                template_args: templateArgs,
                 ...(departmentIds !== undefined && {
-                  departmentIds: departmentIds || null,
+                  department_ids: departmentIds || null,
                 }),
               },
-            });
+            })) as RenderTemplateOut;
             renderedHtml = renderResult.rendered_html;
           } catch (error) {
             // If rendering fails, renderedHtml stays null

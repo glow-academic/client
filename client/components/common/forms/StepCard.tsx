@@ -142,8 +142,9 @@ export function StepCard({
 
       // Update or add new filter values
       Object.keys(currentFilterValues).forEach((key) => {
-        if (newValues[key] !== currentFilterValues[key]) {
-          newValues[key] = currentFilterValues[key];
+        const currentValue = currentFilterValues[key] ?? false;
+        if (newValues[key] !== currentValue) {
+          newValues[key] = currentValue;
           hasChanges = true;
         }
       });

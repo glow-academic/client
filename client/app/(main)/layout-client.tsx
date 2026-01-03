@@ -75,9 +75,6 @@ function MainLayoutContent({
   const {
     effectiveProfile,
     activeProfile,
-    drafts,
-    selectedDraftId,
-    setSelectedDraftId,
   } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
 

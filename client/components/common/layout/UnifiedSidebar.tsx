@@ -196,6 +196,7 @@ export function UnifiedSidebar({
     // Analytics - Available from instructional level and up
     // Check for parent section "analytics" - if present, show all subsections
     if (
+      effectiveProfile.role &&
       ["instructional", "admin", "superadmin"].includes(
         effectiveProfile.role
       ) &&
@@ -557,6 +558,7 @@ export function UnifiedSidebar({
   const canEmulate =
     isAuthenticated &&
     activeProfile &&
+    activeProfile.role &&
     ["instructional", "admin", "superadmin"].includes(activeProfile.role);
 
   // Watch for profile changes and redirect if current page is not accessible

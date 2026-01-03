@@ -11,7 +11,6 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
-import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricNewIn = InputOf<"/api/v4/rubrics/new", "post">;
@@ -81,7 +80,7 @@ export default async function NewRubricPage({
   // Fetch default rubric detail server-side with draft_id
   const rubricNew = await getRubricDefault({
     body: {
-      draftId: q.draftId ?? null,
+      draft_id: q.draftId ?? null,
     },
   });
 

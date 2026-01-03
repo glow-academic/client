@@ -42,9 +42,8 @@ export async function generateMetadata(
   const { keyId } = await params;
   try {
     const input: KeyDetailIn = {
-      key_id: keyId,
-      draft_id: null,
-    } as KeyDetailIn;
+      body: { key_id: keyId, draft_id: null },
+    };
     const key = await getKey(input);
     return {
       title: `${key?.name || "Key"}`,
@@ -121,9 +120,8 @@ export default async function EditKeyPage({
   // Fetch data for edit mode with draft_id
   try {
     const input: KeyDetailIn = {
-      key_id: keyId,
-      draft_id: q.draftId ?? null,
-    } as KeyDetailIn;
+      body: { key_id: keyId, draft_id: q.draftId ?? null },
+    };
     const keyDetail = await getKey(input).catch(() => null);
 
     if (!keyDetail) {

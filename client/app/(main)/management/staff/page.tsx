@@ -31,10 +31,10 @@ type ProcessCSVOut = OutputOf<"/api/v4/staff/csv", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/staff/upsert", "post">;
 type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/staff/upsert", "post">;
 /** ---- Derived types from server responses ---- */
-type ProfileListItem = StaffListOut["staff"][number];
-type SearchStaffItem = SearchStaffOut["staff"][number];
+type ProfileListItem = NonNullable<StaffListOut["staff"]>[number];
+type SearchStaffItem = NonNullable<SearchStaffOut["staff"]>[number];
 // Extract nested types from ProcessCSV
-type ProcessedCSVRow = ProcessCSVOut["rows"][number];
+type ProcessedCSVRow = NonNullable<ProcessCSVOut["rows"]>[number];
 type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
 
 /** ---- Direct fetch (no Next.js cache) ----

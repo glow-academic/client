@@ -86,8 +86,8 @@ export default async function NewKeyPage({
 
   // Fetch default key detail server-side with draft_id
   const input: KeyNewIn = {
-    draft_id: q.draftId ?? null,
-  } as KeyNewIn;
+    body: { draft_id: q.draftId ?? null },
+  };
   const keyDetailDefault = await getKeyDefault(input);
 
   return (

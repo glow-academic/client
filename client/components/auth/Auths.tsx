@@ -74,7 +74,7 @@ export default function Auths({
     try {
       await duplicateAuthAction({
         body: {
-          authId: auth.auth_id,
+          auth_id: auth.auth_id || "",
         },
       });
       toast.success(`Auth "${auth.name}" duplicated successfully`);
@@ -102,7 +102,7 @@ export default function Auths({
     try {
       await deleteAuthAction({
         body: {
-          authId: deleteItem.id,
+          auth_id: deleteItem.id,
         },
       });
       toast.success(`Auth "${deleteItem.name}" deleted successfully`);
@@ -123,9 +123,10 @@ export default function Auths({
   };
 
   const renderPreview = (
-    items: AuthListOut["auths"][number]["sample_items"],
+    items: NonNullable<NonNullable<AuthListOut["auths"]>[number]>["sample_items"],
     totalCount: number,
   ) => {
+    if (!items) return null;
     return (
       <div className="space-y-2">
         {items.map((item) => (
@@ -236,7 +237,7 @@ export default function Auths({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDeleteClick(auth.auth_id, auth.name)}
+                  onClick={() => handleDeleteClick(auth.auth_id || "", auth.name || "")}
                   aria-label={`Delete ${auth.name}`}
                   data-testid="btn-delete-auth"
                   title={`Delete ${auth.name}`}
@@ -253,12 +254,12 @@ export default function Auths({
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {auth.description}
           </p>
-          {count > 0 && auth.sample_items.length > 0 && (
+          {count && count > 0 && auth.sample_items && auth.sample_items.length > 0 && (
             <div>
               <p className="text-xs font-medium mb-2 text-muted-foreground">
                 Sample Items:
               </p>
-              {renderPreview(auth.sample_items, count)}
+              {renderPreview(auth.sample_items, count ?? 0)}
             </div>
           )}
         </CardContent>
