@@ -15,6 +15,12 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  parseAsBoolean,
+  parseAsString,
+  useQueryStates,
+  type Parser,
+} from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -41,12 +47,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
+import { StepCard } from "@/components/common/forms/StepCard";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useDraftAutosave } from "@/hooks/use-draft-autosave";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 
@@ -54,12 +67,34 @@ import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import type {
   DepartmentsListOut,
   KeysListOut,
+  PatchSettingsDraftIn,
   SettingsDetailOut,
   SettingsListOut,
   StaffListOut,
   UpdateSettingsIn,
   UpdateSettingsOut,
 } from "@/app/(main)/settings/page";
+
+// Import helper functions
+import {
+  convertAuthEnabledMappingToArray,
+  convertAuthKeysMappingToArray,
+  convertAuthKeysToMapping,
+  convertAuthValuesMappingToArray,
+  convertAuthValuesToMapping,
+  convertProviderEnabledMappingToArray,
+  convertProviderKeysMappingToArray,
+  convertProviderKeysToMapping,
+} from "./settings-helpers";
+import {
+  buildDepartmentMapping,
+  buildKeyMapping,
+  buildProfileMapping,
+  getValidDepartmentIds,
+  getValidKeyIds,
+  getValidProfileIds,
+} from "./settings-mappers";
+import { DEFAULT_SETTINGS_FORM_DATA } from "./settings-constants";
 
 export interface ProfileMappingItem {
   profile_id: string;
@@ -76,12 +111,18 @@ export interface SettingsProps {
   keysList: KeysListOut;
   staffList: StaffListOut;
   departmentsList: DepartmentsListOut;
-  getSettingsDetailAction: (settingsId: string) => Promise<SettingsDetailOut>;
+  getSettingsDetailAction: (
+    settingsId: string,
+    draftId?: string | null
+  ) => Promise<SettingsDetailOut>;
   getKeysListAction: () => Promise<KeysListOut>;
   getStaffListAction?: () => Promise<StaffListOut>;
   updateSettingsAction?: (
     input: UpdateSettingsIn
   ) => Promise<UpdateSettingsOut>;
+  patchSettingsDraftAction?: (
+    input: PatchSettingsDraftIn
+  ) => Promise<OutputOf<"/api/v4/settings/draft", "patch">>;
 }
 
 type StepStatus = "pending" | "active" | "completed";
@@ -116,10 +157,298 @@ export default function Settings({
   getKeysListAction,
   getStaffListAction,
   updateSettingsAction,
+  patchSettingsDraftAction,
 }: SettingsProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, selectedDraftId, setSelectedDraftId } = useProfile();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
+
+  // Inline parsers for URL-backed state (navigation/search params only)
+  const settingsSearchParamsClient = {
+    // Draft ID (URL-backed, updated when draft is created)
+    draftId: parseAsString,
+  } as const;
+
+  // URL-backed state using nuqs (only navigation/search params)
+  const [urlParams, setUrlParams] = useQueryStates(settingsSearchParamsClient, {
+    history: "replace",
+    shallow: true, // Use shallow routing to prevent server component re-renders
+  });
+
+  // Get draftId from URL (managed by nuqs via urlParams)
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
+
+  // Local draft state (not in URL) - initialized from server data or draft payload
+  type DraftState = {
+    name: string;
+    description: string;
+    active: boolean;
+    primary_color: string;
+    accent: string;
+    background: string;
+    surface: string;
+    success: string;
+    warning: string;
+    error: string;
+    sidebar_background: string;
+    sidebar_primary: string;
+    chart1: string;
+    chart2: string;
+    chart3: string;
+    chart4: string;
+    chart5: string;
+    guest_login_enabled: boolean;
+    success_threshold: number;
+    warning_threshold: number;
+    danger_threshold: number;
+    default_admin_profile_id: string | null;
+    default_guest_profile_id: string | null;
+    department_ids: string[];
+    provider_key_mapping: Record<string, string>;
+    auth_key_mapping: Record<string, Record<string, string>>;
+    provider_enabled: Record<string, boolean>;
+    auth_enabled: Record<string, boolean>;
+    auth_value_mapping: Record<string, Record<string, string>>;
+  };
+
+  // Initialize draft state from server data (merged with draft payload if draftId exists)
+  // Use stable refs to prevent recomputation on every server render
+  const stableSettingsDetailRef = useRef<SettingsDetailOut | null>(initialSettingsDetail);
+  useEffect(() => {
+    stableSettingsDetailRef.current = initialSettingsDetail;
+  }, [initialSettingsDetail]);
+
+  const initialDraftState = useMemo((): DraftState => {
+    const data = stableSettingsDetailRef.current;
+    if (!data) {
+      return {
+        ...DEFAULT_SETTINGS_FORM_DATA,
+        department_ids: [],
+        provider_key_mapping: {},
+        auth_key_mapping: {},
+        provider_enabled: {},
+        auth_enabled: {},
+        auth_value_mapping: {},
+      };
+    }
+
+    // If draftId exists, server should have merged draft payload into data
+    // Extract draft mappings from data (support both camelCase and snake_case)
+    // Type assertion needed because draft fields may not be in type yet
+    const dataWithDraft = data as SettingsDetailOut & {
+      provider_key_mapping?: Record<string, string> | string;
+      auth_key_mapping?: Record<string, Record<string, string>> | string;
+      provider_enabled?: Record<string, boolean> | string;
+      auth_enabled?: Record<string, boolean> | string;
+      auth_value_mapping?: Record<string, Record<string, string>> | string;
+    };
+
+    const providerKeyMapping =
+      dataWithDraft.provider_key_mapping &&
+      typeof dataWithDraft.provider_key_mapping === 'object'
+        ? dataWithDraft.provider_key_mapping
+        : dataWithDraft.provider_key_mapping &&
+            typeof dataWithDraft.provider_key_mapping === 'string'
+          ? JSON.parse(dataWithDraft.provider_key_mapping)
+          : convertProviderKeysToMapping(data.provider_keys);
+
+    const authKeyMapping =
+      dataWithDraft.auth_key_mapping &&
+      typeof dataWithDraft.auth_key_mapping === 'object'
+        ? dataWithDraft.auth_key_mapping
+        : dataWithDraft.auth_key_mapping &&
+            typeof dataWithDraft.auth_key_mapping === 'string'
+          ? JSON.parse(dataWithDraft.auth_key_mapping)
+          : convertAuthKeysToMapping(data.auth_keys);
+
+    const providerEnabled =
+      dataWithDraft.provider_enabled &&
+      typeof dataWithDraft.provider_enabled === 'object'
+        ? dataWithDraft.provider_enabled
+        : dataWithDraft.provider_enabled &&
+            typeof dataWithDraft.provider_enabled === 'string'
+          ? JSON.parse(dataWithDraft.provider_enabled)
+          : {};
+
+    const authEnabled =
+      dataWithDraft.auth_enabled && typeof dataWithDraft.auth_enabled === 'object'
+        ? dataWithDraft.auth_enabled
+        : dataWithDraft.auth_enabled &&
+            typeof dataWithDraft.auth_enabled === 'string'
+          ? JSON.parse(dataWithDraft.auth_enabled)
+          : {};
+
+    const authValueMapping =
+      dataWithDraft.auth_value_mapping &&
+      typeof dataWithDraft.auth_value_mapping === 'object'
+        ? dataWithDraft.auth_value_mapping
+        : dataWithDraft.auth_value_mapping &&
+            typeof dataWithDraft.auth_value_mapping === 'string'
+          ? JSON.parse(dataWithDraft.auth_value_mapping)
+          : convertAuthValuesToMapping(data.auth_values);
+
+    // Initialize provider enabled state from all_providers and providers
+    const allProviderIds =
+      data.all_providers?.map((p) => p.provider_id) ||
+      data.provider_ids ||
+      [];
+    const linkedProviderIds =
+      data.providers?.map((p) => p.provider_id) ||
+      data.provider_ids ||
+      [];
+    const providerEnabledState: Record<string, boolean> = {};
+    allProviderIds.forEach((providerId) => {
+      providerEnabledState[providerId] =
+        providerEnabled[providerId] ?? linkedProviderIds.includes(providerId);
+    });
+
+    // Initialize auth enabled state from all_auths and auths
+    const allAuthIds =
+      data.all_auths?.map((a) => a.auth_id) ||
+      data.auth_ids ||
+      [];
+    const linkedAuthIds =
+      data.auths?.map((a) => a.auth_id) ||
+      data.auth_ids ||
+      [];
+    const authEnabledState: Record<string, boolean> = {};
+    allAuthIds.forEach((authId) => {
+      authEnabledState[authId] =
+        authEnabled[authId] ?? linkedAuthIds.includes(authId);
+    });
+
+    return {
+      name: data.name || "",
+      description: data.description || "",
+      active: data.active ?? true,
+      primary_color: data.primary_color || DEFAULT_SETTINGS_FORM_DATA.primary_color,
+      accent: data.accent || DEFAULT_SETTINGS_FORM_DATA.accent,
+      background: data.background || DEFAULT_SETTINGS_FORM_DATA.background,
+      surface: data.surface || DEFAULT_SETTINGS_FORM_DATA.surface,
+      success: data.success || DEFAULT_SETTINGS_FORM_DATA.success,
+      warning: data.warning || DEFAULT_SETTINGS_FORM_DATA.warning,
+      error: data.error || DEFAULT_SETTINGS_FORM_DATA.error,
+      sidebar_background: data.sidebar_background || DEFAULT_SETTINGS_FORM_DATA.sidebar_background,
+      sidebar_primary: data.sidebar_primary || DEFAULT_SETTINGS_FORM_DATA.sidebar_primary,
+      chart1: data.chart1 || DEFAULT_SETTINGS_FORM_DATA.chart1,
+      chart2: data.chart2 || DEFAULT_SETTINGS_FORM_DATA.chart2,
+      chart3: data.chart3 || DEFAULT_SETTINGS_FORM_DATA.chart3,
+      chart4: data.chart4 || DEFAULT_SETTINGS_FORM_DATA.chart4,
+      chart5: data.chart5 || DEFAULT_SETTINGS_FORM_DATA.chart5,
+      guest_login_enabled: data.guest_login_enabled ?? DEFAULT_SETTINGS_FORM_DATA.guest_login_enabled,
+      success_threshold: data.success_threshold ?? DEFAULT_SETTINGS_FORM_DATA.success_threshold,
+      warning_threshold: data.warning_threshold ?? DEFAULT_SETTINGS_FORM_DATA.warning_threshold,
+      danger_threshold: data.danger_threshold ?? DEFAULT_SETTINGS_FORM_DATA.danger_threshold,
+      default_admin_profile_id: data.default_admin_profile_id ?? null,
+      default_guest_profile_id: data.default_guest_profile_id ?? null,
+      department_ids: data.department_ids || [],
+      provider_key_mapping: providerKeyMapping,
+      auth_key_mapping: authKeyMapping,
+      provider_enabled: providerEnabledState,
+      auth_enabled: authEnabledState,
+      auth_value_mapping: authValueMapping,
+    };
+  }, [stableSettingsDetailRef.current, draftId, urlDraftId]);
+
+  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+
+  // Track previous initialDraftState content to avoid unnecessary updates
+  const prevInitialDraftStateRef = useRef<string>(
+    JSON.stringify(initialDraftState)
+  );
+
+  // Update draft state when server data changes (e.g., draft selected)
+  useEffect(() => {
+    const currentStateStr = prevInitialDraftStateRef.current;
+    const newStateStr = JSON.stringify(initialDraftState);
+
+    if (currentStateStr !== newStateStr) {
+      prevInitialDraftStateRef.current = newStateStr;
+      setDraftState(initialDraftState);
+    }
+  }, [initialDraftState]);
+
+  // Integrate autosave hook
+  // Pattern: Transform hook API (draft_id, patch, expected_version) to backend API (input_draft_id, patch, expected_version)
+  const {
+    saveStatus: _saveStatus,
+    saveNow: _saveNow,
+    lastSavedVersion: _lastSavedVersion,
+  } = useDraftAutosave({
+    draftId,
+    draftState,
+    patchDraftAction: patchSettingsDraftAction
+      ? async (input) => {
+          // Transform hook API → backend API
+          // Hook API: { body: { draft_id, patch, expected_version } }
+          // Backend API: { body: { input_draft_id, patch, expected_version } }
+          // Note: profile_id is added server-side from header
+          // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case)
+          const camelToSnake: Record<string, string> = {
+            departmentIds: "department_ids",
+            providerKeyMapping: "provider_key_mapping",
+            authKeyMapping: "auth_key_mapping",
+            providerEnabled: "provider_enabled",
+            authEnabled: "auth_enabled",
+            authValueMapping: "auth_value_mapping",
+            primaryColor: "primary_color",
+            guestLoginEnabled: "guest_login_enabled",
+            successThreshold: "success_threshold",
+            warningThreshold: "warning_threshold",
+            dangerThreshold: "danger_threshold",
+            defaultAdminProfileId: "default_admin_profile_id",
+            defaultGuestProfileId: "default_guest_profile_id",
+            sidebarBackground: "sidebar_background",
+            sidebarPrimary: "sidebar_primary",
+          };
+          const transformedPatch: Record<string, unknown> = {};
+          Object.entries(input.body.patch as Record<string, unknown>).forEach(
+            ([key, value]) => {
+              const snakeKey = camelToSnake[key] || key;
+              transformedPatch[snakeKey] = value;
+            }
+          );
+
+          const result = await patchSettingsDraftAction({
+            body: {
+              input_draft_id: input.body.draft_id || null,
+              patch: transformedPatch,
+              expected_version: input.body.expected_version,
+            } as PatchSettingsDraftIn["body"],
+          });
+          // Transform backend API → hook API
+          // Backend API: { draft_id, new_version, draft_exists }
+          // Hook API: { draftId, newVersion, draftExists }
+          return {
+            draftId: result.draft_id || "",
+            newVersion: result.new_version || 0,
+            draftExists: result.draft_exists || false,
+          };
+        }
+      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    debounceMs: 1000,
+    onDraftCreated: useCallback(
+      (newDraftId: string) => {
+        // Only update URL if draftId actually changed
+        if (newDraftId === urlDraftId) {
+          return;
+        }
+        // Update URL with new draftId and trigger server-side refetch
+        setUrlParams({ draftId: newDraftId });
+        router.refresh();
+      },
+      [router, urlDraftId, setUrlParams]
+    ),
+  });
 
   // Refs for smooth scrolling to color cards
   const primaryColorRef = useRef<HTMLDivElement>(null);
@@ -305,107 +634,7 @@ export default function Settings({
     default_guest_profile_id: null as string | null,
   });
 
-  // Helper functions to convert arrays to dicts for backward compatibility
-  // API now returns arrays (composite types), but frontend uses dicts internally
-  const convertProviderKeysToMapping = (
-    providerKeys: SettingsDetailOut["provider_keys"] | undefined
-  ): Record<string, string> => {
-    if (!providerKeys) return {};
-    const mapping: Record<string, string> = {};
-    providerKeys.forEach((pk) => {
-      mapping[pk.provider_id] = pk.key_id;
-    });
-    return mapping;
-  };
-
-  const convertAuthKeysToMapping = (
-    authKeys: SettingsDetailOut["auth_keys"] | undefined
-  ): Record<string, Record<string, string>> => {
-    if (!authKeys) return {};
-    const mapping: Record<string, Record<string, string>> = {};
-    authKeys.forEach((ak) => {
-      const itemsMapping: Record<string, string> = {};
-      ak.items.forEach((item) => {
-        itemsMapping[item.auth_item_id] = item.key_id;
-      });
-      mapping[ak.auth_id] = itemsMapping;
-    });
-    return mapping;
-  };
-
-  const convertAuthValuesToMapping = (
-    authValues: SettingsDetailOut["auth_values"] | undefined
-  ): Record<string, Record<string, string>> => {
-    if (!authValues) return {};
-    const mapping: Record<string, Record<string, string>> = {};
-    authValues.forEach((av) => {
-      const itemsMapping: Record<string, string> = {};
-      av.items.forEach((item) => {
-        itemsMapping[item.auth_item_id] = item.value;
-      });
-      mapping[av.auth_id] = itemsMapping;
-    });
-    return mapping;
-  };
-
-  // Helper functions to convert dicts back to arrays for API (reverse of above)
-  // Frontend uses dicts internally, but API expects arrays (composite types)
-  const convertProviderKeysMappingToArray = (
-    mapping: Record<string, string>
-  ): Array<{ provider_id: string; key_id: string }> => {
-    return Object.entries(mapping).map(([provider_id, key_id]) => ({
-      provider_id,
-      key_id,
-    }));
-  };
-
-  const convertAuthKeysMappingToArray = (
-    mapping: Record<string, Record<string, string>>
-  ): Array<{
-    auth_id: string;
-    items: Array<{ auth_item_id: string; key_id: string }>;
-  }> => {
-    return Object.entries(mapping).map(([auth_id, itemsMapping]) => ({
-      auth_id,
-      items: Object.entries(itemsMapping).map(([auth_item_id, key_id]) => ({
-        auth_item_id,
-        key_id,
-      })),
-    }));
-  };
-
-  const convertProviderEnabledMappingToArray = (
-    mapping: Record<string, boolean>
-  ): Array<{ provider_id: string; enabled: boolean }> => {
-    return Object.entries(mapping).map(([provider_id, enabled]) => ({
-      provider_id,
-      enabled,
-    }));
-  };
-
-  const convertAuthEnabledMappingToArray = (
-    mapping: Record<string, boolean>
-  ): Array<{ auth_id: string; enabled: boolean }> => {
-    return Object.entries(mapping).map(([auth_id, enabled]) => ({
-      auth_id,
-      enabled,
-    }));
-  };
-
-  const convertAuthValuesMappingToArray = (
-    mapping: Record<string, Record<string, string>>
-  ): Array<{
-    auth_id: string;
-    items: Array<{ auth_item_id: string; value: string }>;
-  }> => {
-    return Object.entries(mapping).map(([auth_id, itemsMapping]) => ({
-      auth_id,
-      items: Object.entries(itemsMapping).map(([auth_item_id, value]) => ({
-        auth_item_id,
-        value,
-      })),
-    }));
-  };
+  // Helper functions are now imported from settings-helpers.ts
 
   // Update form data and key mappings when settings detail changes
   useEffect(() => {
@@ -732,7 +961,7 @@ export default function Settings({
 
     setSelectedSettingsId(settingsId);
     try {
-      const detailResult = await getSettingsDetailAction(settingsId);
+      const detailResult = await getSettingsDetailAction(settingsId, draftId);
       setSettingsDetail(detailResult);
       // Refresh keys list and staff list
       const freshKeysList = await getKeysListAction();
@@ -1489,6 +1718,180 @@ export default function Settings({
       />
     );
   };
+
+  // Merge draftState with urlParams for formData (GenericForm expects single formData object)
+  // Note: formData is already defined above, but we need to merge draftState for GenericForm
+  const mergedFormData = useMemo(() => {
+    return {
+      ...draftState,
+    } as Record<string, unknown>;
+  }, [draftState]);
+
+  // Steps configuration for GenericForm
+  const steps = useMemo(
+    () => [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description:
+          "Set the settings name, description, departments, active status, guest login, and default accounts.",
+        resetFields: [
+          "name",
+          "description",
+          "department_ids",
+          "active",
+          "guest_login_enabled",
+          "default_admin_profile_id",
+          "default_guest_profile_id",
+        ],
+      },
+      {
+        id: "theme",
+        title: "Theme Colors",
+        description:
+          "Configure brand colors, layout colors, sidebar colors, chart colors, and status colors.",
+        resetFields: [
+          "primary_color",
+          "accent",
+          "background",
+          "surface",
+          "success",
+          "warning",
+          "error",
+          "sidebar_background",
+          "sidebar_primary",
+          "chart1",
+          "chart2",
+          "chart3",
+          "chart4",
+          "chart5",
+          "success_threshold",
+          "warning_threshold",
+          "danger_threshold",
+        ],
+      },
+      {
+        id: "providers",
+        title: "AI Providers",
+        description: "Configure AI provider settings and key mappings.",
+        resetFields: ["provider_enabled", "provider_key_mapping"],
+      },
+      {
+        id: "auth",
+        title: "Authentication Methods",
+        description: "Configure authentication methods, key mappings, and values.",
+        resetFields: [
+          "auth_enabled",
+          "auth_key_mapping",
+          "auth_value_mapping",
+        ],
+      },
+    ],
+    []
+  );
+
+  // Step status calculation function
+  const getStepStatusForGenericForm = useCallback(
+    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
+      const hasDescription = !!(
+        formData["description"] as string | null | undefined
+      )?.trim();
+
+      switch (stepId) {
+        case "basic":
+          return hasName && hasDescription ? "completed" : "active";
+        case "theme":
+          if (!hasName || !hasDescription) return "pending";
+          return "completed"; // Theme always considered complete if basic is done
+        case "providers":
+          if (!hasName || !hasDescription) return "pending";
+          return "completed"; // Providers always considered complete if basic is done
+        case "auth":
+          if (!hasName || !hasDescription) return "pending";
+          return "completed"; // Auth always considered complete if basic is done
+        default:
+          return "pending";
+      }
+    },
+    []
+  );
+
+  // Submit handler for GenericForm (uses draftState, not formData parameter)
+  const handleSubmitForGenericForm = useCallback(async () => {
+    if (!updateSettingsAction) {
+      toast.error("Update action not available");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Extract all form data from draftState
+      const result = await updateSettingsAction({
+        body: {
+          name: draftState.name,
+          description: draftState.description,
+          primary_color: draftState.primary_color,
+          accent: draftState.accent,
+          background: draftState.background,
+          surface: draftState.surface,
+          success: draftState.success,
+          warning: draftState.warning,
+          error: draftState.error,
+          sidebar_background: draftState.sidebar_background,
+          sidebar_primary: draftState.sidebar_primary,
+          chart1: draftState.chart1,
+          chart2: draftState.chart2,
+          chart3: draftState.chart3,
+          chart4: draftState.chart4,
+          chart5: draftState.chart5,
+          guest_login_enabled: draftState.guest_login_enabled,
+          success_threshold: draftState.success_threshold,
+          warning_threshold: draftState.warning_threshold,
+          danger_threshold: draftState.danger_threshold,
+          provider_keys:
+            Object.keys(draftState.provider_key_mapping).length > 0
+              ? convertProviderKeysMappingToArray(draftState.provider_key_mapping)
+              : [],
+          provider_enabled:
+            Object.keys(draftState.provider_enabled).length > 0
+              ? convertProviderEnabledMappingToArray(draftState.provider_enabled)
+              : [],
+          auth_enabled:
+            Object.keys(draftState.auth_enabled).length > 0
+              ? convertAuthEnabledMappingToArray(draftState.auth_enabled)
+              : [],
+          auth_values:
+            Object.keys(draftState.auth_value_mapping).length > 0
+              ? convertAuthValuesMappingToArray(draftState.auth_value_mapping)
+              : [],
+          auth_keys:
+            Object.keys(draftState.auth_key_mapping).length > 0
+              ? convertAuthKeysMappingToArray(draftState.auth_key_mapping)
+              : [],
+          default_admin_profile_id: draftState.default_admin_profile_id || null,
+          default_guest_profile_id: draftState.default_guest_profile_id || null,
+          department_ids: draftState.department_ids.length > 0 ? draftState.department_ids : null,
+        },
+      });
+
+      if (result.settings_id) {
+        toast.success("Settings updated successfully");
+        router.refresh();
+      } else {
+        toast.error("Failed to update settings");
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to update settings: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [draftState, updateSettingsAction, router]);
 
   return (
     <div className="space-y-6">

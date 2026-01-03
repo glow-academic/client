@@ -12,6 +12,8 @@ export type SettingsListOut = OutputOf<"/api/v4/settings/list", "post">;
 export type SettingsDetailOut = OutputOf<"/api/v4/settings/detail", "post">;
 export type UpdateSettingsIn = InputOf<"/api/v4/settings/update", "post">;
 export type UpdateSettingsOut = OutputOf<"/api/v4/settings/update", "post">;
+export type PatchSettingsDraftIn = InputOf<"/api/v4/settings/draft", "patch">;
+export type PatchSettingsDraftOut = OutputOf<"/api/v4/settings/draft", "patch">;
 export type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;
 export type StaffListOut = OutputOf<"/api/v4/staff/list", "post">;
 export type DepartmentsListOut = OutputOf<"/api/v4/departments/list", "post">;
@@ -33,13 +35,19 @@ const getSettingsList = async (): Promise<SettingsListOut> => {
 
 /** ---- Direct fetch for settings detail ---- */
 const getSettingsDetail = async (
-  settingsId: string
+  settingsId: string,
+  draftId?: string | null
 ): Promise<SettingsDetailOut> => {
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Convert camelCase to snake_case for API
   return api.post(
     "/settings/detail",
-    { body: { settings_id: settingsId } },
+    {
+      body: {
+        settings_id: settingsId,
+        draft_id: draftId || null,
+      },
+    },
     {
       cache: "no-store",
       headers: {
@@ -103,11 +111,20 @@ async function updateSettings(
   return api.post("/settings/update", input);
 }
 
+async function patchSettingsDraft(
+  input: PatchSettingsDraftIn
+): Promise<PatchSettingsDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/settings/draft", input);
+}
+
 async function getSettingsDetailAction(
-  settingsId: string
+  settingsId: string,
+  draftId?: string | null
 ): Promise<SettingsDetailOut> {
   "use server";
-  return getSettingsDetail(settingsId);
+  return getSettingsDetail(settingsId, draftId);
 }
 
 async function getKeysListAction(): Promise<KeysListOut> {
@@ -141,6 +158,7 @@ export default async function SettingsPage() {
         departmentsList={departmentsList}
         getSettingsDetailAction={getSettingsDetailAction}
         updateSettingsAction={updateSettings}
+        patchSettingsDraftAction={patchSettingsDraft}
         getKeysListAction={getKeysListAction}
         getStaffListAction={getStaffListAction}
       />

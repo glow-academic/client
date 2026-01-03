@@ -7053,6 +7053,87 @@
         ]
       }
     },
+    "/api/v4/settings/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "settings"
+        ],
+        "summary": "Patch Settings Draft",
+        "description": "Patch settings draft (creates if not exists).",
+        "operationId": "patch_settings_draft_api_v4_settings_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchSettingsDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchSettingsDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
+      }
+    },
     "/api/v4/analytics/refresh": {
       "post": {
         "tags": [
@@ -50424,6 +50505,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Settings Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
           }
         },
         "type": "object",
@@ -50895,6 +50988,62 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "provider_key_mapping": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Key Mapping"
+          },
+          "auth_key_mapping": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Key Mapping"
+          },
+          "provider_enabled": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Enabled"
+          },
+          "auth_enabled": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Enabled"
+          },
+          "auth_value_mapping": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Value Mapping"
           }
         },
         "type": "object",
@@ -56020,6 +56169,77 @@
         },
         "type": "object",
         "title": "PatchScenarioDraftApiResponse"
+      },
+      "PatchSettingsDraftApiRequest": {
+        "properties": {
+          "patch": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Patch"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patch",
+          "expected_version"
+        ],
+        "title": "PatchSettingsDraftApiRequest"
+      },
+      "PatchSettingsDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchSettingsDraftApiResponse"
       },
       "PatchSimulationDraftApiRequest": {
         "properties": {

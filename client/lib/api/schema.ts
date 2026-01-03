@@ -1748,6 +1748,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/settings/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Settings Draft
+         * @description Patch settings draft (creates if not exists).
+         */
+        patch: operations["patch_settings_draft_api_v4_settings_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/analytics/refresh": {
         parameters: {
             query?: never;
@@ -13450,6 +13470,8 @@ export interface components {
              * Format: uuid
              */
             settings_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetSettingsDetailApiResponse */
         GetSettingsDetailApiResponse: {
@@ -13531,6 +13553,18 @@ export interface components {
             department_ids?: string[] | null;
             /** Actor Name */
             actor_name?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Provider Key Mapping */
+            provider_key_mapping?: unknown | null;
+            /** Auth Key Mapping */
+            auth_key_mapping?: unknown | null;
+            /** Provider Enabled */
+            provider_enabled?: unknown | null;
+            /** Auth Enabled */
+            auth_enabled?: unknown | null;
+            /** Auth Value Mapping */
+            auth_value_mapping?: unknown | null;
         };
         /** GetSettingsListApiRequest */
         GetSettingsListApiRequest: Record<string, never>;
@@ -14631,6 +14665,26 @@ export interface components {
         };
         /** PatchScenarioDraftApiResponse */
         PatchScenarioDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchSettingsDraftApiRequest */
+        PatchSettingsDraftApiRequest: {
+            /** Patch */
+            patch: {
+                [key: string]: unknown;
+            };
+            /** Expected Version */
+            expected_version: number;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+        };
+        /** PatchSettingsDraftApiResponse */
+        PatchSettingsDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -26129,6 +26183,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateSettingsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_settings_draft_api_v4_settings_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchSettingsDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchSettingsDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

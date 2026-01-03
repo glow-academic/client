@@ -20709,11 +20709,13 @@ class GetSettingsDetailSqlParams(BaseModel):
 
     settings_id: UUID
     profile_id: UUID
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.settings_id,
             self.profile_id,
+            self.draft_id,
         )
 
 class QGetSettingsDetailV4AuthKeyItem(BaseModel):
@@ -20788,10 +20790,17 @@ class GetSettingsDetailSqlRow(BaseModel):
     default_guest_name: str | None = None
     department_ids: list[str] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    provider_key_mapping: Any | None = None
+    auth_key_mapping: Any | None = None
+    provider_enabled: Any | None = None
+    auth_enabled: Any | None = None
+    auth_value_mapping: Any | None = None
 
 class GetSettingsDetailApiRequest(BaseModel):
 
     settings_id: UUID
+    draft_id: UUID | None = None
 
 class GetSettingsDetailApiResponse(BaseModel):
 
@@ -20834,6 +20843,12 @@ class GetSettingsDetailApiResponse(BaseModel):
     default_guest_name: str | None = None
     department_ids: list[str] | None = None
     actor_name: str | None = None
+    draft_version: int | None = None
+    provider_key_mapping: Any | None = None
+    auth_key_mapping: Any | None = None
+    provider_enabled: Any | None = None
+    auth_enabled: Any | None = None
+    auth_value_mapping: Any | None = None
 
 
 
@@ -20870,6 +20885,43 @@ class GetSettingsListApiResponse(BaseModel):
 
     actor_name: str | None = None
     settings: list[QGetSettingsListV4Setting] | None = None
+
+
+
+# Generated from: patch_settings_draft
+
+class PatchSettingsDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchSettingsDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchSettingsDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchSettingsDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -26857,6 +26909,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSettingsListApiRequest",
         "GetSettingsListApiResponse",
     ),
+    "app/sql/v4/settings/patch_settings_draft_complete.sql": (
+        "PatchSettingsDraftSqlParams",
+        "PatchSettingsDraftSqlRow",
+        "PatchSettingsDraftApiRequest",
+        "PatchSettingsDraftApiResponse",
+    ),
     "app/sql/v4/settings/update_settings_complete.sql": (
         "UpdateSettingsSqlParams",
         "UpdateSettingsSqlRow",
@@ -28905,6 +28963,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/settings/get_settings_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/settings/patch_settings_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v4.settings.detail import router as detail_router
+from app.api.v4.settings.draft import router as draft_router
 from app.api.v4.settings.list import router as list_router
 from app.api.v4.settings.update import router as update_router
 
@@ -12,4 +13,5 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 router.include_router(list_router)
 router.include_router(detail_router)
 router.include_router(update_router)
+router.include_router(draft_router)
 # Note: active endpoint removed - settings are fetched directly via SQL functions

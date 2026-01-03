@@ -133,7 +133,8 @@ CREATE TYPE types.q_get_settings_detail_v4_auth_value AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_settings_detail_v4(
     settings_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     settings_exists boolean,
@@ -174,13 +175,33 @@ RETURNS TABLE (
     default_guest_profile_id uuid,
     default_guest_name text,
     department_ids text[],
-    actor_name text
+    actor_name text,
+    draft_version integer,
+    provider_key_mapping jsonb,
+    auth_key_mapping jsonb,
+    provider_enabled jsonb,
+    auth_enabled jsonb,
+    auth_value_mapping jsonb
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT settings_id AS settings_id, profile_id AS profile_id
+    SELECT 
+        settings_id AS settings_id, 
+        profile_id AS profile_id,
+        draft_id AS draft_id
+),
+draft_payload_data AS (
+    SELECT 
+        d.payload,
+        d.version as draft_version
+    FROM params x
+    JOIN drafts d ON d.id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    AND d.profile_id = x.profile_id
+    AND d.resource_type = 'settings'::draft_resource_type
+    LIMIT 1
 ),
 settings_exists_check AS (
     SELECT EXISTS(
@@ -387,27 +408,119 @@ SELECT
     sec.settings_exists::boolean as settings_exists,
     s.id as settings_id,
     s.created_at,
-    s.active,
-    s.name,
-    s.description,
-    s.primary_color,
-    s.accent,
-    s.background,
-    s.surface,
-    s.success,
-    s.warning,
-    s.error,
-    s.sidebar_background,
-    s.sidebar_primary,
-    s.chart1,
-    s.chart2,
-    s.chart3,
-    s.chart4,
-    s.chart5,
-    s.guest_login_enabled,
-    s.success_threshold,
-    s.warning_threshold,
-    s.danger_threshold,
+    -- Merge draft payload over existing settings data if draft_id provided
+    COALESCE(
+        (SELECT payload->>'active' FROM draft_payload_data),
+        s.active::text,
+        'true'
+    )::boolean as active,
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        s.name,
+        ''
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        s.description,
+        ''
+    ) as description,
+    COALESCE(
+        (SELECT payload->>'primary_color' FROM draft_payload_data),
+        (SELECT payload->>'primaryColor' FROM draft_payload_data),
+        s.primary_color,
+        '#171717'
+    ) as primary_color,
+    COALESCE(
+        (SELECT payload->>'accent' FROM draft_payload_data),
+        s.accent,
+        '#f5f5f5'
+    ) as accent,
+    COALESCE(
+        (SELECT payload->>'background' FROM draft_payload_data),
+        s.background,
+        '#ffffff'
+    ) as background,
+    COALESCE(
+        (SELECT payload->>'surface' FROM draft_payload_data),
+        s.surface,
+        '#ffffff'
+    ) as surface,
+    COALESCE(
+        (SELECT payload->>'success' FROM draft_payload_data),
+        s.success,
+        '#009e34'
+    ) as success,
+    COALESCE(
+        (SELECT payload->>'warning' FROM draft_payload_data),
+        s.warning,
+        '#ea8100'
+    ) as warning,
+    COALESCE(
+        (SELECT payload->>'error' FROM draft_payload_data),
+        s.error,
+        '#e7000b'
+    ) as error,
+    COALESCE(
+        (SELECT payload->>'sidebar_background' FROM draft_payload_data),
+        (SELECT payload->>'sidebarBackground' FROM draft_payload_data),
+        s.sidebar_background,
+        '#fafafa'
+    ) as sidebar_background,
+    COALESCE(
+        (SELECT payload->>'sidebar_primary' FROM draft_payload_data),
+        (SELECT payload->>'sidebarPrimary' FROM draft_payload_data),
+        s.sidebar_primary,
+        '#171717'
+    ) as sidebar_primary,
+    COALESCE(
+        (SELECT payload->>'chart1' FROM draft_payload_data),
+        s.chart1,
+        '#f54900'
+    ) as chart1,
+    COALESCE(
+        (SELECT payload->>'chart2' FROM draft_payload_data),
+        s.chart2,
+        '#009689'
+    ) as chart2,
+    COALESCE(
+        (SELECT payload->>'chart3' FROM draft_payload_data),
+        s.chart3,
+        '#104e64'
+    ) as chart3,
+    COALESCE(
+        (SELECT payload->>'chart4' FROM draft_payload_data),
+        s.chart4,
+        '#ffb900'
+    ) as chart4,
+    COALESCE(
+        (SELECT payload->>'chart5' FROM draft_payload_data),
+        s.chart5,
+        '#fe9a00'
+    ) as chart5,
+    COALESCE(
+        (SELECT (payload->>'guest_login_enabled')::boolean FROM draft_payload_data),
+        (SELECT (payload->>'guestLoginEnabled')::boolean FROM draft_payload_data),
+        s.guest_login_enabled,
+        true
+    ) as guest_login_enabled,
+    COALESCE(
+        (SELECT (payload->>'success_threshold')::integer FROM draft_payload_data),
+        (SELECT (payload->>'successThreshold')::integer FROM draft_payload_data),
+        s.success_threshold,
+        85
+    ) as success_threshold,
+    COALESCE(
+        (SELECT (payload->>'warning_threshold')::integer FROM draft_payload_data),
+        (SELECT (payload->>'warningThreshold')::integer FROM draft_payload_data),
+        s.warning_threshold,
+        80
+    ) as warning_threshold,
+    COALESCE(
+        (SELECT (payload->>'danger_threshold')::integer FROM draft_payload_data),
+        (SELECT (payload->>'dangerThreshold')::integer FROM draft_payload_data),
+        s.danger_threshold,
+        70
+    ) as danger_threshold,
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,
     COALESCE(sad.auths, '{}'::types.q_get_settings_detail_v4_auth[]) as auths,
     COALESCE(spd.provider_ids, ARRAY[]::text[]) as provider_ids,
@@ -417,12 +530,56 @@ SELECT
     COALESCE(savd.auth_values, '{}'::types.q_get_settings_detail_v4_auth_value[]) as auth_values,
     COALESCE(apd.all_providers, '{}'::types.q_get_settings_detail_v4_provider[]) as all_providers,
     COALESCE(aad.all_auths, '{}'::types.q_get_settings_detail_v4_auth[]) as all_auths,
-    sdad.default_admin_profile_id,
+    COALESCE(
+        (SELECT (payload->>'default_admin_profile_id')::uuid FROM draft_payload_data),
+        (SELECT (payload->>'defaultAdminProfileId')::uuid FROM draft_payload_data),
+        sdad.default_admin_profile_id
+    ) as default_admin_profile_id,
     sdad.default_admin_name,
-    sdgd.default_guest_profile_id,
+    COALESCE(
+        (SELECT (payload->>'default_guest_profile_id')::uuid FROM draft_payload_data),
+        (SELECT (payload->>'defaultGuestProfileId')::uuid FROM draft_payload_data),
+        sdgd.default_guest_profile_id
+    ) as default_guest_profile_id,
     sdgd.default_guest_name,
-    COALESCE(sdd.department_ids, ARRAY[]::text[]) as department_ids,
-    up.actor_name
+    COALESCE(
+        CASE 
+            WHEN (SELECT payload->'department_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'department_ids' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'department_ids' FROM draft_payload_data)))
+            WHEN (SELECT payload->'departmentIds' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'departmentIds' FROM draft_payload_data)) = 'array' THEN
+                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'departmentIds' FROM draft_payload_data)))
+            ELSE NULL
+        END,
+        COALESCE(sdd.department_ids, ARRAY[]::text[])
+    ) as department_ids,
+    up.actor_name,
+    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    -- Extract draft mappings (support both camelCase and snake_case)
+    COALESCE(
+        (SELECT payload->'provider_key_mapping' FROM draft_payload_data),
+        (SELECT payload->'providerKeyMapping' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as provider_key_mapping,
+    COALESCE(
+        (SELECT payload->'auth_key_mapping' FROM draft_payload_data),
+        (SELECT payload->'authKeyMapping' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as auth_key_mapping,
+    COALESCE(
+        (SELECT payload->'provider_enabled' FROM draft_payload_data),
+        (SELECT payload->'providerEnabled' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as provider_enabled,
+    COALESCE(
+        (SELECT payload->'auth_enabled' FROM draft_payload_data),
+        (SELECT payload->'authEnabled' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as auth_enabled,
+    COALESCE(
+        (SELECT payload->'auth_value_mapping' FROM draft_payload_data),
+        (SELECT payload->'authValueMapping' FROM draft_payload_data),
+        '{}'::jsonb
+    ) as auth_value_mapping
 FROM settings_exists_check sec
 CROSS JOIN params p
 LEFT JOIN settings s ON s.id = p.settings_id
