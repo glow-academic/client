@@ -65,15 +65,13 @@ async function getPricingFilters(
 ) {
   // Use cached layout context (reuses data already fetched by layout)
   const profileContext = await getLayoutContext({
-    body: {
-      pathname: "/",
-    },
+    body: {},
   });
 
   // Compute startDate using same logic as analytics context
   let startDate: Date;
-  if (profileContext.earliestAttemptDate) {
-    startDate = new Date(profileContext.earliestAttemptDate);
+  if (profileContext.earliest_attempt_date) {
+    startDate = new Date(profileContext.earliest_attempt_date);
     startDate.setHours(0, 0, 0, 0);
   } else {
     // Fallback to 30 days ago (matching analytics context)
@@ -113,15 +111,15 @@ async function getPricingFilters(
   const cohortIds =
     filters.cohortIds && filters.cohortIds.length > 0
       ? filters.cohortIds
-      : profileContext.cohortIds || [];
+      : profileContext.cohort_ids || [];
   const departmentIds =
     filters.departmentIds && filters.departmentIds.length > 0
       ? filters.departmentIds
-      : profileContext.departmentIds || [];
+      : profileContext.department_ids || [];
   const roles =
     filters.roles && filters.roles.length > 0
       ? filters.roles
-      : profileContext.scopedRoles || [];
+      : profileContext.scoped_roles || [];
 
   return {
     ...filters,
@@ -281,6 +279,7 @@ async function PricingRunsSection({
     cohortIds: string[];
     departmentIds: string[];
     roles: string[];
+    simulationFilters: string[];
   };
   pricingPage: number;
   pricingPageSize: number;
@@ -292,7 +291,6 @@ async function PricingRunsSection({
   pricingSortOrder: string;
 }) {
   // Build runs filters with pagination/search/sorting/filtering params
-  // Convert camelCase to snake_case for API
   const runsFilters = {
     start_date: filters.startDate,
     end_date: filters.endDate,

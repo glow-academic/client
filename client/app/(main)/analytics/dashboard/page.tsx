@@ -33,17 +33,8 @@ const getDashboardOverview = async (
 ): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  // Convert camelCase to snake_case for API
-  const apiInput = {
-    start_date: input.startDate,
-    end_date: input.endDate,
-    cohort_ids: input.cohortIds,
-    roles: input.roles,
-    simulation_filters: input.simulationFilters,
-    department_ids: input.departmentIds,
-  };
-
-  return api.post("/dashboard/overview", apiInput, {
+  // InputOf types have body property with snake_case fields
+  return api.post("/dashboard/overview", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -63,26 +54,8 @@ const getDashboardHistory = async (
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  // Convert camelCase to snake_case for API
-  const apiInput = {
-    start_date: input.startDate,
-    end_date: input.endDate,
-    cohort_ids: input.cohortIds,
-    department_ids: input.departmentIds,
-    roles: input.roles,
-    simulation_filters: input.simulationFilters,
-    search: input.search,
-    profile_ids: input.profileIds,
-    simulation_ids: input.simulationIds,
-    scenario_ids: input.scenarioIds,
-    infinite_mode: input.infiniteMode,
-    sort_by: input.sortBy,
-    sort_order: input.sortOrder,
-    page: input.page,
-    page_size: input.pageSize,
-  };
-
-  return api.post("/dashboard/history", apiInput, {
+  // InputOf types have body property with snake_case fields
+  return api.post("/dashboard/history", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -97,15 +70,13 @@ async function getDashboardFilters(searchParams?: URLSearchParams) {
   // Use cached layout context (reuses data already fetched by layout)
   // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   const profileContext = await getLayoutContext({
-    body: {
-      pathname: "/",
-    },
+    body: {},
   });
 
   // Compute startDate using same logic as analytics context
   let startDate: Date;
-  if (profileContext.earliestAttemptDate) {
-    startDate = new Date(profileContext.earliestAttemptDate);
+  if (profileContext.earliest_attempt_date) {
+    startDate = new Date(profileContext.earliest_attempt_date);
     startDate.setHours(0, 0, 0, 0);
   } else {
     // Fallback to 30 days ago (matching analytics context)
@@ -145,15 +116,15 @@ async function getDashboardFilters(searchParams?: URLSearchParams) {
   const cohortIds =
     filters.cohortIds && filters.cohortIds.length > 0
       ? filters.cohortIds
-      : profileContext.cohortIds || [];
+      : profileContext.cohort_ids || [];
   const departmentIds =
     filters.departmentIds && filters.departmentIds.length > 0
       ? filters.departmentIds
-      : profileContext.departmentIds || [];
+      : profileContext.department_ids || [];
   const roles =
     filters.roles && filters.roles.length > 0
       ? filters.roles
-      : profileContext.scopedRoles || [];
+      : profileContext.scoped_roles || [];
 
   return {
     ...filters,
@@ -198,11 +169,6 @@ export default async function DashboardPage({
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
-  // Dashboard bundle no longer uses profileId - removed from request
-  const dashboardRequestBody = {
-    ...filters,
-  };
-
   // Extract pagination and filter params from search params
   const historyPage = searchParamsObj.get("historyPage")
     ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
@@ -231,7 +197,14 @@ export default async function DashboardPage({
 
   // Fetch dashboard data server-side (without history - history will be fetched separately)
   const dashboardData = await getDashboardOverview({
-    body: dashboardRequestBody,
+    body: {
+      start_date: filters.startDate,
+      end_date: filters.endDate,
+      cohort_ids: filters.cohortIds,
+      department_ids: filters.departmentIds,
+      roles: filters.roles,
+      simulation_filters: filters.simulationFilters,
+    },
   });
 
   // Remove history from response for server-driven pagination
@@ -366,32 +339,32 @@ async function DashboardHistorySection({
 
   const historyFilters: DashboardHistoryIn = {
     body: {
-      startDate: defaultFilters.startDate,
-      endDate: defaultFilters.endDate,
-      cohortIds: defaultFilters.cohortIds,
-      departmentIds: defaultFilters.departmentIds,
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
+      cohort_ids: defaultFilters.cohortIds,
+      department_ids: defaultFilters.departmentIds,
       roles: defaultFilters.roles,
-      simulationFilters: historySimulationFilters,
-      page: historyPage,
-      pageSize: historyPageSize,
+      simulation_filters: historySimulationFilters,
+      page_size: historyPageSize,
+      offset: historyPage * historyPageSize,
       ...(historySearch && { search: historySearch }),
       ...(historyProfileIds &&
         historyProfileIds.length > 0 && {
-          profileIds: historyProfileIds,
+          profile_ids: historyProfileIds,
         }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
-          simulationIds: historySimulationIds,
+          simulation_ids: historySimulationIds,
         }),
       ...(historyScenarioIds &&
         historyScenarioIds.length > 0 && {
-          scenarioIds: historyScenarioIds,
+          scenario_ids: historyScenarioIds,
         }),
       ...(historyInfiniteMode !== undefined && {
-        infiniteMode: historyInfiniteMode,
+        infinite_mode: historyInfiniteMode,
       }),
-      sortBy: historySortBy,
-      sortOrder: historySortOrder,
+      sort_by: historySortBy,
+      sort_order: historySortOrder,
     },
   };
 
@@ -399,37 +372,37 @@ async function DashboardHistorySection({
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profileOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const profileOptions = (historyData.profile_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const simulationOptions = (historyData.simulation_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
-  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const scenarioOptions = (historyData.scenario_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
 
   return (
     <SimulationHistory
-      data={historyData.data}
-      totalCount={historyData.totalCount}
-      archivedCount={historyData.archivedCount}
-      unarchivedCount={historyData.unarchivedCount}
+      data={historyData.data || []}
+      totalCount={historyData.total_count || 0}
+      archivedCount={historyData.archived_count || 0}
+      unarchivedCount={historyData.unarchived_count || 0}
       pageIndex={historyPage}
       pageSize={historyPageSize}
       showExport={false}

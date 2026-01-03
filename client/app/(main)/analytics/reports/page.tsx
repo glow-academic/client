@@ -9,7 +9,7 @@ import Reports from "@/components/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { searchParamsToFilters } from "@/utils/analytics-filters";
+import { searchParamsToFilters, type AnalyticsFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
@@ -41,15 +41,13 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   // Use cached layout context (reuses data already fetched by layout)
   // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   const profileContext = await getLayoutContext({
-    body: {
-      pathname: "/",
-    },
+    body: {},
   });
 
   // Compute startDate using same logic as analytics context
   let startDate: Date;
-  if (profileContext.earliestAttemptDate) {
-    startDate = new Date(profileContext.earliestAttemptDate);
+  if (profileContext.earliest_attempt_date) {
+    startDate = new Date(profileContext.earliest_attempt_date);
     startDate.setHours(0, 0, 0, 0);
   } else {
     // Fallback to 30 days ago (matching analytics context)
@@ -62,12 +60,12 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   endDate.setHours(23, 59, 59, 999);
 
   const defaults = {
-    start_date: startDate.toISOString(),
-    end_date: endDate.toISOString(),
-    cohort_ids: [] as string[],
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    cohortIds: [] as string[],
     roles: [] as string[],
-    simulation_filters: ["general" as const],
-    department_ids: [] as string[],
+    simulationFilters: ["general" as const],
+    departmentIds: [] as string[],
   };
 
   // If search params are provided, merge them with defaults
@@ -75,36 +73,39 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   if (searchParams) {
     const parsedFilters = searchParamsToFilters(searchParams, defaults);
     filters = {
-      start_date: parsedFilters.start_date || defaults.start_date,
-      end_date: parsedFilters.end_date || defaults.end_date,
-      cohort_ids: parsedFilters.cohort_ids || defaults.cohort_ids,
+      startDate: parsedFilters.startDate || defaults.startDate,
+      endDate: parsedFilters.endDate || defaults.endDate,
+      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
       roles: parsedFilters.roles || defaults.roles,
-      simulation_filters: (parsedFilters.simulation_filters ||
-        defaults.simulation_filters) as typeof defaults.simulation_filters,
-      department_ids: parsedFilters.department_ids || defaults.department_ids,
+      simulationFilters: (parsedFilters.simulationFilters ||
+        defaults.simulationFilters) as typeof defaults.simulationFilters,
+      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
     };
   }
 
   // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
   const cohortIds =
-    filters.cohort_ids && filters.cohort_ids.length > 0
-      ? filters.cohort_ids
-      : profileContext.cohortIds || [];
+    filters.cohortIds && filters.cohortIds.length > 0
+      ? filters.cohortIds
+      : profileContext.cohort_ids || [];
   const departmentIds =
-    filters.department_ids && filters.department_ids.length > 0
-      ? filters.department_ids
-      : profileContext.departmentIds || [];
+    filters.departmentIds && filters.departmentIds.length > 0
+      ? filters.departmentIds
+      : profileContext.department_ids || [];
   const roles =
     filters.roles && filters.roles.length > 0
       ? filters.roles
-      : profileContext.scopedRoles || [];
+      : profileContext.scoped_roles || [];
 
-  return {
-    ...filters,
-    cohortIds,
-    departmentIds,
-    roles,
+  const result: AnalyticsFilters = {
+    startDate: filters.startDate,
+    endDate: filters.endDate,
   };
+  if (cohortIds.length > 0) result.cohortIds = cohortIds;
+  if (departmentIds.length > 0) result.departmentIds = departmentIds;
+  if (roles.length > 0) result.roles = roles;
+  if (filters.simulationFilters.length > 0) result.simulationFilters = filters.simulationFilters;
+  return result;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -175,9 +176,9 @@ export default async function ReportsFullPage({
     reportsSortOrder,
     filters.startDate, // Include analytics filters to trigger re-fetch when filters change
     filters.endDate,
-    filters.cohortIds.join(","),
-    filters.departmentIds.join(","),
-    filters.roles.join(","),
+    (filters.cohortIds || []).join(","),
+    (filters.departmentIds || []).join(","),
+    (filters.roles || []).join(","),
     (
       filters as typeof filters & { simulationFilters?: string[] }
     ).simulationFilters?.join(",") || "general",
@@ -403,13 +404,7 @@ async function ReportsSection({
   reportsSortBy,
   reportsSortOrder,
 }: {
-  filters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-  };
+  filters: AnalyticsFilters;
   reportsPage: number;
   reportsPageSize: number;
   reportsSearch?: string | undefined;
@@ -421,7 +416,12 @@ async function ReportsSection({
 }) {
   // Build reports filters with pagination/search/sorting/filtering params (snake_case for API)
   const reportsFilters = {
-    ...filters,
+    start_date: filters.startDate,
+    end_date: filters.endDate,
+    cohort_ids: filters.cohortIds || [],
+    department_ids: filters.departmentIds || [],
+    roles: filters.roles || [],
+    simulation_filters: filters.simulationFilters || [],
     page: reportsPage,
     page_size: reportsPageSize,
     ...(reportsSearch && { search: reportsSearch }),
@@ -450,30 +450,30 @@ async function ReportsSection({
   const profileOptions =
     reportsData && "profile_options" in reportsData
       ? (reportsData.profile_options || []).map(
-          (opt: Record<string, string | number>) => ({
-            value: String(opt["value"] || ""),
-            label: String(opt["label"] || ""),
-            count: typeof opt["count"] === "number" ? opt["count"] : 0,
+          (opt: { value?: string | null; label?: string | null; count?: number | null }) => ({
+            value: String(opt.value || ""),
+            label: String(opt.label || ""),
+            count: typeof opt.count === "number" ? opt.count : 0,
           })
         )
       : [];
   const simulationOptions =
     reportsData && "simulation_options" in reportsData
       ? (reportsData.simulation_options || []).map(
-          (opt: Record<string, string | number>) => ({
-            value: String(opt["value"] || ""),
-            label: String(opt["label"] || ""),
-            count: typeof opt["count"] === "number" ? opt["count"] : 0,
+          (opt: { value?: string | null; label?: string | null; count?: number | null }) => ({
+            value: String(opt.value || ""),
+            label: String(opt.label || ""),
+            count: typeof opt.count === "number" ? opt.count : 0,
           })
         )
       : [];
   const scenarioOptions =
     reportsData && "scenario_options" in reportsData
       ? (reportsData.scenario_options || []).map(
-          (opt: Record<string, string | number>) => ({
-            value: String(opt["value"] || ""),
-            label: String(opt["label"] || ""),
-            count: typeof opt["count"] === "number" ? opt["count"] : 0,
+          (opt: { value?: string | null; label?: string | null; count?: number | null }) => ({
+            value: String(opt.value || ""),
+            label: String(opt.label || ""),
+            count: typeof opt.count === "number" ? opt.count : 0,
           })
         )
       : [];

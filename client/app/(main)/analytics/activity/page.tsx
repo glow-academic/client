@@ -89,7 +89,7 @@ export default async function ActivityPage({
 }: ActivityPageProps) {
   // Access control handled server-side in layout
   // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
-  
+
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -125,7 +125,7 @@ export default async function ActivityPage({
 
   // Create empty activity data for loading state
   const emptyActivityData: ActivityListOut = {
-    data: [],
+    activities: [],
     total_count: 0,
     page: activityPage,
     page_size: activityPageSize,

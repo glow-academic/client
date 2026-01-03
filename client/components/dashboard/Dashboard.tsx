@@ -81,156 +81,173 @@ export default function Dashboard({
       };
     }
 
+    if (!bundle.header_metrics) {
+      return {
+        averageScore: null as string | null,
+        completion: null as string | null,
+        passRate: null as string | null,
+        highestScore: null as string | null,
+        messages: null as string | null,
+        responseTime: null as string | null,
+        sessionEfficiency: null as string | null,
+        stagnationRate: null as string | null,
+        timeSpent: null as string | null,
+        totalAttempts: null as string | null,
+      };
+    }
+
     return {
-      averageScore: bundle.header.averageScore.trendAnalysis ?? null,
-      completion: bundle.header.completionPercentage.trendAnalysis ?? null,
-      passRate: bundle.header.firstAttemptPassRate.trendAnalysis ?? null,
-      highestScore: bundle.header.highestScore.trendAnalysis ?? null,
-      messages: bundle.header.messagesPerSession.trendAnalysis ?? null,
-      responseTime: bundle.header.personaResponseTimes.trendAnalysis ?? null,
-      sessionEfficiency: bundle.header.sessionEfficiency.trendAnalysis ?? null,
-      stagnationRate: bundle.header.stagnationRate.trendAnalysis ?? null,
-      timeSpent: bundle.header.timeSpent.trendAnalysis ?? null,
-      totalAttempts: bundle.header.totalAttempts.trendAnalysis ?? null,
+      averageScore: bundle.header_metrics.average_score?.trend_analysis ?? null,
+      completion: bundle.header_metrics.completion_percentage?.trend_analysis ?? null,
+      passRate: bundle.header_metrics.first_attempt_pass_rate?.trend_analysis ?? null,
+      highestScore: bundle.header_metrics.highest_score?.trend_analysis ?? null,
+      messages: bundle.header_metrics.messages_per_session?.trend_analysis ?? null,
+      responseTime: bundle.header_metrics.persona_response_times?.trend_analysis ?? null,
+      sessionEfficiency: bundle.header_metrics.session_efficiency?.trend_analysis ?? null,
+      stagnationRate: bundle.header_metrics.stagnation_rate?.trend_analysis ?? null,
+      timeSpent: bundle.header_metrics.time_spent?.trend_analysis ?? null,
+      totalAttempts: bundle.header_metrics.total_attempts?.trend_analysis ?? null,
     };
   }, [bundle]);
 
   // Build header components from bundle data
   const headerComponents = useMemo(() => {
-    if (!bundle) return [];
+    if (!bundle || !bundle.header_metrics) return [];
 
     return [
       <AverageScore
         key="average-score"
-        averageScore={bundle.header.averageScore.currentValue}
-        scoreTrend={bundle.header.averageScore.trendData}
-        hasDataAvailable={bundle.header.averageScore.hasData}
+        averageScore={bundle.header_metrics.average_score?.current_value ?? 0}
+        scoreTrend={(bundle.header_metrics.average_score?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.average_score?.has_data ?? false}
         trendAnalysis={trendAnalysis.averageScore}
-        status={bundle.header.averageScore.status ?? "neutral"}
+        status={(bundle.header_metrics.average_score?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <CompletionPercentage
         key="completion-percentage"
-        completionPercentage={bundle.header.completionPercentage.currentValue}
-        completionTrend={bundle.header.completionPercentage.trendData}
-        hasDataAvailable={bundle.header.completionPercentage.hasData}
+        completionPercentage={bundle.header_metrics.completion_percentage?.current_value ?? 0}
+        completionTrend={(bundle.header_metrics.completion_percentage?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.completion_percentage?.has_data ?? false}
         trendAnalysis={trendAnalysis.completion}
-        status={bundle.header.completionPercentage.status ?? "neutral"}
+        status={(bundle.header_metrics.completion_percentage?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <FirstAttemptPassRate
         key="first-attempt-pass-rate"
-        firstAttemptPassRate={bundle.header.firstAttemptPassRate.currentValue}
-        passRateTrend={bundle.header.firstAttemptPassRate.trendData}
-        hasDataAvailable={bundle.header.firstAttemptPassRate.hasData}
+        firstAttemptPassRate={bundle.header_metrics.first_attempt_pass_rate?.current_value ?? 0}
+        passRateTrend={(bundle.header_metrics.first_attempt_pass_rate?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.first_attempt_pass_rate?.has_data ?? false}
         trendAnalysis={trendAnalysis.passRate}
-        status={bundle.header.firstAttemptPassRate.status ?? "neutral"}
+        status={(bundle.header_metrics.first_attempt_pass_rate?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <HighestScore
         key="highest-score"
-        highestScore={bundle.header.highestScore.currentValue}
-        scoreTrend={bundle.header.highestScore.trendData}
-        hasDataAvailable={bundle.header.highestScore.hasData}
+        highestScore={bundle.header_metrics.highest_score?.current_value ?? 0}
+        scoreTrend={(bundle.header_metrics.highest_score?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.highest_score?.has_data ?? false}
         trendAnalysis={trendAnalysis.highestScore}
-        status={bundle.header.highestScore.status ?? "neutral"}
+        status={(bundle.header_metrics.highest_score?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <MessagesPerSession
         key="messages-per-session"
         averageMessagesPerSession={
-          bundle.header.messagesPerSession.currentValue
+          bundle.header_metrics.messages_per_session?.current_value ?? 0
         }
-        messagesTrend={bundle.header.messagesPerSession.trendData}
-        hasDataAvailable={bundle.header.messagesPerSession.hasData}
+        messagesTrend={(bundle.header_metrics.messages_per_session?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.messages_per_session?.has_data ?? false}
         trendAnalysis={trendAnalysis.messages}
-        status={bundle.header.messagesPerSession.status ?? "neutral"}
+        status={(bundle.header_metrics.messages_per_session?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <PersonaResponseTimes
         key="persona-response-times"
-        averageResponseTime={bundle.header.personaResponseTimes.currentValue}
-        responseTimeTrend={bundle.header.personaResponseTimes.trendData}
-        hasDataAvailable={bundle.header.personaResponseTimes.hasData}
+        averageResponseTime={bundle.header_metrics.persona_response_times?.current_value ?? 0}
+        responseTimeTrend={(bundle.header_metrics.persona_response_times?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.persona_response_times?.has_data ?? false}
         trendAnalysis={trendAnalysis.responseTime}
-        status={bundle.header.personaResponseTimes.status ?? "neutral"}
+        status={(bundle.header_metrics.persona_response_times?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <SessionEfficiency
         key="session-efficiency"
-        sessionEfficiency={bundle.header.sessionEfficiency.currentValue}
-        efficiencyTrend={bundle.header.sessionEfficiency.trendData}
-        hasDataAvailable={bundle.header.sessionEfficiency.hasData}
+        sessionEfficiency={bundle.header_metrics.session_efficiency?.current_value ?? 0}
+        efficiencyTrend={(bundle.header_metrics.session_efficiency?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.session_efficiency?.has_data ?? false}
         trendAnalysis={trendAnalysis.sessionEfficiency}
-        status={bundle.header.sessionEfficiency.status ?? "neutral"}
+        status={(bundle.header_metrics.session_efficiency?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <StagnationRate
         key="stagnation-rate"
-        stagnationRate={bundle.header.stagnationRate.currentValue}
-        stagnationTrend={bundle.header.stagnationRate.trendData}
-        hasDataAvailable={bundle.header.stagnationRate.hasData}
+        stagnationRate={bundle.header_metrics.stagnation_rate?.current_value ?? 0}
+        stagnationTrend={(bundle.header_metrics.stagnation_rate?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.stagnation_rate?.has_data ?? false}
         trendAnalysis={trendAnalysis.stagnationRate}
-        status={bundle.header.stagnationRate.status ?? "neutral"}
+        status={(bundle.header_metrics.stagnation_rate?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <TimeSpent
         key="time-spent"
-        totalTimeSpent={bundle.header.timeSpent.currentValue * 60}
-        timeSpentTrend={bundle.header.timeSpent.trendData.map((t) => ({
-          ...t,
-          value: Math.round(t.value * 60),
-        }))}
-        hasDataAvailable={bundle.header.timeSpent.hasData}
+        totalTimeSpent={(bundle.header_metrics.time_spent?.current_value ?? 0) * 60}
+        timeSpentTrend={(bundle.header_metrics.time_spent?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: Math.round(t.value! * 60), count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.time_spent?.has_data ?? false}
         trendAnalysis={trendAnalysis.timeSpent}
-        status={bundle.header.timeSpent.status ?? "neutral"}
+        status={(bundle.header_metrics.time_spent?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
       <TotalAttempts
         key="total-attempts"
-        totalAttempts={bundle.header.totalAttempts.currentValue}
-        attemptsTrend={bundle.header.totalAttempts.trendData}
-        hasDataAvailable={bundle.header.totalAttempts.hasData}
+        totalAttempts={bundle.header_metrics.total_attempts?.current_value ?? 0}
+        attemptsTrend={(bundle.header_metrics.total_attempts?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
+        hasDataAvailable={bundle.header_metrics.total_attempts?.has_data ?? false}
         trendAnalysis={trendAnalysis.totalAttempts}
-        status={bundle.header.totalAttempts.status ?? "neutral"}
+        status={(bundle.header_metrics.total_attempts?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
       />,
     ];
   }, [bundle, trendAnalysis]);
 
   // Build primary components from bundle data
   const primaryComponents = useMemo(() => {
-    if (!bundle) return [];
+    if (!bundle || !bundle.primary_metrics) return [];
+
+    const growthData = bundle.primary_metrics.growth_data;
+    const personaPerformance = bundle.primary_metrics.persona_performance;
+    const rubricHeatmap = bundle.primary_metrics.rubric_heatmap;
+
+    if (!growthData || !personaPerformance || !rubricHeatmap) return [];
 
     // Normalize Growth chartData to ensure all required fields are present
-    const normalizedGrowthChartData = bundle.primary.growthData.chartData.map(
+    const normalizedGrowthChartData = (growthData.chart_data || []).map(
       (point) => ({
         date: point.date,
-        averageScore: point.averageScore ?? null,
-        completionRate: point.completionRate ?? null,
-        firstAttemptPassRate: point.firstAttemptPassRate ?? null,
-        sessionEfficiency: point.sessionEfficiency ?? null,
-        stagnationRate: point.stagnationRate ?? null,
+        averageScore: point.average_score ?? null,
+        completionRate: point.completion_rate ?? null,
+        firstAttemptPassRate: point.first_attempt_pass_rate ?? null,
+        sessionEfficiency: point.session_efficiency ?? null,
+        stagnationRate: point.stagnation_rate ?? null,
       }),
     );
 
-    // Normalize PersonaPerformance trendData to ensure score is always present
-    const normalizedPersonaChartData =
-      bundle.primary.personaPerformance.chartData.map((persona) => ({
-        ...persona,
-        trendData: persona.trendData.map((td) => ({
-          date: td.date,
-          score: td.score ?? null,
-          timestamp: td.timestamp,
-          simulationId: td.simulationId ?? "",
-        })),
-        simulationIds: persona.simulationIds ?? [],
-      }));
+    // Normalize PersonaPerformance chartData to ensure score is always present
+    const normalizedPersonaChartData = (personaPerformance.chart_data || []).map((persona) => ({
+      ...persona,
+      trendData: (persona.trend_data || []).map((td) => ({
+        date: td.date,
+        score: td.score ?? null,
+        timestamp: td.timestamp,
+        simulationId: td.simulation_id ?? "",
+      })),
+      simulationIds: persona.simulation_ids ?? [],
+    }));
 
     // Normalize RubricHeatmap matrices to ensure required fields
-    const normalizedRubricMatrices = bundle.primary.rubricHeatmap.matrices.map(
+    const normalizedRubricMatrices = (rubricHeatmap.matrices || []).map(
       (matrix) => ({
         ...matrix,
-        standardGroups: matrix.standardGroups.map((sg) => ({
+        standardGroups: (matrix.standard_groups || []).map((sg) => ({
           id: sg.id,
           name: sg.name,
-          shortName: sg.shortName ?? null,
-          rubricId: sg.rubricId,
+          shortName: sg.short_name ?? null,
+          rubricId: sg.rubric_id,
         })),
-        matrix: matrix.matrix.map((row) =>
+        matrix: (matrix.matrix || []).map((row) =>
           row.map((cell) => ({
             ...cell,
-            pValue: cell.pValue ?? null,
+            pValue: cell.p_value ?? null,
           })),
         ),
         insights: matrix.insights ?? null,
@@ -238,38 +255,38 @@ export default function Dashboard({
     );
 
     // Normalize windowAverages to ensure last and prev are always present
-    const normalizedWindowAverages = {
+    const normalizedWindowAverages = growthData.window_averages ? {
       averageScore: {
-        n: bundle.primary.growthData.windowAverages.averageScore.n,
-        last:
-          bundle.primary.growthData.windowAverages.averageScore.last ?? null,
-        prev:
-          bundle.primary.growthData.windowAverages.averageScore.prev ?? null,
+        n: growthData.window_averages.average_score?.n ?? 0,
+        last: growthData.window_averages.average_score?.last ?? null,
+        prev: growthData.window_averages.average_score?.prev ?? null,
+      },
+    } : {
+      averageScore: {
+        n: 0,
+        last: null,
+        prev: null,
       },
     };
 
     return [
       <Growth
         key="growth"
-        {...bundle.primary.growthData}
         chartData={normalizedGrowthChartData}
+        availableMetrics={growthData.available_metrics || []}
         windowAverages={normalizedWindowAverages}
-        hasDataAvailable={bundle.primary.growthData.chartData.length > 0}
-        actionableInsight={bundle.insights.growth ?? null}
-        status={bundle.primary.growthData.status ?? "neutral"}
+        hasDataAvailable={(growthData.chart_data || []).length > 0}
+        actionableInsight={bundle.insights?.growth ?? null}
+        status={growthData.status ?? "neutral"}
       />,
       <PersonaPerformance
         key="persona-performance"
         chartData={normalizedPersonaChartData}
         simulations={bundle.simulations || []}
-        validSimulationIds={
-          bundle.primary.personaPerformance.validSimulationIds
-        }
-        personaColors={bundle.primary.personaPerformance.personaColors}
-        hasDataAvailable={
-          bundle.primary.personaPerformance.chartData.length > 0
-        }
-        actionableInsights={bundle.insights.persona}
+        validSimulationIds={personaPerformance.valid_simulation_ids || []}
+        personaColors={personaPerformance.persona_colors || []}
+        hasDataAvailable={(personaPerformance.chart_data || []).length > 0}
+        actionableInsights={bundle.insights?.persona}
         performanceStatus="neutral"
         thresholds={bundle.thresholds}
       />,
@@ -277,145 +294,143 @@ export default function Dashboard({
         key="rubric-heatmap"
         matrices={normalizedRubricMatrices}
         rubrics={bundle.rubrics || []}
-        validRubricIds={bundle.primary.rubricHeatmap.validRubricIds}
-        hasDataAvailable={bundle.primary.rubricHeatmap.matrices.length > 0}
-        actionableInsight={bundle.insights.rubric_heatmap ?? null}
-        status={bundle.primary.rubricHeatmap.status ?? "neutral"}
+        validRubricIds={rubricHeatmap.valid_rubric_ids || []}
+        hasDataAvailable={(rubricHeatmap.matrices || []).length > 0}
+        actionableInsight={bundle.insights?.rubric_heatmap ?? null}
+        status={rubricHeatmap.status ?? "neutral"}
       />,
     ];
   }, [bundle]);
 
   // Build secondary components from bundle data
   const secondaryComponents = useMemo(() => {
-    if (!bundle) return [];
+    if (!bundle || !bundle.secondary_metrics) return [];
 
+    const cohortPerformance = bundle.secondary_metrics.cohort_performance;
+    const attemptImprovement = bundle.secondary_metrics.attempt_improvement;
+    const skillPerformance = bundle.secondary_metrics.skill_performance;
+
+    if (!cohortPerformance || !attemptImprovement || !skillPerformance) return [];
 
     // Normalize CohortPerformance dailyData to convert null to undefined
-    const normalizedDailyData =
-      bundle.secondary.cohortPerformance.dailyData.map((d) => ({
-        date: d.date,
-        avgScore: d.avgScore,
-        cohortId: d.cohortId ?? undefined,
-      }));
+    const normalizedDailyData = (cohortPerformance.daily_data || []).map((d) => ({
+      date: d.date,
+      avgScore: d.avg_score,
+      cohortId: d.cohort_id ?? undefined,
+    }));
 
     // Normalize SkillPerformance packages to convert null to undefined
-    const normalizedSkillPackages =
-      bundle.secondary.skillPerformance.packages.map((pkg) => ({
-        ...pkg,
-        radarData: pkg.radarData.map((rd) => ({
-          metric: rd.metric,
-          description: rd.description ?? undefined,
-          value: rd.value,
-          fullMark: rd.fullMark,
-        })),
-        groupFacts: pkg.groupFacts.map((gf) => ({
-          ...gf,
-          groupDescription: gf.groupDescription ?? undefined,
-        })),
-      }));
+    const normalizedSkillPackages = (skillPerformance.packages || []).map((pkg) => ({
+      ...pkg,
+      radarData: (pkg.radar_data || []).map((rd) => ({
+        metric: rd.metric,
+        description: rd.description ?? undefined,
+        value: rd.value,
+        fullMark: rd.full_mark,
+      })),
+      groupFacts: (pkg.group_facts || []).map((gf) => ({
+        ...gf,
+        groupDescription: gf.group_description ?? undefined,
+      })),
+    }));
 
     return [
       <CohortPerformance
         key="cohort-performance"
-        cohortData={bundle.secondary.cohortPerformance.cohortData}
+        cohortData={cohortPerformance.cohort_data || []}
         dailyData={normalizedDailyData}
-        cohortFacts={bundle.secondary.cohortPerformance.cohortFacts}
-        dailyFacts={bundle.secondary.cohortPerformance.dailyFacts}
+        cohortFacts={cohortPerformance.cohort_facts || []}
+        dailyFacts={cohortPerformance.daily_facts || []}
         simulations={bundle.simulations || []}
-        validSimulationIds={
-          bundle.secondary.cohortPerformance.validSimulationIds
-        }
+        validSimulationIds={cohortPerformance.valid_simulation_ids || []}
         profileId={profileId}
-        actionableInsights={bundle.insights.cohort}
-        status={bundle.secondary.cohortPerformance.status ?? "neutral"}
+        actionableInsights={bundle.insights?.cohort}
+        status={cohortPerformance.status ?? "neutral"}
       />,
       <AttemptImprovement
         key="attempt-improvement"
-        chartData={bundle.secondary.attemptImprovement.chartData}
-        facts={bundle.secondary.attemptImprovement.facts}
+        chartData={attemptImprovement.chart_data || []}
+        facts={attemptImprovement.facts || []}
         simulations={bundle.simulations || []}
-        validSimulationIds={
-          bundle.secondary.attemptImprovement.validSimulationIds
-        }
-        actionableInsight={bundle.insights.attempt_improvement ?? null}
-        status={bundle.secondary.attemptImprovement.status ?? "neutral"}
+        validSimulationIds={attemptImprovement.valid_simulation_ids || []}
+        actionableInsight={bundle.insights?.attempt_improvement ?? null}
+        status={attemptImprovement.status ?? "neutral"}
       />,
       <SkillPerformance
         key="skill-performance"
         packages={normalizedSkillPackages}
         rubrics={bundle.rubrics || []}
-        validRubricIds={bundle.secondary.skillPerformance.validRubricIds}
-        actionableInsight={bundle.insights.skill_performance ?? null}
-        status={bundle.secondary.skillPerformance.status ?? "neutral"}
+        validRubricIds={skillPerformance.valid_rubric_ids || []}
+        actionableInsight={bundle.insights?.skill_performance ?? null}
+        status={skillPerformance.status ?? "neutral"}
       />,
     ];
   }, [bundle, profileId]);
 
   // Build footer components from bundle data
   const leftFooterComponents = useMemo(() => {
-    if (!bundle) return [];
+    if (!bundle || !bundle.footer_metrics) return [];
+
+    const scenarioPerformance = bundle.footer_metrics.scenario_performance;
+    const scenarioStats = bundle.footer_metrics.scenario_stats;
+
+    if (!scenarioPerformance || !scenarioStats) return [];
 
     return [
       <ScenarioPerformance
         key="scenario-performance"
-        attributeAttemptFacts={
-          bundle.footer.scenarioPerformance.attributeAttemptFacts
-        }
-        attributeScenarioFacts={
-          bundle.footer.scenarioPerformance.attributeScenarioFacts
-        }
+        attributeAttemptFacts={scenarioPerformance.attribute_attempt_facts || []}
+        attributeScenarioFacts={scenarioPerformance.attribute_scenario_facts || []}
         parameters={bundle.parameters || []}
         fields={bundle.fields || []}
-        validParameterIds={bundle.footer.scenarioPerformance.validParameterIds}
-        actionableInsight={bundle.insights.scenario_performance ?? null}
-        status={bundle.footer.scenarioPerformance.status ?? "neutral"}
+        validParameterIds={scenarioPerformance.valid_parameter_ids || []}
+        actionableInsight={bundle.insights?.scenario_performance ?? null}
+        status={scenarioPerformance.status ?? "neutral"}
       />,
       <ScenarioStats
         key="scenario-stats"
-        numericAttemptFacts={bundle.footer.scenarioStats.numericAttemptFacts}
-        numericScenarioFacts={bundle.footer.scenarioStats.numericScenarioFacts}
+        numericAttemptFacts={scenarioStats.numeric_attempt_facts || []}
+        numericScenarioFacts={scenarioStats.numeric_scenario_facts || []}
         parameters={bundle.parameters || []}
-        validNumericParameterIds={
-          bundle.footer.scenarioStats.validNumericParameterIds
-        }
-        actionableInsight={bundle.insights.scenario_stats ?? null}
-        status={bundle.footer.scenarioStats.status ?? "neutral"}
+        validNumericParameterIds={scenarioStats.valid_numeric_parameter_ids || []}
+        actionableInsight={bundle.insights?.scenario_stats ?? null}
+        status={scenarioStats.status ?? "neutral"}
       />,
     ];
   }, [bundle]);
 
   const rightFooterComponents = useMemo(() => {
-    if (!bundle) return [];
+    if (!bundle || !bundle.footer_metrics) return [];
+
+    const simulationPerformance = bundle.footer_metrics.simulation_performance;
+    const simulationComposition = bundle.footer_metrics.simulation_composition;
+
+    if (!simulationPerformance || !simulationComposition) return [];
 
     return [
       <SimulationPerformance
         key="simulation-performance"
-        validSimulationIds={
-          bundle.footer.simulationPerformance.validSimulationIds
-        }
-        scenarioFacts={bundle.footer.simulationPerformance.scenarioFacts}
+        validSimulationIds={simulationPerformance.valid_simulation_ids || []}
+        scenarioFacts={simulationPerformance.scenario_facts || []}
         simulations={bundle.simulations || []}
-        actionableInsight={bundle.insights.simulation_performance ?? null}
-        status={bundle.footer.simulationPerformance.status ?? "neutral"}
+        actionableInsight={bundle.insights?.simulation_performance ?? null}
+        status={simulationPerformance.status ?? "neutral"}
       />,
       <SimulationComposition
         key="simulation-composition"
-        simulationFacts={bundle.footer.simulationComposition.simulationFacts}
+        simulationFacts={simulationComposition.simulation_facts || []}
         simulationParameterFactsCategorical={
-          bundle.footer.simulationComposition
-            .simulationParameterFactsCategorical
+          simulationComposition.simulation_parameter_facts_categorical || []
         }
         simulationParameterFactsNumeric={
-          bundle.footer.simulationComposition.simulationParameterFactsNumeric
+          simulationComposition.simulation_parameter_facts_numeric || []
         }
         simulations={bundle.simulations || []}
         parameters={bundle.parameters || []}
         fields={bundle.fields || []}
-        validSimulationIds={
-          bundle.footer.simulationComposition.validSimulationIds
-        }
-        actionableInsight={bundle.insights.simulation_composition ?? null}
-        status={bundle.footer.simulationComposition.status ?? "neutral"}
+        validSimulationIds={simulationComposition.valid_simulation_ids || []}
+        actionableInsight={bundle.insights?.simulation_composition ?? null}
+        status={simulationComposition.status ?? "neutral"}
       />,
     ];
   }, [bundle]);
