@@ -78,6 +78,7 @@ import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { buildSearchParams } from "./scenario-helpers";
 import type { DraftState } from "./scenario-types";
+import { isScenarioDetailOut, isScenarioNewOut } from "./scenario-types";
 
 // Utility function to generate gradient from hex color (used for persona cards)
 const generateGradientFromHex = (hexColor: string): string => {
@@ -113,7 +114,6 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import {
-  getFieldIdsFromStructure,
   getObjectivesFromMapping,
   groupFieldsByParameterId,
 } from "@/utils/scenario-helpers";
@@ -334,7 +334,7 @@ export default function Scenario({
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           fieldShowSelected = parsed as Record<string, boolean>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to empty object
       }
     }
@@ -348,7 +348,7 @@ export default function Scenario({
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           fieldRanges = parsed as Record<string, { min: number; max: number }>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to empty object
       }
     }
@@ -366,7 +366,7 @@ export default function Scenario({
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           randomizeParameterItems = parsed as Record<string, string>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to empty object
       }
     }
@@ -428,9 +428,15 @@ export default function Scenario({
     draftId,
     urlDraftId,
     // Include actual content fields so it recomputes when server data changes (not just object reference)
-    scenarioDetailDefault?.name,
     scenarioDetailDefault?.department_ids,
-    isEditMode ? scenarioDetail?.name : undefined,
+    // Extract complex expression to separate variable - only access name from scenarioDetail (ScenarioDetailOut)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (() => {
+      if (isEditMode && scenarioDetail && isScenarioDetailOut(scenarioDetail)) {
+        return scenarioDetail.name;
+      }
+      return undefined;
+    })(),
     scenarioDetail?.problem_statement,
     scenarioDetail?.department_ids,
     scenarioDetail?.persona_ids,
@@ -593,302 +599,6 @@ export default function Scenario({
       throw new Error("updateScenarioAction is required");
     }
     return await updateScenarioAction({ body });
-  };
-
-  const handleGenerateAIScenario = async (
-    body: GenerateAIScenarioBody
-  ): Promise<GenerateAIScenarioOut> => {
-    if (!socket || !isConnected) {
-      throw new Error("WebSocket not connected");
-    }
-
-    // Determine if we're regenerating (problem statement exists) or generating new
-    const isRegenerating = !!problemStatement?.trim();
-    const initialMessage = isRegenerating
-      ? "Regenerating scenario..."
-      : "Generating scenario...";
-
-    // Create a single toast at the start
-    const toastId = toast.loading(initialMessage);
-
-    return new Promise((resolve, reject) => {
-      // Collect IDs from tool completion events
-      let problemStatementId: string | null = null;
-      let objectiveIds: string[] = [];
-      const documentIds: string[] = [];
-      const imageIds: string[] = [];
-      const title = "";
-      const description = "";
-      const objectives: string[] = [];
-      const dynamicDocumentMapping: Record<string, string> | null = null;
-
-      // Set up event listeners
-      const handleProgress = (data: {
-        type: string;
-        message?: string;
-        tool_name?: string;
-        trace_id?: string;
-      }) => {
-        // Update the same toast with progress messages
-        const progressMessage =
-          data.message ||
-          (data.type === "start"
-            ? initialMessage
-            : data.tool_name
-              ? `Calling ${data.tool_name}...`
-              : "Processing...");
-        toast.loading(progressMessage, { id: toastId });
-      };
-
-      // Tool completion event handlers
-      const handleProblemStatementComplete = (data: {
-        success: boolean;
-        problem_statement_id: string;
-        trace_id?: string;
-        message?: string;
-      }) => {
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Scenario] scenario_tool_problem_statement_complete event received:",
-          {
-            success: data.success,
-            problem_statement_id: data.problem_statement_id,
-            trace_id: data.trace_id,
-            message: data.message,
-          }
-        );
-        if (data.success) {
-          problemStatementId = data.problem_statement_id;
-          // Update state to trigger URL refresh
-          updateProblemStatementIds((prev) => {
-            if (prev.includes(data.problem_statement_id)) {
-              return prev;
-            }
-            return [...prev, data.problem_statement_id];
-          });
-        }
-      };
-
-      const handleObjectivesComplete = (data: {
-        success: boolean;
-        objective_ids: string[];
-        trace_id?: string;
-        message?: string;
-      }) => {
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Scenario] scenario_tool_objectives_complete event received:",
-          {
-            success: data.success,
-            objective_ids: data.objective_ids,
-            trace_id: data.trace_id,
-            message: data.message,
-          }
-        );
-        if (data.success) {
-          objectiveIds = data.objective_ids;
-          // Update state to trigger URL sync
-          updateObjectiveIds(data.objective_ids);
-        }
-      };
-
-      const handleDocumentComplete = (data: {
-        success: boolean;
-        document_id: string;
-        parent_document_id?: string;
-        trace_id?: string;
-        message?: string;
-      }) => {
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Scenario] scenario_tool_document_complete event received:",
-          {
-            success: data.success,
-            document_id: data.document_id,
-            parent_document_id: data.parent_document_id,
-            trace_id: data.trace_id,
-            message: data.message,
-          }
-        );
-
-        if (data.success) {
-          documentIds.push(data.document_id);
-
-          const parentDocumentId = data.parent_document_id;
-          if (parentDocumentId) {
-            // Document has a parent - this is a dynamic child document (created from a template)
-            // Add child to currentDocumentIds and remove parent from templateDocumentIds
-            // eslint-disable-next-line no-console
-            console.log("[Scenario] Adding dynamic child document:", {
-              parent_id: parentDocumentId,
-              document_id: data.document_id,
-            });
-            // Add child document to currentDocumentIds
-            // Keep parent in URL (for persistence) but add child for display
-            updateDocumentIds((prev) => {
-              // Add child if not already present
-              if (prev.includes(data.document_id)) {
-                return prev;
-              }
-              return [...prev, data.document_id];
-            });
-            // Note: We keep parent in templateDocumentIds for URL persistence
-            // The display logic will filter/show child instead of parent
-          } else {
-            // Regular document (no parent) - add to currentDocumentIds
-            // eslint-disable-next-line no-console
-            console.log("[Scenario] Adding new document:", data.document_id);
-            updateDocumentIds((prev) => {
-              return [...prev, data.document_id];
-            });
-          }
-        } else {
-          // eslint-disable-next-line no-console
-          console.error("[Scenario] Document completion failed:", data.message);
-        }
-      };
-
-      const handleImageComplete = (data: {
-        success: boolean;
-        image_id: string;
-        trace_id?: string;
-        message?: string;
-      }) => {
-        // eslint-disable-next-line no-console
-        console.log("[Scenario] scenario_tool_image_complete event received:", {
-          success: data.success,
-          image_id: data.image_id,
-          trace_id: data.trace_id,
-          message: data.message,
-        });
-        if (data.success) {
-          imageIds.push(data.image_id);
-        }
-      };
-
-      const handleComplete = (data: {
-        success: boolean;
-        message: string;
-        trace_id?: string;
-      }) => {
-        // Clean up all listeners
-        socket.off("scenarios_generation_progress", handleProgress);
-        socket.off("scenarios_generation_complete", handleComplete);
-        socket.off("scenarios_generation_error", handleError);
-        socket.off(
-          "scenarios_tools_statement_complete",
-          handleProblemStatementComplete
-        );
-        socket.off(
-          "scenarios_tools_objectives_complete",
-          handleObjectivesComplete
-        );
-        socket.off("scenarios_tools_document_complete", handleDocumentComplete);
-        socket.off("scenarios_tools_image_complete", handleImageComplete);
-
-        if (data.success) {
-          // Convert toast to success
-          const successMessage = isRegenerating
-            ? "Scenario regenerated successfully!"
-            : "Scenario generated successfully!";
-          toast.success(successMessage, { id: toastId });
-
-          // Fetch problem statement details if we have an ID
-          // Note: title and description will need to be fetched separately if needed
-          // For now, we'll return empty strings and let the client fetch from the API
-          resolve({
-            success: true,
-            message: data.message,
-            title: title,
-            description: description,
-            objectives: objectives,
-            dynamic_document_mapping: dynamicDocumentMapping,
-            problem_statement_id: problemStatementId,
-            objective_ids: objectiveIds,
-            document_ids: documentIds,
-            image_ids: imageIds,
-          });
-        } else {
-          // Convert toast to error
-          toast.error(data.message || "Scenario generation failed", {
-            id: toastId,
-          });
-          reject(new Error(data.message || "Scenario generation failed"));
-        }
-      };
-
-      const handleError = (data: {
-        success: boolean;
-        message: string;
-        trace_id?: string;
-      }) => {
-        // Clean up all listeners
-        socket.off("scenarios_generation_progress", handleProgress);
-        socket.off("scenarios_generation_complete", handleComplete);
-        socket.off("scenarios_generation_error", handleError);
-        socket.off(
-          "scenarios_tools_statement_complete",
-          handleProblemStatementComplete
-        );
-        socket.off(
-          "scenarios_tools_objectives_complete",
-          handleObjectivesComplete
-        );
-        socket.off("scenarios_tools_document_complete", handleDocumentComplete);
-        socket.off("scenarios_tools_image_complete", handleImageComplete);
-
-        // Convert toast to error
-        toast.error(data.message || "Scenario generation failed", {
-          id: toastId,
-        });
-        reject(new Error(data.message || "Scenario generation failed"));
-      };
-
-      // Register listeners
-      socket.on("scenarios_generation_progress", handleProgress);
-      socket.on("scenarios_generation_complete", handleComplete);
-      socket.on("scenarios_generation_error", handleError);
-      socket.on(
-        "scenario_tool_problem_statement_complete",
-        handleProblemStatementComplete
-      );
-      socket.on(
-        "scenarios_tools_objectives_complete",
-        handleObjectivesComplete
-      );
-      socket.on("scenarios_tools_document_complete", handleDocumentComplete);
-      socket.on("scenarios_tools_image_complete", handleImageComplete);
-
-      // eslint-disable-next-line no-console
-      console.log(
-        "[Scenario] Registered WebSocket event listeners for scenario generation"
-      );
-
-      // Emit the event
-      // scenarioAgentId is required - UI filters and selects appropriate agent for scenario generation
-      if (!basicInfoState.scenarioAgentId) {
-        toast.error("Please select a scenario agent before generating");
-        reject(new Error("Scenario agent ID is required"));
-        return;
-      }
-
-      socket.emit("generate_scenario", {
-        departmentId: body.departmentId,
-        scenarioAgentId: basicInfoState.scenarioAgentId, // Required: selected scenario agent ID
-        imageAgentId: basicInfoState.imageAgentId || undefined, // Optional: selected image agent ID
-        videoAgentId: basicInfoState.videoAgentId || undefined, // Optional: selected video agent ID
-        personaIds: body.personaIds,
-        documentIds: body.documentIds,
-        fieldIds: body.fieldIds, // Renamed from parameterItemIds
-        profileId: body.profileId,
-        scenarioId: scenarioId || undefined, // Pass scenarioId if in edit mode
-        imagesEnabled: useImage,
-        videoEnabled: useVideo,
-        objectivesEnabled: useObjectives,
-        questionsEnabled: useQuestions,
-        videoLength: selectedVideoLength || undefined,
-      });
-    });
   };
 
   // Note: Using handleCreateScenario and handleUpdateScenario directly
@@ -1081,18 +791,48 @@ export default function Scenario({
   const parameterShowSelected =
     (formData["parameterShowSelected"] as boolean | null) ?? false;
 
-  // Derived from draft state (form fields)
-  const name = draftState.name || "New Scenario";
-  const problemStatement = draftState.problemStatement || "";
-  const selectedPersonaIds = draftState.personaIds || [];
-  const currentDocumentIds = draftState.documentIds || [];
-  const templateDocumentIds = draftState.templateDocumentIds || [];
-  const currentFieldIds = draftState.fieldIds || [];
-  const currentProblemStatementIds = draftState.problemStatementIds || [];
-  const currentObjectiveIds = draftState.objectiveIds || [];
-  const fieldShowSelectedByParam = draftState.fieldShowSelected || {};
-  const fieldMinMax = draftState.fieldRanges || {};
-  const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
+  // Derived from draft state (form fields) - wrapped in useMemo to fix React hook dependencies
+  const name = useMemo(
+    () => draftState.name || "New Scenario",
+    [draftState.name]
+  );
+  const problemStatement = useMemo(
+    () => draftState.problemStatement || "",
+    [draftState.problemStatement]
+  );
+  const selectedPersonaIds = useMemo(
+    () => draftState.personaIds || [],
+    [draftState.personaIds]
+  );
+  const currentDocumentIds = useMemo(
+    () => draftState.documentIds || [],
+    [draftState.documentIds]
+  );
+  const templateDocumentIds = useMemo(
+    () => draftState.templateDocumentIds || [],
+    [draftState.templateDocumentIds]
+  );
+  const currentFieldIds = useMemo(
+    () => draftState.fieldIds || [],
+    [draftState.fieldIds]
+  );
+  const currentProblemStatementIds = useMemo(
+    () => draftState.problemStatementIds || [],
+    [draftState.problemStatementIds]
+  );
+  const currentObjectiveIds = useMemo(
+    () => draftState.objectiveIds || [],
+    [draftState.objectiveIds]
+  );
+  const fieldShowSelectedByParam = useMemo(
+    () => draftState.fieldShowSelected || {},
+    [draftState.fieldShowSelected]
+  );
+  const fieldMinMax = useMemo(
+    () => draftState.fieldRanges || {},
+    [draftState.fieldRanges]
+  );
+  const [_previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
   );
   // Local state for preview dialog in documents step (moved outside renderStep)
@@ -1132,8 +872,11 @@ export default function Scenario({
   // Video length from draft state
   const selectedVideoLength = draftState.videoLength ?? null;
 
-  // Objectives from draft state (array, not JSON-encoded)
-  const currentObjectives = draftState.objectives || [];
+  // Objectives from draft state (array, not JSON-encoded) - wrapped in useMemo to fix React hook dependencies
+  const currentObjectives = useMemo(
+    () => draftState.objectives || [],
+    [draftState.objectives]
+  );
   // State for content section (image, video, questions, objectives)
   const [contentState, setContentState] = useState<{
     image: { id: string; name: string; upload_id: string } | null;
@@ -1195,11 +938,10 @@ export default function Scenario({
       return { min: personaMin, max: personaMax };
     }
     // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && !isEditMode && "persona_min" in scenarioData) {
-      const newData = scenarioData as ScenarioNewOut;
+    if (scenarioData && !isEditMode && isScenarioNewOut(scenarioData)) {
       return {
-        min: newData.persona_min ?? 1,
-        max: newData.persona_max ?? 1,
+        min: scenarioData.persona_range_min ?? 1,
+        max: scenarioData.persona_range_max ?? 1,
       };
     }
     return { min: 1, max: 1 };
@@ -1217,11 +959,10 @@ export default function Scenario({
       return { min: documentMin, max: documentMax };
     }
     // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && !isEditMode && "document_min" in scenarioData) {
-      const newData = scenarioData as ScenarioNewOut;
+    if (scenarioData && !isEditMode && isScenarioNewOut(scenarioData)) {
       return {
-        min: newData.document_min ?? 0,
-        max: newData.document_max ?? 1,
+        min: scenarioData.document_range_min ?? 0,
+        max: scenarioData.document_range_max ?? 1,
       };
     }
     return { min: 0, max: 1 };
@@ -1244,24 +985,33 @@ export default function Scenario({
       return { min: parameterSelectionMin, max: parameterSelectionMax };
     }
     // Fallback to server values (from ScenarioNewOut)
-    if (
-      scenarioData &&
-      !isEditMode &&
-      "parameter_selection_min" in scenarioData
-    ) {
-      const newData = scenarioData as ScenarioNewOut;
+    if (scenarioData && !isEditMode && isScenarioNewOut(scenarioData)) {
       return {
-        min: newData.parameter_selection_min ?? 0,
-        max: newData.parameter_selection_max ?? 3,
+        min: scenarioData.parameter_range_min ?? 0,
+        max: scenarioData.parameter_range_max ?? 3,
       };
     }
-    const ranges = (scenarioData as ScenarioNewOut)?.allowed_ranges;
-    return ranges?.parameter_selection
-      ? {
-          min: ranges.parameter_selection.min,
-          max: ranges.parameter_selection.max,
-        }
-      : { min: 0, max: 3 };
+    // Use parameter_range_min and parameter_range_max directly from API response
+    const newDataForRanges =
+      scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+        ? scenarioData
+        : null;
+    if (newDataForRanges) {
+      const min = newDataForRanges.parameter_range_min;
+      const max = newDataForRanges.parameter_range_max;
+      if (
+        min !== null &&
+        min !== undefined &&
+        max !== null &&
+        max !== undefined
+      ) {
+        return {
+          min,
+          max,
+        };
+      }
+    }
+    return { min: 0, max: 3 };
   }, [
     draftState.parameterSelectionMin,
     draftState.parameterSelectionMax,
@@ -1285,18 +1035,43 @@ export default function Scenario({
 
   // Build mappings from arrays (arrays are now the source of truth)
   const fieldMapping = useMemo(() => {
-    const data = scenarioData as any;
-    const map: Record<string, any> = {};
-    if (data?.fields && Array.isArray(data.fields)) {
-      data.fields.forEach((f: any) => {
-        if (f.field_id) {
-          map[String(f.field_id)] = {
-            name: f.name || "",
-            description: f.description || "",
-            parameter_id: f.parameter_id ? String(f.parameter_id) : "",
-            parameter_name: f.parameter_name || "",
+    if (!scenarioData) return {};
+    const fields =
+      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
+        ? scenarioData.fields
+        : undefined;
+    const map: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        parameter_id: string;
+        parameter_name: string;
+        conditional_parameter_ids: string[];
+      }
+    > = {};
+    if (fields && Array.isArray(fields)) {
+      fields.forEach((f) => {
+        const field = f as {
+          field_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+          parameter_id?: string | null;
+          parameter_name?: string | null;
+          conditional_parameter_ids?: Array<string | null> | null;
+        };
+        if (field.field_id) {
+          map[String(field.field_id)] = {
+            name: field.name || "",
+            description: field.description || "",
+            parameter_id: field.parameter_id ? String(field.parameter_id) : "",
+            parameter_name: field.parameter_name || "",
             conditional_parameter_ids:
-              f.conditional_parameter_ids?.map((id: any) => String(id)) || [],
+              field.conditional_parameter_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
           };
         }
       });
@@ -1307,12 +1082,21 @@ export default function Scenario({
   // Helper to get objective mapping from arrays
   const getObjectiveMapping = useMemo(() => {
     const map: Record<string, { name: string }> = {};
-    const data = scenarioData as any;
-    if (data?.objectives && Array.isArray(data.objectives)) {
-      data.objectives.forEach((obj: any) => {
-        if (obj.objective_id) {
-          map[String(obj.objective_id)] = {
-            name: obj.name || obj.description || "",
+    if (!scenarioData) return map;
+    const objectives =
+      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
+        ? scenarioData.objectives
+        : undefined;
+    if (objectives && Array.isArray(objectives)) {
+      objectives.forEach((obj) => {
+        const objective = obj as {
+          objective_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+        };
+        if (objective.objective_id) {
+          map[String(objective.objective_id)] = {
+            name: objective.name || objective.description || "",
           };
         }
       });
@@ -1391,19 +1175,6 @@ export default function Scenario({
     setDraftState((prev) => ({ ...prev, videoLength: length }));
   }, []);
 
-  const updateFieldShowSelected = useCallback(
-    (
-      value:
-        | Record<string, boolean>
-        | ((prev: Record<string, boolean>) => Record<string, boolean>)
-    ) => {
-      const newValue =
-        typeof value === "function" ? value(fieldShowSelectedByParam) : value;
-      setDraftState((prev) => ({ ...prev, fieldShowSelected: newValue }));
-    },
-    [fieldShowSelectedByParam]
-  );
-
   const updateFieldRanges = useCallback(
     (
       value:
@@ -1416,6 +1187,329 @@ export default function Scenario({
       setDraftState((prev) => ({ ...prev, fieldRanges: newValue }));
     },
     [fieldMinMax]
+  );
+
+  const handleGenerateAIScenario = useCallback(
+    async (body: GenerateAIScenarioBody): Promise<GenerateAIScenarioOut> => {
+      if (!socket || !isConnected) {
+        throw new Error("WebSocket not connected");
+      }
+
+      // Determine if we're regenerating (problem statement exists) or generating new
+      const isRegenerating = !!problemStatement?.trim();
+      const initialMessage = isRegenerating
+        ? "Regenerating scenario..."
+        : "Generating scenario...";
+
+      // Create a single toast at the start
+      const toastId = toast.loading(initialMessage);
+
+      return new Promise((resolve, reject) => {
+        // Collect IDs from tool completion events
+        let problemStatementId: string | null = null;
+        let objectiveIds: string[] = [];
+        const documentIds: string[] = [];
+        const imageIds: string[] = [];
+        const title = "";
+        const description = "";
+        const objectives: string[] = [];
+        const dynamicDocumentMapping: Record<string, string> | null = null;
+
+        // Set up event listeners
+        const handleProgress = (data: {
+          type: string;
+          message?: string;
+          tool_name?: string;
+          trace_id?: string;
+        }) => {
+          // Update the same toast with progress messages
+          const progressMessage =
+            data.message ||
+            (data.type === "start"
+              ? initialMessage
+              : data.tool_name
+                ? `Calling ${data.tool_name}...`
+                : "Processing...");
+          toast.loading(progressMessage, { id: toastId });
+        };
+
+        // Tool completion event handlers
+        const handleProblemStatementComplete = (data: {
+          success: boolean;
+          problem_statement_id: string;
+          trace_id?: string;
+          message?: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Scenario] scenario_tool_problem_statement_complete event received:",
+            {
+              success: data.success,
+              problem_statement_id: data.problem_statement_id,
+              trace_id: data.trace_id,
+              message: data.message,
+            }
+          );
+          if (data.success) {
+            problemStatementId = data.problem_statement_id;
+            // Update state to trigger URL refresh
+            updateProblemStatementIds((prev) => {
+              if (prev.includes(data.problem_statement_id)) {
+                return prev;
+              }
+              return [...prev, data.problem_statement_id];
+            });
+          }
+        };
+
+        const handleObjectivesComplete = (data: {
+          success: boolean;
+          objective_ids: string[];
+          trace_id?: string;
+          message?: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Scenario] scenario_tool_objectives_complete event received:",
+            {
+              success: data.success,
+              objective_ids: data.objective_ids,
+              trace_id: data.trace_id,
+              message: data.message,
+            }
+          );
+          if (data.success) {
+            objectiveIds = data.objective_ids;
+            // Update state to trigger URL sync
+            updateObjectiveIds(data.objective_ids);
+          }
+        };
+
+        const handleDocumentComplete = (data: {
+          success: boolean;
+          document_id: string;
+          parent_document_id?: string;
+          trace_id?: string;
+          message?: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Scenario] scenario_tool_document_complete event received:",
+            {
+              success: data.success,
+              document_id: data.document_id,
+              parent_document_id: data.parent_document_id,
+              trace_id: data.trace_id,
+              message: data.message,
+            }
+          );
+
+          if (data.success) {
+            documentIds.push(data.document_id);
+
+            const parentDocumentId = data.parent_document_id;
+            if (parentDocumentId) {
+              // Document has a parent - this is a dynamic child document (created from a template)
+              // Add child to currentDocumentIds and remove parent from templateDocumentIds
+              // eslint-disable-next-line no-console
+              console.log("[Scenario] Adding dynamic child document:", {
+                parent_id: parentDocumentId,
+                document_id: data.document_id,
+              });
+              // Add child document to currentDocumentIds
+              // Keep parent in URL (for persistence) but add child for display
+              updateDocumentIds((prev) => {
+                // Add child if not already present
+                if (prev.includes(data.document_id)) {
+                  return prev;
+                }
+                return [...prev, data.document_id];
+              });
+              // Note: We keep parent in templateDocumentIds for URL persistence
+              // The display logic will filter/show child instead of parent
+            } else {
+              // Regular document (no parent) - add to currentDocumentIds
+              // eslint-disable-next-line no-console
+              console.log("[Scenario] Adding new document:", data.document_id);
+              updateDocumentIds((prev) => {
+                return [...prev, data.document_id];
+              });
+            }
+          } else {
+            // eslint-disable-next-line no-console
+            console.error(
+              "[Scenario] Document completion failed:",
+              data.message
+            );
+          }
+        };
+
+        const handleImageComplete = (data: {
+          success: boolean;
+          image_id: string;
+          trace_id?: string;
+          message?: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Scenario] scenario_tool_image_complete event received:",
+            {
+              success: data.success,
+              image_id: data.image_id,
+              trace_id: data.trace_id,
+              message: data.message,
+            }
+          );
+          if (data.success) {
+            imageIds.push(data.image_id);
+          }
+        };
+
+        const handleComplete = (data: {
+          success: boolean;
+          message: string;
+          trace_id?: string;
+        }) => {
+          // Clean up all listeners
+          socket.off("scenarios_generation_progress", handleProgress);
+          socket.off("scenarios_generation_complete", handleComplete);
+          socket.off("scenarios_generation_error", handleError);
+          socket.off(
+            "scenarios_tools_statement_complete",
+            handleProblemStatementComplete
+          );
+          socket.off(
+            "scenarios_tools_objectives_complete",
+            handleObjectivesComplete
+          );
+          socket.off(
+            "scenarios_tools_document_complete",
+            handleDocumentComplete
+          );
+          socket.off("scenarios_tools_image_complete", handleImageComplete);
+
+          if (data.success) {
+            // Convert toast to success
+            const successMessage = isRegenerating
+              ? "Scenario regenerated successfully!"
+              : "Scenario generated successfully!";
+            toast.success(successMessage, { id: toastId });
+
+            // Fetch problem statement details if we have an ID
+            // Note: title and description will need to be fetched separately if needed
+            // For now, we'll return empty strings and let the client fetch from the API
+            resolve({
+              success: true,
+              message: data.message,
+              title: title,
+              description: description,
+              objectives: objectives,
+              dynamic_document_mapping: dynamicDocumentMapping,
+              problem_statement_id: problemStatementId,
+              objective_ids: objectiveIds,
+              document_ids: documentIds,
+              image_ids: imageIds,
+            });
+          } else {
+            // Convert toast to error
+            toast.error(data.message || "Scenario generation failed", {
+              id: toastId,
+            });
+            reject(new Error(data.message || "Scenario generation failed"));
+          }
+        };
+
+        const handleError = (data: {
+          success: boolean;
+          message: string;
+          trace_id?: string;
+        }) => {
+          // Clean up all listeners
+          socket.off("scenarios_generation_progress", handleProgress);
+          socket.off("scenarios_generation_complete", handleComplete);
+          socket.off("scenarios_generation_error", handleError);
+          socket.off(
+            "scenarios_tools_statement_complete",
+            handleProblemStatementComplete
+          );
+          socket.off(
+            "scenarios_tools_objectives_complete",
+            handleObjectivesComplete
+          );
+          socket.off(
+            "scenarios_tools_document_complete",
+            handleDocumentComplete
+          );
+          socket.off("scenarios_tools_image_complete", handleImageComplete);
+
+          // Convert toast to error
+          toast.error(data.message || "Scenario generation failed", {
+            id: toastId,
+          });
+          reject(new Error(data.message || "Scenario generation failed"));
+        };
+
+        // Register listeners
+        socket.on("scenarios_generation_progress", handleProgress);
+        socket.on("scenarios_generation_complete", handleComplete);
+        socket.on("scenarios_generation_error", handleError);
+        socket.on(
+          "scenario_tool_problem_statement_complete",
+          handleProblemStatementComplete
+        );
+        socket.on(
+          "scenarios_tools_objectives_complete",
+          handleObjectivesComplete
+        );
+        socket.on("scenarios_tools_document_complete", handleDocumentComplete);
+        socket.on("scenarios_tools_image_complete", handleImageComplete);
+
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Scenario] Registered WebSocket event listeners for scenario generation"
+        );
+
+        // Emit the event
+        // scenarioAgentId is required - UI filters and selects appropriate agent for scenario generation
+        if (!basicInfoState.scenarioAgentId) {
+          toast.error("Please select a scenario agent before generating");
+          reject(new Error("Scenario agent ID is required"));
+          return;
+        }
+
+        socket.emit("generate_scenario", {
+          departmentId: body.departmentId,
+          scenarioAgentId: basicInfoState.scenarioAgentId, // Required: selected scenario agent ID
+          imageAgentId: basicInfoState.imageAgentId || undefined, // Optional: selected image agent ID
+          videoAgentId: basicInfoState.videoAgentId || undefined, // Optional: selected video agent ID
+          personaIds: body.personaIds,
+          documentIds: body.documentIds,
+          fieldIds: body.fieldIds, // Renamed from parameterItemIds
+          profileId: body.profileId,
+          scenarioId: scenarioId || undefined, // Pass scenarioId if in edit mode
+          imagesEnabled: useImage,
+          videoEnabled: useVideo,
+          objectivesEnabled: useObjectives,
+          questionsEnabled: useQuestions,
+          videoLength: selectedVideoLength || undefined,
+        });
+      });
+    },
+    [
+      socket,
+      isConnected,
+      problemStatement,
+      updateProblemStatementIds,
+      updateObjectiveIds,
+      updateDocumentIds,
+      basicInfoState,
+      scenarioId,
+      useImage,
+      useVideo,
+      useObjectives,
+      useQuestions,
+      selectedVideoLength,
+    ]
   );
 
   // Helper function to build search params - imported from scenario-helpers.ts
@@ -1489,53 +1583,113 @@ export default function Scenario({
 
   // Convert arrays to lookup maps for performance (prefer arrays, fallback to mappings for backward compatibility)
   const personaMapping = useMemo(() => {
-    // Prefer arrays (new format) - use type assertion since types may not be updated yet
-    const data = scenarioData as any;
-    if (
-      data?.personas &&
-      Array.isArray(data.personas) &&
-      data.personas.length > 0
-    ) {
-      const map: Record<string, any> = {};
-      data.personas.forEach((p: any) => {
-        if (p.persona_id) {
-          map[String(p.persona_id)] = {
-            name: p.name || "",
-            description: p.description || "",
-            color: p.color || "",
-            icon: p.icon || "",
-            image_model: p.image_model || false,
-            parameter_ids: p.parameter_ids?.map((id: any) => String(id)) || [],
-            field_ids: p.field_ids?.map((id: any) => String(id)) || [],
-            example: p.example,
+    if (!scenarioData) return {};
+    const personas =
+      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
+        ? scenarioData.personas
+        : undefined;
+    const map: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        color: string;
+        icon: string;
+        image_model: boolean;
+        parameter_ids: string[];
+        field_ids: string[];
+        example?: unknown;
+      }
+    > = {};
+    if (personas && Array.isArray(personas) && personas.length > 0) {
+      personas.forEach((p) => {
+        const persona = p as {
+          persona_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+          color?: string | null;
+          icon?: string | null;
+          image_model?: boolean | null;
+          parameter_ids?: Array<string | null> | null;
+          field_ids?: Array<string | null> | null;
+          example?: unknown;
+        };
+        if (persona.persona_id) {
+          map[String(persona.persona_id)] = {
+            name: persona.name || "",
+            description: persona.description || "",
+            color: persona.color || "",
+            icon: persona.icon || "",
+            image_model: persona.image_model || false,
+            parameter_ids:
+              persona.parameter_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
+            field_ids:
+              persona.field_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
+            example: persona.example,
           };
         }
       });
       return map;
     }
-    // Fallback to mapping (backward compatibility)
-    return data?.persona_mapping || {};
+    // Fallback to empty object (no persona_mapping in new format)
+    return {};
   }, [scenarioData]);
 
   const documentMapping = useMemo((): Record<string, DocumentMappingItem> => {
     // Use arrays directly (server is source of truth - arrays are guaranteed)
-    const data = scenarioData as any;
-    const documents = data?.documents || [];
+    if (!scenarioData) return {};
+    const documents =
+      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
+        ? scenarioData.documents
+        : undefined;
     const map: Record<string, DocumentMappingItem> = {};
-    if (Array.isArray(documents)) {
-      documents.forEach((d: any) => {
-        if (d.document_id) {
-          map[String(d.document_id)] = {
-            name: d.name || "",
-            description: d.description || "",
-            filePath: d.file_path || null,
-            mimeType: d.mime_type || null,
-            parameter_ids: d.parameter_ids?.map((id: any) => String(id)) || [],
-            field_ids: d.field_ids?.map((id: any) => String(id)) || [],
-            parent_document_id: d.parent_document_id
-              ? String(d.parent_document_id)
+    if (documents && Array.isArray(documents)) {
+      documents.forEach((d) => {
+        const doc = d as {
+          document_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+          file_path?: string | null;
+          mime_type?: string | null;
+          parameter_ids?: Array<string | null> | null;
+          field_ids?: Array<string | null> | null;
+          parent_document_id?: string | null;
+        };
+        if (doc.document_id) {
+          const mappingItem: DocumentMappingItem = {
+            name: doc.name || "",
+            description: doc.description || "",
+            parameter_ids:
+              doc.parameter_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
+            field_ids:
+              doc.field_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
+            parent_document_id: doc.parent_document_id
+              ? String(doc.parent_document_id)
               : null,
           };
+          if (doc.file_path) {
+            mappingItem.filePath = doc.file_path;
+          }
+          if (doc.mime_type) {
+            mappingItem.mimeType = doc.mime_type;
+          }
+          map[String(doc.document_id)] = mappingItem;
         }
       });
     }
@@ -1544,20 +1698,43 @@ export default function Scenario({
 
   const parameterMapping = useMemo(() => {
     // Use arrays directly (server is source of truth - arrays are guaranteed)
-    const data = scenarioData as any;
-    const parameters = data?.parameters || [];
-    const map: Record<string, any> = {};
-    if (Array.isArray(parameters)) {
-      parameters.forEach((p: any) => {
-        if (p.parameter_id) {
-          map[String(p.parameter_id)] = {
-            name: p.name || "",
-            description: p.description || "",
+    if (!scenarioData) return {};
+    const parameters =
+      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
+        ? scenarioData.parameters
+        : undefined;
+    const map: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        numerical: boolean;
+        document_parameter: boolean;
+        persona_parameter: boolean;
+        scenario_parameter: boolean;
+        video_parameter: boolean;
+      }
+    > = {};
+    if (parameters && Array.isArray(parameters)) {
+      parameters.forEach((p) => {
+        const param = p as {
+          parameter_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+          document_parameter?: boolean | null;
+          persona_parameter?: boolean | null;
+          scenario_parameter?: boolean | null;
+          video_parameter?: boolean | null;
+        };
+        if (param.parameter_id) {
+          map[String(param.parameter_id)] = {
+            name: param.name || "",
+            description: param.description || "",
             numerical: false,
-            document_parameter: p.document_parameter || false,
-            persona_parameter: p.persona_parameter || false,
-            scenario_parameter: p.scenario_parameter || false,
-            video_parameter: p.video_parameter || false,
+            document_parameter: param.document_parameter || false,
+            persona_parameter: param.persona_parameter || false,
+            scenario_parameter: param.scenario_parameter || false,
+            video_parameter: param.video_parameter || false,
           };
         }
       });
@@ -1568,18 +1745,38 @@ export default function Scenario({
   // fieldMapping is defined above (before buildSearchParams) so it can be used there
   const simulationMapping = useMemo(() => {
     // Use arrays directly (server is source of truth - arrays are guaranteed)
-    const data = scenarioData as any;
-    const simulations = data?.simulations || [];
-    const map: Record<string, any> = {};
-    if (Array.isArray(simulations)) {
-      simulations.forEach((s: any) => {
-        if (s.simulation_id) {
-          map[String(s.simulation_id)] = {
-            name: s.name || "",
-            description: s.description || "",
-            time_limit: s.time_limit,
+    // simulations only exist on ScenarioDetailOut
+    if (!scenarioData || !isScenarioDetailOut(scenarioData)) return {};
+    const simulations = scenarioData.simulations;
+    const map: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        time_limit?: number | null;
+        department_ids: string[];
+      }
+    > = {};
+    if (simulations && Array.isArray(simulations)) {
+      simulations.forEach((s) => {
+        const sim = s as {
+          simulation_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+          time_limit?: number | null;
+          department_ids?: Array<string | null> | null;
+        };
+        if (sim.simulation_id) {
+          map[String(sim.simulation_id)] = {
+            name: sim.name || "",
+            description: sim.description || "",
+            time_limit: sim.time_limit ?? null,
             department_ids:
-              s.department_ids?.map((id: any) => String(id)) || [],
+              sim.department_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
           };
         }
       });
@@ -1589,19 +1786,61 @@ export default function Scenario({
 
   const departmentMapping = useMemo(() => {
     // Use arrays directly (server is source of truth - arrays are guaranteed)
-    const data = scenarioData as any;
-    const departments = data?.departments || [];
-    const map: Record<string, any> = {};
-    if (Array.isArray(departments)) {
-      departments.forEach((d: any) => {
-        if (d.department_id) {
-          map[String(d.department_id)] = {
-            name: d.name || "",
-            description: d.description || "",
-            persona_ids: d.persona_ids?.map((id: any) => String(id)) || [],
-            document_ids: d.document_ids?.map((id: any) => String(id)) || [],
-            parameter_ids: d.parameter_ids?.map((id: any) => String(id)) || [],
-            parameter_item_ids: d.field_ids?.map((id: any) => String(id)) || [],
+    if (!scenarioData) return {};
+    const departments =
+      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
+        ? scenarioData.departments
+        : undefined;
+    const map: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        persona_ids: string[];
+        document_ids: string[];
+        parameter_ids: string[];
+        parameter_item_ids: string[];
+      }
+    > = {};
+    if (departments && Array.isArray(departments)) {
+      departments.forEach((d) => {
+        const dept = d as {
+          department_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+          persona_ids?: Array<string | null> | null;
+          document_ids?: Array<string | null> | null;
+          parameter_ids?: Array<string | null> | null;
+          field_ids?: Array<string | null> | null;
+        };
+        if (dept.department_id) {
+          map[String(dept.department_id)] = {
+            name: dept.name || "",
+            description: dept.description || "",
+            persona_ids:
+              dept.persona_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
+            document_ids:
+              dept.document_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
+            parameter_ids:
+              dept.parameter_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
+            parameter_item_ids:
+              dept.field_ids
+                ?.map((id) => String(id))
+                .filter(
+                  (id): id is string => id !== "null" && id !== "undefined"
+                ) || [],
           };
         }
       });
@@ -1611,16 +1850,35 @@ export default function Scenario({
 
   const agentMapping = useMemo(() => {
     // Use arrays directly (server is source of truth - arrays are guaranteed)
-    const data = scenarioData as any;
-    const agents = data?.agents || [];
-    const map: Record<string, any> = {};
-    if (Array.isArray(agents)) {
-      agents.forEach((a: any) => {
-        if (a.agent_id) {
-          map[String(a.agent_id)] = {
-            name: a.name || "",
-            description: a.description || "",
-            roles: a.roles || [],
+    if (!scenarioData) return {};
+    const agents =
+      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
+        ? scenarioData.agents
+        : undefined;
+    const map: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        roles: string[];
+      }
+    > = {};
+    if (agents && Array.isArray(agents)) {
+      agents.forEach((a) => {
+        const agent = a as {
+          agent_id?: string | null;
+          name?: string | null;
+          description?: string | null;
+          roles?: Array<string | null> | null;
+        };
+        if (agent.agent_id) {
+          map[String(agent.agent_id)] = {
+            name: agent.name || "",
+            description: agent.description || "",
+            roles:
+              agent.roles?.filter(
+                (role): role is string => role !== null && role !== undefined
+              ) || [],
           };
         }
       });
@@ -1630,9 +1888,12 @@ export default function Scenario({
   // Merge server problem statement mapping with local versions (for create mode)
   // IDs from database are unique, so just merge - local versions override server versions if same ID
   const problemStatementMapping = useMemo(() => {
-    const data = scenarioData as any;
-    const serverMappingRaw = data?.problem_statement_mapping || {};
-    // Normalize server mapping to ensure all entries have name field (for backward compatibility)
+    const data = scenarioData as
+      | ScenarioDetailOut
+      | ScenarioNewOut
+      | null
+      | undefined;
+    // Build mapping from problem_statements array
     const serverMapping: Record<
       string,
       {
@@ -1642,15 +1903,18 @@ export default function Scenario({
         updated_at: string;
       }
     > = {};
-    Object.entries(serverMappingRaw).forEach(([id, entry]) => {
-      serverMapping[id] = {
-        name: (entry as { name?: string }).name || "", // Ensure name field exists
-        problem_statement: (entry as { problem_statement: string })
-          .problem_statement,
-        created_at: (entry as { created_at: string }).created_at,
-        updated_at: (entry as { updated_at: string }).updated_at,
-      };
-    });
+    if (data?.problem_statements) {
+      data.problem_statements.forEach((ps) => {
+        if (ps.problem_statement_id) {
+          serverMapping[String(ps.problem_statement_id)] = {
+            name: ps.name || "", // Ensure name field exists
+            problem_statement: ps.problem_statement || "",
+            created_at: ps.created_at || "",
+            updated_at: ps.updated_at || "",
+          };
+        }
+      });
+    }
 
     const localMapping: Record<
       string,
@@ -1722,7 +1986,7 @@ export default function Scenario({
       scenarioData.document_details.forEach((docDetail) => {
         const parentId = (docDetail as { parent_document_id?: string })
           ?.parent_document_id;
-        if (parentId) {
+        if (parentId && docDetail.document_id) {
           // If we already have a child for this parent, keep the most recent one
           // (or we could keep the first one - either way, we just need one child)
           if (!parentToChildMap.has(parentId)) {
@@ -1949,20 +2213,10 @@ export default function Scenario({
 
   // Use server-provided filtered valid general parameter item IDs
   const validGeneralParameterItemIds = useMemo(() => {
-    // Use server-provided filtered IDs if available (from ScenarioNewOut)
-    if (
-      scenarioData &&
-      !isEditMode &&
-      "valid_general_field_ids" in scenarioData
-    ) {
-      const newData = scenarioData as ScenarioNewOut;
-      if (newData.valid_general_field_ids) {
-        return newData.valid_general_field_ids;
-      }
-    }
+    // Use server-provided filtered IDs (valid_field_ids exists on both types)
     // Fallback for backward compatibility
     return validParameterItemIds;
-  }, [scenarioData, validParameterItemIds]);
+  }, [validParameterItemIds]);
 
   const generalParameterMapping = useMemo(() => {
     // Top parameter selection is the source of truth for section 4
@@ -2138,11 +2392,17 @@ export default function Scenario({
   // Clean up staged selections for departments that are no longer valid
   useEffect(() => {
     // valid_department_ids exists on ScenarioNewOut
-    const validDeptIds = new Set(
-      scenarioData && !isEditMode && "valid_department_ids" in scenarioData
-        ? (scenarioData as ScenarioNewOut).valid_department_ids || []
-        : []
-    );
+    const newDataForDepts =
+      scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+        ? (scenarioData as ScenarioNewOut)
+        : null;
+    const validDeptIdsArray =
+      newDataForDepts &&
+      "valid_department_ids" in newDataForDepts &&
+      newDataForDepts.valid_department_ids
+        ? (newDataForDepts.valid_department_ids as string[]).map(String)
+        : [];
+    const validDeptIds = new Set(validDeptIdsArray);
     setStagedSelections((prev) => {
       const cleaned: Record<string, StagedSelections> = {};
       Object.keys(prev).forEach((deptId) => {
@@ -2505,8 +2765,12 @@ export default function Scenario({
       updateTemplateDocumentIds(templateDocIds);
       // Extract field IDs from parameters array
       const fieldIds = (detailData.parameters || [])
-        .flatMap((p) => p.field_ids || [])
-        .filter((id): id is string => id !== null);
+        .flatMap((p) => {
+          // Parameters array contains objects with field_ids array
+          const paramWithFields = p as { field_ids?: string[] | null };
+          return paramWithFields.field_ids || [];
+        })
+        .filter((id): id is string => id !== null && id !== undefined);
       updateFieldIds(fieldIds);
       updateObjectives(
         getObjectivesFromMapping(
@@ -2699,9 +2963,14 @@ export default function Scenario({
       setOriginalDocumentIds(detailData.document_ids || []);
       // Store template document IDs for original tracking (already extracted above as templateDocIds)
       setOriginalTemplateDocumentIds(templateDocIds);
-      setOriginalFieldIds(
-        getFieldIdsFromStructure(detailData.parameters || [])
-      );
+      // Extract field IDs from parameters structure
+      const fieldIdsFromParams = (detailData.parameters || [])
+        .flatMap((p) => {
+          const paramWithFields = p as { field_ids?: string[] | null };
+          return paramWithFields.field_ids || [];
+        })
+        .filter((id): id is string => id !== null && id !== undefined);
+      setOriginalFieldIds(fieldIdsFromParams);
       setOriginalObjectives(
         getObjectivesFromMapping(
           detailData.objective_ids || [],
@@ -2737,13 +3006,18 @@ export default function Scenario({
         ...initialFormData,
         parameterIds:
           ("selected_parameter_ids" in newData &&
+            Array.isArray(newData.selected_parameter_ids) &&
             newData.selected_parameter_ids) ||
           [],
       }));
 
       // Initialize selections from server response (filtered to valid IDs)
       // Only update URL if server values differ from current URL values
-      if ("selected_persona_ids" in newData && newData.selected_persona_ids) {
+      if (
+        "selected_persona_ids" in newData &&
+        Array.isArray(newData.selected_persona_ids) &&
+        newData.selected_persona_ids.length > 0
+      ) {
         const currentPersonaIds = selectedPersonaIds;
         if (
           JSON.stringify([...currentPersonaIds].sort()) !==
@@ -2752,7 +3026,11 @@ export default function Scenario({
           updatePersonaIds(newData.selected_persona_ids);
         }
       }
-      if ("selected_document_ids" in newData && newData.selected_document_ids) {
+      if (
+        "selected_document_ids" in newData &&
+        Array.isArray(newData.selected_document_ids) &&
+        newData.selected_document_ids.length > 0
+      ) {
         const currentDocIds = currentDocumentIds;
         if (
           JSON.stringify([...currentDocIds].sort()) !==
@@ -2768,12 +3046,17 @@ export default function Scenario({
         // URL params take precedence - no update needed
       } else if (
         "selected_template_document_ids" in newData &&
-        newData.selected_template_document_ids
+        Array.isArray(newData.selected_template_document_ids) &&
+        newData.selected_template_document_ids.length > 0
       ) {
         // Fallback to server response if no URL params
         updateTemplateDocumentIds(newData.selected_template_document_ids);
       }
-      if ("selected_field_ids" in newData && newData.selected_field_ids) {
+      if (
+        "selected_field_ids" in newData &&
+        Array.isArray(newData.selected_field_ids) &&
+        newData.selected_field_ids.length > 0
+      ) {
         const currentFieldIdsFromQ = currentFieldIds;
         if (
           JSON.stringify([...currentFieldIdsFromQ].sort()) !==
@@ -2849,72 +3132,74 @@ export default function Scenario({
 
       // Initialize search terms and ranges from server response (update URL via nuqs)
       // Only update if server values differ from current URL values
-      const updates: Partial<typeof q> = {};
+      const updates: Partial<Record<string, string | number | null>> = {};
       if (
         "persona_search" in newData &&
+        typeof newData.persona_search === "string" &&
         newData.persona_search &&
         newData.persona_search !== personaSearchTerm
       ) {
-        updates.personaSearch = newData.persona_search;
+        updates["personaSearch"] = newData.persona_search;
       }
       if (
         "document_search" in newData &&
+        typeof newData.document_search === "string" &&
         newData.document_search &&
         newData.document_search !== documentSearchTerm
       ) {
-        updates.documentSearch = newData.document_search;
+        updates["documentSearch"] = newData.document_search;
       }
       if (
         "parameter_search" in newData &&
+        typeof newData.parameter_search === "string" &&
         newData.parameter_search &&
         newData.parameter_search !== parameterSearchTerm
       ) {
-        updates.parameterSearch = newData.parameter_search;
+        updates["parameterSearch"] = newData.parameter_search;
       }
 
       // Update ranges if server values differ
-      const serverPersonaMin =
-        ("persona_min" in newData ? newData.persona_min : null) ?? 1;
-      const serverPersonaMax =
-        ("persona_max" in newData ? newData.persona_max : null) ?? 1;
+      const serverPersonaMin = isScenarioNewOut(newData)
+        ? (newData.persona_range_min ?? 1)
+        : 1;
+      const serverPersonaMax = isScenarioNewOut(newData)
+        ? (newData.persona_range_max ?? 1)
+        : 1;
       if (
         personaMinMax.min !== serverPersonaMin ||
         personaMinMax.max !== serverPersonaMax
       ) {
-        updates.personaMin = serverPersonaMin;
-        updates.personaMax = serverPersonaMax;
+        updates["personaMin"] = serverPersonaMin;
+        updates["personaMax"] = serverPersonaMax;
       }
 
-      const serverDocumentMin =
-        ("document_min" in newData ? newData.document_min : null) ?? 0;
-      const serverDocumentMax =
-        ("document_max" in newData ? newData.document_max : null) ?? 1;
+      const serverDocumentMin = isScenarioNewOut(newData)
+        ? (newData.document_range_min ?? 0)
+        : 0;
+      const serverDocumentMax = isScenarioNewOut(newData)
+        ? (newData.document_range_max ?? 1)
+        : 1;
       if (
         documentMinMax.min !== serverDocumentMin ||
         documentMinMax.max !== serverDocumentMax
       ) {
-        updates.documentMin = serverDocumentMin;
-        updates.documentMax = serverDocumentMax;
+        updates["documentMin"] = serverDocumentMin;
+        updates["documentMax"] = serverDocumentMax;
       }
 
-      const parameterDefault =
-        ("allowed_ranges" in newData &&
-          newData.allowed_ranges?.parameter_selection) ||
-        parameterSelectionMinMax;
-      const serverParameterMin =
-        ("parameter_selection_min" in newData
-          ? newData.parameter_selection_min
-          : null) ?? parameterDefault.min;
-      const serverParameterMax =
-        ("parameter_selection_max" in newData
-          ? newData.parameter_selection_max
-          : null) ?? parameterDefault.max;
+      const parameterDefault = parameterSelectionMinMax;
+      const serverParameterMin = isScenarioNewOut(newData)
+        ? (newData.parameter_range_min ?? parameterDefault.min)
+        : parameterDefault.min;
+      const serverParameterMax = isScenarioNewOut(newData)
+        ? (newData.parameter_range_max ?? parameterDefault.max)
+        : parameterDefault.max;
       if (
         parameterSelectionMinMax.min !== serverParameterMin ||
         parameterSelectionMinMax.max !== serverParameterMax
       ) {
-        updates.parameterSelectionMin = serverParameterMin;
-        updates.parameterSelectionMax = serverParameterMax;
+        updates["parameterSelectionMin"] = serverParameterMin;
+        updates["parameterSelectionMax"] = serverParameterMax;
       }
 
       if (Object.keys(updates).length > 0) {
@@ -2963,7 +3248,7 @@ export default function Scenario({
     scenarioData,
     isEditMode,
     previousDepartmentIds.length,
-    effectiveProfile?.primaryDepartmentId,
+    effectiveProfile?.primary_department_id,
     initialFormData,
     searchParams,
     q.documentMax,
@@ -3124,8 +3409,9 @@ export default function Scenario({
         originalBasicInfoState.scenarioAgentId ||
       basicInfoState.imageAgentId !== originalBasicInfoState.imageAgentId ||
       basicInfoState.videoAgentId !== originalBasicInfoState.videoAgentId ||
-      JSON.stringify(current.departmentIds?.sort()) !==
-        JSON.stringify(original.departmentIds?.sort()) ||
+      JSON.stringify(
+        (current["departmentIds"] as string[] | undefined)?.sort() || []
+      ) !== JSON.stringify((original.departmentIds || []).sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
         JSON.stringify([...(originalDocumentIds || [])].sort()) ||
       JSON.stringify([...templateDocumentIds].sort()) !==
@@ -3181,16 +3467,10 @@ export default function Scenario({
 
   // Get affected simulations from V2 data
   const affectedSimulations = useMemo(() => {
-    // active_simulation_ids exists on ScenarioDetailOut
-    if (
-      isEditMode &&
-      scenarioData &&
-      isEditMode &&
-      "active_simulation_ids" in scenarioData
-    ) {
-      const detailData = scenarioData as ScenarioDetailOut;
-      if (!detailData.active_simulation_ids) return [];
-      return detailData.active_simulation_ids.map((id: string) => {
+    // simulation_ids exists on ScenarioDetailOut
+    if (isEditMode && scenarioData && isScenarioDetailOut(scenarioData)) {
+      if (!scenarioData.simulation_ids) return [];
+      return scenarioData.simulation_ids.map((id: string) => {
         const sim = simulationMapping[id] as { name?: string } | undefined;
         return {
           id,
@@ -3401,107 +3681,128 @@ export default function Scenario({
   );
 
   // Parameter actions - WebSocket randomization per parameter
-  const handleRandomizeParameterClient = (paramId: string) => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
+  const handleRandomizeParameterClient = useCallback(
+    (paramId: string) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
 
-    // Set loading state for this specific parameter section
-    setRandomizingSection(`parameter_${paramId}`);
+      // Set loading state for this specific parameter section
+      setRandomizingSection(`parameter_${paramId}`);
 
-    // Emit WebSocket event with all current filter/search/range params
-    socket.emit("scenario_randomize", {
-      scenarioId: isEditMode ? scenarioId : null,
-      randomize: `parameter_${paramId}`,
-      departmentIds: q.departmentIds ?? null,
-      personaIds: q.personaIds ?? null,
-      documentIds: q.documentIds ?? null,
-      templateDocumentIds: q.templateDocumentIds ?? null,
-      parameterIds: q.parameterIds ?? null,
-      fieldIds: q.fieldIds ?? null,
-      personaSearch: q.personaSearch ?? null,
-      documentSearch: q.documentSearch ?? null,
-      parameterSearch: q.parameterSearch ?? null,
-      personaMin: q.personaMin ?? null,
-      personaMax: q.personaMax ?? null,
-      documentMin: q.documentMin ?? null,
-      documentMax: q.documentMax ?? null,
-      parameterSelectionMin: q.parameterSelectionMin ?? null,
-      parameterSelectionMax: q.parameterSelectionMax ?? null,
-      fieldRanges: fieldMinMax,
-      useImage: q.useImage ?? null,
-      useVideo: q.useVideo ?? null,
-      profileId: effectiveProfile?.id ?? "",
-    });
-  };
-
-  const handleResetParameter = (paramId: string) => {
-    try {
-      // Get default min/max for this parameter from server or use defaults
-      const newData =
-        scenarioData && "field_ranges" in scenarioData
-          ? (scenarioData as ScenarioNewOut)
-          : undefined;
-      const serverFieldRanges = newData?.field_ranges || {};
-      const serverRange = serverFieldRanges[paramId];
-      const defaultMin = serverRange?.["min"] ?? 1;
-      const defaultMax = serverRange?.["max"] ?? 3;
-
-      // Set resetting flag to prevent buildSearchParams from interfering
-      isResettingRef.current = true;
-
-      // Remove this parameter's items from URL params and local state
-      const currentParamItems = currentFieldIds.filter(
-        (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-      );
-
-      // Build URL updates - clear field IDs and range params for this parameter
-      const urlUpdates: Record<string, string | string[] | null> = {
-        fieldIds: currentParamItems.length > 0 ? currentParamItems : null,
-        randomize: null,
-      };
-      // Clear range params for this parameter
-      urlUpdates[`fieldMin_${paramId}`] = null;
-      urlUpdates[`fieldMax_${paramId}`] = null;
-
-      // Clear draft state (form fields are in draft state, not URL params)
-      handleInputChange("fieldIds", null);
-      handleInputChange("randomize", null);
-      // Clear dynamic field range params manually
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete(`fieldMin_${paramId}`);
-      params.delete(`fieldMax_${paramId}`);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-
-      // Update local state after URL update completes (next frame)
-      requestAnimationFrame(() => {
-        // Reset local state for this parameter's range
-        updateFieldRanges((prev) => ({
-          ...prev,
-          [paramId]: { min: defaultMin, max: defaultMax },
-        }));
-        // Update local state - remove this parameter's fields
-        updateFieldIds(currentParamItems);
-        // Refresh after state updates to get fresh server data
-        router.refresh();
-        // Reset flag after refresh completes
-        setTimeout(() => {
-          isResettingRef.current = false;
-        }, 200);
+      // Emit WebSocket event with all current filter/search/range params
+      socket.emit("scenario_randomize", {
+        scenarioId: isEditMode ? scenarioId : null,
+        randomize: `parameter_${paramId}`,
+        departmentIds: q.departmentIds ?? null,
+        personaIds: q.personaIds ?? null,
+        documentIds: q.documentIds ?? null,
+        templateDocumentIds: q.templateDocumentIds ?? null,
+        parameterIds: q.parameterIds ?? null,
+        fieldIds: q.fieldIds ?? null,
+        personaSearch: q.personaSearch ?? null,
+        documentSearch: q.documentSearch ?? null,
+        parameterSearch: q.parameterSearch ?? null,
+        personaMin: q.personaMin ?? null,
+        personaMax: q.personaMax ?? null,
+        documentMin: q.documentMin ?? null,
+        documentMax: q.documentMax ?? null,
+        parameterSelectionMin: q.parameterSelectionMin ?? null,
+        parameterSelectionMax: q.parameterSelectionMax ?? null,
+        fieldRanges: fieldMinMax,
+        useImage: q.useImage ?? null,
+        useVideo: q.useVideo ?? null,
+        profileId: effectiveProfile?.id ?? "",
       });
+    },
+    [
+      socket,
+      isConnected,
+      setRandomizingSection,
+      isEditMode,
+      scenarioId,
+      q,
+      fieldMinMax,
+      effectiveProfile?.id,
+    ]
+  );
 
-      toast.success(
-        `${generalParameterMapping[paramId]?.name || "Parameter"} reset`
-      );
-    } catch {
-      isResettingRef.current = false;
-      toast.error("Failed to reset parameter");
-    }
-  };
+  const handleResetParameter = useCallback(
+    (paramId: string) => {
+      try {
+        // Get default min/max for this parameter from server or use defaults
+        // field_ranges is an array on ScenarioDetailOut, not an object
+        // For create mode, we don't have field_ranges, so use defaults
+        const defaultMin = 1;
+        const defaultMax = 3;
+
+        // Set resetting flag to prevent buildSearchParams from interfering
+        isResettingRef.current = true;
+
+        // Remove this parameter's items from URL params and local state
+        const currentParamItems = currentFieldIds.filter(
+          (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+        );
+
+        // Build URL updates - clear field IDs and range params for this parameter
+        const urlUpdates: Record<string, string | string[] | null> = {
+          fieldIds: currentParamItems.length > 0 ? currentParamItems : null,
+          randomize: null,
+        };
+        // Clear range params for this parameter
+        urlUpdates[`fieldMin_${paramId}`] = null;
+        urlUpdates[`fieldMax_${paramId}`] = null;
+
+        // Clear draft state (form fields are in draft state, not URL params)
+        handleInputChange("fieldIds", null);
+        handleInputChange("randomize", null);
+        // Clear dynamic field range params manually
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete(`fieldMin_${paramId}`);
+        params.delete(`fieldMax_${paramId}`);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+
+        // Update local state after URL update completes (next frame)
+        requestAnimationFrame(() => {
+          // Reset local state for this parameter's range
+          updateFieldRanges((prev) => ({
+            ...prev,
+            [paramId]: { min: defaultMin, max: defaultMax },
+          }));
+          // Update local state - remove this parameter's fields
+          updateFieldIds(currentParamItems);
+          // Refresh after state updates to get fresh server data
+          router.refresh();
+          // Reset flag after refresh completes
+          setTimeout(() => {
+            isResettingRef.current = false;
+          }, 200);
+        });
+
+        toast.success(
+          `${generalParameterMapping[paramId]?.name || "Parameter"} reset`
+        );
+      } catch {
+        isResettingRef.current = false;
+        toast.error("Failed to reset parameter");
+      }
+    },
+    [
+      currentFieldIds,
+      fieldMapping,
+      handleInputChange,
+      searchParams,
+      router,
+      pathname,
+      updateFieldRanges,
+      updateFieldIds,
+      generalParameterMapping,
+    ]
+  );
 
   // Persona actions - WebSocket randomization
-  const handleRandomizePersonaClient = () => {
+  const handleRandomizePersonaClient = useCallback(() => {
     if (!socket || !isConnected) {
       toast.error("WebSocket not connected. Please refresh the page.");
       return;
@@ -3534,52 +3835,19 @@ export default function Scenario({
       useVideo: q.useVideo ?? null,
       profileId: effectiveProfile?.id ?? "",
     });
-  };
-
-  const handleResetPersona = () => {
-    try {
-      // Get default min/max from server or use defaults
-      const newData =
-        scenarioData && "persona_min" in scenarioData
-          ? (scenarioData as ScenarioNewOut)
-          : undefined;
-      const defaultMin =
-        ("persona_min" in (newData || {}) && newData?.persona_min) ?? 1;
-      const defaultMax =
-        ("persona_max" in (newData || {}) && newData?.persona_max) ?? 1;
-
-      // Set resetting flag to prevent buildSearchParams from interfering
-      isResettingRef.current = true;
-
-      // Clear draft state and URL params, reset to defaults
-      handleInputChange("personaIds", null);
-      handleInputChange("personaMin", defaultMin);
-      handleInputChange("personaMax", defaultMax);
-      handleInputChange("randomize", null);
-      setUrlParams({
-        personaSearch: null,
-      });
-
-      // Update local state after URL update completes (next frame)
-      requestAnimationFrame(() => {
-        updatePersonaIds([]);
-        // Clear resetting flag after state updates and refresh
-        router.refresh();
-        // Reset flag after refresh completes
-        setTimeout(() => {
-          isResettingRef.current = false;
-        }, 200);
-      });
-
-      toast.success("Persona reset");
-    } catch {
-      isResettingRef.current = false;
-      toast.error("Failed to reset persona");
-    }
-  };
+  }, [
+    socket,
+    isConnected,
+    setRandomizingSection,
+    isEditMode,
+    scenarioId,
+    q,
+    fieldMinMax,
+    effectiveProfile?.id,
+  ]);
 
   // Documents actions - WebSocket randomization
-  const handleRandomizeDocumentsClient = () => {
+  const handleRandomizeDocumentsClient = useCallback(() => {
     if (!socket || !isConnected) {
       toast.error("WebSocket not connected. Please refresh the page.");
       return;
@@ -3612,65 +3880,40 @@ export default function Scenario({
       useVideo: q.useVideo ?? null,
       profileId: effectiveProfile?.id ?? "",
     });
-  };
-
-  const handleResetDocuments = () => {
-    try {
-      // Get default min/max from server or use defaults
-      const newData =
-        scenarioData && "document_min" in scenarioData
-          ? (scenarioData as ScenarioNewOut)
-          : undefined;
-      const defaultMin =
-        ("document_min" in (newData || {}) && newData?.document_min) ?? 0;
-      const defaultMax =
-        ("document_max" in (newData || {}) && newData?.document_max) ?? 1;
-
-      // Set resetting flag to prevent buildSearchParams from interfering
-      isResettingRef.current = true;
-
-      // Clear draft state and URL params, reset to defaults
-      handleInputChange("documentIds", null);
-      handleInputChange("documentMin", defaultMin);
-      handleInputChange("documentMax", defaultMax);
-      handleInputChange("randomize", null);
-      setUrlParams({
-        documentSearch: null,
-      });
-
-      // Update local state after URL update completes (next frame)
-      requestAnimationFrame(() => {
-        updateDocumentIds([]);
-        // Refresh after state updates to get fresh server data
-        router.refresh();
-        // Reset flag after refresh completes
-        setTimeout(() => {
-          isResettingRef.current = false;
-        }, 200);
-      });
-
-      toast.success("Documents reset");
-    } catch {
-      isResettingRef.current = false;
-      toast.error("Failed to reset documents");
-    }
-  };
+  }, [
+    socket,
+    isConnected,
+    setRandomizingSection,
+    isEditMode,
+    scenarioId,
+    q,
+    fieldMinMax,
+    effectiveProfile?.id,
+  ]);
 
   // Document removal handler - removes document from selection
-  const handleDocumentRemove = (docId: string) => {
-    // Check if document is in currentDocumentIds (could be regular or child document)
-    if (currentDocumentIds.includes(docId)) {
-      updateDocumentIds((prev) => prev.filter((id) => id !== docId));
-    }
-    // Check if document is in templateDocumentIds (template document)
-    if (templateDocumentIds.includes(docId)) {
-      updateTemplateDocumentIds((prev) => prev.filter((id) => id !== docId));
-    }
-    // Note: URL params are automatically updated via useEffect that watches currentDocumentIds and templateDocumentIds
-  };
+  const handleDocumentRemove = useCallback(
+    (docId: string) => {
+      // Check if document is in currentDocumentIds (could be regular or child document)
+      if (currentDocumentIds.includes(docId)) {
+        updateDocumentIds((prev) => prev.filter((id) => id !== docId));
+      }
+      // Check if document is in templateDocumentIds (template document)
+      if (templateDocumentIds.includes(docId)) {
+        updateTemplateDocumentIds((prev) => prev.filter((id) => id !== docId));
+      }
+      // Note: URL params are automatically updated via useEffect that watches currentDocumentIds and templateDocumentIds
+    },
+    [
+      currentDocumentIds,
+      templateDocumentIds,
+      updateDocumentIds,
+      updateTemplateDocumentIds,
+    ]
+  );
 
   // Parameters actions - WebSocket randomization
-  const handleRandomizeParametersClient = () => {
+  const handleRandomizeParametersClient = useCallback(() => {
     if (!socket || !isConnected) {
       toast.error("WebSocket not connected. Please refresh the page.");
       return;
@@ -3703,96 +3946,21 @@ export default function Scenario({
       useVideo: q.useVideo ?? null,
       profileId: effectiveProfile?.id ?? "",
     });
-  };
-
-  const handleResetParameters = () => {
-    try {
-      // Get default min/max from server or use defaults
-      const newData =
-        scenarioData && "parameter_selection_min" in scenarioData
-          ? (scenarioData as ScenarioNewOut)
-          : undefined;
-      const defaultMin =
-        ("parameter_selection_min" in (newData || {}) &&
-          newData?.parameter_selection_min) ??
-        0;
-      const defaultMax =
-        ("parameter_selection_max" in (newData || {}) &&
-          newData?.parameter_selection_max) ??
-        3;
-
-      // Set resetting flag to prevent buildSearchParams from interfering
-      isResettingRef.current = true;
-
-      // Build URL updates - clear parameter IDs, search, ranges, and ALL field IDs
-      const urlUpdates: Record<string, string | string[] | null> = {
-        parameterIds: null,
-        parameterSearch: null,
-        parameterSelectionMin: null,
-        parameterSelectionMax: null,
-        fieldIds: null, // Clear all field IDs when resetting parameters
-        randomize: null,
-      };
-
-      // Clear field ranges (now JSON-encoded dict)
-      urlUpdates["fieldRanges"] = null;
-
-      // Clear draft state and URL params
-      handleInputChange("parameterIds", null);
-      handleInputChange("fieldRanges", null);
-      handleInputChange("parameterSelectionMin", defaultMin);
-      handleInputChange("parameterSelectionMax", defaultMax);
-      handleInputChange("fieldIds", null);
-      handleInputChange("randomize", null);
-      setUrlParams({
-        parameterSearch: null,
-      });
-
-      // Clear dynamic field range params manually
-      const params = new URLSearchParams(searchParams.toString());
-      Object.keys(parameterMapping).forEach((paramId) => {
-        params.delete(`fieldMin_${paramId}`);
-        params.delete(`fieldMax_${paramId}`);
-      });
-      // Also clear any we might have missed
-      searchParams.forEach((_value, key) => {
-        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
-          params.delete(key);
-        }
-      });
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-
-      // Update local state after URL update completes (next frame)
-      requestAnimationFrame(() => {
-        handleInputChange("parameterIds", []);
-        // Clear all field IDs and ranges when resetting parameters
-        updateFieldIds([]);
-        // Reset field ranges to defaults for ALL parameters
-        const defaultFieldRanges: Record<string, { min: number; max: number }> =
-          {};
-        Object.keys(parameterMapping).forEach((paramId) => {
-          defaultFieldRanges[paramId] = { min: 1, max: 3 };
-        });
-        updateFieldRanges(defaultFieldRanges);
-        // Refresh after state updates to get fresh server data
-        router.refresh();
-        // Reset flag after refresh completes
-        setTimeout(() => {
-          isResettingRef.current = false;
-        }, 200);
-      });
-
-      toast.success("Parameters reset");
-    } catch {
-      isResettingRef.current = false;
-      toast.error("Failed to reset parameters");
-    }
-  };
+  }, [
+    socket,
+    isConnected,
+    setRandomizingSection,
+    isEditMode,
+    scenarioId,
+    q,
+    fieldMinMax,
+    effectiveProfile?.id,
+  ]);
 
   // Helper functions removed - filtering now handled by server
 
   // Randomize all: personas, documents, and all parameters (WebSocket)
-  const handleRandomizeAll = () => {
+  const handleRandomizeAll = useCallback(() => {
     if (!socket || !isConnected) {
       toast.error("WebSocket not connected. Please refresh the page.");
       return;
@@ -3830,105 +3998,18 @@ export default function Scenario({
       toast.error("Failed to randomize all selections");
       setRandomizingSection(null);
     }
-  };
+  }, [
+    socket,
+    isConnected,
+    setRandomizingSection,
+    isEditMode,
+    scenarioId,
+    q,
+    fieldMinMax,
+    effectiveProfile?.id,
+  ]);
 
-  // Reset all: personas, documents, and all parameters (clear URL params)
-  const handleResetAll = () => {
-    try {
-      // Clear all URL params first - server will return defaults
-      // Build URL updates - clear all params including ranges
-      const urlUpdates: Record<string, string | null> = {
-        departmentIds: null,
-        personaIds: null,
-        documentIds: null,
-        parameterIds: null,
-        fieldIds: null,
-        personaSearch: null,
-        documentSearch: null,
-        parameterSearch: null,
-        personaMin: null,
-        personaMax: null,
-        documentMin: null,
-        documentMax: null,
-        parameterSelectionMin: null,
-        parameterSelectionMax: null,
-        randomize: null,
-      };
-
-      // Clear field ranges (now JSON-encoded dict)
-      urlUpdates["fieldRanges"] = null;
-      urlUpdates["fieldShowSelected"] = null;
-
-      // Set resetting flag to prevent buildSearchParams from interfering
-      isResettingRef.current = true;
-
-      // Clear draft state (form fields) and URL params (search/filter)
-      handleInputChange("departmentIds", null);
-      handleInputChange("personaIds", null);
-      handleInputChange("documentIds", null);
-      handleInputChange("parameterIds", null);
-      handleInputChange("fieldIds", null);
-      handleInputChange("personaMin", null);
-      handleInputChange("personaMax", null);
-      handleInputChange("documentMin", null);
-      handleInputChange("documentMax", null);
-      handleInputChange("parameterSelectionMin", null);
-      handleInputChange("parameterSelectionMax", null);
-      handleInputChange("randomize", null);
-      setUrlParams({
-        personaSearch: null,
-        documentSearch: null,
-        parameterSearch: null,
-      });
-
-      // Clear dynamic field range params manually
-      const params = new URLSearchParams(searchParams.toString());
-      Object.keys(parameterMapping).forEach((paramId) => {
-        params.delete(`fieldMin_${paramId}`);
-        params.delete(`fieldMax_${paramId}`);
-      });
-      searchParams.forEach((_value, key) => {
-        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
-          params.delete(key);
-        }
-      });
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-
-      // Update local state after URL update completes (next frame)
-      requestAnimationFrame(() => {
-        // Reset all local state to defaults for instant UI feedback
-        // Server response will sync these values properly via useEffect
-        // Reset field ranges to defaults for ALL parameters (including defaults)
-        // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
-        const defaultFieldRanges: Record<string, { min: number; max: number }> =
-          {};
-        Object.keys(parameterMapping).forEach((paramId) => {
-          defaultFieldRanges[paramId] = { min: 1, max: 3 };
-        });
-        updateFieldRanges(defaultFieldRanges);
-
-        // Reset all selections
-        updatePersonaIds([]);
-        updateDocumentIds([]);
-        updateFieldIds([]);
-        handleInputChange("parameterIds", []);
-
-        // Refresh after state updates to get fresh server data
-        // The useEffect at line 1695 will sync state from server response
-        router.refresh();
-        // Reset flag after refresh completes
-        setTimeout(() => {
-          isResettingRef.current = false;
-        }, 200);
-      });
-      toast.success("All selections reset");
-    } catch {
-      isResettingRef.current = false;
-      toast.error("Failed to reset all selections");
-    }
-  };
-
-  const handleResetContent = () => {
+  const handleResetContent = useCallback(() => {
     try {
       // Clear problem statement and turn off objectives
       handleInputChange("problemStatement", null);
@@ -3939,242 +4020,270 @@ export default function Scenario({
     } catch {
       toast.error("Failed to reset content");
     }
-  };
+  }, [handleInputChange, setContentState]);
 
-  const handleProblemStatementVersionSelect = (id: string) => {
-    if (id && problemStatementMapping[id]) {
-      handleInputChange(
-        "problemStatement",
-        problemStatementMapping[id].problem_statement
-      );
-    }
-  };
+  const handleProblemStatementVersionSelect = useCallback(
+    (id: string) => {
+      if (id && problemStatementMapping[id]) {
+        handleInputChange(
+          "problemStatement",
+          problemStatementMapping[id].problem_statement
+        );
+      }
+    },
+    [problemStatementMapping, handleInputChange]
+  );
 
   // Note: Objective, question, option, and image/video handlers are now in ContentSection
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
+      }
 
-    setIsUploadingImage(true);
-    const toastId = toast.loading(`Uploading image: ${file.name}`, {
-      description: "0% complete",
-      dismissible: true,
-    });
+      setIsUploadingImage(true);
+      const toastId = toast.loading(`Uploading image: ${file.name}`, {
+        description: "0% complete",
+        dismissible: true,
+      });
 
-    try {
-      // Generate a unique fileId for tracking
-      const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      try {
+        // Generate a unique fileId for tracking
+        const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-      let tusUploadInstance: tus.Upload | null = null;
-      // Create TUS upload
-      tusUploadInstance = new tus.Upload(file, {
-        endpoint: `/api/uploads/upload`,
-        retryDelays: [0, 3000, 5000, 10000, 20000],
-        metadata: {
-          filename: file.name,
-          filetype: file.type,
-          fileId: fileId,
-        },
-        onError: (error) => {
-          toast.error(`Upload failed: ${file.name}`, {
-            description: error.message || "An error occurred during upload",
-            id: toastId,
-          });
-          setIsUploadingImage(false);
-        },
-        onProgress: (bytesUploaded, bytesTotal) => {
-          const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
-          toast.loading(`Uploading image: ${file.name}`, {
-            description: `${percentage}% complete`,
-            id: toastId,
-          });
-        },
-        onSuccess: async () => {
-          // Extract TUS upload_id from upload URL
-          const uploadUrl = tusUploadInstance?.url || "";
-          const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
-          if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
-            toast.error("Failed to extract upload ID from upload URL", {
+        let tusUploadInstance: tus.Upload | null = null;
+        // Create TUS upload
+        tusUploadInstance = new tus.Upload(file, {
+          endpoint: `/api/uploads/upload`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: file.name,
+            filetype: file.type,
+            fileId: fileId,
+          },
+          onError: (error) => {
+            toast.error(`Upload failed: ${file.name}`, {
+              description: error.message || "An error occurred during upload",
               id: toastId,
             });
             setIsUploadingImage(false);
-            return;
-          }
-          const tusUploadId = tusUploadIdMatch[1];
-
-          // Finalize upload to get database upload_id
-          try {
-            const finalizeResponse = await fetch(
-              `/api/uploads/upload/${tusUploadId}/finalize`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({}),
-              }
-            );
-
-            const finalizeResult = await finalizeResponse.json();
-
-            if (!finalizeResult.success || !finalizeResult.upload_id) {
-              throw new Error(
-                finalizeResult.message || "Failed to finalize upload"
-              );
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            toast.loading(`Uploading image: ${file.name}`, {
+              description: `${percentage}% complete`,
+              id: toastId,
+            });
+          },
+          onSuccess: async () => {
+            // Extract TUS upload_id from upload URL
+            const uploadUrl = tusUploadInstance?.url || "";
+            const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+            if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+              toast.error("Failed to extract upload ID from upload URL", {
+                id: toastId,
+              });
+              setIsUploadingImage(false);
+              return;
             }
+            const tusUploadId = tusUploadIdMatch[1];
 
-            const databaseUploadId = finalizeResult.upload_id;
+            // Finalize upload to get database upload_id
+            try {
+              const finalizeResponse = await fetch(
+                `/api/uploads/upload/${tusUploadId}/finalize`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({}),
+                }
+              );
 
-            // Store upload_id directly (no image creation needed)
-            // Image will be linked to scenario when form is submitted
-            setContentState((prev) => ({
-              ...prev,
-              image: {
-                id: databaseUploadId, // Use upload_id as id
-                name: file.name,
-                upload_id: databaseUploadId,
-              },
-            }));
-            toast.success(`Image uploaded: ${file.name}`, { id: toastId });
-          } catch (finalizeError) {
-            toast.error(
-              `Failed to finalize upload: ${
-                finalizeError instanceof Error
-                  ? finalizeError.message
-                  : "Unknown error"
-              }`,
-              { id: toastId }
-            );
-          } finally {
-            setIsUploadingImage(false);
+              const finalizeResult = await finalizeResponse.json();
+
+              if (!finalizeResult.success || !finalizeResult.upload_id) {
+                throw new Error(
+                  finalizeResult.message || "Failed to finalize upload"
+                );
+              }
+
+              const databaseUploadId = finalizeResult.upload_id;
+
+              // Store upload_id directly (no image creation needed)
+              // Image will be linked to scenario when form is submitted
+              setContentState((prev) => ({
+                ...prev,
+                image: {
+                  id: databaseUploadId, // Use upload_id as id
+                  name: file.name,
+                  upload_id: databaseUploadId,
+                },
+              }));
+              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
+            } catch (finalizeError) {
+              toast.error(
+                `Failed to finalize upload: ${
+                  finalizeError instanceof Error
+                    ? finalizeError.message
+                    : "Unknown error"
+                }`,
+                { id: toastId }
+              );
+            } finally {
+              setIsUploadingImage(false);
+            }
+          },
+        });
+
+        tusUploadInstance.start();
+      } catch (error) {
+        toast.error(
+          `Failed to upload image: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          {
+            id: toastId,
           }
-        },
-      });
+        );
+        setIsUploadingImage(false);
+      }
 
-      tusUploadInstance.start();
-    } catch (error) {
-      toast.error(
-        `Failed to upload image: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-        {
-          id: toastId,
+      // Reset input
+      e.target.value = "";
+    },
+    [setContentState]
+  );
+
+  const handleGenerateScenario = useCallback(
+    async (
+      userInstructions?: string,
+      _shouldRegenerateObjectives?: boolean
+    ) => {
+      setIsGeneratingScenario(true);
+
+      try {
+        // Get department ID from first valid department
+        const departmentId = effectiveProfile?.primary_department_id || "";
+        if (!departmentId) {
+          throw new Error("No valid department found");
         }
-      );
-      setIsUploadingImage(false);
-    }
 
-    // Reset input
-    e.target.value = "";
-  };
+        const result = await handleGenerateAIScenario({
+          departmentId,
+          personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
+          documentIds:
+            currentDocumentIds.length > 0 ? currentDocumentIds : null,
+          fieldIds: currentFieldIds.length > 0 ? currentFieldIds : null,
+          profileId: effectiveProfile?.id || null,
+          userInstructions: userInstructions || null,
+          objectivesEnabled: useObjectives,
+          imagesEnabled: useImage,
+          videoEnabled: useVideo,
+          questionsEnabled: useQuestions,
+        });
 
-  const handleGenerateScenario = async (
-    userInstructions?: string,
-    _shouldRegenerateObjectives?: boolean
-  ) => {
-    setIsGeneratingScenario(true);
+        if (!result.success) {
+          throw new Error(result.message || "Failed to generate scenario");
+        }
 
-    try {
-      // Get department ID from first valid department
-      const departmentId = effectiveProfile?.primary_department_id || "";
-      if (!departmentId) {
-        throw new Error("No valid department found");
-      }
-
-      const result = await handleGenerateAIScenario({
-        departmentId,
-        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
-        documentIds: currentDocumentIds.length > 0 ? currentDocumentIds : null,
-        fieldIds: currentFieldIds.length > 0 ? currentFieldIds : null,
-        profileId: effectiveProfile?.id || null,
-        userInstructions: userInstructions || null,
-        objectivesEnabled: useObjectives,
-        imagesEnabled: useImage,
-        videoEnabled: useVideo,
-        questionsEnabled: useQuestions,
-      });
-
-      if (!result.success) {
-        throw new Error(result.message || "Failed to generate scenario");
-      }
-
-      // Handle generated IDs from tool completion events
-      // Note: Document IDs are already updated in real-time via handleDocumentComplete
-      // This is just for showing success message
-      if (result.document_ids && result.document_ids.length > 0) {
-        toast.success(
-          `Created ${result.document_ids.length} dynamic document(s)`
-        );
-      }
-
-      if (result.objective_ids && result.objective_ids.length > 0) {
-        // Objectives will be loaded from the API when scenario detail is fetched
-        // For now, we just note that they were created
-        toast.success(`Created ${result.objective_ids.length} objective(s)`);
-      }
-
-      if (result.image_ids && result.image_ids.length > 0) {
-        // Images will be loaded from the API when scenario detail is fetched
-        toast.success(`Created ${result.image_ids.length} image(s)`);
-      }
-
-      // If we have a problem statement ID, we'll need to fetch it from the API
-      // For now, we'll trigger a refresh of the scenario data if in edit mode
-      if (result.problem_statement_id && isEditMode) {
-        // In edit mode, refresh scenario data to get the new problem statement
-        // This will be handled by the parent component refreshing the data
-        toast.success("Problem statement created successfully");
-      } else if (result.problem_statement_id && !isEditMode) {
-        // In create mode, we'll store the ID for later linking
-        // The problem statement will be linked when the scenario is saved
-        toast.success("Problem statement created successfully");
-      }
-
-      // Note: title and description are no longer in the completion event
-      // They will be fetched from the API when the scenario detail is loaded
-      // If in edit mode, refresh scenario data to get the newly generated content
-      if (isEditMode && scenarioId) {
-        // Trigger a refetch of scenario data to get the new problem statement, objectives, etc.
-        // This will be handled by the parent component or query invalidation
-      }
-    } catch (error) {
-      // Error toast is already handled in handleGenerateAIScenario for WebSocket errors
-      // Only show toast for errors that occur BEFORE calling handleGenerateAIScenario
-      // (e.g., validation errors, connection errors before WebSocket call)
-      if (error instanceof Error) {
-        // Pre-WebSocket errors that should show a toast:
-        const preWebSocketErrors = [
-          "WebSocket not connected",
-          "No valid department found",
-          "No scenario content was generated",
-        ];
-        const isPreWebSocketError = preWebSocketErrors.some((msg) =>
-          error.message.includes(msg)
-        );
-        // All other errors come from handleGenerateAIScenario and already have toasts
-        if (isPreWebSocketError) {
-          toast.error(
-            `Failed to generate scenario: ${error.message || "Unknown error"}`
+        // Handle generated IDs from tool completion events
+        // Note: Document IDs are already updated in real-time via handleDocumentComplete
+        // This is just for showing success message
+        if (result.document_ids && result.document_ids.length > 0) {
+          toast.success(
+            `Created ${result.document_ids.length} dynamic document(s)`
           );
         }
+
+        if (result.objective_ids && result.objective_ids.length > 0) {
+          // Objectives will be loaded from the API when scenario detail is fetched
+          // For now, we just note that they were created
+          toast.success(`Created ${result.objective_ids.length} objective(s)`);
+        }
+
+        if (result.image_ids && result.image_ids.length > 0) {
+          // Images will be loaded from the API when scenario detail is fetched
+          toast.success(`Created ${result.image_ids.length} image(s)`);
+        }
+
+        // If we have a problem statement ID, we'll need to fetch it from the API
+        // For now, we'll trigger a refresh of the scenario data if in edit mode
+        if (result.problem_statement_id && isEditMode) {
+          // In edit mode, refresh scenario data to get the new problem statement
+          // This will be handled by the parent component refreshing the data
+          toast.success("Problem statement created successfully");
+        } else if (result.problem_statement_id && !isEditMode) {
+          // In create mode, we'll store the ID for later linking
+          // The problem statement will be linked when the scenario is saved
+          toast.success("Problem statement created successfully");
+        }
+
+        // Note: title and description are no longer in the completion event
+        // They will be fetched from the API when the scenario detail is loaded
+        // If in edit mode, refresh scenario data to get the newly generated content
+        if (isEditMode && scenarioId) {
+          // Trigger a refetch of scenario data to get the new problem statement, objectives, etc.
+          // This will be handled by the parent component or query invalidation
+        }
+      } catch (error) {
+        // Error toast is already handled in handleGenerateAIScenario for WebSocket errors
+        // Only show toast for errors that occur BEFORE calling handleGenerateAIScenario
+        // (e.g., validation errors, connection errors before WebSocket call)
+        if (error instanceof Error) {
+          // Pre-WebSocket errors that should show a toast:
+          const preWebSocketErrors = [
+            "WebSocket not connected",
+            "No valid department found",
+            "No scenario content was generated",
+          ];
+          const isPreWebSocketError = preWebSocketErrors.some((msg) =>
+            error.message.includes(msg)
+          );
+          // All other errors come from handleGenerateAIScenario and already have toasts
+          if (isPreWebSocketError) {
+            toast.error(
+              `Failed to generate scenario: ${error.message || "Unknown error"}`
+            );
+          }
+        }
+      } finally {
+        setIsGeneratingScenario(false);
       }
-    } finally {
-      setIsGeneratingScenario(false);
-    }
-  };
+    },
+    [
+      effectiveProfile,
+      handleGenerateAIScenario,
+      selectedPersonaIds,
+      currentDocumentIds,
+      currentFieldIds,
+      useObjectives,
+      useImage,
+      useVideo,
+      useQuestions,
+      isEditMode,
+      scenarioId,
+    ]
+  );
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
     try {
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
+      const newDataForDepts =
+        scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+          ? (scenarioData as ScenarioNewOut)
+          : null;
       const validDeptIds =
-        scenarioData && !isEditMode && "valid_department_ids" in scenarioData
-          ? (scenarioData as ScenarioNewOut).valid_department_ids || []
+        newDataForDepts &&
+        "valid_department_ids" in newDataForDepts &&
+        newDataForDepts.valid_department_ids
+          ? (newDataForDepts.valid_department_ids as string[]).map(String)
           : [];
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         draftState.departmentIds || [],
@@ -4222,7 +4331,11 @@ export default function Scenario({
         video_ids?: string[] | null;
         active_video_id?: string | null;
         question_ids?: string[] | null;
-        question_timestamps?: Record<string, Record<string, number[]>> | null;
+        question_timestamps?: Array<{
+          question_id: string | null;
+          video_id: string | null;
+          timestamps: number[] | null;
+        }> | null;
         video_length?: number | null;
       } = {
         name: name?.trim() || "",
@@ -4265,15 +4378,13 @@ export default function Scenario({
             : null,
         question_timestamps:
           contentState.questions.length > 0 && contentState.selectedVideo
-            ? contentState.questions.reduce(
-                (acc, q) => {
-                  if (q.times && q.times.length > 0) {
-                    acc[q.id] = { [contentState.selectedVideo!.id]: q.times };
-                  }
-                  return acc;
-                },
-                {} as Record<string, Record<string, number[]>>
-              )
+            ? contentState.questions
+                .filter((q) => q.times && q.times.length > 0)
+                .map((q) => ({
+                  question_id: q.id,
+                  video_id: contentState.selectedVideo!.id,
+                  timestamps: q.times!,
+                }))
             : null,
         video_length: selectedVideoLength || null,
       };
@@ -4358,9 +4469,12 @@ export default function Scenario({
   };
 
   // Handler for PersonaPicker multi-select
-  const handlePersonaSelect = (ids: string[]) => {
-    updatePersonaIds(ids);
-  };
+  const handlePersonaSelect = useCallback(
+    (ids: string[]) => {
+      updatePersonaIds(ids);
+    },
+    [updatePersonaIds]
+  );
 
   // Render step callback for GenericForm
   // Migrates all custom sections inline using StepCard/SelectableGrid pattern
@@ -4371,8 +4485,8 @@ export default function Scenario({
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: stepFormData,
-      setFormData: setStepFormData,
+      formData: _stepFormData,
+      setFormData: _setStepFormData,
       onReset,
     }: {
       stepId: string;
@@ -4394,27 +4508,9 @@ export default function Scenario({
       switch (stepId) {
         case "basic": {
           // Migrate ScenarioBasicInfoSection inline
-          const filteredScenarioAgentIds =
-            (scenarioData?.valid_agent_ids || []).filter((id) => {
-              const agent = agentMapping[id];
-              return agent?.roles?.includes("scenario");
-            }) || [];
+          // Agent IDs are conditionally rendered below, no need for these variables
 
-          const imageAgentIds =
-            (scenarioData?.valid_agent_ids || []).filter((id) => {
-              const agent = agentMapping[id];
-              return agent?.roles?.includes("image");
-            }) || [];
-
-          const videoAgentIds =
-            (scenarioData?.valid_agent_ids || []).filter((id) => {
-              const agent = agentMapping[id];
-              return agent?.roles?.includes("video");
-            }) || [];
-
-          const showScenarioPicker = filteredScenarioAgentIds.length > 0;
-          const showImagePicker = imageAgentIds.length > 0;
-          const showVideoPicker = videoAgentIds.length > 0;
+          // Agent pickers are conditionally rendered below, no need for these variables
 
           return (
             <StepCard
@@ -4456,10 +4552,19 @@ export default function Scenario({
               <div className="space-y-4">
                 {/* Department Selection */}
                 {(() => {
+                  const newDataForDepts =
+                    scenarioData &&
+                    !isEditMode &&
+                    isScenarioNewOut(scenarioData)
+                      ? (scenarioData as ScenarioNewOut)
+                      : null;
                   const validDeptIds =
-                    scenarioData && "valid_department_ids" in scenarioData
-                      ? (scenarioData as ScenarioNewOut).valid_department_ids ||
-                        []
+                    newDataForDepts &&
+                    "valid_department_ids" in newDataForDepts &&
+                    newDataForDepts.valid_department_ids
+                      ? (newDataForDepts.valid_department_ids as string[]).map(
+                          String
+                        )
                       : [];
                   return validDeptIds.length > 1 ? (
                     <div className="space-y-2">
@@ -4756,14 +4861,14 @@ export default function Scenario({
         }
         case "persona": {
           // Inline PersonaSection using StepCard + SelectableGrid pattern
-          const allowedRanges =
-            scenarioData && !isEditMode && "allowed_ranges" in scenarioData
-              ? (scenarioData as ScenarioNewOut).allowed_ranges
-              : undefined;
+          const newDataForRanges =
+            scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+              ? scenarioData
+              : null;
           const sliderMin =
-            allowedRanges?.persona?.min ?? personaMinMax.min ?? 1;
+            newDataForRanges?.persona_range_min ?? personaMinMax.min ?? 1;
           const sliderMax =
-            allowedRanges?.persona?.max ?? personaMinMax.max ?? 1;
+            newDataForRanges?.persona_range_max ?? personaMinMax.max ?? 1;
 
           // Server handles filtering via validPersonaIds (showSelected filter applied server-side)
           // Client only applies search term filtering (for instant feedback while typing)
@@ -4899,7 +5004,15 @@ export default function Scenario({
                 id: string;
                 persona: (typeof personaMapping)[string];
               }>
-                items={personaItems}
+                items={personaItems.filter(
+                  (
+                    item
+                  ): item is {
+                    id: string;
+                    persona: NonNullable<(typeof personaMapping)[string]>;
+                  } => item.persona !== undefined
+                )}
+                selectedId={null}
                 selectedIds={selectedPersonaIds}
                 onSelect={(ids) =>
                   handlePersonaSelect(Array.isArray(ids) ? ids : [ids])
@@ -4954,14 +5067,14 @@ export default function Scenario({
         }
         case "documents": {
           // Inline DocumentSection using StepCard + SelectableGrid pattern
-          const allowedRanges =
-            scenarioData && !isEditMode && "allowed_ranges" in scenarioData
-              ? (scenarioData as ScenarioNewOut).allowed_ranges
-              : undefined;
+          const newDataForRanges =
+            scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+              ? scenarioData
+              : null;
           const sliderMin =
-            allowedRanges?.document?.min ?? documentMinMax.min ?? 0;
+            newDataForRanges?.document_range_min ?? documentMinMax.min ?? 0;
           const sliderMax =
-            allowedRanges?.document?.max ?? documentMinMax.max ?? 1;
+            newDataForRanges?.document_range_max ?? documentMinMax.max ?? 1;
 
           // Create document items for SelectableGrid
           const documentItems = validDocumentIds
@@ -4990,15 +5103,7 @@ export default function Scenario({
                 fullDoc,
               };
             })
-            .filter(
-              (
-                item
-              ): item is {
-                id: string;
-                doc: DocumentMappingItem;
-                fullDoc?: unknown;
-              } => item !== null
-            );
+            .filter((item): item is NonNullable<typeof item> => item !== null);
 
           return (
             <>
@@ -5127,6 +5232,7 @@ export default function Scenario({
                   fullDoc?: unknown;
                 }>
                   items={documentItems}
+                  selectedId={null}
                   selectedIds={currentDocumentIds}
                   onSelect={(ids) =>
                     updateDocumentIds(Array.isArray(ids) ? ids : [ids])
@@ -5227,7 +5333,6 @@ export default function Scenario({
                   }}
                   emptyMessage="No documents found. Try adjusting your search."
                   disabled={isReadonly}
-                  gridCols={4}
                 />
               </StepCard>
 
@@ -5323,16 +5428,16 @@ export default function Scenario({
         }
         case "parameters": {
           // Inline ParameterSection using StepCard + GenericPicker pattern
-          const allowedRanges =
-            scenarioData && !isEditMode && "allowed_ranges" in scenarioData
-              ? (scenarioData as ScenarioNewOut).allowed_ranges
-              : undefined;
+          const newDataForRanges =
+            scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+              ? scenarioData
+              : null;
           const sliderMin =
-            allowedRanges?.parameter_selection?.min ??
+            newDataForRanges?.parameter_range_min ??
             parameterSelectionMinMax.min ??
             0;
           const sliderMax =
-            allowedRanges?.parameter_selection?.max ??
+            newDataForRanges?.parameter_range_max ??
             parameterSelectionMinMax.max ??
             3;
 
@@ -5344,20 +5449,8 @@ export default function Scenario({
             return null;
           }
 
-          // Create parameter items for GenericPicker (filtered but not used directly)
-          const _parameterItems = validParamIds
-            .filter((paramId) => {
-              // Client-side search filtering
-              if (!parameterSearchTerm.trim()) return true;
-              const param = parameterMapping[paramId];
-              if (!param) return false;
-              const searchLower = parameterSearchTerm.toLowerCase();
-              const searchText =
-                `${param.name} ${param.description || ""}`.toLowerCase();
-              return searchText.includes(searchLower);
-            })
-            .map((paramId) => parameterMapping[paramId])
-            .filter(Boolean);
+          // GenericPicker handles filtering internally
+          // No need to pre-filter here
 
           return (
             <StepCard
@@ -5641,18 +5734,22 @@ export default function Scenario({
             if (!param) return null;
 
             const validItemsForParam = validGeneralParameterItemIds.filter(
-              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
+              (itemId: string) => fieldMapping[itemId]?.parameter_id === paramId
             );
             const selectedItemsForParam = currentFieldIds.filter(
               (itemId) => fieldMapping[itemId]?.parameter_id === paramId
             );
             const fullParam = parameterMapping[paramId] || param;
-            const allowedRanges =
-              scenarioData && "allowed_ranges" in scenarioData
-                ? (scenarioData as ScenarioNewOut).allowed_ranges
+            // field_ranges only exists on ScenarioDetailOut, not ScenarioDetailNew
+            // For new scenarios, use defaults
+            const fieldRange =
+              isEditMode && scenarioData && isScenarioDetailOut(scenarioData)
+                ? scenarioData.field_ranges?.find(
+                    (range) => range.parameter_id === paramId
+                  )
                 : undefined;
-            const sliderMin = allowedRanges?.fields?.[paramId]?.min ?? 1;
-            const sliderMax = allowedRanges?.fields?.[paramId]?.max ?? 3;
+            const sliderMin = fieldRange?.min_count ?? 1;
+            const sliderMax = fieldRange?.max_count ?? 3;
 
             return (
               <StepCard
@@ -5755,7 +5852,7 @@ export default function Scenario({
               >
                 <ParameterSelector
                   parameterMapping={{
-                    [paramId]: fullParam as any,
+                    [paramId]: fullParam,
                   }}
                   fieldMapping={fieldMapping}
                   validParameterItemIds={validItemsForParam}
@@ -5778,31 +5875,24 @@ export default function Scenario({
     [
       name,
       draftState.departmentIds,
+      draftState.parameterIds,
       scenarioData,
+      localPreviewDocId,
       departmentMapping,
       agentMapping,
       basicInfoState,
       setBasicInfoState,
-      useVideo,
-      setContentState,
-      handleInputChange,
       handleRandomizeAll,
       handleRandomizePersonaClient,
       handlePersonaSelect,
-      handleResetPersona,
       handleRandomizeDocumentsClient,
-      handleResetDocuments,
       handleRandomizeParametersClient,
-      handleResetParameters,
       handleRandomizeParameterClient,
       handleResetParameter,
       updateDocumentIds,
-      updateTemplateDocumentIds,
       updateFieldIds,
       updateFieldRanges,
-      updateFieldShowSelected,
       setPreviewDocumentId,
-      previewDocumentId,
       isReadonly,
       isEditMode,
       isPending,
@@ -5820,7 +5910,6 @@ export default function Scenario({
       validDocumentIds,
       documentMapping,
       currentDocumentIds,
-      templateDocumentIds,
       parameterSearchTerm,
       parameterShowSelected,
       parameterSelectionMinMax,
@@ -5830,7 +5919,6 @@ export default function Scenario({
       validGeneralParameterItemIds,
       currentFieldIds,
       fieldMinMax,
-      fieldShowSelectedByParam,
       setUrlParams,
       handleInputChange,
       handleGenerateScenario,
@@ -5857,14 +5945,10 @@ export default function Scenario({
       selectedVideoLength,
       updateVideoLength,
       contentState,
-      setContentState,
       isUploadingImage,
       isGeneratingScenario,
       isSubmitting,
       imageInputRef,
-      scenarioId,
-      isEditMode,
-      showRegenerationDialog,
       setShowRegenerationDialog,
     ]
   );
@@ -5953,7 +6037,9 @@ export default function Scenario({
       )}
 
       <GenericForm
-        nuqsParsers={scenarioSearchParamsClient as Record<string, any>}
+        nuqsParsers={
+          scenarioSearchParamsClient as Record<string, Parser<unknown>>
+        }
         steps={steps}
         getStepStatus={getStepStatus}
         formData={
