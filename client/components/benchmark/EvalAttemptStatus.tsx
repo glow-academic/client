@@ -17,22 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useProfile } from "@/contexts/profile-context";
 import type { OutputOf } from "@/lib/api/types";
-import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare, Check } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AgentConfigCards } from "./AgentConfigCards";
 import type {
   AgentsListOut,
 } from "@/app/(main)/benchmark/a/[attemptId]/page";
@@ -43,12 +33,16 @@ export interface EvalAttemptStatusProps {
   attemptId: string;
   attemptData: EvalAttemptFullOut;
   agentsList: AgentsListOut;
+  patchAttemptDraftAction?: (
+    input: Parameters<typeof AgentConfigCards>[0]["patchAttemptDraftAction"]
+  ) => Promise<ReturnType<NonNullable<typeof AgentConfigCards>[0]["patchAttemptDraftAction"]>>;
 }
 
 export default function EvalAttemptStatus({
   attemptId,
   attemptData,
   agentsList,
+  patchAttemptDraftAction,
 }: EvalAttemptStatusProps) {
   const { socket, isConnected, effectiveProfile, activeProfile } = useProfile();
   const [runs, setRuns] = useState(attemptData.runs || []);
@@ -59,26 +53,6 @@ export default function EvalAttemptStatus({
   const attempt = attemptData.attempt;
   const evalInfo = attemptData.eval;
   const [infiniteMode] = useState(attempt.infinite_mode || false);
-  const [systemPrompt, setSystemPrompt] = useState(evalInfo.system_prompt || "");
-  const [applySystemPromptToAll, setApplySystemPromptToAll] = useState(false);
-  
-  // Build agent mapping for picker
-  const agentMapping = useMemo(() => {
-    const mapping: Record<string, { id: string; name: string; description?: string }> = {};
-    agentsList.agents.forEach((agent) => {
-      mapping[agent.agent_id] = {
-        id: agent.agent_id,
-        name: agent.name,
-        ...(agent.description && { description: agent.description }),
-      };
-    });
-    return mapping;
-  }, [agentsList.agents]);
-  
-  const validAgentIds = useMemo(
-    () => agentsList.agents.map((a) => a.agent_id).filter(Boolean),
-    [agentsList.agents]
-  );
 
     // Join benchmark room on mount for real-time updates
   useEffect(() => {
@@ -406,65 +380,14 @@ export default function EvalAttemptStatus({
         </CardContent>
       </Card>
 
-      {/* Settings Accordion */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="w-full">
-            {/* System Prompt Accordion */}
-            <AccordionItem value="system-prompt">
-              <AccordionTrigger>
-                <div className="flex items-center gap-2">
-                  <span>System Prompt</span>
-                  {applySystemPromptToAll && (
-                    <Check className="h-4 w-4 text-green-600" />
-                  )}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="system-prompt">Agent System Prompt</Label>
-                    <Textarea
-                      id="system-prompt"
-                      value={systemPrompt}
-                      onChange={(e) => setSystemPrompt(e.target.value)}
-                      disabled={!evalInfo.dynamic}
-                      className="min-h-[200px] font-mono text-sm"
-                      placeholder="System prompt for the agent being evaluated..."
-                    />
-                    {!evalInfo.dynamic && (
-                      <p className="text-sm text-muted-foreground">
-                        System prompt editing is only available when eval.dynamic is true.
-                      </p>
-                    )}
-                  </div>
-                  {evalInfo.dynamic && (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="apply-system-prompt-all"
-                        checked={applySystemPromptToAll}
-                        onCheckedChange={(checked) =>
-                          setApplySystemPromptToAll(checked === true)
-                        }
-                      />
-                      <Label
-                        htmlFor="apply-system-prompt-all"
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        Apply to all runs
-                      </Label>
-                    </div>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-          </Accordion>
-        </CardContent>
-      </Card>
+      {/* Agent Configuration Cards */}
+      <AgentConfigCards
+        attemptId={attemptId}
+        evalInfo={evalInfo}
+        agentsList={agentsList}
+        isDynamic={evalInfo.dynamic}
+        patchAttemptDraftAction={patchAttemptDraftAction}
+      />
 
       {/* Runs Table */}
       <Card>

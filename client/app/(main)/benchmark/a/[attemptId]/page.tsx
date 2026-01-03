@@ -15,6 +15,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 type EvalAttemptFullIn = InputOf<"/api/v4/attempts/eval", "post">;
 type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/eval", "post">;
 type AgentsListOut = OutputOf<"/api/v4/agents/list", "post">;
+type PatchAttemptDraftIn = InputOf<"/api/v4/attempts/draft", "patch">;
+type PatchAttemptDraftOut = OutputOf<"/api/v4/attempts/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
@@ -35,6 +37,13 @@ const getAgentsList = async (): Promise<AgentsListOut> => {
   "use server";
   return api.post("/agents/list", { body: {} }, { cache: "no-store" });
 };
+
+async function patchAttemptDraft(
+  input: PatchAttemptDraftIn
+): Promise<PatchAttemptDraftOut> {
+  "use server";
+  return api.patch("/attempts/draft", input);
+}
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -86,6 +95,7 @@ export default async function BenchmarkAttemptPage({
           attemptId={attemptId}
           attemptData={attemptData}
           agentsList={agentsList}
+          patchAttemptDraftAction={patchAttemptDraft}
         />
       </div>
     );

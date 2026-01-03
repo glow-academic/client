@@ -4163,6 +4163,43 @@ class LinkChatToAttemptApiResponse(BaseModel):
 
 
 
+# Generated from: patch_attempt_draft
+
+class PatchAttemptDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.patch,
+            self.expected_version,
+            self.input_draft_id,
+        )
+
+class PatchAttemptDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchAttemptDraftApiRequest(BaseModel):
+
+    patch: str
+    expected_version: int
+    input_draft_id: UUID | None = None
+
+class PatchAttemptDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: update_chat_created_at
 
 class UpdateChatCreatedAtSqlParams(BaseModel):
@@ -25413,6 +25450,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkChatToAttemptApiRequest",
         "LinkChatToAttemptApiResponse",
     ),
+    "app/sql/v4/attempts/patch_attempt_draft_complete.sql": (
+        "PatchAttemptDraftSqlParams",
+        "PatchAttemptDraftSqlRow",
+        "PatchAttemptDraftApiRequest",
+        "PatchAttemptDraftApiResponse",
+    ),
     "app/sql/v4/attempts/update_chat_created_at_complete.sql": (
         "UpdateChatCreatedAtSqlParams",
         "UpdateChatCreatedAtSqlRow",
@@ -27719,6 +27762,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/attempts/link_chat_to_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/attempts/patch_attempt_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
