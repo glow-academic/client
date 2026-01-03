@@ -207,17 +207,17 @@ export default function Home({ homeData }: HomeProps) {
 
   // Sort simulations by completion status and then by cohort
   const sortedSimulations = useMemo(() => {
-    if (simulationItems[0]?.viewMode === "instructional") {
-      // Server already sorted with: passed → cohortName → cohort order → title
+    if (simulationItems[0]?.view_mode === "instructional") {
+      // Server already sorted with: passed → cohort_name → cohort order → title
       return simulationItems;
     }
-    // TA: keep orderIndex before cohortName
+    // TA: keep orderIndex before cohort_name
     const items = [...(simulationItems ?? [])];
     return items.sort((a, b) => {
       if (!a || !b) return 0;
 
-      // 1) incomplete first (hasPassed false first)
-      if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
+      // 1) incomplete first (has_passed false first)
+      if (!!a?.has_passed !== !!b?.has_passed) return a?.has_passed ? 1 : -1;
 
       // // 2) use cohort array order when available (especially TA)
       // const ai = Number.isFinite(a?.orderIndex)
@@ -229,13 +229,13 @@ export default function Home({ homeData }: HomeProps) {
       // if (ai !== bi) return ai - bi;
 
       // 3) cohort name alpha as a softer signal
-      const ca = (a?.cohortName || "").toLowerCase();
-      const cb = (b?.cohortName || "").toLowerCase();
+      const ca = (a?.cohort_name || "").toLowerCase();
+      const cb = (b?.cohort_name || "").toLowerCase();
       if (ca !== cb) return ca < cb ? -1 : 1;
 
       // 4) title alpha
-      const ta = (a?.simulationTitle || "").toLowerCase();
-      const tb = (b?.simulationTitle || "").toLowerCase();
+      const ta = (a?.simulation_title || "").toLowerCase();
+      const tb = (b?.simulation_title || "").toLowerCase();
       if (ta !== tb) return ta < tb ? -1 : 1;
 
       return 0;
@@ -244,17 +244,17 @@ export default function Home({ homeData }: HomeProps) {
 
   // Sort progress data the same way as the cards (non-completed first, then by cohort)
   const sortedProgressData = useMemo(() => {
-    if (simulationItems[0]?.viewMode === "instructional") {
-      // Server already sorted with: passed → cohortName → cohort order → title
+    if (simulationItems[0]?.view_mode === "instructional") {
+      // Server already sorted with: passed → cohort_name → cohort order → title
       return simulationItems;
     }
-    // TA: keep orderIndex before cohortName
+    // TA: keep orderIndex before cohort_name
     const items = [...(simulationItems ?? [])];
     return items.sort((a, b) => {
       if (!a || !b) return 0;
 
-      // 1) incomplete first (hasPassed false first)
-      if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
+      // 1) incomplete first (has_passed false first)
+      if (!!a?.has_passed !== !!b?.has_passed) return a?.has_passed ? 1 : -1;
 
       // // 2) use cohort array order when available (especially TA)
       // const ai = Number.isFinite(a?.orderIndex)
@@ -266,13 +266,13 @@ export default function Home({ homeData }: HomeProps) {
       // if (ai !== bi) return ai - bi;
 
       // 3) cohort name alpha as a softer signal
-      const ca = (a?.cohortName || "").toLowerCase();
-      const cb = (b?.cohortName || "").toLowerCase();
+      const ca = (a?.cohort_name || "").toLowerCase();
+      const cb = (b?.cohort_name || "").toLowerCase();
       if (ca !== cb) return ca < cb ? -1 : 1;
 
       // 4) title alpha
-      const ta = (a?.simulationTitle || "").toLowerCase();
-      const tb = (b?.simulationTitle || "").toLowerCase();
+      const ta = (a?.simulation_title || "").toLowerCase();
+      const tb = (b?.simulation_title || "").toLowerCase();
       if (ta !== tb) return ta < tb ? -1 : 1;
 
       return 0;
@@ -313,7 +313,7 @@ export default function Home({ homeData }: HomeProps) {
       {/* Header with title */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">
-          Welcome back, {effectiveProfile?.firstName}!
+          Welcome back, {effectiveProfile?.first_name}!
         </h2>
       </div>
 
@@ -337,30 +337,30 @@ export default function Home({ homeData }: HomeProps) {
               {sortedProgressData.map((item) =>
                 item ? (
                   <SimulationProgress
-                    key={item.id}
-                    id={item.id}
+                    key={item.simulation_id || ""}
+                    id={item.simulation_id || ""}
                     viewMode={
-                      item.viewMode === "member"
+                      item.view_mode === "member"
                         ? ViewMode.MEMBER
                         : ViewMode.INSTRUCTIONAL
                     }
-                    {...(item.cohortName && { cohortName: item.cohortName })}
-                    {...(item.cohortNames &&
-                      !item.cohortName && { cohortName: item.cohortNames })}
-                    simulationName={item.simulationName}
-                    status={item.status || "not-started"}
-                    completionPct={item.completionPct || 0}
-                    {...(typeof item.passedCount === "number" && {
-                      passedCount: item.passedCount,
+                    {...(item.cohort_name && { cohortName: item.cohort_name })}
+                    {...(item.cohort_names &&
+                      !item.cohort_name && { cohortName: item.cohort_names })}
+                    simulationName={item.simulation_name || ""}
+                    status={(item.status || "not-started") as "not-started" | "in-progress" | "passed"}
+                    completionPct={item.completion_pct || 0}
+                    {...(typeof item.passed_count === "number" && {
+                      passedCount: item.passed_count,
                     })}
-                    {...(typeof item.inProgressCount === "number" && {
-                      inProgressCount: item.inProgressCount,
+                    {...(typeof item.in_progress_count === "number" && {
+                      inProgressCount: item.in_progress_count,
                     })}
-                    {...(typeof item.notStartedCount === "number" && {
-                      notStartedCount: item.notStartedCount,
+                    {...(typeof item.not_started_count === "number" && {
+                      notStartedCount: item.not_started_count,
                     })}
-                    {...(typeof item.passPct === "number" && {
-                      passPct: item.passPct,
+                    {...(typeof item.pass_pct === "number" && {
+                      passPct: item.pass_pct,
                     })}
                   />
                 ) : null,
@@ -409,21 +409,21 @@ export default function Home({ homeData }: HomeProps) {
                 {visibleSimulations.map((item) =>
                   item ? (
                     <SimulationCard
-                      key={item.id}
-                      id={item.id}
-                      {...(typeof item.timeLimit === "number" && {
-                        timeLimit: item.timeLimit,
+                      key={item.simulation_id || ""}
+                      id={item.simulation_id || ""}
+                      {...(typeof item.time_limit === "number" && {
+                        timeLimit: item.time_limit,
                       })}
                       numSessions={
-                        typeof item.numSessions === "number"
-                          ? item.numSessions
+                        typeof item.num_sessions === "number"
+                          ? item.num_sessions
                           : 1
                       }
-                      {...(typeof item.highestScore === "number" && {
-                        highestScore: item.highestScore,
+                      {...(typeof item.highest_score === "number" && {
+                        highestScore: item.highest_score,
                       })}
-                      simulationTitle={item.simulationTitle}
-                      simulationDescription={item.simulationDescription || ""}
+                      simulationTitle={item.simulation_title || ""}
+                      simulationDescription={item.simulation_description || ""}
                       standard_groups={buildStandardGroupsDict(item.standard_groups || [])}
                       standardGroupsMapping={
                         standardGroupsMapping as Record<
@@ -444,11 +444,11 @@ export default function Home({ homeData }: HomeProps) {
                       }
                       {...(item.color && { color: item.color })}
                       {...(item.icon && { icon: item.icon })}
-                      {...(typeof item.hasPassed === "boolean" && {
-                        hasPassed: item.hasPassed,
+                      {...(typeof item.has_passed === "boolean" && {
+                        hasPassed: item.has_passed,
                       })}
-                      {...(typeof item.passRate === "number" && {
-                        passRate: item.passRate,
+                      {...(typeof item.pass_rate === "number" && {
+                        passRate: item.pass_rate,
                       })}
                       type="cohort"
                       onStartSimulation={handleStartSimulation}

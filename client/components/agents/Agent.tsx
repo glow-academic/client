@@ -75,16 +75,24 @@ import type {
   UpdateAgentIn,
   UpdateAgentOut,
 } from "@/app/(main)/engine/agents/a/[agentId]/page";
-import type { OutputOf } from "@/lib/api/types";
 
-// Extract model_mapping type from AgentDetailOut
-// The API returns modalities in model_mapping, so we extract the actual type
-type AgentModelMapping = NonNullable<AgentDetailOut["model_mapping"]>;
-// Get the proper type from the OpenAPI schema - includes all fields (input_modalities, output_modalities, temperature_levels, reasoning_options, etc.)
-type AgentModelMappingItem = OutputOf<
-  "/api/v4/agents/detail",
-  "post"
->["model_mapping"][string];
+// Build model_mapping type from models array
+// The API returns models array, we build a mapping from model_id to model info
+type AgentModelMapping = Record<
+  string,
+  {
+    model_id: string;
+    name: string | null;
+    description: string | null;
+    input_modalities: string[] | null;
+    output_modalities: string[] | null;
+    temperature_lower: number | null;
+    temperature_upper: number | null;
+    temperature_levels: unknown;
+    reasoning_options: unknown;
+    available_voices: unknown;
+  }
+>;
 
 // Remove old StepStatus and Step interfaces - use from GenericForm
 // Remove AgentFormData interface - form fields are in draftState, URL params are separate
@@ -286,9 +294,9 @@ export default function Agent({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primary_department_id ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primary_department_id]
   );
 
   // Initialize draft state from server data or draft payload
@@ -321,9 +329,9 @@ export default function Agent({
       active: data.active ?? true,
       role: data.role || "assistant",
       departmentIds: data.department_ids || [],
-      model_temperature_level_id: data.selected_temperature_level_id || null,
-      model_reasoning_level_id: data.selected_reasoning_level_id || null,
-      model_voice_ids: data.selected_voice_ids || [],
+      model_temperature_level_id: (data as typeof data & { selected_temperature_level_id?: string | null }).selected_temperature_level_id || null,
+      model_reasoning_level_id: (data as typeof data & { selected_reasoning_level_id?: string | null }).selected_reasoning_level_id || null,
+      model_voice_ids: (data as typeof data & { selected_voice_ids?: string[] | null }).selected_voice_ids || [],
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -448,14 +456,31 @@ export default function Agent({
     await deleteAgentPromptAction({ body });
   };
 
-  // Type-safe model mapping - use the actual type from AgentDetailOut
+  // Build model mapping from models array
   // Define this BEFORE temperatureBounds since temperatureBounds depends on it
   const modelMapping = useMemo((): AgentModelMapping => {
-    const mapping =
-      (agentData?.model_mapping as AgentModelMapping) ||
-      ({} as AgentModelMapping);
+    if (!agentData?.models || !Array.isArray(agentData.models)) {
+      return {} as AgentModelMapping;
+    }
+    const mapping: AgentModelMapping = {};
+    agentData.models.forEach((model) => {
+      if (model.model_id) {
+        mapping[model.model_id] = {
+          model_id: model.model_id,
+          name: model.name || null,
+          description: model.description || null,
+          input_modalities: model.input_modalities || null,
+          output_modalities: model.output_modalities || null,
+          temperature_lower: model.temperature_lower ?? null,
+          temperature_upper: model.temperature_upper ?? null,
+          temperature_levels: model.temperature_levels ?? null,
+          reasoning_options: model.reasoning_options ?? null,
+          available_voices: model.available_voices ?? null,
+        };
+      }
+    });
     return mapping;
-  }, [agentData?.model_mapping]);
+  }, [agentData?.models]);
 
   // Get temperature bounds and levels from selected model
   const temperatureBounds = useMemo(() => {
@@ -524,8 +549,12 @@ export default function Agent({
               is_upper: boolean;
             }>)
           : [];
-      lower = agentDetailData?.temperature_lower ?? 0.0;
-      upper = agentDetailData?.temperature_upper ?? 1.0;
+      const agentDetailWithTemp = agentDetailData as typeof agentDetailData & {
+        temperature_lower?: number | null;
+        temperature_upper?: number | null;
+      };
+      lower = agentDetailWithTemp?.temperature_lower ?? 0.0;
+      upper = agentDetailWithTemp?.temperature_upper ?? 1.0;
     }
 
     const values = levels
@@ -557,7 +586,7 @@ export default function Agent({
       const modelInfo = modelMapping[selectedModelId];
       if (modelInfo && "available_voices" in modelInfo) {
         const modelVoices = (
-          modelInfo as AgentModelMappingItem & {
+          modelInfo as typeof modelInfo & {
             available_voices?:
               | Array<{ id: string; voice: string }>
               | Record<string, { id: string; voice: string }>;
@@ -585,30 +614,62 @@ export default function Agent({
         : agentVoices && typeof agentVoices === "object"
           ? Object.values(agentVoices)
           : [];
-      voices = voicesArray.map((v) => ({
-        id: v.id || "",
-        voice: v.voice || "",
-      }));
+      voices = voicesArray.map((v) => {
+        const voiceItem = v as { id?: string; voice?: string };
+        return {
+          id: voiceItem.id || "",
+          voice: voiceItem.voice || "",
+        };
+      });
     }
 
     return voices;
   }, [draftState.modelId, modelMapping, agentDetail?.available_voices]);
+
+  // Build prompt_mapping from prompts array and department_prompt_links
+  const promptMapping = useMemo(() => {
+    if (!agentDetail?.prompts || !Array.isArray(agentDetail.prompts)) {
+      return {} as Record<string, PromptInfo>;
+    }
+    const mapping: Record<string, PromptInfo> = {};
+    agentDetail.prompts.forEach((prompt) => {
+      if (prompt.prompt_id) {
+        // Get department_ids from department_prompt_links
+        const deptIds: string[] = [];
+        if (agentDetail.department_prompt_links && Array.isArray(agentDetail.department_prompt_links)) {
+          agentDetail.department_prompt_links.forEach((link) => {
+            if (link.prompt_id === prompt.prompt_id && link.department_id) {
+              deptIds.push(link.department_id);
+            }
+          });
+        }
+        mapping[prompt.prompt_id] = {
+          system_prompt: prompt.system_prompt || "",
+          name: prompt.name || "",
+          description: prompt.description || "",
+          created_at: prompt.created_at || "",
+          updated_at: prompt.updated_at || "",
+          department_ids: deptIds.length > 0 ? deptIds : null,
+          can_delete: prompt.can_delete ?? false,
+        };
+      }
+    });
+    return mapping;
+  }, [agentDetail?.prompts, agentDetail?.department_prompt_links]);
 
   // Filter prompt_mapping client-side based on selected departments from form
   // API returns all prompts user has access to, then we filter by selected departments
   // When "All Departments" selected (empty array): Show ALL prompts (default + all department-specific)
   // When specific departments selected: Show default + prompts for those departments
   const filteredPromptMapping = useMemo(() => {
-    if (!isEditMode || !agentDetail?.prompt_mapping) {
-      return agentDetail?.prompt_mapping || {};
+    if (!isEditMode || Object.keys(promptMapping).length === 0) {
+      return promptMapping;
     }
 
     const selectedDeptIds = draftState.departmentIds || [];
     const filtered: Record<string, PromptInfo> = {};
 
-    for (const [promptId, promptInfoRaw] of Object.entries(
-      agentDetail.prompt_mapping
-    )) {
+    for (const [promptId, promptInfoRaw] of Object.entries(promptMapping)) {
       // Add default values for name and description if missing (for backward compatibility)
       // Type assertion needed because API schema may not be fully updated in TypeScript types
       const rawInfo = promptInfoRaw as PromptInfo & {
@@ -642,20 +703,20 @@ export default function Agent({
       }
     }
     return filtered;
-  }, [draftState.departmentIds, agentDetail?.prompt_mapping, isEditMode]);
+  }, [draftState.departmentIds, promptMapping, isEditMode]);
 
   // Get default prompt content (from agent_prompts table)
   const defaultPromptContent = useMemo(() => {
-    if (!isEditMode || !agentDetail?.prompt_id || !agentDetail?.prompt_mapping)
+    if (!isEditMode || !agentDetail?.prompt_id || Object.keys(promptMapping).length === 0)
       return "";
-    const defaultPrompt = agentDetail.prompt_mapping[agentDetail.prompt_id];
+    const defaultPrompt = promptMapping[agentDetail.prompt_id];
     return defaultPrompt?.system_prompt || "";
-  }, [agentDetail, isEditMode]);
+  }, [agentDetail, isEditMode, promptMapping]);
 
   // Get resolved prompt (what's actually saved/configured for selected departments from form)
   // This is what would be used in production for the selected department(s)
   const resolvedPrompt = useMemo(() => {
-    if (!isEditMode || !agentDetail?.prompt_mapping) {
+    if (!isEditMode || !agentDetail || Object.keys(promptMapping).length === 0) {
       return { promptId: null, content: "" };
     }
 
@@ -670,22 +731,23 @@ export default function Agent({
 
     // For multiple departments, check if all have the same prompt
     const firstDeptId = selectedDeptIds[0]!;
-    const firstPromptId =
-      agentDetail.department_prompt_links?.[firstDeptId] ||
-      agentDetail.prompt_id ||
-      null;
+    // Find prompt_id for first department from department_prompt_links array
+    const firstLink = agentDetail.department_prompt_links?.find(
+      (link) => link.department_id === firstDeptId
+    );
+    const firstPromptId = firstLink?.prompt_id || agentDetail.prompt_id || null;
 
     // Check if all selected departments have the same prompt
     const allSamePrompt = selectedDeptIds.every((deptId) => {
-      const promptId =
-        agentDetail.department_prompt_links?.[deptId] ||
-        agentDetail.prompt_id ||
-        null;
+      const link = agentDetail.department_prompt_links?.find(
+        (l) => l.department_id === deptId
+      );
+      const promptId = link?.prompt_id || agentDetail.prompt_id || null;
       return promptId === firstPromptId;
     });
 
     if (allSamePrompt && firstPromptId) {
-      const promptInfo = agentDetail.prompt_mapping[firstPromptId];
+      const promptInfo = promptMapping[firstPromptId];
       return {
         promptId: firstPromptId,
         content: promptInfo?.system_prompt || defaultPromptContent,
@@ -699,7 +761,7 @@ export default function Agent({
     };
   }, [
     draftState.departmentIds,
-    agentDetail?.prompt_mapping,
+    promptMapping,
     agentDetail?.department_prompt_links,
     agentDetail?.prompt_id,
     defaultPromptContent,
@@ -751,7 +813,7 @@ export default function Agent({
   // Helper to extract modalities from model info
   // The API returns input_modalities and output_modalities as separate fields
   const getModelModalities = (
-    modelInfo: AgentModelMappingItem | undefined
+    modelInfo: AgentModelMapping[string] | undefined
   ): { input: string[]; output: string[] } => {
     if (!modelInfo) return { input: [], output: [] };
 
@@ -769,7 +831,7 @@ export default function Agent({
 
     // Old format: nested modalities object (backward compatibility)
     // Type assertion needed for old format
-    const modelInfoWithOldFormat = modelInfo as AgentModelMappingItem & {
+    const modelInfoWithOldFormat = modelInfo as AgentModelMapping[string] & {
       modalities?: {
         input?: string[];
         output?: string[];
@@ -2197,9 +2259,7 @@ export default function Agent({
                           {isEditMode &&
                             agentDetail &&
                             filteredPromptMapping &&
-                            (Object.keys(filteredPromptMapping).length > 0 ||
-                              (agentDetail.prompt_mapping &&
-                                Object.keys(agentDetail.prompt_mapping).length > 0)) && (
+                            Object.keys(filteredPromptMapping).length > 0 && (
                               <PromptPicker
                                 promptMapping={filteredPromptMapping}
                                 selectedPromptId={draftState.promptId || null}
@@ -2355,7 +2415,7 @@ export default function Agent({
                               effectiveProfile?.role === "superadmin" ? (
                                 <AgentDebugInfo
                                   debugInfo={agentDetail.debug_info}
-                                  modelMapping={agentDetail.model_mapping}
+                                  modelMapping={modelMapping}
                                 />
                               ) : undefined
                             }

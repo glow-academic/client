@@ -17,12 +17,12 @@ type BenchmarkBundleOut = OutputOf<"/api/v4/benchmark/bundle", "post">;
 // For backward compatibility, extract evals list structure from bundle
 type EvalsListOut = {
   evals: BenchmarkBundleOut["evals"];
-  rubric_mapping: BenchmarkBundleOut["rubric_mapping"];
-  department_mapping: BenchmarkBundleOut["department_mapping"];
-  agent_mapping: BenchmarkBundleOut["agent_mapping"];
-  standard_groups_mapping: BenchmarkBundleOut["standard_groups_mapping"];
-  standards_mapping: BenchmarkBundleOut["standards_mapping"];
-  rubric_standard_groups_mapping: BenchmarkBundleOut["rubric_standard_groups_mapping"];
+  rubric_mapping: Record<string, Record<string, unknown>>;
+  department_mapping: Record<string, { name: string; description: string }>;
+  agent_mapping: Record<string, Record<string, unknown>>;
+  standard_groups_mapping: Record<string, { name: string; description: string; points: number; passPoints: number }>;
+  standards_mapping: Record<string, { name: string; description: string; points: number }>;
+  rubric_standard_groups_mapping: Record<string, Record<string, string[]>>;
   rubric_options: BenchmarkBundleOut["rubric_options"];
   department_options: BenchmarkBundleOut["department_options"];
   agent_options: BenchmarkBundleOut["agent_options"];
@@ -60,7 +60,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function BenchmarkPage() {
   // Build benchmark bundle filters (empty body - profileId comes from header)
   const bundleFilters: BenchmarkBundleIn = {
-    body: {},
+    body: {
+      page: 0,
+      page_size: 20,
+    },
   };
 
   // Fetch benchmark bundle server-side (includes evals list and attempts)
@@ -70,57 +73,73 @@ export default async function BenchmarkPage() {
   // API now returns arrays instead of dicts (composite types)
   const rubricMapping: Record<string, Record<string, unknown>> = {};
   for (const rubric of bundleData.rubrics || []) {
-    rubricMapping[rubric.rubric_id] = {
-      name: rubric.name,
-      description: rubric.description,
-      points: rubric.points,
-      pass_points: rubric.pass_points,
-    };
+    if (rubric.rubric_id) {
+      rubricMapping[rubric.rubric_id] = {
+        name: rubric.name || "",
+        description: rubric.description || "",
+        points: rubric.points || 0,
+        pass_points: rubric.pass_points || 0,
+      };
+    }
   }
 
   const departmentMapping: Record<string, { name: string; description: string }> = {};
   for (const dept of bundleData.departments || []) {
-    departmentMapping[dept.department_id] = {
-      name: dept.name,
-      description: dept.description,
-    };
+    if (dept.department_id) {
+      departmentMapping[dept.department_id] = {
+        name: dept.name || "",
+        description: dept.description || "",
+      };
+    }
   }
 
   const agentMapping: Record<string, Record<string, unknown>> = {};
   for (const agent of bundleData.agents || []) {
-    agentMapping[agent.agent_id] = {
-      name: agent.name,
-      description: agent.description,
-    };
+    if (agent.agent_id) {
+      agentMapping[agent.agent_id] = {
+        name: agent.name || "",
+        description: agent.description || "",
+      };
+    }
   }
 
   const standardGroupsMapping: Record<string, { name: string; description: string; points: number; passPoints: number }> = {};
   for (const sg of bundleData.standard_groups || []) {
-    standardGroupsMapping[sg.standard_group_id] = {
-      name: sg.name,
-      description: sg.description,
-      points: sg.points,
-      passPoints: sg.pass_points,
-    };
+    if (sg.standard_group_id) {
+      standardGroupsMapping[sg.standard_group_id] = {
+        name: sg.name || "",
+        description: sg.description || "",
+        points: sg.points || 0,
+        passPoints: sg.pass_points || 0,
+      };
+    }
   }
 
   const standardsMapping: Record<string, { name: string; description: string; points: number }> = {};
   for (const std of bundleData.standards || []) {
-    standardsMapping[std.standard_id] = {
-      name: std.name,
-      description: std.description,
-      points: std.points,
-    };
+    if (std.standard_id) {
+      standardsMapping[std.standard_id] = {
+        name: std.name || "",
+        description: std.description || "",
+        points: std.points || 0,
+      };
+    }
   }
 
   // Build rubric_standard_groups_mapping from array
   const rubricStandardGroupsMapping: Record<string, Record<string, string[]>> = {};
   for (const rsg of bundleData.rubric_standard_groups || []) {
-    if (!rubricStandardGroupsMapping[rsg.rubric_id]) {
-      rubricStandardGroupsMapping[rsg.rubric_id] = {};
+    if (rsg.rubric_id && rsg.standard_group_id) {
+      if (!rubricStandardGroupsMapping[rsg.rubric_id]) {
+        rubricStandardGroupsMapping[rsg.rubric_id] = {};
+      }
+      const standardIds = rsg.standard_ids || [];
+      const rubricMapping = rubricStandardGroupsMapping[rsg.rubric_id];
+      if (rubricMapping) {
+        rubricMapping[rsg.standard_group_id] = 
+          standardIds.map(id => id.toString());
+      }
     }
-    rubricStandardGroupsMapping[rsg.rubric_id][rsg.standard_group_id] = 
-      rsg.standard_ids.map(id => id.toString());
   }
 
   // Extract evals list structure from bundle for Benchmark component
@@ -161,7 +180,7 @@ export default async function BenchmarkPage() {
 
   // Build rubric mappings for each unique rubric_id
   const uniqueRubricIds = Array.from(
-    new Set(evalsData.evals.map((evalItem) => evalItem.rubric_id))
+    new Set((evalsData.evals || []).map((evalItem) => evalItem.rubric_id).filter((id): id is string => id !== null))
   );
 
   for (const rubricId of uniqueRubricIds) {
@@ -203,11 +222,13 @@ export default async function BenchmarkPage() {
       }
     }
 
-    rubricMappings[rubricId] = {
-      standard_groups,
-      standardGroupsMapping,
-      standardsMapping: evalsData.standards_mapping || {},
-    };
+    if (rubricId) {
+      rubricMappings[rubricId] = {
+        standard_groups,
+        standardGroupsMapping,
+        standardsMapping: evalsData.standards_mapping || {},
+      };
+    }
   }
 
   return (

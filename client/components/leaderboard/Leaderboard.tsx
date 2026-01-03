@@ -33,36 +33,38 @@ type ProfileRole =
   | "guest";
 
 type LeaderboardMetric = {
-  has_data: boolean;
-  method: string;
-  current_value: number;
+  has_data: boolean | null;
+  method: string | null;
+  current_value: number | null;
   key_field?: string | null;
-  trend_data: string[];
-  data_points: string[];
-  hover: string;
+  trend_data: string[] | null;
+  data_points: string[] | null;
+  hover: string | null;
 };
 
 type LeaderboardRow = {
-  profile_id: string;
-  first_name: string;
-  last_name: string;
-  simulation_ids: string[];
-  scenario_ids: string[];
+  profile_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  simulation_ids: string[] | null;
+  scenario_ids: string[] | null;
   metrics: {
-    total_attempts: LeaderboardMetric;
-    highest_score_avg: LeaderboardMetric;
-    messages_per_session: LeaderboardMetric;
-    persona_response_seconds: LeaderboardMetric;
-    time_spent_minutes: LeaderboardMetric;
-    improvement_rate_per_day: LeaderboardMetric;
-    perfect_score_count: LeaderboardMetric;
-    quickest_pass_minutes: LeaderboardMetric;
-  };
+    total_attempts: LeaderboardMetric | null;
+    highest_score_avg: LeaderboardMetric | null;
+    messages_per_session: LeaderboardMetric | null;
+    persona_response_seconds: LeaderboardMetric | null;
+    time_spent_minutes: LeaderboardMetric | null;
+    improvement_rate_per_day: LeaderboardMetric | null;
+    perfect_score_count: LeaderboardMetric | null;
+    quickest_pass_minutes: LeaderboardMetric | null;
+  } | null;
 };
 
 // Helper function to get initials from name
-const getInitials = (firstName: string, lastName: string): string => {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+const getInitials = (firstName: string | null, lastName: string | null): string => {
+  const first = firstName?.charAt(0) || "";
+  const last = lastName?.charAt(0) || "";
+  return `${first}${last}`.toUpperCase();
 };
 
 export interface LeaderboardProps {
@@ -85,9 +87,9 @@ export default function Leaderboard({
 
   // Extract gradient colors from leaderboardData
   const gradientStartColor =
-    leaderboardData?.gradient_start_color || "rgba(59, 130, 246, 0.8)";
+    leaderboardData?.primary_color || "rgba(59, 130, 246, 0.8)";
   const gradientEndColor =
-    leaderboardData?.gradient_end_color || "rgba(59, 130, 246, 0.8)";
+    leaderboardData?.accent_color || "rgba(59, 130, 246, 0.8)";
 
   // Data is always available from server-side fetch
   const isError = false;
@@ -136,34 +138,41 @@ export default function Leaderboard({
   const computedAccolades = useMemo(() => {
     // Helper to get current value from metric (now provided by server)
     const getCurrentValue = (metric: {
-      has_data: boolean;
-      current_value?: number;
-    }) => {
+      has_data: boolean | null;
+      current_value?: number | null;
+    } | null | undefined) => {
+      if (!metric) return 0;
       return metric.has_data && metric.current_value != null
         ? metric.current_value
         : 0;
     };
 
     // Helper to pick winner based on current value
-    const pickMaxByMetric = (metricKey: keyof LeaderboardRow["metrics"]) =>
-      hydratedRows.reduce(
+    type MetricKey = "total_attempts" | "highest_score_avg" | "messages_per_session" | "persona_response_seconds" | "time_spent_minutes" | "improvement_rate_per_day" | "perfect_score_count" | "quickest_pass_minutes";
+    const pickMaxByMetric = (metricKey: MetricKey) => {
+      if (!hydratedRows.length) return undefined;
+      return hydratedRows.reduce(
         (best, cur) => {
-          const bestValue = best ? getCurrentValue(best.metrics[metricKey]) : 0;
+          if (!cur.metrics) return best;
+          const bestValue = best && best.metrics ? getCurrentValue(best.metrics[metricKey]) : 0;
           const curValue = getCurrentValue(cur.metrics[metricKey]);
           return curValue > bestValue ? cur : best;
         },
         hydratedRows[0] as LeaderboardRow | undefined,
       );
+    };
 
     const pickMinPositiveByMetric = (
-      metricKey: keyof LeaderboardRow["metrics"],
+      metricKey: MetricKey,
     ) => {
       const positives = hydratedRows.filter((r) => {
+        if (!r.metrics) return false;
         const value = getCurrentValue(r.metrics[metricKey]);
         return value > 0;
       });
       if (!positives.length) return undefined;
       return positives.reduce((best, cur) => {
+        if (!best?.metrics || !cur.metrics) return best || cur;
         const bestValue = getCurrentValue(best.metrics[metricKey]);
         const curValue = getCurrentValue(cur.metrics[metricKey]);
         return curValue < bestValue ? cur : best;
@@ -192,7 +201,7 @@ export default function Leaderboard({
     const quickestPassRow = pickMinPositiveByMetric("quickest_pass_minutes");
     const perfectScoreRow = (() => {
       const byCount = pickMaxByMetric("perfect_score_count");
-      if (byCount && getCurrentValue(byCount.metrics.perfect_score_count) > 0)
+      if (byCount && byCount.metrics && getCurrentValue(byCount.metrics.perfect_score_count) > 0)
         return byCount;
       // Only fall back to highest score if no one has perfect scores
       return highestScorerRow;
@@ -200,49 +209,49 @@ export default function Leaderboard({
     return {
       highestScorer: {
         holder: highestScorerRow,
-        details: highestScorerRow
+        details: highestScorerRow && highestScorerRow.metrics
           ? `${Math.round(getCurrentValue(highestScorerRow.metrics.highest_score_avg))} avg`
           : "",
       },
       responseTimes: {
         holder: responseTimesRow,
-        details: responseTimesRow
+        details: responseTimesRow && responseTimesRow.metrics
           ? `${Math.round(getCurrentValue(responseTimesRow.metrics.persona_response_seconds))}s`
           : "",
       },
       rapidRiser: {
         holder: rapidRiserRow,
-        details: rapidRiserRow
+        details: rapidRiserRow && rapidRiserRow.metrics
           ? `+${Math.round(getCurrentValue(rapidRiserRow.metrics.improvement_rate_per_day))} pts/day`
           : "",
       },
       longestConvo: {
         holder: longestConvoRow,
-        details: longestConvoRow
+        details: longestConvoRow && longestConvoRow.metrics
           ? `${Math.round(getCurrentValue(longestConvoRow.metrics.messages_per_session))} msgs/session`
           : "",
       },
       marathonRunner: {
         holder: marathonRunnerRow,
-        details: marathonRunnerRow
+        details: marathonRunnerRow && marathonRunnerRow.metrics
           ? `${Math.round(getCurrentValue(marathonRunnerRow.metrics.time_spent_minutes))} min`
           : "",
       },
       thePersistent: {
         holder: persistentRow,
-        details: persistentRow
+        details: persistentRow && persistentRow.metrics
           ? `${Math.round(getCurrentValue(persistentRow.metrics.total_attempts))} attempts`
           : "",
       },
       quickestPass: {
         holder: quickestPassRow,
-        details: quickestPassRow
+        details: quickestPassRow && quickestPassRow.metrics
           ? `${Math.round(getCurrentValue(quickestPassRow.metrics.quickest_pass_minutes))} min`
           : "",
       },
       perfectScore: {
         holder: perfectScoreRow,
-        details: perfectScoreRow
+        details: perfectScoreRow && perfectScoreRow.metrics
           ? getCurrentValue(perfectScoreRow.metrics.perfect_score_count) > 0
             ? `${Math.round(getCurrentValue(perfectScoreRow.metrics.perfect_score_count))} perfect`
             : `${Math.round(getCurrentValue(perfectScoreRow.metrics.highest_score_avg))} avg`
@@ -335,9 +344,10 @@ export default function Leaderboard({
 
     // Helper to get current value from metric (now provided by server)
     const getCurrentValue = (metric: {
-      has_data: boolean;
-      current_value?: number;
-    }) => {
+      has_data: boolean | null;
+      current_value?: number | null;
+    } | null | undefined) => {
+      if (!metric) return 0;
       return metric.has_data && metric.current_value != null
         ? metric.current_value
         : 0;
@@ -350,6 +360,8 @@ export default function Leaderboard({
 
     // Sort by the relevant metric for each accolade
     const sortedChallengers = challengers.sort((a, b) => {
+      if (!a.metrics || !b.metrics) return 0;
+      
       switch (accoladeKey) {
         case "perfectScore":
           // Sort by perfect score count, then by highest score avg
@@ -419,6 +431,10 @@ export default function Leaderboard({
     });
 
     return sortedChallengers.slice(0, 5).map((row) => {
+      if (!row.metrics) {
+        return { row, metricValue: 0, metricLabel: "" };
+      }
+
       let metricValue: number;
       let metricLabel: string;
 
@@ -472,31 +488,34 @@ export default function Leaderboard({
     if (hydratedRows && hydratedRows.length > 0) {
       // Helper to get current value from metric (now provided by server)
       const getCurrentValue = (metric: {
-        has_data: boolean;
-        current_value?: number;
-      }) => {
+        has_data: boolean | null;
+        current_value?: number | null;
+      } | null | undefined) => {
+        if (!metric) return 0;
         return metric.has_data && metric.current_value != null
           ? metric.current_value
           : 0;
       };
 
-      const rows = hydratedRows.map((r) => ({
-        id: r.profile_id,
-        name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || r.profile_id,
-        profileId: r.profile_id, // Add profileId for filtering
-        simulationIds: (r.simulation_ids || []).map(String), // Add simulation IDs for filtering
-        scenarioIds: (r.scenario_ids || []).map(String), // Add scenario IDs for filtering
-        timeSpentMinutes: getCurrentValue(r.metrics.time_spent_minutes),
-        improvementRatePerDay: getCurrentValue(r.metrics.improvement_rate_per_day),
-        messagesPerSession: getCurrentValue(r.metrics.messages_per_session),
-        perfectScoreCount: getCurrentValue(r.metrics.perfect_score_count),
-        quickestPassMinutes: getCurrentValue(r.metrics.quickest_pass_minutes),
-        totalAttempts: getCurrentValue(r.metrics.total_attempts),
-        highestScoreAvg: getCurrentValue(r.metrics.highest_score_avg),
-        personaResponseSeconds: getCurrentValue(
-          r.metrics.persona_response_seconds,
-        ),
-      }));
+      const rows = hydratedRows
+        .filter((r) => r.metrics !== null && r.profile_id !== null)
+        .map((r) => ({
+          id: r.profile_id!,
+          name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || r.profile_id!,
+          profileId: r.profile_id!, // Add profileId for filtering
+          simulationIds: (r.simulation_ids || []).map(String), // Add simulation IDs for filtering
+          scenarioIds: (r.scenario_ids || []).map(String), // Add scenario IDs for filtering
+          timeSpentMinutes: getCurrentValue(r.metrics!.time_spent_minutes),
+          improvementRatePerDay: getCurrentValue(r.metrics!.improvement_rate_per_day),
+          messagesPerSession: getCurrentValue(r.metrics!.messages_per_session),
+          perfectScoreCount: getCurrentValue(r.metrics!.perfect_score_count),
+          quickestPassMinutes: getCurrentValue(r.metrics!.quickest_pass_minutes),
+          totalAttempts: getCurrentValue(r.metrics!.total_attempts),
+          highestScoreAvg: getCurrentValue(r.metrics!.highest_score_avg),
+          personaResponseSeconds: getCurrentValue(
+            r.metrics!.persona_response_seconds,
+          ),
+        }));
 
       // Server already returns top 25%, just sort by highest score descending
       return rows.sort((a, b) => b.highestScoreAvg - a.highestScoreAvg);
@@ -539,21 +558,21 @@ export default function Leaderboard({
                     title={title}
                     data-testid={`accolade-${key}`}
                     user={
-                      accolade?.holder
+                      accolade?.holder && accolade.holder.profile_id
                         ? {
                             id: accolade.holder.profile_id,
-                            firstName: accolade.holder.first_name ?? "",
-                            lastName: accolade.holder.last_name ?? "",
+                            first_name: accolade.holder.first_name ?? null,
+                            last_name: accolade.holder.last_name ?? null,
                             emails: [],
-                            primaryEmail: null,
+                            primary_email: null,
                             role: "guest" as ProfileRole,
                             active: true,
-                            createdAt: new Date().toISOString(),
-                            lastActive: null,
-                            lastLogin: new Date().toISOString(),
-                            reqPerDay: 0,
-                            updatedAt: new Date().toISOString(),
-                            primaryDepartmentId: null,
+                            created_at: new Date().toISOString(),
+                            last_active: null,
+                            last_login: new Date().toISOString(),
+                            req_per_day: 0,
+                            updated_at: new Date().toISOString(),
+                            primary_department_id: null,
                           }
                         : undefined
                     }
@@ -727,11 +746,25 @@ export default function Leaderboard({
           <LeaderboardTable
             data={processedLeaderboardData}
             currentUserId={effectiveProfile?.id || ""}
-            simulations={leaderboardData?.simulations}
-            scenarios={leaderboardData?.scenarios}
-            {...(shouldDisableNavigation
-              ? {}
-              : { onViewReport: handleViewReport })}
+            {...(leaderboardData?.simulations && {
+              simulations: leaderboardData.simulations.filter((s): s is { simulation_id: string | null; name: string | null; description: string | null; time_limit: number | null; department_ids: string[] | null } => s.simulation_id !== null && s.name !== null).map(s => {
+                const result: { simulation_id: string; name: string; description?: string } = { simulation_id: s.simulation_id!, name: s.name! };
+                if (s.description !== null && s.description !== undefined) {
+                  result.description = s.description;
+                }
+                return result;
+              })
+            })}
+            {...(leaderboardData?.scenarios && {
+              scenarios: leaderboardData.scenarios.filter((s): s is { scenario_id: string | null; name: string | null; description: string | null } => s.scenario_id !== null && s.name !== null).map(s => {
+                const result: { scenario_id: string; name: string; description?: string } = { scenario_id: s.scenario_id!, name: s.name! };
+                if (s.description !== null && s.description !== undefined) {
+                  result.description = s.description;
+                }
+                return result;
+              })
+            })}
+            {...(!shouldDisableNavigation && { onViewReport: handleViewReport })}
           />
         </div>
       </div>

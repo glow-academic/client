@@ -27,17 +27,7 @@ const getLeaderboard = async (
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  // Convert camelCase to snake_case for API
-  const apiInput = {
-    start_date: input.startDate,
-    end_date: input.endDate,
-    cohort_ids: input.cohortIds || [],
-    department_ids: input.departmentIds || [],
-    simulation_filters: input.simulationFilters || ["general"],
-    roles: input.roles || [],
-  };
-
-  return api.post("/leaderboard/bundle", apiInput, {
+  return api.post("/leaderboard/bundle", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -52,15 +42,13 @@ async function getLeaderboardFilters(searchParams?: URLSearchParams) {
   // Use cached layout context (reuses data already fetched by layout)
   // profileId come from X-Profile-Id header (auto-injected by request-core.ts)
   const profileContext = await getLayoutContext({
-    body: {
-      pathname: "/",
-    },
+    body: {},
   });
 
   // Compute startDate using same logic as analytics context
   let startDate: Date;
-  if (profileContext.earliestAttemptDate) {
-    startDate = new Date(profileContext.earliestAttemptDate);
+  if (profileContext.earliest_attempt_date) {
+    startDate = new Date(profileContext.earliest_attempt_date);
     startDate.setHours(0, 0, 0, 0);
   } else {
     // Fallback to 30 days ago (matching analytics context)
@@ -101,15 +89,15 @@ async function getLeaderboardFilters(searchParams?: URLSearchParams) {
   const cohortIds =
     filters.cohortIds && filters.cohortIds.length > 0
       ? filters.cohortIds
-      : profileContext.cohortIds || [];
+      : profileContext.cohort_ids || [];
   const departmentIds =
     filters.departmentIds && filters.departmentIds.length > 0
       ? filters.departmentIds
-      : profileContext.departmentIds || [];
+      : profileContext.department_ids || [];
   const roles =
     filters.roles && filters.roles.length > 0
       ? filters.roles
-      : profileContext.scopedRoles || [];
+      : profileContext.scoped_roles || [];
 
   return {
     ...filters,
@@ -156,7 +144,14 @@ export default async function LeaderboardPage({
 
   // Fetch leaderboard data server-side
   const leaderboardData = await getLeaderboard({
-    body: filters,
+    body: {
+      start_date: filters.startDate,
+      end_date: filters.endDate,
+      cohort_ids: filters.cohortIds,
+      department_ids: filters.departmentIds,
+      roles: filters.roles,
+      simulation_filters: filters.simulationFilters,
+    },
   });
 
   return (

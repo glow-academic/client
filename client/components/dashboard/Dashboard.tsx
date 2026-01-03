@@ -41,6 +41,18 @@ interface DashboardProps {
   dashboardData: DashboardOut;
 }
 
+// Helper function to validate and cast status values
+function validateStatus(
+  status: string | null | undefined,
+  defaultValue: "neutral" | "success" | "warning" | "danger" = "neutral"
+): "neutral" | "success" | "warning" | "danger" {
+  if (!status) return defaultValue;
+  if (status === "neutral" || status === "success" || status === "warning" || status === "danger") {
+    return status;
+  }
+  return defaultValue;
+}
+
 export default function Dashboard({
   profileId,
   dashboardData,
@@ -121,7 +133,7 @@ export default function Dashboard({
         scoreTrend={(bundle.header_metrics.average_score?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.average_score?.has_data ?? false}
         trendAnalysis={trendAnalysis.averageScore}
-        status={(bundle.header_metrics.average_score?.status ?? "neutral") as "neutral" | "success" | "warning" | "danger"}
+        status={validateStatus(bundle.header_metrics.average_score?.status)}
       />,
       <CompletionPercentage
         key="completion-percentage"
@@ -244,12 +256,16 @@ export default function Dashboard({
           shortName: sg.short_name ?? null,
           rubricId: sg.rubric_id,
         })),
-        matrix: (matrix.matrix || []).map((row) =>
-          row.map((cell) => ({
-            ...cell,
-            pValue: cell.p_value ?? null,
-          })),
-        ),
+        matrix: Array.isArray(matrix.matrix) 
+          ? (matrix.matrix as unknown as Array<Array<{ p_value?: number | null; [key: string]: unknown }>>).map((row) =>
+              Array.isArray(row) 
+                ? row.map((cell) => ({
+                    ...cell,
+                    pValue: cell.p_value ?? null,
+                  }))
+                : []
+            )
+          : [],
         insights: matrix.insights ?? null,
       }),
     );
@@ -277,7 +293,7 @@ export default function Dashboard({
         windowAverages={normalizedWindowAverages}
         hasDataAvailable={(growthData.chart_data || []).length > 0}
         actionableInsight={bundle.insights?.growth ?? null}
-        status={growthData.status ?? "neutral"}
+        status={validateStatus(growthData.status)}
       />,
       <PersonaPerformance
         key="persona-performance"
@@ -297,7 +313,7 @@ export default function Dashboard({
         validRubricIds={rubricHeatmap.valid_rubric_ids || []}
         hasDataAvailable={(rubricHeatmap.matrices || []).length > 0}
         actionableInsight={bundle.insights?.rubric_heatmap ?? null}
-        status={rubricHeatmap.status ?? "neutral"}
+        status={validateStatus(rubricHeatmap.status)}
       />,
     ];
   }, [bundle]);
@@ -345,7 +361,7 @@ export default function Dashboard({
         validSimulationIds={cohortPerformance.valid_simulation_ids || []}
         profileId={profileId}
         actionableInsights={bundle.insights?.cohort}
-        status={cohortPerformance.status ?? "neutral"}
+        status={validateStatus(cohortPerformance.status)}
       />,
       <AttemptImprovement
         key="attempt-improvement"
@@ -354,7 +370,7 @@ export default function Dashboard({
         simulations={bundle.simulations || []}
         validSimulationIds={attemptImprovement.valid_simulation_ids || []}
         actionableInsight={bundle.insights?.attempt_improvement ?? null}
-        status={attemptImprovement.status ?? "neutral"}
+        status={validateStatus(attemptImprovement.status)}
       />,
       <SkillPerformance
         key="skill-performance"
@@ -362,7 +378,7 @@ export default function Dashboard({
         rubrics={bundle.rubrics || []}
         validRubricIds={skillPerformance.valid_rubric_ids || []}
         actionableInsight={bundle.insights?.skill_performance ?? null}
-        status={skillPerformance.status ?? "neutral"}
+        status={validateStatus(skillPerformance.status)}
       />,
     ];
   }, [bundle, profileId]);
@@ -385,7 +401,7 @@ export default function Dashboard({
         fields={bundle.fields || []}
         validParameterIds={scenarioPerformance.valid_parameter_ids || []}
         actionableInsight={bundle.insights?.scenario_performance ?? null}
-        status={scenarioPerformance.status ?? "neutral"}
+        status={validateStatus(scenarioPerformance.status)}
       />,
       <ScenarioStats
         key="scenario-stats"
@@ -394,7 +410,7 @@ export default function Dashboard({
         parameters={bundle.parameters || []}
         validNumericParameterIds={scenarioStats.valid_numeric_parameter_ids || []}
         actionableInsight={bundle.insights?.scenario_stats ?? null}
-        status={scenarioStats.status ?? "neutral"}
+        status={validateStatus(scenarioStats.status)}
       />,
     ];
   }, [bundle]);
@@ -414,7 +430,7 @@ export default function Dashboard({
         scenarioFacts={simulationPerformance.scenario_facts || []}
         simulations={bundle.simulations || []}
         actionableInsight={bundle.insights?.simulation_performance ?? null}
-        status={simulationPerformance.status ?? "neutral"}
+        status={validateStatus(simulationPerformance.status)}
       />,
       <SimulationComposition
         key="simulation-composition"
@@ -430,7 +446,7 @@ export default function Dashboard({
         fields={bundle.fields || []}
         validSimulationIds={simulationComposition.valid_simulation_ids || []}
         actionableInsight={bundle.insights?.simulation_composition ?? null}
-        status={simulationComposition.status ?? "neutral"}
+        status={validateStatus(simulationComposition.status)}
       />,
     ];
   }, [bundle]);

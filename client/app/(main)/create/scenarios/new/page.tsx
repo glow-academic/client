@@ -52,7 +52,7 @@ async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  return api.post("/scenarios/draft", input);
+  return api.patch("/scenarios/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -106,7 +106,12 @@ export default async function NewScenarioPage({
       document_show_selected: q.documentShowSelected ?? null,
       persona_show_selected: q.personaShowSelected ?? null,
       parameter_show_selected: q.parameterShowSelected ?? null,
-      field_show_selected_by_param: fieldShowSelectedByParam ?? null,
+      field_show_selected_by_param: fieldShowSelectedByParam 
+        ? Object.entries(fieldShowSelectedByParam).map(([parameter_id, show_selected]) => ({
+            parameter_id,
+            show_selected,
+          }))
+        : null,
       use_image: q.useImage ?? null,
       use_video: q.useVideo ?? null,
       image_ids: csvToArray(q.imageIds) ?? null,

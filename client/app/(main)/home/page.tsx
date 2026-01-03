@@ -64,15 +64,13 @@ async function getHomeFilters(searchParams: URLSearchParams | undefined) {
   // Use cached layout context (reuses data already fetched by layout)
   // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   const profileContext = await getLayoutContext({
-    body: {
-      pathname: "/",
-    },
+    body: {},
   });
 
   // Compute startDate using same logic as analytics context
   let startDate: Date;
-  if (profileContext.earliestAttemptDate) {
-    startDate = new Date(profileContext.earliestAttemptDate);
+  if (profileContext.earliest_attempt_date) {
+    startDate = new Date(profileContext.earliest_attempt_date);
     startDate.setHours(0, 0, 0, 0);
   } else {
     // Fallback to 30 days ago (matching analytics context)
@@ -112,15 +110,15 @@ async function getHomeFilters(searchParams: URLSearchParams | undefined) {
   const cohortIds =
     filters.cohortIds && filters.cohortIds.length > 0
       ? filters.cohortIds
-      : profileContext.cohortIds || [];
+      : profileContext.cohort_ids || [];
   const departmentIds =
     filters.departmentIds && filters.departmentIds.length > 0
       ? filters.departmentIds
-      : profileContext.departmentIds || [];
+      : profileContext.department_ids || [];
   const roles =
     filters.roles && filters.roles.length > 0
       ? filters.roles
-      : profileContext.scopedRoles || [];
+      : profileContext.scoped_roles || [];
 
   return {
     startDate: filters.startDate,
@@ -350,44 +348,45 @@ async function HomeHistorySection({
   const historyData = await getHomeHistory(historyFilters);
 
   // Calculate archived/unarchived counts from data (home history API doesn't provide these)
-  const archivedCount = historyData.data.filter(
-    (item) => item.isArchived
+  const dataArray = historyData.data || [];
+  const archivedCount = dataArray.filter(
+    (item) => item.is_archived
   ).length;
-  const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived
+  const unarchivedCount = dataArray.filter(
+    (item) => !item.is_archived
   ).length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profileOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const profileOptions = (historyData.profile_options || []).map((opt) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const simulationOptions = (historyData.simulation_options || []).map((opt) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
-  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
 
   return (
     <SimulationHistory
-      data={historyData.data}
-      totalCount={historyData.totalCount}
+      data={dataArray}
+      totalCount={historyData.total_count || 0}
       archivedCount={archivedCount}
       unarchivedCount={unarchivedCount}
       pageIndex={historyPage}

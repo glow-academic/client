@@ -96,9 +96,7 @@ export default async function PracticePage({
   let profileContext;
   try {
     profileContext = await getLayoutContext({
-      body: {
-        pathname: "/practice",
-      },
+      body: {},
     });
   } catch (error) {
     // Handle 401 Unauthorized (invalid session - profile doesn't exist)
@@ -122,7 +120,7 @@ export default async function PracticePage({
   // profile_id removed - comes from X-Profile-Id header automatically
   // Always pass department_ids (never empty array) - use all IDs from profile context
   const practiceFiltersBody: PracticeIn["body"] = {
-    department_ids: profileContext.departmentIds || [], // Always pass (non-empty from profile context)
+    department_ids: profileContext.department_ids || [], // Always pass (non-empty from profile context)
   };
 
   const practiceFilters: PracticeIn = {
@@ -164,11 +162,11 @@ export default async function PracticePage({
   };
 
   // Get effectiveProfileId from profile context
-  const effectiveProfileId = profileContext.effectiveProfile?.id;
+  const effectiveProfileId = profileContext.id;
 
   // Check if user is a guest
   const isGuest =
-    !effectiveProfileId || profileContext.effectiveProfile?.role === "guest";
+    !effectiveProfileId || profileContext.role === "guest";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
@@ -240,7 +238,7 @@ export default async function PracticePage({
               historySortBy={historySortBy}
               historySortOrder={historySortOrder}
               effectiveProfileId={effectiveProfileId}
-              departmentIds={profileContext.departmentIds || []}
+              departmentIds={profileContext.department_ids || []}
             />
           </Suspense>
         </div>
@@ -280,7 +278,7 @@ async function PracticeHistorySection({
   const historyFilters: PracticeHistoryIn = {
     body: {
       department_ids: departmentIds,
-      page: historyPage,
+      page_offset: historyPage * historyPageSize,
       page_size: historyPageSize,
       ...(historySearch && { search: historySearch }),
       ...(historyProfileIds &&
@@ -306,16 +304,17 @@ async function PracticeHistorySection({
   const historyData = await getPracticeHistory(historyFilters);
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
-  const archivedCount = historyData.data.filter(
-    (item) => item.isArchived
+  const dataArray = historyData.data || [];
+  const archivedCount = dataArray.filter(
+    (item) => item.is_archived
   ).length;
-  const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived
+  const unarchivedCount = dataArray.filter(
+    (item) => !item.is_archived
   ).length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profileOptions || []).map((opt) => {
+  const profileOptions = (historyData.profile_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),
@@ -323,7 +322,7 @@ async function PracticeHistorySection({
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
+  const simulationOptions = (historyData.simulation_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),
@@ -331,7 +330,7 @@ async function PracticeHistorySection({
       ...(count !== undefined && { count }),
     };
   });
-  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
+  const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),
@@ -342,8 +341,8 @@ async function PracticeHistorySection({
 
   return (
     <SimulationHistory
-      data={historyData.data}
-      totalCount={historyData.totalCount}
+      data={dataArray}
+      totalCount={historyData.total_count || 0}
       archivedCount={archivedCount}
       unarchivedCount={unarchivedCount}
       pageIndex={historyPage}
