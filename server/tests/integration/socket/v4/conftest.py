@@ -155,6 +155,8 @@ def patch_sio_instance(
         "app.socket.v4.benchmark.end",
         "app.socket.v4.benchmark.error",
         "app.socket.v4.benchmark.eval_complete",
+        "app.socket.v4.benchmark.run_start",
+        "app.socket.v4.benchmark.runs_start_all",
         # Agents - Audio
         "app.socket.v4.agents.audio.generate",
         "app.socket.v4.agents.audio.regenerate",
@@ -465,6 +467,8 @@ def patch_get_db_connection(
         "app.socket.v4.benchmark.end",
         "app.socket.v4.benchmark.error",
         "app.socket.v4.benchmark.eval_complete",
+        "app.socket.v4.benchmark.run_start",
+        "app.socket.v4.benchmark.runs_start_all",
         # All agent modules (same list as patch_sio_instance)
         "app.socket.v4.agents.audio.generate",
         "app.socket.v4.agents.audio.regenerate",

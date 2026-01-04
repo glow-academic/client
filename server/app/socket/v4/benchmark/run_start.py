@@ -1,20 +1,27 @@
 """Handler for benchmark_run_start WebSocket event - starts individual run."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.sql.types import (
+    GetBenchmarkRunStartContextSqlParams,
+    GetBenchmarkRunStartContextSqlRow,
+)
 
 internal_sio = get_internal_sio()
 logger = get_logger(__name__)
+
+SQL_PATH = "app/sql/v4/benchmark/get_benchmark_run_start_context_complete.sql"
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -96,23 +103,16 @@ async def _benchmark_run_start_impl(
             run_id_uuid = uuid.UUID(run_id)
 
             # Get eval_id, use_groups, and verify run belongs to attempt's eval
-            result = await conn.fetchrow(
-                """
-                SELECT 
-                    e.id::text as eval_id,
-                    e.use_groups,
-                    er.run_id::uuid as run_id,
-                    er.completed as run_completed
-                FROM eval_attempts ea
-                JOIN evals e ON e.id = ea.eval_id
-                LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.run_id = $1::uuid
-                WHERE ea.id = $2::uuid
-                """,
-                run_id_uuid,
-                attempt_id_uuid,
+            params = GetBenchmarkRunStartContextSqlParams(
+                attempt_id=attempt_id_uuid,
+                run_id=run_id_uuid,
+            )
+            result = cast(
+                GetBenchmarkRunStartContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            if not result:
+            if not result or not result.eval_id:
                 await benchmark_run_start_error(
                     BenchmarkRunStartErrorPayload(
                         success=False,
@@ -123,21 +123,10 @@ async def _benchmark_run_start_impl(
                 )
                 return
 
-            eval_id = result.get("eval_id")
-            use_groups = result.get("use_groups", False)
-            found_run_id = result.get("run_id")
-            run_completed = result.get("run_completed")
-
-            if not eval_id:
-                await benchmark_run_start_error(
-                    BenchmarkRunStartErrorPayload(
-                        success=False,
-                        message=f"Eval not found for attempt: {attempt_id}",
-                        run_id=run_id,
-                    ),
-                    room=sid,
-                )
-                return
+            eval_id = result.eval_id
+            use_groups = result.use_groups or False
+            found_run_id = result.run_id
+            run_completed = result.run_completed or False
 
             # Verify run belongs to this eval
             if not found_run_id:
@@ -175,15 +164,17 @@ async def _benchmark_run_start_impl(
             )
 
             # Emit benchmark_next internally to start the run
+            from app.socket.v4.benchmark.next import BenchmarkNextPayload
+
             await emit_to_internal(
                 "benchmark_next",
-                {
-                    "attempt_id": attempt_id,
-                    "eval_id": eval_id,
-                    "run_id": run_id,
-                    "group_id": None,
-                    "use_groups": use_groups,
-                },
+                BenchmarkNextPayload(
+                    attempt_id=attempt_id,
+                    eval_id=eval_id,
+                    run_id=run_id,
+                    group_id=None,
+                    use_groups=use_groups,
+                ),
                 sid=sid,
             )
 
@@ -208,7 +199,7 @@ async def _benchmark_run_start_impl(
                 message=f"Invalid UUID format: {str(e)}",
                 run_id=data.run_id,
             ),
-            sid=sid,
+            room=sid,
         )
     except Exception as e:
         await benchmark_run_start_error(
@@ -217,7 +208,7 @@ async def _benchmark_run_start_impl(
                 message=f"Failed to start run: {str(e)}",
                 run_id=data.run_id,
             ),
-            sid=sid,
+            room=sid,
         )
 
 

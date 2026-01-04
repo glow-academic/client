@@ -242,3 +242,37 @@ async def create_test_test(
         params=params,
     )
     return str(result.test_id)
+
+
+async def create_test_eval_run(
+    db: asyncpg.Connection, eval_id: str, completed: bool = False
+) -> str:
+    """Create a test eval run and link it to an eval using SQL helper."""
+    from app.sql.types import (
+        TestCreateTestEvalRunV4SqlParams,
+        TestCreateTestEvalRunV4SqlRow,
+    )
+
+    params = TestCreateTestEvalRunV4SqlParams(eval_id=eval_id, completed=completed)
+    result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_eval_run_v4_complete.sql",
+        params=params,
+    )
+    return str(result.run_id)
+
+
+async def create_test_eval_group(db: asyncpg.Connection, eval_id: str) -> str:
+    """Create a test eval group and link it to an eval using SQL helper."""
+    from app.sql.types import (
+        TestCreateTestEvalGroupV4SqlParams,
+        TestCreateTestEvalGroupV4SqlRow,
+    )
+
+    params = TestCreateTestEvalGroupV4SqlParams(eval_id=eval_id)
+    result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_eval_group_v4_complete.sql",
+        params=params,
+    )
+    return str(result.group_id)

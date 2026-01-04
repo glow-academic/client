@@ -1,20 +1,27 @@
 """Handler for benchmark_runs_start_all WebSocket event - starts all pending runs."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.sql.types import (
+    GetBenchmarkRunsStartAllContextSqlParams,
+    GetBenchmarkRunsStartAllContextSqlRow,
+)
 
 internal_sio = get_internal_sio()
 logger = get_logger(__name__)
+
+SQL_PATH = "app/sql/v4/benchmark/get_benchmark_runs_start_all_context_complete.sql"
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -86,35 +93,15 @@ async def _benchmark_runs_start_all_impl(
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Get eval_id, use_groups, and all pending runs/groups
-            result = await conn.fetchrow(
-                """
-                SELECT 
-                    e.id::text as eval_id,
-                    e.use_groups,
-                    CASE 
-                        WHEN e.use_groups THEN
-                            ARRAY_AGG(eg.group_id::text) FILTER (
-                                WHERE NOT EXISTS (
-                                    SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id
-                                )
-                            )
-                        ELSE
-                            ARRAY_AGG(er.run_id::text) FILTER (WHERE er.completed = false)
-                    END as pending_ids
-                FROM eval_attempts ea
-                JOIN evals e ON e.id = ea.eval_id
-                LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.completed = false
-                LEFT JOIN eval_groups eg ON eg.eval_id = e.id
-                    AND NOT EXISTS (
-                        SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id
-                    )
-                WHERE ea.id = $1::uuid
-                GROUP BY e.id, e.use_groups
-                """,
-                attempt_id_uuid,
+            params = GetBenchmarkRunsStartAllContextSqlParams(
+                attempt_id=attempt_id_uuid,
+            )
+            result = cast(
+                GetBenchmarkRunsStartAllContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            if not result:
+            if not result or not result.eval_id:
                 await benchmark_runs_start_all_error(
                     BenchmarkRunsStartAllErrorPayload(
                         success=False,
@@ -125,20 +112,9 @@ async def _benchmark_runs_start_all_impl(
                 )
                 return
 
-            eval_id = result.get("eval_id")
-            use_groups = result.get("use_groups", False)
-            pending_ids = result.get("pending_ids", []) or []
-
-            if not eval_id:
-                await benchmark_runs_start_all_error(
-                    BenchmarkRunsStartAllErrorPayload(
-                        success=False,
-                        message=f"Eval not found for attempt: {attempt_id}",
-                        attempt_id=attempt_id,
-                    ),
-                    room=sid,
-                )
-                return
+            eval_id = result.eval_id
+            use_groups = result.use_groups or False
+            pending_ids = result.pending_ids or []
 
             # If no pending runs, return success with count 0
             if not pending_ids:
@@ -154,29 +130,31 @@ async def _benchmark_runs_start_all_impl(
                 return
 
             # Emit benchmark_next for each pending run/group
+            from app.socket.v4.benchmark.next import BenchmarkNextPayload
+
             for pending_id in pending_ids:
                 if use_groups:
                     await emit_to_internal(
                         "benchmark_next",
-                        {
-                            "attempt_id": attempt_id,
-                            "eval_id": eval_id,
-                            "run_id": None,
-                            "group_id": pending_id,
-                            "use_groups": True,
-                        },
+                        BenchmarkNextPayload(
+                            attempt_id=attempt_id,
+                            eval_id=eval_id,
+                            run_id=None,
+                            group_id=pending_id,
+                            use_groups=True,
+                        ),
                         sid=sid,
                     )
                 else:
                     await emit_to_internal(
                         "benchmark_next",
-                        {
-                            "attempt_id": attempt_id,
-                            "eval_id": eval_id,
-                            "run_id": pending_id,
-                            "group_id": None,
-                            "use_groups": False,
-                        },
+                        BenchmarkNextPayload(
+                            attempt_id=attempt_id,
+                            eval_id=eval_id,
+                            run_id=pending_id,
+                            group_id=None,
+                            use_groups=False,
+                        ),
                         sid=sid,
                     )
 
@@ -216,7 +194,7 @@ async def _benchmark_runs_start_all_impl(
                 message=f"Invalid UUID format: {str(e)}",
                 attempt_id=data.attempt_id,
             ),
-            sid=sid,
+            room=sid,
         )
     except Exception as e:
         await benchmark_runs_start_all_error(
@@ -225,7 +203,7 @@ async def _benchmark_runs_start_all_impl(
                 message=f"Failed to start runs: {str(e)}",
                 attempt_id=data.attempt_id,
             ),
-            sid=sid,
+            room=sid,
         )
 
 
