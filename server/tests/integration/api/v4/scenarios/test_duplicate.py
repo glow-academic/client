@@ -7,7 +7,17 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias  # type: ignore
-from tests.sql.types import GetScenarioByIdSqlParams, GetScenarioByIdSqlRow
+from tests.sql.types import (
+    CreateScenarioDepartmentLinkV4SqlParams,
+    CreateTestScenarioV4SqlParams,
+    CreateTestScenarioV4SqlRow,
+    GetScenarioDepartmentLinkV4SqlParams,
+    GetScenarioDepartmentLinkV4SqlRow,
+    GetScenarioDepartmentLinksV4SqlParams,
+    GetScenarioDepartmentLinksV4SqlRow,
+    GetScenarioByIdSqlParams,
+    GetScenarioByIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -20,28 +30,31 @@ async def test_duplicate_scenario_with_departments(
     await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
-    # Create a scenario with department link - using inline SQL temporarily
-    scenario_id = await db.fetchval(
-        "INSERT INTO scenarios(name, active) VALUES ('Original Scenario', true) RETURNING id"
-    )
+    # Create a scenario using SQL file
+    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
 
-    # Insert self-referencing tree edge
-    await db.execute(
-        "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $1, true)",
-        scenario_id,
+    scenario_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        params=CreateTestScenarioV4SqlParams(
+            scenario_name="Original Scenario",
+            scenario_problem_statement="Test problem",
+        ),
     )
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    assert typed_scenario.scenario_id is not None
+    scenario_id = typed_scenario.scenario_id
 
-    # Create problem statement
-    await db.execute(
-        "INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active) VALUES ($1, 'Test problem', true)",
-        scenario_id,
-    )
+    # Link to department using SQL file
+    from tests.sql.types import CreateScenarioDepartmentLinkV4SqlParams
 
-    # Link to department
-    await db.execute(
-        "INSERT INTO scenario_departments(scenario_id, department_id) VALUES ($1, $2)",
-        scenario_id,
-        UUID(dept_id),
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_create_scenario_department_link_v4_complete.sql",
+        params=CreateScenarioDepartmentLinkV4SqlParams(
+            input_scenario_id=scenario_id,
+            input_department_id=UUID(dept_id),
+        ),
     )
 
     # v4 routes get profile_id from router dependency, not request body
@@ -58,14 +71,20 @@ async def test_duplicate_scenario_with_departments(
     new_scenario_id = UUID(data["scenarioId"])
     assert new_scenario_id != scenario_id
 
-    # Verify department link was duplicated - using inline SQL temporarily
-    new_dept_link = await db.fetchrow(
-        "SELECT * FROM scenario_departments WHERE scenario_id = $1 AND department_id = $2",
-        new_scenario_id,
-        UUID(dept_id),
+    # Verify department link was duplicated using SQL file
+    from tests.sql.types import GetScenarioDepartmentLinkV4SqlParams, GetScenarioDepartmentLinkV4SqlRow
+
+    new_dept_link_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
+        params=GetScenarioDepartmentLinkV4SqlParams(
+            input_scenario_id=new_scenario_id,
+            input_department_id=UUID(dept_id),
+        ),
     )
-    assert new_dept_link is not None
-    assert new_dept_link["active"] is True
+    typed_new_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(new_dept_link_result.model_dump())
+    assert typed_new_dept_link.scenario_id is not None
+    assert typed_new_dept_link.active is True
 
 
 async def test_duplicate_scenario_without_departments(
@@ -74,22 +93,20 @@ async def test_duplicate_scenario_without_departments(
     """Test duplicating a scenario without department links (cross-department)."""
     await get_superadmin_alias(db)
 
-    # Create a scenario without department links - using inline SQL temporarily
-    scenario_id = await db.fetchval(
-        "INSERT INTO scenarios(name, active) VALUES ('Cross-Dept Scenario', true) RETURNING id"
-    )
+    # Create a scenario using SQL file
+    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
 
-    # Insert self-referencing tree edge
-    await db.execute(
-        "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $1, true)",
-        scenario_id,
+    scenario_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        params=CreateTestScenarioV4SqlParams(
+            scenario_name="Cross-Dept Scenario",
+            scenario_problem_statement="Test problem",
+        ),
     )
-
-    # Create problem statement
-    await db.execute(
-        "INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active) VALUES ($1, 'Test problem', true)",
-        scenario_id,
-    )
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    assert typed_scenario.scenario_id is not None
+    scenario_id = typed_scenario.scenario_id
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
@@ -103,9 +120,15 @@ async def test_duplicate_scenario_without_departments(
     assert data["success"] is True
     new_scenario_id = UUID(data["scenarioId"])
 
-    # Verify no department links were created (original had none) - using inline SQL temporarily
-    dept_links = await db.fetch(
-        "SELECT * FROM scenario_departments WHERE scenario_id = $1",
-        new_scenario_id,
+    # Verify no department links were created (original had none) using SQL file
+    from tests.sql.types import GetScenarioDepartmentLinksV4SqlParams, GetScenarioDepartmentLinksV4SqlRow
+
+    dept_links_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_department_links_v4_complete.sql",
+        params=GetScenarioDepartmentLinksV4SqlParams(input_scenario_id=new_scenario_id),
     )
-    assert len(dept_links) == 0
+    # execute_sql_typed returns a single row, so we check if it's None or empty
+    typed_dept_links = GetScenarioDepartmentLinksV4SqlRow.model_validate(dept_links_result.model_dump())
+    # If no links exist, the function should return NULL values
+    assert typed_dept_links.scenario_id is None

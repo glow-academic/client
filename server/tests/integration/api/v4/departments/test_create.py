@@ -12,6 +12,8 @@ from tests.sql.types import (
     CreateTestDepartmentSqlRow,
     GetDepartmentByIdSqlParams,
     GetDepartmentByIdSqlRow,
+    GetProfileDepartmentLinkV4SqlParams,
+    GetProfileDepartmentLinkV4SqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -52,14 +54,20 @@ async def test_create_department(
     assert typed_dept.title == "Test Department"
     assert typed_dept.description == "Test Description"
 
-    # Verify profile link was created (superadmin should be auto-linked) - using inline SQL temporarily
+    # Verify profile link was created (superadmin should be auto-linked) using SQL file
     profile_id = await get_superadmin_alias(db)
-    profile_link = await db.fetchrow(
-        "SELECT * FROM profile_departments WHERE department_id = $1 AND profile_id = $2",
-        UUID(data["departmentId"]),
-        UUID(profile_id),
+    from tests.sql.types import GetProfileDepartmentLinkV4SqlParams, GetProfileDepartmentLinkV4SqlRow
+
+    profile_link_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/departments/test_get_profile_department_link_v4_complete.sql",
+        params=GetProfileDepartmentLinkV4SqlParams(
+            input_department_id=UUID(data["departmentId"]),
+            input_profile_id=UUID(profile_id),
+        ),
     )
-    assert profile_link is not None
+    typed_profile_link = GetProfileDepartmentLinkV4SqlRow.model_validate(profile_link_result.model_dump())
+    assert typed_profile_link.department_id is not None
 
 
 async def test_create_department_minimal(

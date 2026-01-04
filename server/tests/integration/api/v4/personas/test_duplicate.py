@@ -7,6 +7,8 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
+    CreatePersonaDepartmentLinkV4SqlParams,
+    CreatePersonaPromptLinkV4SqlParams,
     CreateTestPersonaSqlParams,
     CreateTestPersonaSqlRow,
     CreateTestPromptSqlParams,
@@ -53,12 +55,16 @@ async def test_duplicate_persona(
     assert typed_dept.department_id is not None
     dept_id = typed_dept.department_id
 
-    # Link persona to department using inline SQL (no test SQL file for this yet)
-    await db.execute(
-        "INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at) "
-        "VALUES ($1, $2, true, NOW(), NOW())",
-        persona_id,
-        dept_id,
+    # Link persona to department using SQL file
+    from tests.sql.types import CreatePersonaDepartmentLinkV4SqlParams
+
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/personas/test_create_persona_department_link_v4_complete.sql",
+        params=CreatePersonaDepartmentLinkV4SqlParams(
+            input_persona_id=persona_id,
+            input_department_id=dept_id,
+        ),
     )
 
     # Create a prompt and link it using SQL file
@@ -71,12 +77,16 @@ async def test_duplicate_persona(
     assert typed_prompt.prompt_id is not None
     prompt_id = typed_prompt.prompt_id
 
-    # Link prompt to persona using inline SQL (no test SQL file for this yet)
-    await db.execute(
-        "INSERT INTO persona_prompts (persona_id, prompt_id, active, created_at, updated_at) "
-        "VALUES ($1, $2, true, NOW(), NOW())",
-        persona_id,
-        prompt_id,
+    # Link prompt to persona using SQL file
+    from tests.sql.types import CreatePersonaPromptLinkV4SqlParams
+
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql",
+        params=CreatePersonaPromptLinkV4SqlParams(
+            input_persona_id=persona_id,
+            input_prompt_id=prompt_id,
+        ),
     )
 
     # v4 routes get profile_id from router dependency

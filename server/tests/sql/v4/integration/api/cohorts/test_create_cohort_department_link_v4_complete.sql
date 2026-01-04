@@ -8,8 +8,8 @@ DROP FUNCTION IF EXISTS test_create_cohort_department_link_v4(uuid, uuid);
 
 -- Create function
 CREATE OR REPLACE FUNCTION test_create_cohort_department_link_v4(
-    cohort_id uuid,
-    department_id uuid
+    input_cohort_id uuid,
+    input_department_id uuid
 )
 RETURNS TABLE (
     cohort_id uuid,
@@ -22,8 +22,8 @@ VOLATILE
 AS $$
     INSERT INTO cohort_departments(cohort_id, department_id, active)
     VALUES (
-        test_create_cohort_department_link_v4.cohort_id,
-        test_create_cohort_department_link_v4.department_id,
+        test_create_cohort_department_link_v4.input_cohort_id,
+        test_create_cohort_department_link_v4.input_department_id,
         true
     )
     RETURNING cohort_id, department_id, active, created_at;

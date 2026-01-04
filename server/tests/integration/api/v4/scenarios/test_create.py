@@ -7,7 +7,16 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias  # type: ignore
-from tests.sql.types import GetScenarioByIdSqlParams, GetScenarioByIdSqlRow
+from tests.sql.types import (
+    GetScenarioByIdSqlParams,
+    GetScenarioByIdSqlRow,
+    GetScenarioDepartmentLinkV4SqlParams,
+    GetScenarioDepartmentLinkV4SqlRow,
+    GetScenarioProblemStatementV4SqlParams,
+    GetScenarioProblemStatementV4SqlRow,
+    GetScenarioTreeEdgeV4SqlParams,
+    GetScenarioTreeEdgeV4SqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -56,20 +65,28 @@ async def test_create_scenario_minimal(
     assert typed_scenario.name == "Test Scenario"
     assert typed_scenario.active is True
 
-    # Verify self-referencing tree edge was created - using inline SQL temporarily
-    tree_edge = await db.fetchrow(
-        "SELECT * FROM scenario_tree WHERE parent_id = $1 AND child_id = $1",
-        UUID(data["scenarioId"]),
-    )
-    assert tree_edge is not None
+    # Verify self-referencing tree edge was created using SQL file
+    from tests.sql.types import GetScenarioTreeEdgeV4SqlParams, GetScenarioTreeEdgeV4SqlRow
 
-    # Verify problem statement was created - using inline SQL temporarily
-    problem_statement = await db.fetchrow(
-        "SELECT * FROM scenario_problem_statements WHERE scenario_id = $1 AND active = true",
-        UUID(data["scenarioId"]),
+    tree_edge_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql",
+        params=GetScenarioTreeEdgeV4SqlParams(input_scenario_id=UUID(data["scenarioId"])),
     )
-    assert problem_statement is not None
-    assert problem_statement["problem_statement"] == "Test problem statement"
+    typed_tree_edge = GetScenarioTreeEdgeV4SqlRow.model_validate(tree_edge_result.model_dump())
+    assert typed_tree_edge.parent_id is not None
+
+    # Verify problem statement was created using SQL file
+    from tests.sql.types import GetScenarioProblemStatementV4SqlParams, GetScenarioProblemStatementV4SqlRow
+
+    problem_statement_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql",
+        params=GetScenarioProblemStatementV4SqlParams(input_scenario_id=UUID(data["scenarioId"])),
+    )
+    typed_problem_statement = GetScenarioProblemStatementV4SqlRow.model_validate(problem_statement_result.model_dump())
+    assert typed_problem_statement.scenario_id is not None
+    assert typed_problem_statement.problem_statement == "Test problem statement"
 
 
 async def test_create_scenario_with_departments(
@@ -101,11 +118,17 @@ async def test_create_scenario_with_departments(
     assert response.status_code == 200
     data = response.json()
 
-    # Verify department link was created - using inline SQL temporarily
-    dept_link = await db.fetchrow(
-        "SELECT * FROM scenario_departments WHERE scenario_id = $1 AND department_id = $2",
-        UUID(data["scenarioId"]),
-        UUID(dept_id),
+    # Verify department link was created using SQL file
+    from tests.sql.types import GetScenarioDepartmentLinkV4SqlParams, GetScenarioDepartmentLinkV4SqlRow
+
+    dept_link_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
+        params=GetScenarioDepartmentLinkV4SqlParams(
+            input_scenario_id=UUID(data["scenarioId"]),
+            input_department_id=UUID(dept_id),
+        ),
     )
-    assert dept_link is not None
-    assert dept_link["active"] is True
+    typed_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(dept_link_result.model_dump())
+    assert typed_dept_link.scenario_id is not None
+    assert typed_dept_link.active is True

@@ -7,7 +7,15 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-from tests.sql.types import GetScenarioByIdSqlParams, GetScenarioByIdSqlRow
+from tests.sql.types import (
+    CreateTestScenarioV4SqlParams,
+    CreateTestScenarioV4SqlRow,
+    CreateTestSimulationWithRubricV4SqlParams,
+    CreateTestSimulationWithRubricV4SqlRow,
+    GetOrCreateRubricV4SqlRow,
+    GetScenarioByIdSqlParams,
+    GetScenarioByIdSqlRow,
+)
 from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
@@ -19,22 +27,20 @@ async def test_delete_scenario(
     """Test deleting a scenario."""
     await get_superadmin_alias(db)
 
-    # Create a scenario - using inline SQL temporarily
-    scenario_id = await db.fetchval(
-        "INSERT INTO scenarios(name, active) VALUES ('Scenario to Delete', true) RETURNING id"
-    )
+    # Create a scenario using SQL file
+    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
 
-    # Insert self-referencing tree edge
-    await db.execute(
-        "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $1, true)",
-        scenario_id,
+    scenario_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        params=CreateTestScenarioV4SqlParams(
+            scenario_name="Scenario to Delete",
+            scenario_problem_statement="Test problem",
+        ),
     )
-
-    # Create problem statement
-    await db.execute(
-        "INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active) VALUES ($1, 'Test problem', true)",
-        scenario_id,
-    )
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    assert typed_scenario.scenario_id is not None
+    scenario_id = typed_scenario.scenario_id
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
@@ -64,42 +70,60 @@ async def test_delete_scenario_in_use(
     """Test deleting a scenario that is in use by a simulation."""
     await get_superadmin_alias(db)
 
-    # Create a scenario - using inline SQL temporarily
-    scenario_id = await db.fetchval(
-        "INSERT INTO scenarios(name, active) VALUES ('Scenario in Use', true) RETURNING id"
+    # Create a scenario using SQL file
+    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
+
+    scenario_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        params=CreateTestScenarioV4SqlParams(
+            scenario_name="Scenario in Use",
+            scenario_problem_statement="Test problem",
+        ),
     )
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    assert typed_scenario.scenario_id is not None
+    scenario_id = typed_scenario.scenario_id
 
-    # Insert self-referencing tree edge
-    await db.execute(
-        "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $1, true)",
-        scenario_id,
+    # Get or create rubric using SQL file
+    from tests.sql.types import GetOrCreateRubricV4SqlRow
+
+    rubric_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql",
+        params=None,
     )
+    typed_rubric = GetOrCreateRubricV4SqlRow.model_validate(rubric_result.model_dump())
+    assert typed_rubric.rubric_id is not None
+    rubric_id = typed_rubric.rubric_id
 
-    # Create problem statement
-    await db.execute(
-        "INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active) VALUES ($1, 'Test problem', true)",
-        scenario_id,
+    # Create a simulation and link it to the scenario using SQL files
+    simulation_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
+        params=CreateTestSimulationWithRubricV4SqlParams(
+            rubric_id=rubric_id,
+            title="Test Simulation",
+            description="Test",
+            active=True,
+            practice_simulation=False,
+        ),
     )
+    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(simulation_result.model_dump())
+    assert typed_simulation.simulation_id is not None
+    simulation_id = typed_simulation.simulation_id
 
-    # Create a simulation and link it to the scenario - using inline SQL temporarily
-    rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
-    if not rubric_id:
-        rubric_id = await db.fetchval(
-            "INSERT INTO rubrics(name, description, points, pass_points, active) "
-            "VALUES ('Test Rubric', 'Test', 100, 70, true) RETURNING id"
-        )
+    # Link scenario to simulation using SQL file
+    from tests.sql.types import CreateSimulationScenarioLinkV4SqlParams
 
-    simulation_id = await db.fetchval(
-        "INSERT INTO simulations(title, description, active, practice_simulation, rubric_id) "
-        "VALUES ('Test Simulation', 'Test', true, false, $1) RETURNING id",
-        rubric_id,
-    )
-
-    # Link scenario to simulation
-    await db.execute(
-        "INSERT INTO simulation_scenarios(simulation_id, scenario_id, active, position) VALUES ($1, $2, true, 1)",
-        simulation_id,
-        scenario_id,
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql",
+        params=CreateSimulationScenarioLinkV4SqlParams(
+            input_simulation_id=simulation_id,
+            input_scenario_id=scenario_id,
+            input_position=1,
+        ),
     )
 
     # v4 routes get profile_id from router dependency, not request body

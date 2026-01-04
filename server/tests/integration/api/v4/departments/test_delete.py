@@ -8,10 +8,14 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
+    CreateSimulationDepartmentLinkV4SqlParams,
     CreateTestDepartmentSqlParams,
     CreateTestDepartmentSqlRow,
+    CreateTestSimulationWithRubricV4SqlParams,
+    CreateTestSimulationWithRubricV4SqlRow,
     GetDepartmentByIdSqlParams,
     GetDepartmentByIdSqlRow,
+    GetOrCreateRubricV4SqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -78,26 +82,44 @@ async def test_delete_department_in_use(
     assert typed_dept.department_id is not None
     dept_id = typed_dept.department_id
 
-    # Create a simulation linked to this department - using inline SQL temporarily
-    rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
-    if not rubric_id:
-        rubric_id = await db.fetchval(
-            "INSERT INTO rubrics(name, description, points, pass_points, active) "
-            "VALUES ('Test Rubric', 'Test', 100, 70, true) RETURNING id"
-        )
+    # Get or create rubric using SQL file
+    from tests.sql.types import GetOrCreateRubricV4SqlRow
 
-    simulation_id = await db.fetchval(
-        "INSERT INTO simulations(title, description, active, practice_simulation, rubric_id) "
-        "VALUES ('Test Simulation', 'Test', true, false, $1) RETURNING id",
-        rubric_id,
+    rubric_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql",
+        params=None,
     )
+    typed_rubric = GetOrCreateRubricV4SqlRow.model_validate(rubric_result.model_dump())
+    assert typed_rubric.rubric_id is not None
+    rubric_id = typed_rubric.rubric_id
 
-    # Link simulation to department
-    await db.execute(
-        "INSERT INTO simulation_departments(simulation_id, department_id, active) "
-        "VALUES ($1, $2, true)",
-        simulation_id,
-        dept_id,
+    # Create a simulation linked to this department using SQL files
+    simulation_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
+        params=CreateTestSimulationWithRubricV4SqlParams(
+            rubric_id=rubric_id,
+            title="Test Simulation",
+            description="Test",
+            active=True,
+            practice_simulation=False,
+        ),
+    )
+    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(simulation_result.model_dump())
+    assert typed_simulation.simulation_id is not None
+    simulation_id = typed_simulation.simulation_id
+
+    # Link simulation to department using SQL file
+    from tests.sql.types import CreateSimulationDepartmentLinkV4SqlParams
+
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/simulations/test_create_simulation_department_link_v4_complete.sql",
+        params=CreateSimulationDepartmentLinkV4SqlParams(
+            input_simulation_id=simulation_id,
+            input_department_id=dept_id,
+        ),
     )
 
     # v4 routes get profile_id from router dependency, not request body

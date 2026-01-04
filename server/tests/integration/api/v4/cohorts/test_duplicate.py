@@ -7,6 +7,7 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
+    CreateCohortDepartmentLinkV4SqlParams,
     CreateTestCohortSqlParams,
     CreateTestCohortSqlRow,
     GetCohortByIdSqlParams,
@@ -49,11 +50,16 @@ async def test_duplicate_cohort(
     assert typed_dept.department_id is not None
     dept_id = typed_dept.department_id
 
-    await db.execute(
-        "INSERT INTO cohort_departments(cohort_id, department_id, active) "
-        "VALUES ($1, $2, true)",
-        cohort_id,
-        dept_id,
+    # Link to department using SQL file
+    from tests.sql.types import CreateCohortDepartmentLinkV4SqlParams
+
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql",
+        params=CreateCohortDepartmentLinkV4SqlParams(
+            input_cohort_id=cohort_id,
+            input_department_id=dept_id,
+        ),
     )
 
     # v4 routes get profile_id from router dependency

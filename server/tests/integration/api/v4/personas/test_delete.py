@@ -7,6 +7,7 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
+    CreateScenarioPersonaLinkV4SqlParams,
     CreateTestPersonaSqlParams,
     CreateTestPersonaSqlRow,
     CreateTestScenarioSqlParams,
@@ -101,12 +102,16 @@ async def test_delete_persona_in_use(
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
-    # Link persona to scenario using inline SQL (no test SQL file for this yet)
-    await db.execute(
-        "INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at) "
-        "VALUES ($1, $2, true, NOW(), NOW())",
-        scenario_id,
-        persona_id,
+    # Link persona to scenario using SQL file
+    from tests.sql.types import CreateScenarioPersonaLinkV4SqlParams
+
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/scenarios/test_create_scenario_persona_link_v4_complete.sql",
+        params=CreateScenarioPersonaLinkV4SqlParams(
+            input_scenario_id=scenario_id,
+            input_persona_id=persona_id,
+        ),
     )
 
     # v4 routes get profile_id from router dependency

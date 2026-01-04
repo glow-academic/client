@@ -5,6 +5,7 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
+    CreateCohortProfileLinkV4SqlParams,
     CreateTestCohortSqlParams,
     CreateTestCohortSqlRow,
     GetOrCreateTestProfileSqlParams,
@@ -52,12 +53,16 @@ async def test_remove_profiles_from_cohort(
     assert typed_profile.profile_id is not None
     profile_id = typed_profile.profile_id
 
-    # Add profile to cohort first using inline SQL (no test SQL file for this yet)
-    await db.execute(
-        "INSERT INTO cohort_profiles(cohort_id, profile_id, active) "
-        "VALUES ($1, $2, true)",
-        cohort_id,
-        profile_id,
+    # Add profile to cohort first using SQL file
+    from tests.sql.types import CreateCohortProfileLinkV4SqlParams
+
+    await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql",
+        params=CreateCohortProfileLinkV4SqlParams(
+            input_cohort_id=cohort_id,
+            input_profile_id=profile_id,
+        ),
     )
 
     # v4 routes get profile_id from router dependency
