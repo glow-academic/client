@@ -415,30 +415,64 @@ profile_chats AS (
     FROM filt 
     WHERE chat_id IS NOT NULL
 ),
+-- Get chat scenario and simulation info for bundle fallback
+chat_scenario_info_bundle AS (
+    SELECT DISTINCT
+        c.id AS chat_id,
+        c.scenario_id,
+        sa.simulation_id
+    FROM chats c
+    JOIN attempt_chats ac ON ac.chat_id = c.id
+    JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    WHERE c.id IN (SELECT chat_id FROM profile_chats)
+),
+-- Get first scenario's rubric per simulation for bundle (fallback)
+sim_first_scenario_rubric_bundle AS (
+    SELECT DISTINCT ON (ss.simulation_id)
+        ss.simulation_id,
+        rga.rubric_id,
+        r.points
+    FROM simulation_scenarios ss
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+    LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    LEFT JOIN rubrics r ON r.id = rga.rubric_id
+    WHERE ss.active = true
+      AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_bundle)
+    ORDER BY ss.simulation_id, ss.position
+),
 grade_stream_per_profile AS (
     SELECT
         pc.profile_id,
         sg.id,
         c_bundle.id AS simulation_chat_id,
         sg.created_at,
-        (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
+        (sg.score::numeric / NULLIF(COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 0), 0)) * 100.0 AS norm
     FROM grades sg
     LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
     JOIN runs r_bundle ON r_bundle.id = sg.run_id
     JOIN group_runs gr_bundle ON gr_bundle.run_id = r_bundle.id
-    JOIN groups g_bundle ON g_bundle.id = gr_bundle.group_id
-    JOIN chat_groups cg_bundle ON cg_bundle.group_id = g_bundle.id
-    JOIN chats c_bundle ON c_bundle.id = cg_bundle.chat_id
+    JOIN grade_groups gg_bundle ON gg_bundle.group_id = gr_bundle.group_id
+    JOIN chats c_bundle ON c_bundle.id = gg_bundle.chat_id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id
+    LEFT JOIN chat_scenario_info_bundle csi ON csi.chat_id = c_bundle.id
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
+      AND ssrga_fallback.scenario_id = csi.scenario_id
+      AND rga.rubric_id IS NULL
+    LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback.rubric_grade_agent_id
     LEFT JOIN rubrics r ON r.id = rga.rubric_id
+    LEFT JOIN rubrics r_fallback_scenario ON r_fallback_scenario.id = rga_fallback_scenario.rubric_id
+    LEFT JOIN sim_first_scenario_rubric_bundle sfsr ON sfsr.simulation_id = csi.simulation_id
+      AND rga.rubric_id IS NULL
+      AND r_fallback_scenario.points IS NULL
+    LEFT JOIN rubrics r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id
+        JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
+        JOIN chats c_check ON c_check.id = gg_check.chat_id
         WHERE r_check.id = sg.run_id
     )
+      AND COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 0) > 0
 ),
 ordered_grades_per_profile AS (
     SELECT *,

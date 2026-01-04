@@ -784,29 +784,63 @@ filt AS (
             filtered_chats_for_stagnation AS (
                 SELECT DISTINCT chat_id FROM filt WHERE chat_id IS NOT NULL
             ),
+            -- Get chat scenario and simulation info for stagnation fallback
+            chat_scenario_info_stagnation AS (
+                SELECT DISTINCT
+                    c.id AS chat_id,
+                    c.scenario_id,
+                    sa.simulation_id
+                FROM chats c
+                JOIN attempt_chats ac ON ac.chat_id = c.id
+                JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+                WHERE c.id IN (SELECT chat_id FROM filtered_chats_for_stagnation)
+            ),
+            -- Get first scenario's rubric per simulation for stagnation (fallback)
+            sim_first_scenario_rubric_stagnation AS (
+                SELECT DISTINCT ON (ss.simulation_id)
+                    ss.simulation_id,
+                    rga.rubric_id,
+                    r.points
+                FROM simulation_scenarios ss
+                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+                LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+                LEFT JOIN rubrics r ON r.id = rga.rubric_id
+                WHERE ss.active = true
+                  AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_stagnation)
+                ORDER BY ss.simulation_id, ss.position
+            ),
             grade_stream AS (
                 SELECT
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
+                    (sg.score::numeric / NULLIF(COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 0), 0)) * 100.0 AS norm
                 FROM grades sg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
                 JOIN runs r_stag ON r_stag.id = sg.run_id
                 JOIN group_runs gr_stag ON gr_stag.run_id = r_stag.id
-                JOIN groups g_stag ON g_stag.id = gr_stag.group_id
-                JOIN chat_groups cg_stag ON cg_stag.group_id = g_stag.id
-                JOIN chats c_stag ON c_stag.id = cg_stag.chat_id
+                JOIN grade_groups gg_stag ON gg_stag.group_id = gr_stag.group_id
+                JOIN chats c_stag ON c_stag.id = gg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
+                LEFT JOIN chat_scenario_info_stagnation csi ON csi.chat_id = c_stag.id
+                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
+                  AND ssrga_fallback.scenario_id = csi.scenario_id
+                  AND rga.rubric_id IS NULL
+                LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback.rubric_grade_agent_id
                 LEFT JOIN rubrics r ON r.id = rga.rubric_id
+                LEFT JOIN rubrics r_fallback_scenario ON r_fallback_scenario.id = rga_fallback_scenario.rubric_id
+                LEFT JOIN sim_first_scenario_rubric_stagnation sfsr ON sfsr.simulation_id = csi.simulation_id
+                  AND rga.rubric_id IS NULL
+                  AND r_fallback_scenario.points IS NULL
+                LEFT JOIN rubrics r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
                 WHERE EXISTS (
                     SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-                    JOIN groups g_check ON g_check.id = gr_check.group_id
-                    JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                    JOIN chats c_check ON c_check.id = cg_check.chat_id
+                    JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
+                    JOIN chats c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = sg.run_id
                 )
+                  AND COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 0) > 0
             ),
             ordered_grades AS (
                 SELECT *,
@@ -1294,27 +1328,65 @@ filt AS (
                 FROM filt
                 WHERE chat_id IS NOT NULL
             ),
+            -- Get chat scenario and simulation info for fallback
+            chat_scenario_info_overview AS (
+                SELECT DISTINCT
+                    c.id AS chat_id,
+                    c.scenario_id,
+                    sa.simulation_id
+                FROM chats c
+                JOIN attempt_chats ac ON ac.chat_id = c.id
+                JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+                WHERE c.id IN (SELECT chat_id FROM filtered_chats)
+            ),
+            -- Get first scenario's rubric per simulation (fallback)
+            sim_first_scenario_rubric_overview AS (
+                SELECT DISTINCT ON (ss.simulation_id)
+                    ss.simulation_id,
+                    rga.rubric_id
+                FROM simulation_scenarios ss
+                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+                LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+                WHERE ss.active = true
+                  AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_overview)
+                ORDER BY ss.simulation_id, ss.position
+            ),
             latest_grade_per_chat AS (
                 SELECT DISTINCT ON (c.id)
                     scg.id,
                     c.id AS chat_id,
-                    rga.rubric_id
+                    COALESCE(
+                        rga.rubric_id,
+                        rga_fallback_scenario.rubric_id,
+                        sfsr.rubric_id
+                    ) AS rubric_id
                 FROM grades scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
                 JOIN runs r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
-                JOIN groups g ON g.id = gr.group_id
-                JOIN chat_groups cg ON cg.group_id = g.id
-                JOIN chats c ON c.id = cg.chat_id
+                JOIN grade_groups gg ON gg.group_id = gr.group_id
+                JOIN chats c ON c.id = gg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
+                LEFT JOIN chat_scenario_info_overview csi ON csi.chat_id = c.id
+                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
+                  AND ssrga_fallback.scenario_id = csi.scenario_id
+                  AND rga.rubric_id IS NULL
+                LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback.rubric_grade_agent_id
+                LEFT JOIN sim_first_scenario_rubric_overview sfsr ON sfsr.simulation_id = csi.simulation_id
+                  AND rga.rubric_id IS NULL
+                  AND rga_fallback_scenario.rubric_id IS NULL
                 WHERE EXISTS (
                     SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-                    JOIN groups g_check ON g_check.id = gr_check.group_id
-                    JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                    JOIN chats c_check ON c_check.id = cg_check.chat_id
+                    JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
+                    JOIN chats c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
+                  AND COALESCE(
+                      rga.rubric_id,
+                      rga_fallback_scenario.rubric_id,
+                      sfsr.rubric_id
+                  ) IS NOT NULL
                 ORDER BY c.id, scg.created_at DESC
             ),
             per_grade_group AS (

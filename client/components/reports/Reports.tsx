@@ -85,7 +85,7 @@ export default function Reports({
       "data" in reportsData &&
       Array.isArray(reportsData.data)
     ) {
-      // Transform API response to match ProfileRow type
+      // Transform API response to match ProfileRow type (snake_case -> camelCase)
       return reportsData.data.map((row: unknown) => {
         if (typeof row === "object" && row !== null) {
           const rowObj = row as Record<string, unknown>;
@@ -94,10 +94,60 @@ export default function Reports({
             | null
             | undefined;
           const emails = rowObj["emails"] as string[] | undefined;
+          
+          // Transform metrics from snake_case to camelCase
+          const metrics = rowObj["metrics"] as Record<string, unknown> | undefined;
+          const transformedMetrics: Record<string, {
+            hasData: boolean;
+            method: string;
+            currentValue: number;
+            status: string;
+            valueField?: string | null;
+            hover?: Record<string, unknown> | null;
+          }> = {};
+          
+          if (metrics) {
+            // Map snake_case metric keys to camelCase
+            const metricKeyMap: Record<string, string> = {
+              average_score: "averageScore",
+              completion_percentage: "completionPercentage",
+              first_attempt_pass_rate: "firstAttemptPassRate",
+              highest_score: "highestScore",
+              messages_per_session: "messagesPerSession",
+              persona_response_times: "personaResponseTimes",
+              session_efficiency: "sessionEfficiency",
+              stagnation_rate: "stagnationRate",
+              time_spent: "timeSpent",
+              total_attempts: "totalAttempts",
+            };
+            
+            Object.entries(metrics).forEach(([key, value]) => {
+              const camelKey = metricKeyMap[key] || key;
+              if (value && typeof value === "object") {
+                const metric = value as Record<string, unknown>;
+                transformedMetrics[camelKey] = {
+                  hasData: Boolean(metric.has_data),
+                  method: String(metric.method || ""),
+                  currentValue: Number(metric.current_value || 0),
+                  status: String(metric.status || "neutral"),
+                  valueField: metric.value_field as string | null | undefined,
+                  hover: metric.hover as Record<string, unknown> | null | undefined,
+                };
+              }
+            });
+          }
+          
           return {
-            ...rowObj,
-            email:
-              primaryEmail || (emails && emails.length > 0 ? emails[0] : ""),
+            profileId: String(rowObj["profile_id"] || ""),
+            firstName: String(rowObj["first_name"] || ""),
+            lastName: String(rowObj["last_name"] || ""),
+            email: primaryEmail || (emails && emails.length > 0 ? emails[0] : ""),
+            emails: emails,
+            primary_email: primaryEmail,
+            role: String(rowObj["role"] || ""),
+            scenarioIds: rowObj["scenario_ids"] as string[] | undefined,
+            simulationIds: rowObj["simulation_ids"] as string[] | undefined,
+            metrics: transformedMetrics,
           } as ProfileRow;
         }
         return row as ProfileRow;

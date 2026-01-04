@@ -334,18 +334,44 @@ history_chat_grades AS (
     )
     ORDER BY c.id, scg.created_at DESC
 ),
+-- Get first scenario's rubric per simulation (fallback when chat scenario doesn't match)
+sim_first_scenario_rubric AS (
+    SELECT DISTINCT ON (ss.simulation_id)
+        ss.simulation_id,
+        rga.rubric_id,
+        r.points
+    FROM simulation_scenarios ss
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
+    LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    LEFT JOIN rubrics r ON r.id = rga.rubric_id
+    WHERE ss.active = true
+      AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM history_attempts_final)
+    ORDER BY ss.simulation_id, ss.position
+),
 -- Aggregate grades per attempt
 history_grade_rollup AS (
     SELECT
         ac.attempt_id,
         COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) AS completed_with_grade,
-        SUM(CASE WHEN hcg.score IS NOT NULL AND r.points > 0
-            THEN (hcg.score / r.points::numeric * 100.0)
+        SUM(CASE WHEN hcg.score IS NOT NULL AND COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 0) > 0
+            THEN (hcg.score / COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 1)::numeric * 100.0)
             ELSE 0 END) AS sum_grade_percent
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
+    JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
+    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback_scenario ON ssrga_fallback_scenario.simulation_id = sa.simulation_id
+      AND ssrga_fallback_scenario.scenario_id = sc.scenario_id
+      AND hcg.chat_id IS NOT NULL
+      AND hcg.rubric_id IS NULL
+    LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback_scenario.rubric_grade_agent_id
     LEFT JOIN rubrics r ON r.id = hcg.rubric_id
+    LEFT JOIN rubrics r_fallback_scenario ON r_fallback_scenario.id = rga_fallback_scenario.rubric_id
+    LEFT JOIN sim_first_scenario_rubric sfsr ON sfsr.simulation_id = sa.simulation_id
+      AND hcg.chat_id IS NOT NULL
+      AND hcg.rubric_id IS NULL
+      AND r_fallback_scenario.points IS NULL
+    LEFT JOIN rubrics r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY ac.attempt_id
 ),
@@ -557,7 +583,7 @@ final_rows AS (
                             ELSE ROUND(aj.sum_grade_percent_zero_fill / NULLIF(aj.sim_scenario_count, 0))::int
                         END
                 END
-        END AS score_percent,
+        END AS score,
         CASE
             WHEN aj.infinite_mode THEN
                 CASE GREATEST(array_length(aj.leaf_scenarios_seen, 1), 0)
@@ -661,7 +687,7 @@ paginated_rows AS (
         fr.num_scenarios,
         fr.num_scenarios_completed,
         fr.infinite_mode,
-        fr.score_percent,
+        fr.score,
         fr.score_status,
         fr.simulation_id,
         fr.scenario_ids_assigned,
@@ -688,10 +714,10 @@ paginated_rows AS (
             WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'asc' THEN fr.simulation_name
         END ASC NULLS LAST,
         CASE 
-            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(fr.score_percent, -1)
+            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(fr.score, -1)
         END DESC,
         CASE 
-            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(fr.score_percent, 999999)
+            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(fr.score, 999999)
         END ASC,
         fr.attempt_id DESC
     LIMIT (SELECT page_size FROM params)
@@ -719,7 +745,7 @@ data_agg AS (
                 ),
                 COALESCE(pl.persona_names, ARRAY[]::text[]),
                 COALESCE(pl.persona_colors, ARRAY[]::text[]),
-                pr.score_percent,
+                pr.score,
                 pr.score_status,
                 pr.simulation_id,
                 COALESCE(pr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
@@ -747,10 +773,10 @@ data_agg AS (
                     WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'asc' THEN pr.simulation_name
                 END ASC NULLS LAST,
                 CASE 
-                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(pr.score_percent, -1)
+                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(pr.score, -1)
                 END DESC,
                 CASE 
-                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(pr.score_percent, 999999)
+                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(pr.score, 999999)
                 END ASC,
                 pr.attempt_id DESC
         ),
