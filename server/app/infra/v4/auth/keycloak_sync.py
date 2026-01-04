@@ -7,11 +7,11 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
+import asyncpg  # type: ignore
+from app.main import get_pool
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
-
-from app.main import get_pool
+from utils.sql_helper import _detect_function_in_sql, load_sql
 
 logger = get_logger(__name__)
 
@@ -256,6 +256,53 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
                     )
     except Exception as e:
         logger.warning(f"Could not ensure glow-client in master realm: {e}")
+
+
+async def fetch_sql_function(
+    conn: asyncpg.Connection,
+    sql_path: str,
+    *args: Any,
+) -> list[asyncpg.Record]:
+    """Fetch multiple rows from a PostgreSQL function or raw SQL query.
+
+    Follows Standards.md pattern: detects if SQL file contains a function definition
+    and calls it directly, or executes raw SQL if no function is found.
+
+    Args:
+        conn: Database connection
+        sql_path: Relative path from server root (e.g., "app/sql/v4/keycloak/get_auth_providers_complete.sql")
+        *args: Function parameters (will be passed as $1, $2, etc.)
+
+    Returns:
+        List of asyncpg.Record objects (same as conn.fetch())
+    """
+    # Load SQL file to check if it's a function
+    sql_text = load_sql(sql_path)
+    is_function, function_name, schema = _detect_function_in_sql(sql_text)
+
+    if is_function and function_name:
+        # It's a function - call it with SELECT * FROM schema.function_name($1, $2, ...)
+        num_params = len(args)
+        param_placeholders = ", ".join([f"${i + 1}" for i in range(num_params)])
+        function_call_sql = (
+            f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
+        )
+
+        # Functions return multiple rows (RETURNS TABLE)
+        if args:
+            rows = await conn.fetch(function_call_sql, *args)
+        else:
+            rows = await conn.fetch(function_call_sql)
+
+        return rows
+    else:
+        # It's raw SQL - execute directly (though these files should be DDL, so this shouldn't happen)
+        if args:
+            rows = await conn.fetch(sql_text, *args)
+        else:
+            rows = await conn.fetch(sql_text)
+
+        return rows
 
 
 async def sync_department_realm_by_settings(
@@ -517,9 +564,10 @@ async def sync_department_realm_by_settings(
         # Get providers for this settings (not department)
         # We need to update get_auth_providers_complete.sql to accept settings_id
         # For now, if we have department_id, use it; otherwise use NULL for default settings
-        providers_sql = load_sql("app/sql/v4/keycloak/get_auth_providers_complete.sql")
         # Pass department_id for backward compatibility, but logic will be updated
-        providers = await conn.fetch(providers_sql, department_id)
+        providers = await fetch_sql_function(
+            conn, "app/sql/v4/keycloak/get_auth_providers_complete.sql", department_id
+        )
 
         # Get list of provider slugs that should exist
         expected_provider_slugs = {p["slug"] for p in providers} if providers else set()
@@ -557,15 +605,18 @@ async def sync_department_realm_by_settings(
                 f"No active providers found for department {department_id or 'default'}, skipping sync"
             )
         else:
-            items_sql = load_sql("app/sql/v4/keycloak/get_auth_items_complete.sql")
-
             for p in providers:
                 auth_id = p["id"]
                 slug = p["slug"]
                 provider_id = p["provider_id"]
                 display_name = p["name"]
 
-                items = await conn.fetch(items_sql, auth_id, department_id)
+                items = await fetch_sql_function(
+                    conn,
+                    "app/sql/v4/keycloak/get_auth_items_complete.sql",
+                    auth_id,
+                    department_id,
+                )
 
                 config_map: dict[str, str] = {}
                 for item in items:
