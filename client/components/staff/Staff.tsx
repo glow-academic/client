@@ -520,43 +520,51 @@ export default function Staff({
   };
 
   // Use server-provided filter options directly
-  const roleOptions = useMemo(
-    () =>
-      (serverListData?.role_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [serverListData?.role_options],
-  );
+  const roleOptions = useMemo(() => {
+    const options = serverListData?.role_options;
+    if (!options || !Array.isArray(options)) return [];
+    return options
+      .map((opt: unknown) => {
+        if (opt && typeof opt === "object" && "value" in opt && "label" in opt) {
+          return {
+            value: String(opt.value),
+            label: String(opt.label),
+          };
+        }
+        return null;
+      })
+      .filter((opt): opt is { value: string; label: string } => opt !== null && !!opt.value && !!opt.label);
+  }, [serverListData?.role_options]);
 
-  const lastActiveOptions = useMemo(
-    () =>
-      (serverListData?.last_active_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [serverListData?.last_active_options],
-  );
+  const lastActiveOptions = useMemo(() => {
+    const options = serverListData?.last_active_options;
+    if (!options || !Array.isArray(options)) return [];
+    return options
+      .map((opt: unknown) => {
+        if (opt && typeof opt === "object" && "value" in opt && "label" in opt) {
+          return {
+            value: String(opt.value),
+            label: String(opt.label),
+          };
+        }
+        return null;
+      })
+      .filter((opt): opt is { value: string; label: string } => opt !== null && !!opt.value && !!opt.label);
+  }, [serverListData?.last_active_options]);
 
   // Transform mappings for CSV import
   const departmentMappingForCSV = useMemo(() => {
     const createStaffData = initialCreateStaffData;
     const mapping: Record<string, { name: string; description: string }> = {};
-    if (createStaffData?.department_mapping) {
-      Object.entries(createStaffData.department_mapping).forEach(
-        ([id, dept]) => {
-          if (dept && typeof dept === "object" && "name" in dept) {
-            mapping[id] = {
-              name: String(dept.name),
-              description: String(dept.description || ""),
-            };
-          }
-        },
-      );
+    if (createStaffData && "departments" in createStaffData && Array.isArray(createStaffData.departments)) {
+      createStaffData.departments.forEach((dept) => {
+        if (dept && dept.department_id) {
+          mapping[dept.department_id] = {
+            name: dept.title ?? "",
+            description: dept.description ?? "",
+          };
+        }
+      });
     }
     return mapping;
   }, [initialCreateStaffData]);
@@ -564,12 +572,12 @@ export default function Staff({
   const cohortMappingForCSV = useMemo(() => {
     const createStaffData = initialCreateStaffData;
     const mapping: Record<string, { name: string; description: string }> = {};
-    if (createStaffData?.cohort_mapping) {
-      Object.entries(createStaffData.cohort_mapping).forEach(([id, cohort]) => {
-        if (cohort && typeof cohort === "object" && "name" in cohort) {
-          mapping[id] = {
-            name: String(cohort.name),
-            description: String(cohort.description || ""),
+    if (createStaffData && "cohorts" in createStaffData && Array.isArray(createStaffData.cohorts)) {
+      createStaffData.cohorts.forEach((cohort) => {
+        if (cohort && cohort.cohort_id) {
+          mapping[cohort.cohort_id] = {
+            name: cohort.name ?? "",
+            description: cohort.description ?? "",
           };
         }
       });
@@ -623,7 +631,7 @@ export default function Staff({
   }, [showCSVImportModal]);
 
   const hasErrors = useMemo(
-    () => processedRows.some((row) => row.errors.length > 0),
+    () => processedRows.some((row) => (row.errors?.length ?? 0) > 0),
     [processedRows],
   );
 
@@ -806,7 +814,7 @@ export default function Staff({
         },
       });
 
-      setProcessedRows(response.rows);
+      setProcessedRows(response.rows ?? []);
       setEditableRows({});
       setCsvStage("review");
     } catch (error) {
@@ -868,7 +876,7 @@ export default function Staff({
           updated[field] = value;
         }
 
-        const errors = [...updated.errors];
+        const errors = [...(updated.errors ?? [])];
         const errorIndex = errors.findIndex((e) => e.field === field);
         if (errorIndex >= 0) {
           errors.splice(errorIndex, 1);
@@ -974,15 +982,16 @@ export default function Staff({
           emails.push("");
         }
         return {
-          first_name: row.first_name!,  // snake_case
-          last_name: row.last_name!,  // snake_case
+          first_name: row.first_name ?? "",  // snake_case
+          last_name: row.last_name ?? "",  // snake_case
           emails: emails,
           primary_email_index:
+            row.primary_email_index !== null &&
             row.primary_email_index !== undefined &&
             row.primary_email_index < emails.length
               ? row.primary_email_index
               : 0,
-          role: row.role || "member",
+          role: row.role ?? "member",
           department_ids: deptIds,
           cohort_ids: cohortIds,
         };
@@ -1047,7 +1056,7 @@ export default function Staff({
                   className="h-8 w-8 rounded-full outline outline-muted-foreground flex items-center justify-center text-xs font-medium"
                   style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                 >
-                  {getInitials(staff.first_name, staff.last_name)}
+                  {getInitials(staff.first_name ?? "", staff.last_name ?? "")}
                 </div>
                 <div className="text-left">
                   <div className="flex items-center gap-2">
@@ -1082,8 +1091,8 @@ export default function Staff({
             (staff.primary_email !== null &&
               staff.primary_email.toLowerCase().includes(valueLower));
           return Boolean(
-            staff.first_name.toLowerCase().includes(valueLower) ||
-              staff.last_name.toLowerCase().includes(valueLower) ||
+            (staff.first_name ?? "").toLowerCase().includes(valueLower) ||
+              (staff.last_name ?? "").toLowerCase().includes(valueLower) ||
               emailMatch,
           );
         },
@@ -1109,12 +1118,13 @@ export default function Staff({
         ),
         cell: ({ row }) => {
           const staff = row.original;
-          const RoleIcon = getRoleIcon(staff.role);
+          const role = staff.role ?? "member";
+          const RoleIcon = getRoleIcon(role);
           return (
             <div className="flex items-center gap-2">
               <RoleIcon className="h-4 w-4" />
               <span className="text-sm font-medium">
-                {getRoleDisplayName(staff.role)}
+                {getRoleDisplayName(role)}
               </span>
             </div>
           );
@@ -1180,7 +1190,7 @@ export default function Staff({
         ),
         cell: ({ row }) => {
           const staff = row.original;
-          const departmentIds = staff.department_ids;
+          const departmentIds = staff.department_ids ?? [];
 
           if (!departmentIds.length) {
             return <span className="text-xs text-muted-foreground">None</span>;
@@ -1317,7 +1327,8 @@ export default function Staff({
               table.toggleAllPageRowsSelected(!!value);
               const visibleRowIds = table
                 .getFilteredRowModel()
-                .rows.map((row) => row.original.profile_id);
+                .rows.map((row) => row.original.profile_id)
+                .filter((id): id is string => id !== null && id !== undefined);
               if (value) {
                 setSelectedStaffIds((prev) => {
                   const newSelection = [...prev];
@@ -1343,11 +1354,12 @@ export default function Staff({
       cell: ({ row }) => (
         <div className="pr-2">
           <Checkbox
-            checked={selectedStaffIds.includes(row.original.profile_id)}
+            checked={row.original.profile_id ? selectedStaffIds.includes(row.original.profile_id) : false}
             onCheckedChange={(value) => {
+              if (!row.original.profile_id) return;
               setSelectedStaffIds((prev) =>
                 value
-                  ? [...prev, row.original.profile_id]
+                  ? [...prev, row.original.profile_id!]
                   : prev.filter((x) => x !== row.original.profile_id),
               );
             }}
@@ -1378,12 +1390,14 @@ export default function Staff({
                   size="sm"
                   className="h-7 w-7 p-0"
                   onClick={() => {
+                    if (!staff.profile_id) return;
                     window.open(
                       `/analytics/reports/p/${staff.profile_id}`,
                       "_blank",
                       "noopener,noreferrer",
                     );
                   }}
+                  disabled={!staff.profile_id}
                   data-testid="btn-preview-staff"
                 >
                   <Eye className="h-3 w-3" />
@@ -2467,7 +2481,7 @@ export default function Staff({
                         <ul className="text-sm space-y-2">
                           {impactedCohorts.map(({ staff, cohortCount }) => (
                             <li
-                              key={staff.profile_id}
+                              key={staff.profile_id ?? `staff-${cohortCount}`}
                               className="text-red-600 dark:text-red-300"
                             >
                               • {staff.first_name} {staff.last_name} (

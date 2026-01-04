@@ -109,16 +109,20 @@ export default function Agents({
   // Filter options (inline)
   const modelOptions = useMemo(
     () =>
-      Object.entries(modelMapping).map(([id, name]) => ({
-        value: id,
-        label: name.name,
-      })),
+      Object.entries(modelMapping)
+        .map(([id, name]) => ({
+          value: id,
+          label: name.name ?? id,
+        }))
+        .filter((opt) => opt.label),
     [modelMapping],
   );
 
   // Build role options from unique agent roles
   const roleOptions = useMemo(() => {
-    const roles = agents.map((a) => a.role).filter(Boolean);
+    const roles = agents
+      .map((a) => a.role)
+      .filter((role): role is string => role !== null && role !== undefined);
     const uniqueRoles = [...new Set(roles)].sort();
     return uniqueRoles.map((role) => ({
       value: role,
@@ -325,10 +329,12 @@ export default function Agents({
                     {agent.reasoning}
                   </Badge>
                 )}
-                <Badge variant="outline" className="text-xs">
-                  <Thermometer className="h-3 w-3 mr-1" />
-                  {formatTemperature(agent.temperature)}
-                </Badge>
+                {agent.temperature !== null && agent.temperature !== undefined && (
+                  <Badge variant="outline" className="text-xs">
+                    <Thermometer className="h-3 w-3 mr-1" />
+                    {formatTemperature(agent.temperature)}
+                  </Badge>
+                )}
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -336,61 +342,61 @@ export default function Agents({
             </p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            {agent.can_edit ? (
+            {agent.can_edit && agent.agent_id ? (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleEdit(agent.agent_id)}
-                aria-label={`Edit agent ${agent.name}`}
+                onClick={() => handleEdit(agent.agent_id!)}
+                aria-label={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-edit-agent"
-                title={`Edit agent ${agent.name}`}
+                title={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
                 <Edit className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">Edit</span>
               </Button>
-            ) : (
+            ) : agent.agent_id ? (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleEdit(agent.agent_id)}
-                aria-label={`View agent ${agent.name}`}
+                onClick={() => handleEdit(agent.agent_id!)}
+                aria-label={`View agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-view-agent"
-                title={`View agent ${agent.name}`}
+                title={`View agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
                 <Eye className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">View</span>
               </Button>
-            )}
-            {agent.can_duplicate && (
+            ) : null}
+            {agent.can_duplicate && agent.agent_id && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleDuplicate(agent.agent_id)}
+                onClick={() => handleDuplicate(agent.agent_id!)}
                 disabled={false} // No loading state for server action
-                aria-label={`Duplicate agent ${agent.name}`}
+                aria-label={`Duplicate agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-duplicate-agent"
-                title={`Duplicate agent ${agent.name}`}
+                title={`Duplicate agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
                 <Copy className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">Duplicate</span>
               </Button>
             )}
-            {agent.can_delete && (
+            {agent.can_delete && agent.agent_id && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() =>
                   handleDeleteClick(
-                    agent.agent_id,
-                    agent.name || "Unnamed Agent",
+                    agent.agent_id!,
+                    agent.name ?? "Unnamed Agent",
                   )
                 }
-                aria-label={`Delete agent ${agent.name}`}
+                aria-label={`Delete agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-delete-agent"
-                title={`Delete agent ${agent.name}`}
+                title={`Delete agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
                 <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
@@ -404,7 +410,7 @@ export default function Agents({
         <div className="text-sm">
           <span className="text-muted-foreground">Updated:</span>
           <span className="font-medium ml-2">
-            {formatDate(agent.updated_at)}
+            {agent.updated_at ? formatDate(agent.updated_at) : "N/A"}
           </span>
         </div>
       </CardContent>

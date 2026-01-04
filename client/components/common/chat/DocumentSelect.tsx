@@ -24,20 +24,10 @@ import {
 // Icons
 import { Check, ChevronsUpDown } from "lucide-react";
 
-type DocumentItem = {
-  document_id: string;
-  name: string;
-  updatedAt: string;
-  extension: string;
-  scenario_ids: string[];
-  can_edit: boolean;
-  can_delete: boolean;
-  active: boolean;
-  department_ids: string[] | null;
-  file_path: string | null;
-  mime_type: string | null;
-  field_ids: string[];
-};
+// Use server type from documents list API
+import type { OutputOf } from "@/lib/api/types";
+type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
 
 export interface DocumentSelectProps {
   documents: DocumentItem[];
@@ -94,11 +84,13 @@ export default function DocumentSelect({
             <CommandGroup>
               {documents.map((doc) => (
                 <CommandItem
-                  key={doc.document_id}
-                  value={doc.name}
+                  key={doc.document_id || ""}
+                  value={doc.name || ""}
                   onSelect={() => {
-                    onDocumentSelect(doc.document_id);
-                    setOpen(false);
+                    if (doc.document_id) {
+                      onDocumentSelect(doc.document_id);
+                      setOpen(false);
+                    }
                   }}
                   className="truncate"
                 >
@@ -109,7 +101,7 @@ export default function DocumentSelect({
                         : "opacity-0"
                     }`}
                   />
-                  <span className="truncate">{doc.name}</span>
+                  <span className="truncate">{doc.name || ""}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

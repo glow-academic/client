@@ -32,16 +32,20 @@ import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
-import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
-type PracticeOverviewOut = OutputOf<"/api/v4/practice/overview", "post">;
-type StandardGroupsMapping = "standard_groups_mapping" extends keyof PracticeOverviewOut
-  ? PracticeOverviewOut["standard_groups_mapping"]
-  : Record<string, string[]>;
-type StandardsMapping = "standards_mapping" extends keyof PracticeOverviewOut
-  ? PracticeOverviewOut["standards_mapping"]
-  : Record<string, { name: string; description: string | null }>;
+// Note: Practice component transforms arrays to mappings before passing to SimulationCard
+type StandardGroupsMapping = Record<string, {
+  name: string;
+  description: string;
+  points: number;
+  passPoints: number;
+}>;
+type StandardsMapping = Record<string, {
+  name: string;
+  description: string;
+  points: number;
+}>;
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present

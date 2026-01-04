@@ -110,20 +110,22 @@ export default function BenchmarkZone({
         data-testid="benchmark-eval-grid"
       >
         {visibleEvals.map((evalItem) => {
-          const rubricMapping = rubricMappings?.[evalItem.rubric_id];
+          const rubricMapping = evalItem.rubric_id
+            ? rubricMappings?.[evalItem.rubric_id]
+            : undefined;
           return (
             profile && (
               <EvalCard
-                key={evalItem.eval_id}
-                evalId={evalItem.eval_id}
-                name={evalItem.name}
-                description={evalItem.description}
-                status={evalItem.status}
-                totalRuns={evalItem.total_runs}
-                completedRuns={evalItem.completed_runs}
-                pendingRuns={evalItem.pending_runs}
-                rubricName={evalItem.rubric_name}
-                useGroups={evalItem.use_groups || false}
+                key={evalItem.eval_id ?? ""}
+                evalId={evalItem.eval_id ?? ""}
+                name={evalItem.name ?? ""}
+                description={evalItem.description ?? ""}
+                status={evalItem.status ?? "unknown"}
+                totalRuns={evalItem.total_runs ?? 0}
+                completedRuns={evalItem.completed_runs ?? 0}
+                pendingRuns={evalItem.pending_runs ?? 0}
+                rubricName={evalItem.rubric_name ?? ""}
+                useGroups={(evalItem as { use_groups?: boolean | null }).use_groups ?? false}
                 onStartEval={onStartEval}
                 {...(onStartInfiniteMode && { onStartInfiniteMode })}
                 loadingEval={loadingEval}

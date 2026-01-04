@@ -25,7 +25,6 @@ import {
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
-import type { OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +68,7 @@ export interface SimulationScenariosTableProps {
   scenarioMapping?: Record<
     string,
     {
+      id: string;
       name: string;
       description: string;
       persona_ids?: string[];

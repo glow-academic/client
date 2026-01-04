@@ -4,26 +4,15 @@ import CodeViewer from "@/components/common/chat/viewers/CodeViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { OutputOf } from "@/lib/api/types";
 import { isCodeByName } from "@/utils/mime-map";
-
-export type DocumentItem = {
-  document_id: string;
-  name: string;
-  updatedAt: string;
-  extension: string;
-  scenario_ids: string[];
-  can_edit: boolean;
-  can_delete: boolean;
-  active: boolean;
-  department_ids: string[] | null;
-  upload_id: string | null;
-  parameter_item_ids?: string[]; // Keep for backward compatibility (optional)
-  field_ids?: string[]; // New field name (optional)
-};
-
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+
+// Use server type from documents list API
+type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+export type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
 
 export interface DocumentViewerProps {
   document: DocumentItem;
@@ -346,7 +335,7 @@ export default function DocumentViewer({
     ) {
       return (
         <div className="w-full h-full flex flex-col">
-          <CodeViewer name={document.name} value={content ?? ""} />
+          <CodeViewer name={document.name ?? ""} value={content ?? ""} />
         </div>
       );
     }
@@ -355,7 +344,7 @@ export default function DocumentViewer({
     if (type?.includes("text/") || document.name?.endsWith(".md")) {
       return (
         <div className="w-full h-full flex flex-col">
-          <CodeViewer name={document.name} value={content ?? ""} />
+          <CodeViewer name={document.name ?? ""} value={content ?? ""} />
         </div>
       );
     }

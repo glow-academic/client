@@ -149,8 +149,8 @@ export default function EvalAttemptsTable({
         };
 
         const data = await getBenchmarkBundle(filters);
-        setAttempts(data.attempts);
-        setTotalCount(data.total_count);
+        setAttempts(data.attempts ?? []);
+        setTotalCount(data.total_count ?? 0);
       } catch {
         setAttempts([]);
         setTotalCount(0);
@@ -439,8 +439,10 @@ export default function EvalAttemptsTable({
         enableSorting: true,
         accessorFn: (row) => {
           // Sort by completion ratio
-          if (row.total_runs === 0) return 0;
-          return row.completed_runs / row.total_runs;
+          const totalRuns = row.total_runs ?? 0;
+          const completedRuns = row.completed_runs ?? 0;
+          if (totalRuns === 0) return 0;
+          return completedRuns / totalRuns;
         },
       },
       // Status column
@@ -451,7 +453,7 @@ export default function EvalAttemptsTable({
           <DataTableColumnHeader column={column} title="Status" />
         ),
         cell: ({ row }) => {
-          return getStatusBadge(row.original.status);
+          return getStatusBadge(row.original.status ?? "unknown");
         },
         enableSorting: true,
       },
@@ -494,7 +496,7 @@ export default function EvalAttemptsTable({
     getCoreRowModel: getCoreRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    getRowId: (row) => row.attempt_id,
+    getRowId: (row) => row.attempt_id ?? "",
   });
 
   // Handle comprehensive reset (filters, search, sorting, pagination)

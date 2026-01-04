@@ -21,11 +21,11 @@ import { useCallback } from "react";
 import { useProfile } from "@/contexts/profile-context";
 
 export interface DraftItem {
-  id: string;
-  resource_type: string;
+  id: string | null;
+  resource_type: string | null;
   payload: Record<string, unknown>;
-  version: number;
-  updated_at: string;
+  version: number | null;
+  updated_at: string | null;
 }
 
 export interface DraftPickerProps {
@@ -49,15 +49,15 @@ export function DraftPicker({
   // Get draft name from payload (resource-specific)
   const getDraftName = useCallback((draft: DraftItem): string => {
     const payload = draft.payload;
-    // Try common name fields
-    if (typeof payload.name === "string" && payload.name.trim()) {
-      return payload.name;
+    // Try common name fields (use bracket notation for index signature properties)
+    if (typeof payload["name"] === "string" && payload["name"].trim()) {
+      return payload["name"];
     }
-    if (typeof payload.title === "string" && payload.title.trim()) {
-      return payload.title;
+    if (typeof payload["title"] === "string" && payload["title"].trim()) {
+      return payload["title"];
     }
     // Fallback to timestamp
-    return new Date(draft.updated_at).toLocaleDateString();
+    return draft.updated_at ? new Date(draft.updated_at).toLocaleDateString() : "Draft";
   }, []);
 
   const handleSelectDraft = useCallback(
@@ -82,14 +82,17 @@ export function DraftPicker({
     (d) => d.id === selectedDraftId
   );
 
+  // Filter out drafts with null ids for display
+  const validDrafts = filteredDrafts.filter((d): d is typeof d & { id: string } => d.id !== null);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="h-8">
           <FileText className="h-4 w-4 mr-2" />
-          {selectedDraft
-            ? getDraftName(selectedDraft)
-            : filteredDrafts.length > 0
+          {selectedDraft && selectedDraft.id
+            ? getDraftName(selectedDraft as DraftItem & { id: string })
+            : validDrafts.length > 0
               ? "Select Draft"
               : "Drafts"}
         </Button>
@@ -100,22 +103,26 @@ export function DraftPicker({
         {filteredDrafts.length === 0 ? (
           <DropdownMenuItem disabled>No drafts available</DropdownMenuItem>
         ) : (
-          filteredDrafts.map((draft) => (
-            <DropdownMenuItem
-              key={draft.id}
-              onClick={() => handleSelectDraft(draft.id)}
-              className={selectedDraftId === draft.id ? "bg-accent" : ""}
-            >
-              <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <span className="font-medium truncate">
-                  {getDraftName(draft)}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(draft.updated_at).toLocaleString()}
-                </span>
-              </div>
-            </DropdownMenuItem>
-          ))
+          filteredDrafts
+            .filter((draft): draft is typeof draft & { id: string; resource_type: string } => 
+              draft.id !== null && draft.resource_type !== null
+            )
+            .map((draft) => (
+              <DropdownMenuItem
+                key={draft.id}
+                onClick={() => handleSelectDraft(draft.id)}
+                className={selectedDraftId === draft.id ? "bg-accent" : ""}
+              >
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <span className="font-medium truncate">
+                    {getDraftName(draft as DraftItem & { id: string })}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {draft.updated_at ? new Date(draft.updated_at).toLocaleString() : ""}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            ))
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleCreateNew}>

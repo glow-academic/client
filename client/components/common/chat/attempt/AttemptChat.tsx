@@ -31,7 +31,8 @@ import GradedAttemptView from "./GradedAttemptView";
 // ContentItem type - derived from ChatData
 // Questions now come from scenario.questions, not video.questions
 type AttemptFullResponse = AttemptFullOut;
-type ChatDataType = AttemptFullResponse["chats"][number];
+type ChatsArray = NonNullable<AttemptFullResponse["chats"]>;
+type ChatDataType = ChatsArray extends Array<infer T> ? T : never;
 export type ContentItem = ChatDataType;
 
 interface AttemptChatProps {
@@ -81,7 +82,7 @@ export default function AttemptChat({
     if (initialAttemptData?.current_chat_index !== undefined) {
       if (!hasInitializedFromServerRef.current) {
         // Initial load: sync from server
-        setCurrentChatIndex(initialAttemptData.current_chat_index);
+        setCurrentChatIndex(initialAttemptData.current_chat_index ?? 0);
         hasInitializedFromServerRef.current = true;
       } else if (initialAttemptData.chats) {
         // Subsequent refreshes: only sync if current chat no longer exists or is invalid
@@ -93,7 +94,7 @@ export default function AttemptChat({
         );
         if (!currentChatStillExists && initialAttemptData.chats.length > 0) {
           // Current chat no longer exists, sync to server's suggestion
-          setCurrentChatIndex(initialAttemptData.current_chat_index);
+          setCurrentChatIndex(initialAttemptData.current_chat_index ?? 0);
         }
         // Otherwise, keep current index to preserve user's view
       }
@@ -146,7 +147,7 @@ export default function AttemptChat({
 
           const missingOrIncompleteHints = optimisticChatHints.filter(
             (optimisticHint) => {
-              const serverHint = optimisticHint.messageId ? serverHintsMap.get(optimisticHint.messageId) : undefined;
+              const serverHint = optimisticHint.message_id ? serverHintsMap.get(optimisticHint.message_id) : undefined;
               // Keep optimistic hint if:
               // 1. Server doesn't have hints for this messageId, OR
               // 2. Server hints exist but don't have the same count as optimistic, OR
@@ -155,14 +156,14 @@ export default function AttemptChat({
                 return true; // Server doesn't have this hint yet
               }
               // Check if server hints have the same count as optimistic hints
-              const serverHintCount = serverHint.hints.length;
-              const optimisticHintCount = optimisticHint.hints.length;
+              const serverHintCount = (serverHint.hints || []).length;
+              const optimisticHintCount = (optimisticHint.hints || []).length;
               if (serverHintCount !== optimisticHintCount) {
                 return true; // Keep if counts don't match (server data incomplete)
               }
               // Check if server hints have actual content (non-empty hint text)
-              const hasContent = serverHint.hints.some(
-                (h) => h.hint && h.hint.trim().length > 0
+              const hasContent = (serverHint.hints || []).some(
+                (h: { hint: string | null }) => h.hint && h.hint.trim().length > 0
               );
               return !hasContent; // Keep if server hints don't have content yet
             }
@@ -255,7 +256,7 @@ export default function AttemptChat({
   );
   const attemptProfileId = useMemo(() => {
     const activeProfile = attemptProfiles.find((ap) => ap["active"]);
-    return activeProfile?.["profileId"] || null;
+    return activeProfile?.["profile_id"] || null;
   }, [attemptProfiles]);
 
   // Scenarios map - map chatId -> scenario for all chats
@@ -274,27 +275,34 @@ export default function AttemptChat({
   const rubricStructure = attemptData?.rubric_structure ?? null;
 
   // Optimistic grading states - updated in realtime from WebSocket events
-  type OptimisticGradingState = NonNullable<ChatDataType["gradingState"]>;
+  // Use camelCase Records for compatibility with TableRubric component
+  type OptimisticGradingState = {
+    achieved_standards: Array<{ standard_id: string | null; achieved: boolean | null }> | null;
+    passed_standards: Array<{ standard_id: string | null; passed: boolean | null }> | null;
+    grade_description: string | null;
+    feedback_by_standard_id: Array<{ standard_id: string | null; feedback: string | null }> | null;
+  };
   const [optimisticGradingStates, setOptimisticGradingStates] = useState<
     Record<string, OptimisticGradingState>
   >({});
 
   // Optimistic hints - updated in realtime from WebSocket events
   // Structure: Record<chatId, Array<{ messageId: string, hints: Array<...> }>>
-  type HintsByMessage = ChatDataType["hints"][number];
+  type HintsByMessage = NonNullable<ChatDataType["hints"]>[number];
   const [optimisticHints, setOptimisticHints] = useState<
     Record<string, HintsByMessage[]>
   >({});
 
+
   // Grading states map - map chatId -> grading state (merged from server + optimistic)
   const gradingStatesByChatId = useMemo(() => {
-    const map: Record<string, NonNullable<ChatDataType["gradingState"]>> = {};
+    const map: Record<string, NonNullable<ChatDataType["grading_state"]>> = {};
 
-    // First, add server data
+    // First, add server data (keep server type structure)
     if (attemptData?.chats) {
       attemptData.chats.forEach((chatData) => {
-        if (chatData.gradingState && chatData.chat.id) {
-          map[chatData.chat.id] = chatData.gradingState;
+        if (chatData.grading_state && chatData.chat?.id) {
+          map[chatData.chat.id] = chatData.grading_state;
         }
       });
     }
@@ -307,22 +315,10 @@ export default function AttemptChat({
         if (existingState) {
           // Merge: optimistic updates override server data
           map[chatId] = {
-            achievedStandards: {
-              ...existingState.achievedStandards,
-              ...optimisticState.achievedStandards,
-            },
-            passedStandards: {
-              ...existingState.passedStandards,
-              ...optimisticState.passedStandards,
-            },
-            gradeDescription:
-              optimisticState.gradeDescription ??
-              existingState.gradeDescription ??
-              null,
-            feedbackByStandardId: {
-              ...(existingState.feedbackByStandardId || {}),
-              ...(optimisticState.feedbackByStandardId || {}),
-            },
+            achieved_standards: optimisticState.achieved_standards ?? existingState.achieved_standards,
+            passed_standards: optimisticState.passed_standards ?? existingState.passed_standards,
+            grade_description: optimisticState.grade_description ?? existingState.grade_description,
+            feedback_by_standard_id: optimisticState.feedback_by_standard_id ?? existingState.feedback_by_standard_id,
           };
         } else {
           // Use optimistic state if no server state exists yet
@@ -338,7 +334,7 @@ export default function AttemptChat({
   const currentMessages = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat?.id === currentChat.id
     );
     const messages = chatData?.messages ?? [];
     // Transform messages to match expected type (personaId: string | null -> optional string)
@@ -351,14 +347,14 @@ export default function AttemptChat({
         completed?: boolean;
         personaId?: string;
       } = {
-        id: msg.id,
-        type: msg.type,
-        content: msg.content,
-        createdAt: msg.createdAt,
-        completed: msg.completed,
+        id: msg.id || "",
+        type: msg.type || "",
+        content: msg.content || "",
+        createdAt: msg.created_at || "",
+        completed: msg.completed ?? false,
       };
-      if (msg.personaId) {
-        result.personaId = msg.personaId;
+      if (msg.persona_id) {
+        result.personaId = msg.persona_id;
       }
       return result;
     });
@@ -368,23 +364,28 @@ export default function AttemptChat({
   const currentPersonas = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat?.id === currentChat.id
     );
     const personas = chatData?.personas ?? [];
     // Transform personas to match expected type (icon/color optional -> required but nullable)
-    return personas.map((p) => ({
-      id: p.id,
-      name: p.name,
-      icon: p.icon ?? null,
-      color: p.color ?? null,
-    }));
+    // Filter out personas with null ids/names and ensure types match
+    return personas
+      .filter((p): p is typeof p & { id: string; name: string } => 
+        p.id !== null && p.name !== null
+      )
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        icon: p.icon ?? null,
+        color: p.color ?? null,
+      }));
   }, [attemptData, currentChat]);
 
   // Hints - get hints for current chat (merged from server + optimistic)
   const currentChatHints = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat?.id === currentChat.id
     );
     const serverHints = chatData?.hints || [];
     const optimisticChatHints = currentChat.id
@@ -397,27 +398,27 @@ export default function AttemptChat({
 
     // First add optimistic hints (as fallback for when server doesn't have them yet)
     optimisticChatHints.forEach((hintGroup) => {
-      hintsMap.set(hintGroup.messageId, hintGroup);
+      hintsMap.set(hintGroup.message_id || "", hintGroup);
     });
 
     // Then add/override with server hints (server hints take precedence when they have content)
     serverHints.forEach((hintGroup) => {
-      const existingOptimistic = hintsMap.get(hintGroup.messageId);
+      const existingOptimistic = hintsMap.get(hintGroup.message_id || "");
 
       // Check if server hints have actual content
-      const serverHasContent = hintGroup.hints.some(
+      const serverHasContent = (hintGroup.hints || []).some(
         (h) => h.hint && h.hint.trim().length > 0
       );
 
       if (serverHasContent) {
         // Server has content, use it
-        hintsMap.set(hintGroup.messageId, hintGroup);
+        hintsMap.set(hintGroup.message_id || "", hintGroup);
       } else if (existingOptimistic) {
         // Server doesn't have content yet, keep optimistic hints
         // (optimistic hints already in map, no need to override)
       } else {
         // No optimistic hints, use server hints even if empty (better than nothing)
-        hintsMap.set(hintGroup.messageId, hintGroup);
+        hintsMap.set(hintGroup.message_id || "", hintGroup);
       }
     });
 
@@ -428,26 +429,26 @@ export default function AttemptChat({
   const currentDynamicRubric = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return null;
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat?.id === currentChat.id
     );
-    return chatData?.dynamicRubric;
+    return chatData?.dynamic_rubric;
   }, [attemptData, currentChat]);
 
   const allDynamicRubrics = useMemo(
     () =>
       attemptData?.chats
-        .map((c) => c.dynamicRubric)
+        ?.map((c) => c.dynamic_rubric)
         .filter(
-          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null
+          (r): r is NonNullable<ChatDataType["dynamic_rubric"]> => r !== null
         ) || [],
-    [attemptData]
+    [attemptData?.chats]
   );
 
-  const aggregatedResults = attemptData?.aggregatedResults || null;
+  const aggregatedResults = attemptData?.aggregated_results || null;
 
   // Metadata from v3
-  const expectedChatCount = attemptData?.expectedChatCount || 1;
-  const isSingleChatAttempt = attemptData?.isSingleChatAttempt ?? true;
+  const expectedChatCount = attemptData?.expected_chat_count || 1;
+  const isSingleChatAttempt = attemptData?.is_single_chat_attempt ?? true;
 
   // Timer from v3 (server computed baseline) - convert backend format to frontend format
   const serverTimer = useMemo(() => {
@@ -459,14 +460,12 @@ export default function AttemptChat({
         expired: false,
       };
     }
-    const remaining =
-      backendTimer.limit !== null
-        ? backendTimer.limit - backendTimer.elapsed
-        : null;
     return {
-      elapsed: backendTimer.elapsed,
-      remaining,
-      expired: backendTimer.exceeded,
+      elapsed: backendTimer.elapsed ?? 0,
+      remaining: backendTimer.limit !== null && backendTimer.elapsed !== null
+        ? backendTimer.limit - backendTimer.elapsed
+        : null,
+      expired: backendTimer.exceeded ?? false,
     };
   }, [attemptData?.timer]);
 
@@ -474,7 +473,7 @@ export default function AttemptChat({
   useEffect(() => {
     dataFetchedAtRef.current = Date.now();
     setLocalElapsedOffset(0);
-  }, [attemptData?.timer.elapsed]);
+  }, [attemptData?.timer?.elapsed]);
 
   // Tick timer every second for active simulations
   useEffect(() => {
@@ -520,7 +519,7 @@ export default function AttemptChat({
     if (chats && chats.length > 0 && currentChatIndex === 0) {
       const sortedChats = [...chats].sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime()
       );
 
       const firstIncompleteIndex = sortedChats.findIndex(
@@ -629,7 +628,7 @@ export default function AttemptChat({
 
   // WebSocket-based message handler
   const sendMessage = useCallback(
-    async (message: string, isRetry?: boolean) => {
+    async (message: string, _isRetry?: boolean) => {
       if (!message.trim() || !currentChat || isSendingMessage || !socket)
         return;
 
@@ -820,8 +819,8 @@ export default function AttemptChat({
           if (nextChatExists) {
             const sortedChats = [...(chats || [])].sort(
               (a, b) =>
-                new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime()
+                new Date(a.created_at || "").getTime() -
+                new Date(b.created_at || "").getTime()
             );
             const nextIndex = sortedChats.findIndex(
               (c) => c.id === data.next_chat_id
@@ -1021,47 +1020,88 @@ export default function AttemptChat({
         rubricStructure
       ) {
         // Find the standard group by name (since shortName is not in the type)
-        const standardGroupEntry = Object.entries(
-          rubricStructure.standardGroupsMapping
-        ).find(([_, group]) => group.name === data.standard_group_name);
+        const standardGroupsMapping = rubricStructure.standard_groups_mapping || [];
+        const standardGroupEntry = standardGroupsMapping.find(
+          (group) => group.name === data.standard_group_name
+        );
 
         if (standardGroupEntry) {
-          const [groupId, groupInfo] = standardGroupEntry;
-          const standardIds = rubricStructure.standardGroups[groupId] || [];
+          const groupId = standardGroupEntry.standard_group_id;
+          const standardGroups = rubricStructure.standard_groups || [];
+          const groupEntry = standardGroups.find((g) => g.standard_group_id === groupId);
+          const standardIds = groupEntry?.standard_ids || [];
 
           // Find the standard with matching points (score)
-          const matchingStandard = standardIds.find((stdId: string) => {
-            const standard = rubricStructure.standardsMapping[stdId];
-            return standard && standard["points"] === data.score;
+          const standardsMapping = rubricStructure.standards_mapping || [];
+          const matchingStandard = standardIds.find((stdId: string | null) => {
+            if (!stdId) return false;
+            const standard = standardsMapping.find((s) => s.standard_id === stdId);
+            return standard && standard.points === data.score;
           });
 
           if (matchingStandard) {
-            const passPoints = groupInfo.passPoints || 0;
+            const passPoints = standardGroupEntry.pass_points || 0;
             const isPassed = (data.score || 0) >= passPoints;
 
             setOptimisticGradingStates((prev) => {
               const currentState = prev[data.chat_id] || {
-                achievedStandards: {},
-                passedStandards: {},
-                feedbackByStandardId: {},
+                achieved_standards: null,
+                passed_standards: null,
+                feedback_by_standard_id: null,
+                grade_description: null,
               };
 
+              // Convert current state arrays to maps for easier merging
+              const achievedMap = new Map<string, boolean>();
+              const passedMap = new Map<string, boolean>();
+              const feedbackMap = new Map<string, string>();
+
+              if (currentState.achieved_standards) {
+                currentState.achieved_standards.forEach((item) => {
+                  if (item.standard_id) {
+                    achievedMap.set(item.standard_id, item.achieved ?? false);
+                  }
+                });
+              }
+              if (currentState.passed_standards) {
+                currentState.passed_standards.forEach((item) => {
+                  if (item.standard_id) {
+                    passedMap.set(item.standard_id, item.passed ?? false);
+                  }
+                });
+              }
+              if (currentState.feedback_by_standard_id) {
+                currentState.feedback_by_standard_id.forEach((item) => {
+                  if (item.standard_id && item.feedback) {
+                    feedbackMap.set(item.standard_id, item.feedback);
+                  }
+                });
+              }
+
+              // Update with new values
+              achievedMap.set(matchingStandard, true);
+              passedMap.set(matchingStandard, isPassed);
+              if (data.feedback_preview) {
+                feedbackMap.set(matchingStandard, data.feedback_preview);
+              }
+
+              // Convert back to arrays
               return {
                 ...prev,
                 [data.chat_id]: {
-                  achievedStandards: {
-                    ...currentState.achievedStandards,
-                    [matchingStandard]: true,
-                  },
-                  passedStandards: {
-                    ...currentState.passedStandards,
-                    [matchingStandard]: isPassed,
-                  },
-                  feedbackByStandardId: {
-                    ...currentState.feedbackByStandardId,
-                    [matchingStandard]: data.feedback_preview || "",
-                  },
-                  gradeDescription: currentState.gradeDescription ?? null,
+                  achieved_standards: Array.from(achievedMap.entries()).map(([standard_id, achieved]) => ({
+                    standard_id,
+                    achieved,
+                  })),
+                  passed_standards: Array.from(passedMap.entries()).map(([standard_id, passed]) => ({
+                    standard_id,
+                    passed,
+                  })),
+                  feedback_by_standard_id: Array.from(feedbackMap.entries()).map(([standard_id, feedback]) => ({
+                    standard_id,
+                    feedback,
+                  })),
+                  grade_description: currentState.grade_description,
                 },
               };
             });
@@ -1077,16 +1117,17 @@ export default function AttemptChat({
         if (summaryPreview) {
           setOptimisticGradingStates((prev) => {
             const currentState = prev[data.chat_id] || {
-              achievedStandards: {},
-              passedStandards: {},
-              feedbackByStandardId: {},
+              achieved_standards: null,
+              passed_standards: null,
+              feedback_by_standard_id: null,
+              grade_description: null,
             };
 
             return {
               ...prev,
               [data.chat_id]: {
                 ...currentState,
-                gradeDescription: summaryPreview ?? null,
+                grade_description: summaryPreview ?? null,
               },
             };
           });
@@ -1097,16 +1138,17 @@ export default function AttemptChat({
       if (data.type === "complete" && data.summary) {
         setOptimisticGradingStates((prev) => {
           const currentState = prev[data.chat_id] || {
-            achievedStandards: {},
-            passedStandards: {},
-            feedbackByStandardId: {},
+            achieved_standards: null,
+            passed_standards: null,
+            feedback_by_standard_id: null,
+            grade_description: null,
           };
 
           return {
             ...prev,
             [data.chat_id]: {
               ...currentState,
-              gradeDescription: data.summary ?? null,
+              grade_description: data.summary ?? null,
             },
           };
         });
@@ -1131,10 +1173,10 @@ export default function AttemptChat({
         if (data.hints && data.hints.length > 0) {
           // Use hint text from event for immediate display
           hints = data.hints.map((h) => ({
-            simulationMessageId: data.message_id,
+            simulation_message_id: data.message_id,
             hint: h.hint, // Use actual hint text from event
             idx: h.idx,
-            createdAt: new Date().toISOString(),
+            created_at: new Date().toISOString(),
           }));
         } else {
           // Fallback: Parse hint_ids to extract messageId and create hint entries
@@ -1150,10 +1192,10 @@ export default function AttemptChat({
 
               // Create placeholder hint (will be replaced by server data on refresh)
               return {
-                simulationMessageId: data.message_id,
+                simulation_message_id: data.message_id,
                 hint: "", // Placeholder - will be replaced by server data
                 idx: isNaN(idx) ? index : idx,
-                createdAt: new Date().toISOString(),
+                created_at: new Date().toISOString(),
               };
             })
             .filter((h) => !isNaN(h.idx)); // Filter out invalid entries
@@ -1164,11 +1206,11 @@ export default function AttemptChat({
           const chatHints = prev[data.chat_id] || [];
           // Check if we already have hints for this messageId
           const existingIndex = chatHints.findIndex(
-            (h) => h.messageId === data.message_id
+            (h) => h.message_id === data.message_id
           );
 
           const newHintGroup: HintsByMessage = {
-            messageId: data.message_id,
+            message_id: data.message_id,
             hints: hints,
           };
 
@@ -1406,7 +1448,7 @@ export default function AttemptChat({
       <Select
         value={chats[currentChatIndex]?.id || ""}
         onValueChange={(chatId) => {
-          const chatIndex = chats.findIndex((chat) => chat.id === chatId);
+          const chatIndex = chats.findIndex((chat) => chat?.id === chatId);
           if (chatIndex !== undefined && chatIndex >= 0) {
             setCurrentChatIndex(chatIndex);
           }
@@ -1416,11 +1458,11 @@ export default function AttemptChat({
           <SelectValue placeholder="Select chat to view results" />
         </SelectTrigger>
         <SelectContent>
-          {chats?.map((chat: Chat) => {
-            if (!chat.id) return null;
+          {chats?.map((chat: Chat | null) => {
+            if (!chat?.id) return null;
             // Find rubric result for this chat
             const rubricResult = allDynamicRubrics.find(
-              (rubric) => rubric.chatId === chat.id
+              (rubric) => rubric.chat_id === chat.id
             );
 
             return (
@@ -1462,10 +1504,10 @@ export default function AttemptChat({
 
   // Helper function to calculate time taken from chat timestamps
   const calculateChatTimeTaken = useCallback((chat: Chat | null): number => {
-    if (!chat?.completed || !chat.completedAt) return 0;
+    if (!chat?.completed || !chat.completed_at) return 0;
 
-    const startTime = new Date(chat.createdAt).getTime();
-    const endTime = new Date(chat.completedAt).getTime();
+    const startTime = new Date(chat.created_at || "").getTime();
+    const endTime = new Date(chat.completed_at || "").getTime();
     const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
 
     return timeTakenSeconds;
@@ -1557,7 +1599,7 @@ export default function AttemptChat({
       }
 
       // If all chats are completed, default to showing rubric (only if user hasn't manually toggled)
-      const completedChats = chats.filter((chat: Chat) => chat.completed);
+      const completedChats = chats.filter((chat: Chat | null) => chat?.completed);
       if (
         completedChats.length === chats.length &&
         !userHasManuallyToggledGrades
@@ -1654,7 +1696,15 @@ export default function AttemptChat({
         showGrades={showGrades}
         selectedDocumentId={selectedDocumentId}
         currentMessages={currentMessages}
-        currentChatHints={currentChatHints}
+        currentChatHints={currentChatHints.map((hintGroup) => ({
+          messageId: hintGroup.message_id || "",
+          hints: (hintGroup.hints || []).map((hint) => ({
+            simulationMessageId: hint.simulation_message_id || "",
+            hint: hint.hint || "",
+            idx: hint.idx ?? 0,
+            createdAt: hint.created_at || "",
+          })),
+        }))}
         personas={currentPersonas}
         isAttemptOwner={isAttemptOwner}
         chatPicker={chatPicker}
@@ -1696,35 +1746,40 @@ export default function AttemptChat({
             {scenarioQuestions.map(
               (
                 question: {
-                  id?: string;
-                  questionText?: string;
-                  options?: Array<{
-                    id?: string;
-                    optionText?: string;
-                    isCorrect?: boolean;
-                  }>;
+                  id: string | null;
+                  question_text: string | null;
+                  type: string | null;
+                  allow_multiple: boolean | null;
+                  times: number[] | null;
+                  options: Array<{
+                    id: string | null;
+                    option_text: string | null;
+                    type: string | null;
+                    is_correct: boolean | null;
+                  }> | null;
                 },
                 idx: number
               ) => (
                 <div key={question.id || idx} className="space-y-2">
-                  <p className="font-medium">{question.questionText}</p>
+                  <p className="font-medium">{question.question_text || ""}</p>
                   {question.options && question.options.length > 0 && (
                     <div className="space-y-1 pl-4">
                       {question.options.map(
                         (option: {
-                          id?: string;
-                          optionText?: string;
-                          isCorrect?: boolean;
+                          id: string | null;
+                          option_text: string | null;
+                          type: string | null;
+                          is_correct: boolean | null;
                         }) => (
                           <div
-                            key={option.id}
+                            key={option.id || ""}
                             className={`p-2 rounded border ${
-                              option.isCorrect
+                              option.is_correct
                                 ? "bg-green-50 border-green-200"
                                 : "bg-muted/50"
                             }`}
                           >
-                            {option.optionText}
+                            {option.option_text || ""}
                           </div>
                         )
                       )}
@@ -1780,7 +1835,7 @@ export default function AttemptChat({
       expectedChatCount={expectedChatCount}
       scenarioDocuments={scenarioDocuments}
       scenariosByChatId={scenariosByChatId}
-      currentDynamicRubric={currentDynamicRubric}
+      currentDynamicRubric={currentDynamicRubric ?? null}
       timer={timer}
       showDocuments={showDocuments}
       showDocumentModal={showDocumentModal}
@@ -1793,7 +1848,15 @@ export default function AttemptChat({
         inputPanelGroupRef as React.RefObject<ImperativePanelGroupHandle>
       }
       currentMessages={currentMessages}
-      currentChatHints={currentChatHints}
+      currentChatHints={currentChatHints.map((hintGroup) => ({
+        messageId: hintGroup.message_id || "",
+        hints: (hintGroup.hints || []).map((hint) => ({
+          simulationMessageId: hint.simulation_message_id || "",
+          hint: hint.hint || "",
+          idx: hint.idx ?? 0,
+          createdAt: hint.created_at || "",
+        })),
+      }))}
       personas={currentPersonas}
       isAttemptOwner={isAttemptOwner}
       isSendingMessage={isSendingMessage}

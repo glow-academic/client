@@ -30,6 +30,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { GenericPicker } from "./GenericPicker";
 
@@ -38,21 +39,9 @@ type MappingItem = {
   description: string;
 };
 
-type DocumentItem = {
-  document_id: string;
-  name: string;
-  updatedAt: string;
-  extension: string;
-  scenario_ids: string[];
-  can_edit: boolean;
-  can_delete: boolean;
-  active: boolean;
-  department_ids: string[] | null;
-  file_path: string | null;
-  mime_type: string | null;
-  field_ids: string[];
-  upload_id?: string | null;
-};
+// Use server type from documents list API
+type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
 
 // Extended mapping item for documents with tags
 export interface DocumentMappingItem extends MappingItem {
@@ -191,21 +180,22 @@ export function DocumentPicker<
                     }
                     // Fallback: create minimal DocumentItem from mapping so DocumentViewer can fetch it
                     if (id) {
-                      const minimalDoc = {
+                      const minimalDoc: DocumentViewerItem = {
                         document_id: id,
                         name: document.name || "Document",
-                        updatedAt: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
                         extension: "",
                         scenario_ids: [],
                         can_edit: false,
                         can_delete: false,
                         active: true,
                         department_ids: [],
-                        file_path: document.filePath || "",
-                        mime_type: document.mimeType || "",
                         field_ids: [],
                         upload_id: id || null,
-                      } as DocumentViewerItem;
+                        valid_field_ids: null,
+                        active_scenario_count: null,
+                        total_scenario_links: null,
+                      };
                       return (
                         <div className="w-full h-full">
                           <DocumentViewer
@@ -340,7 +330,7 @@ export function DocumentPicker<
                     const minimalDoc: DocumentViewerItem = {
                       document_id: id,
                       name: item.name || "Document",
-                      updatedAt: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
                       extension: "",
                       scenario_ids: [],
                       can_edit: false,
@@ -349,6 +339,9 @@ export function DocumentPicker<
                       department_ids: [],
                       upload_id: id || null,
                       field_ids: [],
+                      valid_field_ids: null,
+                      active_scenario_count: null,
+                      total_scenario_links: null,
                     };
                     return (
                       <div className="w-full h-full">
@@ -424,7 +417,7 @@ export function DocumentPicker<
                 const minimalDoc: DocumentViewerItem = {
                   document_id: previewDocumentId,
                   name: mappedDoc.name || "Document",
-                  updatedAt: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
                   extension: "",
                   scenario_ids: [],
                   can_edit: false,
@@ -433,6 +426,9 @@ export function DocumentPicker<
                   department_ids: [],
                   upload_id: previewDocumentId || null,
                   field_ids: [],
+                  valid_field_ids: null,
+                  active_scenario_count: null,
+                  total_scenario_links: null,
                 };
                 return (
                   <div className="flex-1 min-h-0">

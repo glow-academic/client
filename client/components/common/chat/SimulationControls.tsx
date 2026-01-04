@@ -321,16 +321,16 @@ export function SimulationControls({
       number,
       ContinuationPermutationOption[]
     >();
-    continuationOptions.next_sequential_options.forEach((opt: { scenario_id: string; scenario_name: string; previous_chat_id: string | null; title: string; score: number | null; percentage: number | null; time_taken: number | null; position?: number | null }) => {
-      const pos = opt.position || 0;
+    continuationOptions.next_sequential_options.forEach((opt: { scenario_id: string | null; scenario_name: string | null; previous_chat_id: string | null; title: string | null; score: number | null; percentage: number | null; time_taken: number | null; position: number | null }) => {
+      const pos = opt.position ?? 0;
       if (!optionsByPosition.has(pos)) {
         optionsByPosition.set(pos, []);
       }
       optionsByPosition.get(pos)!.push({
-        scenarioId: opt.scenario_id,
-        scenarioName: opt.scenario_name,
-        previousChatId: opt.previous_chat_id,
-        title: opt.title,
+        scenarioId: opt.scenario_id || "",
+        scenarioName: opt.scenario_name || "",
+        previousChatId: opt.previous_chat_id || "",
+        title: opt.title || "",
         score: opt.score ?? null,
         percentage: opt.percentage ?? null,
         timeTaken: opt.time_taken ?? null,

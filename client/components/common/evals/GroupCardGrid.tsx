@@ -82,22 +82,27 @@ export function GroupCardGrid({
 
   // Apply search filter and sort selected first
   const filteredGroups = React.useMemo(() => {
+    if (!groups) return [];
     return groups
       .filter((group) => {
         if (!searchTerm) return true;
         const searchLower = searchTerm.toLowerCase();
         return (
-          group.name.toLowerCase().includes(searchLower) ||
+          group.name?.toLowerCase().includes(searchLower) ||
           group.description?.toLowerCase().includes(searchLower)
         );
       })
       .sort((a, b) => {
-        const aSelected = selectedGroupIds.includes(a.group_id);
-        const bSelected = selectedGroupIds.includes(b.group_id);
+        const aId = a.group_id || "";
+        const bId = b.group_id || "";
+        const aSelected = selectedGroupIds.includes(aId);
+        const bSelected = selectedGroupIds.includes(bId);
         if (aSelected && !bSelected) return -1;
         if (!aSelected && bSelected) return 1;
+        const aCreated = a.created_at || "";
+        const bCreated = b.created_at || "";
         return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(bCreated).getTime() - new Date(aCreated).getTime()
         );
       });
   }, [groups, selectedGroupIds, searchTerm]);
@@ -143,14 +148,15 @@ export function GroupCardGrid({
                 </div>
               ) : (
                 filteredGroups.map((group) => {
-                  const isSelected = selectedGroupIds.includes(group.group_id);
+                  const groupId = group.group_id || "";
+                  const isSelected = selectedGroupIds.includes(groupId);
 
                   return (
-                    <Tooltip key={group.group_id}>
+                    <Tooltip key={groupId}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
-                          onClick={() => handleSelect(group.group_id)}
+                          onClick={() => handleSelect(groupId)}
                           disabled={readonly}
                           className={cn(
                             "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
@@ -186,7 +192,7 @@ export function GroupCardGrid({
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                {new Date(group.created_at).toLocaleDateString()}
+                                {group.created_at ? new Date(group.created_at).toLocaleDateString() : ""}
                               </p>
                             </div>
                           </div>

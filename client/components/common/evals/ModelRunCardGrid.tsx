@@ -86,14 +86,20 @@ export function ModelRunCardGrid({
   // Apply search filter and sort selected first
   const filteredModelRuns = React.useMemo(() => {
     // Search is handled server-side, but we can also filter client-side for selected items
+    if (!modelRuns) return [];
     return modelRuns.sort((a, b) => {
-      const aSelected = selectedModelRunIds.includes(a.model_run_id);
-      const bSelected = selectedModelRunIds.includes(b.model_run_id);
+      const aId = a.model_run_id || "";
+      const bId = b.model_run_id || "";
+      const aSelected = selectedModelRunIds.includes(aId);
+      const bSelected = selectedModelRunIds.includes(bId);
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
       // Both selected or both unselected - sort by created_at desc
+      const aCreated = a.created_at || "";
+      const bCreated = b.created_at || "";
+      if (!aCreated || !bCreated) return 0;
       return (
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(bCreated).getTime() - new Date(aCreated).getTime()
       );
     });
   }, [modelRuns, selectedModelRunIds]);
@@ -139,16 +145,15 @@ export function ModelRunCardGrid({
                 </div>
               ) : (
                 filteredModelRuns.map((mr) => {
-                  const isSelected = selectedModelRunIds.includes(
-                    mr.model_run_id,
-                  );
+                  const modelRunId = mr.model_run_id || "";
+                  const isSelected = selectedModelRunIds.includes(modelRunId);
 
                   return (
-                    <Tooltip key={mr.model_run_id}>
+                    <Tooltip key={modelRunId}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
-                          onClick={() => handleSelect(mr.model_run_id)}
+                          onClick={() => handleSelect(modelRunId)}
                           disabled={readonly}
                           className={cn(
                             "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
@@ -186,7 +191,7 @@ export function ModelRunCardGrid({
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                {new Date(mr.created_at).toLocaleDateString()}
+                                {mr.created_at ? new Date(mr.created_at).toLocaleDateString() : ""}
                               </p>
                             </div>
                           </div>

@@ -254,7 +254,7 @@ export default function Agent({
     modelSearch: parseAsString,
     reasoningSearch: parseAsString,
     voiceSearch: parseAsString,
-    promptSearch: parseAsString,
+    _promptSearch: parseAsString,
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
@@ -1032,6 +1032,76 @@ export default function Agent({
     []
   );
 
+  // Steps configuration for GenericForm (moved before handleReset to fix declaration order)
+  const steps = useMemo(() => {
+    const baseSteps = [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description: "Set the agent name, description, departments, and active status.",
+        resetFields: ["name", "description", "active", "departmentIds"] as string[],
+      },
+      {
+        id: "role",
+        title: "Role",
+        description: "Select the agent role that defines its capabilities.",
+        resetFields: ["role"] as string[],
+      },
+      {
+        id: "model",
+        title: "Model",
+        description: "Select the AI model for this agent.",
+        resetFields: ["modelId"] as string[],
+      },
+    ];
+
+    // Conditionally add configuration steps based on model capabilities
+    const configSteps = [];
+
+    if (selectedModelCapabilities) {
+      configSteps.push({
+        id: "temperature",
+        title: "Temperature",
+        description: "Configure the temperature setting for the model.",
+        optional: true,
+        resetFields: ["model_temperature_level_id"] as string[],
+      });
+
+      if (selectedModelCapabilities.has_text_output) {
+        configSteps.push({
+          id: "reasoning",
+          title: "Reasoning Effort",
+          description: "Configure the reasoning effort level.",
+          optional: true,
+          resetFields: ["model_reasoning_level_id"] as string[],
+        });
+      }
+
+      // Only show voice configuration for models with BOTH input and output audio (e.g., gpt-realtime)
+      if (
+        selectedModelCapabilities.has_audio_input &&
+        selectedModelCapabilities.has_audio_output
+      ) {
+        configSteps.push({
+          id: "voice",
+          title: "Voices",
+          description: "Select voices for audio output.",
+          optional: true,
+          resetFields: ["model_voice_ids"] as string[],
+        });
+      }
+    }
+
+    const promptStep = {
+      id: "prompt",
+      title: "Prompt Instructions",
+      description: "Define the system prompt that controls agent behavior.",
+      resetFields: ["systemPrompt", "promptId"] as string[],
+    };
+
+    return [...baseSteps, ...configSteps, promptStep];
+  }, [selectedModelCapabilities]);
+
   // Reset handler for GenericForm - resets draftState fields
   const handleReset = useCallback(
     (stepId: string, _fields: string[]) => {
@@ -1085,7 +1155,7 @@ export default function Agent({
 
   // Handle form submission (for GenericForm)
   const handleSubmit = useCallback(
-    async (formData: Values<Record<string, Parser<unknown>>>) => {
+    async (_formData: Values<Record<string, Parser<unknown>>>) => {
       // Form data from GenericForm is URL params (search/filter)
       // Actual form fields are in draftState
 
@@ -1147,8 +1217,14 @@ export default function Agent({
               departmentsForPromptOverride = targetDeptIds;
             } else {
               // For multiple departments, check which ones are safe to update
-              const departmentPromptLinks =
-                (agentDetail?.department_prompt_links as Record<string, string | undefined>) || {};
+              // Convert department_prompt_links array to Record<department_id, prompt_id>
+              const departmentPromptLinksArray = agentDetail?.department_prompt_links ?? [];
+              const departmentPromptLinks: Record<string, string | undefined> = {};
+              departmentPromptLinksArray.forEach((link) => {
+                if (link.department_id) {
+                  departmentPromptLinks[link.department_id] = link.prompt_id ?? undefined;
+                }
+              });
               const existingPromptIds = targetDeptIds
                 .map((deptId) => departmentPromptLinks[deptId])
                 .filter((promptId) => promptId !== undefined);
@@ -1275,7 +1351,7 @@ export default function Agent({
 
   // Step status calculation for GenericForm
   const getStepStatus = useCallback(
-    (stepId: string, formData: Values<Record<string, Parser<unknown>>>): StepStatus => {
+    (stepId: string, _formData: Values<Record<string, Parser<unknown>>>): StepStatus => {
       const hasRole = !!draftState.role;
       const hasModel = !!draftState.modelId?.trim();
       const hasName = !!draftState.name?.trim();
@@ -1312,82 +1388,10 @@ export default function Agent({
     [draftState]
   );
 
-  // Steps configuration for GenericForm
-  const steps = useMemo(() => {
-    const baseSteps = [
-      {
-        id: "basic",
-        title: "Basic Information",
-        description: "Set the agent name, description, departments, and active status.",
-        resetFields: ["name", "description", "active", "departmentIds"] as string[],
-      },
-      {
-        id: "role",
-        title: "Role",
-        description: "Select the agent role that defines its capabilities.",
-        resetFields: ["role"] as string[],
-      },
-      {
-        id: "model",
-        title: "Model",
-        description: "Select the AI model for this agent.",
-        resetFields: ["modelId"] as string[],
-      },
-    ];
-
-    // Conditionally add configuration steps based on model capabilities
-    const configSteps = [];
-
-    if (selectedModelCapabilities) {
-      configSteps.push({
-        id: "temperature",
-        title: "Temperature",
-        description: "Configure the temperature setting for the model.",
-        optional: true,
-        resetFields: ["model_temperature_level_id"] as string[],
-      });
-
-      if (selectedModelCapabilities.has_text_output) {
-        configSteps.push({
-          id: "reasoning",
-          title: "Reasoning Effort",
-          description: "Configure the reasoning effort level.",
-          optional: true,
-          resetFields: ["model_reasoning_level_id"] as string[],
-        });
-      }
-
-      // Only show voice configuration for models with BOTH input and output audio (e.g., gpt-realtime)
-      if (
-        selectedModelCapabilities.has_audio_input &&
-        selectedModelCapabilities.has_audio_output
-      ) {
-        configSteps.push({
-          id: "voice",
-          title: "Voices",
-          description: "Select voices for audio output.",
-          optional: true,
-          resetFields: ["model_voice_ids"] as string[],
-        });
-      }
-    }
-
-    const promptStep = {
-      id: "prompt",
-      title: "Prompt Instructions",
-      description: "Define the system prompt that controls agent behavior.",
-        resetFields: ["systemPrompt", "promptId"] as string[],
-    };
-
-    return [...baseSteps, ...configSteps, promptStep];
-  }, [selectedModelCapabilities]);
 
   // Handle role change - do NOT reset model when role is unselected
   const handleRoleChange = useCallback((roleId: string) => {
     setDraftState((prev) => ({ ...prev, role: roleId }));
-    if (errors.role) {
-      setErrors((prev) => ({ ...prev, role: undefined }));
-    }
 
     // If unselecting role (empty string), do NOT reset model - just update role
     if (!roleId || roleId === "") {
@@ -1576,7 +1580,10 @@ export default function Agent({
                             onChange={(e) => {
                               setDraftState((prev) => ({ ...prev, description: e.target.value }));
                               if (errors.description) {
-                                setErrors((prev) => ({ ...prev, description: undefined }));
+                                setErrors((prev) => {
+                                  const { description: _, ...rest } = prev;
+                                  return rest;
+                                });
                               }
                             }}
                             placeholder="Detailed behavior description and personality traits"
@@ -1839,7 +1846,10 @@ export default function Agent({
                                 }
                               }
                               if (errors.modelId) {
-                                setErrors((prev) => ({ ...prev, modelId: undefined }));
+                                setErrors((prev) => {
+                                  const { modelId: _, ...rest } = prev;
+                                  return rest;
+                                });
                               }
                             }}
                             getId={(model) => model.id}
@@ -2268,8 +2278,6 @@ export default function Agent({
                 }
 
                 case "prompt": {
-                  const promptSearch = (stepFormData["promptSearch"] as string) || "";
-
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -2431,7 +2439,10 @@ export default function Agent({
                                 promptId: null, // Clear promptId when editing, indicating new prompt
                               }));
                               if (errors.systemPrompt) {
-                                setErrors((prev) => ({ ...prev, systemPrompt: undefined }));
+                                setErrors((prev) => {
+                                  const { systemPrompt: _, ...rest } = prev;
+                                  return rest;
+                                });
                               }
                             }}
                             placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
@@ -2439,10 +2450,28 @@ export default function Agent({
                             debugContent={
                               isEditMode &&
                               agentDetail &&
-                              effectiveProfile?.role === "superadmin" ? (
+                              effectiveProfile?.role === "superadmin" &&
+                              agentDetail.debug_info &&
+                              Array.isArray(agentDetail.debug_info) ? (
                                 <AgentDebugInfo
-                                  debugInfo={agentDetail.debug_info}
-                                  modelMapping={modelMapping}
+                                  debugInfo={agentDetail.debug_info
+                                    .filter((item): item is { created_at: string; model_id: string; content: string } => 
+                                      !!item.created_at && !!item.model_id && !!item.content
+                                    )
+                                    .map((item) => ({
+                                      created_at: item.created_at,
+                                      model_id: item.model_id,
+                                      content: item.content,
+                                    }))}
+                                  modelMapping={Object.fromEntries(
+                                    Object.entries(modelMapping).map(([id, model]) => [
+                                      id,
+                                      {
+                                        name: model.name ?? "",
+                                        description: model.description ?? "",
+                                      },
+                                    ])
+                                  )}
                                 />
                               ) : undefined
                             }

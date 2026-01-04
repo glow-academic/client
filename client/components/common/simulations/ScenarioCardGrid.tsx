@@ -13,11 +13,9 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type SimulationsListOut = OutputOf<"/api/v4/simulations/list", "post">;
-type ScenarioMappingItem = "scenario_mapping" extends keyof SimulationsListOut
-  ? SimulationsListOut["scenario_mapping"] extends Record<string, infer T>
-    ? T
-    : never
-  : never;
+type ScenarioMappingItem = SimulationsListOut extends { scenario_mapping: Record<string, infer T> }
+  ? T
+  : { id: string; name?: string; description?: string };
 
 export interface ScenarioCardGridProps<
   T extends ScenarioMappingItem = ScenarioMappingItem,
@@ -51,16 +49,16 @@ export function ScenarioCardGrid<
         const mappingItem = scenarioMapping[id];
         if (!mappingItem) return null;
         return {
-          id,
           ...mappingItem,
+          id, // Ensure id matches the key
         } as { id: string } & T;
       })
       .filter((scenario): scenario is { id: string } & T => scenario !== null);
 
     // Sort by name
     return scenarios.sort((a, b) => {
-      const aName = ("name" in a ? a.name : null) || "";
-      const bName = ("name" in b ? b.name : null) || "";
+      const aName = (a as { name?: string }).name || "";
+      const bName = (b as { name?: string }).name || "";
       return aName.localeCompare(bName);
     });
   }, [validScenarioIds, scenarioMapping]);
@@ -73,8 +71,8 @@ export function ScenarioCardGrid<
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((scenario) => {
-        const name = ("name" in scenario ? scenario.name : null) || "";
-        const description = ("description" in scenario ? scenario.description : null) || "";
+        const name = (scenario as { name?: string }).name || "";
+        const description = (scenario as { description?: string }).description || "";
         return (
           name.toLowerCase().includes(searchLower) ||
           description.toLowerCase().includes(searchLower)
@@ -95,8 +93,8 @@ export function ScenarioCardGrid<
         return aIndex - bIndex;
       }
       // Both unselected - sort by name
-      const aName = ("name" in a ? a.name : null) || "";
-      const bName = ("name" in b ? b.name : null) || "";
+      const aName = (a as { name?: string }).name || "";
+      const bName = (b as { name?: string }).name || "";
       return aName.localeCompare(bName);
     });
   }, [baseScenarios, searchTerm, selectedScenarioIds]);

@@ -58,8 +58,8 @@ type ChatsArray = NonNullable<AttemptFullOut["chats"]>;
 type ChatDataType = ChatsArray extends Array<infer T> ? T : never;
 type Chat = ChatDataType["chat"];
 type ScenarioItem = ChatDataType["scenario"];
-type ScenarioDocumentItem = AttemptFullOut["scenarioDocuments"][number];
-type DynamicRubric = ChatDataType["dynamicRubric"];
+type ScenarioDocumentItem = NonNullable<AttemptFullOut["scenario_documents"]>[number];
+type DynamicRubric = ChatDataType["dynamic_rubric"];
 type AttemptItem = AttemptFullOut["attempt"];
 type SimulationItem = AttemptFullOut["simulation"];
 
@@ -198,10 +198,10 @@ export default function ActiveAttemptView({
                                   ? scenariosByChatId[displayChat.id]
                                   : scenario;
                                 const shouldShowProblemStatement =
-                                  currentScenario?.showProblemStatement !== false;
+                                  currentScenario?.show_problem_statement !== false;
                                 return shouldShowProblemStatement ? (
                                   <span className="font-medium">
-                                    {scenario?.problemStatement ||
+                                    {scenario?.problem_statement ||
                                       scenario?.name ||
                                       currentChat?.title}
                                   </span>
@@ -216,10 +216,10 @@ export default function ActiveAttemptView({
                           <div className="flex items-start justify-end gap-2">
                             <div className="flex items-center gap-4">
                               {/* Hide completed badge logic in infinite mode */}
-                              {!attempt?.infiniteMode &&
+                              {!attempt?.infinite_mode &&
                                 currentChat?.completed &&
                                 expectedChatCount ===
-                                  chats.filter((chat) => chat.completed)
+                                  chats.filter((chat) => chat?.completed)
                                     .length && (
                                   <Badge variant="default">Completed</Badge>
                                 )}
@@ -227,13 +227,13 @@ export default function ActiveAttemptView({
 
                             <div className="flex items-center gap-2">
                               {/* Objectives Toggle - only show if simulation has objectives enabled, scenario has showObjectives enabled, and current chat scenario has objectives */}
-                              {simulation?.objectivesEnabled &&
+                              {simulation?.objectives_enabled &&
                                 (() => {
                                   const currentScenario = displayChat?.id
                                     ? scenariosByChatId[displayChat.id]
                                     : scenario;
                                   const shouldShowObjectives =
-                                    currentScenario?.showObjectives !== false;
+                                    currentScenario?.show_objectives !== false;
                                   const hasObjectives =
                                     currentScenario?.objectives &&
                                     currentScenario.objectives.length > 0;
@@ -274,10 +274,10 @@ export default function ActiveAttemptView({
 
                               {(() => {
                                 const currentChatDocIds =
-                                  displayChat?.documentIds || [];
+                                  displayChat?.document_ids || [];
                                 const hasDocumentsForCurrentChat =
                                   scenarioDocuments?.some((doc) =>
-                                    currentChatDocIds.includes(doc.document_id),
+                                    doc.document_id && currentChatDocIds.includes(doc.document_id),
                                   );
                                 return hasDocumentsForCurrentChat;
                               })() && (
@@ -317,11 +317,11 @@ export default function ActiveAttemptView({
                                 <TooltipTrigger asChild>
                                   <div
                                     className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
-                                      !attempt?.infiniteMode &&
+                                      !attempt?.infinite_mode &&
                                       currentChat?.completed &&
                                       currentDynamicRubric &&
                                       expectedChatCount ===
-                                        chats.filter((chat) => chat.completed)
+                                        chats.filter((chat) => chat?.completed)
                                           .length
                                         ? currentDynamicRubric?.passed
                                           ? "bg-green-100 dark:bg-green-900/30"
@@ -329,16 +329,16 @@ export default function ActiveAttemptView({
                                         : "bg-muted"
                                     }`}
                                   >
-                                    {attempt?.infiniteMode ? (
+                                    {attempt?.infinite_mode ? (
                                       <InfinityIcon className="h-4 w-4 flex-shrink-0" />
                                     ) : (
                                       <Clock className="h-4 w-4 flex-shrink-0" />
                                     )}
                                     <span
                                       className={`text-sm font-medium ${
-                                        attempt?.infiniteMode
+                                        attempt?.infinite_mode
                                           ? ""
-                                          : simulation?.timeLimit &&
+                                          : simulation?.time_limit &&
                                               timer.remaining !== null &&
                                               timer.remaining < 0
                                             ? "text-red-500"
@@ -346,13 +346,13 @@ export default function ActiveAttemptView({
                                       }`}
                                       data-testid="timer"
                                     >
-                                      {attempt?.infiniteMode
-                                        ? simulation?.timeLimit
+                                      {attempt?.infinite_mode
+                                        ? simulation?.time_limit
                                           ? formatTime(
                                               Math.max(timer.remaining || 0, 0),
                                             )
                                           : formatTime(timer.elapsed)
-                                        : simulation?.timeLimit &&
+                                        : simulation?.time_limit &&
                                             timer.remaining !== null
                                           ? formatTime(timer.remaining)
                                           : formatTime(timer.elapsed)}
@@ -360,11 +360,11 @@ export default function ActiveAttemptView({
                                     {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
                                   </div>
                                 </TooltipTrigger>
-                                {!attempt?.infiniteMode &&
+                                {!attempt?.infinite_mode &&
                                   currentChat?.completed &&
                                   currentDynamicRubric &&
                                   expectedChatCount ===
-                                    chats.filter((chat) => chat.completed)
+                                    chats.filter((chat) => chat?.completed)
                                       .length && (
                                     <TooltipContent>
                                       <p>
@@ -373,7 +373,7 @@ export default function ActiveAttemptView({
                                           : "Failed"}
                                         ({currentDynamicRubric?.score}/
                                         {
-                                          currentDynamicRubric?.totalPossiblePoints
+                                          currentDynamicRubric?.total_possible_points
                                         }
                                         )
                                       </p>
@@ -386,13 +386,13 @@ export default function ActiveAttemptView({
                       </div>
 
                       {/* Objectives Collapsible Content - hide in grading mode */}
-                      {simulation?.objectivesEnabled &&
+                      {simulation?.objectives_enabled &&
                         (() => {
                           const currentScenario = displayChat?.id
                             ? scenariosByChatId[displayChat.id]
                             : scenario;
                           const shouldShowObjectives =
-                            currentScenario?.showObjectives !== false;
+                            currentScenario?.show_objectives !== false;
                           const objectives = currentScenario?.objectives || [];
                           return shouldShowObjectives && objectives.length > 0;
                         })() &&
@@ -427,7 +427,7 @@ export default function ActiveAttemptView({
                     {/* Messages Area */}
                     {/* Progress Bar at the very top */}
                     {/* Hide progress bar in infinite mode */}
-                    {!attempt?.infiniteMode && expectedChatCount > 1 && (
+                    {!attempt?.infinite_mode && expectedChatCount > 1 && (
                       <div className="p-0">
                         {/* Progress bar would go here if needed */}
                       </div>
@@ -439,27 +439,27 @@ export default function ActiveAttemptView({
                         currentChat
                           ? {
                               id: currentChat.id || "",
-                              completed: currentChat.completed,
+                              ...(typeof currentChat.completed === "boolean" ? { completed: currentChat.completed } : {}),
                             }
                           : null
                       }
                       sendMessage={sendMessage}
                       isSendingMessage={isSendingMessage}
                       isActive={!timer.expired}
-                      simulation={simulation}
+                      simulation={simulation ? { ...(typeof simulation.time_limit === "number" ? { timeLimit: simulation.time_limit } : {}), ...(typeof simulation.practice_simulation === "boolean" ? { practiceSimulation: simulation.practice_simulation } : {}) } : null}
                       currentChatHints={currentChatHints}
                       personas={personas ?? []}
-                      scenario={scenario}
+                      scenario={scenario ? { personaName: scenario.persona_name, personaIcon: scenario.persona_icon, personaColor: scenario.persona_color } : null}
                       backgroundImage={
                         (() => {
                           const currentScenario = displayChat?.id
                             ? scenariosByChatId[displayChat.id]
                             : scenario;
                           const shouldShowImages =
-                            currentScenario?.showImages !== false;
+                            currentScenario?.show_images !== false;
                           return shouldShowImages &&
-                            currentScenario?.backgroundImage
-                            ? currentScenario.backgroundImage
+                            currentScenario?.background_image
+                            ? currentScenario.background_image
                             : null;
                         })()
                       }
@@ -485,7 +485,7 @@ export default function ActiveAttemptView({
                       currentChat
                         ? {
                             id: currentChat.id || "",
-                            completed: currentChat.completed,
+                            ...(typeof currentChat.completed === "boolean" ? { completed: currentChat.completed } : {}),
                           }
                         : null
                     }
@@ -494,8 +494,8 @@ export default function ActiveAttemptView({
                     isSendingMessage={isSendingMessage}
                     isStoppingMessage={isStoppingMessage}
                     isConnected={isConnected}
-                    simulation={simulation}
-                    scenario={scenario}
+                    simulation={simulation ? { ...(typeof simulation.practice_simulation === "boolean" ? { practiceSimulation: simulation.practice_simulation } : {}), ...(typeof simulation.copy_paste_allowed === "boolean" ? { copyPasteAllowed: simulation.copy_paste_allowed } : {}) } : null}
+                    scenario={scenario ? { ...(typeof scenario.copy_paste_allowed === "boolean" ? { copyPasteAllowed: scenario.copy_paste_allowed } : {}), ...(typeof scenario.text_enabled === "boolean" ? { textEnabled: scenario.text_enabled } : {}), ...(typeof scenario.audio_enabled === "boolean" ? { audioEnabled: scenario.audio_enabled } : {}) } : null}
                     readOnly={false}
                   />
                 </div>
@@ -508,10 +508,10 @@ export default function ActiveAttemptView({
         {showDocuments &&
           (() => {
             // Filter documents for current chat's scenario
-            const currentChatDocIds = displayChat?.documentIds || [];
+            const currentChatDocIds = displayChat?.document_ids || [];
             const filteredDocs =
               scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id),
+                doc.document_id && currentChatDocIds.includes(doc.document_id),
               ) || [];
 
             return (
@@ -530,7 +530,26 @@ export default function ActiveAttemptView({
                         {filteredDocs.length > 1 && (
                           <div className="p-2 pb-1.5 border-b">
                             <DocumentSelect
-                              documents={filteredDocs}
+                              documents={filteredDocs
+                                .filter((doc): doc is ScenarioDocumentItem & { document_id: string } => 
+                                  !!doc.document_id
+                                )
+                                .map((doc) => ({
+                                  document_id: doc.document_id!,
+                                  name: doc.name || "",
+                                  updated_at: doc.updated_at || "",
+                                  extension: doc.extension || "",
+                                  scenario_ids: doc.scenario_ids || [],
+                                  can_edit: doc.can_edit ?? false,
+                                  can_delete: doc.can_delete ?? false,
+                                  active: doc.active ?? false,
+                                  department_ids: doc.department_ids,
+                                  upload_id: doc.upload_id,
+                                  field_ids: doc.field_ids || [],
+                                  valid_field_ids: null,
+                                  active_scenario_count: null,
+                                  total_scenario_links: null,
+                                }))}
                               selectedDocumentId={selectedDocumentId}
                               onDocumentSelect={setSelectedDocumentId}
                             />
@@ -540,15 +559,30 @@ export default function ActiveAttemptView({
                         <div className="flex-1 min-h-0 px-1 py-3">
                           {selectedDocumentId &&
                             (() => {
-                              const document =
-                                filteredDocs.find(
-                                  (doc) =>
-                                    doc.document_id === selectedDocumentId,
-                                ) || filteredDocs[0];
+                const document =
+                  filteredDocs.find(
+                    (doc) =>
+                      doc.document_id && doc.document_id === selectedDocumentId,
+                  ) || (filteredDocs[0]?.document_id ? filteredDocs[0] : null);
                               return document ? (
                                 <DocumentViewer
                                   key={selectedDocumentId}
-                                  document={document}
+                                  document={{
+                                    document_id: document.document_id!,
+                                    name: document.name || "",
+                                    updated_at: document.updated_at || "",
+                                    extension: document.extension || "",
+                                    scenario_ids: document.scenario_ids || [],
+                                    can_edit: document.can_edit ?? false,
+                                    can_delete: document.can_delete ?? false,
+                                    active: document.active ?? false,
+                                    department_ids: document.department_ids,
+                                    upload_id: document.upload_id,
+                                    field_ids: document.field_ids || [],
+                                    valid_field_ids: null,
+                                    active_scenario_count: null,
+                                    total_scenario_links: null,
+                                  }}
                                 />
                               ) : null;
                             })()}
@@ -571,15 +605,15 @@ export default function ActiveAttemptView({
           <DialogHeader>
             <DialogTitle>
               {(() => {
-                const currentChatDocIds = displayChat?.documentIds || [];
+                const currentChatDocIds = displayChat?.document_ids || [];
                 const filteredDocs =
                   scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id),
+                    doc.document_id && currentChatDocIds.includes(doc.document_id),
                   ) || [];
                 return (
-                  filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId,
-                  )?.name ||
+                  (selectedDocumentId ? filteredDocs.find(
+                    (doc) => doc.document_id && doc.document_id === selectedDocumentId,
+                  )?.name : null) ||
                   filteredDocs[0]?.name ||
                   "Document"
                 );
@@ -590,15 +624,34 @@ export default function ActiveAttemptView({
 
           {/* Document selector (if multiple documents) */}
           {(() => {
-            const currentChatDocIds = displayChat?.documentIds || [];
+            const currentChatDocIds = displayChat?.document_ids || [];
             const filteredDocs =
               scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id),
+                doc.document_id && currentChatDocIds.includes(doc.document_id),
               ) || [];
             return filteredDocs.length > 1 ? (
               <div className="pb-3">
                 <DocumentSelect
-                  documents={filteredDocs}
+                  documents={filteredDocs
+                    .filter((doc): doc is ScenarioDocumentItem & { document_id: string } => 
+                      !!doc.document_id
+                    )
+                                .map((doc) => ({
+                                  document_id: doc.document_id!,
+                                  name: doc.name || "",
+                                  updated_at: doc.updated_at || "",
+                                  extension: doc.extension || "",
+                                  scenario_ids: doc.scenario_ids || [],
+                                  can_edit: doc.can_edit ?? false,
+                                  can_delete: doc.can_delete ?? false,
+                                  active: doc.active ?? false,
+                                  department_ids: doc.department_ids,
+                                  upload_id: doc.upload_id,
+                                  field_ids: doc.field_ids || [],
+                                  valid_field_ids: null,
+                                  active_scenario_count: null,
+                                  total_scenario_links: null,
+                                }))}
                   selectedDocumentId={selectedDocumentId}
                   onDocumentSelect={setSelectedDocumentId}
                 />
@@ -610,17 +663,35 @@ export default function ActiveAttemptView({
           {selectedDocumentId && (
             <div className="flex-1 overflow-auto">
               {(() => {
-                const currentChatDocIds = displayChat?.documentIds || [];
+                const currentChatDocIds = displayChat?.document_ids || [];
                 const filteredDocs =
                   scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id),
+                    doc.document_id && currentChatDocIds.includes(doc.document_id),
                   ) || [];
                 const document =
                   filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId,
+                    (doc) => doc.document_id && doc.document_id === selectedDocumentId,
                   ) || filteredDocs[0];
                 return document ? (
-                  <DocumentViewer document={document} bare={true} />
+                  <DocumentViewer
+                    document={{
+                      document_id: document.document_id!,
+                      name: document.name || "",
+                      updated_at: document.updated_at || "",
+                      extension: document.extension || "",
+                      scenario_ids: document.scenario_ids || [],
+                      can_edit: document.can_edit ?? false,
+                      can_delete: document.can_delete ?? false,
+                      active: document.active ?? false,
+                      department_ids: document.department_ids,
+                      upload_id: document.upload_id,
+                      field_ids: document.field_ids || [],
+                      valid_field_ids: null,
+                      active_scenario_count: null,
+                      total_scenario_links: null,
+                    }}
+                    bare={true}
+                  />
                 ) : null;
               })()}
             </div>

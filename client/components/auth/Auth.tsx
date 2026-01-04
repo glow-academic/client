@@ -686,9 +686,12 @@ function AuthComponent({
       // Prepare auth items for submission in order specified by authItemIds
       const auth_items = draftState.authItemIds.map((itemId, index) => {
         const itemData = draftState.authItemData[itemId];
+        if (!itemData) {
+          throw new Error(`Auth item data not found for itemId: ${itemId}`);
+        }
         return {
-          name: itemData.name,
-          description: itemData.description || "",
+          name: itemData.name ?? "",
+          description: itemData.description ?? "",
           encrypted: draftState.authItemEncryptedStates[itemId] ?? false,
           position: index + 1,
           active: draftState.authItemActiveStates[itemId] ?? true,
@@ -1033,6 +1036,7 @@ function AuthComponent({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {itemIds.map((itemId) => {
                   const item = itemData[itemId];
+                  if (!item) return null;
                   const active = activeStates[itemId] ?? true;
 
                   return (

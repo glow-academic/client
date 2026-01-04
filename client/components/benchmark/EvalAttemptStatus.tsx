@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -28,14 +28,14 @@ import type {
 } from "@/app/(main)/benchmark/a/[attemptId]/page";
 
 type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/eval", "post">;
+type PatchAttemptDraftIn = InputOf<"/api/v4/attempts/draft", "patch">;
+type PatchAttemptDraftOut = OutputOf<"/api/v4/attempts/draft", "patch">;
 
 export interface EvalAttemptStatusProps {
   attemptId: string;
   attemptData: EvalAttemptFullOut;
   agentsList: AgentsListOut;
-  patchAttemptDraftAction?: (
-    input: Parameters<typeof AgentConfigCards>[0]["patchAttemptDraftAction"]
-  ) => Promise<ReturnType<NonNullable<typeof AgentConfigCards>[0]["patchAttemptDraftAction"]>>;
+  patchAttemptDraftAction?: (input: PatchAttemptDraftIn) => Promise<PatchAttemptDraftOut>;
 }
 
 export default function EvalAttemptStatus({
@@ -50,9 +50,9 @@ export default function EvalAttemptStatus({
   const [stoppingRunIds, setStoppingRunIds] = useState<Set<string>>(new Set());
   
   // Attempt and eval info
-  const attempt = attemptData.attempt;
-  const evalInfo = attemptData.eval;
-  const [infiniteMode] = useState(attempt.infinite_mode || false);
+  const attempt = attemptData.attempt ?? null;
+  const evalInfo = attemptData.eval ?? null;
+  const [infiniteMode] = useState(attempt?.infinite_mode || false);
 
     // Join benchmark room on mount for real-time updates
   useEffect(() => {
@@ -324,7 +324,7 @@ export default function EvalAttemptStatus({
     }
   };
 
-  const statusSummary = attemptData.status_summary;
+  const statusSummary = attemptData.status_summary ?? null;
   const notStartedRuns = useMemo(
     () => runs.filter((run) => run.status === "not_started"),
     [runs]
@@ -335,59 +335,67 @@ export default function EvalAttemptStatus({
   return (
     <div className="space-y-6">
       {/* Eval Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{evalInfo.name}</CardTitle>
-          <p className="text-sm text-muted-foreground mt-2">
-            {evalInfo.description}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Rubric: </span>
-              <span className="font-medium">{evalInfo.rubric_name}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Total Runs: </span>
-              <span className="font-medium">{statusSummary.total}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Completed: </span>
-              <span className="font-medium text-green-600">
-                {statusSummary.completed}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">In Progress: </span>
-              <span className="font-medium text-blue-600">
-                {statusSummary.in_progress}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Not Started: </span>
-              <span className="font-medium text-gray-600">
-                {statusSummary.not_started}
-              </span>
-            </div>
-            {infiniteMode && (
+      {evalInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{evalInfo.name ?? "Unknown Eval"}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              {evalInfo.description ?? ""}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground">Infinite Mode: </span>
-                <Badge variant="secondary">Enabled</Badge>
+                <span className="text-muted-foreground">Rubric: </span>
+                <span className="font-medium">{evalInfo.rubric_name ?? "N/A"}</span>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              {statusSummary && (
+                <>
+                  <div>
+                    <span className="text-muted-foreground">Total Runs: </span>
+                    <span className="font-medium">{statusSummary.total ?? 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Completed: </span>
+                    <span className="font-medium text-green-600">
+                      {statusSummary.completed ?? 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">In Progress: </span>
+                    <span className="font-medium text-blue-600">
+                      {statusSummary.in_progress ?? 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Not Started: </span>
+                    <span className="font-medium text-gray-600">
+                      {statusSummary.not_started ?? 0}
+                    </span>
+                  </div>
+                </>
+              )}
+              {infiniteMode && (
+                <div>
+                  <span className="text-muted-foreground">Infinite Mode: </span>
+                  <Badge variant="secondary">Enabled</Badge>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Agent Configuration Cards */}
-      <AgentConfigCards
-        attemptId={attemptId}
-        evalInfo={evalInfo}
-        agentsList={agentsList}
-        isDynamic={evalInfo.dynamic}
-        patchAttemptDraftAction={patchAttemptDraftAction}
-      />
+      {evalInfo && (
+        <AgentConfigCards
+          attemptId={attemptId}
+          evalInfo={evalInfo}
+          agentsList={agentsList}
+          isDynamic={evalInfo.dynamic ?? false}
+          {...(patchAttemptDraftAction ? { patchAttemptDraftAction } : {})}
+        />
+      )}
 
       {/* Runs Table */}
       <Card>
@@ -430,22 +438,22 @@ export default function EvalAttemptStatus({
                 runs.map((run) => (
                   <TableRow key={run.run_id}>
                     <TableCell className="font-mono text-xs">
-                      {run.run_id.substring(0, 8)}...
+                      {run.run_id ? `${run.run_id.substring(0, 8)}...` : "N/A"}
                     </TableCell>
                     <TableCell>{run.model_name || "N/A"}</TableCell>
                     <TableCell>
                       {run.agent_name || run.persona_name || "N/A"}
                     </TableCell>
-                    <TableCell>{getStatusBadge(run.status)}</TableCell>
+                    <TableCell>{getStatusBadge(run.status || "")}</TableCell>
                     <TableCell>
                       {run.status === "completed" && run.grade_score !== null
                         ? `${run.grade_score}${run.grade_passed ? " ✓" : ""}`
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      {run.status === "not_started" && (
+                      {run.status === "not_started" && run.run_id && (
                         <Button
-                          onClick={() => handleStartRun(run.run_id)}
+                          onClick={() => handleStartRun(run.run_id!)}
                           variant="outline"
                           size="sm"
                           disabled={
@@ -456,9 +464,9 @@ export default function EvalAttemptStatus({
                           {startingRunIds.has(run.run_id) ? "Starting..." : "Start"}
                         </Button>
                       )}
-                      {run.status === "in_progress" && (
+                      {run.status === "in_progress" && run.run_id && (
                         <Button
-                          onClick={() => handleStopRun(run.run_id)}
+                          onClick={() => handleStopRun(run.run_id!)}
                           variant="destructive"
                           size="sm"
                           disabled={

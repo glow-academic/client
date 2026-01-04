@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Bug, Check, Eye, RotateCcw, Trash2 } from "lucide-react";
-import AgentDebugInfo from "./AgentDebugInfo";
+import { useMemo } from "react";
+import AgentDebugInfo, { type ModelMapping } from "./AgentDebugInfo";
 
 type StepStatus = "pending" | "active" | "completed";
 
@@ -89,6 +90,23 @@ export function AgentPromptSection({
   isReadonly,
   errors,
 }: AgentPromptSectionProps) {
+  // Build model mapping from models array (similar to Agent.tsx)
+  const modelMapping = useMemo((): ModelMapping => {
+    if (!agentDetail?.models || !Array.isArray(agentDetail.models)) {
+      return {};
+    }
+    const mapping: ModelMapping = {};
+    agentDetail.models.forEach((model) => {
+      if (model.model_id) {
+        mapping[model.model_id] = {
+          name: model.name || "",
+          description: model.description || "",
+        };
+      }
+    });
+    return mapping;
+  }, [agentDetail?.models]);
+
   return (
     <Card
       className={cn(
@@ -269,10 +287,24 @@ export function AgentPromptSection({
                 debugContent={
                   isEditMode &&
                   agentDetail &&
-                  effectiveProfile?.role === "superadmin" ? (
+                  effectiveProfile?.role === "superadmin" &&
+                  agentDetail.debug_info &&
+                  Array.isArray(agentDetail.debug_info) ? (
                     <AgentDebugInfo
-                      debugInfo={agentDetail.debug_info}
-                      modelMapping={agentDetail.model_mapping}
+                      debugInfo={
+                        agentDetail.debug_info && Array.isArray(agentDetail.debug_info)
+                          ? agentDetail.debug_info
+                              .filter((item): item is { created_at: string; model_id: string; content: string } => 
+                                !!item.created_at && !!item.model_id && !!item.content
+                              )
+                              .map((item) => ({
+                                created_at: item.created_at!,
+                                model_id: item.model_id!,
+                                content: item.content!,
+                              }))
+                          : []
+                      }
+                      modelMapping={modelMapping}
                     />
                   ) : undefined
                 }

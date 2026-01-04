@@ -55,11 +55,20 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type SimulationsListOut = OutputOf<"/api/v4/simulations/list", "post">;
-type ScenarioMappingItem = "scenario_mapping" extends keyof SimulationsListOut
-  ? SimulationsListOut["scenario_mapping"] extends Record<string, infer T>
-    ? T
-    : never
-  : never;
+type ScenarioMappingType = SimulationsListOut extends { scenario_mapping?: infer T } ? T : never;
+type ScenarioMappingItem = ScenarioMappingType extends Record<string, infer T> ? T : never;
+
+// Constraint type for scenario items with required properties
+export interface ScenarioItem {
+  id: string;
+  name?: string | null;
+  persona_ids?: string[] | null;
+  persona_mapping?: Record<string, { name?: string; color?: string; icon?: string }> | null;
+  document_ids?: string[] | null;
+  document_mapping?: Record<string, { name?: string; description?: string }> | null;
+  parameter_item_ids?: string[] | null;
+  parameter_item_mapping?: Record<string, { name?: string; parameter_name?: string; description?: string }> | null;
+}
 
 // Filter key constants
 const NO_PERSONA_KEY = "__no_persona__";
@@ -67,7 +76,7 @@ const NO_DOCUMENTS_KEY = "__no_documents__";
 const NO_PARAMS_KEY = "__no_params__";
 
 export interface ScenarioPickerProps<
-  T extends ScenarioMappingItem = ScenarioMappingItem,
+  T extends ScenarioItem = ScenarioItem,
 > extends PopoverProps {
   scenarioMapping: Record<string, T>;
   validScenarioIds: string[];
@@ -85,7 +94,7 @@ export interface ScenarioPickerProps<
 }
 
 export function ScenarioPicker<
-  T extends ScenarioMappingItem = ScenarioMappingItem,
+  T extends ScenarioItem = ScenarioItem,
 >({
   scenarioMapping,
   validScenarioIds,
@@ -117,14 +126,14 @@ export function ScenarioPicker<
         const scenario = scenarioMapping[id];
         if (!scenario) return null;
         return {
-          id,
           ...scenario,
-        };
+          id: scenario.id || id,
+        } as { id: string } & T;
       })
       .filter((scenario): scenario is { id: string } & T => scenario !== null);
 
     // Sort by name
-    return scenarios.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return scenarios.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
   }, [validScenarioIds, scenarioMapping]);
 
   // Build persona filter options
@@ -144,9 +153,9 @@ export function ScenarioPicker<
           if (!persona) return;
           const existing = personaMap.get(personaId);
           personaMap.set(personaId, {
-            name: persona.name,
-            color: persona.color,
-            icon: persona.icon,
+            name: persona.name || "",
+            color: persona.color || "",
+            icon: persona.icon || "",
             count: (existing?.count || 0) + 1,
           });
         });
@@ -460,12 +469,12 @@ export function ScenarioPicker<
                 key={id}
                 className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
               >
-                <span>{scenario.name}</span>
+                <span>{scenario.name || "Unnamed Scenario"}</span>
                 <button
                   type="button"
                   onClick={(e) => handleRemoveItem(id, e)}
                   className="text-muted-foreground hover:text-destructive"
-                  aria-label={`Remove ${scenario.name}`}
+                  aria-label={`Remove ${scenario.name || "scenario"}`}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -506,7 +515,7 @@ export function ScenarioPicker<
                   {peekedScenario?.name || "Scenario selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
-                  {peekedScenario?.description || "No description available"}
+                  {("description" in (peekedScenario || {}) ? (peekedScenario as { description?: string | null }).description : null) || "No description available"}
                 </div>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {peekedScenario && (
@@ -833,9 +842,9 @@ function ScenarioItem<T extends ScenarioMappingItem>({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Play className="h-4 w-4 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="truncate">{scenario.name}</div>
+            <div className="truncate">{("name" in scenario ? (scenario.name ?? "") : "") || "Unnamed Scenario"}</div>
             <div className="mt-1 text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-              {scenario.description || "No description available"}
+              {(scenario as { description?: string | null }).description || "No description available"}
             </div>
           </div>
         </div>

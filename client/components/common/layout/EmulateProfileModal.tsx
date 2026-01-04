@@ -67,13 +67,13 @@ export function EmulateProfileModal({
   // Search when user types (debounced)
   const handleSearch = useCallback(
     async (query: string) => {
-      if (!activeProfile?.profile_id) return;
+      if (!activeProfile?.id) return;
       setIsLoading(true);
       try {
         const data = await searchSimulatableProfiles({
           body: {
-            query: query || null,
-            limit: 200,
+            query: query ?? null,
+            limit_count: 200,
           },
         });
         // profileId comes from X-Profile-Id header automatically
@@ -228,9 +228,11 @@ export function EmulateProfileModal({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.map((profile) => {
-                    const profileId = profile.profile_id || "";
-                    const isSelected = selectedProfileId === profileId;
+                  {searchResults
+                    .filter((profile) => profile.profile_id !== null)
+                    .map((profile) => {
+                      const profileId = String(profile.profile_id!);
+                      const isSelected = selectedProfileId === profileId;
                     return (
                       <TableRow
                         key={profileId}

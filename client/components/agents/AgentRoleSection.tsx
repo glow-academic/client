@@ -51,17 +51,16 @@ const getRequiredModalitiesForRole = (
   output: string[];
 } => {
   switch (roleId) {
-    case "simulation-text":
+    case "simulation":
     case "hint":
     case "question":
-    case "outline":
     case "scenario":
     case "grade":
     case "document":
     case "classify":
     case "eval":
       return { input: ["text"], output: ["text"] };
-    case "simulation-voice":
+    case "voice":
       return { input: ["text", "audio"], output: ["text", "audio"] };
     case "image":
       return { input: [], output: ["image"] };
@@ -102,9 +101,9 @@ export function AgentRoleSection({
       const isAudioModel = hasAudioInput && hasAudioOutput;
 
       roles = roles.filter((role) => {
-        // If audio model, only allow simulation-voice
+        // If audio model, only allow voice (simulation-voice was migrated to voice)
         if (isAudioModel) {
-          return role.id === "simulation-voice";
+          return role.id === "voice";
         }
 
         const requiredModalities = getRequiredModalitiesForRole(role.id);

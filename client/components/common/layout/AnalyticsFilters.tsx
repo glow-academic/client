@@ -222,22 +222,29 @@ export function AnalyticsFilters({
   };
 
   // Convert departments to the format expected by DepartmentSelector
-  const departmentOptions = departments.map((department) => {
-    const departmentId = "department_id" in department ? department.department_id : null;
-    return {
-      id: departmentId || "",
-      title: department.title,
-      ...(department.description && { description: department.description }),
-    };
-  }).filter((dept) => dept.id);
+  const departmentOptions = departments
+    .filter((department) => {
+      const departmentId = "department_id" in department ? department.department_id : null;
+      const departmentName = "name" in department ? department.name : null;
+      return departmentId && departmentName;
+    })
+    .map((department) => {
+      const departmentId = "department_id" in department ? department.department_id : null;
+      const departmentName = "name" in department ? department.name : null;
+      return {
+        id: departmentId!,
+        title: departmentName as string,
+        ...(("description" in department && department.description) && { description: department.description }),
+      };
+    });
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
     selectedDepartmentIds.includes(department.id),
   );
 
-  const handleDepartmentSelect = (departments: typeof departmentOptions) => {
-    setSelectedDepartmentIds(departments.map((d) => d.id));
+  const handleDepartmentSelect = (selectedDepts: typeof departmentOptions) => {
+    setSelectedDepartmentIds(selectedDepts.map((d) => d.id));
   };
 
   const handleRoleSelect = (roles: ProfileRole[]) => {

@@ -74,7 +74,7 @@ export function AgentConfigCards({
 
     agentIds.forEach((agentId) => {
       // Find agent in agentsList to get defaults
-      const agent = agentsList.agents.find((a) => a.agent_id === agentId);
+      const agent = (agentsList.agents ?? []).find((a) => a.agent_id === agentId);
       configs[agentId] = {
         model_id: agent?.model_id || null,
         provider_id: null,
@@ -180,16 +180,27 @@ export function AgentConfigCards({
   // Handle config change for a specific agent
   const handleConfigChange = useCallback(
     (agentId: string, updates: Partial<AgentConfig>) => {
-      setDraftState((prev) => ({
-        ...prev,
-        agent_configs: {
-          ...prev.agent_configs,
-          [agentId]: {
-            ...prev.agent_configs[agentId],
-            ...updates,
+      setDraftState((prev) => {
+        const currentConfig = prev.agent_configs[agentId] || {
+          model_id: null,
+          provider_id: null,
+          base_url: null,
+          system_prompt: "",
+          temperature_level_id: null,
+          reasoning_level_id: null,
+          voice_ids: [],
+        };
+        return {
+          ...prev,
+          agent_configs: {
+            ...prev.agent_configs,
+            [agentId]: {
+              ...currentConfig,
+              ...updates,
+            },
           },
-        },
-      }));
+        };
+      });
     },
     []
   );
@@ -232,10 +243,10 @@ export function AgentConfigCards({
       <CardContent>
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
           {agentIds.map((agentId) => {
-            const agent = agentsList.agents.find((a) => a.agent_id === agentId);
+            const agent = (agentsList.agents ?? []).find((a) => a.agent_id === agentId);
             const agentName = agent?.name || `Agent ${agentId.substring(0, 8)}`;
             const isLoading = loadingAgents[agentId];
-            const agentDetail = agentDetails[agentId];
+            const agentDetail = agentDetails[agentId] ?? null;
             const agentConfig = draftState.agent_configs[agentId] || {
               model_id: null,
               provider_id: null,

@@ -16,10 +16,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
-  parseAsBoolean,
   parseAsString,
   useQueryStates,
-  type Parser,
 } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -46,11 +44,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  GenericForm,
-  type StepStatus,
-} from "@/components/common/forms/GenericForm";
-import { StepCard } from "@/components/common/forms/StepCard";
+// StepStatus type defined locally to avoid conflict
+type StepStatus = "pending" | "active" | "completed";
 import {
   Tooltip,
   TooltipContent,
@@ -306,10 +301,12 @@ export default function Settings({
       data.provider_ids ||
       [];
     const providerEnabledState: Record<string, boolean> = {};
-    allProviderIds.forEach((providerId) => {
-      providerEnabledState[providerId] =
-        providerEnabled[providerId] ?? linkedProviderIds.includes(providerId);
-    });
+    allProviderIds
+      .filter((id): id is string => id !== null && id !== undefined)
+      .forEach((providerId) => {
+        providerEnabledState[providerId] =
+          providerEnabled[providerId] ?? linkedProviderIds.includes(providerId);
+      });
 
     // Initialize auth enabled state from all_auths and auths
     const allAuthIds =
@@ -321,10 +318,12 @@ export default function Settings({
       data.auth_ids ||
       [];
     const authEnabledState: Record<string, boolean> = {};
-    allAuthIds.forEach((authId) => {
-      authEnabledState[authId] =
-        authEnabled[authId] ?? linkedAuthIds.includes(authId);
-    });
+    allAuthIds
+      .filter((id): id is string => id !== null && id !== undefined)
+      .forEach((authId) => {
+        authEnabledState[authId] =
+          authEnabled[authId] ?? linkedAuthIds.includes(authId);
+      });
 
     return {
       name: data.name || "",
@@ -522,9 +521,9 @@ export default function Settings({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primary_department_id ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primary_department_id]
   );
   const [selectedDepartmentIds] = useState<string[]>(defaultDepartmentIds);
 
@@ -553,6 +552,7 @@ export default function Settings({
     if (selectedDepartmentIds.length === 0) {
       return settingsList;
     }
+    if (!settingsList) return [];
     return settingsList.filter((setting) => {
       if (!setting.department_ids || setting.department_ids.length === 0) {
         return true;
@@ -566,8 +566,11 @@ export default function Settings({
   // Build settings mapping for picker (using filtered list)
   const settingsMapping = useMemo(() => {
     const mapping: Record<string, SettingsListOut["settings"][number]> = {};
+    if (!filteredSettingsList) return mapping;
     filteredSettingsList.forEach((setting) => {
-      mapping[setting.settings_id] = setting;
+      if (setting.settings_id) {
+        mapping[setting.settings_id] = setting;
+      }
     });
     return mapping;
   }, [filteredSettingsList]);
@@ -575,30 +578,39 @@ export default function Settings({
   // Build profile mapping from staff list
   const profileMapping = useMemo(() => {
     const mapping: Record<string, ProfileMappingItem> = {};
+    if (!staffList.staff) return mapping;
     staffList.staff.forEach((staff) => {
-      mapping[staff.profile_id] = {
-        profile_id: staff.profile_id,
-        name: staff.name,
-        role: staff.role,
-        first_name: staff.first_name,
-        last_name: staff.last_name,
-      };
+      if (staff.profile_id) {
+        mapping[staff.profile_id] = {
+          profile_id: staff.profile_id,
+          name: staff.name ?? "",
+          role: staff.role ?? "",
+          first_name: staff.first_name ?? "",
+          last_name: staff.last_name ?? "",
+        };
+      }
     });
     return mapping;
   }, [staffList]);
 
   const validProfileIds = useMemo(() => {
-    return staffList.staff.map((staff) => staff.profile_id);
+    if (!staffList.staff) return [];
+    return staffList.staff
+      .map((staff) => staff.profile_id)
+      .filter((id): id is string => id !== null && id !== undefined);
   }, [staffList]);
 
   // Build department mapping from departments list
   const departmentMapping = useMemo(() => {
     const mapping: Record<string, { name: string; description: string }> = {};
+    if (!departmentsList.departments) return mapping;
     departmentsList.departments.forEach((dept) => {
-      mapping[dept.department_id] = {
-        name: dept.title,
-        description: dept.description || "",
-      };
+      if (dept.department_id) {
+        mapping[dept.department_id] = {
+          name: dept.title ?? "",
+          description: dept.description ?? "",
+        };
+      }
     });
     return mapping;
   }, [departmentsList]);
@@ -691,17 +703,15 @@ export default function Settings({
       setOriginalAuthKeyMapping(JSON.parse(JSON.stringify(authKeyMap)));
 
       // Initialize provider enabled state
-      // Use all_providers array if available, otherwise fall back to all_provider_ids
+      // Use all_providers array if available
       const allProviderIds =
-        settingsDetail.all_providers?.map((p) => p.provider_id) ||
-        settingsDetail.all_provider_ids ||
+        settingsDetail.all_providers?.map((p) => p.provider_id).filter((id): id is string => id !== null && id !== undefined) ||
         [];
       const linkedProviderIds =
-        settingsDetail.providers?.map((p) => p.provider_id) ||
-        settingsDetail.provider_ids ||
+        settingsDetail.providers?.map((p) => p.provider_id).filter((id): id is string => id !== null && id !== undefined) ||
         [];
       const enabled: Record<string, boolean> = {};
-      allProviderIds.forEach((providerId) => {
+      allProviderIds.forEach((providerId: string) => {
         enabled[providerId] = linkedProviderIds.includes(providerId);
       });
       setProviderEnabled(enabled);
@@ -709,17 +719,15 @@ export default function Settings({
       setOriginalProviderEnabled(JSON.parse(JSON.stringify(enabled)));
 
       // Initialize auth enabled state
-      // Use all_auths array if available, otherwise fall back to all_auth_ids
+      // Use all_auths array if available
       const allAuthIds =
-        settingsDetail.all_auths?.map((a) => a.auth_id) ||
-        settingsDetail.all_auth_ids ||
+        settingsDetail.all_auths?.map((a) => a.auth_id).filter((id): id is string => id !== null && id !== undefined) ||
         [];
       const linkedAuthIds =
-        settingsDetail.auths?.map((a) => a.auth_id) ||
-        settingsDetail.auth_ids ||
+        settingsDetail.auths?.map((a) => a.auth_id).filter((id): id is string => id !== null && id !== undefined) ||
         [];
       const authEnabledState: Record<string, boolean> = {};
-      allAuthIds.forEach((authId) => {
+      allAuthIds.forEach((authId: string) => {
         authEnabledState[authId] = linkedAuthIds.includes(authId);
       });
       setAuthEnabled(authEnabledState);
@@ -741,13 +749,13 @@ export default function Settings({
       setOriginalDepartmentIds([...deptIds]);
 
       // Auto-select enabled auth methods and providers
-      const enabledAuthIds = new Set(
-        allAuthIds.filter((authId) => authEnabledState[authId])
+      const enabledAuthIds = new Set<string>(
+        allAuthIds.filter((authId: string) => authEnabledState[authId])
       );
       setSelectedAuthMethodIds(enabledAuthIds);
 
-      const enabledProviderIds = new Set(
-        allProviderIds.filter((providerId) => enabled[providerId])
+      const enabledProviderIds = new Set<string>(
+        allProviderIds.filter((providerId: string) => enabled[providerId])
       );
       setSelectedProviderIds(enabledProviderIds);
     }

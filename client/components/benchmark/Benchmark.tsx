@@ -56,7 +56,14 @@ export default function Benchmark({
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Extract evals list from data
-  const evalsList = useMemo(() => evalsData?.evals || [], [evalsData?.evals]);
+  const evalsList = useMemo(() => {
+    const evals = evalsData?.evals || [];
+    // Add missing use_groups property if not present
+    return evals.map((evalItem) => ({
+      ...evalItem,
+      use_groups: (evalItem as { use_groups?: boolean | null }).use_groups ?? false,
+    }));
+  }, [evalsData?.evals]);
 
   // Set up eval-specific event listeners using global WebSocket
   useEffect(() => {

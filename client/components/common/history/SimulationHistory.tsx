@@ -90,7 +90,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const loadingToastIdRef = React.useRef<string | number | null>(null);
 
-  const isCurrentUser = effectiveProfile?.id === item.profileId;
+  const isCurrentUser = effectiveProfile?.id === item.profile_id;
 
   // Infinite-mode window check (owner-only)
   // Parse date from string (server returns ISO string)
@@ -108,37 +108,37 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
   }, [item.date]);
 
   const isInfiniteWindowOpen = React.useMemo(() => {
-    if (!item.infiniteMode) return false;
-    if (!item.timeLimit || !attemptCreatedAt) return true; // no limit => open
+    if (!item.infinite_mode) return false;
+    if (!item.time_limit || !attemptCreatedAt) return true; // no limit => open
     const started = new Date(attemptCreatedAt).getTime();
     if (Number.isNaN(started)) return false;
     const elapsedMin = (Date.now() - started) / 60000;
-    const timeLimitMinutes = (item.timeLimit ?? 0) / 60; // Convert from seconds to minutes
+    const timeLimitMinutes = (item.time_limit ?? 0) / 60; // Convert from seconds to minutes
     return elapsedMin <= timeLimitMinutes;
-  }, [item.infiniteMode, item.timeLimit, attemptCreatedAt]);
+  }, [item.infinite_mode, item.time_limit, attemptCreatedAt]);
 
   // Final decision:
   // - Continue only if server says it CAN continue,
   // - and it's the owner,
   // - and (if infinite mode) the time window is still open.
   const wantContinue =
-    Boolean(item.showContinue) &&
+    Boolean(item.show_continue) &&
     isCurrentUser &&
-    (!item.infiniteMode || isInfiniteWindowOpen);
+    (!item.infinite_mode || isInfiniteWindowOpen);
 
   const buttonText = wantContinue ? "Continue" : "View";
   const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id;
-  const linkHref = `/${item.practiceSimulation ? "practice" : "home"}/a/${item.attemptId}`;
+  const linkHref = `/${item.practice_simulation ? "practice" : "home"}/a/${item.attempt_id}`;
 
   // Determine if we should show Retry or Try button
   // Only show if not emulating (effectiveProfile.id === activeProfile.id)
   const isNotEmulating = effectiveProfile?.id === activeProfile?.id;
-  const isOwnAttempt = activeProfile?.id === item.profileId;
+  const isOwnAttempt = activeProfile?.id === item.profile_id;
   const shouldShowRetry =
     isNotEmulating &&
     isOwnAttempt &&
     (item.simulation_id ?? "") !== "" &&
-    !item.showContinue;
+    !item.show_continue;
   const shouldShowTry =
     isNotEmulating && !isOwnAttempt && (item.simulation_id ?? "") !== "";
 
@@ -157,7 +157,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(
-        `/${item.practiceSimulation ? "practice" : "home"}/a/${attemptId}`,
+        `/${item.practice_simulation ? "practice" : "home"}/a/${attemptId}`,
       );
     };
 
@@ -189,7 +189,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, item.practiceSimulation, item.attemptId]);
+  }, [router, item.practice_simulation, item.attempt_id]);
 
   const handleStartSimulation = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -221,10 +221,10 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
         simulation_id: String(item.simulation_id),
         profile_id: profileIdForEmit,
         scenario_id:
-          item.practiceSimulation && item.practiceScenarioId
-            ? item.practiceScenarioId
+          item.practice_simulation && item.practice_scenario_id
+            ? item.practice_scenario_id
             : null,
-        ...(item.infiniteMode ? { infinite: true } : {}),
+        ...(item.infinite_mode ? { infinite: true } : {}),
       });
     } catch {
       if (loadingToastIdRef.current) {
@@ -622,8 +622,8 @@ export default function SimulationHistory({
 
   // Create mode options (infinite, standard)
   const infiniteModeOptions = React.useMemo(() => {
-    const hasInfinite = data.some((item) => item.infiniteMode);
-    const hasStandard = data.some((item) => !item.infiniteMode);
+    const hasInfinite = data.some((item) => item.infinite_mode);
+    const hasStandard = data.some((item) => !item.infinite_mode);
     const options: { value: string; label: string }[] = [];
     if (hasInfinite)
       options.push({ value: "infinite", label: "Infinite Mode" });
@@ -742,18 +742,18 @@ export default function SimulationHistory({
           const item = row.original;
 
           // Search in profile name
-          if (item.profileName.toLowerCase().includes(searchValue)) {
+          if (item.profile_name?.toLowerCase().includes(searchValue)) {
             return true;
           }
 
           // Search in simulation name
-          if (item.simulationName.toLowerCase().includes(searchValue)) {
+          if (item.simulation_name?.toLowerCase().includes(searchValue)) {
             return true;
           }
 
           // Search in persona names
           if (
-            item.personaNames.some((name: string) =>
+            item.persona_names?.some((name: string) =>
               name.toLowerCase().includes(searchValue),
             )
           ) {
@@ -774,7 +774,7 @@ export default function SimulationHistory({
         filterFn: (row, _id, value) => {
           if (!value || !Array.isArray(value) || value.length === 0)
             return true;
-          const profileId = row.original.profileId;
+          const profileId = row.original.profile_id;
           // Additive filtering: keep row if profileId is in selected values
           return value.includes(profileId);
         },
@@ -819,11 +819,11 @@ export default function SimulationHistory({
         enableHiding: true,
         enableSorting: false,
         accessorFn: (row: HistoryDataItem) => {
-          return row.infiniteMode ? "infinite" : "standard";
+          return row.infinite_mode ? "infinite" : "standard";
         },
         filterFn: (row, _id, value: string[]) => {
           if (!value || value.length === 0) return true;
-          const mode = row.original.infiniteMode ? "infinite" : "standard";
+          const mode = row.original.infinite_mode ? "infinite" : "standard";
           // Additive filtering: keep row if mode is in selected values
           return value.includes(mode);
         },
@@ -853,7 +853,7 @@ export default function SimulationHistory({
             hour12: false,
           });
 
-          const isArchived = row.original.isArchived;
+          const isArchived = row.original.is_archived;
 
           return (
             <div className="flex items-center justify-between">
@@ -891,7 +891,7 @@ export default function SimulationHistory({
                 column: Column<HistoryDataItem, unknown>;
               }) => <DataTableColumnHeader column={column} title="Name" />,
               cell: ({ row }: { row: Row<HistoryDataItem> }) => {
-                const profileName = row.original.profileName;
+                const profileName = row.original.profile_name || "";
                 return (
                   <div className="flex items-center min-w-0 max-w-[200px]">
                     <Tooltip>
@@ -910,7 +910,7 @@ export default function SimulationHistory({
                 _id: string,
                 value: string[],
               ) => {
-                return value.includes(row.original.profileId);
+                return value.includes(row.original.profile_id || "");
               },
               enableSorting: true,
             },
@@ -918,14 +918,14 @@ export default function SimulationHistory({
         : []),
       // Simulation column
       {
-        accessorKey: "simulationName",
+        accessorKey: "simulation_name",
         id: "simulationName",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
-          const simulationName = row.original.simulationName;
-          const isInfinite = row.original.infiniteMode;
+          const simulationName = row.original.simulation_name || "";
+          const isInfinite = row.original.infinite_mode;
 
           return (
             <div className="flex items-center space-x-1 min-w-0 max-w-[280px]">
@@ -954,18 +954,18 @@ export default function SimulationHistory({
       },
       // Scenarios completion column
       {
-        accessorKey: "numScenariosCompleted",
+        accessorKey: "num_scenarios_completed",
         id: "numScenariosCompleted",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Scenarios" />
         ),
         cell: ({ row }) => {
           // Use original for display so we don't show a ratio:
-          const completedCount = row.original.numScenariosCompleted;
-          const totalCount = row.original.numScenarios;
-          const isInfinite = row.original.infiniteMode;
-          const personaNames = row.original.personaNames;
-          const personaColors = row.original.personaColors;
+          const completedCount = row.original.num_scenarios_completed || 0;
+          const totalCount = row.original.num_scenarios || 0;
+          const isInfinite = row.original.infinite_mode;
+          const personaNames = row.original.persona_names || [];
+          const personaColors = row.original.persona_colors || [];
 
           return (
             <div className="text-center">
@@ -1012,9 +1012,9 @@ export default function SimulationHistory({
         enableSorting: true,
         // Keep accessorFn solely to provide a sortable value (ratio)
         accessorFn: (row: HistoryDataItem) => {
-          const total = row.numScenarios;
-          if (total === null || total === undefined || total === 0) return 0;
-          return row.numScenariosCompleted / total;
+          const total = row.num_scenarios ?? 0;
+          if (total === 0) return 0;
+          return (row.num_scenarios_completed ?? 0) / total;
         },
         // scenario filtering should read from original
         filterFn: (row, _id, value) => {
@@ -1032,7 +1032,7 @@ export default function SimulationHistory({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: HistoryDataItem) => row.personaNames ?? [],
+        accessorFn: (row: HistoryDataItem) => row.persona_names ?? [],
         filterFn: (row, id, value) => {
           const personaNames = row.getValue(id) as string[];
           if (!value || !Array.isArray(value) || value.length === 0)
@@ -1052,7 +1052,7 @@ export default function SimulationHistory({
         accessorFn: (row: HistoryDataItem) => row.score, // <-- no `|| 0`
         cell: ({ row }) => {
           const score = row.original.score; // <-- read original for display
-          const scoreStatus = row.original.scoreStatus; // <-- read server-computed status
+          const scoreStatus = row.original.score_status; // <-- read server-computed status
           if (score === null || score === undefined) {
             return (
               <div className="text-muted-foreground text-center min-w-0 max-w-[100px]">
@@ -1324,7 +1324,7 @@ export default function SimulationHistory({
         });
 
         // Use server-provided count for "Select All" operations
-        countMessage = `${result.count} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`;
+        countMessage = `${result.updated_count || 0} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`;
       } else {
         // AttemptIds-based bulk archive: archive specific attempts (backward compatible)
         const selectedRows = table.getSelectedRowModel().flatRows;

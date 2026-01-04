@@ -58,10 +58,11 @@ export function AgentConfigCard({
     const mapping: Record<string, { id: string; name: string; description?: string }> = {};
     agentDetail.models.forEach((model) => {
       if (model.model_id) {
+        const modelDesc = model.description ?? undefined;
         mapping[model.model_id] = {
           id: model.model_id,
-          name: model.name || "",
-          description: model.description || undefined,
+          name: model.name ?? "",
+          ...(modelDesc !== undefined ? { description: modelDesc } : {}),
         };
       }
     });
@@ -213,12 +214,6 @@ export function AgentConfigCard({
       (l) => !l.is_upper && Math.abs(parseFloat(l.temperature) - temp) < 0.001
     );
     return matchingLevel?.id || null;
-  };
-
-  // Helper to get reasoning option ID from reasoning level
-  const _getReasoningOptionId = (reasoningLevel: string): string | null => {
-    const option = reasoningOptions.find((opt) => opt.reasoning_level === reasoningLevel);
-    return option?.id || null;
   };
 
   return (

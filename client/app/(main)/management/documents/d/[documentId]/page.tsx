@@ -90,7 +90,10 @@ async function renderTemplate(
   input: RenderTemplateIn
 ): Promise<RenderTemplateOut> {
   "use server";
-  return api.post("/documents/_render", input);
+  // _render endpoint is not in OpenAPI schema, use type assertion for endpoint path
+  const result = await (api.post as any)("/documents/_render", input);
+  // API returns dict[str, Any], assert to our expected type
+  return result as RenderTemplateOut;
 }
 
 async function patchDocumentDraft(
@@ -183,7 +186,7 @@ export default async function DocumentEditPage({
                   department_ids: departmentIds || null,
                 }),
               },
-            })) as RenderTemplateOut;
+            })) as unknown as RenderTemplateOut;
             renderedHtml = renderResult.rendered_html;
           } catch (error) {
             // If rendering fails, renderedHtml stays null

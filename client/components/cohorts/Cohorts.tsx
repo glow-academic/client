@@ -121,11 +121,17 @@ export default function Cohorts({
     // Handle both array (new format) and legacy format
     const profilesArray = Array.isArray(profiles) ? profiles : Object.values(profiles);
     return profilesArray
-      .map((item) => ({
-        value: String(item.profile_id || ""),
-        label: item.name || "",
-      }))
-      .filter((opt) => opt.value && opt.label);
+      .map((item) => {
+        // Type guard for profile item
+        if (item && typeof item === "object" && "profile_id" in item && "name" in item) {
+          return {
+            value: String(item.profile_id || ""),
+            label: String(item.name || ""),
+          };
+        }
+        return null;
+      })
+      .filter((opt): opt is { value: string; label: string } => opt !== null && !!opt.value && !!opt.label);
   }, [cohortsData?.profiles]);
 
   const simulationOptions = useMemo(() => {
@@ -133,11 +139,17 @@ export default function Cohorts({
     // Handle both array (new format) and legacy format
     const simulationsArray = Array.isArray(simulations) ? simulations : Object.values(simulations);
     return simulationsArray
-      .map((item) => ({
-        value: String(item.simulation_id || ""),
-        label: item.name || "",
-      }))
-      .filter((opt) => opt.value && opt.label);
+      .map((item) => {
+        // Type guard for simulation item
+        if (item && typeof item === "object" && "simulation_id" in item && "name" in item) {
+          return {
+            value: String(item.simulation_id || ""),
+            label: String(item.name || ""),
+          };
+        }
+        return null;
+      })
+      .filter((opt): opt is { value: string; label: string } => opt !== null && !!opt.value && !!opt.label);
   }, [cohortsData?.simulations]);
 
   const departmentOptions = useMemo(() => {
@@ -145,11 +157,17 @@ export default function Cohorts({
     // Handle both array (new format) and legacy format
     const departmentsArray = Array.isArray(departments) ? departments : Object.values(departments);
     return departmentsArray
-      .map((item) => ({
-        value: String(item.department_id || ""),
-        label: item.name || "",
-      }))
-      .filter((opt) => opt.value && opt.label);
+      .map((item) => {
+        // Type guard for department item
+        if (item && typeof item === "object" && "department_id" in item && "name" in item) {
+          return {
+            value: String(item.department_id || ""),
+            label: String(item.name || ""),
+          };
+        }
+        return null;
+      })
+      .filter((opt): opt is { value: string; label: string } => opt !== null && !!opt.value && !!opt.label);
   }, [cohortsData?.departments]);
 
   // Define table columns inline
@@ -186,6 +204,9 @@ export default function Cohorts({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
+          if (!row.original.updated_at) {
+            return <div className="text-sm text-muted-foreground">-</div>;
+          }
           const date = new Date(row.original.updated_at);
           return (
             <div className="text-sm text-muted-foreground">
@@ -378,10 +399,10 @@ export default function Cohorts({
 
   const renderCohortCard = (cohort: (typeof cohorts)[number]) => (
     <Card
-      key={cohort.cohort_id}
-      aria-label={cohort.name}
+      key={cohort.cohort_id || ""}
+      {...(cohort.name ? { "aria-label": cohort.name } : {})}
       data-testid="cohort-card"
-      data-cohort-id={cohort.cohort_id}
+      {...(cohort.cohort_id ? { "data-cohort-id": cohort.cohort_id } : {})}
       className="relative flex flex-col h-full"
     >
       <CardHeader className="pb-3">
@@ -408,8 +429,8 @@ export default function Cohorts({
                 variant="outline"
                 size="sm"
                 data-testid={`edit-${cohort.cohort_id}`}
-                onClick={() => handleEdit(cohort.cohort_id)}
-                aria-label={`Edit ${cohort.name}`}
+                onClick={() => cohort.cohort_id && handleEdit(cohort.cohort_id)}
+                {...(cohort.name ? { "aria-label": `Edit ${cohort.name}` } : {})}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -418,8 +439,8 @@ export default function Cohorts({
                 variant="outline"
                 size="sm"
                 data-testid={`view-${cohort.cohort_id}`}
-                onClick={() => handleView(cohort.cohort_id)}
-                aria-label={`View ${cohort.name}`}
+                onClick={() => cohort.cohort_id && handleView(cohort.cohort_id)}
+                {...(cohort.name ? { "aria-label": `View ${cohort.name}` } : {})}
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -428,15 +449,15 @@ export default function Cohorts({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleDuplicate(cohort.cohort_id, cohort.name)}
+                onClick={() => cohort.cohort_id && cohort.name && handleDuplicate(cohort.cohort_id, cohort.name)}
                 disabled={
-                  isDuplicating === cohort.cohort_id || false // No pending state for server action
+                  !cohort.cohort_id || isDuplicating === cohort.cohort_id || false // No pending state for server action
                 }
-                aria-label={`Duplicate ${cohort.name}`}
+                {...(cohort.name ? { "aria-label": `Duplicate ${cohort.name}` } : {})}
                 data-testid="btn-duplicate-cohort"
-                title={`Duplicate ${cohort.name}`}
+                {...(cohort.name ? { title: cohort.name } : {})}
               >
-                {isDuplicating === cohort.cohort_id ? (
+                {cohort.cohort_id && isDuplicating === cohort.cohort_id ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 ) : (
                   <Copy className="h-4 w-4" />
@@ -448,8 +469,8 @@ export default function Cohorts({
                 variant="outline"
                 size="sm"
                 data-testid={`delete-${cohort.cohort_id}`}
-                onClick={() => handleDeleteClick(cohort.cohort_id, cohort.name)}
-                aria-label={`Delete ${cohort.name}`}
+                onClick={() => cohort.cohort_id && cohort.name && handleDeleteClick(cohort.cohort_id, cohort.name)}
+                {...(cohort.name ? { "aria-label": `Delete ${cohort.name}` } : {})}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -459,8 +480,8 @@ export default function Cohorts({
                 variant="outline"
                 size="sm"
                 data-testid={`leave-${cohort.cohort_id}`}
-                onClick={() => handleLeaveClick(cohort.cohort_id, cohort.name)}
-                aria-label={`Leave ${cohort.name}`}
+                onClick={() => cohort.cohort_id && cohort.name && handleLeaveClick(cohort.cohort_id, cohort.name)}
+                {...(cohort.name ? { "aria-label": `Leave ${cohort.name}` } : {})}
               >
                 <LogOut className="h-4 w-4" />
               </Button>
