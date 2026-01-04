@@ -5379,6 +5379,69 @@ class GetBenchmarkBundleApiResponse(BaseModel):
 
 
 
+# Generated from: get_benchmark_run_start_context
+
+class GetBenchmarkRunStartContextSqlParams(BaseModel):
+
+    attempt_id: UUID
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.run_id,
+        )
+
+class GetBenchmarkRunStartContextSqlRow(BaseModel):
+
+    eval_id: str | None = None
+    use_groups: bool | None = None
+    run_id: UUID | None = None
+    run_completed: bool | None = None
+
+class GetBenchmarkRunStartContextApiRequest(BaseModel):
+
+    attempt_id: UUID
+    run_id: UUID
+
+class GetBenchmarkRunStartContextApiResponse(BaseModel):
+
+    eval_id: str | None = None
+    use_groups: bool | None = None
+    run_id: UUID | None = None
+    run_completed: bool | None = None
+
+
+
+# Generated from: get_benchmark_runs_start_all_context
+
+class GetBenchmarkRunsStartAllContextSqlParams(BaseModel):
+
+    attempt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+        )
+
+class GetBenchmarkRunsStartAllContextSqlRow(BaseModel):
+
+    eval_id: str | None = None
+    use_groups: bool | None = None
+    pending_ids: list[str] | None = None
+
+class GetBenchmarkRunsStartAllContextApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetBenchmarkRunsStartAllContextApiResponse(BaseModel):
+
+    eval_id: str | None = None
+    use_groups: bool | None = None
+    pending_ids: list[str] | None = None
+
+
+
 # Generated from: get_eval_detail
 
 class GetEvalDetailSqlParams(BaseModel):
@@ -25576,6 +25639,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetBenchmarkBundleApiRequest",
         "GetBenchmarkBundleApiResponse",
     ),
+    "app/sql/v4/benchmark/get_benchmark_run_start_context_complete.sql": (
+        "GetBenchmarkRunStartContextSqlParams",
+        "GetBenchmarkRunStartContextSqlRow",
+        "GetBenchmarkRunStartContextApiRequest",
+        "GetBenchmarkRunStartContextApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_benchmark_runs_start_all_context_complete.sql": (
+        "GetBenchmarkRunsStartAllContextSqlParams",
+        "GetBenchmarkRunsStartAllContextSqlRow",
+        "GetBenchmarkRunsStartAllContextApiRequest",
+        "GetBenchmarkRunsStartAllContextApiResponse",
+    ),
     "app/sql/v4/benchmark/get_eval_detail_complete.sql": (
         "GetEvalDetailSqlParams",
         "GetEvalDetailSqlRow",
@@ -27867,6 +27942,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/get_benchmark_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_benchmark_run_start_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_benchmark_runs_start_all_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload

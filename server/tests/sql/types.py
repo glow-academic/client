@@ -548,13 +548,13 @@ class GetFirstModelApiResponse(BaseModel):
 
 class CreateCohortDepartmentLinkSqlParams(BaseModel):
 
-    cohort_id: UUID
-    department_id: UUID
+    input_cohort_id: UUID
+    input_department_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.cohort_id,
-            self.department_id,
+            self.input_cohort_id,
+            self.input_department_id,
         )
 
 class CreateCohortDepartmentLinkSqlRow(BaseModel):
@@ -566,13 +566,47 @@ class CreateCohortDepartmentLinkSqlRow(BaseModel):
 
 class CreateCohortDepartmentLinkApiRequest(BaseModel):
 
-    cohort_id: UUID
-    department_id: UUID
+    input_cohort_id: UUID
+    input_department_id: UUID
 
 class CreateCohortDepartmentLinkApiResponse(BaseModel):
 
     cohort_id: UUID | None = None
     department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: create_cohort_profile_link
+
+class CreateCohortProfileLinkSqlParams(BaseModel):
+
+    input_cohort_id: UUID
+    input_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_cohort_id,
+            self.input_profile_id,
+        )
+
+class CreateCohortProfileLinkSqlRow(BaseModel):
+
+    cohort_id: UUID | None = None
+    profile_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateCohortProfileLinkApiRequest(BaseModel):
+
+    input_cohort_id: UUID
+    input_profile_id: UUID
+
+class CreateCohortProfileLinkApiResponse(BaseModel):
+
+    cohort_id: UUID | None = None
+    profile_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
 
@@ -776,6 +810,40 @@ class GetDifferentDepartmentApiResponse(BaseModel):
 
     department_id: UUID | None = None
     title: str | None = None
+
+
+
+# Generated from: get_profile_department_link
+
+class GetProfileDepartmentLinkSqlParams(BaseModel):
+
+    input_department_id: UUID
+    input_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_department_id,
+            self.input_profile_id,
+        )
+
+class GetProfileDepartmentLinkSqlRow(BaseModel):
+
+    department_id: UUID | None = None
+    profile_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetProfileDepartmentLinkApiRequest(BaseModel):
+
+    input_department_id: UUID
+    input_profile_id: UUID
+
+class GetProfileDepartmentLinkApiResponse(BaseModel):
+
+    department_id: UUID | None = None
+    profile_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
 
 
 
@@ -1449,6 +1517,42 @@ class GetParameterItemsApiResponse(BaseModel):
 
 
 
+# Generated from: create_persona_department_link
+
+class CreatePersonaDepartmentLinkSqlParams(BaseModel):
+
+    input_persona_id: UUID
+    input_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_persona_id,
+            self.input_department_id,
+        )
+
+class CreatePersonaDepartmentLinkSqlRow(BaseModel):
+
+    persona_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class CreatePersonaDepartmentLinkApiRequest(BaseModel):
+
+    input_persona_id: UUID
+    input_department_id: UUID
+
+class CreatePersonaDepartmentLinkApiResponse(BaseModel):
+
+    persona_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
 # Generated from: create_persona_department_prompt_link
 
 class CreatePersonaDepartmentPromptLinkSqlParams(BaseModel):
@@ -1483,42 +1587,6 @@ class CreatePersonaDepartmentPromptLinkApiResponse(BaseModel):
 
     persona_id: UUID | None = None
     department_id: UUID | None = None
-    prompt_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-
-
-# Generated from: create_persona_prompt_link
-
-class CreatePersonaPromptLinkSqlParams(BaseModel):
-
-    persona_id: UUID
-    prompt_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.persona_id,
-            self.prompt_id,
-        )
-
-class CreatePersonaPromptLinkSqlRow(BaseModel):
-
-    persona_id: UUID | None = None
-    prompt_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-class CreatePersonaPromptLinkApiRequest(BaseModel):
-
-    persona_id: UUID
-    prompt_id: UUID
-
-class CreatePersonaPromptLinkApiResponse(BaseModel):
-
-    persona_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
@@ -2205,6 +2273,107 @@ class GetRubricStandardsApiResponse(BaseModel):
 
 
 
+# Generated from: create_scenario_department_link
+
+class CreateScenarioDepartmentLinkSqlParams(BaseModel):
+
+    input_scenario_id: UUID
+    input_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_scenario_id,
+            self.input_department_id,
+        )
+
+class CreateScenarioDepartmentLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateScenarioDepartmentLinkApiRequest(BaseModel):
+
+    input_scenario_id: UUID
+    input_department_id: UUID
+
+class CreateScenarioDepartmentLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: create_scenario_persona_link
+
+class CreateScenarioPersonaLinkSqlParams(BaseModel):
+
+    input_scenario_id: UUID
+    input_persona_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_scenario_id,
+            self.input_persona_id,
+        )
+
+class CreateScenarioPersonaLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    persona_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class CreateScenarioPersonaLinkApiRequest(BaseModel):
+
+    input_scenario_id: UUID
+    input_persona_id: UUID
+
+class CreateScenarioPersonaLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    persona_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
+# Generated from: create_scenario_tree_edge
+
+class CreateScenarioTreeEdgeSqlParams(BaseModel):
+
+    input_scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_scenario_id,
+        )
+
+class CreateScenarioTreeEdgeSqlRow(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateScenarioTreeEdgeApiRequest(BaseModel):
+
+    input_scenario_id: UUID
+
+class CreateScenarioTreeEdgeApiResponse(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: create_test_scenario
 
 class CreateTestScenarioSqlParams(BaseModel):
@@ -2263,6 +2432,136 @@ class GetScenarioByIdApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario_department_link
+
+class GetScenarioDepartmentLinkSqlParams(BaseModel):
+
+    input_scenario_id: UUID
+    input_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_scenario_id,
+            self.input_department_id,
+        )
+
+class GetScenarioDepartmentLinkSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetScenarioDepartmentLinkApiRequest(BaseModel):
+
+    input_scenario_id: UUID
+    input_department_id: UUID
+
+class GetScenarioDepartmentLinkApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: get_scenario_department_links
+
+class GetScenarioDepartmentLinksSqlParams(BaseModel):
+
+    input_scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_scenario_id,
+        )
+
+class GetScenarioDepartmentLinksSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetScenarioDepartmentLinksApiRequest(BaseModel):
+
+    input_scenario_id: UUID
+
+class GetScenarioDepartmentLinksApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: get_scenario_tree_edge
+
+class GetScenarioTreeEdgeSqlParams(BaseModel):
+
+    input_scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_scenario_id,
+        )
+
+class GetScenarioTreeEdgeSqlRow(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetScenarioTreeEdgeApiRequest(BaseModel):
+
+    input_scenario_id: UUID
+
+class GetScenarioTreeEdgeApiResponse(BaseModel):
+
+    parent_id: UUID | None = None
+    child_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: create_simulation_department_link
+
+class CreateSimulationDepartmentLinkSqlParams(BaseModel):
+
+    input_simulation_id: UUID
+    input_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_simulation_id,
+            self.input_department_id,
+        )
+
+class CreateSimulationDepartmentLinkSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateSimulationDepartmentLinkApiRequest(BaseModel):
+
+    input_simulation_id: UUID
+    input_department_id: UUID
+
+class CreateSimulationDepartmentLinkApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: create_test_simulation
 
 class CreateTestSimulationSqlParams(BaseModel):
@@ -2304,6 +2603,58 @@ class CreateTestSimulationApiResponse(BaseModel):
 
 
 
+# Generated from: get_or_create_rubric
+
+class GetOrCreateRubricSqlParams(BaseModel):
+
+    pass
+
+class GetOrCreateRubricSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+
+class GetOrCreateRubricApiRequest(BaseModel):
+
+    pass
+
+class GetOrCreateRubricApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+
+
+
+# Generated from: get_or_create_scenario
+
+class GetOrCreateScenarioSqlParams(BaseModel):
+
+    pass
+
+class GetOrCreateScenarioSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    name: str | None = None
+
+class GetOrCreateScenarioApiRequest(BaseModel):
+
+    pass
+
+class GetOrCreateScenarioApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    name: str | None = None
+
+
+
 # Generated from: get_simulation_by_id
 
 class GetSimulationByIdSqlParams(BaseModel):
@@ -2338,6 +2689,40 @@ class GetSimulationByIdApiResponse(BaseModel):
     practice_simulation: bool | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+
+# Generated from: get_simulation_department_link
+
+class GetSimulationDepartmentLinkSqlParams(BaseModel):
+
+    input_simulation_id: UUID
+    input_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_simulation_id,
+            self.input_department_id,
+        )
+
+class GetSimulationDepartmentLinkSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetSimulationDepartmentLinkApiRequest(BaseModel):
+
+    input_simulation_id: UUID
+    input_department_id: UUID
+
+class GetSimulationDepartmentLinkApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
 
 
 
@@ -2637,6 +3022,65 @@ class Helpers/testCreateTestChatV4CompleteApiRequest(BaseModel):
 class Helpers/testCreateTestChatV4CompleteApiResponse(BaseModel):
 
     chat_id: UUID | None = None
+
+
+
+# Generated from: helpers/test_create_test_eval_group_v4_complete
+
+class Helpers/testCreateTestEvalGroupV4CompleteSqlParams(BaseModel):
+
+    eval_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+        )
+
+class Helpers/testCreateTestEvalGroupV4CompleteSqlRow(BaseModel):
+
+    group_id: UUID | None = None
+    eval_id: UUID | None = None
+
+class Helpers/testCreateTestEvalGroupV4CompleteApiRequest(BaseModel):
+
+    eval_id: UUID
+
+class Helpers/testCreateTestEvalGroupV4CompleteApiResponse(BaseModel):
+
+    group_id: UUID | None = None
+    eval_id: UUID | None = None
+
+
+
+# Generated from: helpers/test_create_test_eval_run_v4_complete
+
+class Helpers/testCreateTestEvalRunV4CompleteSqlParams(BaseModel):
+
+    eval_id: UUID
+    completed: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.completed,
+        )
+
+class Helpers/testCreateTestEvalRunV4CompleteSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    eval_id: UUID | None = None
+    completed: bool | None = None
+
+class Helpers/testCreateTestEvalRunV4CompleteApiRequest(BaseModel):
+
+    eval_id: UUID
+    completed: bool | None = False
+
+class Helpers/testCreateTestEvalRunV4CompleteApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    eval_id: UUID | None = None
+    completed: bool | None = None
 
 
 
@@ -3064,6 +3508,34 @@ class Helpers/testGetSimulationByActiveV4CompleteApiResponse(BaseModel):
 
 
 
+# Generated from: helpers/test_update_eval_use_groups_v4_complete
+
+class Helpers/testUpdateEvalUseGroupsV4CompleteSqlParams(BaseModel):
+
+    eval_id: UUID
+    use_groups: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.use_groups,
+        )
+
+class Helpers/testUpdateEvalUseGroupsV4CompleteSqlRow(BaseModel):
+
+    eval_id: UUID | None = None
+
+class Helpers/testUpdateEvalUseGroupsV4CompleteApiRequest(BaseModel):
+
+    eval_id: UUID
+    use_groups: bool
+
+class Helpers/testUpdateEvalUseGroupsV4CompleteApiResponse(BaseModel):
+
+    eval_id: UUID | None = None
+
+
+
 
 # ============================================================================
 # REGISTRY
@@ -3172,6 +3644,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateCohortDepartmentLinkApiRequest",
         "CreateCohortDepartmentLinkApiResponse",
     ),
+    "tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql": (
+        "CreateCohortProfileLinkSqlParams",
+        "CreateCohortProfileLinkSqlRow",
+        "CreateCohortProfileLinkApiRequest",
+        "CreateCohortProfileLinkApiResponse",
+    ),
     "tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql": (
         "CreateProfileDepartmentLinkSqlParams",
         "CreateProfileDepartmentLinkSqlRow",
@@ -3207,6 +3685,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDifferentDepartmentSqlRow",
         "GetDifferentDepartmentApiRequest",
         "GetDifferentDepartmentApiResponse",
+    ),
+    "tests/sql/v4/integration/api/departments/test_get_profile_department_link_v4_complete.sql": (
+        "GetProfileDepartmentLinkSqlParams",
+        "GetProfileDepartmentLinkSqlRow",
+        "GetProfileDepartmentLinkApiRequest",
+        "GetProfileDepartmentLinkApiResponse",
     ),
     "tests/sql/v4/integration/api/documents/test_create_document_department_link_v4_complete.sql": (
         "CreateDocumentDepartmentLinkSqlParams",
@@ -3322,17 +3806,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParameterItemsApiRequest",
         "GetParameterItemsApiResponse",
     ),
+    "tests/sql/v4/integration/api/personas/test_create_persona_department_link_v4_complete.sql": (
+        "CreatePersonaDepartmentLinkSqlParams",
+        "CreatePersonaDepartmentLinkSqlRow",
+        "CreatePersonaDepartmentLinkApiRequest",
+        "CreatePersonaDepartmentLinkApiResponse",
+    ),
     "tests/sql/v4/integration/api/personas/test_create_persona_department_prompt_link_v4_complete.sql": (
         "CreatePersonaDepartmentPromptLinkSqlParams",
         "CreatePersonaDepartmentPromptLinkSqlRow",
         "CreatePersonaDepartmentPromptLinkApiRequest",
         "CreatePersonaDepartmentPromptLinkApiResponse",
-    ),
-    "tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql": (
-        "CreatePersonaPromptLinkSqlParams",
-        "CreatePersonaPromptLinkSqlRow",
-        "CreatePersonaPromptLinkApiRequest",
-        "CreatePersonaPromptLinkApiResponse",
     ),
     "tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql": (
         "CreateTestPersonaSqlParams",
@@ -3448,6 +3932,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricStandardsApiRequest",
         "GetRubricStandardsApiResponse",
     ),
+    "tests/sql/v4/integration/api/scenarios/test_create_scenario_department_link_v4_complete.sql": (
+        "CreateScenarioDepartmentLinkSqlParams",
+        "CreateScenarioDepartmentLinkSqlRow",
+        "CreateScenarioDepartmentLinkApiRequest",
+        "CreateScenarioDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/scenarios/test_create_scenario_persona_link_v4_complete.sql": (
+        "CreateScenarioPersonaLinkSqlParams",
+        "CreateScenarioPersonaLinkSqlRow",
+        "CreateScenarioPersonaLinkApiRequest",
+        "CreateScenarioPersonaLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql": (
+        "CreateScenarioTreeEdgeSqlParams",
+        "CreateScenarioTreeEdgeSqlRow",
+        "CreateScenarioTreeEdgeApiRequest",
+        "CreateScenarioTreeEdgeApiResponse",
+    ),
     "tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql": (
         "CreateTestScenarioSqlParams",
         "CreateTestScenarioSqlRow",
@@ -3460,17 +3962,59 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioByIdApiRequest",
         "GetScenarioByIdApiResponse",
     ),
+    "tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql": (
+        "GetScenarioDepartmentLinkSqlParams",
+        "GetScenarioDepartmentLinkSqlRow",
+        "GetScenarioDepartmentLinkApiRequest",
+        "GetScenarioDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/scenarios/test_get_scenario_department_links_v4_complete.sql": (
+        "GetScenarioDepartmentLinksSqlParams",
+        "GetScenarioDepartmentLinksSqlRow",
+        "GetScenarioDepartmentLinksApiRequest",
+        "GetScenarioDepartmentLinksApiResponse",
+    ),
+    "tests/sql/v4/integration/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql": (
+        "GetScenarioTreeEdgeSqlParams",
+        "GetScenarioTreeEdgeSqlRow",
+        "GetScenarioTreeEdgeApiRequest",
+        "GetScenarioTreeEdgeApiResponse",
+    ),
+    "tests/sql/v4/integration/api/simulations/test_create_simulation_department_link_v4_complete.sql": (
+        "CreateSimulationDepartmentLinkSqlParams",
+        "CreateSimulationDepartmentLinkSqlRow",
+        "CreateSimulationDepartmentLinkApiRequest",
+        "CreateSimulationDepartmentLinkApiResponse",
+    ),
     "tests/sql/v4/integration/api/simulations/test_create_test_simulation_v4_complete.sql": (
         "CreateTestSimulationSqlParams",
         "CreateTestSimulationSqlRow",
         "CreateTestSimulationApiRequest",
         "CreateTestSimulationApiResponse",
     ),
+    "tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql": (
+        "GetOrCreateRubricSqlParams",
+        "GetOrCreateRubricSqlRow",
+        "GetOrCreateRubricApiRequest",
+        "GetOrCreateRubricApiResponse",
+    ),
+    "tests/sql/v4/integration/api/simulations/test_get_or_create_scenario_v4_complete.sql": (
+        "GetOrCreateScenarioSqlParams",
+        "GetOrCreateScenarioSqlRow",
+        "GetOrCreateScenarioApiRequest",
+        "GetOrCreateScenarioApiResponse",
+    ),
     "tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_v4_complete.sql": (
         "GetSimulationByIdSqlParams",
         "GetSimulationByIdSqlRow",
         "GetSimulationByIdApiRequest",
         "GetSimulationByIdApiResponse",
+    ),
+    "tests/sql/v4/integration/api/simulations/test_get_simulation_department_link_v4_complete.sql": (
+        "GetSimulationDepartmentLinkSqlParams",
+        "GetSimulationDepartmentLinkSqlRow",
+        "GetSimulationDepartmentLinkApiRequest",
+        "GetSimulationDepartmentLinkApiResponse",
     ),
     "tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql": (
         "GetCsDeptIdSqlParams",
@@ -3531,6 +4075,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "Helpers/testCreateTestChatV4CompleteSqlRow",
         "Helpers/testCreateTestChatV4CompleteApiRequest",
         "Helpers/testCreateTestChatV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_eval_group_v4_complete.sql": (
+        "Helpers/testCreateTestEvalGroupV4CompleteSqlParams",
+        "Helpers/testCreateTestEvalGroupV4CompleteSqlRow",
+        "Helpers/testCreateTestEvalGroupV4CompleteApiRequest",
+        "Helpers/testCreateTestEvalGroupV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_create_test_eval_run_v4_complete.sql": (
+        "Helpers/testCreateTestEvalRunV4CompleteSqlParams",
+        "Helpers/testCreateTestEvalRunV4CompleteSqlRow",
+        "Helpers/testCreateTestEvalRunV4CompleteApiRequest",
+        "Helpers/testCreateTestEvalRunV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_group_v4_complete.sql": (
         "Helpers/testCreateTestGroupV4CompleteSqlParams",
@@ -3621,6 +4177,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "Helpers/testGetSimulationByActiveV4CompleteSqlRow",
         "Helpers/testGetSimulationByActiveV4CompleteApiRequest",
         "Helpers/testGetSimulationByActiveV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_update_eval_use_groups_v4_complete.sql": (
+        "Helpers/testUpdateEvalUseGroupsV4CompleteSqlParams",
+        "Helpers/testUpdateEvalUseGroupsV4CompleteSqlRow",
+        "Helpers/testUpdateEvalUseGroupsV4CompleteApiRequest",
+        "Helpers/testUpdateEvalUseGroupsV4CompleteApiResponse",
     ),
 }
 
@@ -3771,6 +4333,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -3797,6 +4364,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/departments/test_get_different_department_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/departments/test_get_profile_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -3896,12 +4468,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_persona_department_prompt_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_persona_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_persona_department_prompt_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -4001,6 +4573,21 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_persona_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4011,12 +4598,47 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_department_links_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_simulation_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_test_simulation_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_or_create_scenario_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -4067,6 +4689,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_eval_group_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_eval_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -4142,6 +4774,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_simulation_by_active_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_update_eval_use_groups_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
