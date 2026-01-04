@@ -25,7 +25,7 @@ export interface SettingsBasicInfoSectionProps {
   guestLoginEnabled: boolean;
   settingsList: SettingsListOut["settings"] | null | undefined;
   selectedSettingsId: string | null;
-  settingsMapping: Record<string, SettingsListOut["settings"][number]>;
+  settingsMapping: Record<string, NonNullable<SettingsListOut["settings"]>[number]>;
 
   // Callbacks
   onNameChange: (name: string) => void;
@@ -103,11 +103,11 @@ export function SettingsBasicInfoSection({
               onSelect={(ids) => onSettingsVersionSelect(ids[0] || null)}
               getId={(item) => (item as unknown as { id: string }).id}
               getLabel={(item) => {
-                const date = new Date(item.created_at);
+                const date = item.created_at ? new Date(item.created_at) : new Date();
                 return item.name || `Settings (${date.toLocaleDateString()})`;
               }}
               getSearchText={(item) => {
-                const date = new Date(item.created_at);
+                const date = item.created_at ? new Date(item.created_at) : new Date();
                 return `${item.name || "Settings"} ${item.description || ""} ${date.toLocaleDateString()} ${item.active ? "Active" : "Inactive"}`;
               }}
               renderButton={(selectedItems) => {
@@ -116,7 +116,7 @@ export function SettingsBasicInfoSection({
                 }
                 const setting = selectedItems[0];
                 if (!setting) return "Select version...";
-                const date = new Date(setting.created_at);
+                const date = setting.created_at ? new Date(setting.created_at) : new Date();
                 const isDefault =
                   !setting.department_ids ||
                   setting.department_ids.length === 0;
@@ -138,7 +138,7 @@ export function SettingsBasicInfoSection({
                 );
               }}
               renderItem={(item) => {
-                const date = new Date(item.created_at);
+                const date = item.created_at ? new Date(item.created_at) : new Date();
                 const isDefault =
                   !item.department_ids || item.department_ids.length === 0;
                 return (

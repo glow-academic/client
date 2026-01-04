@@ -1334,8 +1334,8 @@ export default function Rubric({
       stepDescription: string;
       stepNumber: number;
       isOptional: boolean;
-      formData: Values<typeof rubricSearchParamsClient>;
-      setFormData: (updates: Partial<Values<typeof rubricSearchParamsClient>>) => void;
+      formData: Values<Record<string, Parser<unknown>>>;
+      setFormData: (updates: Partial<Values<Record<string, Parser<unknown>>>>) => void;
       filters?: Array<{
         key: string;
         label: string;

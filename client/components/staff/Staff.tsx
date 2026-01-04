@@ -473,11 +473,21 @@ export default function Staff({
   );
   const trendData = useMemo(
     () => ({
-      active: serverListData?.trend_data_active || [],
-      admin: serverListData?.trend_data_admin || [],
-      instructional: serverListData?.trend_data_instructional || [],
-      member: serverListData?.trend_data_member || [],
-      total_requests: serverListData?.trend_data_total_requests || [],
+      active: (serverListData?.trend_data_active || [])
+        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
+        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+      admin: (serverListData?.trend_data_admin || [])
+        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
+        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+      instructional: (serverListData?.trend_data_instructional || [])
+        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
+        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+      member: (serverListData?.trend_data_member || [])
+        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
+        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+      total_requests: (serverListData?.trend_data_total_requests || [])
+        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
+        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
     }),
     [
       serverListData?.trend_data_active,
@@ -560,7 +570,7 @@ export default function Staff({
       createStaffData.departments.forEach((dept) => {
         if (dept && dept.department_id) {
           mapping[dept.department_id] = {
-            name: dept.title ?? "",
+            name: dept.name ?? "",
             description: dept.description ?? "",
           };
         }
@@ -782,7 +792,7 @@ export default function Staff({
 
   const handleProcessCSV = useCallback(async () => {
     const activeMappings = columnMappings.filter(
-      (m) => includedColumns[m.csv_column] !== false,
+      (m) => m.csv_column && includedColumns[m.csv_column] !== false,
     );
 
     const requiredFields = ["firstName", "lastName", "email"];
@@ -894,7 +904,7 @@ export default function Staff({
       return editableRows[index] || row;
     });
 
-    const validRows = finalRows.filter((row) => row.errors.length === 0);
+    const validRows = finalRows.filter((row) => (row.errors?.length ?? 0) === 0);
 
     if (validRows.length === 0) {
       toast.error("No valid rows to process. Please fix errors.");
@@ -992,6 +1002,7 @@ export default function Staff({
               ? row.primary_email_index
               : 0,
           role: row.role ?? "member",
+          active: true,  // Default to active for new staff
           department_ids: deptIds,
           cohort_ids: cohortIds,
         };
@@ -1002,9 +1013,15 @@ export default function Staff({
         return;
       }
 
+      if (!effectiveProfile?.id) {
+        toast.error("Profile ID is required");
+        return;
+      }
+
       const response = await bulkCreateOrUpdateStaffAction({
         body: {
           profiles,
+          current_profile_id: effectiveProfile.id,
         },
       });
 
@@ -1036,7 +1053,7 @@ export default function Staff({
   ]);
 
   const validRowCount = processedRows.filter(
-    (row) => row.errors.length === 0,
+    (row) => (row.errors?.length ?? 0) === 0,
   ).length;
 
   // Table columns definition
@@ -1157,7 +1174,7 @@ export default function Staff({
         ),
         cell: ({ row }) => {
           const staff = row.original;
-          const cohortIds = staff.cohort_ids;
+          const cohortIds = staff.cohort_ids ?? [];
 
           if (!cohortIds.length) {
             return <span className="text-xs text-muted-foreground">None</span>;
@@ -1600,10 +1617,12 @@ export default function Staff({
                   <DataTableFacetedFilter
                     column={departmentIdsColumn}
                     title="Department"
-                    options={departments.map((dept) => ({
-                      value: dept.department_id,
-                      label: dept.name,
-                    }))}
+                    options={departments
+                      .filter((dept) => dept.department_id && dept.name)
+                      .map((dept) => ({
+                        value: dept.department_id!,
+                        label: dept.name!,
+                      }))}
                   />
                 )}
 
@@ -2083,7 +2102,7 @@ export default function Staff({
                             .filter((row, index) => {
                               const editableRow = editableRows[index] || row;
                               const hasRowErrors =
-                                editableRow.errors.length > 0;
+                                (editableRow.errors?.length ?? 0) > 0;
                               if (!showErrorRows && hasRowErrors) {
                                 return false;
                               }
@@ -2091,28 +2110,29 @@ export default function Staff({
                             })
                             .map((row, index) => {
                               const editableRow = editableRows[index] || row;
-                              const hasFirstNameError = editableRow.errors.some(
+                              const errors = editableRow.errors ?? [];
+                              const hasFirstNameError = errors.some(
                                 (e) => e.field === "first_name",  // snake_case
                               );
-                              const hasLastNameError = editableRow.errors.some(
+                              const hasLastNameError = errors.some(
                                 (e) => e.field === "last_name",  // snake_case
                               );
-                              const hasAliasError = editableRow.errors.some(
+                              const hasAliasError = errors.some(
                                 (e) => e.field === "email",
                               );
                               const hasDuplicateAlias =
                                 duplicateAliasMap.has(index);
-                              const hasRoleError = editableRow.errors.some(
+                              const hasRoleError = errors.some(
                                 (e) => e.field === "role",
                               );
                               const hasDepartmentError =
                                 validDepartmentIdsForCSV.length > 1 &&
-                                editableRow.errors.some(
+                                errors.some(
                                   (e) =>
                                     e.field === "department_ids" ||
                                     e.field === "department_id",
                                 );
-                              const hasCohortError = editableRow.errors.some(
+                              const hasCohortError = errors.some(
                                 (e) =>
                                   e.field === "cohort_ids" ||
                                   e.field === "cohort_id",
@@ -2461,13 +2481,13 @@ export default function Staff({
             </AlertDialogHeader>
             {(() => {
               const selected = staff.filter((s) =>
-                selectedStaffIds.includes(s.profile_id),
+                s.profile_id && selectedStaffIds.includes(s.profile_id),
               );
               const nonDeletable = selected.filter((s) => !s.can_delete);
               const deletable = selected.filter((s) => s.can_delete);
               const impactedCohorts = deletable.map((s) => ({
                 staff: s,
-                cohortCount: s.cohort_ids.length,
+                cohortCount: (s.cohort_ids?.length ?? 0),
               }));
               return (
                 <div className="space-y-3">
@@ -2549,10 +2569,12 @@ export default function Staff({
                     const deletableIds = staff
                       .filter(
                         (s) =>
+                          s.profile_id &&
                           selectedStaffIds.includes(s.profile_id) &&
                           s.can_delete,
                       )
-                      .map((s) => s.profile_id);
+                      .map((s) => s.profile_id!)
+                      .filter((id): id is string => id !== null);
                     if (deletableIds.length === 0) {
                       setShowBulkDeleteDialog(false);
                       return;
@@ -2596,7 +2618,7 @@ export default function Staff({
               (() => {
                 const staffMember = deleteStaffMember;
                 const canDelete = staffMember.can_delete;
-                const cohortCount = staffMember.cohort_ids.length;
+                const cohortCount = (staffMember.cohort_ids?.length ?? 0);
 
                 if (!canDelete) {
                   return (
@@ -2675,10 +2697,24 @@ export default function Staff({
                     return;
                   }
 
+                  if (!deleteStaffMember.profile_id) {
+                    toast.error("Invalid user profile ID");
+                    setShowSingleDeleteDialog(false);
+                    setDeleteStaffMember(null);
+                    return;
+                  }
+
                   try {
                     if (!deleteStaffAction) return;
+                    if (!effectiveProfile?.id) {
+                      toast.error("Profile ID is required");
+                      return;
+                    }
                     await deleteStaffAction({
-                      body: { profileId: deleteStaffMember.profile_id },
+                      body: { 
+                        target_profile_id: deleteStaffMember.profile_id,
+                        current_profile_id: effectiveProfile.id,
+                      },
                     });
                     router.refresh();
                     toast.success("User deleted successfully");

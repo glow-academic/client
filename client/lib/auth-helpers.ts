@@ -133,15 +133,13 @@ export async function checkRouteAccess(
           const profileContext = await api.post(
             "/profile/context",
             {
-              body: {
-                pathname: "/",
-              },
+              body: {},
             },
             cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined,
           );
 
           const role =
-            (profileContext.effectiveProfile?.role as ProfileRole) || null;
+            (profileContext.role as ProfileRole) || null;
 
           if (!role) {
             return {

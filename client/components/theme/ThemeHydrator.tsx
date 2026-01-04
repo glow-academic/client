@@ -23,22 +23,13 @@ export function ThemeHydrator({
     applyThemeTokens(activeSettings.tokens);
 
     // Handle dark/light mode by toggling .dark class on document root
+    // Note: mode is not currently in SettingsActiveClient type, so we skip mode handling for now
+    // If mode support is needed, it should be added to SettingsFields in layout-server.tsx
     const root = document.documentElement;
-    if (activeSettings.mode === "dark") {
-      root.classList.add("dark");
-    } else if (activeSettings.mode === "light") {
-      root.classList.remove("dark");
-    }
-    // For 'system' mode, we could defer to prefers-color-scheme,
-    // but for POC we'll default to light
-    else if (activeSettings.mode === "system") {
-      // For now, default to light mode
-      // Future: could check window.matchMedia("(prefers-color-scheme: dark)")
-      root.classList.remove("dark");
-    }
+    // Default to light mode if mode is not available
+    root.classList.remove("dark");
   }, [
-    activeSettings?.settings_id,
-    activeSettings?.mode,
+    activeSettings?.id,
     activeSettings?.tokens,
   ]); // Re-run when active theme changes
 
