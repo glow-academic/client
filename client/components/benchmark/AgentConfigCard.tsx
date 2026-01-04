@@ -103,15 +103,17 @@ export function AgentConfigCard({
     let levels: Array<{ id: string; temperature: string; is_upper: boolean }> = [];
     if (selectedModel.temperature_levels) {
       const tempLevels = selectedModel.temperature_levels;
-      if (typeof tempLevels === "object") {
+      if (typeof tempLevels === "object" && tempLevels !== null) {
         const levelsArray = Array.isArray(tempLevels)
           ? tempLevels
           : Object.values(tempLevels);
-        levels = levelsArray.map((l: any) => ({
-          id: String(l.id || ""),
-          temperature: String(l.temperature || ""),
-          is_upper: Boolean(l.is_upper || false),
-        }));
+        levels = levelsArray
+          .filter((l): l is Record<string, unknown> => typeof l === "object" && l !== null)
+          .map((l) => ({
+            id: String(l["id"] || ""),
+            temperature: String(l["temperature"] || ""),
+            is_upper: Boolean(l["is_upper"] || false),
+          }));
       }
     }
 
@@ -150,14 +152,16 @@ export function AgentConfigCard({
     if (!selectedModel?.reasoning_options) return [];
 
     const reasoningOpts = selectedModel.reasoning_options;
-    if (typeof reasoningOpts === "object") {
+    if (typeof reasoningOpts === "object" && reasoningOpts !== null) {
       const optsArray = Array.isArray(reasoningOpts)
         ? reasoningOpts
         : Object.values(reasoningOpts);
-      return optsArray.map((opt: any) => ({
-        id: String(opt.id || ""),
-        reasoning_level: String(opt.reasoning_level || ""),
-      }));
+      return optsArray
+        .filter((opt): opt is Record<string, unknown> => typeof opt === "object" && opt !== null)
+        .map((opt) => ({
+          id: String(opt["id"] || ""),
+          reasoning_level: String(opt["reasoning_level"] || ""),
+        }));
     }
     return [];
   }, [agentConfig.model_id, agentDetail?.models]);
@@ -195,12 +199,14 @@ export function AgentConfigCard({
     if (!selectedModel?.available_voices) return [];
 
     const voices = selectedModel.available_voices;
-    if (typeof voices === "object") {
+    if (typeof voices === "object" && voices !== null) {
       const voicesArray = Array.isArray(voices) ? voices : Object.values(voices);
-      return voicesArray.map((v: any) => ({
-        id: String(v.id || ""),
-        voice: String(v.voice || ""),
-      }));
+      return voicesArray
+        .filter((v): v is Record<string, unknown> => typeof v === "object" && v !== null)
+        .map((v) => ({
+          id: String(v["id"] || ""),
+          voice: String(v["voice"] || ""),
+        }));
     }
     return [];
   }, [agentConfig.model_id, agentDetail?.models]);

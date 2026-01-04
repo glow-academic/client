@@ -253,7 +253,7 @@ function AuthComponent({
     let authItemIds: string[] = [];
     let authItemActiveStates: Record<string, boolean> = {};
     let authItemEncryptedStates: Record<string, boolean> = {};
-    let authItemData: Record<string, { name: string; description: string }> =
+    const authItemData: Record<string, { name: string; description: string }> =
       {};
 
     // Try to read from draft payload fields first (if draft exists)
@@ -271,7 +271,7 @@ function AuthComponent({
         if (Array.isArray(parsed)) {
           authItemIds = parsed.map(String);
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to auth_items array
       }
     }
@@ -289,7 +289,7 @@ function AuthComponent({
         if (parsed && typeof parsed === "object") {
           authItemActiveStates = parsed as Record<string, boolean>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to auth_items array
       }
     }
@@ -307,7 +307,7 @@ function AuthComponent({
         if (parsed && typeof parsed === "object") {
           authItemEncryptedStates = parsed as Record<string, boolean>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to auth_items array
       }
     }

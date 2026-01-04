@@ -381,7 +381,7 @@ function ParameterComponent({
         if (Array.isArray(parsed)) {
           fieldIds = parsed.map((id) => String(id));
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to extracting from array data
       }
     }
@@ -395,7 +395,7 @@ function ParameterComponent({
         if (parsed && typeof parsed === "object") {
           fieldActiveStates = parsed as Record<string, boolean>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to extracting from array data
       }
     }
@@ -409,7 +409,7 @@ function ParameterComponent({
         if (parsed && typeof parsed === "object") {
           fieldDefaultStates = parsed as Record<string, boolean>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to extracting from array data
       }
     }
@@ -735,12 +735,6 @@ function ParameterComponent({
   const validFieldIds = useMemo(() => {
     return parameterData?.valid_field_ids || [];
   }, [parameterData?.valid_field_ids]);
-
-
-  // Get current field IDs from draftState (not formData, since fieldIds is not in URL)
-  const currentFieldIds = useMemo(() => {
-    return draftState.fieldIds || [];
-  }, [draftState.fieldIds]);
 
   // Form initialization function for GenericForm
   const initializeForm = useCallback(
@@ -1828,7 +1822,7 @@ function ParameterComponent({
         },
       },
     ];
-  }, [currentFieldIds, fieldMapping, isReadonly, isEditMode]);
+  }, [fieldMapping, isReadonly, isEditMode, draftState.fieldIds]);
 
   return (
     <TooltipProvider>

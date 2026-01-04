@@ -299,17 +299,19 @@ export default function Rubric({
             ? JSON.parse(data.draft_standard_groups)
             : data.draft_standard_groups;
         if (parsed && Array.isArray(parsed)) {
-          standardGroups = parsed.map((g: any) => ({
-            id: g.id || `temp-${Date.now()}-${Math.random()}`,
-            name: g.name || "",
-            description: g.description || "",
-            points: g.points || 5,
-            passPoints: g.passPoints || 4,
-            position: g.position || 1,
-            active: g.active ?? true,
-          }));
+          standardGroups = parsed
+            .filter((g): g is Record<string, unknown> => typeof g === "object" && g !== null)
+            .map((g) => ({
+              id: (typeof g["id"] === "string" ? g["id"] : undefined) || `temp-${Date.now()}-${Math.random()}`,
+              name: (typeof g["name"] === "string" ? g["name"] : "") || "",
+              description: (typeof g["description"] === "string" ? g["description"] : "") || "",
+              points: (typeof g["points"] === "number" ? g["points"] : undefined) || 5,
+              passPoints: (typeof g["passPoints"] === "number" ? g["passPoints"] : undefined) || 4,
+              position: (typeof g["position"] === "number" ? g["position"] : undefined) || 1,
+              active: (typeof g["active"] === "boolean" ? g["active"] : undefined) ?? true,
+            }));
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to extracting from array data
       }
     }
@@ -321,14 +323,17 @@ export default function Rubric({
             ? JSON.parse(data.draft_standards)
             : data.draft_standards;
         if (parsed && Array.isArray(parsed)) {
-          standards = parsed.map((s: any) => ({
-            id: s.id || `temp-${Date.now()}-${Math.random()}`,
-            name: s.name || "",
-            points: s.points || 1,
-            standardGroupId: s.standardGroupId || s.standard_group_id || "",
-          }));
+          standards = parsed
+            .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null)
+            .map((s) => ({
+              id: (typeof s["id"] === "string" ? s["id"] : undefined) || `temp-${Date.now()}-${Math.random()}`,
+              name: (typeof s["name"] === "string" ? s["name"] : "") || "",
+              points: (typeof s["points"] === "number" ? s["points"] : undefined) || 1,
+              standardGroupId: (typeof s["standardGroupId"] === "string" ? s["standardGroupId"] : undefined) ||
+                (typeof s["standard_group_id"] === "string" ? s["standard_group_id"] : undefined) || "",
+            }));
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to extracting from array data
       }
     }
@@ -341,25 +346,30 @@ export default function Rubric({
             : data.draft_grid_cells;
         if (parsed && Array.isArray(parsed)) {
           // gridCells is an array of GridCell objects
-          gridCells = parsed.map((cell: any) => ({
-            standardGroupId: cell.standardGroupId || cell.standard_group_id || "",
-            standardId: cell.standardId || cell.standard_id || "",
-            description: cell.description || "",
-          }));
+          gridCells = parsed
+            .filter((cell): cell is Record<string, unknown> => typeof cell === "object" && cell !== null)
+            .map((cell) => ({
+              standardGroupId: (typeof cell["standardGroupId"] === "string" ? cell["standardGroupId"] : undefined) ||
+                (typeof cell["standard_group_id"] === "string" ? cell["standard_group_id"] : undefined) || "",
+              standardId: (typeof cell["standardId"] === "string" ? cell["standardId"] : undefined) ||
+                (typeof cell["standard_id"] === "string" ? cell["standard_id"] : undefined) || "",
+              description: (typeof cell["description"] === "string" ? cell["description"] : "") || "",
+            }));
         } else if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           // Fallback: Convert JSONB object to array of GridCell (for backward compatibility)
-          Object.entries(parsed).forEach(([key, value]: [string, any]) => {
+          Object.entries(parsed).forEach(([key, value]) => {
             const [standardGroupId, standardId] = key.split(":");
             if (standardGroupId && standardId) {
+              const valueObj = value && typeof value === "object" ? value as Record<string, unknown> : null;
               gridCells.push({
                 standardGroupId,
                 standardId,
-                description: value?.description || (typeof value === "string" ? value : ""),
+                description: (valueObj && "description" in valueObj ? String(valueObj["description"]) : "") || (typeof value === "string" ? value : ""),
               });
             }
           });
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to extracting from array data
       }
     }
@@ -368,8 +378,8 @@ export default function Rubric({
     if (standardGroups.length === 0 && data && "standard_groups" in data && data.standard_groups) {
       const groups: StandardGroup[] = [];
       if (Array.isArray(data.standard_groups)) {
-        data.standard_groups.forEach((group: any) => {
-          if (group.standard_group_id) {
+        data.standard_groups.forEach((group) => {
+          if (typeof group === "object" && group !== null && "standard_group_id" in group && group.standard_group_id) {
             groups.push({
               id: String(group.standard_group_id),
               name: group.name || "",
@@ -390,12 +400,13 @@ export default function Rubric({
       const standardsList: Standard[] = [];
       const cells: GridCell[] = [];
       if (Array.isArray(data.standard_groups) && Array.isArray(data.standards)) {
-        data.standard_groups.forEach((group: any) => {
-          if (group.standard_group_id && "standard_ids" in group && Array.isArray(group.standard_ids)) {
+        data.standard_groups.forEach((group) => {
+          if (typeof group === "object" && group !== null && "standard_group_id" in group && group.standard_group_id && "standard_ids" in group && Array.isArray(group.standard_ids)) {
             const groupId = String(group.standard_group_id);
             group.standard_ids.forEach((standardId: string) => {
               const standard = data.standards?.find(
-                (s: any) => s.standard_id === standardId
+                (s): s is { standard_id: string | null; name: string | null; description: string | null; points: number | null } =>
+                  typeof s === "object" && s !== null && "standard_id" in s && s.standard_id === standardId
               );
               if (standard && standard.standard_id) {
                 const name = standard.name;
@@ -890,7 +901,7 @@ export default function Rubric({
         gridCells: newGridCells,
       }));
     },
-    [draftState.standardGroups, draftState.standards],
+    [draftState.standardGroups, draftState.standards, draftState.gridCells],
   );
 
   // Handle group metadata change
@@ -1004,7 +1015,7 @@ export default function Rubric({
   );
 
   // Handle rubric generation
-  const handleGenerateRubric = async () => {
+  const handleGenerateRubric = useCallback(async () => {
     if (!socket || !isConnected) {
       toast.error("WebSocket not connected");
       return;
@@ -1185,7 +1196,7 @@ export default function Rubric({
         { id: toastId },
       );
     }
-  };
+  }, [socket, isConnected, draftState, rubricData, isEditMode, rubricId, setDraftState]);
 
   // Group level names by uniqueness for column headers
   const levelNameGroups = useMemo(() => {
@@ -1390,11 +1401,11 @@ export default function Rubric({
                       <GenericPicker
                         items={(() => {
                           const mapping: Record<string, { name: string; description: string }> = {};
-                          (rubricData.departments || []).forEach((dept: any) => {
-                            if (dept.department_id) {
+                          (rubricData.departments || []).forEach((dept) => {
+                            if (typeof dept === "object" && dept !== null && "department_id" in dept && dept.department_id) {
                               mapping[String(dept.department_id)] = {
-                                name: dept.name || "",
-                                description: dept.description || "",
+                                name: (typeof dept.name === "string" ? dept.name : "") || "",
+                                description: (typeof dept.description === "string" ? dept.description : "") || "",
                               };
                             }
                           });
@@ -1427,7 +1438,9 @@ export default function Rubric({
                   const agents = rubricData?.agents || [];
                   const rubricAgentIds =
                     rubricData?.valid_agent_ids?.filter((id) => {
-                      const agent = agents.find((a: any) => String(a.agent_id) === id);
+                      const agent = agents.find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
+                        typeof a === "object" && a !== null && "agent_id" in a && String(a.agent_id) === id
+                      );
                       return agent?.roles?.includes("rubric");
                     }) || [];
 
@@ -1444,12 +1457,12 @@ export default function Rubric({
                         <GenericPicker
                           items={(() => {
                             const mapping: Record<string, { name: string; description: string; roles: string[] }> = {};
-                            agents.forEach((agent: any) => {
-                              if (agent.agent_id) {
+                            agents.forEach((agent) => {
+                              if (typeof agent === "object" && agent !== null && "agent_id" in agent && agent.agent_id) {
                                 mapping[String(agent.agent_id)] = {
-                                  name: agent.name || "",
-                                  description: agent.description || "",
-                                  roles: agent.roles || [],
+                                  name: (typeof agent.name === "string" ? agent.name : "") || "",
+                                  description: (typeof agent.description === "string" ? agent.description : "") || "",
+                                  roles: (Array.isArray(agent.roles) ? agent.roles.map(String) : []) || [],
                                 };
                               }
                             });

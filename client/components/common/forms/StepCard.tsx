@@ -160,12 +160,7 @@ export function StepCard({
       // Only update state if values actually changed
       return hasChanges ? newValues : prev;
     });
-  }, [
-    // Depend on filter values, not array reference
-    filters
-      ? JSON.stringify(filters.map((f) => `${f.key}:${f.value}`))
-      : null,
-  ]);
+  }, [filters]);
 
   const handleApplyFilters = () => {
     if (filters) {

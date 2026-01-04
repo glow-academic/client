@@ -325,7 +325,7 @@ function EvalComponent({
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           agentSettings = parsed as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors
       }
     }
@@ -352,7 +352,7 @@ function EvalComponent({
             grade_agent_ids: Array.from(gradeAgentIdsSet),
           };
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors
       }
     }
@@ -394,7 +394,7 @@ function EvalComponent({
           });
           agentSelectionsByRole = converted;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to extracting from agent_ids
       }
     }
@@ -406,7 +406,9 @@ function EvalComponent({
       const agentRolesMap: Record<string, string> = {};
       
       data.agent_ids.forEach((agentId: string) => {
-        const agent = agents.find((a: any) => a.agent_id === agentId);
+        const agent = agents.find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } => 
+          typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+        );
         if (agent?.roles && Array.isArray(agent.roles) && agent.roles.length > 0) {
           agent.roles.forEach((role: string) => {
             // Only set if not already set (single-select - take first)
@@ -678,10 +680,8 @@ function EvalComponent({
     return baseIds;
   }, [evalData?.valid_agent_ids, draftState.departmentIds]);
 
-  // Get valid rubric IDs
-  const validRubricIds = useMemo(() => {
-    return evalData?.valid_rubric_ids || [];
-  }, [evalData?.valid_rubric_ids]);
+  // Get valid rubric IDs (computed but used via evalData directly)
+  // Removed unused variable - evalData?.valid_rubric_ids is used directly where needed
 
   // Get eval agents array (agents with 'eval' role) - prefer eval_agents, fallback to agents
   const evalAgentsArray = useMemo(() => {
@@ -704,19 +704,21 @@ function EvalComponent({
     // Add agents from API response (arrays now)
     const agents = evalData?.agents || [];
 
-    agents.forEach((agent: any) => {
+    agents.forEach((agent) => {
+      if (typeof agent !== "object" || agent === null || !("agent_id" in agent)) return;
       const key = String(agent.agent_id);
+      const agentRoles = "roles" in agent && Array.isArray(agent.roles) ? agent.roles : [];
       mapped[key] =
-        agent.roles && agent.roles.length > 0
+        agentRoles.length > 0
           ? {
               id: key,
-              name: agent.name || "",
-              description: agent.description || "",
-              roles: agent.roles.map(String),
+              name: ("name" in agent ? String(agent.name) : "") || "",
+              description: ("description" in agent ? String(agent.description) : "") || "",
+              roles: agentRoles.map(String),
             }
           : {
               id: key,
-              name: agent.name || "",
+              name: ("name" in agent ? String(agent.name) : "") || "",
               description: agent.description || "",
             };
     });
@@ -761,7 +763,9 @@ function EvalComponent({
       const availableModelRuns = evalData?.available_model_runs || [];
       
       modelRunIds.forEach((runId) => {
-        const run = availableModelRuns.find((mr: any) => mr.model_run_id === runId);
+        const run = availableModelRuns.find((mr): mr is { model_run_id: string | null; created_at: string | null; model_id: string | null; model_name: string | null; profile_id: string | null; profile_name: string | null; agent_id: string | null; agent_name: string | null; persona_id: string | null; persona_name: string | null; actor_type: string | null } => 
+          typeof mr === "object" && mr !== null && "model_run_id" in mr && mr.model_run_id === runId
+        );
         if (run?.agent_id) {
           const agent = agentMapping[run.agent_id];
           if (agent?.roles && agent.roles.length > 0) {
@@ -795,13 +799,20 @@ function EvalComponent({
       const evalDetailData = serverData as EvalDetailOut;
       const deptIds = evalDetailData.department_ids || [];
       const agentIds = evalDetailData.agent_ids || [];
-      const modelRunIds = evalDetailData.model_runs?.map((mr: any) => mr.model_run_id) || [];
+      const modelRunIds = evalDetailData.model_runs
+        ?.filter((mr): mr is { model_run_id: string | null; completed: boolean | null; assigned_at: string | null; status_updated_at: string | null; model_run_created_at: string | null; model_id: string | null; model_name: string | null; profile_id: string | null; profile_name: string | null; agent_id: string | null; agent_name: string | null; persona_id: string | null; persona_name: string | null; actor_type: string | null; has_grade: boolean | null; grade_score: number | null; grade_passed: boolean | null; grade_created_at: string | null; rubric_grade_agents: Array<{ rubric_grade_agent_id: string | null; rubric_id: string | null; rubric_name: string | null; agent_id: string | null; agent_name: string | null }> | null } =>
+          typeof mr === "object" && mr !== null && "model_run_id" in mr
+        )
+        .map((mr) => mr.model_run_id)
+        .filter((id): id is string => id !== null) || [];
 
       // Convert agentIds to agentSelectionsByRole (single-select per role)
       const agents = evalDetailData.agents || [];
       const agentSelectionsByRole: Record<string, string> = {};
       agentIds.forEach((agentId: string) => {
-        const agent = agents.find((a: any) => a.agent_id === agentId);
+        const agent = agents.find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
+          typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+        );
         if (agent?.roles && Array.isArray(agent.roles) && agent.roles.length > 0) {
           agent.roles.forEach((role: string) => {
             // Only set if not already set (single-select - take first)
@@ -878,14 +889,18 @@ function EvalComponent({
         const rubricIds = settings.rubric_ids || [];
         const gradeAgentIds = settings.grade_agent_ids || [];
         if (rubricIds.length === 0) {
-          const agent = (evalData?.agents || []).find((a: any) => a.agent_id === agentId);
+          const agent = (evalData?.agents || []).find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
+            typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+          );
           toast.error(
             `Please select at least one rubric for agent ${agent?.name || agentId.slice(0, 8)}`
           );
           throw new Error(`Missing rubrics for agent ${agentId}`);
         }
         if (gradeAgentIds.length === 0) {
-          const agent = (evalData?.agents || []).find((a: any) => a.agent_id === agentId);
+          const agent = (evalData?.agents || []).find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
+            typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+          );
           toast.error(
             `Please select at least one grading agent for agent ${agent?.name || agentId.slice(0, 8)}`
           );
@@ -1439,13 +1454,11 @@ function EvalComponent({
     },
     [
       evalData,
-      validAgentIds,
-      validRubricIds,
-      evalAgentsArray,
-      validEvalAgentIds,
       isReadonly,
       isEditMode,
       effectiveProfile?.id,
+      evalId,
+      setDraftState,
     ]
   );
 
@@ -1589,7 +1602,8 @@ function EvalComponent({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {uniqueAgentIds.map((agentId) => {
                   const agent = (evalData?.agents || []).find(
-                    (a: any) => a.agent_id === agentId
+                    (a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
+                      typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
                   );
                   const settings = getAgentSettings(agentId);
                   const selectedRubricIds = settings.rubric_ids || [];
@@ -1602,16 +1616,17 @@ function EvalComponent({
                   // Filter rubrics to only those matching the agent's roles
                   const agentRoles = agent?.roles || [];
                   const allRubrics = evalData?.rubrics || [];
-                  const validRubricsForAgent = allRubrics.filter((rubric: any) => {
+                  const validRubricsForAgent = allRubrics.filter((rubric): rubric is { rubric_id: string | null; name: string | null; description: string | null; agent_role: string | null } => {
+                    if (typeof rubric !== "object" || rubric === null || !("rubric_id" in rubric)) return false;
                     // If agent has no roles, show all rubrics (backward compatibility)
                     if (!agentRoles || agentRoles.length === 0) return true;
                     // If rubric has no agent_role (NULL/empty/null), show it (general rubric)
-                    const rubricRole = rubric?.agent_role;
+                    const rubricRole = "agent_role" in rubric ? rubric.agent_role : null;
                     if (rubricRole == null || rubricRole === '') return true;
                     // Show rubric if its agent_role matches any of the agent's roles
-                    return agentRoles.includes(rubricRole);
+                    return agentRoles.includes(String(rubricRole));
                   });
-                  const validRubricIdsForAgent = validRubricsForAgent.map((r: any) => r.rubric_id);
+                  const validRubricIdsForAgent = validRubricsForAgent.map((r) => r.rubric_id).filter((id): id is string => id !== null);
 
                   return (
                     <Card key={agentId} className="p-4">
@@ -1707,23 +1722,18 @@ function EvalComponent({
 
     return sections;
   }, [
-    draftState.use_groups,
-    draftState.modelRunIds,
-    draftState.groupIds,
-    draftState.agentSelectionsByRole,
     extractedAgentRoles,
     evalData?.rubrics,
     evalData?.agents,
-    validRubricIds,
-    validAgentIds,
-    evalAgentsArray,
-    validEvalAgentIds,
     agentMapping,
     isReadonly,
     isEditMode,
     getAgentSettings,
     getUniqueSelectedAgents,
-    draftState.agentSettings,
+    draftState,
+    evalAgentsArray,
+    validAgentIds,
+    validEvalAgentIds,
   ]);
 
   return (

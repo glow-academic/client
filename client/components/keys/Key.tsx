@@ -430,7 +430,7 @@ function KeyComponent({
   const [dotsCount, setDotsCount] = useState(100);
   const dotsContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleTogglePreview = async () => {
+  const handleTogglePreview = useCallback(async () => {
     if (!isPreviewMode) {
       // Turning preview on - need to decrypt
       if (!keyId || !decryptKeyAction) {
@@ -461,23 +461,23 @@ function KeyComponent({
       setIsPreviewMode(false);
       setDecryptedKey(null);
     }
-  };
+  }, [isPreviewMode, keyId, decryptKeyAction]);
 
-  const handleStartEditKey = () => {
+  const handleStartEditKey = useCallback(() => {
     setIsEditingKey(true);
     setEditingKeyValue(draftState.key || "");
-  };
+  }, [draftState.key]);
 
-  const handleSaveEditKey = () => {
+  const handleSaveEditKey = useCallback(() => {
     setFormData({ key: editingKeyValue });
     setIsEditingKey(false);
     setEditingKeyValue("");
-  };
+  }, [editingKeyValue, setFormData]);
 
-  const handleCancelEditKey = () => {
+  const handleCancelEditKey = useCallback(() => {
     setIsEditingKey(false);
     setEditingKeyValue("");
-  };
+  }, []);
 
   // Calculate dots dynamically based on container width
   useEffect(() => {

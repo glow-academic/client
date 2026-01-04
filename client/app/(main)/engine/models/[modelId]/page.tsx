@@ -66,17 +66,10 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   "use server";
-  // Convert camelCase to snake_case for API request
-  const { modelId, ...rest } = input.body as any;
-  const snakeCaseInput = {
-    body: {
-      ...rest,
-      model_id: modelId,
-    },
-  };
+  // Input body already has snake_case from API schema (model_id, not modelId)
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/update", snakeCaseInput as UpdateModelIn);
+  return api.post("/models/update", input);
 }
 
 async function patchModelDraft(

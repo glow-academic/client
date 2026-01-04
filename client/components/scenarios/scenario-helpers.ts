@@ -224,9 +224,12 @@ export function buildSearchParams({
   const isRandomizing = searchParams.get("randomize") === "all";
   // Convert field_ranges array to dictionary for lookup
   // Note: field_ranges is only available in GetScenarioDetailApiResponse, not GetScenarioNewApiResponse
-  const serverFieldRangesArray = (serverCurrentValues as any)?.field_ranges || [];
+  const serverFieldRangesArray = (typeof serverCurrentValues === "object" && serverCurrentValues !== null && "field_ranges" in serverCurrentValues && Array.isArray(serverCurrentValues.field_ranges))
+    ? serverCurrentValues.field_ranges
+    : [];
   const serverFieldRanges: Record<string, { min: number; max: number }> = {};
-  serverFieldRangesArray.forEach((range: { parameter_id: string | null; min_count: number | null; max_count: number | null }) => {
+  serverFieldRangesArray.forEach((range) => {
+    if (typeof range !== "object" || range === null || !("parameter_id" in range)) return;
     if (range.parameter_id) {
       serverFieldRanges[range.parameter_id] = {
         min: range.min_count ?? 1,

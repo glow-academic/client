@@ -567,6 +567,8 @@ function DepartmentComponent({
       updateDepartmentAction,
       createDepartmentAction,
       router,
+      departmentData,
+      departmentDetailDefault,
     ]
   );
 

@@ -304,10 +304,6 @@ export default function Model({
   const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEditingBaseUrl, setIsEditingBaseUrl] = useState(false);
-  const [editingBaseUrlValue, setEditingBaseUrlValue] = useState("");
-  const [dotsCount, setDotsCount] = useState(100);
-  const dotsContainerRef = useRef<HTMLDivElement>(null);
   const isEditMode = !!modelId;
 
   // Inline parsers for URL-backed state (draftId only for now)
@@ -430,7 +426,7 @@ export default function Model({
         : [];
     const pricing: Record<string, { unit_id: string; price: number }[]> = {};
     const selectedPricingTypesSet = new Set<string>();
-    pricingArray.forEach((entry: any) => {
+    pricingArray.forEach((entry) => {
       const type = entry.type;
       selectedPricingTypesSet.add(type);
       if (!pricing[type]) {
@@ -516,27 +512,9 @@ export default function Model({
           : [],
       qualities: "qualities" in data ? (data as ModelDetailOut).qualities || [] : [],
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    isEditMode,
     modelData,
     defaultDepartmentIds,
-    draftId,
-    urlDraftId,
-    isModelDetailOut(modelData) ? modelData.name : undefined,
-    isModelDetailOut(modelData) ? modelData.description : undefined,
-    isModelDetailOut(modelData) ? modelData.value : undefined,
-    isModelDetailOut(modelData) ? modelData.active : undefined,
-    (modelData as ModelDetailOut)?.provider_id,
-    (modelData as ModelDetailOut)?.department_ids,
-    (modelData as ModelDetailOut)?.base_url,
-    (modelData as ModelDetailOut)?.temperature_lower,
-    (modelData as ModelDetailOut)?.temperature_upper,
-    (modelData as ModelDetailOut)?.modalities,
-    (modelData as ModelDetailOut)?.pricing,
-    (modelData as ModelDetailOut)?.reasoning_levels,
-    (modelData as ModelDetailOut)?.voices,
-    (modelData as ModelDetailOut)?.qualities,
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
@@ -675,19 +653,19 @@ export default function Model({
   type UpdateModelBody = UpdateModelIn extends { body: infer B } ? B : never;
 
   // Use server actions directly (no mutations needed)
-  const handleCreateModel = async (body: CreateModelBody) => {
+  const handleCreateModel = useCallback(async (body: CreateModelBody) => {
     if (!createModelAction) {
       throw new Error("createModelAction is required");
     }
     await createModelAction({ body });
-  };
+  }, [createModelAction]);
 
-  const handleUpdateModel = async (body: UpdateModelBody) => {
+  const handleUpdateModel = useCallback(async (body: UpdateModelBody) => {
     if (!updateModelAction) {
       throw new Error("updateModelAction is required");
     }
     await updateModelAction({ body });
-  };
+  }, [updateModelAction]);
 
   // Readonly logic - models are always editable for now (no can_edit field in API)
   const isReadonly = useMemo(() => {
@@ -774,10 +752,10 @@ export default function Model({
   }, [modelData]);
 
 
-  const resetFormAndState = () => {
+  const resetFormAndState = useCallback(() => {
     setDraftState(initialDraftState);
     setErrors({});
-  };
+  }, [initialDraftState]);
 
   // Step status logic (for GenericForm)
   const getStepStatus = useCallback(
@@ -1025,61 +1003,10 @@ export default function Model({
     []
   );
 
-  // Custom URL editing handlers (will be recreated in renderStep with stepFormData)
-  const handleStartEditBaseUrl = useCallback(() => {
-    setIsEditingBaseUrl(true);
-    setEditingBaseUrlValue((draftState.baseUrl || "") as string);
-  }, [draftState.baseUrl]);
-
-  const handleSaveEditBaseUrl = useCallback(() => {
-    setDraftState((prev) => ({ ...prev, baseUrl: editingBaseUrlValue }));
-    setIsEditingBaseUrl(false);
-    setEditingBaseUrlValue("");
-  }, [editingBaseUrlValue]);
-
-  const handleCancelEditBaseUrl = useCallback(() => {
-    setIsEditingBaseUrl(false);
-    setEditingBaseUrlValue("");
-  }, []);
+  // Custom URL editing handlers removed - not used in renderStep
 
   // Calculate dots dynamically based on container width (for custom URL display)
-  useEffect(() => {
-    const calculateDots = () => {
-      if (!dotsContainerRef.current) return;
-
-      const container = dotsContainerRef.current;
-      const containerWidth = container.offsetWidth;
-      const padding = 24; // p-3 = 12px on each side
-      const availableWidth = containerWidth - padding;
-
-      // Approximate width of a dot character at text-lg (18px)
-      const tempSpan = document.createElement("span");
-      tempSpan.style.fontSize = "18px";
-      tempSpan.style.visibility = "hidden";
-      tempSpan.style.position = "absolute";
-      tempSpan.textContent = "•";
-      document.body.appendChild(tempSpan);
-      const dotWidth = tempSpan.offsetWidth;
-      document.body.removeChild(tempSpan);
-
-      const dotsNeeded = Math.floor(availableWidth / dotWidth);
-      setDotsCount(Math.max(50, dotsNeeded));
-    };
-
-    calculateDots();
-
-    const resizeObserver = new ResizeObserver(calculateDots);
-    if (dotsContainerRef.current) {
-      resizeObserver.observe(dotsContainerRef.current);
-    }
-
-    window.addEventListener("resize", calculateDots);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", calculateDots);
-    };
-  }, [isEditMode, isEditingBaseUrl]);
+  // Removed dots calculation useEffect - dotsCount is managed in ModelStepContent component
 
   // Submit handler for GenericForm
   const handleSubmit = useCallback(
@@ -2006,6 +1933,7 @@ export default function Model({
             >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
                       <Image
                         className="h-4 w-4 text-muted-foreground"
                         aria-hidden="true"
@@ -2062,18 +1990,11 @@ export default function Model({
       isReadonly,
       isEditMode,
       isSubmitting,
-      isEditingBaseUrl,
-      editingBaseUrlValue,
-      dotsCount,
-      dotsContainerRef,
       errors,
       validDepartmentIds,
       departments,
       providers,
       units,
-      handleStartEditBaseUrl,
-      handleSaveEditBaseUrl,
-      handleCancelEditBaseUrl,
     ]
   );
 

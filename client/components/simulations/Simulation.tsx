@@ -289,7 +289,7 @@ export default function Simulation({
         if (parsed && typeof parsed === "object") {
           scenarioActiveStates = parsed as Record<string, boolean>;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to scenarios array
       }
     }
@@ -314,7 +314,7 @@ export default function Simulation({
             }
           >;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to scenarios array
       }
     }
@@ -1903,7 +1903,6 @@ export default function Simulation({
       departmentMapping,
       validAgentIds,
       agentMapping,
-      draftId,
       effectiveProfile?.role,
       scenariosArray,
       validScenarioIds,

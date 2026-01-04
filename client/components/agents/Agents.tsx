@@ -97,14 +97,23 @@ export default function Agents({
       return 0;
     });
   }, [agentsData?.agents]);
-  const modelMapping = useMemo(
-    () =>
-      ((agentsData as any)?.model_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [agentsData],
-  );
+  
+  // Build model mapping from agents array (extract unique models)
+  const modelMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    const agentsArray = agentsData?.agents || [];
+    agentsArray.forEach((agent) => {
+      if (agent.model_id && agent.model_name) {
+        if (!mapping[agent.model_id]) {
+          mapping[agent.model_id] = {
+            name: agent.model_name || "",
+            description: agent.model_description || "",
+          };
+        }
+      }
+    });
+    return mapping;
+  }, [agentsData]);
 
   // Filter options (inline)
   const modelOptions = useMemo(
@@ -130,15 +139,26 @@ export default function Agents({
     }));
   }, [agents]);
 
-  // Build department options from mapping
-  const departmentMapping = useMemo(
-    () =>
-      ((agentsData as any)?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [agentsData],
-  );
+  // Build department options from agents array (extract unique departments)
+  // Note: Department info is not directly available in agents array, so we'll use department_ids
+  // For now, we'll create a simple mapping from department_ids
+  const departmentMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    const agentsArray = agentsData?.agents || [];
+    agentsArray.forEach((agent) => {
+      if (agent.department_ids && Array.isArray(agent.department_ids)) {
+        agent.department_ids.forEach((deptId) => {
+          if (deptId && !mapping[deptId]) {
+            mapping[deptId] = {
+              name: deptId, // Department name not available in agents list response
+              description: "",
+            };
+          }
+        });
+      }
+    });
+    return mapping;
+  }, [agentsData]);
 
   const departmentOptions = useMemo(() => {
     return Object.entries(departmentMapping).map(([id, obj]) => ({

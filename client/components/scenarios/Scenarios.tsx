@@ -112,16 +112,16 @@ export function Scenarios({
   const personaMapping = useMemo(
     () => {
       // Build mapping from arrays (arrays are now the source of truth)
-      const data = scenariosData as any;
-      const map: Record<string, any> = {};
+      const data = scenariosData;
+      const map: Record<string, { name: string; description: string; color: string; icon: string }> = {};
       if (data?.personas && Array.isArray(data.personas)) {
-        data.personas.forEach((p: any) => {
-          if (p.persona_id) {
+        data.personas.forEach((p) => {
+          if (typeof p === "object" && p !== null && "persona_id" in p && p.persona_id) {
             map[String(p.persona_id)] = {
-              name: p.name || "",
-              description: p.description || "",
-              color: p.color || "",
-              icon: p.icon || "",
+              name: (typeof p.name === "string" ? p.name : "") || "",
+              description: (typeof p.description === "string" ? p.description : "") || "",
+              color: (typeof p.color === "string" ? p.color : "") || "",
+              icon: (typeof p.icon === "string" ? p.icon : "") || "",
             };
           }
         });

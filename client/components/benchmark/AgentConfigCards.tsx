@@ -122,8 +122,8 @@ export function AgentConfigCards({
             body: { agent_id: agentId },
           });
           setAgentDetails((prev) => ({ ...prev, [agentId]: detail }));
-        } catch (error) {
-          console.error(`Failed to fetch agent detail for ${agentId}:`, error);
+        } catch {
+          // Failed to fetch agent detail - set to null
           setAgentDetails((prev) => ({ ...prev, [agentId]: null }));
         } finally {
           setLoadingAgents((prev) => ({ ...prev, [agentId]: false }));

@@ -282,7 +282,7 @@ function PracticeCustomizeComponent({
         if (parsed && Array.isArray(parsed)) {
           personaIds = parsed.map((id) => String(id));
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to empty array
       }
     }
@@ -300,7 +300,7 @@ function PracticeCustomizeComponent({
         if (parsed && Array.isArray(parsed)) {
           parameterItemIds = parsed.map((id) => String(id));
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to empty array
       }
     }
@@ -318,7 +318,7 @@ function PracticeCustomizeComponent({
         if (parsed && Array.isArray(parsed)) {
           departmentIds = parsed.map((id) => String(id));
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors, fall back to empty array
       }
     }

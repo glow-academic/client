@@ -57,7 +57,7 @@ export default function Practice({
     // Since standards array doesn't include standard_group_id, we can't build this mapping
     // Return empty mapping for now - this may need server-side changes to include standard_group_id
     return mapping;
-  }, [practiceOverview?.standards]);
+  }, []);
 
   // Convert arrays to dicts for backward compatibility with SimulationCard
   // API now returns arrays (standard_groups, standards) instead of mappings

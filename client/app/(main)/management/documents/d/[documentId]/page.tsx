@@ -91,7 +91,7 @@ async function renderTemplate(
 ): Promise<RenderTemplateOut> {
   "use server";
   // _render endpoint is not in OpenAPI schema, use type assertion for endpoint path
-  const result = await (api.post as any)("/documents/_render", input);
+  const result = await (api.post as (path: string, input: RenderTemplateIn) => Promise<Record<string, unknown>>)("/documents/_render", input);
   // API returns dict[str, Any], assert to our expected type
   return result as RenderTemplateOut;
 }

@@ -1050,6 +1050,7 @@ export default function Staff({
     validRoles,
     bulkCreateOrUpdateStaffAction,
     router,
+    effectiveProfile?.id,
   ]);
 
   const validRowCount = processedRows.filter(

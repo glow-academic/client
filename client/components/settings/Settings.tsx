@@ -346,7 +346,7 @@ export default function Settings({
       auth_enabled: authEnabledState,
       auth_value_mapping: authValueMapping,
     };
-  }, [stableSettingsDetailRef.current, draftId, urlDraftId]);
+  }, []);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
 
