@@ -62,7 +62,7 @@ latest_grade AS (
          rga.rubric_id,
          g.created_at
   FROM grades g
-  JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
+  LEFT JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
   JOIN runs r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id
@@ -290,7 +290,11 @@ JOIN root_map rm              ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
 LEFT JOIN personas p          ON p.id = sfp.persona_id
 LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
-LEFT JOIN rubrics r           ON r.id = lg.rubric_id
+LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = sa.simulation_id
+  AND ssrga_fallback.scenario_id = s.id
+  AND lg.rubric_id IS NULL
+LEFT JOIN rubric_grade_agents rga_fallback ON rga_fallback.id = ssrga_fallback.rubric_grade_agent_id
+LEFT JOIN rubrics r           ON r.id = COALESCE(lg.rubric_id, rga_fallback.rubric_id)
 LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id

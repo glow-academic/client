@@ -240,26 +240,37 @@ attempt_avg AS (
              ELSE 0 END AS avg_pct_over_expected
     FROM attempt_scores
 ),
+-- Completed attempts count (includes attempts with or without grades)
+completed_attempts_count AS (
+    SELECT
+        a.profile_id,
+        a.simulation_id,
+        COUNT(DISTINCT a.attempt_id) AS completed_count
+    FROM filt a
+    WHERE a.completed = TRUE
+    GROUP BY a.profile_id, a.simulation_id
+),
 -- User-simulation status with best attempt + pass status
 user_sim_status AS (
     SELECT
-        aa.profile_id,
-        aa.simulation_id,
+        COALESCE(aa.profile_id, cac.profile_id) AS profile_id,
+        COALESCE(aa.simulation_id, cac.simulation_id) AS simulation_id,
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
-        BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
+        COALESCE(BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
             (SELECT ROUND(100.0 * r.pass_points::numeric / NULLIF(r.points,0))
              FROM simulations s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
              LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
              LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
              LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
-             WHERE s.id = aa.simulation_id
+             WHERE s.id = COALESCE(aa.simulation_id, cac.simulation_id)
              ORDER BY ss_rubric.position
              LIMIT 1), 0
-        )) AS passed,
-        COUNT(*) AS chats_completed
+        )), false) AS passed,
+        COALESCE(MAX(cac.completed_count), 0) AS chats_completed
     FROM attempt_avg aa
-    GROUP BY aa.profile_id, aa.simulation_id
+    FULL OUTER JOIN completed_attempts_count cac ON cac.profile_id = aa.profile_id AND cac.simulation_id = aa.simulation_id
+    GROUP BY COALESCE(aa.profile_id, cac.profile_id), COALESCE(aa.simulation_id, cac.simulation_id)
 ),
 -- Cohort membership CTE (for non-history queries - only active memberships)
 cohort_membership AS (
