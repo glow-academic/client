@@ -100,19 +100,28 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH 
+WITH params AS (
+    -- Wrap all function parameters in a CTE for asyncpg prepared statement compatibility
+    SELECT 
+        simulation_id::uuid as simulation_id,
+        infinite_mode::boolean as infinite_mode,
+        profile_id::uuid as profile_id,
+        scenario_id_override::uuid as scenario_id_override
+),
 -- Create the attempt first
 new_attempt AS (
     INSERT INTO simulation_attempts (simulation_id, infinite_mode, created_at)
-    VALUES (simulation_id, infinite_mode, now())
+    SELECT p.simulation_id, p.infinite_mode, now()
+    FROM params p
     RETURNING id as attempt_id
 ),
 -- Create attempt_profiles junction if profile exists
 attempt_profile_link AS (
     INSERT INTO attempt_profiles (attempt_id, profile_id, active, created_at, updated_at)
-    SELECT na.attempt_id, profile_id, true, now(), now()
+    SELECT na.attempt_id, p.profile_id, true, now(), now()
     FROM new_attempt na
-    WHERE profile_id IS NOT NULL
+    CROSS JOIN params p
+    WHERE p.profile_id IS NOT NULL
     RETURNING attempt_id
 ),
 -- Get simulation data
@@ -131,16 +140,16 @@ simulation_data AS (
          WHERE ss.simulation_id = s.id AND ss.active = true 
          ORDER BY ss.position 
          LIMIT 1) as rubric_id
-    FROM simulations s
-    WHERE s.id = simulation_id
+    FROM params p
+    JOIN simulations s ON s.id = p.simulation_id
 ),
 -- Get simulation scenarios in order
 simulation_scenarios AS (
     SELECT 
         ss.scenario_id,
         ss.position
-    FROM simulation_scenarios ss
-    WHERE ss.simulation_id = simulation_id AND ss.active = true
+    FROM params p
+    JOIN simulation_scenarios ss ON ss.simulation_id = p.simulation_id AND ss.active = true
     ORDER BY ss.position
 ),
 -- Determine content type (always scenario now - videos are accessed through scenarios)
@@ -153,7 +162,7 @@ content_type_check AS (
 chosen_scenario_id AS (
     SELECT 
         CASE 
-            WHEN scenario_id_override IS NOT NULL THEN scenario_id_override
+            WHEN p.scenario_id_override IS NOT NULL THEN p.scenario_id_override
             WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 
                 (SELECT scenario_id FROM simulation_scenarios 
                  ORDER BY position LIMIT 1)
@@ -164,6 +173,7 @@ chosen_scenario_id AS (
                 LIMIT 1
             )
         END as scenario_id
+    FROM params p
 ),
 -- Resolve department_id for agent prompt selection (scenario -> profile -> any active)
 scenario_dept AS (
@@ -176,11 +186,11 @@ scenario_dept AS (
 profile_dept AS (
     -- Get first department from profile's accessible departments
     SELECT d.id as department_id
-    FROM departments d
+    FROM params p
+    JOIN departments d ON d.active = true
     JOIN profile_departments pd ON pd.department_id = d.id
-    WHERE pd.profile_id = profile_id 
-      AND pd.active = true 
-      AND d.active = true
+    WHERE pd.profile_id = p.profile_id 
+      AND pd.active = true
     LIMIT 1
 ),
 any_active_dept AS (
@@ -213,9 +223,9 @@ default_settings AS (
 profile_primary_department AS (
     -- Get profile's primary department ID (only if profile_id is provided)
     SELECT pd.department_id
-    FROM profile_departments pd
-    WHERE pd.profile_id = profile_id 
-      AND pd.is_primary = TRUE 
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id
+    WHERE pd.is_primary = TRUE 
       AND pd.active = true
     LIMIT 1
 ),

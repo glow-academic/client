@@ -146,6 +146,8 @@ async def execute_sql_typed(
         function_call_sql = (
             f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
         )
+        # Ensure no semicolons or multiple statements (asyncpg doesn't allow multiple commands in prepared statements)
+        function_call_sql = function_call_sql.strip().rstrip(";")
 
         # Functions return single row (RETURNS TABLE)
         if sql_params:

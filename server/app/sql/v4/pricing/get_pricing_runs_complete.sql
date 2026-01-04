@@ -287,7 +287,17 @@ runs_base AS (
 ),
 runs_with_debug AS (
     SELECT
-        mrb.*,
+        mrb.run_id,
+        mrb.created_at,
+        mrb.input_tokens,
+        mrb.output_tokens,
+        mrb.model_id,
+        mrb.profile_id,
+        mrb.agent_id,
+        mrb.persona_id,
+        mrb.practice_simulation,
+        mrb.archived,
+        mrb.group_id,
         COALESCE(
             ARRAY_AGG(
                 (di.id, di.created_at, di.content)::types.q_get_pricing_runs_v4_debug_info
@@ -318,7 +328,18 @@ run_costs AS (
 -- Join with mappings for search and display
 runs_with_names AS (
     SELECT
-        mrwd.*,
+        mrwd.run_id,
+        mrwd.created_at,
+        mrwd.input_tokens,
+        mrwd.output_tokens,
+        mrwd.model_id,
+        mrwd.profile_id,
+        mrwd.agent_id,
+        mrwd.persona_id,
+        mrwd.practice_simulation,
+        mrwd.archived,
+        mrwd.group_id,
+        mrwd.debug_info,
         m.name as model_name,
         p.first_name || ' ' || p.last_name as profile_name,
         a.name as agent_name,

@@ -707,9 +707,17 @@ async def execute_sql_file(
         # Load SQL file
         sql_text = load_sql(sql_path)
 
-        # Execute if it contains function definitions
+        # Check if it contains function definitions
         has_function = _detect_function_in_sql(sql_text)
-        if not has_function:
+        
+        # Always execute analytics view creation file (DDL only, no function)
+        # This must be executed before other files that depend on the analytics view
+        is_analytics_view = (
+            sql_path == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
+        )
+        
+        # Execute if it contains function definitions OR is the analytics view creation file
+        if not has_function and not is_analytics_view:
             return (
                 True,
                 f"Skipping {sql_path} (no function definition)",
@@ -918,8 +926,9 @@ async def main() -> int:
             Tuple of (priority, path) where:
             - Priority 0: Analytics view creation file (must be first)
             - Priority 1: Other analytics routes
-            - Priority 2: Settings detail (must come before active settings)
-            - Priority 3: All other routes (sorted alphabetically)
+            - Priority 2: Files that depend on analytics view (dashboard, home, reports, etc.)
+            - Priority 3: Settings detail (must come before active settings)
+            - Priority 4: All other routes (sorted alphabetically)
         """
         sql_path = str(sql_file.relative_to(server_root))
 
@@ -934,18 +943,32 @@ async def main() -> int:
         if sql_path.startswith(f"app/sql/{VERSION}/analytics/"):
             return (1, sql_path)
 
+        # Files that depend on analytics view must come after analytics
+        analytics_dependent_paths = [
+            f"app/sql/{VERSION}/dashboard/get_dashboard_bundle_complete.sql",
+            f"app/sql/{VERSION}/documents/get_certificate_data_complete.sql",
+            f"app/sql/{VERSION}/home/get_home_overview_complete.sql",
+            f"app/sql/{VERSION}/leaderboard/get_leaderboard_bundle_complete.sql",
+            f"app/sql/{VERSION}/practice/get_practice_overview_complete.sql",
+            f"app/sql/{VERSION}/reports/get_per_simulation_metrics_complete.sql",
+            f"app/sql/{VERSION}/reports/get_reports_bundle_complete.sql",
+            f"app/sql/{VERSION}/reports/get_reports_overview_complete.sql",
+        ]
+        if sql_path in analytics_dependent_paths:
+            return (2, sql_path)
+
         # Settings detail must come before active settings (type dependency)
         if sql_path == f"app/sql/{VERSION}/settings/get_settings_detail_complete.sql":
             return (
-                2,
+                3,
                 "a_" + sql_path,
             )  # 'a_' prefix ensures it sorts before 'get_active_'
 
         if sql_path == f"app/sql/{VERSION}/settings/get_active_settings_complete.sql":
-            return (2, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
+            return (3, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
 
         # All other routes sorted alphabetically
-        return (3, sql_path)
+        return (4, sql_path)
 
     # Sort SQL files with analytics routes first
     sorted_sql_files = sorted(sql_files, key=_sort_sql_files)

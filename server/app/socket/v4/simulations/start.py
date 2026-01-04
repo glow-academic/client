@@ -2,24 +2,22 @@
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-
+from app.sql.types import (CheckNextIncompleteScenarioSqlParams,
+                           CheckNextIncompleteScenarioSqlRow,
+                           StartSimulationAttemptSqlParams,
+                           StartSimulationAttemptSqlRow)
 # Removed gen_trace_id import - trace_id comes from SQL
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from typing import Any, cast
-from utils.sql_helper import load_sql, execute_sql_typed
-
-from app.sql.types import (
-    StartSimulationAttemptSqlParams,
-    StartSimulationAttemptSqlRow,
-)
+from utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 
@@ -443,10 +441,16 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
             attempt_id = result.attempt_id
 
             # Check if there's a next incomplete scenario
-            sql = load_sql("app/sql/v4/simulations/check_next_incomplete_scenario_complete.sql")
-            next_scenario_row = await conn.fetchrow(sql, attempt_id)
+            next_scenario_result = cast(
+                CheckNextIncompleteScenarioSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/simulations/check_next_incomplete_scenario_complete.sql",
+                    params=CheckNextIncompleteScenarioSqlParams(attempt_id=uuid.UUID(attempt_id)),
+                ),
+            )
 
-            if not next_scenario_row:
+            if not next_scenario_result:
                 await simulation_start_error(
                     StartSimulationErrorPayload(
                         success=False,
@@ -456,8 +460,8 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                 )
                 return
 
-            has_next_scenario = next_scenario_row.get("has_next_scenario", False)
-            next_scenario_id = next_scenario_row.get("next_scenario_id")
+            has_next_scenario = next_scenario_result.has_next_scenario or False
+            next_scenario_id = str(next_scenario_result.next_scenario_id) if next_scenario_result.next_scenario_id else None
 
             # Emit success event
             await simulation_started(

@@ -3752,7 +3752,7 @@ class QGetSimulationAttemptV4Chat(BaseModel):
     attempt_id: UUID | None
     completed: bool | None
     completed_at: str | None
-    trace_id: UUID | None
+    trace_id: str | None
     document_ids: list[str] | None
 
 

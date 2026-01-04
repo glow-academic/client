@@ -316,7 +316,7 @@ CREATE TYPE types.q_get_simulation_attempt_v4_chat AS (
     attempt_id uuid,
     completed boolean,
     completed_at timestamptz,
-    trace_id uuid,
+    trace_id text,
     document_ids text[]
 );
 
