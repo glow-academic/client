@@ -194,15 +194,18 @@ export default function ScenarioPerformance({
   // Build parameters from mapping
   const allParameters = useMemo(
     () =>
-      validParameterIds.map((id) => ({
-        id,
-        name: parameterMapping[id]?.name || "Unknown",
-        description: parameterMapping[id]?.description || "",
-        numerical: false,
-        active: true,
-        departmentId: "",
-      })),
-    [parameterMapping, validParameterIds],
+      validParameterIds.map((id) => {
+        const param = parameters.find((p) => p.parameter_id === id);
+        return {
+          id,
+          name: parameterMapping[id]?.name || param?.name || "Unknown",
+          description: parameterMapping[id]?.description || param?.description || "",
+          numerical: param?.numerical ?? false,
+          active: true,
+          departmentId: "",
+        };
+      }),
+    [parameterMapping, validParameterIds, parameters],
   );
 
   // Build parameter items from mapping

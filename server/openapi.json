@@ -62776,6 +62776,29 @@
         ],
         "title": "QGetDashboardBundleV4RubricHeatmapResponse"
       },
+      "QGetDashboardBundleV4RubricHeatmapRow": {
+        "properties": {
+          "cells": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDashboardBundleV4RubricHeatmapCell"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cells"
+        ],
+        "title": "QGetDashboardBundleV4RubricHeatmapRow"
+      },
       "QGetDashboardBundleV4RubricMatrixPackage": {
         "properties": {
           "rubric_id": {
@@ -62807,7 +62830,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetDashboardBundleV4RubricHeatmapCell"
+                  "$ref": "#/components/schemas/QGetDashboardBundleV4RubricHeatmapRow"
                 },
                 "type": "array"
               },

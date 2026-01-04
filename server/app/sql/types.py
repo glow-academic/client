@@ -7152,6 +7152,10 @@ class QGetDashboardBundleV4RubricHeatmapCell(BaseModel):
     strength: str | None
     data_points: int | None
 
+class QGetDashboardBundleV4RubricHeatmapRow(BaseModel):
+
+    cells: list[QGetDashboardBundleV4RubricHeatmapCell] | None
+
 
 
 
@@ -7166,7 +7170,7 @@ class QGetDashboardBundleV4RubricMatrixPackage(BaseModel):
 
     rubric_id: str | None
     standard_groups: list[QGetDashboardBundleV4StandardGroup] | None
-    matrix: list[QGetDashboardBundleV4RubricHeatmapCell] | None
+    matrix: list[QGetDashboardBundleV4RubricHeatmapRow] | None
     insights: str | None
     has_data: bool | None
 

@@ -268,17 +268,20 @@ export default function Dashboard({
           rubricId: sg.rubric_id || "",
         })),
         matrix: Array.isArray(matrix.matrix) 
-          ? (matrix.matrix as unknown as Array<Array<{ 
-              rubric_id?: string | null;
-              correlation?: number | null;
-              p_value?: number | null;
-              color?: string | null;
-              strength?: string | null;
-              data_points?: number | null;
+          ? (matrix.matrix as unknown as Array<{ 
+              cells?: Array<{
+                rubric_id?: string | null;
+                correlation?: number | null;
+                p_value?: number | null;
+                color?: string | null;
+                strength?: string | null;
+                data_points?: number | null;
+                [key: string]: unknown;
+              }> | null;
               [key: string]: unknown;
-            }>>).map((row) =>
-              Array.isArray(row) 
-                ? row.map((cell) => ({
+            }>).map((row) =>
+              Array.isArray(row.cells) 
+                ? row.cells.map((cell) => ({
                     rubricId: cell.rubric_id || "",
                     correlation: cell.correlation ?? 0,
                     pValue: cell.p_value ?? null,

@@ -16012,6 +16012,11 @@ export interface components {
             /** Status */
             status: string | null;
         };
+        /** QGetDashboardBundleV4RubricHeatmapRow */
+        QGetDashboardBundleV4RubricHeatmapRow: {
+            /** Cells */
+            cells: components["schemas"]["QGetDashboardBundleV4RubricHeatmapCell"][] | null;
+        };
         /** QGetDashboardBundleV4RubricMatrixPackage */
         QGetDashboardBundleV4RubricMatrixPackage: {
             /** Rubric Id */
@@ -16019,7 +16024,7 @@ export interface components {
             /** Standard Groups */
             standard_groups: components["schemas"]["QGetDashboardBundleV4StandardGroup"][] | null;
             /** Matrix */
-            matrix: components["schemas"]["QGetDashboardBundleV4RubricHeatmapCell"][] | null;
+            matrix: components["schemas"]["QGetDashboardBundleV4RubricHeatmapRow"][] | null;
             /** Insights */
             insights: string | null;
             /** Has Data */
