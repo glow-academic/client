@@ -19,9 +19,11 @@ BEGIN
     END LOOP;
 END $$;
 
--- Recreate function
-CREATE OR REPLACE FUNCTION api_get_feedback_list_v4()
-RETURNS TABLE (
+-- Drop types WITHOUT CASCADE
+DROP TYPE IF EXISTS types.q_get_feedback_list_v4_feedback_row;
+
+-- Create composite type for feedback row
+CREATE TYPE types.q_get_feedback_list_v4_feedback_row AS (
     feedback_id uuid,
     type feedback_type,
     message text,
@@ -31,31 +33,59 @@ RETURNS TABLE (
     author_email text,
     author_emails text[],
     author_profile_id text
+);
+
+-- Recreate function
+CREATE OR REPLACE FUNCTION api_get_feedback_list_v4(
+    profile_id uuid
+)
+RETURNS TABLE (
+    actor_name text,
+    feedback types.q_get_feedback_list_v4_feedback_row[]
 )
 LANGUAGE sql
 STABLE
 AS $$
+WITH actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = profile_id
+),
+feedback_rows AS (
+    SELECT 
+        f.id as feedback_id,
+        f.type,
+        COALESCE(f.message, '') as message,
+        f.created_at,
+        f.resolved,
+        COALESCE(p.first_name || ' ' || p.last_name, 'Anonymous') as author_name,
+        COALESCE(
+            (SELECT email FROM profile_emails WHERE profile_id = f.profile_id AND is_primary = true AND active = true LIMIT 1),
+            ''
+        ) as author_email,
+        COALESCE(
+            ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true),
+            ARRAY[]::text[]
+        ) as author_emails,
+        COALESCE(f.profile_id::text, '') as author_profile_id
+    FROM feedback f
+    LEFT JOIN profiles p ON p.id = f.profile_id
+    LEFT JOIN profile_emails pe ON pe.profile_id = f.profile_id AND pe.active = true
+    GROUP BY f.id, f.type, f.message, f.created_at, f.resolved, p.first_name, p.last_name, f.profile_id
+    ORDER BY f.resolved ASC, f.created_at DESC
+)
 SELECT 
-    f.id as feedback_id,
-    f.type,
-    COALESCE(f.message, '') as message,
-    f.created_at,
-    f.resolved,
-    COALESCE(p.first_name || ' ' || p.last_name, 'Anonymous') as author_name,
+    COALESCE(ap.actor_name, '') as actor_name,
     COALESCE(
-        (SELECT email FROM profile_emails WHERE profile_id = f.profile_id AND is_primary = true AND active = true LIMIT 1),
-        ''
-    ) as author_email,
-    COALESCE(
-        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true),
-        ARRAY[]::text[]
-    ) as author_emails,
-    COALESCE(f.profile_id::text, '') as author_profile_id
-FROM feedback f
-LEFT JOIN profiles p ON p.id = f.profile_id
-LEFT JOIN profile_emails pe ON pe.profile_id = f.profile_id AND pe.active = true
-GROUP BY f.id, f.type, f.message, f.created_at, f.resolved, p.first_name, p.last_name, f.profile_id
-ORDER BY f.resolved ASC, f.created_at DESC
+        ARRAY_AGG(
+            (fr.feedback_id, fr.type, fr.message, fr.created_at, fr.resolved, fr.author_name, fr.author_email, fr.author_emails, fr.author_profile_id)::types.q_get_feedback_list_v4_feedback_row
+        ),
+        ARRAY[]::types.q_get_feedback_list_v4_feedback_row[]
+    ) as feedback
+FROM actor_profile ap
+CROSS JOIN feedback_rows fr
+GROUP BY ap.actor_name
 $$;
 
 COMMIT;

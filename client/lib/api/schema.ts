@@ -10509,43 +10509,6 @@ export interface components {
              */
             brightspace_format: boolean;
         };
-        /**
-         * FeedbackItem
-         * @description Individual feedback item in the response.
-         */
-        FeedbackItem: {
-            /** Feedback Id */
-            feedback_id: string;
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Created At */
-            created_at: string;
-            /** Resolved */
-            resolved: boolean;
-            /** Author Name */
-            author_name: string;
-            /** Author Email */
-            author_email: string;
-            /** Author Emails */
-            author_emails: string[];
-            /** Author Profile Id */
-            author_profile_id: string;
-        };
-        /**
-         * FeedbackListFilters
-         * @description Filters for feedback list request.
-         */
-        FeedbackListFilters: Record<string, never>;
-        /**
-         * FeedbackListResponse
-         * @description Response for feedback list endpoint.
-         */
-        FeedbackListResponse: {
-            /** Feedback */
-            feedback: components["schemas"]["FeedbackItem"][];
-        };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
             /** Upload Id */
@@ -11675,6 +11638,15 @@ export interface components {
             department_options?: components["schemas"]["QListEvalsV4Option"][] | null;
             /** Agent Options */
             agent_options?: components["schemas"]["QListEvalsV4Option"][] | null;
+        };
+        /** GetFeedbackListApiRequest */
+        GetFeedbackListApiRequest: Record<string, never>;
+        /** GetFeedbackListApiResponse */
+        GetFeedbackListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Feedback */
+            feedback?: components["schemas"]["QGetFeedbackListV4FeedbackRow"][] | null;
         };
         /** GetFieldDetailApiRequest */
         GetFieldDetailApiRequest: {
@@ -16671,6 +16643,27 @@ export interface components {
             /** Agent Name */
             agent_name: string | null;
         };
+        /** QGetFeedbackListV4FeedbackRow */
+        QGetFeedbackListV4FeedbackRow: {
+            /** Feedback Id */
+            feedback_id: string | null;
+            /** Type */
+            type: unknown | null;
+            /** Message */
+            message: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Resolved */
+            resolved: boolean | null;
+            /** Author Name */
+            author_name: string | null;
+            /** Author Email */
+            author_email: string | null;
+            /** Author Emails */
+            author_emails: string[] | null;
+            /** Author Profile Id */
+            author_profile_id: string | null;
+        };
         /** QGetFieldDetailV4Department */
         QGetFieldDetailV4Department: {
             /** Department Id */
@@ -17747,6 +17740,8 @@ export interface components {
             agent_id: string | null;
             /** Persona Id */
             persona_id: string | null;
+            /** Run Cost */
+            run_cost: number | null;
             /** Debug Info */
             debug_info: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
         };
@@ -28604,7 +28599,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FeedbackListFilters"];
+                "application/json": components["schemas"]["GetFeedbackListApiRequest"];
             };
         };
         responses: {
@@ -28614,7 +28609,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FeedbackListResponse"];
+                    "application/json": components["schemas"]["GetFeedbackListApiResponse"];
                 };
             };
             /** @description Validation Error */

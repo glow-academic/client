@@ -63,6 +63,7 @@ CREATE TYPE types.q_get_pricing_analytics_v4_model_run AS (
     profile_id uuid,
     agent_id uuid,
     persona_id uuid,
+    run_cost numeric,
     debug_info types.q_get_pricing_analytics_v4_debug_info[]
 );
 
@@ -229,9 +230,33 @@ runs_base AS (
             OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
+-- Calculate run costs using run_pricing_usage (source of truth for pricing)
+run_costs AS (
+    SELECT 
+        rpu.run_id,
+        COALESCE(SUM(
+            (rpu.count::numeric / u.value::numeric) * mp.price
+        ), 0) as run_cost
+    FROM run_pricing_usage rpu
+    JOIN run_models rm ON rm.run_id = rpu.run_id AND rm.active = true
+    JOIN model_pricing mp ON mp.model_id = rm.model_id 
+        AND mp.pricing_type = rpu.pricing_type 
+        AND mp.unit_id = rpu.unit_id
+        AND mp.active = true
+    JOIN units u ON u.id = rpu.unit_id
+    GROUP BY rpu.run_id
+),
 runs_with_debug AS (
     SELECT
-        mrb.*,
+        mrb.run_id,
+        mrb.created_at,
+        mrb.input_tokens,
+        mrb.output_tokens,
+        mrb.model_id,
+        mrb.profile_id,
+        mrb.agent_id,
+        mrb.persona_id,
+        COALESCE(rc.run_cost, 0) as run_cost,
         COALESCE(
             ARRAY_AGG(
                 (di.id, di.created_at, di.content)::types.q_get_pricing_analytics_v4_debug_info
@@ -240,8 +265,9 @@ runs_with_debug AS (
             '{}'::types.q_get_pricing_analytics_v4_debug_info[]
         ) as debug_info
     FROM runs_base mrb
+    LEFT JOIN run_costs rc ON rc.run_id = mrb.run_id
     LEFT JOIN debug_info di ON di.run_id = mrb.run_id
-    GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.practice_simulation, mrb.archived
+    GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, rc.run_cost
 ),
 model_pricing_aggregated AS (
     -- Aggregate pricing per model: sum all input/output prices normalized to per-million tokens
@@ -258,7 +284,7 @@ SELECT
     COALESCE((SELECT actor_name FROM user_profile LIMIT 1), 'System')::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.debug_info)::types.q_get_pricing_analytics_v4_model_run
+            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.run_cost, mrb.debug_info)::types.q_get_pricing_analytics_v4_model_run
             ORDER BY mrb.created_at DESC
         ),
         '{}'::types.q_get_pricing_analytics_v4_model_run[]

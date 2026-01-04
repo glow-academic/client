@@ -11961,7 +11961,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FeedbackListFilters"
+                "$ref": "#/components/schemas/GetFeedbackListApiRequest"
               }
             }
           }
@@ -11972,7 +11972,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FeedbackListResponse"
+                  "$ref": "#/components/schemas/GetFeedbackListApiResponse"
                 }
               }
             }
@@ -34556,86 +34556,6 @@
         "title": "ExportRequest",
         "description": "Export request - extends GetReportsBundleApiRequest with export-specific options."
       },
-      "FeedbackItem": {
-        "properties": {
-          "feedback_id": {
-            "type": "string",
-            "title": "Feedback Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "resolved": {
-            "type": "boolean",
-            "title": "Resolved"
-          },
-          "author_name": {
-            "type": "string",
-            "title": "Author Name"
-          },
-          "author_email": {
-            "type": "string",
-            "title": "Author Email"
-          },
-          "author_emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Author Emails"
-          },
-          "author_profile_id": {
-            "type": "string",
-            "title": "Author Profile Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "feedback_id",
-          "type",
-          "message",
-          "created_at",
-          "resolved",
-          "author_name",
-          "author_email",
-          "author_emails",
-          "author_profile_id"
-        ],
-        "title": "FeedbackItem",
-        "description": "Individual feedback item in the response."
-      },
-      "FeedbackListFilters": {
-        "properties": {},
-        "type": "object",
-        "title": "FeedbackListFilters",
-        "description": "Filters for feedback list request."
-      },
-      "FeedbackListResponse": {
-        "properties": {
-          "feedback": {
-            "items": {
-              "$ref": "#/components/schemas/FeedbackItem"
-            },
-            "type": "array",
-            "title": "Feedback"
-          }
-        },
-        "type": "object",
-        "required": [
-          "feedback"
-        ],
-        "title": "FeedbackListResponse",
-        "description": "Response for feedback list endpoint."
-      },
       "FinalizeUploadApiResponse": {
         "properties": {
           "upload_id": {
@@ -40274,6 +40194,42 @@
         },
         "type": "object",
         "title": "GetEvalsListApiResponse"
+      },
+      "GetFeedbackListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetFeedbackListApiRequest"
+      },
+      "GetFeedbackListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFeedbackListV4FeedbackRow"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "title": "GetFeedbackListApiResponse"
       },
       "GetFieldDetailApiRequest": {
         "properties": {
@@ -66410,6 +66366,124 @@
         ],
         "title": "QGetEvalDetailV4RubricGradeAgent"
       },
+      "QGetFeedbackListV4FeedbackRow": {
+        "properties": {
+          "feedback_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Id"
+          },
+          "type": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "resolved": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "author_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Email"
+          },
+          "author_emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Emails"
+          },
+          "author_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback_id",
+          "type",
+          "message",
+          "created_at",
+          "resolved",
+          "author_name",
+          "author_email",
+          "author_emails",
+          "author_profile_id"
+        ],
+        "title": "QGetFeedbackListV4FeedbackRow"
+      },
       "QGetFieldDetailV4Department": {
         "properties": {
           "department_id": {
@@ -72290,6 +72364,17 @@
             ],
             "title": "Persona Id"
           },
+          "run_cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Cost"
+          },
           "debug_info": {
             "anyOf": [
               {
@@ -72315,6 +72400,7 @@
           "profile_id",
           "agent_id",
           "persona_id",
+          "run_cost",
           "debug_info"
         ],
         "title": "QGetPricingAnalyticsV4ModelRun"

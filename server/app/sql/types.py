@@ -9085,19 +9085,29 @@ class CreateFeedbackApiResponse(BaseModel):
 
 class GetFeedbackListSqlParams(BaseModel):
 
-    pass
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetFeedbackListV4FeedbackRow(BaseModel):
+
+    feedback_id: UUID | None
+    type: Any | None
+    message: str | None
+    created_at: str | None
+    resolved: bool | None
+    author_name: str | None
+    author_email: str | None
+    author_emails: list[str] | None
+    author_profile_id: str | None
 
 class GetFeedbackListSqlRow(BaseModel):
 
-    feedback_id: UUID | None = None
-    type: str | None = None
-    message: str | None = None
-    created_at: str | None = None
-    resolved: bool | None = None
-    author_name: str | None = None
-    author_email: str | None = None
-    author_emails: list[str] | None = None
-    author_profile_id: str | None = None
+    actor_name: str | None = None
+    feedback: list[QGetFeedbackListV4FeedbackRow] | None = None
 
 class GetFeedbackListApiRequest(BaseModel):
 
@@ -9105,15 +9115,8 @@ class GetFeedbackListApiRequest(BaseModel):
 
 class GetFeedbackListApiResponse(BaseModel):
 
-    feedback_id: UUID | None = None
-    type: str | None = None
-    message: str | None = None
-    created_at: str | None = None
-    resolved: bool | None = None
-    author_name: str | None = None
-    author_email: str | None = None
-    author_emails: list[str] | None = None
-    author_profile_id: str | None = None
+    actor_name: str | None = None
+    feedback: list[QGetFeedbackListV4FeedbackRow] | None = None
 
 
 
@@ -14273,6 +14276,7 @@ class QGetPricingAnalyticsV4ModelRun(BaseModel):
     profile_id: UUID | None
     agent_id: UUID | None
     persona_id: UUID | None
+    run_cost: float | None
     debug_info: list[QGetPricingAnalyticsV4DebugInfo] | None
 
 

@@ -171,9 +171,11 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       const createdAt = run.created_at;
       if (!createdAt) continue;
 
-      const spend =
-        (inputTokens / 1_000_000) * (Number(modelInfo.input_ppm) || 0) +
-        (outputTokens / 1_000_000) * (Number(modelInfo.output_ppm) || 0);
+      // Use run_cost from SQL (calculated from run_pricing_usage) if available, otherwise fall back to token-based calculation
+      const spend = run.run_cost !== undefined && run.run_cost !== null
+        ? Number(run.run_cost)
+        : (inputTokens / 1_000_000) * (Number(modelInfo.input_ppm) || 0) +
+          (outputTokens / 1_000_000) * (Number(modelInfo.output_ppm) || 0);
 
       const dateKey = format(new Date(createdAt), "yyyy-MM-dd");
       const dateLabel = format(new Date(createdAt), "MMM dd");

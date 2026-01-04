@@ -1,46 +1,27 @@
 """Feedback list endpoint."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-from app.infra.v4.activity.audit import audit_activity
+from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetFeedbackListApiRequest,
+    GetFeedbackListApiResponse,
+    GetFeedbackListSqlParams,
+    GetFeedbackListSqlRow,
+    load_sql_query,
+)
 
-
-# Inline request/response schemas
-class FeedbackListFilters(BaseModel):
-    """Filters for feedback list request."""
-
-    pass
-    # No filters needed - returns all feedback
-
-
-class FeedbackItem(BaseModel):
-    """Individual feedback item in the response."""
-
-    feedback_id: str
-    type: str
-    message: str
-    created_at: str
-    resolved: bool
-    author_name: str
-    author_email: str
-    author_emails: list[str]
-    author_profile_id: str
-
-
-class FeedbackListResponse(BaseModel):
-    """Response for feedback list endpoint."""
-
-    feedback: list[FeedbackItem]
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v4/feedback/get_feedback_list_complete.sql"
 
 
 router = APIRouter()
@@ -48,26 +29,26 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=FeedbackListResponse,
+    response_model=GetFeedbackListApiResponse,
     dependencies=[
         audit_activity("feedback.list", "{{ actor.name }} viewed feedback list")
     ],
 )
 async def get_feedback_list(
-    filters: FeedbackListFilters,
-    request: Request,
+    request: GetFeedbackListApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> FeedbackListResponse:
+) -> GetFeedbackListApiResponse:
     """Get list of all feedback entries."""
     tags = ["feedback"]  # From router tags
 
     # Check for cache bypass header (for hard refresh)
-    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Generate cache key from path and parsed body
-    body_dict = filters.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    # Generate cache key from path and parsed body (use mode='json' for consistent serialization)
+    body_dict = request.model_dump(mode="json")
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache (unless bypassed)
     if not bypass_cache:
@@ -75,58 +56,61 @@ async def get_feedback_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return FeedbackListResponse.model_validate(cached["data"])
+            return GetFeedbackListApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Load SQL query
-        sql_query = load_sql("app/sql/v4/feedback/get_feedback_list.sql")
-        sql_params = ()
-
-        # Execute query
-        rows = await conn.fetch(sql_query, *sql_params)
-
-        # Transform results
-        feedback_items = []
-        for row in rows:
-            feedback_items.append(
-                FeedbackItem(
-                    feedback_id=str(row["feedback_id"]),
-                    type=row["type"],
-                    message=row["message"],
-                    created_at=row["created_at"].isoformat()
-                    if row["created_at"]
-                    else "",
-                    resolved=row["resolved"],
-                    author_name=row["author_name"],
-                    author_email=row["author_email"],
-                    author_emails=row["author_emails"] or [],
-                    author_profile_id=row["author_profile_id"],
-                )
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
             )
 
-        result_data = FeedbackListResponse(feedback=feedback_items)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetFeedbackListSqlParams(profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Cache response
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetFeedbackListSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        # Set audit context
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+
+        # Convert SQL result to API response
+        # Note: SQL function returns TABLE, so result contains all feedback rows
+        api_response = GetFeedbackListApiResponse.model_validate(result.model_dump())
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": result_data.model_dump()},
+            {"data": api_response.model_dump(mode="json")},
             ttl=300,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_feedback_list",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )
