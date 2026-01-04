@@ -8255,17 +8255,6 @@ class QGetDocumentDetailV4Parameter(BaseModel):
     scenario_parameter: bool | None
     video_parameter: bool | None
 
-
-
-
-class QGetDocumentDetailV4Template(BaseModel):
-
-    template_id: UUID | None
-    template_args: Any | None
-    active: bool | None
-    created_at: str | None
-    updated_at: str | None
-
 class GetDocumentDetailSqlRow(BaseModel):
 
     document_exists: bool | None = None
@@ -8299,7 +8288,7 @@ class GetDocumentDetailSqlRow(BaseModel):
     template_upload_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
-    templates: list[QGetDocumentDetailV4Template] | None = None
+    templates: Any | None = None
     actor_name: str | None = None
     draft_version: int | None = None
 
@@ -8341,7 +8330,7 @@ class GetDocumentDetailApiResponse(BaseModel):
     template_upload_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
-    templates: list[QGetDocumentDetailV4Template] | None = None
+    templates: Any | None = None
     actor_name: str | None = None
     draft_version: int | None = None
 
@@ -8374,11 +8363,6 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IDocumentRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
 class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
 
     agent_id: str | None = None
@@ -8398,7 +8382,7 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    previous_messages: list[IDocumentRegenRunContextCreateRunV4Msg] | None = None
+    previous_messages: Any | None = None
 
 class GetDocumentRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -8430,7 +8414,7 @@ class GetDocumentRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    previous_messages: list[IDocumentRegenRunContextCreateRunV4Msg] | None = None
+    previous_messages: Any | None = None
 
 
 
