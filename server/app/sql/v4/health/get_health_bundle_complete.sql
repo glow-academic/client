@@ -1,9 +1,6 @@
 -- Get health bundle with health KPIs and metrics
 -- Converted to function with composite types (zero JSONB tolerance)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -280,6 +277,3 @@ SELECT
     ) as metrics
 FROM metrics_trend mt
 $$;
-
-COMMIT;
-

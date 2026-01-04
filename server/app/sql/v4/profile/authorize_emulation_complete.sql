@@ -1,9 +1,6 @@
 -- Authorize emulation endpoint - check if emulation is authorized
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -97,6 +94,3 @@ SELECT
     END as reason,
     (SELECT actor_name FROM actor_name_computed) as actor_name
 $$;
-
-COMMIT;
-

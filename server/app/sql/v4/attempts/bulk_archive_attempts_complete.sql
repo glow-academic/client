@@ -4,9 +4,6 @@
 -- 2. filter mode: Archive all attempts matching filters (when attempt_ids is empty)
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -260,5 +257,3 @@ BEGIN
     RETURN QUERY SELECT v_updated_count, v_actor_name, COALESCE(v_profile_ids, ARRAY[]::text[]);
 END;
 $$;
-
-COMMIT;

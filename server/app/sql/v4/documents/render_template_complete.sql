@@ -3,9 +3,6 @@
 -- Converted to function pattern with settings integration
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- Keeps JSONB for template_args (schema structure)
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -135,5 +132,3 @@ LEFT JOIN settings s ON s.id = ss.settings_id
 ORDER BY dt.created_at DESC
 LIMIT 1
 $$;
-
-COMMIT;

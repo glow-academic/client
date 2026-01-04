@@ -1,9 +1,6 @@
 -- Update parameter with field connections and department links in a single transaction
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_update_parameter_v4(uuid, text, text, boolean, boolean, boolean, boolean, boolean, boolean, text[], types.i_update_parameter_v4_field_connection[], uuid);
 
@@ -201,5 +198,3 @@ FROM parameter_exists_check pec
 CROSS JOIN actor_profile ap
 LEFT JOIN update_parameter up ON pec.parameter_exists = true
 $$;
-
-COMMIT;

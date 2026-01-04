@@ -1,8 +1,5 @@
 -- Get developer messages for a run for test verification
 -- Returns count of developer messages
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_developer_messages_count_by_run_v4(uuid);
 
@@ -22,6 +19,3 @@ AS $$
     JOIN message_runs mr ON mr.message_id = m.id
     WHERE m.role = 'developer' AND mr.run_id = test_get_developer_messages_count_by_run_v4.run_id;
 $$;
-
-COMMIT;
-

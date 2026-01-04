@@ -1,8 +1,5 @@
 -- Create a test key for test setup
 -- Returns key data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_key_v4(text, text, text, boolean);
 
@@ -34,6 +31,3 @@ AS $$
     )
     RETURNING id AS key_id, name, key, description, active, created_at, updated_at;
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Create a test agent for test setup
 -- Returns agent_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_agent_v4(uuid, text, text, text, boolean);
 
@@ -42,6 +39,3 @@ AS $$
     )
     RETURNING id, name, description, model_id, active, role::text, created_at;
 $$;
-
-COMMIT;
-

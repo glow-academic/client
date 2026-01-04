@@ -1,8 +1,5 @@
 -- Get agent by ID for test verification
 -- Returns agent data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_agent_by_id_v4(uuid);
 
@@ -35,6 +32,3 @@ AS $$
     FROM agents
     WHERE id = test_get_agent_by_id_v4.input_agent_id;
 $$;
-
-COMMIT;
-

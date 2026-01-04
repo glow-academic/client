@@ -1,8 +1,5 @@
 -- Get run by ID for test verification
 -- Returns run details
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_run_by_id_v4(uuid);
 
@@ -22,6 +19,3 @@ AS $$
     FROM runs 
     WHERE id = test_get_run_by_id_v4.run_id;
 $$;
-
-COMMIT;
-

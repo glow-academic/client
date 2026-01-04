@@ -1,8 +1,5 @@
 -- Create a test parameter item for test setup
 -- Returns item data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_parameter_item_v4(uuid, text, text, text);
 
@@ -30,6 +27,3 @@ AS $$
     -- This function returns empty result - tests using this may need updating
     SELECT NULL::uuid AS parameter_item_id, NULL::uuid AS parameter_id, NULL::text AS name, NULL::text AS description, NULL::text AS value, NULL::timestamptz AS created_at, NULL::timestamptz AS updated_at WHERE false;
 $$;
-
-COMMIT;
-

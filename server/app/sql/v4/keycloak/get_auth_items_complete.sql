@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_get_auth_items_v4(uuid, uuid);
 CREATE OR REPLACE FUNCTION api_get_auth_items_v4(
     auth_id uuid,
@@ -93,5 +92,3 @@ SELECT name, value, encrypted
 FROM non_encrypted_items
 ORDER BY name
 $$;
-COMMIT;
-

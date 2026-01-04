@@ -1,8 +1,5 @@
 -- Get default persona detail for creation
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -404,5 +401,3 @@ CROSS JOIN valid_agent_ids_data vaid
 CROSS JOIN valid_parameter_ids_data vpid
 CROSS JOIN valid_parameter_item_ids_data vpiid
 $$;
-
-COMMIT;

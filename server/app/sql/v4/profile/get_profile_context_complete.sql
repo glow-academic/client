@@ -19,9 +19,6 @@
 -- complex color math utilities (hex_to_oklch, ensure_contrast, shade, tint) that are not available
 -- in PostgreSQL. The SQL returns theme primitives (colors as strings), and Python derives the
 -- full ThemeTokens structure for the frontend.
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -1044,5 +1041,3 @@ WHERE (
      -- Note: settings_id check happens in Python code, not here
 )
 $$;
-
-COMMIT;

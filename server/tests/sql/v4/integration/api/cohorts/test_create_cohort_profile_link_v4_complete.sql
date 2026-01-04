@@ -1,8 +1,5 @@
 -- Create cohort-profile link for test setup
 -- Returns link data for verification
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_cohort_profile_link_v4(uuid, uuid);
 
@@ -28,6 +25,3 @@ AS $$
     )
     RETURNING cohort_id, profile_id, active, created_at;
 $$;
-
-COMMIT;
-

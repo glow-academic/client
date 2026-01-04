@@ -1,8 +1,5 @@
 -- Get document by ID for test verification
 -- Returns document details for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_document_by_id_v4(uuid);
 
@@ -31,6 +28,3 @@ AS $$
     FROM documents
     WHERE id = input_document_id;
 $$;
-
-COMMIT;
-

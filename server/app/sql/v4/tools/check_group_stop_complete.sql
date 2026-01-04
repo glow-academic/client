@@ -1,9 +1,6 @@
 -- Check if a tool is in group_stop for a group
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -42,6 +39,3 @@ SELECT EXISTS(
       AND gs.tool_id = p.tool_id
 ) as "exists"
 $$;
-
-COMMIT;
-

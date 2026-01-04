@@ -1,9 +1,6 @@
 -- Delete prompt endpoint
 -- Converted to function following agents pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -164,6 +161,3 @@ SELECT
     COALESCE((SELECT actor_name FROM actor_profile), '') as actor_name
 FROM params
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Update the resolved status of a feedback entry
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -35,6 +32,3 @@ SET resolved = api_resolve_feedback_v4.resolved
 WHERE id = feedback_id
 RETURNING id, resolved
 $$;
-
-COMMIT;
-

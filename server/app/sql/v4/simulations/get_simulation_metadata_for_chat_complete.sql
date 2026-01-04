@@ -1,8 +1,5 @@
 -- Get simulation metadata from chat (optimized single JOIN query)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -40,6 +37,3 @@ INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN simulations s ON s.id = sa.simulation_id
 WHERE sc.id = chat_id
 $$;
-
-COMMIT;
-

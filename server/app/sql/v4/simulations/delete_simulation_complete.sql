@@ -1,8 +1,5 @@
 -- Delete simulation with existence and usage checks in a single transaction
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -68,5 +65,3 @@ FROM simulation_info si
 LEFT JOIN delete_simulation ds ON ds.id = si.id
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

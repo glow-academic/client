@@ -1,9 +1,6 @@
 -- Get all data needed to run audio grading agent
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -203,6 +200,3 @@ LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id
 LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
 WHERE a.active = true
 $$;
-
-COMMIT;
-

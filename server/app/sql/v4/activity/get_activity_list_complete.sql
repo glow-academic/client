@@ -1,9 +1,6 @@
 -- Get activity list with pagination
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -132,6 +129,3 @@ CROSS JOIN activity_count ac
 LEFT JOIN paginated_activities pa ON true
 GROUP BY up.actor_name, ac.total_count, p.page, p.page_size
 $$;
-
-COMMIT;
-

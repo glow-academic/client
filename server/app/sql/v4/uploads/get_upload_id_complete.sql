@@ -1,8 +1,5 @@
 -- Get upload id to validate upload exists
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -30,6 +27,3 @@ STABLE
 AS $$
 SELECT id FROM uploads WHERE id = upload_id
 $$;
-
-COMMIT;
-

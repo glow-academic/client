@@ -1,9 +1,6 @@
 -- Get or create developer message and link to run
 -- Converted to PostgreSQL function
 -- Uses MD5 deduplication via message_content_hash() function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -68,5 +65,3 @@ link_to_run AS (
 )
 SELECT message_id, run_id FROM link_to_run
 $$;
-
-COMMIT;

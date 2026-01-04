@@ -1,8 +1,5 @@
 -- Get profile activity for test verification
 -- Returns last_active timestamp
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_profile_activity_v4(uuid);
 
@@ -22,6 +19,3 @@ AS $$
     ORDER BY created_at DESC 
     LIMIT 1;
 $$;
-
-COMMIT;
-

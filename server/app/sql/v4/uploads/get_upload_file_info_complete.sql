@@ -1,9 +1,6 @@
 -- Get upload file info for download
 -- Converted to function following agents pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -113,6 +110,3 @@ SELECT
     COALESCE((SELECT is_template FROM template_info), false)::boolean as is_template,
     COALESCE((SELECT template_args FROM template_info), '{}'::jsonb) as template_args;
 $$;
-
-COMMIT;
-

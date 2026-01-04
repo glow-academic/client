@@ -1,9 +1,6 @@
 -- Get profile detail with role visibility check and all fields needed for editing
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -253,6 +250,3 @@ LEFT JOIN target_profile_departments tpd ON pec.profile_exists = true
 LEFT JOIN can_edit_check cec ON pec.profile_exists = true
 LIMIT 1
 $$;
-
-COMMIT;
-

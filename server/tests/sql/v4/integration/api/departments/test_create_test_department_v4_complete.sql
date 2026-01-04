@@ -1,8 +1,5 @@
 -- Create a test department for test setup
 -- Returns department_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_department_v4(text, text);
 
@@ -27,6 +24,3 @@ AS $$
     )
     RETURNING id, title, description, created_at;
 $$;
-
-COMMIT;
-

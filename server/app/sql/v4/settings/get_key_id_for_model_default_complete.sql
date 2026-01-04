@@ -1,8 +1,5 @@
 -- Get key_id for a model using default settings (no profile)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -56,6 +53,3 @@ JOIN keys k ON k.id = spk.key_id AND k.active = true
 WHERE m.id = model_id
 LIMIT 1
 $$;
-
-COMMIT;
-

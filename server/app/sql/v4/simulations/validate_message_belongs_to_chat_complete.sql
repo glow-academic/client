@@ -1,8 +1,5 @@
 -- Validate that a message belongs to a chat
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -41,6 +38,3 @@ WHERE c.id = chat_id
   AND m.id = message_id
 LIMIT 1
 $$;
-
-COMMIT;
-

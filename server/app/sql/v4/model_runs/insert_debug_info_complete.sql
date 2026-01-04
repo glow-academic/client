@@ -1,8 +1,5 @@
 -- Insert debug info for a model run
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -35,6 +32,3 @@ INSERT INTO debug_info (run_id, content, created_at)
 VALUES (api_insert_debug_info_v4.run_id, api_insert_debug_info_v4.content, NOW())
 RETURNING run_id, content, created_at
 $$;
-
-COMMIT;
-

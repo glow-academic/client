@@ -1,9 +1,6 @@
 -- Create assistant message, link to run, and create branch from developer (or system if no developer)
 -- Converted to PostgreSQL function
 -- Creates message, links to run, and creates message_tree branch
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -61,6 +58,3 @@ create_branch AS (
 )
 SELECT id, created_at FROM assistant_message
 $$;
-
-COMMIT;
-

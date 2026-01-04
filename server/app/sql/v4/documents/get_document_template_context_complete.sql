@@ -1,9 +1,6 @@
 -- Get fields information for document template generation context
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -67,6 +64,3 @@ JOIN parameters pa ON pa.id = fp.parameter_id
 WHERE f.id = ANY($1)
   AND pa.active = true
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Get problem statement for a scenario
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -39,6 +36,3 @@ WHERE sps.scenario_id = scenario_id
 ORDER BY sps.created_at DESC
 LIMIT 1
 $$;
-
-COMMIT;
-

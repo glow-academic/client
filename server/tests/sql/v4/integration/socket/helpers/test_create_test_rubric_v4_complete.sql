@@ -1,8 +1,5 @@
 -- Create a test rubric for socket tests
 -- Returns rubric_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_rubric_v4(text, text, integer, integer);
 
@@ -29,6 +26,3 @@ AS $$
     ) 
     RETURNING id as rubric_id;
 $$;
-
-COMMIT;
-

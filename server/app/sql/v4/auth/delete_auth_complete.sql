@@ -1,9 +1,6 @@
 -- Delete auth entry (cascade will handle auth_items)
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -72,5 +69,3 @@ FROM auth_exists_check aec
 CROSS JOIN actor_profile ap
 LEFT JOIN auth_info ai ON true
 $$;
-
-COMMIT;

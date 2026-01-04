@@ -1,8 +1,5 @@
 -- Update cohort with department, profile, and simulation relationships in single query (DHH style)
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -150,6 +147,3 @@ SELECT
 FROM cohort_update cu
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

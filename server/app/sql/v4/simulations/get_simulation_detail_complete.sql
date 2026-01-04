@@ -1,8 +1,5 @@
 -- Get simulation detail with departments, scenarios, and access control
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -993,5 +990,3 @@ CROSS JOIN scenarios_full_data sfd
 CROSS JOIN departments_data dd
 CROSS JOIN agents_data ad
 $$;
-
-COMMIT;

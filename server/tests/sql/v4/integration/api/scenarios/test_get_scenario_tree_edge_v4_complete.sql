@@ -1,8 +1,5 @@
 -- Get scenario tree edge for test verification
 -- Returns tree edge data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_scenario_tree_edge_v4(uuid);
 
@@ -28,6 +25,3 @@ AS $$
     WHERE parent_id = test_get_scenario_tree_edge_v4.input_scenario_id
       AND child_id = test_get_scenario_tree_edge_v4.input_scenario_id;
 $$;
-
-COMMIT;
-

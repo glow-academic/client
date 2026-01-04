@@ -1,9 +1,6 @@
 -- Get or create a run for a chat (now uses groups)
 -- Converted to PostgreSQL function
 -- This will get the latest run for the chat's group, or create a new one if none exists
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -155,6 +152,3 @@ SELECT sr.id::text as run_id
 FROM selected_run sr
 LIMIT 1
 $$;
-
-COMMIT;
-

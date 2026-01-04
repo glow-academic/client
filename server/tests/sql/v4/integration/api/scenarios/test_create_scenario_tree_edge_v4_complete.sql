@@ -1,8 +1,5 @@
 -- Create scenario tree edge for test setup
 -- Returns edge data for verification
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_scenario_tree_edge_v4(uuid);
 
@@ -27,6 +24,3 @@ AS $$
     )
     RETURNING parent_id, child_id, active, created_at;
 $$;
-
-COMMIT;
-

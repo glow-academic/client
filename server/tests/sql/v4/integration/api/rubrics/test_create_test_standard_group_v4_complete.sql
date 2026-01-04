@@ -1,8 +1,5 @@
 -- Create a test standard group for test setup
 -- Returns standard group data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_standard_group_v4(uuid, text, text, text, integer, integer);
 
@@ -55,6 +52,3 @@ AS $$
         updated_at
     FROM new_group;
 $$;
-
-COMMIT;
-

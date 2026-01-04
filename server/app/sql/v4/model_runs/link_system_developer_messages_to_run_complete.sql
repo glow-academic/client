@@ -12,9 +12,6 @@
 --   - Developer messages are linked separately (hint, grade agents)
 --
 -- Note: message_tree linking to first user message happens when user message is created
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -232,5 +229,3 @@ SELECT
     (SELECT system_message_id FROM link_system LIMIT 1) as system_message_id,
     (SELECT developer_message_id FROM link_developer LIMIT 1) as developer_message_id
 $$;
-
-COMMIT;

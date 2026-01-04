@@ -1,9 +1,6 @@
 -- Delete provider (cascade deletes provider_endpoints, setting_provider_keys)
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -94,6 +91,3 @@ FROM provider_exists_check pec
 LEFT JOIN provider_info pi ON pec.provider_exists = true
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Get departments for a profile
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -33,6 +30,3 @@ FROM departments d
 JOIN profile_departments pd ON pd.department_id = d.id
 WHERE pd.profile_id = profile_id AND d.active = true
 $$;
-
-COMMIT;
-

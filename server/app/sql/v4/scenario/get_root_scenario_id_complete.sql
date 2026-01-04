@@ -1,9 +1,6 @@
 -- Recursively find the root scenario ID for a given scenario ID
 -- Root scenario is the topmost ancestor (scenario with no parent or parent = self)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -67,6 +64,3 @@ FROM scenario_ancestors
 WHERE depth = (SELECT MAX(depth) FROM scenario_ancestors)
 LIMIT 1
 $$;
-
-COMMIT;
-

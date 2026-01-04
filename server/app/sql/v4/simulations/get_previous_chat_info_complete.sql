@@ -1,8 +1,5 @@
 -- Get previous chat info (scenario_id and whether it has a grade)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -46,6 +43,3 @@ LEFT JOIN chat_groups cg_prev ON cg_prev.group_id = g_prev.id
 LEFT JOIN chats c_prev ON c_prev.id = cg_prev.chat_id AND c_prev.id = sc.id
 WHERE sc.id = chat_id AND sc.completed = true
 $$;
-
-COMMIT;
-

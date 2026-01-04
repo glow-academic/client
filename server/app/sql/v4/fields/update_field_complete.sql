@@ -1,8 +1,5 @@
 -- Update field with conditional parameters and department links
 -- Converted to function
-
-BEGIN;
-
 DROP FUNCTION IF EXISTS api_update_field_v4(uuid, text, text, boolean, text[], text[], uuid);
 
 CREATE OR REPLACE FUNCTION api_update_field_v4(
@@ -130,5 +127,3 @@ FROM field_exists_check fec
 CROSS JOIN user_profile up
 LEFT JOIN update_field uf ON fec.field_exists = true
 $$;
-
-COMMIT;

@@ -1,8 +1,5 @@
 -- Create a test simulation for test setup
 -- Returns simulation_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_simulation_v4(text, text, boolean);
 
@@ -37,6 +34,3 @@ AS $$
     )
     RETURNING id, title, description, active, practice_simulation, created_at;
 $$;
-
-COMMIT;
-

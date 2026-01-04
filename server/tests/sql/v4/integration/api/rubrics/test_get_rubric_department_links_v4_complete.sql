@@ -1,8 +1,5 @@
 -- Get all rubric department links for test verification
 -- Returns all links for a rubric
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_rubric_department_links_v4(uuid);
 
@@ -27,6 +24,3 @@ AS $$
     FROM rubric_departments
     WHERE rubric_id = input_rubric_id;
 $$;
-
-COMMIT;
-

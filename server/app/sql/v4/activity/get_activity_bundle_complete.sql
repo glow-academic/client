@@ -1,9 +1,6 @@
 -- Get activity bundle with header metrics and chart data
 -- Converted to function with composite types (no JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -130,6 +127,3 @@ FROM user_profile up
 CROSS JOIN combined_daily cd
 GROUP BY up.actor_name
 $$;
-
-COMMIT;
-

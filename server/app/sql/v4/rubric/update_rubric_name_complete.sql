@@ -1,9 +1,6 @@
 -- Update rubric name
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -55,6 +52,3 @@ AS $$
     WHERE id = socket_update_rubric_name_v4.rubric_id
     RETURNING id as rubric_id, name
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Get feedback totals for a grade
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -33,6 +30,3 @@ AS $$
     FROM feedbacks
     WHERE grade_id = grade_id_param
 $$;
-
-COMMIT;
-

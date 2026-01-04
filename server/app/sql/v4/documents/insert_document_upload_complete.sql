@@ -1,9 +1,6 @@
 -- Insert document_uploads junction record
 -- Converted to PostgreSQL function
 -- Links a document to a regular upload (not a template upload)
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -42,6 +39,3 @@ ON CONFLICT (document_id, upload_id) DO UPDATE SET
     updated_at = NOW()
 RETURNING document_id, upload_id, active, created_at, updated_at
 $$;
-
-COMMIT;
-

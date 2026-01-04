@@ -1,8 +1,5 @@
 -- Create a test scenario for test setup
 -- Returns scenario_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_scenario_v4(text, text);
 
@@ -57,6 +54,3 @@ BEGIN
     WHERE s.id = v_scenario_id;
 END;
 $$;
-
-COMMIT;
-

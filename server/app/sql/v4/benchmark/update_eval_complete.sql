@@ -1,9 +1,6 @@
 -- Update eval with optional runs and departments changes
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -156,6 +153,3 @@ SELECT ue.eval_id, ue.eval_name, up.actor_name::text as actor_name
 FROM update_eval ue
 CROSS JOIN user_profile up
 $$;
-
-COMMIT;
-

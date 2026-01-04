@@ -1,8 +1,5 @@
 -- Get cohort detail with simulations and mappings
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop functions that depend on these types first (breaks dependency on types)
 -- Drop all versions of the functions using DO block to handle signature variations
 DO $$
@@ -466,5 +463,3 @@ FROM cohort_exists_check cec
 CROSS JOIN user_profile_for_cohort upc
 LEFT JOIN cohort_data cd ON true
 $$;
-
-COMMIT;

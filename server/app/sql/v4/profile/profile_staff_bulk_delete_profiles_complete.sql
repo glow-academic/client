@@ -1,9 +1,6 @@
 -- Bulk delete staff profiles with validation in single function
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_bulk_delete_staff_v4(uuid[], uuid);
 
@@ -56,5 +53,3 @@ SELECT
 FROM deletable_profiles dp
 CROSS JOIN user_profile up
 $$;
-
-COMMIT;

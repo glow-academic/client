@@ -1,9 +1,6 @@
 -- Bulk update profile with role validation and request limit update in single function
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -146,5 +143,3 @@ FROM profile_update pu
 CROSS JOIN user_profile up
 GROUP BY up.actor_name
 $$;
-
-COMMIT;

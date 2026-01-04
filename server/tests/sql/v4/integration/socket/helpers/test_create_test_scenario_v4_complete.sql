@@ -1,8 +1,5 @@
 -- Create a test scenario for socket tests
 -- Returns scenario_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_scenario_v4(text);
 
@@ -20,6 +17,3 @@ AS $$
     VALUES (test_create_test_scenario_v4.name, true) 
     RETURNING id as scenario_id;
 $$;
-
-COMMIT;
-

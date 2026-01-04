@@ -1,8 +1,5 @@
 -- Get images for a scenario
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ FROM scenario_images si
 WHERE si.scenario_id = scenario_id
   AND si.active = true
 $$;
-
-COMMIT;
-

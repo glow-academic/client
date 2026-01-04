@@ -1,8 +1,5 @@
 -- Update image completion status
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -37,6 +34,3 @@ SET completed = api_update_image_completed_v4.completed,
 WHERE id = image_id
 RETURNING id, completed, updated_at
 $$;
-
-COMMIT;
-

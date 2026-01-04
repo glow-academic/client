@@ -1,8 +1,5 @@
 -- Get field detail with permissions and relationships
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -228,5 +225,3 @@ CROSS JOIN user_has_field_access uha
 LEFT JOIN draft_payload_data dpd ON true
 WHERE uha.has_access = true OR fec.field_exists = false
 $$;
-
-COMMIT;

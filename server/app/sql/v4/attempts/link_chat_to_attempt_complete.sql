@@ -1,8 +1,5 @@
 -- Link an existing chat to an attempt via junction table
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -35,6 +32,3 @@ VALUES (attempt_id, chat_id, NOW(), NOW())
 ON CONFLICT (attempt_id, chat_id) DO NOTHING
 RETURNING attempt_id, chat_id
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Create template and link to document and run
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -120,6 +117,3 @@ link_to_run AS (
 )
 SELECT template_id FROM link_to_document LIMIT 1
 $$;
-
-COMMIT;
-

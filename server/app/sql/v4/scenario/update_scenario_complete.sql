@@ -1,9 +1,6 @@
 -- Update scenario with all relationships in a single transaction
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -715,5 +712,3 @@ FROM scenario_exists_check sec
 LEFT JOIN update_scenario us ON sec.scenario_exists = true
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

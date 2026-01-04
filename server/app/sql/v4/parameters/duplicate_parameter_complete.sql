@@ -1,9 +1,6 @@
 -- Duplicate parameter with items and department links in a single transaction
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DROP FUNCTION IF EXISTS api_duplicate_parameter_v4(uuid, uuid);
 
@@ -160,5 +157,3 @@ FROM new_parameter np
 CROSS JOIN original_parameter op
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

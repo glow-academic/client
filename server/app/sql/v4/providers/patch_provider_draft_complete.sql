@@ -1,8 +1,5 @@
 -- Patch provider draft (create if not exists, patch if exists)
 -- Function handles both create and patch logic
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -81,6 +78,3 @@ BEGIN
     RETURN QUERY SELECT v_draft_id, v_new_version, false;
 END;
 $$;
-
-COMMIT;
-

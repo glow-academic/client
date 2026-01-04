@@ -1,9 +1,6 @@
 -- Delete rubric with existence and usage checks in a single transaction
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -72,5 +69,3 @@ FROM rubric_info ri
 LEFT JOIN delete_rubric dr ON dr.rubric_id = ri.id
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

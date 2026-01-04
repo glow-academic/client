@@ -1,9 +1,6 @@
 -- Get department detail with permissions, stats, and settings
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -487,6 +484,3 @@ GROUP BY dec.department_exists, d.id, d.title, d.description, d.active, up.role,
          du.total_usage, dsc.staff_count, dps.total_price_spent, dcs.settings_id, up.actor_name
 LIMIT 1
 $$;
-
-COMMIT;
-

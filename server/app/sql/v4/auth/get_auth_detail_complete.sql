@@ -1,9 +1,6 @@
 -- Get auth detail with items (values managed separately in settings)
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -184,5 +181,3 @@ LEFT JOIN auth_data ad ON true
 LEFT JOIN auth_items_data aid ON true
 GROUP BY aec.auth_exists, ad.name, ad.description, ad.active, ad.can_edit, up.actor_name
 $$;
-
-COMMIT;

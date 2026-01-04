@@ -1,8 +1,5 @@
 -- Get the latest run for a chat (now uses groups)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -38,6 +35,3 @@ WHERE c.id = chat_id
 ORDER BY r.created_at DESC
 LIMIT 1
 $$;
-
-COMMIT;
-

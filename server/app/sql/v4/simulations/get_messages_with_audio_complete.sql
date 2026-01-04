@@ -1,9 +1,6 @@
 -- Get messages with audio upload information for a chat
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -52,6 +49,3 @@ AS $$
     WHERE c.id = chat_id
       AND m.id = ANY(message_ids)
 $$;
-
-COMMIT;
-

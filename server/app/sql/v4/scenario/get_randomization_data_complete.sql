@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Drop existing types if they exist (for idempotent migrations)
 DROP TYPE IF EXISTS types.get_randomization_data_persona_v4 CASCADE;
 DROP TYPE IF EXISTS types.get_randomization_data_document_v4 CASCADE;
@@ -194,5 +192,3 @@ CROSS JOIN parameters_agg pra
 CROSS JOIN parameter_items_agg pia
 CROSS JOIN document_parameter_items_agg dpia
 $$;
-
-COMMIT;

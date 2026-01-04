@@ -1,9 +1,6 @@
 -- Document tool eval start handler (scenario agent)
 -- No-op function (no database operations) - just returns eval info
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -69,5 +66,3 @@ SELECT
     true as success,
     'Document eval started' as message
 $$;
-
-COMMIT;

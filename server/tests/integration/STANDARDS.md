@@ -38,7 +38,7 @@ Integration tests follow the agents-style architecture pattern, which uses:
 - **One function per test operation**: Function name follows `test_{operation}_{resource}_v4` pattern
 - **RETURNS TABLE**: Functions return structured rows with explicit column types
 - **Composite types**: Nested structures use composite types in `types` schema
-- **Idempotent**: Files use `BEGIN; DROP FUNCTION; DROP TYPE; CREATE TYPE; CREATE FUNCTION; COMMIT;`
+- **Idempotent**: Files use `DROP FUNCTION IF EXISTS` followed by `CREATE OR REPLACE FUNCTION` (no transaction blocks)
 
 ### 3. Use execute_sql_typed() for All Database Operations
 
@@ -86,8 +86,6 @@ server/tests/sql/v4/integration/
 
 ```sql
 -- tests/sql/v4/integration/conftest/test_get_superadmin_alias_v4_complete.sql
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_superadmin_alias_v4();
 
@@ -107,8 +105,6 @@ AS $$
     WHERE p.role = 'superadmin'::profile_role
     LIMIT 1;
 $$;
-
-COMMIT;
 ```
 
 **Usage in Test:**
@@ -130,8 +126,6 @@ async def test_example(db: asyncpg.Connection) -> None:
 
 ```sql
 -- tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql
-BEGIN;
-
 DROP FUNCTION IF EXISTS test_create_test_agent_v4(uuid, text, text, uuid);
 
 CREATE TYPE types.test_create_test_agent_v4_result AS (
@@ -160,8 +154,6 @@ AS $$
     VALUES (name, description, model_id, true, 'assistant'::agent_role)
     RETURNING id, name, model_id, created_at;
 $$;
-
-COMMIT;
 ```
 
 **Usage in Test:**
@@ -200,8 +192,6 @@ async def test_create_agent(db: asyncpg.Connection) -> None:
 
 ```sql
 -- tests/sql/v4/integration/socket/simulations/test_create_simulation_attempt_v4_complete.sql
-BEGIN;
-
 DROP FUNCTION IF EXISTS test_create_simulation_attempt_v4(uuid, uuid, uuid);
 
 CREATE TYPE types.test_create_simulation_attempt_v4_result AS (
@@ -264,8 +254,6 @@ AS $$
     FROM new_attempt na
     JOIN new_chat nc ON nc.attempt_id = na.id;
 $$;
-
-COMMIT;
 ```
 
 **Usage in Test:**
@@ -379,7 +367,6 @@ SELECT id, name FROM agents WHERE id = $1;
 
 -- ✅ GOOD: PostgreSQL function
 -- tests/sql/v4/integration/api/agents/test_get_test_agent_v4_complete.sql
-BEGIN;
 DROP FUNCTION IF EXISTS test_get_test_agent_v4(uuid);
 CREATE OR REPLACE FUNCTION test_get_test_agent_v4(agent_id uuid)
 RETURNS TABLE (id uuid, name text)
@@ -388,7 +375,6 @@ STABLE
 AS $$
     SELECT id, name FROM agents WHERE id = agent_id;
 $$;
-COMMIT;
 ```
 
 ## Test Helper Functions
@@ -399,8 +385,6 @@ Create reusable helper functions in `tests/sql/v4/integration/helpers/`:
 
 ```sql
 -- tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql
-BEGIN;
-
 DROP FUNCTION IF EXISTS test_get_or_create_test_profile_v4(text);
 
 CREATE OR REPLACE FUNCTION test_get_or_create_test_profile_v4(
@@ -429,8 +413,6 @@ AS $$
     WHERE pe.email = test_get_or_create_test_profile_v4.email
     LIMIT 1;
 $$;
-
-COMMIT;
 ```
 
 ## conftest.py Pattern
@@ -460,7 +442,7 @@ async def superadmin_profile(db: asyncpg.Connection) -> TestGetSuperadminAliasV4
 - [ ] **PostgreSQL functions** - All SQL files define functions, not raw queries
 - [ ] **Function naming** - Functions follow `test_{operation}_{resource}_v4` pattern
 - [ ] **Composite types** - Complex structures use composite types in `types` schema
-- [ ] **Idempotent** - SQL files use `BEGIN; DROP FUNCTION; CREATE FUNCTION; COMMIT;` pattern
+- [ ] **Idempotent** - SQL files use `DROP FUNCTION IF EXISTS` followed by `CREATE OR REPLACE FUNCTION` (no transaction blocks)
 - [ ] **Type generation** - Types generated correctly in `server/tests/sql/types.py`
 - [ ] **No JSONB** - Use composite types instead of JSONB
 

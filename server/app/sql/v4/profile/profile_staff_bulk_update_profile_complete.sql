@@ -1,9 +1,6 @@
 -- Bulk update profile with role validation and request limit update in single function
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_bulk_update_staff_v4(uuid[], text, boolean, integer, uuid, uuid);
 
@@ -132,5 +129,3 @@ FROM profile_update pu
 CROSS JOIN user_profile up
 GROUP BY up.actor_name
 $$;
-
-COMMIT;

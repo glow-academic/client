@@ -1,8 +1,5 @@
 -- Get objectives for a scenario
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ FROM scenario_objectives so
 WHERE so.scenario_id = scenario_id
 ORDER BY so.idx
 $$;
-
-COMMIT;
-

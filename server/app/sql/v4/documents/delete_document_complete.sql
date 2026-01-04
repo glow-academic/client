@@ -1,9 +1,6 @@
 -- Delete document with actor tracking
 -- Converted to function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -64,6 +61,3 @@ CROSS JOIN actor_profile ap
 WHERE EXISTS (SELECT 1 FROM delete_result)
 LIMIT 1
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Get parameter detail with nested items and relationships
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -477,5 +474,3 @@ SELECT
 FROM parameter_data pd
 CROSS JOIN user_profile up
 $$;
-
-COMMIT;

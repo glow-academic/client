@@ -690,32 +690,10 @@ def _detect_function_in_sql(sql_text: str) -> bool:
     return bool(re.search(pattern, sql_text, re.IGNORECASE | re.MULTILINE))
 
 
-def _detect_transaction_block(sql_text: str) -> bool:
-    """Detect if SQL file contains BEGIN/COMMIT transaction blocks.
-
-    Args:
-        sql_text: SQL file content
-
-    Returns:
-        True if SQL contains BEGIN; and COMMIT; blocks
-    """
-    # Check for BEGIN; and COMMIT; patterns (case insensitive)
-    has_begin = bool(
-        re.search(r"^\s*BEGIN\s*;", sql_text, re.IGNORECASE | re.MULTILINE)
-    )
-    has_commit = bool(
-        re.search(r"^\s*COMMIT\s*;", sql_text, re.IGNORECASE | re.MULTILINE)
-    )
-    return has_begin and has_commit
-
-
 async def execute_sql_file(
     sql_path: str, conn: asyncpg.Connection, server_root: Path
 ) -> tuple[bool, str]:
     """Execute SQL file on database (for functions/types).
-
-    Uses savepoints for SQL files with BEGIN/COMMIT blocks to prevent
-    transaction corruption when one file fails.
 
     Args:
         sql_path: SQL file path relative to server root
@@ -729,129 +707,17 @@ async def execute_sql_file(
         # Load SQL file
         sql_text = load_sql(sql_path)
 
-        # Check if SQL contains transaction blocks (BEGIN/COMMIT)
-        has_transaction_block = _detect_transaction_block(sql_text)
-
-        # Execute if it contains function definitions OR if it's a DDL file with transaction blocks
-        # (e.g., analytics view creation which creates materialized views and indexes)
+        # Execute if it contains function definitions
         has_function = _detect_function_in_sql(sql_text)
-        if not has_function and not has_transaction_block:
+        if not has_function:
             return (
                 True,
-                f"Skipping {sql_path} (no function definition or DDL transaction block)",
+                f"Skipping {sql_path} (no function definition)",
             )
 
-        # For DDL-only files (no function), we still need to execute them
-        # but they won't be introspected later (handled in generate_types_for_sql_file)
-
-        if has_transaction_block:
-            # For SQL files with BEGIN/COMMIT, we need to wrap execution in a transaction
-            # and use savepoints for isolation. However, PostgreSQL doesn't support nested
-            # transactions, so we strip BEGIN/COMMIT and wrap in our own transaction.
-            import hashlib
-
-            savepoint_name = f"sp_{hashlib.md5(sql_path.encode()).hexdigest()[:16]}"
-
-            # Strip BEGIN; and COMMIT; from SQL text
-            # Remove BEGIN; at the start (with optional whitespace)
-            sql_without_transaction = re.sub(
-                r"^\s*BEGIN\s*;\s*", "", sql_text, flags=re.IGNORECASE | re.MULTILINE
-            )
-            # Remove COMMIT; at the end (with optional whitespace)
-            sql_without_transaction = re.sub(
-                r"\s*COMMIT\s*;\s*$",
-                "",
-                sql_without_transaction,
-                flags=re.IGNORECASE | re.MULTILINE,
-            )
-
-            try:
-                # Start transaction and create savepoint
-                await conn.execute("BEGIN")
-                await conn.execute(f"SAVEPOINT {savepoint_name}")
-
-                # Execute SQL file (without BEGIN/COMMIT, now wrapped in our transaction)
-                await conn.execute(sql_without_transaction)
-
-                # Release savepoint and commit on success
-                await conn.execute(f"RELEASE SAVEPOINT {savepoint_name}")
-                await conn.execute("COMMIT")
-                return True, f"Executed {sql_path}"
-
-            except Exception as e:
-                error_str = str(e)
-
-                # Extract line number and position from PostgreSQL error if available
-                line_match = re.search(r"LINE (\d+)", error_str, re.IGNORECASE)
-                line_num = line_match.group(1) if line_match else None
-                position_match = re.search(r"position (\d+)", error_str, re.IGNORECASE)
-                position = int(position_match.group(1)) if position_match else None
-
-                # Extract SQL snippet around error position for better error messages
-                sql_snippet = None
-
-                # Try to extract line-based context if we have a line number
-                if line_num:
-                    try:
-                        lines = sql_without_transaction.split("\n")
-                        line_idx = int(line_num) - 1
-                        if 0 <= line_idx < len(lines):
-                            # Get 5 lines before and after for context
-                            start = max(0, line_idx - 5)
-                            end = min(len(lines), line_idx + 6)
-                            context_lines = lines[start:end]
-                            sql_snippet = "\n".join(
-                                f"{start + i + 1:4d} | {line}"
-                                if i + start != line_idx
-                                else f"{start + i + 1:4d} | {line}  <-- ERROR"
-                                for i, line in enumerate(context_lines)
-                            )
-                    except (ValueError, IndexError):
-                        pass
-
-                # Fallback to position-based extraction if line number extraction failed
-                if (
-                    not sql_snippet
-                    and position
-                    and position < len(sql_without_transaction)
-                ):
-                    start = max(0, position - 300)
-                    end = min(len(sql_without_transaction), position + 300)
-                    sql_snippet = sql_without_transaction[start:end]
-
-                # Format error message similar to psql for better debugging
-                error_parts = [f"Error executing {sql_path}"]
-                if line_num:
-                    error_parts.append(f"LINE {line_num}")
-                if position:
-                    error_parts.append(f"position {position}")
-                error_parts.append(f"\n{error_str}")
-                if sql_snippet:
-                    error_parts.append(f"\n\nSQL context:\n{sql_snippet}")
-
-                formatted_error = "\n".join(error_parts)
-
-                # Rollback to savepoint on error to restore connection state
-                try:
-                    await conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
-                    await conn.execute(
-                        "COMMIT"
-                    )  # Commit the outer transaction (savepoint rollback succeeded)
-                except Exception as rollback_error:
-                    # If rollback fails, rollback entire transaction
-                    try:
-                        await conn.execute("ROLLBACK")
-                    except Exception:
-                        pass  # Connection may be corrupted, caller will handle
-                    return (
-                        False,
-                        f"{formatted_error}\n(rollback also failed: {str(rollback_error)})",
-                    )
-                return False, formatted_error
-        else:
-            # No transaction block, execute normally
-            await conn.execute(sql_text)
-            return True, f"Executed {sql_path}"
+        # Execute SQL file directly (no BEGIN/COMMIT blocks to strip)
+        await conn.execute(sql_text)
+        return True, f"Executed {sql_path}"
 
     except Exception as e:
         return False, f"Error executing {sql_path}: {str(e)}"

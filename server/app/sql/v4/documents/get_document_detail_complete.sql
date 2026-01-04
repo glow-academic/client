@@ -1,9 +1,6 @@
 -- Get document detail with mappings and template info
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -496,5 +493,3 @@ LEFT JOIN document_active_template dat ON dat.document_id = dd.document_id AND d
 LEFT JOIN valid_field_ids_data vfid ON vfid.document_id = dd.document_id AND dec.document_exists = true
 LIMIT 1
 $$;
-
-COMMIT;

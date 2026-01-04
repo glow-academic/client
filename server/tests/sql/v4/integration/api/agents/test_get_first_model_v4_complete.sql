@@ -1,8 +1,5 @@
 -- Get first active model ID for test setup
 -- Returns model_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_first_model_v4();
 
@@ -24,6 +21,3 @@ AS $$
     WHERE active = true
     LIMIT 1;
 $$;
-
-COMMIT;
-

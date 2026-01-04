@@ -1,9 +1,6 @@
 -- Update grade record with final values
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -39,6 +36,3 @@ AS $$
     WHERE id = grade_id_param
     RETURNING id::text
 $$;
-
-COMMIT;
-

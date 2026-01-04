@@ -1,8 +1,5 @@
 -- Create a test eval group and link it to an eval
 -- Returns group_id and eval_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_eval_group_v4(uuid);
 
@@ -35,6 +32,3 @@ AS $$
         lg.eval_id
     FROM link_group lg;
 $$;
-
-COMMIT;
-

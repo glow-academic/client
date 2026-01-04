@@ -1,9 +1,6 @@
 -- Insert or update app metrics snapshot
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
@@ -39,6 +36,3 @@ AS $$
         memory_bytes = EXCLUDED.memory_bytes;
     SELECT true as success;
 $$;
-
-COMMIT;
-

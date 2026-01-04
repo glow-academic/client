@@ -2,9 +2,6 @@
 -- Uses existing group_id to get previous context from previous runs
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -538,6 +535,3 @@ CROSS JOIN group_data gd
 CROSS JOIN previous_messages_array pma
 LEFT JOIN documents_data dd ON dd.scenario_id = cd.scenario_id
 $$;
-
-COMMIT;
-

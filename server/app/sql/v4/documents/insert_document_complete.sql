@@ -1,9 +1,6 @@
 -- Insert document with department, parameter item, and upload links in single transaction
 -- Converted to PostgreSQL function
 -- Note: Uses JSONB for template_args - may need refactoring per STANDARDS.md
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -142,5 +139,3 @@ SELECT
     document_id::text as document_id,
     (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 $$;
-
-COMMIT;

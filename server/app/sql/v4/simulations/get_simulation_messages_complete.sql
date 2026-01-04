@@ -1,9 +1,6 @@
 -- Get all messages for a chat using tree traversal
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -178,5 +175,3 @@ SELECT
     ) as messages
 FROM distinct_messages dm
 $$;
-
-COMMIT;

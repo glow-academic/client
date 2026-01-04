@@ -2,9 +2,6 @@
 -- Converted to PostgreSQL function
 -- If use_groups=false: returns next incomplete run
 -- If use_groups=true: returns next incomplete group
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -82,6 +79,3 @@ FROM next_run nr
 FULL OUTER JOIN next_group ng ON true
 LIMIT 1
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Get all feedback entries with author information
 -- Converted to PostgreSQL function
 -- Returns all feedback entries ordered by resolved status (unresolved first) then created_at DESC
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -87,6 +84,3 @@ FROM actor_profile ap
 CROSS JOIN feedback_rows fr
 GROUP BY ap.actor_name
 $$;
-
-COMMIT;
-

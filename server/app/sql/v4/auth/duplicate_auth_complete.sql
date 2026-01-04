@@ -1,9 +1,6 @@
 -- Duplicate auth with items and values in a single transaction
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -117,5 +114,3 @@ CROSS JOIN actor_profile ap
 LEFT JOIN source_auth sa ON true
 LEFT JOIN new_auth na ON true
 $$;
-
-COMMIT;

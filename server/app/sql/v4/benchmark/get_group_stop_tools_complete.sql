@@ -1,8 +1,5 @@
 -- Get tools in group_stop for a group (ordered by position_idx)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ FROM group_stop gs
 WHERE gs.group_id = api_get_group_stop_tools_v4.group_id
 ORDER BY gs.position_idx ASC
 $$;
-
-COMMIT;
-

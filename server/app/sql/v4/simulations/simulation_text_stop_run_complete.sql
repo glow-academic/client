@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_simulation_text_stop_run_v4(uuid);
 CREATE OR REPLACE FUNCTION api_simulation_text_stop_run_v4(
     chat_id uuid
@@ -45,4 +44,3 @@ SELECT
     (SELECT id FROM update_message) as cancelled_message_id,
     (SELECT content FROM latest_message) as final_content
 $$;
-COMMIT;

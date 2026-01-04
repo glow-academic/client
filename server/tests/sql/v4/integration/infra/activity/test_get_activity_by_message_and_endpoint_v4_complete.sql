@@ -1,8 +1,5 @@
 -- Get activity by message and endpoint for test assertions
 -- Returns activity data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_activity_by_message_and_endpoint_v4(text, text);
 
@@ -28,6 +25,3 @@ AS $$
     ORDER BY created_at DESC
     LIMIT 1;
 $$;
-
-COMMIT;
-

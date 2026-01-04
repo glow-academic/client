@@ -1,9 +1,6 @@
 -- Insert or update service health check
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
@@ -36,6 +33,3 @@ AS $$
         error = EXCLUDED.error;
     SELECT true as success;
 $$;
-
-COMMIT;
-

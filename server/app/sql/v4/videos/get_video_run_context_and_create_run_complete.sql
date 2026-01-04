@@ -1,9 +1,6 @@
 -- Get all data needed to run video agent AND create run in single atomic transaction
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -291,6 +288,3 @@ SELECT
 FROM context_data cd
 CROSS JOIN create_run cr
 $$;
-
-COMMIT;
-

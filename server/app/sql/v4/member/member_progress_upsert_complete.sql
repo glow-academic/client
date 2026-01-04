@@ -1,9 +1,6 @@
 -- Upsert user message and run, link run to group, link system/developer messages
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DROP FUNCTION IF EXISTS socket_member_progress_upsert_v4(uuid, text, boolean, uuid);
 
@@ -426,5 +423,3 @@ SELECT
     (SELECT chat_id FROM params LIMIT 1)::text as chat_id,
     (SELECT group_id FROM target_group LIMIT 1)::text as group_id
 $$;
-
-COMMIT;

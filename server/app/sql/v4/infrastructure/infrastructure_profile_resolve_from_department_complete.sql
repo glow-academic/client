@@ -1,9 +1,6 @@
 -- Resolve profile ID from department-id + auth-mode cookies
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
@@ -78,6 +75,3 @@ AS $$
     SELECT resolved_profile_id FROM resolve_profile_from_department
     WHERE resolved_profile_id IS NOT NULL;
 $$;
-
-COMMIT;
-

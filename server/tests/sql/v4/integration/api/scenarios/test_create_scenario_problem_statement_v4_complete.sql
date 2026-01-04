@@ -1,8 +1,5 @@
 -- Create scenario problem statement for test setup
 -- Returns problem statement data for verification
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_scenario_problem_statement_v4(uuid, text);
 
@@ -28,6 +25,3 @@ AS $$
     )
     RETURNING scenario_id, problem_statement, active, created_at;
 $$;
-
-COMMIT;
-

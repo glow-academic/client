@@ -1,8 +1,5 @@
 -- Create a test eval run and link it to an eval
 -- Returns run_id and eval_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_eval_run_v4(uuid, boolean);
 
@@ -39,6 +36,3 @@ AS $$
         lr.completed
     FROM link_run lr;
 $$;
-
-COMMIT;
-

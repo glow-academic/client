@@ -1,8 +1,5 @@
 -- Get profile-department link for test verification
 -- Returns link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_profile_department_link_v4(uuid, uuid);
 
@@ -29,6 +26,3 @@ AS $$
     WHERE department_id = test_get_profile_department_link_v4.input_department_id
       AND profile_id = test_get_profile_department_link_v4.input_profile_id;
 $$;
-
-COMMIT;
-

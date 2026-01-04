@@ -1,9 +1,6 @@
 -- Get rubric detail with departments, standard groups, and access control
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -358,5 +355,3 @@ CROSS JOIN agents_aggregated aa
 LEFT JOIN draft_payload_data ON true
 WHERE uhra.has_access = true OR rec.rubric_exists = false
 $$;
-
-COMMIT;

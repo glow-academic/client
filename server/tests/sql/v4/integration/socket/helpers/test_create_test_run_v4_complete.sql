@@ -1,8 +1,5 @@
 -- Create a test run for socket tests
 -- Returns run_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_run_v4(uuid, uuid, uuid, text, uuid, uuid);
 
@@ -28,6 +25,3 @@ AS $$
     VALUES (0, 0, test_create_test_run_v4.agent_id)
     RETURNING id, test_create_test_run_v4.department_id, test_create_test_run_v4.model_id, test_create_test_run_v4.agent_id;
 $$;
-
-COMMIT;
-

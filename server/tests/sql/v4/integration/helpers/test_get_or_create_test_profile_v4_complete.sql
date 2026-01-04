@@ -1,8 +1,5 @@
 -- Get existing profile by email or create a new one
 -- Returns profile_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_test_profile_v4(text, text, text, text);
 
@@ -63,6 +60,3 @@ AS $$
     WHERE ep.profile_id IS NOT NULL OR np.id IS NOT NULL
     LIMIT 1;
 $$;
-
-COMMIT;
-

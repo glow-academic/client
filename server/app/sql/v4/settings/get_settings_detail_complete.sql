@@ -1,9 +1,6 @@
 -- Get settings detail by ID with auth and provider info
 -- Converted to function with composite types (NO JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop functions that depend on these types first
 -- Drop active endpoint function first (depends on detail types)
 DO $$
@@ -595,6 +592,3 @@ LEFT JOIN settings_default_guest_data sdgd ON true
 LEFT JOIN settings_departments_data sdd ON true
 CROSS JOIN user_profile up
 $$;
-
-COMMIT;
-

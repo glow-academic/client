@@ -1,8 +1,5 @@
 -- Get message_id from tool_call_id and run_id
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -40,6 +37,3 @@ WHERE tc.id = api_get_message_id_from_tool_call_v4.tool_call_id
 ORDER BY m.created_at DESC
 LIMIT 1
 $$;
-
-COMMIT;
-

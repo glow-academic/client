@@ -1,9 +1,6 @@
 -- Randomize scenario selections with validation and integrity checks
 -- Converted to function following DHH principles
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -455,6 +452,3 @@ BEGIN
         randomized_field_ids;
 END;
 $$;
-
-COMMIT;
-

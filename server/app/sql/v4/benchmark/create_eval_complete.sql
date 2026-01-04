@@ -1,9 +1,6 @@
 -- Create eval with runs junction table entries and departments in a single transaction
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -122,5 +119,3 @@ SELECT
 FROM new_eval ne
 CROSS JOIN user_profile up
 $$;
-
-COMMIT;

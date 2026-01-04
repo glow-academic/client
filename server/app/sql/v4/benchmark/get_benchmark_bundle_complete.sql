@@ -1,9 +1,6 @@
 -- Get benchmark bundle with evals list and eval attempts list
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -700,6 +697,3 @@ SELECT
     END::int as total_pages
 FROM params p
 $$;
-
-COMMIT;
-

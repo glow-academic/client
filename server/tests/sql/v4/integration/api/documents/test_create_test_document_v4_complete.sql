@@ -1,8 +1,5 @@
 -- Create a test document for test setup
 -- Returns document data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_document_v4(text, text, boolean, text, text);
 
@@ -33,6 +30,3 @@ AS $$
     )
     RETURNING id AS document_id, name, description, active, created_at, updated_at;
 $$;
-
-COMMIT;
-

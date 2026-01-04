@@ -1,9 +1,6 @@
 -- Create model with department links, endpoint, and all related data
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -194,5 +191,3 @@ BEGIN
     WHERE p.id = profile_id;
 END;
 $$;
-
-COMMIT;

@@ -1,9 +1,6 @@
 -- Update rubric with departments, standard groups, and standards in a single transaction
 -- Converted to function with input composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -291,5 +288,3 @@ SELECT ur.rubric_id, ur.rubric_name, ap.actor_name
 FROM update_rubric ur
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

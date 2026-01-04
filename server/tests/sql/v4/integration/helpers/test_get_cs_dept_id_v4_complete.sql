@@ -1,8 +1,5 @@
 -- Get Computer Science department ID from seed data
 -- Returns department_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_cs_dept_id_v4();
 
@@ -22,6 +19,3 @@ AS $$
     WHERE title = 'Computer Science'
     LIMIT 1;
 $$;
-
-COMMIT;
-

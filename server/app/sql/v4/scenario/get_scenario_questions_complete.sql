@@ -1,8 +1,5 @@
 -- Get questions for a scenario
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ FROM scenario_questions sq
 WHERE sq.scenario_id = scenario_id
   AND sq.active = true
 $$;
-
-COMMIT;
-

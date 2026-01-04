@@ -1,9 +1,6 @@
 -- Add eval runs with rubric_grade_agents per run
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -123,6 +120,3 @@ SELECT
 FROM params p
 CROSS JOIN user_profile up
 $$;
-
-COMMIT;
-

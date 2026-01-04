@@ -1,8 +1,5 @@
 -- Get cohorts list with permissions and relationships
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -431,6 +428,3 @@ SELECT
     ) as departments
 FROM user_profile up
 $$;
-
-COMMIT;
-

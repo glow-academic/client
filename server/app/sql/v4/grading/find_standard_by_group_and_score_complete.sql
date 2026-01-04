@@ -1,9 +1,6 @@
 -- Find the standard that matches the score for a standard group
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -37,6 +34,3 @@ AS $$
     ORDER BY points DESC
     LIMIT 1
 $$;
-
-COMMIT;
-

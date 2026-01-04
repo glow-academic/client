@@ -1,9 +1,6 @@
 -- Create or update staff profile with departments, cohorts, and all emails in single function
 -- Converted to PostgreSQL function (single profile, called in loop for bulk)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_upsert_staff_v4(uuid, text, text, text, text, boolean, uuid[], uuid[], uuid, text[], integer);
 
@@ -185,5 +182,3 @@ FROM profile_upsert pu
 CROSS JOIN user_profile up
 LIMIT 1
 $$;
-
-COMMIT;

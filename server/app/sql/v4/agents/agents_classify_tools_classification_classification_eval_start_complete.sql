@@ -1,9 +1,6 @@
 -- Classification tool eval start handler (classify agent)
 -- No-op function (no database operations) - just returns eval info
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -69,5 +66,3 @@ SELECT
     true as success,
     'Classification eval started' as message
 $$;
-
-COMMIT;

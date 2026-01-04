@@ -1,9 +1,6 @@
 -- Create provider with optional endpoint in a single transaction
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -89,5 +86,3 @@ SELECT
 FROM new_provider np
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

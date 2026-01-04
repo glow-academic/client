@@ -1,9 +1,6 @@
 -- Update profile to active and insert activity in a single transaction
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -54,5 +51,3 @@ SELECT
     EXISTS(SELECT 1 FROM update_profile)::boolean as profile_exists,
     (SELECT profile_id FROM update_profile LIMIT 1)::uuid as profile_id
 $$;
-
-COMMIT;

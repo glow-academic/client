@@ -1,8 +1,5 @@
 -- Get tool_call by call_id
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ FROM tool_calls
 WHERE call_id = api_get_tool_call_by_call_id_v4.call_id
 LIMIT 1
 $$;
-
-COMMIT;
-

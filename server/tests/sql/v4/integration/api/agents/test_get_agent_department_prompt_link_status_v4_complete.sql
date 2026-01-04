@@ -1,8 +1,5 @@
 -- Get agent department prompt link status for test verification
 -- Returns active status
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_agent_department_prompt_link_status_v4(uuid, uuid, uuid);
 
@@ -24,6 +21,3 @@ AS $$
       AND department_id = input_department_id
       AND prompt_id = input_prompt_id;
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Get all data needed to run classification agent for uploads AND create run in single atomic transaction
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DROP FUNCTION IF EXISTS socket_get_upload_classification_run_context_and_create_run_v4(uuid, uuid);
 
@@ -245,6 +242,3 @@ SELECT
 FROM context_data cd
 CROSS JOIN create_run cr
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Finalize upload - insert upload record and get actor name
 -- Converted to function following agents pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -74,6 +71,3 @@ AS $$
     FROM inserted_upload iu
     CROSS JOIN LATERAL (SELECT actor_name FROM actor_info) ai
 $$;
-
-COMMIT;
-

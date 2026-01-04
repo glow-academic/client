@@ -1,9 +1,6 @@
 -- Get rubrics list with permissions
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -420,6 +417,3 @@ CROSS JOIN simulations_aggregated sima
 CROSS JOIN simulation_options_aggregated soa
 GROUP BY up.actor_name, sga.standard_groups, sta.standards, da.departments, sima.simulations, soa.simulation_options
 $$;
-
-COMMIT;
-

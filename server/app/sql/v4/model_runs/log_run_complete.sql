@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_log_run_v4(uuid, uuid, integer, integer, integer, integer, integer, integer, integer, text[], text);
 CREATE OR REPLACE FUNCTION api_log_run_v4(
     run_id uuid,
@@ -554,5 +553,3 @@ create_assistant_branch AS (
 )
 SELECT 1 AS success
 $$;
-COMMIT;
-

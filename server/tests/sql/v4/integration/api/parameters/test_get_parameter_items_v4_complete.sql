@@ -1,8 +1,5 @@
 -- Get parameter items for test verification
 -- Returns items ordered by name
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_parameter_items_v4(uuid);
 
@@ -27,6 +24,3 @@ AS $$
     -- This function returns empty result - tests using this may need updating
     SELECT NULL::uuid AS parameter_item_id, NULL::uuid AS parameter_id, NULL::text AS name, NULL::text AS description, NULL::text AS value, NULL::timestamptz AS created_at, NULL::timestamptz AS updated_at WHERE false;
 $$;
-
-COMMIT;
-

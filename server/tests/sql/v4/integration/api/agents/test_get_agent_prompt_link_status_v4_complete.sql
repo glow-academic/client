@@ -1,8 +1,5 @@
 -- Get agent prompt link status for test verification
 -- Returns active status
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_agent_prompt_link_status_v4(uuid, uuid);
 
@@ -22,6 +19,3 @@ AS $$
     WHERE agent_id = input_agent_id
       AND prompt_id = input_prompt_id;
 $$;
-
-COMMIT;
-

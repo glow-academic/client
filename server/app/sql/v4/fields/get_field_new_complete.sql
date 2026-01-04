@@ -1,8 +1,5 @@
 -- Get field new endpoint data
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -163,5 +160,3 @@ FROM user_profile up
 LEFT JOIN primary_department_data pdd ON true
 LEFT JOIN draft_payload_data dpd ON true
 $$;
-
-COMMIT;

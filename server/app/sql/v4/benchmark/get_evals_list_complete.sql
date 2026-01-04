@@ -1,9 +1,6 @@
 -- Get evals list with status derivation from eval_runs junction table
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -379,6 +376,3 @@ SELECT
 FROM user_profile up
 CROSS JOIN evals_aggregated ea
 $$;
-
-COMMIT;
-

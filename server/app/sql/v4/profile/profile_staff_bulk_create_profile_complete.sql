@@ -1,9 +1,6 @@
 -- Bulk create staff profiles with validation, department inserts, and all emails in single function
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_bulk_create_staff_v4(uuid[], text[], text[], text[], text[], uuid[], uuid, text[], uuid[]);
 
@@ -149,5 +146,3 @@ CROSS JOIN email_check ec
 CROSS JOIN user_profile up
 GROUP BY ec.existing_emails, up.actor_name
 $$;
-
-COMMIT;

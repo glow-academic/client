@@ -1,9 +1,6 @@
 -- Create eval grade record
 -- Converted to PostgreSQL function
 -- Note: eval_id removed from grades table - derive from test_runs → tests → attempt_tests → eval_attempts → evals
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -48,6 +45,3 @@ SELECT
 WHERE (eval_id IS NOT NULL OR eval_id IS NULL)  -- Use eval_id to help PostgreSQL infer type
 RETURNING id::text as grade_id
 $$;
-
-COMMIT;
-

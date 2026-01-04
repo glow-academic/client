@@ -11,7 +11,8 @@ import asyncpg  # type: ignore
 from app.main import get_pool
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import _detect_function_in_sql, load_sql
+from utils.sql_helper import (_detect_function_in_sql, execute_sql_typed,
+                              load_sql)
 
 logger = get_logger(__name__)
 
@@ -151,12 +152,26 @@ async def get_realm_name_for_department(department_id: str | None, pool: Any) ->
         return "master"  # No department → master realm (default settings)
 
     try:
+        import uuid
+        from typing import cast
+
+        from app.sql.types import (GetRealmNameForDepartmentSqlParams,
+                                   GetRealmNameForDepartmentSqlRow)
+        from utils.sql_helper import execute_sql_typed
+
         async with pool.acquire() as conn:
-            realm_sql = load_sql(
-                "app/sql/v4/keycloak/get_realm_name_for_department.sql"
+            params = GetRealmNameForDepartmentSqlParams(
+                department_id=uuid.UUID(department_id)
             )
-            realm_name = await conn.fetchval(realm_sql, department_id)
-            return realm_name or "master"
+            result = cast(
+                GetRealmNameForDepartmentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/keycloak/get_realm_name_for_department_complete.sql",
+                    params=params,
+                ),
+            )
+            return result.realm_name or "master"
     except Exception as e:
         logger.warning(f"Failed to get realm name for department {department_id}: {e}")
         return "master"  # Fallback to master on error
@@ -258,51 +273,6 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
         logger.warning(f"Could not ensure glow-client in master realm: {e}")
 
 
-async def fetch_sql_function(
-    conn: asyncpg.Connection,
-    sql_path: str,
-    *args: Any,
-) -> list[asyncpg.Record]:
-    """Fetch multiple rows from a PostgreSQL function or raw SQL query.
-
-    Follows Standards.md pattern: detects if SQL file contains a function definition
-    and calls it directly, or executes raw SQL if no function is found.
-
-    Args:
-        conn: Database connection
-        sql_path: Relative path from server root (e.g., "app/sql/v4/keycloak/get_auth_providers_complete.sql")
-        *args: Function parameters (will be passed as $1, $2, etc.)
-
-    Returns:
-        List of asyncpg.Record objects (same as conn.fetch())
-    """
-    # Load SQL file to check if it's a function
-    sql_text = load_sql(sql_path)
-    is_function, function_name, schema = _detect_function_in_sql(sql_text)
-
-    if is_function and function_name:
-        # It's a function - call it with SELECT * FROM schema.function_name($1, $2, ...)
-        num_params = len(args)
-        param_placeholders = ", ".join([f"${i + 1}" for i in range(num_params)])
-        function_call_sql = (
-            f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
-        )
-
-        # Functions return multiple rows (RETURNS TABLE)
-        if args:
-            rows = await conn.fetch(function_call_sql, *args)
-        else:
-            rows = await conn.fetch(function_call_sql)
-
-        return rows
-    else:
-        # It's raw SQL - execute directly (though these files should be DDL, so this shouldn't happen)
-        if args:
-            rows = await conn.fetch(sql_text, *args)
-        else:
-            rows = await conn.fetch(sql_text)
-
-        return rows
 
 
 async def sync_department_realm_by_settings(
@@ -565,9 +535,34 @@ async def sync_department_realm_by_settings(
         # We need to update get_auth_providers_complete.sql to accept settings_id
         # For now, if we have department_id, use it; otherwise use NULL for default settings
         # Pass department_id for backward compatibility, but logic will be updated
-        providers = await fetch_sql_function(
-            conn, "app/sql/v4/keycloak/get_auth_providers_complete.sql", department_id
-        )
+        import uuid
+
+        from app.sql.types import GetAuthProvidersSqlParams
+
+        # Handle multi-row function results
+        sql_text = load_sql("app/sql/v4/keycloak/get_auth_providers_complete.sql")
+        is_function, function_name, schema = _detect_function_in_sql(sql_text)
+
+        if is_function and function_name:
+            # Handle None department_id - function accepts NULL but Pydantic requires UUID
+            # Pass None directly to PostgreSQL (it accepts NULL even for non-nullable params)
+            if department_id:
+                dept_id_uuid = uuid.UUID(department_id)
+                params = GetAuthProvidersSqlParams(department_id=dept_id_uuid)
+                sql_params = params.to_tuple()
+            else:
+                # Pass NULL directly to PostgreSQL function
+                sql_params = (None,)
+            param_placeholders = ", ".join([f"${i + 1}" for i in range(len(sql_params))])
+            function_call_sql = (
+                f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
+            )
+            provider_rows = await conn.fetch(function_call_sql, *sql_params)
+            providers = [dict(row) for row in provider_rows]
+        else:
+            raise ValueError(
+                "Expected function definition in get_auth_providers_complete.sql"
+            )
 
         # Get list of provider slugs that should exist
         expected_provider_slugs = {p["slug"] for p in providers} if providers else set()
@@ -611,12 +606,42 @@ async def sync_department_realm_by_settings(
                 provider_id = p["provider_id"]
                 display_name = p["name"]
 
-                items = await fetch_sql_function(
-                    conn,
-                    "app/sql/v4/keycloak/get_auth_items_complete.sql",
-                    auth_id,
-                    department_id,
+                # Handle multi-row function results for auth items
+                from app.sql.types import GetAuthItemsSqlParams
+
+                items_sql_text = load_sql(
+                    "app/sql/v4/keycloak/get_auth_items_complete.sql"
                 )
+                items_is_function, items_function_name, items_schema = (
+                    _detect_function_in_sql(items_sql_text)
+                )
+
+                if items_is_function and items_function_name:
+                    auth_id_uuid = uuid.UUID(str(auth_id))
+                    # Handle None department_id - function accepts NULL but Pydantic requires UUID
+                    if department_id:
+                        dept_id_uuid = uuid.UUID(department_id)
+                        items_params = GetAuthItemsSqlParams(
+                            auth_id=auth_id_uuid, department_id=dept_id_uuid
+                        )
+                        items_sql_params = items_params.to_tuple()
+                    else:
+                        # Pass NULL directly to PostgreSQL function
+                        items_sql_params = (auth_id_uuid, None)
+                    items_param_placeholders = ", ".join(
+                        [f"${i + 1}" for i in range(len(items_sql_params))]
+                    )
+                    items_function_call_sql = (
+                        f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
+                    )
+                    item_rows = await conn.fetch(
+                        items_function_call_sql, *items_sql_params
+                    )
+                    items = [dict(row) for row in item_rows]
+                else:
+                    raise ValueError(
+                        "Expected function definition in get_auth_items_complete.sql"
+                    )
 
                 config_map: dict[str, str] = {}
                 for item in items:

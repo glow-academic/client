@@ -1,9 +1,6 @@
 -- Get pricing group detail with all runs, messages, and pricing information
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -621,5 +618,3 @@ CROSS JOIN group_access_check gac
 WHERE (SELECT group_exists FROM group_exists_check) = true
 GROUP BY (SELECT group_exists FROM group_exists_check), (SELECT group_id FROM params), (SELECT actor_name FROM user_profile LIMIT 1), (SELECT has_access FROM group_access_check)
 $$;
-
-COMMIT;

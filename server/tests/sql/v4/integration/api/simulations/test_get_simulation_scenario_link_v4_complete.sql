@@ -1,8 +1,5 @@
 -- Get simulation-scenario link for test verification
 -- Returns link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_simulation_scenario_link_v4(uuid, uuid);
 
@@ -31,6 +28,3 @@ AS $$
     WHERE simulation_id = test_get_simulation_scenario_link_v4.input_simulation_id
       AND scenario_id = test_get_simulation_scenario_link_v4.input_scenario_id;
 $$;
-
-COMMIT;
-

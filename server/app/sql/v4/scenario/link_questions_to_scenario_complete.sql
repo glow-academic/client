@@ -1,8 +1,5 @@
 -- Link a question to a scenario
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -37,6 +34,3 @@ ON CONFLICT (scenario_id, question_id) DO UPDATE SET
     updated_at = NOW()
 RETURNING question_id
 $$;
-
-COMMIT;
-

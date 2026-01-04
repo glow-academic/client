@@ -1,9 +1,6 @@
 -- Get all data needed to run simulation agent AND create run in single atomic transaction
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -544,6 +541,3 @@ CROSS JOIN create_run cr
 CROSS JOIN group_data gd
 LEFT JOIN documents_data dd ON dd.chat_id::text = cd.chat_id
 $$;
-
-COMMIT;
-

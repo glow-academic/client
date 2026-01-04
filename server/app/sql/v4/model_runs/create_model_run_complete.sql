@@ -1,9 +1,6 @@
 -- Create run with all junction records in a single transaction
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -81,5 +78,3 @@ link_profile AS (
 SELECT id::text as run_id
 FROM create_run
 $$;
-
-COMMIT;

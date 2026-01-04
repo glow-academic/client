@@ -1,9 +1,6 @@
 -- Get parameter items for classification based on parameterIds filter
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern
-
-BEGIN;
-
 -- 1) Drop function first
 DROP FUNCTION IF EXISTS socket_get_classification_context_v4(uuid[], uuid);
 
@@ -68,6 +65,3 @@ SELECT
 FROM parameter_items_data
 ORDER BY parameter_name, name
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Get key detail with department relationships, model relationships, and permissions
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -255,5 +252,3 @@ GROUP BY kec.key_exists, kd.key_id, kd.name, kd.key_masked, kd.description, kd.a
          kd.created_at, kd.updated_at, kdd.department_ids, kmd.model_ids, vd.dept_ids, 
          pr.user_role, uhka.has_access, ap.actor_name
 $$;
-
-COMMIT;

@@ -1,8 +1,5 @@
 -- Get agents in group_order for a group (ordered by position_idx)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ FROM group_order go
 WHERE go.group_id = api_get_group_order_agents_v4.group_id
 ORDER BY go.position_idx ASC
 $$;
-
-COMMIT;
-

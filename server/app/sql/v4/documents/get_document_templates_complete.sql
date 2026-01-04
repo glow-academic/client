@@ -1,8 +1,5 @@
 -- Get document templates
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -45,6 +42,3 @@ JOIN templates t ON t.id = dt.template_id
 WHERE dt.document_id = document_id
 ORDER BY dt.created_at DESC
 $$;
-
-COMMIT;
-

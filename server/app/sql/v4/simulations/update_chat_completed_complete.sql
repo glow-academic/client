@@ -1,8 +1,5 @@
 -- Mark chat as completed
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -34,6 +31,3 @@ SET completed = true
 WHERE id = chat_id
 RETURNING id, completed
 $$;
-
-COMMIT;
-

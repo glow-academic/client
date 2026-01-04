@@ -1,8 +1,5 @@
 -- Get fields list with permissions and relationships
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_list_fields_v4(uuid);
 
@@ -233,6 +230,3 @@ SELECT
     COALESCE((SELECT options FROM department_options_data), '{}'::types.q_list_fields_v4_option[]) as department_options
 FROM user_profile up
 $$;
-
-COMMIT;
-

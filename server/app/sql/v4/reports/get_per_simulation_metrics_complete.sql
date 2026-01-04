@@ -5,9 +5,6 @@
 -- Parameters: start_date, end_date, profile_id, cohort_ids, department_ids, roles, simulation_filters,
 --             profile_ids, simulation_ids, scenario_ids
 -- Returns: Array of per-simulation metrics per profile
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -222,6 +219,3 @@ LEFT JOIN first_attempt_per_sim_profile fasp
     ON fasp.profile_id = sm.profile_id 
     AND fasp.simulation_id = sm.simulation_id
 $$;
-
-COMMIT;
-

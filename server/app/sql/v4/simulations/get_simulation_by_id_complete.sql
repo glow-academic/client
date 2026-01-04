@@ -1,8 +1,5 @@
 -- Get simulation by ID
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -46,6 +43,3 @@ SELECT
 FROM simulations s
 WHERE s.id = api_get_simulation_by_id_v4.simulation_id
 $$;
-
-COMMIT;
-

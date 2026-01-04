@@ -1,8 +1,5 @@
 -- Create a profile email for test setup
 -- Returns email data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_profile_email_v4(uuid, text, boolean, boolean);
 
@@ -36,6 +33,3 @@ AS $$
         active = EXCLUDED.active
     RETURNING profile_id, email, is_primary, active, created_at, updated_at;
 $$;
-
-COMMIT;
-

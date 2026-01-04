@@ -1,9 +1,6 @@
 -- Update settings: deactivate current active row, insert new active row
 -- Converted to function with composite types (NO JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -521,6 +518,3 @@ SELECT
 FROM insert_new in_new
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

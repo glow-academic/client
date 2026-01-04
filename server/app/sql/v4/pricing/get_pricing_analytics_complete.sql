@@ -1,9 +1,6 @@
 -- Get pricing analytics - complete model run pricing with all mappings
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -321,5 +318,3 @@ LEFT JOIN agents a ON a.id = mrb.agent_id
 LEFT JOIN personas per ON per.id = mrb.persona_id
 GROUP BY (SELECT actor_name FROM user_profile LIMIT 1)
 $$;
-
-COMMIT;

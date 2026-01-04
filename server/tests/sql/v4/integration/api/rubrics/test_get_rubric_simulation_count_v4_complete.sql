@@ -1,8 +1,5 @@
 -- Get rubric simulation count for test verification
 -- Returns count of simulations linked to rubric
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_rubric_simulation_count_v4(uuid);
 
@@ -21,6 +18,3 @@ AS $$
     -- This function returns 0 - tests using this may need updating
     SELECT 0::bigint AS simulation_count;
 $$;
-
-COMMIT;
-

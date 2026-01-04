@@ -1,9 +1,6 @@
 -- Get default parameter detail for creation
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -458,5 +455,3 @@ FROM actor_profile ap
 CROSS JOIN parameter_data pd
 LEFT JOIN primary_department_id pdi ON true
 $$;
-
-COMMIT;

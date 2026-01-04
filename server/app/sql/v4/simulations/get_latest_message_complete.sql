@@ -1,8 +1,5 @@
 -- Get the latest message(s) for a chat (messages with no active children in message_tree)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -58,6 +55,3 @@ WHERE c.id = chat_id
 ORDER BY m.created_at DESC
 LIMIT 1
 $$;
-
-COMMIT;
-

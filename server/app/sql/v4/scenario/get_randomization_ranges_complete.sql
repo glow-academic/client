@@ -1,9 +1,6 @@
 -- Get randomization ranges for a scenario (or defaults if scenario_id is NULL)
 -- Converted to PostgreSQL function
 -- Note: Uses JSONB for field_ranges_json - may need refactoring per STANDARDS.md
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -75,6 +72,3 @@ SELECT
         '{}'::jsonb
     ) as field_ranges_json
 $$;
-
-COMMIT;
-

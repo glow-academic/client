@@ -1,9 +1,6 @@
 -- Update provider with optional endpoint in a single transaction
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -104,5 +101,3 @@ FROM provider_exists_check pec
 LEFT JOIN update_provider up ON pec.provider_exists = true
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

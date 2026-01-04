@@ -1,9 +1,6 @@
 -- Get key for decryption (returns full key, not masked)
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -50,6 +47,3 @@ FROM params x
 JOIN keys k ON k.id = x.key_id
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

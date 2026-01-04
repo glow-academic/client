@@ -1,8 +1,5 @@
 -- Get chat by ID for test verification
 -- Returns chat details
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_chat_by_id_v4(uuid);
 
@@ -22,6 +19,3 @@ AS $$
     FROM chats 
     WHERE id = test_get_chat_by_id_v4.chat_id;
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Delete scenario with existence and usage checks
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -85,5 +82,3 @@ LEFT JOIN scenario_info si ON sec.scenario_exists = true
 LEFT JOIN delete_scenario ds ON ds.id = si.id
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

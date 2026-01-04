@@ -1,8 +1,5 @@
 -- Create a test profile for test setup
 -- Returns profile data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_profile_v4(text, text, text, boolean, boolean);
 
@@ -34,6 +31,3 @@ AS $$
     )
     RETURNING id AS profile_id, first_name, last_name, role, active, created_at, updated_at;
 $$;
-
-COMMIT;
-

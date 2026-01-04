@@ -1,8 +1,5 @@
 -- Get attempt with active profile in single query
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -41,6 +38,3 @@ SELECT
 FROM simulation_attempts sa
 WHERE sa.id = attempt_id
 $$;
-
-COMMIT;
-

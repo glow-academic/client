@@ -3,9 +3,6 @@
 -- A scenario is considered "done" if it has a chat (linked via attempt_chats) with a grade
 -- Uses simulation_scenarios as source of truth - checks if each parent scenario has a graded chat
 -- Recursively maps child scenarios to root scenarios via scenario_tree
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -115,6 +112,3 @@ WHERE sa.id = attempt_id
     OR sc.scenario_id = ss.scenario_id
   )
 $$;
-
-COMMIT;
-

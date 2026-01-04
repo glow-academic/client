@@ -1,8 +1,5 @@
 -- Update scenario name
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ SET name = api_update_scenario_name_v4.name,
 WHERE id = scenario_id
 RETURNING id as scenario_id, name
 $$;
-
-COMMIT;
-

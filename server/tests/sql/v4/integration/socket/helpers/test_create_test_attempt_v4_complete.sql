@@ -1,8 +1,5 @@
 -- Create a test attempt for socket tests
 -- Returns attempt_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_attempt_v4(uuid);
 
@@ -20,6 +17,3 @@ AS $$
     VALUES (test_create_test_attempt_v4.simulation_id, false) 
     RETURNING id as attempt_id;
 $$;
-
-COMMIT;
-

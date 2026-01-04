@@ -1,9 +1,6 @@
 -- Get home overview with items and mappings (no history - bundle only returns top half)
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -628,6 +625,3 @@ SELECT
     COALESCE((SELECT simulations FROM simulations_agg), '{}'::types.q_get_home_overview_v4_simulation[]) as simulations
 FROM user_profile up
 $$;
-
-COMMIT;
-

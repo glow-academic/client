@@ -1,9 +1,6 @@
 -- Complete image generation by creating upload and linking to image
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -55,5 +52,3 @@ update_image AS (
 SELECT upload_row.id AS upload_id
 FROM upload_row
 $$;
-
-COMMIT;

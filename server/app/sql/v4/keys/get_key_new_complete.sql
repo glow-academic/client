@@ -1,9 +1,6 @@
 -- Get default key structure for new key creation
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -181,5 +178,3 @@ CROSS JOIN departments_data dd
 CROSS JOIN actor_profile ap
 GROUP BY pr.user_role, pd.department_id, vd.dept_ids, ap.actor_name
 $$;
-
-COMMIT;

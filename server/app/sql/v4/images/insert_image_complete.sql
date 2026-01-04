@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_insert_image_v4(text);
 CREATE OR REPLACE FUNCTION api_insert_image_v4(
     name text
@@ -21,4 +20,3 @@ insert_image AS (
 )
 SELECT id FROM insert_image
 $$;
-COMMIT;

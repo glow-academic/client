@@ -1,8 +1,5 @@
 -- Get agent prompt link for test verification
 -- Returns prompt link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_agent_prompt_link_v4(uuid);
 
@@ -26,6 +23,3 @@ AS $$
     WHERE agent_id = test_get_agent_prompt_link_v4.agent_id
       AND active = true;
 $$;
-
-COMMIT;
-

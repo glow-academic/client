@@ -1,8 +1,5 @@
 -- Insert scenario variant (for child scenarios)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -64,6 +61,3 @@ RETURNING id, name, generated, active, objectives_enabled, images_enabled, scena
     created_at, updated_at, NULL::uuid as profile_id,
     (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = scenarios.id AND sd.active = true LIMIT 1) as department_id
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Create a test test for benchmark tests
 -- Returns test_id
 -- Note: tests table requires run_id, so we need to create a run first
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_test_v4(text, uuid);
 
@@ -27,6 +24,3 @@ AS $$
     ) 
     RETURNING id as test_id;
 $$;
-
-COMMIT;
-

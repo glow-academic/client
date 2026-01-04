@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_text_complete_finalize_v4(uuid, uuid, uuid, text, uuid, text, uuid);
 CREATE OR REPLACE FUNCTION api_text_complete_finalize_v4(
     chat_id uuid,
@@ -101,5 +100,3 @@ SELECT
     (SELECT final_content FROM params LIMIT 1) as final_content,
     (SELECT completed FROM complete_message LIMIT 1) as completed
 $$;
-COMMIT;
-

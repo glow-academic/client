@@ -1,9 +1,6 @@
 -- Get eval detail with status breakdown and runs list
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -777,6 +774,3 @@ WHERE
         OR up.role IN ('admin'::profile_role, 'superadmin'::profile_role)
     )
 $$;
-
-COMMIT;
-

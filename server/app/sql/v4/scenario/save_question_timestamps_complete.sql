@@ -1,9 +1,6 @@
 -- Save question timestamps for scenario questions linked to videos
 -- Converted to PostgreSQL function
 -- Note: Uses JSONB - may need refactoring per STANDARDS.md
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -58,6 +55,3 @@ insert_timestamps AS (
 )
 SELECT COUNT(*)::int as inserted_count FROM insert_timestamps
 $$;
-
-COMMIT;
-

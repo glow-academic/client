@@ -1,9 +1,6 @@
 -- Update department with settings relationship in single query
 -- Converted to function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -94,5 +91,3 @@ SELECT
 FROM department_update du
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

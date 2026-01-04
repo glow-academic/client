@@ -4,9 +4,6 @@
 --
 -- This view aggregates simulation attempts, chats, grades, and related data
 -- for efficient analytics queries.
-
-BEGIN;
-
 -- ============================================================================
 -- Step 1: Drop all indexes on analytics materialized view (if it exists)
 -- ============================================================================
@@ -481,6 +478,3 @@ CREATE INDEX analytics_department_id_idx
 -- ============================================================================
 
 REFRESH MATERIALIZED VIEW analytics;
-
-COMMIT;
-

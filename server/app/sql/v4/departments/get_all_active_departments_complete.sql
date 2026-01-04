@@ -1,8 +1,5 @@
 -- Get all active departments
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -28,6 +25,3 @@ STABLE
 AS $$
 SELECT id FROM departments WHERE active = true
 $$;
-
-COMMIT;
-

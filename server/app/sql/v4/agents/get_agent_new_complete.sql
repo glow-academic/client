@@ -1,9 +1,6 @@
 -- Get default agent detail for creation
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -348,5 +345,3 @@ CROSS JOIN valid_departments_data vdd
 LEFT JOIN primary_department_id pdi ON true
 GROUP BY up.actor_name, up.role, pdi.department_id
 $$;
-
-COMMIT;

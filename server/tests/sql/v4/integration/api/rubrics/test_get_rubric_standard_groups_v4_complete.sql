@@ -1,8 +1,5 @@
 -- Get rubric standard groups for test verification
 -- Returns standard groups ordered by name
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_rubric_standard_groups_v4(uuid);
 
@@ -41,6 +38,3 @@ AS $$
     WHERE rsg.rubric_id = input_rubric_id
     ORDER BY sg.name;
 $$;
-
-COMMIT;
-

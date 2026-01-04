@@ -1,9 +1,6 @@
 -- Update document name
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -54,6 +51,3 @@ SET name = $2,
 WHERE documents.id = $1
 RETURNING documents.id as document_id, documents.name
 $$;
-
-COMMIT;
-

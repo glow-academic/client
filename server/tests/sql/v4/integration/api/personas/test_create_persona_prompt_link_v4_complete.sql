@@ -1,8 +1,5 @@
 -- Create persona-prompt link for test setup
 -- Returns link data for verification
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_persona_prompt_link_v4(uuid, uuid);
 
@@ -31,5 +28,3 @@ AS $$
     )
     RETURNING persona_id, prompt_id, active, created_at, updated_at;
 $$;
-
-COMMIT;

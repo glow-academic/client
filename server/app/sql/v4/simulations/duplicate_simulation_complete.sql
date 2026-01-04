@@ -1,8 +1,5 @@
 -- Duplicate simulation with all relationships
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -116,6 +113,3 @@ FROM new_simulation ns
 CROSS JOIN source_simulation ss
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

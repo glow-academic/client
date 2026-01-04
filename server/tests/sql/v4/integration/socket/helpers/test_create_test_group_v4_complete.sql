@@ -1,8 +1,5 @@
 -- Create a test group for socket tests
 -- Returns group_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_group_v4(uuid, text);
 
@@ -23,6 +20,3 @@ AS $$
     VALUES (COALESCE(test_create_test_group_v4.trace_id, gen_trace_id())) 
     RETURNING id as group_id;
 $$;
-
-COMMIT;
-

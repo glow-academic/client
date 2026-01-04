@@ -1,8 +1,5 @@
 -- Create persona with department links in a single transaction
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -147,5 +144,3 @@ SELECT
 FROM new_persona np
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

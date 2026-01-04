@@ -2,9 +2,6 @@
 -- Uses existing group_id to get previous context from previous run
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -341,6 +338,3 @@ CROSS JOIN create_run cr
 CROSS JOIN group_data gd
 CROSS JOIN previous_messages_array pma
 $$;
-
-COMMIT;
-

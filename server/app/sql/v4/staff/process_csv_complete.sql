@@ -2,9 +2,6 @@
 -- Converted to function with composite types (ZERO tolerance for JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- Note: CSV parsing logic happens in Python, but SQL function defines types for consistency
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -128,6 +125,3 @@ SELECT
 FROM params p
 CROSS JOIN user_profile up
 $$;
-
-COMMIT;
-

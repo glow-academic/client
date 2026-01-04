@@ -1,9 +1,6 @@
 -- Duplicate rubric with departments, standard groups, and standards in a single transaction
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -200,5 +197,3 @@ FROM new_rubric nr
 CROSS JOIN original_rubric or_r
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

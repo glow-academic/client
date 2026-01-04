@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_update_chat_created_at_v4(timestamptz, uuid);
 CREATE OR REPLACE FUNCTION api_update_chat_created_at_v4(
     created_at timestamptz,
@@ -25,5 +24,3 @@ update_chat AS (
 )
 SELECT chat_id FROM update_chat
 $$;
-COMMIT;
-

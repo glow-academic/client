@@ -1,9 +1,6 @@
 -- Create simulation hints for a message
 -- Converted to PostgreSQL function pattern with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -91,5 +88,3 @@ SELECT
     ) as hints
 FROM inserted_hints
 $$;
-
-COMMIT;

@@ -1,8 +1,5 @@
 -- Get agent department link for test verification
 -- Returns department link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_agent_department_link_v4(uuid, uuid);
 
@@ -27,6 +24,3 @@ AS $$
     WHERE agent_id = test_get_agent_department_link_v4.agent_id
       AND department_id = test_get_agent_department_link_v4.department_id;
 $$;
-
-COMMIT;
-

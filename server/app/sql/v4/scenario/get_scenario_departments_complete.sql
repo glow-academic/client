@@ -1,8 +1,5 @@
 -- Get all department_ids from scenario_departments junction table
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -33,6 +30,3 @@ FROM scenario_departments sd
 WHERE sd.scenario_id = scenario_id 
   AND sd.active = true
 $$;
-
-COMMIT;
-

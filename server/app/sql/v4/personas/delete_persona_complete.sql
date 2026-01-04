@@ -1,8 +1,5 @@
 -- Delete persona with usage check and name fetch - returns usage_count, name, and deleted (boolean)
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -64,5 +61,3 @@ SELECT
     CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
     (SELECT actor_name FROM user_profile) as actor_name
 $$;
-
-COMMIT;

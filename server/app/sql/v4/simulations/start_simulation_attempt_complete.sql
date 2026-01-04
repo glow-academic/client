@@ -1,9 +1,6 @@
 -- Start simulation attempt: create attempt, link profile, select scenario, create chat
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -450,5 +447,3 @@ LEFT JOIN chat_group_link cgl ON cgl.chat_id = nc.chat_id AND ctc.content_type =
 LEFT JOIN new_group ng ON ng.group_id = cgl.group_id AND ctc.content_type = 'scenario'
 LEFT JOIN scenario_full_data sfd ON ctc.content_type = 'scenario' AND sfd.scenario_id = (SELECT scenario_id FROM chosen_scenario_id)
 $$;
-
-COMMIT;

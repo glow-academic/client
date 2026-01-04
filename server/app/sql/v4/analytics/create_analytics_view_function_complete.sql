@@ -1,9 +1,6 @@
 -- Create Analytics View Function - API Endpoint
 -- This function returns actor_name and response fields after view creation
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -41,6 +38,3 @@ SELECT
     'Analytics materialized view created successfully'::text as message,
     'success'::text as status;
 $$;
-
-COMMIT;
-

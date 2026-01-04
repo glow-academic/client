@@ -1,8 +1,5 @@
 -- Check if attempt has next incomplete scenario that could come next
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -183,6 +180,3 @@ SELECT
         (SELECT position FROM infinite_mode_next)
     ) as next_scenario_position
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Create message feedback with replaces and highlights
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -38,5 +35,3 @@ AS $$
     VALUES (grade_id, message_id, name, description, type, NOW())
     RETURNING id::text
 $$;
-
-COMMIT;

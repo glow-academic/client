@@ -1,9 +1,6 @@
 -- Get default model detail for creation with department and key mappings
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -246,5 +243,3 @@ CROSS JOIN profile_data pr
 CROSS JOIN actor_profile ap
 LEFT JOIN primary_department_id pdi ON true
 $$;
-
-COMMIT;

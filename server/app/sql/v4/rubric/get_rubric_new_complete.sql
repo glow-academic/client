@@ -1,9 +1,6 @@
 -- Get default rubric detail for creation
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -349,5 +346,3 @@ LEFT JOIN primary_department_id pdi ON true
 CROSS JOIN agents_aggregated aa
 LEFT JOIN draft_payload_data ON true
 $$;
-
-COMMIT;

@@ -1,9 +1,6 @@
 -- Upsert assistant message and tool call for voice simulation
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -265,5 +262,3 @@ SELECT
     (SELECT message_content FROM params LIMIT 1) as final_content,
     (SELECT EXISTS(SELECT 1 FROM link_audio_to_message)) as upload_linked
 $$;
-
-COMMIT;

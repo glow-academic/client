@@ -1,8 +1,5 @@
 -- Create a document parameter item link for test setup
 -- Returns link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_document_parameter_item_link_v4(uuid, uuid);
 
@@ -25,6 +22,3 @@ AS $$
     -- This function returns empty result - tests using this may need updating
     SELECT NULL::uuid AS document_id, NULL::uuid AS parameter_item_id, NULL::boolean AS active, NULL::timestamptz AS created_at, NULL::timestamptz AS updated_at WHERE false;
 $$;
-
-COMMIT;
-

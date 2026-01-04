@@ -1,8 +1,5 @@
 -- Create a test standard for test setup
 -- Returns standard data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_standard_v4(uuid, text, text, integer);
 
@@ -34,6 +31,3 @@ AS $$
     )
     RETURNING id AS standard_id, standard_group_id, name, description, points, created_at, created_at AS updated_at;
 $$;
-
-COMMIT;
-

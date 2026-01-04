@@ -1,9 +1,6 @@
 -- Create document with department, field, and upload links in single transaction
 -- Converted to function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -174,6 +171,3 @@ FROM new_document_id ndi
 CROSS JOIN user_profile up
 LIMIT 1
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Create simulation-scenario link for test setup
 -- Returns link data for verification
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_simulation_scenario_link_v4(uuid, uuid, integer);
 
@@ -31,6 +28,3 @@ AS $$
     )
     RETURNING simulation_id, scenario_id, active, position, created_at;
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Get all data needed to run simulation voice agent
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -314,5 +311,3 @@ LEFT JOIN documents_data dd ON dd.scenario_id = s.id
 WHERE sc.id = p_params.chat_id
 LIMIT 1
 $$;
-
-COMMIT;

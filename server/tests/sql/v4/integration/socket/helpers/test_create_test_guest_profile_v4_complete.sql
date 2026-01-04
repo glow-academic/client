@@ -1,8 +1,5 @@
 -- Create a test guest profile for socket tests
 -- Returns guest_id and email
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_guest_profile_v4(text);
 
@@ -32,6 +29,3 @@ AS $$
     FROM new_profile np
     JOIN new_email ne ON ne.profile_id = np.id;
 $$;
-
-COMMIT;
-

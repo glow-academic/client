@@ -1,8 +1,5 @@
 -- Get default department from settings
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -33,6 +30,3 @@ WHERE s.active = true
   AND sdd.active = true
 LIMIT 1
 $$;
-
-COMMIT;
-

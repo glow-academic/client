@@ -1,8 +1,5 @@
 -- Get or create a test rubric for test setup
 -- Returns rubric_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_rubric_v4();
 
@@ -37,6 +34,3 @@ AS $$
     FROM new_rubric
     LIMIT 1;
 $$;
-
-COMMIT;
-

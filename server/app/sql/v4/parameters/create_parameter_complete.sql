@@ -1,9 +1,6 @@
 -- Create parameter with field connections and department links in a single transaction
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_create_parameter_v4(text, text, boolean, boolean, boolean, boolean, boolean, boolean, text[], types.i_create_parameter_v4_field_connection[], uuid);
 
@@ -167,5 +164,3 @@ SELECT
 FROM new_parameter np
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

@@ -5,9 +5,6 @@
 -- Parameters: start_date, end_date, cohort_ids, department_ids, roles, simulation_filters, search, 
 --            profile_ids, simulation_ids, scenario_ids, infinite_mode, sort_by, sort_order, page_size, offset, profile_id
 -- Returns: Paginated history data with options arrays
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -826,6 +823,3 @@ SELECT
     (SELECT simulation_options FROM simulation_options_agg LIMIT 1) AS simulation_options,
     (SELECT scenario_options FROM scenario_options_agg LIMIT 1) AS scenario_options
 $$;
-
-COMMIT;
-

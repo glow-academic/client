@@ -4,9 +4,6 @@
 -- Parameters: scenario_id (uuid), profile_id (uuid), use_image (bool, nullable), use_objectives (bool, nullable), 
 --            document_ids (uuid[], nullable), problem_statement_ids (uuid[], nullable), 
 --            template_document_ids (uuid[], nullable), use_video (bool, nullable, for video parameter filtering)
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -2081,5 +2078,3 @@ LEFT JOIN scenario_documents_agg sd ON true
 LEFT JOIN scenario_simulations_agg ssa ON true
 LEFT JOIN scenario_field_ranges_data sfrd ON sfrd.scenario_id = sc.id
 $$;
-
-COMMIT;

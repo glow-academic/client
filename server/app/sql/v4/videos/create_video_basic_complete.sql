@@ -1,8 +1,5 @@
 -- Create basic video record with tool call
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -51,6 +48,3 @@ insert_video AS (
 )
 SELECT id FROM insert_video
 $$;
-
-COMMIT;
-

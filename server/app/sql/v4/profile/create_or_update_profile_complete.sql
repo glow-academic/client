@@ -1,9 +1,6 @@
 -- Create or update profile with departments, cohorts, and all emails in single function
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -207,6 +204,3 @@ FROM profile_upsert pu
 CROSS JOIN user_profile up
 LIMIT 1
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Insert debug info for a model run
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
@@ -26,6 +23,3 @@ AS $$
     VALUES (run_id, content, NOW());
     SELECT true as success;
 $$;
-
-COMMIT;
-

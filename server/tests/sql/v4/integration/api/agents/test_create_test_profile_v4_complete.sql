@@ -1,8 +1,5 @@
 -- Create a test profile for test setup
 -- Returns profile_id and email for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_profile_v4(text, text, text, text);
 
@@ -48,6 +45,3 @@ AS $$
     FROM new_profile np
     JOIN new_email ne ON ne.profile_id = np.id;
 $$;
-
-COMMIT;
-

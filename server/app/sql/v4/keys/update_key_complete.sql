@@ -1,9 +1,6 @@
 -- Update a key
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -118,6 +115,3 @@ SELECT
 FROM update_key uk
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

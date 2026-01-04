@@ -1,8 +1,5 @@
 -- Create generation record, link to video and run
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -69,6 +66,3 @@ mark_video AS (
 SELECT fi.upload_id as generation_id
 FROM final_upload_id fi
 $$;
-
-COMMIT;
-

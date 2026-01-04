@@ -2,9 +2,6 @@
 -- Converted to PostgreSQL function
 -- If use_groups=false: queries eval_runs_rubric_grade_agents
 -- If use_groups=true: queries eval_groups_rubric_grade_agents
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -58,6 +55,3 @@ SELECT
 FROM run_rubric rr
 FULL OUTER JOIN group_rubric gr ON true
 $$;
-
-COMMIT;
-

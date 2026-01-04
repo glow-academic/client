@@ -1,9 +1,6 @@
 -- Create questions and their options, return question IDs
 -- Converted to PostgreSQL function
 -- Note: Uses JSONB - may need refactoring per STANDARDS.md
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -153,6 +150,3 @@ SELECT DISTINCT
 FROM all_questions aq
 ORDER BY aq.question_id
 $$;
-
-COMMIT;
-

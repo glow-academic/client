@@ -1,9 +1,6 @@
 -- Mark chat as completed
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -35,6 +32,3 @@ AS $$
     WHERE id = chat_id
     RETURNING true as success
 $$;
-
-COMMIT;
-

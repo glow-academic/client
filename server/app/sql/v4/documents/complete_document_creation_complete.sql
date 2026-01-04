@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_complete_document_creation_v4(uuid, text, text, bigint, text, text, uuid, uuid, uuid);
 CREATE OR REPLACE FUNCTION api_complete_document_creation_v4(
     parent_document_id uuid,
@@ -93,5 +92,3 @@ CROSS JOIN link_document_upload ldu
 CROSS JOIN link_document_tree ldt
 LEFT JOIN link_scenario ls ON ls.document_id = ccd.id
 $$;
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Update test created_at timestamp
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -33,6 +30,3 @@ UPDATE tests SET created_at = created_at, updated_at = NOW()
 WHERE id = test_id
 RETURNING id::text as test_id
 $$;
-
-COMMIT;
-

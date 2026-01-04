@@ -1,8 +1,5 @@
 -- Get cohort by ID for test verification
 -- Returns cohort data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_cohort_by_id_v4(uuid);
 
@@ -31,6 +28,3 @@ AS $$
     FROM cohorts
     WHERE id = test_get_cohort_by_id_v4.input_cohort_id;
 $$;
-
-COMMIT;
-

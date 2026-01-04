@@ -1,9 +1,6 @@
 -- Delete cohort with usage check - returns usage_count and deleted (boolean)
 -- Converted to function
 -- Note: Prevents deletion if ANY cohort_profile links exist (active or inactive) for historical data preservation
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -66,6 +63,3 @@ SELECT
 FROM actor_profile ap
 CROSS JOIN usage_check uc
 $$;
-
-COMMIT;
-

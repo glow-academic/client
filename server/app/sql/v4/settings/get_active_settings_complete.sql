@@ -2,9 +2,6 @@
 -- Converted to function with composite types (NO JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- Reuses composite types from get_settings_detail_complete.sql
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -260,6 +257,3 @@ LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_default_guest_data sdgd ON true
 LEFT JOIN settings_default_account_data sdad ON true
 $$;
-
-COMMIT;
-

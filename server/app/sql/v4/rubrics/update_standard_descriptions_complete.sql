@@ -2,9 +2,6 @@
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- Returns descriptions as array of composite types (not JSONB)
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -128,6 +125,3 @@ SELECT
     ) as descriptions
 FROM updated_standards us
 $$;
-
-COMMIT;
-

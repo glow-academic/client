@@ -1,8 +1,5 @@
 -- Create an agent department link for test setup
 -- Returns link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_agent_department_link_v4(uuid, uuid);
 
@@ -28,6 +25,3 @@ AS $$
     )
     RETURNING agent_id, department_id, active, created_at;
 $$;
-
-COMMIT;
-

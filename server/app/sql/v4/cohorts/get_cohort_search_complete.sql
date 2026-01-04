@@ -1,9 +1,6 @@
 -- Search profiles for adding to a cohort
 -- Converted to function with composite types
 -- Reuses staff_item type from new endpoint where possible
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -242,6 +239,3 @@ SELECT
     up.actor_name
 FROM user_profile up
 $$;
-
-COMMIT;
-

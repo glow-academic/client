@@ -1,9 +1,6 @@
 -- Get realm name for a department: settings_id if dept has keys, else 'master'
 -- Converted to PostgreSQL function
 -- Simplified version matching get_login_data_complete.sql logic
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -52,6 +49,3 @@ SELECT
         ELSE 'master'::text
     END as realm_name
 $$;
-
-COMMIT;
-

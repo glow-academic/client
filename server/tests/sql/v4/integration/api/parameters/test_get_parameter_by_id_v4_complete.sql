@@ -1,8 +1,5 @@
 -- Get parameter by ID for test verification
 -- Returns parameter details for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_parameter_by_id_v4(uuid);
 
@@ -35,6 +32,3 @@ AS $$
     FROM parameters
     WHERE id = input_parameter_id;
 $$;
-
-COMMIT;
-

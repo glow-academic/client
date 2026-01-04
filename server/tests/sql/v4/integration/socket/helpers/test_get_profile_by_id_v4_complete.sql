@@ -1,8 +1,5 @@
 -- Get profile by ID for test verification
 -- Returns profile active status
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_profile_by_id_v4(uuid);
 
@@ -18,6 +15,3 @@ STABLE
 AS $$
     SELECT active FROM profiles WHERE id = test_get_profile_by_id_v4.profile_id;
 $$;
-
-COMMIT;
-

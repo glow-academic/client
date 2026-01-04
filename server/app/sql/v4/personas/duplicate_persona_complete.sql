@@ -1,8 +1,5 @@
 -- Duplicate persona - fetches original and creates copy with prompt and department links in single query
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -96,6 +93,3 @@ SELECT
     (SELECT name FROM original_persona LIMIT 1) as original_name,
     (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 $$;
-
-COMMIT;
-

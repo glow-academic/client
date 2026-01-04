@@ -1,8 +1,5 @@
 -- Get videos for a scenario
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ FROM scenario_videos sv
 WHERE sv.scenario_id = scenario_id
   AND sv.active = true
 $$;
-
-COMMIT;
-

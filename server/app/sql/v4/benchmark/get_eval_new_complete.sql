@@ -1,9 +1,6 @@
 -- Get default eval detail for creation
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -520,5 +517,3 @@ LEFT JOIN available_model_runs_array amra ON (
 )
 CROSS JOIN available_groups_array aga
 $$;
-
-COMMIT;

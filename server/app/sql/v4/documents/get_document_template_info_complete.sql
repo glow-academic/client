@@ -1,8 +1,5 @@
 -- Get parent document template info for dynamic document creation
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -48,6 +45,3 @@ WHERE d.id = parent_document_id
 ORDER BY dt.created_at DESC
 LIMIT 1
 $$;
-
-COMMIT;
-

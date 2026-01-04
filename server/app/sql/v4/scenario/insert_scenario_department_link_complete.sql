@@ -1,8 +1,5 @@
 -- Insert scenario-department link
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -41,6 +38,3 @@ ON CONFLICT (scenario_id, department_id) DO UPDATE SET
     updated_at = NOW()
 RETURNING scenario_id, department_id, active, created_at, updated_at
 $$;
-
-COMMIT;
-

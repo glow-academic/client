@@ -1,9 +1,6 @@
 -- Link a video to a scenario
 -- Converted to PostgreSQL function
 -- Note: Only one video can be active per scenario (enforced by unique partial index)
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -46,6 +43,3 @@ insert_video AS (
 )
 SELECT video_id FROM insert_video
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Get scenario problem statement for test verification
 -- Returns problem statement data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_scenario_problem_statement_v4(uuid);
 
@@ -28,6 +25,3 @@ AS $$
     WHERE scenario_id = test_get_scenario_problem_statement_v4.input_scenario_id
       AND active = true;
 $$;
-
-COMMIT;
-

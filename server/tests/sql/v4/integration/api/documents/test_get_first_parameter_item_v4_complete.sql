@@ -1,8 +1,5 @@
 -- Get first parameter item for test setup
 -- Returns parameter item ID for linking
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_first_parameter_item_v4();
 
@@ -18,6 +15,3 @@ AS $$
     -- This function returns empty result - tests using this may need updating
     SELECT NULL::uuid AS parameter_item_id WHERE false;
 $$;
-
-COMMIT;
-

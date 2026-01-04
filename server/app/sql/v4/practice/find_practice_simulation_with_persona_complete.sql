@@ -1,9 +1,6 @@
 -- Find practice simulation with scenario linked to specific persona
 -- Converted to PostgreSQL function
 -- Returns first matching simulation/scenario pair, prioritizing by position
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -108,6 +105,3 @@ FROM scenario_with_name
 ORDER BY position_val ASC
 LIMIT 1
 $$;
-
-COMMIT;
-

@@ -1,9 +1,6 @@
 -- Insert document_tree junction record
 -- Converted to PostgreSQL function
 -- Links a parent document to a child document
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -42,6 +39,3 @@ ON CONFLICT (parent_id, child_id) DO UPDATE SET
     updated_at = NOW()
 RETURNING parent_id, child_id, active, created_at, updated_at
 $$;
-
-COMMIT;
-

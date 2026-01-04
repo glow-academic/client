@@ -1,8 +1,5 @@
 -- Duplicate field with all parameter and department associations
 -- Converted to function
-
-BEGIN;
-
 DROP FUNCTION IF EXISTS api_duplicate_field_v4(uuid, uuid);
 
 CREATE OR REPLACE FUNCTION api_duplicate_field_v4(
@@ -102,5 +99,3 @@ FROM field_exists_check fec
 CROSS JOIN user_profile up
 LEFT JOIN new_field nf ON fec.field_exists = true
 $$;
-
-COMMIT;

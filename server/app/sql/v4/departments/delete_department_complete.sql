@@ -1,9 +1,6 @@
 -- Delete department with existence and usage checks in a single transaction
 -- Converted to function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -97,5 +94,3 @@ CROSS JOIN actor_profile ap
 LEFT JOIN usage_summary us ON dec.department_exists = true
 LEFT JOIN delete_department dd ON dd.id = us.id AND us.total_usage = 0
 $$;
-
-COMMIT;

@@ -5,9 +5,6 @@
 -- Parameters: start_date, end_date, profile_id, cohort_ids, department_ids, roles, simulation_filters,
 --             profile_ids, simulation_ids, scenario_ids, search, sort_by, sort_order, page, page_size
 -- Returns: Complete reports bundle with profile data, metrics, filter options, and entity mappings (as arrays)
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -1436,6 +1433,3 @@ SELECT
     COALESCE((SELECT scenarios_array FROM scenarios_final), ARRAY[]::types.q_reports_bundle_v4_scenario[]) as scenarios,
     COALESCE((SELECT simulations_array FROM simulations_final), ARRAY[]::types.q_reports_bundle_v4_simulation[]) as simulations
 $$;
-
-COMMIT;
-

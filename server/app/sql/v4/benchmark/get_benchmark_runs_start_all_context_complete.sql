@@ -1,9 +1,6 @@
 -- Get benchmark runs start all context
 -- Gets eval_id, use_groups, and all pending runs/groups
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -72,6 +69,3 @@ AS $$
     WHERE ea.id = socket_get_benchmark_runs_start_all_context_v4.attempt_id
     GROUP BY e.id, e.use_groups;
 $$;
-
-COMMIT;
-

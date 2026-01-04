@@ -1,8 +1,5 @@
 -- Get existing agent or create a new one
 -- Returns agent_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_test_agent_v4(text, text, uuid);
 
@@ -54,6 +51,3 @@ AS $$
     WHERE ea.id IS NOT NULL OR na.id IS NOT NULL
     LIMIT 1;
 $$;
-
-COMMIT;
-

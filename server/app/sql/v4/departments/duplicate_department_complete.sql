@@ -1,9 +1,6 @@
 -- Duplicate department - fetches original and creates copy in single query
 -- Converted to function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -71,5 +68,3 @@ FROM new_dept nd
 CROSS JOIN original_dept od
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

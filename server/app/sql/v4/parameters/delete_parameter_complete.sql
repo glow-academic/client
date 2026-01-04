@@ -1,9 +1,6 @@
 -- Delete parameter if items not in use, returning parameter name and usage count
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- 1) Drop function first
 DROP FUNCTION IF EXISTS api_delete_parameter_v4(uuid, uuid);
 
@@ -70,5 +67,3 @@ CROSS JOIN actor_profile ap
 LEFT JOIN parameter_info pi ON pec.parameter_exists = true
 LEFT JOIN delete_parameter dp ON dp.name = pi.name AND pec.parameter_exists = true
 $$;
-
-COMMIT;

@@ -1,8 +1,5 @@
 -- Get all chats for an attempt
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -36,6 +33,3 @@ JOIN chats sc ON sc.id = ac.chat_id
 WHERE ac.attempt_id = attempt_id
 ORDER BY sc.created_at
 $$;
-
-COMMIT;
-

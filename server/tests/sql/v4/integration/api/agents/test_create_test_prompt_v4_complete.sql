@@ -1,8 +1,5 @@
 -- Create a test prompt for test setup
 -- Returns prompt_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_prompt_v4(text);
 
@@ -22,6 +19,3 @@ AS $$
     VALUES (test_create_test_prompt_v4.system_prompt)
     RETURNING id, system_prompt, created_at;
 $$;
-
-COMMIT;
-

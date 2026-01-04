@@ -1,9 +1,6 @@
 -- Delete a key
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -96,6 +93,3 @@ LEFT JOIN key_info ki ON true
 LEFT JOIN delete_key dk ON dk.id = ki.id
 WHERE kec.key_exists = true
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Get simulation's scenarios with position ordering
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -34,6 +31,3 @@ FROM simulation_scenarios ss
 WHERE ss.simulation_id = api_get_simulation_scenarios_ordered_v4.simulation_id
 ORDER BY ss.position
 $$;
-
-COMMIT;
-

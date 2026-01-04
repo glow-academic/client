@@ -1,9 +1,6 @@
 -- Delete model with usage checks (personas and agents) and name fetch
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -80,5 +77,3 @@ FROM model_exists_check mec
 CROSS JOIN actor_profile ap
 LEFT JOIN model_info mi ON true
 $$;
-
-COMMIT;

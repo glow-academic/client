@@ -1,8 +1,5 @@
 -- Get existing department by title or create a new one
 -- Returns department_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_test_department_v4(text, text);
 
@@ -41,6 +38,3 @@ AS $$
     WHERE ed.id IS NOT NULL OR nd.id IS NOT NULL
     LIMIT 1;
 $$;
-
-COMMIT;
-

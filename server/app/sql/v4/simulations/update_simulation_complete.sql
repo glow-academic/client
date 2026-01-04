@@ -1,8 +1,5 @@
 -- Update simulation with departments, scenarios, and videos in a single transaction
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -344,5 +341,3 @@ SELECT
 FROM update_simulation us
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

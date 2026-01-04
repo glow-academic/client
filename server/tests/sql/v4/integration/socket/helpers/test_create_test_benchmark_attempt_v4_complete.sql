@@ -1,9 +1,6 @@
 -- Create a test benchmark attempt for socket tests
 -- Returns attempt_id
 -- Note: Uses eval_attempts table (not benchmark_attempts)
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_benchmark_attempt_v4(uuid);
 
@@ -21,5 +18,3 @@ AS $$
     VALUES (test_create_test_benchmark_attempt_v4.eval_id, false) 
     RETURNING id as attempt_id;
 $$;
-
-COMMIT;

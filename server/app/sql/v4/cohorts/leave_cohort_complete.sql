@@ -1,8 +1,5 @@
 -- Deactivate cohort profile link (preserves history)
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -60,6 +57,3 @@ FROM cohort_info ci
 CROSS JOIN actor_profile ap
 WHERE EXISTS (SELECT 1 FROM update_result)
 $$;
-
-COMMIT;
-

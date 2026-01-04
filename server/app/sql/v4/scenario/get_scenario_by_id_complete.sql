@@ -1,8 +1,5 @@
 -- Get scenario by ID (for _create_chat_for_scenario)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -51,6 +48,3 @@ SELECT
 FROM scenarios s
 WHERE s.id = api_get_scenario_by_id_v4.scenario_id
 $$;
-
-COMMIT;
-

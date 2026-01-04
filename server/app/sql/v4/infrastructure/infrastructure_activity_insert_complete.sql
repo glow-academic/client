@@ -1,9 +1,6 @@
 -- Insert activity record (profile_id can be NULL)
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
@@ -28,6 +25,3 @@ AS $$
     VALUES (message, endpoint, profile_id, error, now());
     SELECT true as success;
 $$;
-
-COMMIT;
-

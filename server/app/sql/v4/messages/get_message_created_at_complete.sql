@@ -1,8 +1,5 @@
 -- Get message created_at timestamp
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -30,5 +27,3 @@ STABLE
 AS $$
 SELECT created_at FROM messages WHERE id = message_id
 $$;
-
-COMMIT;

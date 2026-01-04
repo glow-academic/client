@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_insert_problem_statement_v4(text, text, uuid, boolean);
 CREATE OR REPLACE FUNCTION api_insert_problem_statement_v4(
     problem_statement text,
@@ -29,5 +28,3 @@ link_scenario AS (
 SELECT problem_statement_id::text as problem_statement_id
 FROM create_ps
 $$;
-COMMIT;
-

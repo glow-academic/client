@@ -1,8 +1,5 @@
 -- Get simulation by ID with time_limit for test verification
 -- Returns simulation data including time_limit for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_simulation_by_id_with_time_limit_v4(uuid);
 
@@ -35,6 +32,3 @@ AS $$
     FROM simulations
     WHERE id = test_get_simulation_by_id_with_time_limit_v4.input_simulation_id;
 $$;
-
-COMMIT;
-

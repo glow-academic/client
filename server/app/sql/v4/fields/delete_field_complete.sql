@@ -1,8 +1,5 @@
 -- Delete field
 -- Converted to function
-
-BEGIN;
-
 DROP FUNCTION IF EXISTS api_delete_field_v4(uuid, uuid);
 
 CREATE OR REPLACE FUNCTION api_delete_field_v4(
@@ -54,5 +51,3 @@ FROM field_exists_check fec
 CROSS JOIN user_profile up
 LEFT JOIN deleted_field df ON fec.field_exists = true
 $$;
-
-COMMIT;

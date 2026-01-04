@@ -1,9 +1,6 @@
 -- Get default cohort detail with simulations, staff, and mappings
 -- Converted to function with composite types
 -- Reuses detail composite types where possible
-
-BEGIN;
-
 -- 1) Drop functions that depend on these types first (breaks dependency on types)
 -- Drop all versions of the functions using DO block to handle signature variations
 DO $$
@@ -756,5 +753,3 @@ SELECT
 FROM cohort_data cd
 CROSS JOIN user_profile_for_cohort upc
 $$;
-
-COMMIT;

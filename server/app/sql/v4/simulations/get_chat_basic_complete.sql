@@ -1,8 +1,5 @@
 -- Get basic chat info
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -34,6 +31,3 @@ SELECT id, completed, scenario_id
 FROM chats
 WHERE id = chat_id
 $$;
-
-COMMIT;
-

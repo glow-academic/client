@@ -1,8 +1,5 @@
 -- Check if document parameter item link exists for test verification
 -- Returns boolean indicating existence
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_document_parameter_item_link_exists_v4(uuid, uuid);
 
@@ -21,6 +18,3 @@ AS $$
     -- This function returns false - tests using this may need updating
     SELECT false AS link_exists;
 $$;
-
-COMMIT;
-

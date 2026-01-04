@@ -1,8 +1,5 @@
 -- Get count of active models for test verification
 -- Returns count for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_active_models_count_v4();
 
@@ -18,6 +15,3 @@ AS $$
     FROM models
     WHERE active = true;
 $$;
-
-COMMIT;
-

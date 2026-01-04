@@ -1,8 +1,5 @@
 -- Get persona instructions only (not full system prompts) for personas in a chat
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -41,6 +38,3 @@ WHERE c.id = chat_id
   AND p.active = true
 ORDER BY p.name
 $$;
-
-COMMIT;
-

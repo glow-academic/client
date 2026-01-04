@@ -1,8 +1,5 @@
 -- Get parameters list with permissions and relationships
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_list_parameters_v4(uuid);
 
@@ -448,6 +445,3 @@ SELECT
     ) as document_options
 FROM user_profile up
 $$;
-
-COMMIT;
-

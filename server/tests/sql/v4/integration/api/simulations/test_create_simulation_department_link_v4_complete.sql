@@ -1,8 +1,5 @@
 -- Create simulation-department link for test setup
 -- Returns link data for verification
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_simulation_department_link_v4(uuid, uuid);
 
@@ -28,6 +25,3 @@ AS $$
     )
     RETURNING simulation_id, department_id, active, created_at;
 $$;
-
-COMMIT;
-

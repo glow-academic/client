@@ -1,9 +1,6 @@
 -- Get benchmark run start context
 -- Gets eval_id, use_groups, and verifies run belongs to attempt's eval
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -61,6 +58,3 @@ AS $$
     LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.run_id = socket_get_benchmark_run_start_context_v4.run_id
     WHERE ea.id = socket_get_benchmark_run_start_context_v4.attempt_id;
 $$;
-
-COMMIT;
-

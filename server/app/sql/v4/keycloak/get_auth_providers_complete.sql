@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_get_auth_providers_v4(uuid);
 CREATE OR REPLACE FUNCTION api_get_auth_providers_v4(
     department_id uuid
@@ -75,5 +74,3 @@ WHERE a.active = true
   AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = a.id)
 ORDER BY a.slug
 $$;
-COMMIT;
-

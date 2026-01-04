@@ -1,8 +1,5 @@
 -- Duplicate cohort with relationships in single query (DHH style)
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -114,6 +111,3 @@ CROSS JOIN original_cohort oc
 CROSS JOIN actor_profile ap
 LIMIT 1
 $$;
-
-COMMIT;
-

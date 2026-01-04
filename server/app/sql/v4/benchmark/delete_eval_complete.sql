@@ -1,9 +1,6 @@
 -- Delete eval (cascades to junction table and grades via FK)
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -59,6 +56,3 @@ FROM eval_info ei
 CROSS JOIN actor_profile ap
 WHERE EXISTS (SELECT 1 FROM delete_eval)
 $$;
-
-COMMIT;
-

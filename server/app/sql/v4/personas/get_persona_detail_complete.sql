@@ -1,8 +1,5 @@
 -- Get persona detail with agents, departments, and access control
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -581,5 +578,3 @@ CROSS JOIN parameter_field_ids_data pfid
 CROSS JOIN persona_examples_data ped
 CROSS JOIN examples_history_data ehd
 $$;
-
-COMMIT;

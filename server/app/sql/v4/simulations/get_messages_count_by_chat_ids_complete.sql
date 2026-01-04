@@ -1,8 +1,5 @@
 -- Get message counts for multiple chats (batch query)
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -40,6 +37,3 @@ JOIN messages m ON m.id = mr.message_id
 WHERE c.id = ANY(chat_ids)
 GROUP BY c.id
 $$;
-
-COMMIT;
-

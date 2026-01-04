@@ -1,8 +1,5 @@
 -- Create a test cohort for test setup
 -- Returns cohort_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_cohort_v4(text, text, boolean);
 
@@ -34,6 +31,3 @@ AS $$
     )
     RETURNING id, title, description, active, created_at;
 $$;
-
-COMMIT;
-

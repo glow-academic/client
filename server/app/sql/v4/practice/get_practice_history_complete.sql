@@ -1,9 +1,6 @@
 -- Get practice history with pagination, search, filters, and sorting
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -779,6 +776,3 @@ SELECT
     COALESCE((SELECT simulation_options FROM simulation_options_agg), '{}'::types.q_get_practice_history_v4_simulation_option[]) as simulation_options,
     COALESCE((SELECT scenario_options FROM scenario_options_agg), '{}'::types.q_get_practice_history_v4_scenario_option[]) as scenario_options
 $$;
-
-COMMIT;
-

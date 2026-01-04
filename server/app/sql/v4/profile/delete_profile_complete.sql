@@ -1,9 +1,6 @@
 -- Delete profile with validation and name lookup in single function
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -86,6 +83,3 @@ LEFT JOIN profile_check pc ON pec.profile_exists = true
 LEFT JOIN profile_delete pd ON pd.id = pc.id
 LIMIT 1
 $$;
-
-COMMIT;
-

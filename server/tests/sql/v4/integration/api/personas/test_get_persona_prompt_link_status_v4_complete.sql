@@ -1,8 +1,5 @@
 -- Get persona prompt link status for test verification
 -- Returns whether an active link exists
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_persona_prompt_link_status_v4(uuid, uuid);
 
@@ -22,6 +19,3 @@ AS $$
     -- This function returns false - tests using this may need updating
     SELECT false AS link_exists;
 $$;
-
-COMMIT;
-

@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_start_benchmark_attempt_v4(uuid, boolean);
 CREATE OR REPLACE FUNCTION api_start_benchmark_attempt_v4(
     eval_id uuid,
@@ -61,5 +60,3 @@ LEFT JOIN eval_agents_data ead ON true
 LEFT JOIN pending_runs pr ON true
 LEFT JOIN pending_groups pg ON true
 $$;
-COMMIT;
-

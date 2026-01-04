@@ -1,9 +1,6 @@
 -- Duplicate model with profile_id for auditing
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -87,5 +84,3 @@ CROSS JOIN actor_profile ap
 WHERE mec.model_exists = true
 LIMIT 1
 $$;
-
-COMMIT;

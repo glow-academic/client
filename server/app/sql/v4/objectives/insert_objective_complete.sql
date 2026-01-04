@@ -1,4 +1,3 @@
-BEGIN;
 DROP FUNCTION IF EXISTS api_insert_objective_v4(text, integer, uuid);
 CREATE OR REPLACE FUNCTION api_insert_objective_v4(
     objective text,
@@ -34,5 +33,3 @@ link_scenario AS (
 SELECT objective_id::text as objective_id
 FROM all_obj
 $$;
-COMMIT;
-

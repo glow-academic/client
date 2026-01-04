@@ -1,8 +1,5 @@
 -- Check if document department link exists for test verification
 -- Returns boolean indicating existence
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_document_department_link_exists_v4(uuid, uuid);
 
@@ -25,6 +22,3 @@ AS $$
           AND active = true
     ) AS link_exists;
 $$;
-
-COMMIT;
-

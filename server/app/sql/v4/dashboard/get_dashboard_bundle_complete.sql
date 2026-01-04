@@ -5,9 +5,6 @@
 -- Parameters: start_date, end_date, cohort_ids, roles, simulation_filters, department_ids, profile_id
 -- Returns: Complete dashboard bundle with header metrics, primary metrics, secondary metrics, 
 --          footer metrics, history, insights, thresholds, and entity mappings (as arrays)
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -2982,6 +2979,3 @@ SELECT
     (SELECT parameters_array FROM parameters_converted LIMIT 1) as parameters,
     (SELECT fields_array FROM fields_converted LIMIT 1) as fields
 $$;
-
-COMMIT;
-

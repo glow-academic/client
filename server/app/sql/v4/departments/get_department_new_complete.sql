@@ -1,9 +1,6 @@
 -- Get default department data for new department creation
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -131,6 +128,3 @@ FROM user_profile up
 CROSS JOIN settings_data sd
 GROUP BY up.role, up.actor_name
 $$;
-
-COMMIT;
-

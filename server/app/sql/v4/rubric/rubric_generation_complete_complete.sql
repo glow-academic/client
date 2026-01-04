@@ -1,9 +1,6 @@
 -- Rubric generation complete event handler
 -- No-op function (no database operations) - just returns success
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -59,6 +56,3 @@ SELECT
     COALESCE(message, 'Rubric generation completed') as message,
     (SELECT trace_id FROM groups WHERE id = group_id LIMIT 1) as trace_id
 $$;
-
-COMMIT;
-

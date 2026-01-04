@@ -1,8 +1,5 @@
 -- Get persona by ID for test verification
 -- Returns persona data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_persona_by_id_v4(uuid);
 
@@ -37,6 +34,3 @@ AS $$
     FROM personas
     WHERE id = test_get_persona_by_id_v4.input_persona_id;
 $$;
-
-COMMIT;
-

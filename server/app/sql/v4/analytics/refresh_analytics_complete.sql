@@ -1,9 +1,6 @@
 -- Refresh Analytics Materialized View - API Endpoint
 -- Converted to function following agents pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -48,6 +45,3 @@ BEGIN
         'Analytics materialized view refreshed successfully'::text as message,
         'success'::text as status;
 END $$;
-
-COMMIT;
-

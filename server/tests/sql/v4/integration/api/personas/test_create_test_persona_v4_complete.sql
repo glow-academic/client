@@ -1,8 +1,5 @@
 -- Create a test persona for test setup
 -- Returns persona_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_persona_v4(text, text, text, text, boolean, text);
 
@@ -46,6 +43,3 @@ AS $$
     )
     RETURNING id, name, description, color, icon, active, instructions, created_at;
 $$;
-
-COMMIT;
-

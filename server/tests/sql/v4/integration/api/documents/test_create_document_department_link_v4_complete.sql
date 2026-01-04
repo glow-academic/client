@@ -1,8 +1,5 @@
 -- Create a document department link for test setup
 -- Returns link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_document_department_link_v4(uuid, uuid);
 
@@ -31,6 +28,3 @@ AS $$
     )
     RETURNING document_id, department_id, active, created_at, updated_at;
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Create a test rubric for test setup
 -- Returns rubric data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_rubric_v4(text, text, integer, integer, boolean);
 
@@ -37,6 +34,3 @@ AS $$
     )
     RETURNING id AS rubric_id, name, description, points, pass_points, active, created_at, updated_at;
 $$;
-
-COMMIT;
-

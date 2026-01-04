@@ -16,9 +16,6 @@
 --   - Department provided + exists + no auth providers, OR
 --   - No department + default has no auth + at least one dept without auth
 -- Guest: Allowed only when guest_login_enabled = true in resolved settings
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -163,6 +160,3 @@ SELECT
     (SELECT department_exists FROM department_exists_check) as department_exists
 LIMIT 1
 $$;
-
-COMMIT;
-

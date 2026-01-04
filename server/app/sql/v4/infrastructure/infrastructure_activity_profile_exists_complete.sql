@@ -1,9 +1,6 @@
 -- Check if profile exists
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
-
-BEGIN;
-
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
@@ -23,6 +20,3 @@ STABLE
 AS $$
     SELECT EXISTS(SELECT 1 FROM profiles WHERE id = profile_id) as profile_exists;
 $$;
-
-COMMIT;
-

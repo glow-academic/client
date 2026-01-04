@@ -1,9 +1,6 @@
 -- Get eval attempt full details with runs and status
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -391,5 +388,3 @@ CROSS JOIN actor_profile ap
 CROSS JOIN agent_system_prompt asp
 CROSS JOIN runs_aggregated ra
 $$;
-
-COMMIT;

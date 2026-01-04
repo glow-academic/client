@@ -1,8 +1,5 @@
 -- Get simulation by ID for test verification
 -- Returns simulation data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_simulation_by_id_v4(uuid);
 
@@ -33,6 +30,3 @@ AS $$
     FROM simulations
     WHERE id = test_get_simulation_by_id_v4.input_simulation_id;
 $$;
-
-COMMIT;
-

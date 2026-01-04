@@ -1,8 +1,5 @@
 -- Insert upload record
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -34,6 +31,3 @@ INSERT INTO uploads (file_path, mime_type, size, created_at, updated_at)
 VALUES (file_path, mime_type, size, NOW(), NOW())
 RETURNING id::text as id
 $$;
-
-COMMIT;
-

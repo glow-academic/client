@@ -1,8 +1,5 @@
 -- Create a test chat for socket tests
 -- Returns chat_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_chat_v4(uuid, text);
 
@@ -23,6 +20,3 @@ AS $$
     VALUES ('Test Chat', test_create_test_chat_v4.scenario_id, false) 
     RETURNING id as chat_id;
 $$;
-
-COMMIT;
-

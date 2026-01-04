@@ -1,9 +1,6 @@
 -- Create feedback entry
 -- Converted to PostgreSQL function
 -- profile_id is always a UUID (required in request body)
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -50,6 +47,3 @@ SELECT
 FROM new_feedback nf
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

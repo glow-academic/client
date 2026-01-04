@@ -1,9 +1,6 @@
 -- Get all active tools for an agent
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern
-
-BEGIN;
-
 -- 1) Drop function first
 DROP FUNCTION IF EXISTS socket_get_agent_tools_v4(uuid);
 
@@ -42,6 +39,3 @@ WHERE at.agent_id = agent_id
   AND t.active = TRUE
 ORDER BY t.tool_type, t.name
 $$;
-
-COMMIT;
-

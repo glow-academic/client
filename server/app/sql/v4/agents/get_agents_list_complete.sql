@@ -1,9 +1,6 @@
 -- Get agents list with permissions
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -149,5 +146,3 @@ LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AN
 LEFT JOIN models m ON m.id = fa.model_id
 GROUP BY up.actor_name, up.role
 $$;
-
-COMMIT;

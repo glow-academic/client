@@ -1,9 +1,6 @@
 -- Create or update staff profile with departments, cohorts, and all emails in single function
 -- Converted to PostgreSQL function (single profile, called in loop for bulk)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -262,5 +259,3 @@ SELECT
     COALESCE(r.actor_name, 'System') as actor_name
 FROM results r
 $$;
-
-COMMIT;

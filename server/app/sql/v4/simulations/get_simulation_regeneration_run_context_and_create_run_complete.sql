@@ -2,9 +2,6 @@
 -- Uses existing group_id to get previous context from previous runs
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- Drop old function with old name (if exists)
 DROP FUNCTION IF EXISTS socket_get_simulation_regeneration_run_context_and_create_run_v4 CASCADE;
 
@@ -600,6 +597,3 @@ CROSS JOIN group_data gd
 CROSS JOIN previous_messages_array pma
 LEFT JOIN documents_data dd ON dd.chat_id::text = cd.chat_id
 $$;
-
-COMMIT;
-

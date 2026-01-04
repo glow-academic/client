@@ -1,8 +1,5 @@
 -- Get default simulation details for new simulation form
 -- Converted to function with composite types
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -725,5 +722,3 @@ CROSS JOIN agents_data ad
 CROSS JOIN videos_data vd
 LEFT JOIN primary_department_id pdi ON true
 $$;
-
-COMMIT;

@@ -1,8 +1,5 @@
 -- Get key by ID for test verification
 -- Returns key details for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_key_by_id_v4(uuid);
 
@@ -33,6 +30,3 @@ AS $$
     FROM keys
     WHERE id = input_key_id;
 $$;
-
-COMMIT;
-

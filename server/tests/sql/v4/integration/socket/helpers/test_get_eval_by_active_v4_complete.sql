@@ -1,8 +1,5 @@
 -- Get first active eval for test setup
 -- Returns eval ID
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_eval_by_active_v4();
 
@@ -16,6 +13,3 @@ STABLE
 AS $$
     SELECT id FROM evals WHERE active = true LIMIT 1;
 $$;
-
-COMMIT;
-

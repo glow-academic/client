@@ -1,8 +1,5 @@
 -- Create a test scenario linked to a parameter item for test setup
 -- Returns scenario and link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_scenario_with_parameter_item_v4(uuid);
 
@@ -42,6 +39,3 @@ AS $$
     FROM new_scenario ns
     JOIN new_link nl ON ns.scenario_id = nl.scenario_id;
 $$;
-
-COMMIT;
-

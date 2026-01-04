@@ -1,8 +1,5 @@
 -- Create a test parameter for test setup
 -- Returns parameter data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_parameter_v4(text, text, boolean, boolean, boolean, boolean);
 
@@ -37,6 +34,3 @@ AS $$
     )
     RETURNING id AS parameter_id, name, description, active, document_parameter, simulation_parameter, created_at, updated_at;
 $$;
-
-COMMIT;
-

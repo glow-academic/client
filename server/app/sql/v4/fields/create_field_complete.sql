@@ -1,8 +1,5 @@
 -- Create field with conditional parameters and department links
 -- Converted to function
-
-BEGIN;
-
 DROP FUNCTION IF EXISTS api_create_field_v4(text, text, boolean, text[], text[], uuid);
 
 CREATE OR REPLACE FUNCTION api_create_field_v4(
@@ -102,5 +99,3 @@ SELECT
 FROM new_field nf
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;

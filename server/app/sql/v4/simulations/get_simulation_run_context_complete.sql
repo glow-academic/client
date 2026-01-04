@@ -5,9 +5,6 @@
 -- Existing fields (persona_id, model_id, etc.) point to text agent/model 
 -- Voice fields are prefixed with voice_* (voice_model_id, voice_model_name, etc.)
 -- Note: Uses JSON for documents aggregation - may need refactoring per STANDARDS.md
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -381,5 +378,3 @@ GROUP BY sc.id, sc.title,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 $$;
-
-COMMIT;

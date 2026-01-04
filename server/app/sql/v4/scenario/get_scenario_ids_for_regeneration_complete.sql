@@ -1,9 +1,6 @@
 -- Get scenario's current persona/document/parameter IDs and agent_id for regeneration
 -- Converted to PostgreSQL function
 -- Note: Uses JSON for arrays - may need refactoring per STANDARDS.md
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -49,6 +46,3 @@ LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
 WHERE s.id = api_get_scenario_ids_for_regeneration_v4.scenario_id
 GROUP BY s.id, s.scenario_agent_id
 $$;
-
-COMMIT;
-

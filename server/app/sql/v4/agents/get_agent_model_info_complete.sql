@@ -1,9 +1,6 @@
 -- Get agent's model information with proper API key resolution
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -117,6 +114,3 @@ WHERE a.id = agent_id
   AND a.active = true
 LIMIT 1
 $$;
-
-COMMIT;
-

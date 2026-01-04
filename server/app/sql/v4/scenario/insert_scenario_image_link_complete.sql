@@ -1,8 +1,5 @@
 -- Link image to scenario via junction table
 -- Converted to PostgreSQL function
-
-BEGIN;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -41,6 +38,3 @@ ON CONFLICT (scenario_id, image_id) DO UPDATE SET
     updated_at = NOW()
 RETURNING scenario_id, image_id, active, created_at, updated_at
 $$;
-
-COMMIT;
-

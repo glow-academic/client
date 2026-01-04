@@ -1,9 +1,6 @@
 -- Get complete login data: providers and departments
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -266,5 +263,3 @@ CROSS JOIN realm_name_calc
 CROSS JOIN show_default_account_calc
 LIMIT 1
 $$;
-
-COMMIT;

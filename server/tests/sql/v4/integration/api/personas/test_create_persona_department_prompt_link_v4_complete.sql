@@ -1,8 +1,5 @@
 -- Create a persona department prompt link for test setup
 -- Returns link data for assertions
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_persona_department_prompt_link_v4(uuid, uuid, uuid);
 
@@ -28,6 +25,3 @@ AS $$
     -- This function returns empty result - tests using this may need updating
     SELECT NULL::uuid AS persona_id, NULL::uuid AS department_id, NULL::uuid AS prompt_id, NULL::boolean AS active, NULL::timestamptz AS created_at, NULL::timestamptz AS updated_at WHERE false;
 $$;
-
-COMMIT;
-

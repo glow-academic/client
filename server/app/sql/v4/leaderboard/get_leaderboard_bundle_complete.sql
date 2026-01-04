@@ -1,9 +1,6 @@
 -- Get leaderboard bundle with all metrics and profile data
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -398,6 +395,3 @@ CROSS JOIN user_profile up
 CROSS JOIN settings_colors sc
 GROUP BY up.actor_name, sc.primary_color, sc.accent
 $$;
-
-COMMIT;
-

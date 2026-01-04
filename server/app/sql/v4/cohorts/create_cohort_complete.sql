@@ -1,8 +1,5 @@
 -- Create cohort with departments, profiles, and simulations in single query (DHH style)
 -- Converted to function
-
-BEGIN;
-
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -121,6 +118,3 @@ SELECT
 FROM new_cohort nc
 CROSS JOIN actor_profile ap
 $$;
-
-COMMIT;
-

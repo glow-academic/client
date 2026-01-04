@@ -1,8 +1,5 @@
 -- Update eval use_groups flag
 -- Returns eval_id
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_update_eval_use_groups_v4(uuid, boolean);
 
@@ -22,6 +19,3 @@ AS $$
     WHERE id = test_update_eval_use_groups_v4.eval_id
     RETURNING id as eval_id;
 $$;
-
-COMMIT;
-

@@ -1,8 +1,5 @@
 -- Create a test simulation with rubric for test setup
 -- Returns simulation_id for use in tests
-
-BEGIN;
-
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_simulation_with_rubric_v4(uuid, text, text, boolean, boolean, integer);
 
@@ -46,6 +43,3 @@ AS $$
     )
     RETURNING id, title, description, active, practice_simulation, time_limit, rubric_id, created_at;
 $$;
-
-COMMIT;
-
