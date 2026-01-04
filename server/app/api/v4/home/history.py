@@ -87,6 +87,34 @@ async def get_home_history(
                 params=params,
             ),
         )
+        # #region agent log
+        try:
+            import json
+            LOG_PATH = "/Users/ashoksaravanan/Coding/glow/.cursor/debug.log"
+            with open(LOG_PATH, "a") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "home-history-entry",
+                    "hypothesisId": "H",
+                    "location": "history.py:89",
+                    "message": "History result summary",
+                    "data": {
+                        "total_items": len(result.data) if result.data else 0,
+                        "items_summary": [
+                            {
+                                "simulation_name": item.simulation_name if hasattr(item, 'simulation_name') else None,
+                                "score_percent": item.score_percent if hasattr(item, 'score_percent') else None,
+                                "num_scenarios_completed": item.num_scenarios_completed if hasattr(item, 'num_scenarios_completed') else None,
+                                "num_scenarios": item.num_scenarios if hasattr(item, 'num_scenarios') else None
+                            }
+                            for item in (result.data[:3] if result.data else [])
+                        ]
+                    },
+                    "timestamp": int(__import__("time").time() * 1000)
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
 
         # Set audit context
         if result.actor_name:
