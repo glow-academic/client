@@ -1,0 +1,56 @@
+"""Handler for member_prompt_complete WebSocket event - ONE EVENT PER FILE."""
+
+import uuid
+from typing import Any
+
+from fastapi import APIRouter
+
+from app.infra.v4.websocket.handler_wrapper import handle_internal_event
+from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
+from app.infra.v4.websocket.typed_emit import emit_to_client
+from app.main import get_internal_sio
+
+from .call import (
+    MemberPromptToolCompleteApiRequest,
+    MemberPromptToolErrorSqlRow,
+)
+
+internal_sio = get_internal_sio()
+server_router = APIRouter()
+
+
+async def _member_prompt_complete_impl(
+    sid: str,
+    data: MemberPromptToolCompleteApiRequest,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None = None,
+) -> None:
+    """Internal implementation - emits to client."""
+    await emit_to_client(
+        "member_prompt_complete",
+        data,
+        room=sid,
+    )
+
+
+@internal_sio.on("member_prompt_complete")  # type: ignore
+async def member_prompt_complete_internal(
+    data: dict[str, Any],
+) -> None:
+    """Handle member_prompt_complete event from internal bus (server-to-server)."""
+    await handle_internal_event(
+        data=data,
+        request_type=MemberPromptToolCompleteApiRequest,
+        handler=_member_prompt_complete_impl,  # type: ignore[arg-type]
+        error_event_name="member_prompt_error",
+        error_response_type=MemberPromptToolErrorSqlRow,
+    )
+
+
+register_server_endpoint(
+    server_router,
+    "/member_prompt_complete",
+    MemberPromptToolCompleteApiRequest,
+    "Member prompt tool completed successfully",
+)
+

@@ -238,7 +238,37 @@ async def _member_generate_impl(
                     f"Member Agent not found for chat {context['chat_id']}"
                 )
 
-            # Create agent instance (no persona tools for member agent - generates student responses directly)
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(member_agent_id)
+            from app.sql.types import GetAgentToolsSqlRow
+
+            # Function returns multiple rows, so we call it directly with fetch()
+            function_call_sql = 'SELECT * FROM "public"."socket_get_agent_tools_v4"($1)'
+            rows = await conn.fetch(function_call_sql, agent_id_uuid)
+            agent_tools_config = [
+                GetAgentToolsSqlRow.model_validate(dict(row)).model_dump()
+                for row in rows
+            ]
+            tool_config_map: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
+            # Build member agent tools
+            # For member agent, tools are available but agent generates responses directly
+            # Tools (speak, regenerate, instruct, prompt, end_conversation, debug_info) are tracked via SQL/socket handlers
+            member_tools: list[Any] = []
+
+            # Add debug_info tool if available
+            if "debug_info" in tool_config_map:
+                from app.infra.v4.debug.debug_info import debug_info
+
+                member_tools.append(debug_info)
+
+            # Note: speak, regenerate, instruct, prompt, and end_conversation tools
+            # are tracked via SQL/socket handlers but don't need function_tool wrappers
+            # for member agent since it generates student responses directly
+
+            # Create agent instance with loaded tools
             member_agent = GenericAgent(
                 agent_name=context["persona_name"] or "Member Agent",
                 system_prompt=context["system_prompt"],
@@ -248,7 +278,7 @@ async def _member_generate_impl(
                 base_url=context["base_url"],
                 reasoning=context["reasoning"],
                 api_key=context["api_key"],
-                tools=[],  # No tools for member agent - generates student responses directly
+                tools=member_tools,
             )
 
             agent_instance = member_agent.agent()

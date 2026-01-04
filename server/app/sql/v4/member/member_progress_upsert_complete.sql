@@ -142,6 +142,13 @@ link_profile_to_run AS (
       )
     RETURNING run_id
 ),
+-- Get speak tool_id for member agent
+get_speak_tool_id AS (
+    SELECT id as tool_id
+    FROM tools
+    WHERE name = 'speak' AND agent_role = 'member'::agent_role AND active = true
+    LIMIT 1
+),
 -- Get latest user message for this run (if exists, for upsert)
 latest_user_message AS (
     SELECT m.id as message_id
@@ -163,8 +170,9 @@ create_message_if_needed AS (
 -- Create synthetic tool call for new user messages
 user_tool_call AS (
     INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'member_progress_user_' || cm.message_id::text, NULL, true, cm.created_at, cm.updated_at
+    SELECT 'member_progress_user_' || cm.message_id::text, gst.tool_id, true, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
+    CROSS JOIN get_speak_tool_id gst
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
@@ -349,11 +357,19 @@ new_system_message AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as system_message_id, created_at, updated_at
 ),
+-- Get prompt tool_id for member agent
+get_prompt_tool_id AS (
+    SELECT id as tool_id
+    FROM tools
+    WHERE name = 'prompt' AND agent_role = 'member'::agent_role AND active = true
+    LIMIT 1
+),
 -- Create synthetic tool call for new system messages
 system_tool_call AS (
     INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'member_progress_system_' || nsm.system_message_id::text, NULL, true, nsm.created_at, nsm.updated_at
+    SELECT 'member_progress_system_' || nsm.system_message_id::text, gpt.tool_id, true, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
+    CROSS JOIN get_prompt_tool_id gpt
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
@@ -423,11 +439,19 @@ new_scenario_developer_message AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
     RETURNING id as developer_message_id, created_at, updated_at
 ),
+-- Get instruct tool_id for member agent
+get_instruct_tool_id AS (
+    SELECT id as tool_id
+    FROM tools
+    WHERE name = 'instruct' AND agent_role = 'member'::agent_role AND active = true
+    LIMIT 1
+),
 -- Create synthetic tool call for new developer messages
 developer_tool_call AS (
     INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'member_progress_developer_' || nsdm.developer_message_id::text, NULL, true, nsdm.created_at, nsdm.updated_at
+    SELECT 'member_progress_developer_' || nsdm.developer_message_id::text, git.tool_id, true, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
+    CROSS JOIN get_instruct_tool_id git
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
