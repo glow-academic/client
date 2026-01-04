@@ -90,7 +90,7 @@ function KeyComponent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEditMode = mode === "edit" && !!keyId;
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
+  const { selectedDraftId, setSelectedDraftId } =
     useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
@@ -204,7 +204,7 @@ function KeyComponent({
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(keySearchParamsClient, {
+  const [urlParams] = useQueryStates(keySearchParamsClient, {
     history: "replace",
     shallow: true, // Use shallow routing to prevent server component re-renders
   });
@@ -447,7 +447,7 @@ function KeyComponent({
             key_id: keyId,
           },
         });
-        setDecryptedKey(result.key);
+        setDecryptedKey(result.key ?? null);
         setIsPreviewMode(true);
       } catch (error) {
         toast.error(

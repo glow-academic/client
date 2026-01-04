@@ -736,9 +736,6 @@ function ParameterComponent({
     return parameterData?.valid_field_ids || [];
   }, [parameterData?.valid_field_ids]);
 
-  const validDepartmentIds = useMemo(() => {
-    return parameterData?.valid_department_ids || [];
-  }, [parameterData?.valid_department_ids]);
 
   // Get current field IDs from draftState (not formData, since fieldIds is not in URL)
   const currentFieldIds = useMemo(() => {
@@ -892,7 +889,7 @@ function ParameterComponent({
         }
         try {
           const updateRequest: UpdateParameterBody = {
-            parameterId: parameterId!,
+            parameter_id: parameterId!,
             name: draftState.name || "",
             description: draftState.description || "",
             active: draftState.active ?? false,

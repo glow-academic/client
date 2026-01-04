@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 type PersonaMappingItem =
-  components["schemas"]["app__api__v4__scenarios__detail__PersonaMappingItem"];
+  components["schemas"]["QGetScenarioDetailV4Persona"];
 
 type StepStatus = "pending" | "active" | "completed";
 
@@ -322,7 +322,7 @@ export function PersonaSection({
             if (!persona) return null;
 
             const IconComponent =
-              getPersonaIconComponent(persona.icon) || Brain;
+              getPersonaIconComponent(persona.icon || "") || Brain;
             const hexColor = persona.color || "#64748b";
             const isSelected = selectedPersonaIds.includes(personaId);
 

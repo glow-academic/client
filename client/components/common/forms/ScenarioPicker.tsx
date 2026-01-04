@@ -463,7 +463,7 @@ export function ScenarioPicker<
         <div className="flex flex-wrap gap-1 mb-2">
           {selectedScenarioIds.map((id) => {
             const scenario = scenarioMapping[id];
-            if (!scenario) return null;
+            if (!scenario) return null as React.ReactNode;
             return (
               <div
                 key={id}
@@ -842,9 +842,9 @@ function ScenarioItem<T extends ScenarioMappingItem>({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Play className="h-4 w-4 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="truncate">{("name" in scenario ? (scenario.name ?? "") : "") || "Unnamed Scenario"}</div>
+            <div className="truncate">{("name" in scenario && scenario.name) ? String(scenario.name) : "Unnamed Scenario"}</div>
             <div className="mt-1 text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-              {(scenario as { description?: string | null }).description || "No description available"}
+              {("description" in scenario && scenario.description) ? String(scenario.description) : "No description available"}
             </div>
           </div>
         </div>

@@ -118,10 +118,14 @@ export default function Parameters({
   );
   const departmentOptions = useMemo(() => {
     const departments = parametersData?.departments || [];
-    return departments.map((dept) => ({
-      value: dept.department_id,
-      label: dept.name,
-    }));
+    return departments
+      .map((dept) => ({
+        value: dept.department_id,
+        label: dept.name,
+      }))
+      .filter((item): item is { value: string; label: string } => 
+        item.value !== null && item.label !== null
+      );
   }, [parametersData?.departments]);
   const documentOptions = useMemo(
     () =>
@@ -271,15 +275,19 @@ export default function Parameters({
       return;
     }
 
+    if (!parameter.parameter_id) {
+      toast.error("Parameter ID is missing");
+      return;
+    }
     setIsDuplicating(parameter.parameter_id);
     try {
       await duplicateParameterAction({
         body: {
-          parameterId: parameter.parameter_id,
+          parameter_id: parameter.parameter_id,
         },
       });
       // profileId comes from X-Profile-Id header automatically
-      toast.success(`Parameter "${parameter.name}" duplicated successfully`);
+      toast.success(`Parameter "${parameter.name || "Unknown Parameter"}" duplicated successfully`);
       router.refresh();
     } catch (error) {
       toast.error(
@@ -304,7 +312,7 @@ export default function Parameters({
     try {
       await deleteParameterAction({
         body: {
-          parameterId: deleteItem.id,
+          parameter_id: deleteItem.id,
         },
       });
       // profileId comes from X-Profile-Id header automatically
@@ -327,7 +335,7 @@ export default function Parameters({
 
   const getParameterIcon = (parameter: (typeof parameters)[number]) => {
     // Return different icons based on parameter name or type
-    const name = parameter.name.toLowerCase();
+    const name = (parameter.name || "").toLowerCase();
     if (name.includes("class") || name.includes("course"))
       return <Book className="h-5 w-5" />;
     if (name.includes("location") || name.includes("place"))
@@ -340,13 +348,16 @@ export default function Parameters({
   };
 
   const renderPreview = (
-    items: ParametersListOut["parameters"][number]["sample_items"],
+    items: NonNullable<ParametersListOut["parameters"]>[number]["sample_items"],
     totalCount: number,
   ) => {
     // Show name + description
+    if (!items || items.length === 0) {
+      return <p className="text-sm text-muted-foreground">No items yet</p>;
+    }
     return (
       <div className="space-y-2">
-        {items.map((item) => (
+        {items.map((item: NonNullable<typeof items>[number]) => (
           <div
             key={item.parameter_item_id}
             className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
@@ -469,12 +480,16 @@ export default function Parameters({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    handleDeleteClick(parameter.parameter_id, parameter.name)
-                  }
-                  aria-label={`Delete ${parameter.name}`}
+                  onClick={() => {
+                    if (!parameter.parameter_id) {
+                      toast.error("Parameter ID is missing");
+                      return;
+                    }
+                    handleDeleteClick(parameter.parameter_id, parameter.name || "Unknown Parameter");
+                  }}
+                  aria-label={`Delete ${parameter.name || "Unknown Parameter"}`}
                   data-testid="btn-delete-parameter"
-                  title={`Delete ${parameter.name}`}
+                  title={`Delete ${parameter.name || "Unknown Parameter"}`}
                   className="h-9 px-3"
                 >
                   <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
@@ -485,10 +500,10 @@ export default function Parameters({
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col">
-          {parameter.sample_items.length === 0 ? (
+          {!parameter.sample_items || parameter.sample_items.length === 0 ? (
             <p className="text-sm text-muted-foreground">No items yet</p>
           ) : (
-            renderPreview(parameter.sample_items, parameter.num_items)
+            renderPreview(parameter.sample_items, parameter.num_items ?? 0)
           )}
         </CardContent>
       </Card>

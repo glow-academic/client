@@ -44,8 +44,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// StepStatus type defined locally to avoid conflict
-type StepStatus = "pending" | "active" | "completed";
 import {
   Tooltip,
   TooltipContent,
@@ -565,8 +563,8 @@ export default function Settings({
 
   // Build settings mapping for picker (using filtered list)
   const settingsMapping = useMemo(() => {
-    const mapping: Record<string, SettingsListOut["settings"][number]> = {};
-    if (!filteredSettingsList) return mapping;
+    const mapping: Record<string, NonNullable<SettingsListOut["settings"]>[number]> = {};
+    if (!filteredSettingsList || !Array.isArray(filteredSettingsList)) return mapping;
     filteredSettingsList.forEach((setting) => {
       if (setting.settings_id) {
         mapping[setting.settings_id] = setting;
@@ -616,7 +614,9 @@ export default function Settings({
   }, [departmentsList]);
 
   const validDepartmentIds = useMemo(() => {
-    return departmentsList.departments.map((dept) => dept.department_id);
+    return (departmentsList.departments || [])
+      .map((dept) => dept.department_id)
+      .filter((id): id is string => id !== null && id !== undefined);
   }, [departmentsList]);
 
   // Form data state
@@ -790,12 +790,13 @@ export default function Settings({
         department_ids: string[] | null;
       }
     > = {};
-    keysList.keys.forEach((key) => {
+    (keysList.keys || []).forEach((key) => {
+      if (!key.key_id) return;
       mapping[key.key_id] = {
-        name: key.name,
+        name: key.name || "",
         description: key.description || "",
-        key_masked: key.key_masked,
-        active: key.active,
+        key_masked: key.key_masked || "",
+        active: key.active ?? false,
         department_ids: key.department_ids || null,
       };
     });
@@ -803,7 +804,9 @@ export default function Settings({
   }, [keysList]);
 
   const validKeyIds = useMemo(() => {
-    return keysList.keys.map((key) => key.key_id);
+    return (keysList.keys || [])
+      .map((key) => key.key_id)
+      .filter((id): id is string => id !== null && id !== undefined);
   }, [keysList]);
 
   // Filter profiles by role
@@ -826,16 +829,19 @@ export default function Settings({
     if (!settingsDetail) return [];
     // Use all_auths array (composite types) - convert to list
     const allAuths = settingsDetail.all_auths || [];
-    return allAuths.map((auth) => {
-      const enabled = authEnabled[auth.auth_id] ?? false;
-      return {
-        auth_id: auth.auth_id,
-        auth_name: auth.name,
-        auth_description: auth.description,
-        auth_slug: auth.slug,
-        enabled,
-      };
-    });
+    return allAuths
+      .filter((auth) => auth.auth_id !== null && auth.auth_id !== undefined)
+      .map((auth) => {
+        const authId = auth.auth_id!;
+        const enabled = authEnabled[authId] ?? false;
+        return {
+          auth_id: authId,
+          auth_name: auth.name || "",
+          auth_description: auth.description || "",
+          auth_slug: auth.slug || "",
+          enabled,
+        };
+      });
   }, [settingsDetail, authEnabled]);
 
   // Build auth table data - use ALL auths, show ALL items (encrypted and non-encrypted)
@@ -859,6 +865,7 @@ export default function Settings({
     const allAuths = settingsDetail.all_auths || [];
     allAuths.forEach((auth) => {
       const authId = auth.auth_id;
+      if (!authId) return;
       const enabled = authEnabled[authId] ?? false;
 
       // Auth items are now nested in the auth object (composite types)
@@ -867,9 +874,9 @@ export default function Settings({
       if (authItems.length === 0) {
         data.push({
           auth_id: authId,
-          auth_name: auth.name,
-          auth_description: auth.description,
-          auth_slug: auth.slug,
+          auth_name: auth.name || "",
+          auth_description: auth.description || "",
+          auth_slug: auth.slug || "",
           auth_item_id: "",
           auth_item_name: "",
           auth_item_description: "",
@@ -881,9 +888,10 @@ export default function Settings({
       } else {
         authItems.forEach((item) => {
           const authItemId = item.auth_item_id;
-          const itemName = item.name;
-          const itemDesc = item.description;
-          const itemEncrypted = item.encrypted;
+          if (!authItemId) return;
+          const itemName = item.name || "";
+          const itemDesc = item.description || "";
+          const itemEncrypted = item.encrypted ?? false;
 
           const itemKeyMapping = authKeyMapping[authId] || {};
           const itemValueMapping = authValueMapping[authId] || {};
@@ -894,9 +902,9 @@ export default function Settings({
             ? itemValueMapping[authItemId] || null
             : null;
 
-          const authName = auth.name;
-          const authDesc = auth.description;
-          const authSlug = auth.slug;
+          const authName = auth.name || "";
+          const authDesc = auth.description || "";
+          const authSlug = auth.slug || "";
           data.push({
             auth_id: authId,
             auth_name: authName,
@@ -904,7 +912,7 @@ export default function Settings({
             auth_slug: authSlug,
             auth_item_id: authItemId,
             auth_item_name: itemName,
-            auth_item_description: itemDesc || "",
+            auth_item_description: itemDesc,
             selected_key_id: selectedKeyId,
             value: value,
             encrypted: itemEncrypted,
@@ -922,15 +930,17 @@ export default function Settings({
     if (!settingsDetail) return [];
     // Use all_providers array (composite types) instead of all_provider_ids + mapping
     const allProviders = settingsDetail.all_providers || [];
-    return allProviders.map((provider) => {
-      const providerId = provider.provider_id;
-      const selectedKeyId = providerKeyMapping[providerId] || null;
-      const enabled = providerEnabled[providerId] ?? false;
+    return allProviders
+      .filter((provider) => provider.provider_id !== null && provider.provider_id !== undefined)
+      .map((provider) => {
+        const providerId = provider.provider_id!;
+        const selectedKeyId = providerKeyMapping[providerId] || null;
+        const enabled = providerEnabled[providerId] ?? false;
       return {
         provider_id: providerId,
-        provider_name: provider.name,
-        provider_description: provider.description,
-        provider_value: provider.value,
+        provider_name: provider.name || "",
+        provider_description: provider.description || "",
+        provider_value: provider.value || null,
         selected_key_id: selectedKeyId,
         enabled,
       };
@@ -985,12 +995,12 @@ export default function Settings({
 
   // Auto-select active settings for selected departments
   useEffect(() => {
-    if (!filteredSettingsList.length || selectedSettingsId) return;
+    if (!filteredSettingsList || !filteredSettingsList.length || selectedSettingsId) return;
 
     let activeSettings = null;
 
     if (selectedDepartmentIds.length === 0) {
-      activeSettings = filteredSettingsList.find(
+      activeSettings = (filteredSettingsList || []).find(
         (s) => !s.department_ids || s.department_ids.length === 0
       );
     } else {
@@ -2095,8 +2105,8 @@ export default function Settings({
                     <SettingsAIProviderConfigSection
                       key={providerId}
                       providerId={providerId}
-                      providerName={provider.provider_name}
-                      providerDescription={provider.provider_description}
+                      providerName={provider.provider_name || ""}
+                      providerDescription={provider.provider_description || ""}
                       data={providerTableData}
                       keyMapping={keyMapping}
                       validKeyIds={validKeyIds}

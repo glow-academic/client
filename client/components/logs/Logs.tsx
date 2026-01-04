@@ -37,23 +37,26 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
     () => serverBundleData?.health_kpis,
     [serverBundleData],
   );
-  const metrics = useMemo(
-    () => serverBundleData?.metrics || [],
-    [serverBundleData],
-  );
+  const metrics = useMemo(() => {
+    const m = serverBundleData?.metrics;
+    return Array.isArray(m) ? m : [];
+  }, [serverBundleData]);
 
   // Get chart colors from design system
   const chartColors = useChartColors();
 
   // Prepare metrics chart data
   const metricsChartData = useMemo(() => {
-    return metrics.map((m: HealthBundleOut["metrics"][number]) => ({
-      date: m.date,
-      cpu: m.cpu_percent,
-      latency: m.latency_ms,
-      memory: m.memory_bytes / 1024 / 1024, // Convert to MB
-      requests: m.requests_total,
-      errors: m.errors_total,
+    if (!metrics || !Array.isArray(metrics)) {
+      return [];
+    }
+    return metrics.map((m) => ({
+      date: m.date ?? "",
+      cpu: m.cpu_percent ?? 0,
+      latency: m.latency_ms ?? 0,
+      memory: (m.memory_bytes ?? 0) / 1024 / 1024, // Convert to MB
+      requests: m.requests_total ?? 0,
+      errors: m.errors_total ?? 0,
     }));
   }, [metrics]);
 
@@ -63,36 +66,71 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {healthKPIs && (
           <>
-            <WebSocketKPI
-              ok={healthKPIs.websocket.ok}
-              latency_ms={healthKPIs.websocket.latency_ms}
-              error={healthKPIs.websocket.error}
-              trend={healthKPIs.websocket.trend || []}
-            />
-            <RedisKPI
-              ok={healthKPIs.redis.ok}
-              latency_ms={healthKPIs.redis.latency_ms}
-              error={healthKPIs.redis.error}
-              trend={healthKPIs.redis.trend || []}
-            />
-            <DocumentKPI
-              ok={healthKPIs.document.ok}
-              latency_ms={healthKPIs.document.latency_ms}
-              error={healthKPIs.document.error}
-              trend={healthKPIs.document.trend || []}
-            />
-            <DatabaseKPI
-              ok={healthKPIs.database.ok}
-              latency_ms={healthKPIs.database.latency_ms}
-              error={healthKPIs.database.error}
-              trend={healthKPIs.database.trend || []}
-            />
-            <AuthenticationKPI
-              ok={healthKPIs.authentication.ok}
-              latency_ms={healthKPIs.authentication.latency_ms}
-              error={healthKPIs.authentication.error}
-              trend={healthKPIs.authentication.trend || []}
-            />
+            {healthKPIs.websocket && (
+              <WebSocketKPI
+                ok={healthKPIs.websocket.ok ?? false}
+                latency_ms={healthKPIs.websocket.latency_ms ?? 0}
+                error={healthKPIs.websocket.error ?? ""}
+                trend={(healthKPIs.websocket.trend || []).map((t) => ({
+                  date: t.date ?? "",
+                  value: t.value ?? 0,
+                  latency: t.latency ?? 0,
+                  count: t.count ?? 0,
+                }))}
+              />
+            )}
+            {healthKPIs.redis && (
+              <RedisKPI
+                ok={healthKPIs.redis.ok ?? false}
+                latency_ms={healthKPIs.redis.latency_ms ?? 0}
+                error={healthKPIs.redis.error ?? ""}
+                trend={(healthKPIs.redis.trend || []).map((t) => ({
+                  date: t.date ?? "",
+                  value: t.value ?? 0,
+                  latency: t.latency ?? 0,
+                  count: t.count ?? 0,
+                }))}
+              />
+            )}
+            {healthKPIs.document && (
+              <DocumentKPI
+                ok={healthKPIs.document.ok ?? false}
+                latency_ms={healthKPIs.document.latency_ms ?? 0}
+                error={healthKPIs.document.error ?? ""}
+                trend={(healthKPIs.document.trend || []).map((t) => ({
+                  date: t.date ?? "",
+                  value: t.value ?? 0,
+                  latency: t.latency ?? 0,
+                  count: t.count ?? 0,
+                }))}
+              />
+            )}
+            {healthKPIs.database && (
+              <DatabaseKPI
+                ok={healthKPIs.database.ok ?? false}
+                latency_ms={healthKPIs.database.latency_ms ?? 0}
+                error={healthKPIs.database.error ?? ""}
+                trend={(healthKPIs.database.trend || []).map((t) => ({
+                  date: t.date ?? "",
+                  value: t.value ?? 0,
+                  latency: t.latency ?? 0,
+                  count: t.count ?? 0,
+                }))}
+              />
+            )}
+            {healthKPIs.authentication && (
+              <AuthenticationKPI
+                ok={healthKPIs.authentication.ok ?? false}
+                latency_ms={healthKPIs.authentication.latency_ms ?? 0}
+                error={healthKPIs.authentication.error ?? ""}
+                trend={(healthKPIs.authentication.trend || []).map((t) => ({
+                  date: t.date ?? "",
+                  value: t.value ?? 0,
+                  latency: t.latency ?? 0,
+                  count: t.count ?? 0,
+                }))}
+              />
+            )}
           </>
         )}
       </div>

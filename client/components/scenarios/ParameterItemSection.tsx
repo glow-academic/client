@@ -225,7 +225,7 @@ export function ParameterItemSection({
             onParameterItemIdsChange={onFieldIdsChange}
             disabled={isReadonly || disabled}
             showSelected={showSelected}
-            onShowSelectedChange={onShowSelectedChange}
+            {...(onShowSelectedChange ? { onShowSelectedChange } : {})}
           />
         </div>
       </CardContent>

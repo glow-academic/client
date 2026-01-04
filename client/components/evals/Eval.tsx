@@ -15,20 +15,17 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // UI Components
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ModelRunCardGrid } from "@/components/common/evals/ModelRunCardGrid";
 import { GroupCardGrid } from "@/components/common/evals/GroupCardGrid";
@@ -39,9 +36,8 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Check, Plus, Power, X, Zap, Users } from "lucide-react";
+import { Power, Zap, Users } from "lucide-react";
 import {
-  parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
   useQueryStates,
@@ -390,7 +386,7 @@ function EvalComponent({
           // Convert arrays to single values (for backward compatibility)
           const converted: Record<string, string> = {};
           Object.entries(parsed as Record<string, string | string[]>).forEach(([role, value]) => {
-            if (Array.isArray(value) && value.length > 0) {
+            if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
               converted[role] = value[0]; // Take first agent if array
             } else if (typeof value === "string") {
               converted[role] = value;
@@ -436,10 +432,10 @@ function EvalComponent({
       description: data.description || "",
       active: data.active ?? true,
       dynamic: data.dynamic ?? false,
-      use_groups: data.use_groups ?? false,
+      use_groups: ("use_groups" in data && data.use_groups !== undefined ? data.use_groups : false) ?? false,
       departmentIds: data.department_ids || defaultDepartmentIds || [],
       agentSelectionsByRole,
-      modelRunIds: data.model_run_ids || [],
+      modelRunIds: ("model_run_ids" in data && data.model_run_ids ? data.model_run_ids : []) || [],
       groupIds: [], // TODO: Extract when groups are implemented
       agentSettings,
     };
@@ -831,8 +827,8 @@ function EvalComponent({
         draftUpdates.active = evalDetailData.active ?? true;
       if (evalDetailData.dynamic !== undefined)
         draftUpdates.dynamic = evalDetailData.dynamic ?? false;
-      if (evalDetailData.use_groups !== undefined)
-        draftUpdates.use_groups = evalDetailData.use_groups ?? false;
+      if ("use_groups" in evalDetailData && evalDetailData.use_groups !== undefined)
+        draftUpdates.use_groups = (evalDetailData as { use_groups?: boolean }).use_groups ?? false;
       if (deptIds.length > 0) draftUpdates["departmentIds"] = deptIds;
       if (Object.keys(agentSelectionsByRole).length > 0) draftUpdates["agentSelectionsByRole"] = agentSelectionsByRole;
       if (modelRunIds.length > 0) draftUpdates["modelRunIds"] = modelRunIds;
@@ -1004,19 +1000,16 @@ function EvalComponent({
         ? ((formData["groupIds"] as string[] | null | undefined) || []).length > 0
         : ((formData["modelRunIds"] as string[] | null | undefined) || []).length > 0;
       
-      // Check if agents are selected (across all roles) - single-select
-      const agentSelectionsByRole = (formData["agentSelectionsByRole"] as Record<string, string> | null | undefined) || {};
-      const uniqueAgentIds = Object.values(agentSelectionsByRole).filter((id): id is string => !!id);
-      const hasAgents = uniqueAgentIds.length > 0;
-      
-      const agentSettings = (formData["agentSettings"] as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }> | null | undefined) || {};
-      
-      // Check if agents have rubric/agent settings configured
-      const hasAgentRubricSettings = hasAgents && Object.keys(agentSettings).length > 0 &&
-        uniqueAgentIds.every((agentId) => {
-          const settings = agentSettings[agentId] || {};
-          return (settings.rubric_ids?.length || 0) > 0 && (settings.grade_agent_ids?.length || 0) > 0;
-        });
+      // Note: agentSelectionsByRole, uniqueAgentIds, hasAgents and agentSettings are computed but not currently used - kept for future use
+      // const agentSelectionsByRole = (formData["agentSelectionsByRole"] as Record<string, string> | null | undefined) || {};
+      // const uniqueAgentIds = Object.values(agentSelectionsByRole).filter((id): id is string => !!id);
+      // const hasAgents = uniqueAgentIds.length > 0;
+      // const agentSettings = (formData["agentSettings"] as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }> | null | undefined) || {};
+      // const hasAgentRubricSettings = hasAgents && Object.keys(agentSettings).length > 0 &&
+      //   uniqueAgentIds.every((agentId) => {
+      //     const settings = agentSettings[agentId] || {};
+      //     return (settings.rubric_ids?.length || 0) > 0 && (settings.grade_agent_ids?.length || 0) > 0;
+      // });
 
       switch (stepId) {
         case "basic":
@@ -1228,7 +1221,7 @@ function EvalComponent({
                           departmentIds: ids.length > 0 ? ids : null,
                         })
                       }
-                      getId={(dept) => dept.department_id}
+                      getId={(dept) => dept.department_id || ""}
                       getLabel={(dept) => dept.name || ""}
                       getSearchText={(dept) =>
                         `${dept.name} ${dept.description || ""}`
@@ -1329,8 +1322,7 @@ function EvalComponent({
                             | boolean
                             | null
                             | undefined) ??
-                          (evalData as { use_groups?: boolean })?.use_groups ??
-                          false
+                          ("use_groups" in (evalData || {}) && (evalData as { use_groups?: boolean }).use_groups !== undefined ? (evalData as { use_groups?: boolean }).use_groups : false) ?? false
                         }
                         onCheckedChange={(checked) =>
                           setStepFormData({ use_groups: checked })
@@ -1388,7 +1380,7 @@ function EvalComponent({
                     setStepFormData({ modelRunIds: ids.length > 0 ? ids : null });
                   }}
                   readonly={isReadonly}
-                  evalId={evalId || undefined}
+                  {...(evalId ? { evalId } : {})}
                 />
               )}
             </StepCard>
@@ -1434,7 +1426,7 @@ function EvalComponent({
                     setStepFormData({ groupIds: ids.length > 0 ? ids : null });
                   }}
                     readonly={isReadonly}
-                  evalId={evalId || undefined}
+                  {...(evalId ? { evalId } : {})}
                 />
               )}
             </StepCard>
@@ -1523,7 +1515,7 @@ function EvalComponent({
                             ...prev,
                             agentSelectionsByRole: {
                               ...prev.agentSelectionsByRole,
-                              [role]: ids.length > 0 ? ids[0] : "",
+                              [role]: ids.length > 0 && ids[0] ? ids[0] : "",
                             },
                           }));
                         }}
@@ -1657,7 +1649,7 @@ function EvalComponent({
                                 };
                               });
                             }}
-                            getId={(item) => item.rubric_id}
+                            getId={(item) => item.rubric_id || ""}
                             getLabel={(item) => item.name || ""}
                             getSearchText={(item) =>
                               `${item.name} ${item.description || ""}`
@@ -1689,7 +1681,7 @@ function EvalComponent({
                                 },
                               }));
                             }}
-                            getId={(item) => item.agent_id}
+                            getId={(item) => item.agent_id || ""}
                             getLabel={(item) => item.name || ""}
                             getSearchText={(item) =>
                               `${item.name} ${item.description || ""}`

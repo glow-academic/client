@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
+    "description": "Auto-generated OpenAPI schema",
     "version": "0.1.0"
   },
   "paths": {
@@ -80,11 +80,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/update": {
@@ -161,11 +157,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/create": {
@@ -242,11 +234,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/delete": {
@@ -323,11 +311,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/upsert": {
@@ -404,11 +388,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/new": {
@@ -485,11 +465,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/email": {
@@ -566,11 +542,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/context": {
@@ -647,11 +619,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/emulate": {
@@ -728,11 +696,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/simulatable": {
@@ -809,11 +773,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/list": {
@@ -890,11 +850,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/detail": {
@@ -971,11 +927,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/new": {
@@ -1052,11 +1004,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/create": {
@@ -1133,11 +1081,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/update": {
@@ -1214,11 +1158,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/duplicate": {
@@ -1295,11 +1235,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/delete": {
@@ -1376,11 +1312,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/draft": {
@@ -1457,11 +1389,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/simulations/list": {
@@ -1538,11 +1466,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/detail": {
@@ -1619,11 +1543,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/new": {
@@ -1700,11 +1620,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/create": {
@@ -1781,11 +1697,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/update": {
@@ -1862,11 +1774,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/duplicate": {
@@ -1943,11 +1851,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/delete": {
@@ -2024,11 +1928,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/draft": {
@@ -2105,11 +2005,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/personas/list": {
@@ -2186,11 +2082,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/detail": {
@@ -2267,11 +2159,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/new": {
@@ -2348,11 +2236,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/create": {
@@ -2429,11 +2313,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/update": {
@@ -2510,11 +2390,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/duplicate": {
@@ -2591,11 +2467,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/delete": {
@@ -2672,11 +2544,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/draft": {
@@ -2753,11 +2621,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/auth/list": {
@@ -2834,11 +2698,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/detail": {
@@ -2915,11 +2775,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/new": {
@@ -2996,11 +2852,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/create": {
@@ -3077,11 +2929,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/update": {
@@ -3158,11 +3006,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/duplicate": {
@@ -3239,11 +3083,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/delete": {
@@ -3320,11 +3160,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/draft": {
@@ -3401,11 +3237,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/login": {
@@ -3482,11 +3314,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/departments/list": {
@@ -3563,11 +3391,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/detail": {
@@ -3644,11 +3468,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/new": {
@@ -3725,11 +3545,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/create": {
@@ -3806,11 +3622,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/update": {
@@ -3887,11 +3699,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/duplicate": {
@@ -3968,11 +3776,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/delete": {
@@ -4049,11 +3853,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/draft": {
@@ -4130,11 +3930,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/list": {
@@ -4211,11 +4007,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/detail": {
@@ -4292,11 +4084,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/new": {
@@ -4373,11 +4161,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/duplicate": {
@@ -4454,11 +4238,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/leave": {
@@ -4535,11 +4315,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/create": {
@@ -4616,11 +4392,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/update": {
@@ -4697,11 +4469,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/delete": {
@@ -4778,11 +4546,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/search": {
@@ -4859,11 +4623,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/draft": {
@@ -4940,11 +4700,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/documents/list": {
@@ -5021,11 +4777,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/detail": {
@@ -5102,11 +4854,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/create": {
@@ -5183,11 +4931,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/delete": {
@@ -5264,11 +5008,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/update": {
@@ -5345,11 +5085,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/certificate": {
@@ -5424,11 +5160,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents_render": {
@@ -5507,11 +5239,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/draft": {
@@ -5588,11 +5316,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/evals/create": {
@@ -5669,11 +5393,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/delete": {
@@ -5750,11 +5470,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/detail": {
@@ -5831,11 +5547,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/list": {
@@ -5912,11 +5624,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/new": {
@@ -5993,11 +5701,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/update": {
@@ -6074,11 +5778,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/draft": {
@@ -6155,11 +5855,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/list": {
@@ -6236,11 +5932,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/detail": {
@@ -6317,11 +6009,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/new": {
@@ -6398,11 +6086,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/duplicate": {
@@ -6479,11 +6163,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/create": {
@@ -6560,11 +6240,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/update": {
@@ -6641,11 +6317,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/delete": {
@@ -6722,11 +6394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/draft": {
@@ -6803,11 +6471,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/settings/list": {
@@ -6884,11 +6548,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/detail": {
@@ -6965,11 +6625,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/update": {
@@ -7046,11 +6702,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/draft": {
@@ -7127,11 +6779,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/analytics/refresh": {
@@ -7208,11 +6856,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v4/analytics/view": {
@@ -7289,11 +6933,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v4/activity/bundle": {
@@ -7370,11 +7010,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/activity/list": {
@@ -7451,11 +7087,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/dashboard/overview": {
@@ -7532,11 +7164,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/dashboard/history": {
@@ -7613,11 +7241,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/reports/export": {
@@ -7693,12 +7317,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/reports": {
@@ -7775,11 +7394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/reports/overview": {
@@ -7856,11 +7471,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/reports/history": {
@@ -7937,11 +7548,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/leaderboard/bundle": {
@@ -8018,11 +7625,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v4/agents/list": {
@@ -8099,11 +7702,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/detail": {
@@ -8180,11 +7779,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/new": {
@@ -8261,11 +7856,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/create": {
@@ -8342,11 +7933,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/update": {
@@ -8423,11 +8010,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/duplicate": {
@@ -8504,11 +8087,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/delete": {
@@ -8585,11 +8164,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/draft": {
@@ -8666,11 +8241,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/keys/list": {
@@ -8747,11 +8318,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/keys/detail": {
@@ -8828,11 +8395,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/keys/new": {
@@ -8909,11 +8472,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/keys/create": {
@@ -8990,11 +8549,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/keys/update": {
@@ -9071,11 +8626,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/keys/delete": {
@@ -9152,11 +8703,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/keys/decrypt": {
@@ -9233,11 +8780,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/keys/draft": {
@@ -9314,11 +8857,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/models/list": {
@@ -9395,11 +8934,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/detail": {
@@ -9476,11 +9011,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/new": {
@@ -9557,11 +9088,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/create": {
@@ -9638,11 +9165,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/update": {
@@ -9719,11 +9242,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/delete": {
@@ -9800,11 +9319,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/duplicate": {
@@ -9881,11 +9396,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/draft": {
@@ -9962,11 +9473,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/providers/list": {
@@ -10043,11 +9550,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/detail": {
@@ -10124,11 +9627,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/new": {
@@ -10205,11 +9704,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/create": {
@@ -10286,11 +9781,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/update": {
@@ -10367,11 +9858,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/delete": {
@@ -10448,11 +9935,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/draft": {
@@ -10529,11 +10012,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/parameters/list": {
@@ -10610,11 +10089,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/detail": {
@@ -10691,11 +10166,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/new": {
@@ -10772,11 +10243,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/create": {
@@ -10853,11 +10320,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/update": {
@@ -10934,11 +10397,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/duplicate": {
@@ -11015,11 +10474,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/delete": {
@@ -11096,11 +10551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/draft": {
@@ -11177,11 +10628,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/fields/list": {
@@ -11258,11 +10705,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/detail": {
@@ -11339,11 +10782,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/new": {
@@ -11420,11 +10859,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/create": {
@@ -11501,11 +10936,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/update": {
@@ -11582,11 +11013,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/duplicate": {
@@ -11663,11 +11090,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/delete": {
@@ -11744,11 +11167,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/draft": {
@@ -11825,11 +11244,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/feedback/create": {
@@ -11906,11 +11321,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v4/feedback/list": {
@@ -11987,11 +11398,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v4/feedback/resolve": {
@@ -12068,11 +11475,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v4/health/bundle": {
@@ -12149,11 +11552,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/attempts/archive": {
@@ -12230,11 +11629,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/attempts/draft": {
@@ -12311,11 +11706,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/attempts/simulation": {
@@ -12392,11 +11783,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/attempts/eval": {
@@ -12473,11 +11860,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/prompts/delete": {
@@ -12554,11 +11937,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "prompts"
-        ]
+        }
       }
     },
     "/api/v4/staff/list": {
@@ -12635,11 +12014,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/detail": {
@@ -12716,11 +12091,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/new": {
@@ -12797,11 +12168,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/draft": {
@@ -12878,11 +12245,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/search": {
@@ -12959,11 +12322,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/csv": {
@@ -13040,11 +12399,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/data/create": {
@@ -13121,11 +12476,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/create": {
@@ -13202,11 +12553,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/update": {
@@ -13283,11 +12630,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/delete": {
@@ -13364,11 +12707,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/upsert": {
@@ -13445,11 +12784,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/benchmark/bundle": {
@@ -13526,11 +12861,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/home/overview": {
@@ -13607,11 +12938,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/home/history": {
@@ -13688,11 +13015,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/practice/overview": {
@@ -13769,11 +13092,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/practice/history": {
@@ -13850,11 +13169,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/practice/draft": {
@@ -13931,11 +13246,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/pricing/analytics": {
@@ -14012,11 +13323,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/pricing/runs": {
@@ -14093,11 +13400,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/pricing/detail": {
@@ -14174,11 +13477,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/uploads/upload": {
@@ -14243,11 +13542,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -14310,11 +13605,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/upload/{upload_id}": {
@@ -14388,11 +13679,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "head": {
         "tags": [
@@ -14464,11 +13751,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -14540,11 +13823,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/upload/{upload_id}/finalize": {
@@ -14620,11 +13899,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/download/{upload_id}": {
@@ -14710,11 +13985,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/socket/v4/client/connect": {
@@ -14741,11 +14012,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/disconnect": {
@@ -14772,11 +14039,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/log": {
@@ -14823,11 +14086,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/simulations/start": {
@@ -14876,13 +14135,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/simulations/debug": {
@@ -14931,13 +14184,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/simulations/delta": {
@@ -14986,13 +14233,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/simulations/done": {
@@ -15041,13 +14282,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/simulations/audio_link": {
@@ -15096,13 +14331,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/scenarios/generate": {
@@ -15151,13 +14380,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/scenarios/randomize": {
@@ -15206,13 +14429,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/scenarios/regenerate": {
@@ -15261,13 +14478,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/documents/generate": {
@@ -15316,13 +14527,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/videos/generate": {
@@ -15371,13 +14576,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/images/generate": {
@@ -15426,13 +14625,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/rubrics/generate": {
@@ -15481,13 +14674,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/rubrics/regenerate": {
@@ -15536,13 +14723,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/classify/classify": {
@@ -15591,13 +14772,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/hints/generate": {
@@ -15646,13 +14821,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/grades/start": {
@@ -15701,13 +14870,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/grades/generate": {
@@ -15756,13 +14919,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/members/generate": {
@@ -15811,13 +14968,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/agents/members/progress": {
@@ -15866,13 +15017,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/enter": {
@@ -15920,12 +15065,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/join": {
@@ -15973,12 +15113,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/leave": {
@@ -16026,12 +15161,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/start": {
@@ -16079,12 +15209,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/end": {
@@ -16132,12 +15257,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/next": {
@@ -16185,12 +15305,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/advance": {
@@ -16238,12 +15353,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/stop": {
@@ -16291,12 +15401,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/voice_stop": {
@@ -16344,12 +15449,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/enter": {
@@ -16397,12 +15497,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/join": {
@@ -16450,12 +15545,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/leave": {
@@ -16503,12 +15593,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -16556,12 +15641,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/advance": {
@@ -16609,12 +15689,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/stop": {
@@ -16662,12 +15737,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/next": {
@@ -16715,12 +15785,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/end": {
@@ -16768,12 +15833,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/run_start": {
@@ -16821,12 +15881,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/runs_start_all": {
@@ -16874,12 +15929,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -16926,11 +15976,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/simulation_text_complete": {
@@ -16979,13 +16025,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/simulation_text_error": {
@@ -17034,13 +16074,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/simulation_text_progress": {
@@ -17089,13 +16123,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/eval": {
@@ -17144,13 +16172,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/debug_info": {
@@ -17200,14 +16222,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/debug_info_complete": {
@@ -17257,14 +16272,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/debug_info_error": {
@@ -17314,14 +16322,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/debug_info_progress": {
@@ -17371,14 +16372,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/eval": {
@@ -17428,14 +16422,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/speak_tool": {
@@ -17485,14 +16472,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/speak_complete": {
@@ -17542,14 +16522,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/speak_error": {
@@ -17599,14 +16572,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tools/speak_progress": {
@@ -17656,14 +16622,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/start_response": {
@@ -17712,13 +16671,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/start_error": {
@@ -17767,13 +16720,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/simulation_voice_complete": {
@@ -17822,13 +16769,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/simulation_voice_error": {
@@ -17877,13 +16818,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/debug_error": {
@@ -17932,13 +16867,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/tool_call_error": {
@@ -17987,13 +16916,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/simulations/audio_link_error": {
@@ -18042,13 +16965,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/generation_progress": {
@@ -18097,13 +17014,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/generation_complete": {
@@ -18152,13 +17063,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/generation_error": {
@@ -18207,13 +17112,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/scenario_complete": {
@@ -18262,13 +17161,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/scenario_error": {
@@ -18317,13 +17210,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/scenario_progress": {
@@ -18372,13 +17259,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/eval": {
@@ -18427,13 +17308,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/debug_info": {
@@ -18483,14 +17358,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/debug_info_complete": {
@@ -18540,14 +17408,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/debug_info_error": {
@@ -18597,14 +17458,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/debug_info_progress": {
@@ -18654,14 +17508,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/eval": {
@@ -18711,14 +17558,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/document_complete": {
@@ -18768,14 +17608,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/document_error": {
@@ -18825,14 +17658,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/document_progress": {
@@ -18882,14 +17708,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/image_complete": {
@@ -18939,14 +17758,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/image_error": {
@@ -18996,14 +17808,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/image_progress": {
@@ -19053,14 +17858,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/objectives_complete": {
@@ -19110,14 +17908,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/objectives_error": {
@@ -19167,14 +17958,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/objectives_progress": {
@@ -19224,14 +18008,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/questions_complete": {
@@ -19281,14 +18058,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/questions_error": {
@@ -19338,14 +18108,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/questions_progress": {
@@ -19395,14 +18158,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/title_description": {
@@ -19452,14 +18208,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/title_description_complete": {
@@ -19509,14 +18258,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/title_description_error": {
@@ -19566,14 +18308,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/title_description_progress": {
@@ -19623,14 +18358,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/scenario_tool_title_complete": {
@@ -19680,14 +18408,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/scenario_tool_title_error": {
@@ -19737,14 +18458,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/scenario_tool_title_progress": {
@@ -19794,14 +18508,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/video_complete": {
@@ -19851,14 +18558,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/video_error": {
@@ -19908,14 +18608,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/scenarios/tools/video_progress": {
@@ -19965,14 +18658,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/document_complete": {
@@ -20021,13 +18707,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/document_error": {
@@ -20076,13 +18756,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/document_progress": {
@@ -20131,13 +18805,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/eval": {
@@ -20186,13 +18854,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/document_tool_title_complete": {
@@ -20242,14 +18904,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/document_tool_title_error": {
@@ -20299,14 +18954,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/document_tool_title_progress": {
@@ -20356,14 +19004,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/eval": {
@@ -20413,14 +19054,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/document_tool_debug": {
@@ -20470,14 +19104,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/debug_info_complete": {
@@ -20527,14 +19154,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/debug_info_error": {
@@ -20584,14 +19204,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/documents/tools/debug_info_progress": {
@@ -20641,14 +19254,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/generation_progress": {
@@ -20697,13 +19303,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/generation_complete": {
@@ -20752,13 +19352,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/generation_error": {
@@ -20807,13 +19401,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/video_complete": {
@@ -20862,13 +19450,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/video_error": {
@@ -20917,13 +19499,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/video_progress": {
@@ -20972,13 +19548,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/eval": {
@@ -21027,13 +19597,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/video_tool_title_complete": {
@@ -21083,14 +19647,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/video_tool_title_error": {
@@ -21140,14 +19697,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/video_tool_title_progress": {
@@ -21197,14 +19747,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/eval": {
@@ -21254,14 +19797,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/debug_info": {
@@ -21311,14 +19847,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/debug_info_complete": {
@@ -21368,14 +19897,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/debug_info_error": {
@@ -21425,14 +19947,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/videos/tools/debug_info_progress": {
@@ -21482,14 +19997,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/generation_complete": {
@@ -21538,13 +20046,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/generation_error": {
@@ -21593,13 +20095,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/generation_progress": {
@@ -21648,13 +20144,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/eval": {
@@ -21703,13 +20193,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/debug_info": {
@@ -21759,14 +20243,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/debug_info_complete": {
@@ -21816,14 +20293,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/debug_info_error": {
@@ -21873,14 +20343,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/debug_info_progress": {
@@ -21930,14 +20393,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/eval": {
@@ -21987,14 +20443,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/image_tool_title_complete": {
@@ -22044,14 +20493,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/image_tool_title_error": {
@@ -22101,14 +20543,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/images/tools/image_tool_title_progress": {
@@ -22158,14 +20593,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/generation_complete": {
@@ -22214,13 +20642,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/generation_error": {
@@ -22269,13 +20691,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/generation_progress": {
@@ -22324,13 +20740,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/eval": {
@@ -22379,13 +20789,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_complete": {
@@ -22435,14 +20839,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_error": {
@@ -22492,14 +20889,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_progress": {
@@ -22549,14 +20939,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/eval": {
@@ -22606,14 +20989,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/debug_info": {
@@ -22663,14 +21039,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/debug_info_complete": {
@@ -22720,14 +21089,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/debug_info_error": {
@@ -22777,14 +21139,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/debug_info_progress": {
@@ -22834,14 +21189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/rubric_tool_standard_description": {
@@ -22891,14 +21239,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/standard_description_complete": {
@@ -22948,14 +21289,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/standard_description_error": {
@@ -23005,14 +21339,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/rubrics/tools/standard_description_progress": {
@@ -23062,14 +21389,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/classification_progress": {
@@ -23118,13 +21438,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/classification_complete": {
@@ -23173,13 +21487,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/classification_error": {
@@ -23228,13 +21536,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/classify_complete": {
@@ -23283,13 +21585,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/classify_error": {
@@ -23338,13 +21634,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/classify_progress": {
@@ -23393,13 +21683,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/eval": {
@@ -23448,13 +21732,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/debug_info": {
@@ -23504,14 +21782,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/debug_info_complete": {
@@ -23561,14 +21832,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/debug_info_error": {
@@ -23618,14 +21882,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/debug_info_progress": {
@@ -23675,14 +21932,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/eval": {
@@ -23732,14 +21982,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/classification_tool": {
@@ -23789,14 +22032,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/classification_complete": {
@@ -23846,14 +22082,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/classification_error": {
@@ -23903,14 +22132,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/classify/tools/classification_progress": {
@@ -23960,14 +22182,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/generation_progress": {
@@ -24016,13 +22231,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/hint_complete": {
@@ -24071,13 +22280,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/hint_error": {
@@ -24126,13 +22329,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/hint_progress": {
@@ -24181,13 +22378,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/eval": {
@@ -24236,13 +22427,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/hint_tool_debug": {
@@ -24292,14 +22477,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/debug_info_complete": {
@@ -24349,14 +22527,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/debug_info_error": {
@@ -24406,14 +22577,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/debug_info_progress": {
@@ -24463,14 +22627,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/eval": {
@@ -24520,14 +22677,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/hint_tool": {
@@ -24577,14 +22727,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/hint_complete": {
@@ -24634,14 +22777,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/hint_error": {
@@ -24691,14 +22827,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/hints/tools/hint_progress": {
@@ -24748,14 +22877,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/progress": {
@@ -24804,13 +22926,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/grade_text_complete": {
@@ -24859,13 +22975,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/grade_text_error": {
@@ -24914,13 +23024,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/grade_text_progress": {
@@ -24969,13 +23073,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/eval": {
@@ -25024,13 +23122,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/audio_complete": {
@@ -25080,14 +23172,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/audio_error": {
@@ -25137,14 +23222,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/audio_progress": {
@@ -25194,14 +23272,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/eval": {
@@ -25251,14 +23322,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/message_improvement_complete": {
@@ -25308,14 +23372,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/message_improvement_error": {
@@ -25365,14 +23422,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/message_improvement_progress": {
@@ -25422,14 +23472,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/message_strength_complete": {
@@ -25479,14 +23522,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/message_strength_error": {
@@ -25536,14 +23572,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/message_strength_progress": {
@@ -25593,14 +23622,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/feedback_complete": {
@@ -25650,14 +23672,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/feedback_error": {
@@ -25707,14 +23722,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/feedback_progress": {
@@ -25764,14 +23772,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/debug_info": {
@@ -25821,14 +23822,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/debug_info_complete": {
@@ -25878,14 +23872,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/debug_info_error": {
@@ -25935,14 +23922,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/tools/debug_info_progress": {
@@ -25992,14 +23972,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/generation_progress": {
@@ -26048,13 +24021,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/generation_complete": {
@@ -26103,13 +24070,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/generation_error": {
@@ -26158,13 +24119,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/audio_complete": {
@@ -26213,13 +24168,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/audio_error": {
@@ -26268,13 +24217,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/grades/audio_progress": {
@@ -26323,13 +24266,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/generate_error": {
@@ -26378,13 +24315,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/member_complete": {
@@ -26433,13 +24364,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/member_error": {
@@ -26488,13 +24413,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/eval": {
@@ -26543,13 +24462,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/progress_error": {
@@ -26598,13 +24511,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/tools/conversation_end": {
@@ -26654,14 +24561,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/tools/conversation_end_complete": {
@@ -26711,14 +24611,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/tools/conversation_end_error": {
@@ -26768,14 +24661,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/tools/conversation_end_progress": {
@@ -26825,14 +24711,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agents/members/tools/eval": {
@@ -26882,14 +24761,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/enter_response": {
@@ -26937,12 +24809,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/enter_error": {
@@ -26990,12 +24857,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/joined": {
@@ -27043,12 +24905,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/join_error": {
@@ -27096,12 +24953,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/leave_error": {
@@ -27149,12 +25001,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/start_error": {
@@ -27202,12 +25049,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/started": {
@@ -27255,12 +25097,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_error": {
@@ -27308,12 +25145,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/ended": {
@@ -27361,12 +25193,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_all_started": {
@@ -27414,12 +25241,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_chat_started": {
@@ -27467,12 +25289,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_all_completed": {
@@ -27520,12 +25337,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/next_error": {
@@ -27573,12 +25385,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/advance_error": {
@@ -27626,12 +25433,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/advanced": {
@@ -27679,12 +25481,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/stopped": {
@@ -27732,12 +25529,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/message_cancelled": {
@@ -27785,12 +25577,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/stop_error": {
@@ -27838,12 +25625,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/voice_stop_response": {
@@ -27891,12 +25673,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/voice_stop_error": {
@@ -27944,12 +25721,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/enter_response": {
@@ -27997,12 +25769,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/enter_error": {
@@ -28050,12 +25817,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/joined": {
@@ -28103,12 +25865,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/join_error": {
@@ -28156,12 +25913,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/leave_error": {
@@ -28209,12 +25961,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/advance_error": {
@@ -28262,12 +26009,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/advanced": {
@@ -28315,12 +26057,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/stopped": {
@@ -28368,12 +26105,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/stop_error": {
@@ -28421,12 +26153,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/completed": {
@@ -28474,12 +26201,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/end_error": {
@@ -28527,12 +26249,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/run_started": {
@@ -28580,12 +26297,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/run_start_error": {
@@ -28633,12 +26345,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_started": {
@@ -28686,12 +26393,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_error": {
@@ -28739,12 +26441,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/": {

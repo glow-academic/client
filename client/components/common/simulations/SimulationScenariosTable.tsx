@@ -76,8 +76,8 @@ export interface SimulationScenariosTableProps {
         string,
         { name: string; description: string; color?: string }
       >;
-      document_mapping?: Record<string, unknown>;
-      parameter_item_mapping?: Record<string, unknown>;
+      document_mapping?: Record<string, { name?: string; description?: string }>;
+      parameter_item_mapping?: Record<string, { name?: string; parameter_name?: string; description?: string }>;
       parameter_item_ids?: string[];
       document_ids?: string[];
     }

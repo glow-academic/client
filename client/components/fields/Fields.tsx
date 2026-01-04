@@ -247,7 +247,7 @@ export default function Fields({
     try {
       await deleteFieldAction({
         body: {
-          fieldId: deleteItem.id,
+          field_id: deleteItem.id,
         },
       });
       // profileId comes from X-Profile-Id header automatically
@@ -276,7 +276,7 @@ export default function Fields({
     try {
       await duplicateFieldAction({
         body: {
-          fieldId,
+          field_id: fieldId,
         },
       });
       // profileId comes from X-Profile-Id header automatically
@@ -341,8 +341,11 @@ export default function Fields({
                   variant="outline"
                   size="sm"
                   data-testid={`edit-${field.field_id}`}
-                  onClick={() => handleEdit(field.field_id)}
-                  aria-label={`Edit ${field.name}`}
+                  onClick={() => {
+                    const fieldId = field.field_id;
+                    if (fieldId) handleEdit(fieldId);
+                  }}
+                  aria-label={`Edit ${field.name ?? ""}`}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -351,7 +354,11 @@ export default function Fields({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDuplicate(field.field_id, field.name)}
+                  onClick={() => {
+                    const fieldId = field.field_id;
+                    const fieldName = field.name ?? "";
+                    if (fieldId) handleDuplicate(fieldId, fieldName);
+                  }}
                   disabled={isDuplicating === field.field_id}
                   aria-label={`Duplicate ${field.name}`}
                   data-testid="btn-duplicate-field"
@@ -368,7 +375,11 @@ export default function Fields({
                   variant="outline"
                   size="sm"
                   data-testid={`delete-${field.field_id}`}
-                  onClick={() => handleDeleteClick(field.field_id, field.name)}
+                  onClick={() => {
+                    const fieldId = field.field_id;
+                    const fieldName = field.name ?? "";
+                    if (fieldId) handleDeleteClick(fieldId, fieldName);
+                  }}
                   aria-label={`Delete ${field.name}`}
                 >
                   <Trash2 className="h-4 w-4" />

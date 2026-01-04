@@ -75,13 +75,14 @@ export default function Evals({
   // Use server-provided data directly
   const evalsData = serverListData;
 
-  // Extract data from response
-  const [evalsList, setEvalsList] = useState<EvalsListOut["evals"]>(
-    evalsData?.evals || [],
+  // Extract data from response - ensure it's always an array
+  const [evalsList, setEvalsList] = useState<NonNullable<EvalsListOut["evals"]>>(
+    Array.isArray(evalsData?.evals) ? evalsData.evals : [],
   );
 
   useEffect(() => {
-    setEvalsList(evalsData?.evals || []);
+    const evalsArray = Array.isArray(evalsData?.evals) ? evalsData.evals : [];
+    setEvalsList(evalsArray);
   }, [evalsData?.evals]);
 
   // Build agent options from mapping
@@ -109,7 +110,7 @@ export default function Evals({
       message: string;
     }) => {
       setEvalsList((prev) =>
-        prev.map((evalItem) =>
+        (prev || []).map((evalItem) =>
           evalItem.eval_id === data.eval_id
             ? { ...evalItem, status: data.status }
             : evalItem,
@@ -122,7 +123,7 @@ export default function Evals({
       message: string;
     }) => {
       setEvalsList((prev) =>
-        prev.map((evalItem) =>
+        (prev || []).map((evalItem) =>
           evalItem.eval_id === data.eval_id
             ? { ...evalItem, status: "completed" }
             : evalItem,
@@ -136,7 +137,7 @@ export default function Evals({
       stopped_count: number;
     }) => {
       setEvalsList((prev) =>
-        prev.map((evalItem) =>
+        (prev || []).map((evalItem) =>
           evalItem.eval_id === data.eval_id
             ? { ...evalItem, status: data.success ? "completed" : "pending" }
             : evalItem,
@@ -174,8 +175,11 @@ export default function Evals({
     }
   };
 
+  // Ensure evalsList is always an array for type safety
+  const evalsListArray = Array.isArray(evalsList) ? evalsList : [];
+
   // Define table columns inline
-  const columns: ColumnDef<(typeof evalsList)[number]>[] = useMemo(
+  const columns: ColumnDef<(typeof evalsListArray)[number]>[] = useMemo(
     () => [
       {
         accessorKey: "name",
@@ -188,7 +192,10 @@ export default function Evals({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof evalsList)[number]) => row.agent_id || "",
+        accessorFn: (row: (typeof evalsListArray)[number]) => {
+          const agentIds = row.agent_ids;
+          return Array.isArray(agentIds) && agentIds.length > 0 ? agentIds[0] ?? "" : "";
+        },
         filterFn: (row, _id, value: string[]) => {
           const rowId = row.getValue("agent_id") as string;
           if (value.length === 0) return true;
@@ -202,7 +209,7 @@ export default function Evals({
 
   // Create table instance
   const table = useReactTable({
-    data: evalsList,
+    data: evalsListArray,
     columns,
     state: {
       sorting,
@@ -236,7 +243,7 @@ export default function Evals({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, columnFiltersKey, evalsList.length, pageIndex, pageSize]);
+  }, [sortingKey, columnFiltersKey, evalsListArray.length, pageIndex, pageSize]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -265,23 +272,30 @@ export default function Evals({
     }
   };
 
-  const renderEvalCard = (evalItem: (typeof evalsList)[number]) => (
+  const renderEvalCard = (evalItem: (typeof evalsListArray)[number]) => {
+    const evalId = evalItem.eval_id ?? "";
+    const evalName = evalItem.name ?? "";
+    const evalStatus = evalItem.status ?? "";
+    
+    if (!evalId) return null;
+    
+    return (
     <Card
-      key={evalItem.eval_id}
+      key={evalId}
       className="hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => router.push(`/engine/evals/e/${evalItem.eval_id}`)}
+      onClick={() => router.push(`/engine/evals/e/${evalId}`)}
       data-testid="eval-card"
-      data-eval-id={evalItem.eval_id}
+      data-eval-id={evalId}
     >
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{evalItem.name}</CardTitle>
+            <CardTitle className="text-lg truncate">{evalName}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {evalItem.description}
+              {evalItem.description ?? ""}
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              {getStatusBadge(evalItem.status)}
+              {getStatusBadge(evalStatus)}
               <Badge variant="outline">
                 {evalItem.total_runs}{" "}
                 {evalItem.total_runs === 1 ? "run" : "runs"}
@@ -297,7 +311,8 @@ export default function Evals({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/engine/evals/e/${evalItem.eval_id}`);
+                const evalId = evalItem.eval_id ?? "";
+                if (evalId) router.push(`/engine/evals/e/${evalId}`);
               }}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -309,8 +324,12 @@ export default function Evals({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setDeleteItem({ id: evalItem.eval_id, name: evalItem.name });
-                  setShowDeleteDialog(true);
+                  const evalId = evalItem.eval_id ?? "";
+                  const evalName = evalItem.name ?? "";
+                  if (evalId) {
+                    setDeleteItem({ id: evalId, name: evalName });
+                    setShowDeleteDialog(true);
+                  }
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -320,7 +339,8 @@ export default function Evals({
         </div>
       </CardHeader>
     </Card>
-  );
+    );
+  };
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
@@ -329,7 +349,7 @@ export default function Evals({
 
   return (
     <div className="space-y-6" data-page="evals-index">
-      {evalsList.length === 0 ? (
+      {evalsListArray.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground">No evals found</p>
         </div>

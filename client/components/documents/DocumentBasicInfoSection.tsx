@@ -10,10 +10,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import type { components } from "@/lib/api/schema";
+import type { DocumentDetailOut } from "@/app/(main)/management/documents/d/[documentId]/page";
 
-type DepartmentMappingItem =
-  components["schemas"]["app__api__v4__documents__detail__DepartmentMappingItem"];
+type DepartmentMappingItem = NonNullable<
+  NonNullable<DocumentDetailOut["departments"]>[number]
+>;
 
 export interface DocumentBasicInfoSectionProps {
   // Data

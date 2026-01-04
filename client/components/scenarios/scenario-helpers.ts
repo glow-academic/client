@@ -180,8 +180,8 @@ export function buildSearchParams({
   const serverCurrentValues = scenarioData as ScenarioNewOut | undefined;
 
   // Persona ranges - compare against server's current values
-  const serverPersonaMin = serverCurrentValues?.persona_min ?? 1;
-  const serverPersonaMax = serverCurrentValues?.persona_max ?? 1;
+  const serverPersonaMin = serverCurrentValues?.persona_range_min ?? 1;
+  const serverPersonaMax = serverCurrentValues?.persona_range_max ?? 1;
   if (
     personaMinMax.min !== serverPersonaMin ||
     personaMinMax.max !== serverPersonaMax
@@ -191,8 +191,8 @@ export function buildSearchParams({
   }
 
   // Document ranges - compare against server's current values
-  const serverDocumentMin = serverCurrentValues?.document_min ?? 0;
-  const serverDocumentMax = serverCurrentValues?.document_max ?? 1;
+  const serverDocumentMin = serverCurrentValues?.document_range_min ?? 0;
+  const serverDocumentMax = serverCurrentValues?.document_range_max ?? 1;
   if (
     documentMinMax.min !== serverDocumentMin ||
     documentMinMax.max !== serverDocumentMax
@@ -202,8 +202,8 @@ export function buildSearchParams({
   }
 
   // Parameter selection ranges - compare against server's current values
-  const serverParameterMin = serverCurrentValues?.parameter_selection_min ?? 0;
-  const serverParameterMax = serverCurrentValues?.parameter_selection_max ?? 3;
+  const serverParameterMin = serverCurrentValues?.parameter_range_min ?? 0;
+  const serverParameterMax = serverCurrentValues?.parameter_range_max ?? 3;
   if (
     parameterSelectionMinMax.min !== serverParameterMin ||
     parameterSelectionMinMax.max !== serverParameterMax
@@ -222,7 +222,18 @@ export function buildSearchParams({
   // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
   const selectedParamIds = draftState.parameterIds || [];
   const isRandomizing = searchParams.get("randomize") === "all";
-  const serverFieldRanges = serverCurrentValues?.field_ranges || {};
+  // Convert field_ranges array to dictionary for lookup
+  // Note: field_ranges is only available in GetScenarioDetailApiResponse, not GetScenarioNewApiResponse
+  const serverFieldRangesArray = (serverCurrentValues as any)?.field_ranges || [];
+  const serverFieldRanges: Record<string, { min: number; max: number }> = {};
+  serverFieldRangesArray.forEach((range: { parameter_id: string | null; min_count: number | null; max_count: number | null }) => {
+    if (range.parameter_id) {
+      serverFieldRanges[range.parameter_id] = {
+        min: range.min_count ?? 1,
+        max: range.max_count ?? 3,
+      };
+    }
+  });
 
   // Build filtered ranges dict (only include ranges that differ from server or are needed for randomization)
   const filteredFieldRanges: Record<string, { min: number; max: number }> = {};
@@ -232,11 +243,9 @@ export function buildSearchParams({
     // 2. We're randomizing all (server will randomize parameters and need these ranges)
     // AND range differs from server's current value
     const shouldInclude = isRandomizing || selectedParamIds.includes(paramId);
-    const serverFieldRange = serverFieldRanges[paramId] as
-      | { min?: number; max?: number }
-      | undefined;
-    const fieldDefaultMin = serverFieldRange?.["min"] ?? 1;
-    const fieldDefaultMax = serverFieldRange?.["max"] ?? 3;
+    const serverFieldRange = serverFieldRanges[paramId];
+    const fieldDefaultMin = serverFieldRange?.min ?? 1;
+    const fieldDefaultMax = serverFieldRange?.max ?? 3;
     const fieldDefault: { min: number; max: number } = {
       min: fieldDefaultMin,
       max: fieldDefaultMax,

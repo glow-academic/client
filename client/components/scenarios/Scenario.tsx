@@ -1591,14 +1591,15 @@ export default function Scenario({
     const map: Record<
       string,
       {
-        name: string;
-        description: string;
-        color: string;
-        icon: string;
-        image_model: boolean;
-        parameter_ids: string[];
-        field_ids: string[];
-        example?: unknown;
+        persona_id: string | null;
+        name: string | null;
+        description: string | null;
+        color: string | null;
+        icon: string | null;
+        image_model: boolean | null;
+        parameter_ids: string[] | null;
+        field_ids: string[] | null;
+        example: string | null;
       }
     > = {};
     if (personas && Array.isArray(personas) && personas.length > 0) {
@@ -1616,24 +1617,25 @@ export default function Scenario({
         };
         if (persona.persona_id) {
           map[String(persona.persona_id)] = {
-            name: persona.name || "",
-            description: persona.description || "",
-            color: persona.color || "",
-            icon: persona.icon || "",
-            image_model: persona.image_model || false,
+            persona_id: persona.persona_id,
+            name: persona.name || null,
+            description: persona.description || null,
+            color: persona.color || null,
+            icon: persona.icon || null,
+            image_model: persona.image_model ?? null,
             parameter_ids:
               persona.parameter_ids
                 ?.map((id) => String(id))
                 .filter(
                   (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
+                ) || null,
             field_ids:
               persona.field_ids
                 ?.map((id) => String(id))
                 .filter(
                   (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-            example: persona.example,
+                ) || null,
+            example: (persona.example as string | null) || null,
           };
         }
       });
@@ -5021,7 +5023,7 @@ export default function Scenario({
                 renderItem={(item, isSelected) => {
                   const persona = item.persona;
                   const IconComponent =
-                    getPersonaIconComponent(persona.icon) || Brain;
+                    getPersonaIconComponent(persona.icon || "") || Brain;
                   const hexColor = persona.color || "#64748b";
 
                   return (
@@ -5258,7 +5260,7 @@ export default function Scenario({
                       ? {
                           document_id: fullDocTyped.document_id || "",
                           name: fullDocTyped.name || "",
-                          updatedAt:
+                          updated_at:
                             fullDocTyped.updated_at || new Date().toISOString(),
                           extension: fullDocTyped.extension || "",
                           scenario_ids: fullDocTyped.scenario_ids || [],
@@ -5268,11 +5270,17 @@ export default function Scenario({
                           department_ids: fullDocTyped.department_ids || [],
                           upload_id: fullDocTyped.upload_id ?? null,
                           field_ids: fullDocTyped.field_ids || [],
+                          valid_field_ids: null,
+                          active_scenario_count: null,
+                          total_scenario_links: null,
                         }
                       : {
                           document_id: item.id,
                           name: item.doc.name || "Document",
-                          updatedAt: new Date().toISOString(),
+                          valid_field_ids: null,
+                          active_scenario_count: null,
+                          total_scenario_links: null,
+                          updated_at: new Date().toISOString(),
                           extension: "",
                           scenario_ids: [],
                           can_edit: false,
@@ -5386,7 +5394,7 @@ export default function Scenario({
                         ? {
                             document_id: fullDocTyped.document_id || "",
                             name: fullDocTyped.name || "",
-                            updatedAt:
+                            updated_at:
                               fullDocTyped.updated_at ||
                               new Date().toISOString(),
                             extension: fullDocTyped.extension || "",
@@ -5397,13 +5405,19 @@ export default function Scenario({
                             department_ids: fullDocTyped.department_ids || [],
                             upload_id: fullDocTyped.upload_id ?? null,
                             field_ids: fullDocTyped.field_ids || [],
+                            valid_field_ids: null,
+                            active_scenario_count: null,
+                            total_scenario_links: null,
                           }
                         : {
                             document_id: localPreviewDocId,
+                            valid_field_ids: null,
+                            active_scenario_count: null,
+                            total_scenario_links: null,
                             name:
                               documentMapping[localPreviewDocId]?.name ||
                               "Document",
-                            updatedAt: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
                             extension: "",
                             scenario_ids: [],
                             can_edit: false,

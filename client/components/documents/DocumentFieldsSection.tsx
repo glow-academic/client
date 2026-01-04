@@ -14,10 +14,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { components } from "@/lib/api/schema";
+import type { DocumentDetailOut } from "@/app/(main)/management/documents/d/[documentId]/page";
 
-type FieldMappingItem =
-  components["schemas"]["app__api__v4__documents__detail__FieldMappingItem"];
+type FieldMappingItem = NonNullable<
+  NonNullable<DocumentDetailOut["fields"]>[number]
+>;
 
 type StepStatus = "pending" | "active" | "completed";
 

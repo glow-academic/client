@@ -141,7 +141,7 @@ export default function Rubrics({
     // Check which ranges have rubrics
     const rangesWithData = allRanges.filter((range) => {
       return rubrics.some((rubric) => {
-        const percentage = rubric.passPercentage;
+        const percentage = rubric.pass_percentage ?? 0;
         return percentage >= range.min && percentage <= range.max;
       });
     });
@@ -172,7 +172,7 @@ export default function Rubrics({
         enableSorting: false,
         accessorFn: (row: (typeof rubrics)[number]) => {
           // Return the range string that this percentage falls into for faceting
-          const percentage = row.passPercentage;
+          const percentage = row.pass_percentage ?? 0;
           if (percentage >= 0 && percentage <= 25) return "0-25";
           if (percentage >= 26 && percentage <= 50) return "26-50";
           if (percentage >= 51 && percentage <= 75) return "51-75";
@@ -180,7 +180,7 @@ export default function Rubrics({
           return null;
         },
         filterFn: (row, _id, value: string[]) => {
-          const percentage = row.original.passPercentage;
+          const percentage = row.original.pass_percentage ?? 0;
           return value.some((range) => {
             const [min, max] = range.split("-").map(Number);
             return (
@@ -287,7 +287,7 @@ export default function Rubrics({
     try {
       await deleteRubricAction({
         body: {
-          rubricId: deleteItem.id,
+          rubric_id: deleteItem.id,
         },
       });
       toast.success("Rubric deleted successfully");
@@ -317,7 +317,7 @@ export default function Rubrics({
     try {
       await duplicateRubricAction({
         body: {
-          rubricId: rubric.rubric_id,
+          original_rubric_id: rubric.rubric_id ?? "",
         },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
@@ -356,7 +356,7 @@ export default function Rubrics({
     const passPercentage =
       totalPoints > 0
         ? Math.round((totalPassPoints / totalPoints) * 100)
-        : rubric.passPercentage; // Fallback to server value if no groups
+        : (rubric.pass_percentage ?? 0); // Fallback to server value if no groups
 
     return (
       <Card
@@ -379,7 +379,7 @@ export default function Rubrics({
                 </div>
                 <div className="flex items-center gap-2">
                   <FileCheck className="h-4 w-4" />
-                  Pass: {rubric.passPoints} pts ({passPercentage}%)
+                  Pass: {rubric.pass_points ?? 0} pts ({passPercentage}%)
                 </div>
               </div>
               {rubric.description && (
@@ -392,7 +392,9 @@ export default function Rubrics({
               {rubric.can_edit ? (
                 <Button
                   variant="outline"
-                  onClick={() => handleEdit(rubric.rubric_id)}
+                  onClick={() => {
+                    if (rubric.rubric_id) handleEdit(rubric.rubric_id);
+                  }}
                   data-testid="btn-edit-rubric"
                   aria-label="Edit rubric"
                 >
@@ -402,7 +404,9 @@ export default function Rubrics({
               ) : (
                 <Button
                   variant="outline"
-                  onClick={() => handleEdit(rubric.rubric_id)}
+                  onClick={() => {
+                    if (rubric.rubric_id) handleEdit(rubric.rubric_id);
+                  }}
                   aria-label={`View ${rubric.name}`}
                   data-testid="btn-view-rubric"
                 >
@@ -434,9 +438,11 @@ export default function Rubrics({
               {rubric.can_delete && (
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    handleDeleteClick(rubric.rubric_id, rubric.name)
-                  }
+                  onClick={() => {
+                    if (rubric.rubric_id) {
+                      handleDeleteClick(rubric.rubric_id, rubric.name ?? "");
+                    }
+                  }}
                   data-testid="btn-delete-rubric"
                   aria-label="Delete rubric"
                 >
@@ -457,8 +463,8 @@ export default function Rubrics({
               const groupIds = rubric.standard_group_ids || [];
               groupIds.forEach((groupId) => {
                 const group = standardGroups.find((g) => g.standard_group_id === groupId);
-                if (group && group.standard_ids) {
-                  groupsDict[String(groupId)] = group.standard_ids.map(String);
+                if (group && "standard_ids" in group && group.standard_ids) {
+                  groupsDict[String(groupId)] = (group.standard_ids as string[]).map(String);
                 }
               });
               return groupsDict;

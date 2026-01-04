@@ -312,11 +312,11 @@ export default function Reports({
   );
 
   // Convert simulations array to options format (for compatibility with existing code)
-  const simulationOptions = useMemo(
+  const simulationOptionsFromData = useMemo(
     () =>
       simulations.map((sim) => ({
-        id: sim.simulation_id,
-        title: sim.name || "Unknown",
+        value: sim.simulation_id ?? "",
+        label: sim.name || "Unknown",
       })),
     [simulations]
   );
@@ -1467,12 +1467,12 @@ export default function Reports({
 
                     {/* Simulation Filter */}
                     {simulationsColumn &&
-                      simulationOptions &&
-                      simulationOptions.length > 0 && (
+                      (simulationOptions || simulationOptionsFromData) &&
+                      (simulationOptions || simulationOptionsFromData).length > 0 && (
                         <DataTableFacetedFilter
                           column={simulationsColumn}
                           title="Simulation"
-                          options={simulationOptions}
+                          options={simulationOptions || simulationOptionsFromData}
                           isServerDriven={true}
                         />
                       )}

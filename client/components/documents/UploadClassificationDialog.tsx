@@ -94,9 +94,9 @@ export function UploadClassificationDialog({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primary_department_id ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primary_department_id],
   );
 
   // Per-file classification state (keyed by file.name)

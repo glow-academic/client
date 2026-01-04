@@ -495,24 +495,42 @@ export default function Document({
     const map: Record<
       string,
       {
-        name: string;
-        description: string;
-        parameter_id: string;
-        parameter_name: string;
+        field_id: string | null;
+        name: string | null;
+        description: string | null;
+        parameter_id: string | null;
+        parameter_name: string | null;
       }
     > = {};
     fieldsArray.forEach((f) => {
       if (f.field_id) {
         map[f.field_id] = {
-          name: f.name || "",
-          description: f.description || "",
-          parameter_id: f.parameter_id || "",
-          parameter_name: f.parameter_name || "",
+          field_id: f.field_id ?? null,
+          name: f.name ?? null,
+          description: f.description ?? null,
+          parameter_id: f.parameter_id ?? null,
+          parameter_name: f.parameter_name ?? null,
         };
       }
     });
     return map;
   }, [fieldsArray]);
+
+  // Transform fieldMapping for ParameterItemPicker (handles nullable fields)
+  const parameterItemMapping = useMemo(() => {
+    const map: Record<string, { name: string; description: string; parameter_id: string; parameter_name: string }> = {};
+    Object.entries(fieldMapping).forEach(([key, value]) => {
+      if (value.name && value.parameter_id && value.parameter_name) {
+        map[key] = {
+          name: value.name,
+          description: value.description || "",
+          parameter_id: value.parameter_id,
+          parameter_name: value.parameter_name,
+        };
+      }
+    });
+    return map;
+  }, [fieldMapping]);
 
   const agentMapping = useMemo(() => {
     const map: Record<
@@ -596,7 +614,7 @@ export default function Document({
       );
       return baseIds.filter((itemId) => {
         const item = fieldMapping[itemId];
-        return item && linkedParameterIds.has(item.parameter_id);
+        return item && item.parameter_id && linkedParameterIds.has(item.parameter_id);
       });
     }
     return Object.keys(fieldMapping);
@@ -989,7 +1007,7 @@ export default function Document({
       documentParameterIds.forEach((paramId) => {
         const itemsForParam = filteredValidParameterItemIds.filter((itemId) => {
           const item = fieldMapping[itemId];
-          return item && item.parameter_id === paramId;
+          return item && item.parameter_id && item.parameter_id === paramId;
         });
 
         const hasItemForParam = itemsForParam.some((itemId) =>
@@ -1727,7 +1745,7 @@ export default function Document({
                 data-testid="document-parameter-selector"
               >
                 <ParameterItemPicker
-                  mapping={fieldMapping}
+                  mapping={parameterItemMapping}
                   validIds={filteredValidParameterItemIds}
                   selectedIds={globalDefaultParameterItemIds}
                   onSelect={(next) => {
@@ -1754,7 +1772,7 @@ export default function Document({
                     documentParameterIds.some((paramId) =>
                       filteredValidParameterItemIds.some(
                         (itemId) =>
-                          fieldMapping[itemId]?.parameter_id === paramId
+                          fieldMapping[itemId]?.parameter_id && fieldMapping[itemId]?.parameter_id === paramId
                       )
                     )
                   }
@@ -1875,7 +1893,7 @@ export default function Document({
                       )}
                       <TableCell className="max-w-[300px]">
                         <ParameterItemPicker
-                          mapping={fieldMapping}
+                          mapping={parameterItemMapping}
                           validIds={filteredValidParameterItemIds}
                           selectedIds={
                             useDefaultParameterItems
@@ -1917,7 +1935,7 @@ export default function Document({
                             documentParameterIds.some((paramId) =>
                               filteredValidParameterItemIds.some(
                                 (itemId) =>
-                                  fieldMapping[itemId]?.parameter_id === paramId
+                                  fieldMapping[itemId]?.parameter_id && fieldMapping[itemId]?.parameter_id === paramId
                               )
                             )
                           }
@@ -2360,17 +2378,7 @@ export default function Document({
                             }
                           >
                         }
-                        fieldMapping={
-                          fieldMapping as Record<
-                            string,
-                            {
-                              name: string;
-                              description: string;
-                              parameter_id: string;
-                              parameter_name: string;
-                            }
-                          >
-                        }
+                        fieldMapping={parameterItemMapping}
                         validParameterItemIds={
                           documentDetail.valid_field_ids || []
                         }
@@ -2790,20 +2798,26 @@ export default function Document({
                         <DocumentViewer
                           document={{
                             document_id:
-                              documentDetail.document_id || documentId || "",
-                            name: documentDetail.name || "",
-                            updatedAt:
-                              documentDetail.updated_at ||
+                              documentDetail.document_id ?? documentId ?? null,
+                            name: documentDetail.name ?? null,
+                            updated_at:
+                              documentDetail.updated_at ??
                               new Date().toISOString(),
-                            extension: documentDetail.extension || "",
-                            scenario_ids: documentDetail.scenario_ids || [],
-                            can_edit: documentDetail.can_edit ?? true,
-                            can_delete: documentDetail.can_delete ?? false,
-                            active: documentDetail.active ?? true,
+                            extension: documentDetail.extension ?? null,
+                            scenario_ids: documentDetail.scenario_ids ?? null,
+                            can_edit: documentDetail.can_edit ?? null,
+                            can_delete: documentDetail.can_delete ?? null,
+                            active: documentDetail.active ?? null,
                             department_ids:
-                              documentDetail.department_ids || null,
-                            upload_id: documentDetail.upload_id || null,
-                            field_ids: documentDetail.field_ids || [],
+                              documentDetail.department_ids ?? null,
+                            upload_id: documentDetail.upload_id ?? null,
+                            field_ids: documentDetail.field_ids ?? null,
+                            valid_field_ids:
+                              documentDetail.valid_field_ids ?? null,
+                            active_scenario_count:
+                              ("active_scenario_count" in documentDetail && typeof documentDetail.active_scenario_count === "number" ? documentDetail.active_scenario_count : null) ?? null,
+                            total_scenario_links:
+                              ("total_scenario_links" in documentDetail && typeof documentDetail.total_scenario_links === "number" ? documentDetail.total_scenario_links : null) ?? null,
                           }}
                           bare={true}
                         />

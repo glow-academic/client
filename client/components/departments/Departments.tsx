@@ -184,7 +184,13 @@ export default function Departments({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
-          const date = new Date(row.original.updated_at);
+          const updatedAt = row.original.updated_at;
+          if (!updatedAt) {
+            return (
+              <div className="text-sm text-muted-foreground">-</div>
+            );
+          }
+          const date = new Date(updatedAt);
           return (
             <div className="text-sm text-muted-foreground">
               {date.toLocaleDateString()}
@@ -272,6 +278,10 @@ export default function Departments({
       return;
     }
 
+    if (!department.department_id) {
+      toast.error("Department ID is required");
+      return;
+    }
     setIsDuplicating(department.department_id);
     try {
       await duplicateDepartmentAction({
@@ -293,7 +303,7 @@ export default function Departments({
       await deleteDepartmentAction({
         body: { department_id: deleteItem.id },
       });
-      toast.success(`Department "${deleteItem.name}" deleted successfully`);
+      toast.success(`Department "${deleteItem.name || "Unknown"}" deleted successfully`);
       router.refresh();
     } catch (error) {
       toast.error(
@@ -333,7 +343,7 @@ export default function Departments({
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="text-xs">
                   <DollarSign className="h-3 w-3 mr-1" />$
-                  {department.total_price_spent.toFixed(2)}
+                  {(department.total_price_spent ?? 0).toFixed(2)}
                 </Badge>
                 <Badge variant="outline" className="text-xs">
                   <Users className="h-3 w-3 mr-1" />
@@ -346,34 +356,34 @@ export default function Departments({
             </p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            {department.can_edit ? (
+            {department.can_edit && department.department_id ? (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleEdit(department.department_id)}
-                aria-label={`Edit department ${department.title}`}
+                onClick={() => handleEdit(department.department_id!)}
+                aria-label={`Edit department ${department.title || "Unknown"}`}
                 data-testid="btn-edit-department"
-                title={`Edit department ${department.title}`}
+                title={`Edit department ${department.title || "Unknown"}`}
                 className="h-9 px-3"
               >
                 <Edit className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">Edit</span>
               </Button>
-            ) : (
+            ) : department.department_id ? (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleEdit(department.department_id)}
-                aria-label={`View department ${department.title}`}
+                onClick={() => department.department_id && handleEdit(department.department_id)}
+                aria-label={`View department ${department.title || "Unknown"}`}
                 data-testid="btn-view-department"
-                title={`View department ${department.title}`}
+                title={`View department ${department.title || "Unknown"}`}
                 className="h-9 px-3"
               >
                 <Eye className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">View</span>
               </Button>
-            )}
-            {department.can_duplicate && (
+            ) : null}
+            {department.can_duplicate && department.department_id && (
               <Button
                 variant="outline"
                 size="sm"
@@ -382,9 +392,9 @@ export default function Departments({
                 aria-busy={
                   isDuplicating === department.department_id ? true : undefined
                 }
-                aria-label={`Duplicate department ${department.title}`}
+                aria-label={`Duplicate department ${department.title || "Unknown"}`}
                 data-testid="btn-duplicate-department"
-                title={`Duplicate department ${department.title}`}
+                title={`Duplicate department ${department.title || "Unknown"}`}
                 className="h-9 px-3"
               >
                 {isDuplicating === department.department_id ? (
@@ -399,16 +409,16 @@ export default function Departments({
                 </span>
               </Button>
             )}
-            {department.can_delete && (
+            {department.can_delete && department.department_id && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  handleDeleteClick(department.department_id, department.title)
+                  handleDeleteClick(department.department_id!, department.title || "Unknown")
                 }
-                aria-label={`Delete department ${department.title}`}
+                aria-label={`Delete department ${department.title || "Unknown"}`}
                 data-testid="btn-delete-department"
-                title={`Delete department ${department.title}`}
+                title={`Delete department ${department.title || "Unknown"}`}
                 className="h-9 px-3"
               >
                 <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
@@ -422,7 +432,7 @@ export default function Departments({
         <div className="text-sm">
           <span className="text-muted-foreground">Updated:</span>
           <span className="font-medium ml-2">
-            {formatDate(department.updated_at)}
+            {department.updated_at ? formatDate(department.updated_at) : "-"}
           </span>
         </div>
       </CardContent>

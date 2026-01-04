@@ -16,13 +16,6 @@ import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -62,16 +55,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Parser } from "nuqs";
-import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
-
-type StepStatus = "pending" | "active" | "completed";
-
-interface Step {
-  id: string;
-  title: string;
-  description: string;
-  status: StepStatus;
-}
+import { parseAsString, useQueryStates } from "nuqs";
 
 interface FormErrors {
   name?: string;
@@ -81,32 +65,6 @@ interface FormErrors {
   baseUrl?: string;
 }
 
-interface FormData {
-  name?: string;
-  description?: string;
-  provider_id?: string;
-  value?: string;
-  active?: boolean;
-  departmentIds?: string[] | null;
-  keyId?: string | null; // Kept for backward compatibility, not rendered
-  customModel?: boolean;
-  baseUrl?: string;
-  // Feature toggles
-  enableModalities?: boolean;
-  enableTemperature?: boolean;
-  enablePricing?: boolean;
-  enableVoices?: boolean;
-  enableReasoningLevels?: boolean;
-  enableQualities?: boolean;
-  // Configuration fields
-  temperature_bounds?: TemperatureBounds;
-  pricing?: Record<string, { unit_id: string; price: number }[]>; // Changed from PricingEntry[]
-  selectedPricingTypes?: string[]; // Selected pricing types (input/output/cached)
-  modalities?: { input: string[]; output: string[] };
-  reasoning_levels?: string[];
-  voices?: string[];
-  qualities?: string[];
-}
 
 // Type-only import from server pages
 import type {
@@ -121,6 +79,11 @@ import type {
   CreateModelOut,
   ModelNewOut,
 } from "@/app/(main)/engine/models/new/page";
+
+// Type guard to check if data has ModelDetailOut properties
+function isModelDetailOut(d: unknown): d is ModelDetailOut {
+  return typeof d === "object" && d !== null && "name" in d;
+}
 
 // Custom URL step component (separate component to use hooks properly)
 function CustomUrlStep({
@@ -395,9 +358,9 @@ export default function Model({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null,
+        effectiveProfile?.primary_department_id || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primary_department_id],
   );
 
   // Initialize draft state from server data or draft payload
@@ -447,13 +410,23 @@ export default function Model({
     }
 
     // Parse pricing
+    if (!data || typeof data !== "object" || !("pricing" in data)) {
+      // Handle case where data is null or doesn't have pricing - return empty pricing array
+      return {
+        ...initialDraftState,
+        pricing: {},
+        selectedPricingTypes: [],
+      };
+    }
     const pricingArray =
-      "pricing" in data && data.pricing
-        ? (data as ModelDetailOut).pricing.map((p: any) => ({
-            type: (p.type || p.pricing_type) as "input" | "output" | "cached",
-            unit_id: p.unit_id,
-            price: p.price,
-          }))
+      data.pricing && Array.isArray(data.pricing)
+        ? data.pricing
+            .filter((p): p is NonNullable<typeof p> => p != null)
+            .map((p) => ({
+              type: (p?.pricing_type ?? "input") as "input" | "output" | "cached",
+              unit_id: p?.unit_id || "",
+              price: p?.price ?? 0,
+            }))
         : [];
     const pricing: Record<string, { unit_id: string; price: number }[]> = {};
     const selectedPricingTypesSet = new Set<string>();
@@ -472,10 +445,14 @@ export default function Model({
 
     // Parse modalities
     const modalities =
-      "modalities" in data && data.modalities
+      "modalities" in data && data.modalities && typeof data.modalities === "object"
         ? {
-            input: (data as ModelDetailOut).modalities.input || ["text"],
-            output: (data as ModelDetailOut).modalities.output || ["text"],
+            input: Array.isArray((data as ModelDetailOut).modalities?.input) 
+              ? (data as ModelDetailOut).modalities!.input || ["text"]
+              : ["text"],
+            output: Array.isArray((data as ModelDetailOut).modalities?.output)
+              ? (data as ModelDetailOut).modalities!.output || ["text"]
+              : ["text"],
           }
         : { input: ["text"], output: ["text"] };
 
@@ -487,33 +464,43 @@ export default function Model({
     const hasVoices =
       "voices" in data &&
       data.voices &&
+      Array.isArray(data.voices) &&
       (data.voices as Array<string | { voice: string }>).length > 0;
     const hasReasoningLevels =
       "reasoning_levels" in data &&
       data.reasoning_levels &&
+      Array.isArray(data.reasoning_levels) &&
       data.reasoning_levels.length > 0;
     const hasQualities =
-      "qualities" in data && data.qualities && data.qualities.length > 0;
+      "qualities" in data && 
+      data.qualities && 
+      Array.isArray(data.qualities) &&
+      data.qualities.length > 0;
 
     // Determine if custom model
     const baseUrl = "base_url" in data ? (data as ModelDetailOut).base_url || "" : "";
     const customModel = baseUrl !== "" && baseUrl.trim() !== "";
 
+    // Type guard to check if data has ModelDetailOut properties
+    const isModelDetailOut = (d: unknown): d is ModelDetailOut => {
+      return typeof d === "object" && d !== null && "name" in d;
+    };
+
     return {
-      name: data.name || "New Model",
-      description: data.description || "",
-      provider_id: "provider_id" in data ? (data as ModelDetailOut).provider_id || "" : "",
-      value: "value" in data ? (data as ModelDetailOut).value || "" : "",
-      active: typeof data.active === "boolean" ? data.active : true,
-      departmentIds: "department_ids" in data ? (data as ModelDetailOut).department_ids || defaultDepartmentIds : defaultDepartmentIds,
+      name: isModelDetailOut(data) ? (data.name ?? "New Model") : "New Model",
+      description: isModelDetailOut(data) ? (data.description ?? "") : "",
+      provider_id: isModelDetailOut(data) ? (data.provider_id ?? "") : "",
+      value: isModelDetailOut(data) ? (data.value ?? "") : "",
+      active: isModelDetailOut(data) ? (data.active ?? true) : true,
+      departmentIds: isModelDetailOut(data) ? (data.department_ids ?? defaultDepartmentIds) : defaultDepartmentIds,
       customModel,
       baseUrl,
       enableModalities: hasModalities,
-      enableTemperature: hasTemperature,
-      enablePricing: hasPricing,
-      enableVoices: hasVoices,
-      enableReasoningLevels: hasReasoningLevels,
-      enableQualities: hasQualities,
+      enableTemperature: hasTemperature ?? false,
+      enablePricing: hasPricing ?? false,
+      enableVoices: hasVoices ?? false,
+      enableReasoningLevels: hasReasoningLevels ?? false,
+      enableQualities: hasQualities ?? false,
       ...(temperature_bounds ? { temperature_bounds } : {}),
       pricing,
       selectedPricingTypes,
@@ -536,10 +523,10 @@ export default function Model({
     defaultDepartmentIds,
     draftId,
     urlDraftId,
-    modelData?.name,
-    modelData?.description,
-    modelData?.value,
-    modelData?.active,
+    isModelDetailOut(modelData) ? modelData.name : undefined,
+    isModelDetailOut(modelData) ? modelData.description : undefined,
+    isModelDetailOut(modelData) ? modelData.value : undefined,
+    isModelDetailOut(modelData) ? modelData.active : undefined,
     (modelData as ModelDetailOut)?.provider_id,
     (modelData as ModelDetailOut)?.department_ids,
     (modelData as ModelDetailOut)?.base_url,
@@ -683,9 +670,6 @@ export default function Model({
 
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Use server-provided data
-  const modelDetail = serverModelDetail;
-
   // Extract body types from server action types for type safety
   type CreateModelBody = CreateModelIn extends { body: infer B } ? B : never;
   type UpdateModelBody = UpdateModelIn extends { body: infer B } ? B : never;
@@ -712,6 +696,9 @@ export default function Model({
     return false;
   }, []);
 
+  // Use server-provided data (for breadcrumbs and other non-form uses)
+  const modelDetail = isEditMode ? serverModelDetail : modelDetailDefault;
+
   // Get department and key arrays (replacing mappings)
   const modelDataForArrays = isEditMode ? modelDetail : modelDetailDefault;
   const departments = useMemo(() => {
@@ -727,32 +714,33 @@ export default function Model({
     return modelDataForArrays?.providers || [];
   }, [modelDataForArrays]);
 
-  // Get keys array (replacing key_mapping)
-  const keys = useMemo(() => {
-    return modelDataForArrays?.keys || [];
-  }, [modelDataForArrays]);
+  // Get keys array (replacing key_mapping) - unused but kept for potential future use
+  // const _keys = useMemo(() => {
+  //   return modelDataForArrays?.keys || [];
+  // }, [modelDataForArrays]);
 
-  // Get current department_ids and key_id for edit mode
-  const currentDepartmentIds = useMemo(() => {
-    if (isEditMode && modelDetail && "department_ids" in modelDetail) {
-      return (modelDetail.department_ids as string[]) || [];
-    }
-    return defaultDepartmentIds;
-  }, [isEditMode, modelDetail, defaultDepartmentIds]);
+  // Get current department_ids and key_id for edit mode - unused but kept for potential future use
+  // const _currentDepartmentIds = useMemo(() => {
+  //   if (isEditMode && modelDetail && "department_ids" in modelDetail) {
+  //     return (modelDetail.department_ids as string[]) || [];
+  //   }
+  //   return defaultDepartmentIds;
+  // }, [isEditMode, modelDetail, defaultDepartmentIds]);
 
-  const currentKeyId = useMemo(() => {
-    if (isEditMode && modelDetail && "default_key_id" in modelDetail) {
-      return (modelDetail.default_key_id as string | null) || null;
-    }
-    return null;
-  }, [isEditMode, modelDetail]);
+  // const _currentKeyId = useMemo(() => {
+  //   if (isEditMode && modelDetail && "default_key_id" in modelDetail) {
+  //     return (modelDetail.default_key_id as string | null) || null;
+  //   }
+  //   return null;
+  // }, [isEditMode, modelDetail]);
 
   // Set breadcrumb context for model (edit mode only)
   useEffect(() => {
-    if (modelDetail?.name && modelId && isEditMode) {
+    const detailName = isModelDetailOut(modelDetail) ? modelDetail.name : null;
+    if (detailName && modelId && isEditMode) {
       setEntityMetadata({
         entityId: modelId,
-        entityName: modelDetail.name,
+        entityName: detailName,
         entityType: "model",
       });
     }
@@ -770,22 +758,21 @@ export default function Model({
   ]);
 
   // Get units from model detail response (already included)
+  // Map server units to Unit type expected by UnitCardGrid
   const units = useMemo(() => {
-    return modelData?.units || [];
+    if (!modelData?.units) return [];
+    return modelData.units
+      .filter((u): u is NonNullable<typeof u> & { unit_id: string; name: string; value: number } => 
+        u !== null && u.unit_id !== null && u.name !== null && u.value !== null
+      )
+      .map((u) => ({
+        id: u.unit_id,
+        name: u.name,
+        unit_category: u.unit_category || "",
+        value: u.value,
+      }));
   }, [modelData]);
 
-  // Use server-provided data (for breadcrumbs and other non-form uses)
-  const modelDetail = serverModelDetail;
-
-  const handleInputChange = (
-    field: keyof FormData,
-    value: string | boolean | undefined,
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
 
   const resetFormAndState = () => {
     setDraftState(initialDraftState);
@@ -1002,7 +989,7 @@ export default function Model({
 
   // Initialize form from server data (for GenericForm)
   const initializeForm = useCallback(
-    (serverData: unknown, isEditMode: boolean): Partial<Record<string, unknown>> => {
+    (_serverData: unknown, _isEditMode: boolean): Partial<Record<string, unknown>> => {
       // Form is already initialized via initialDraftState, so return empty object
       // GenericForm will use the formData prop we provide
       return {};
@@ -1151,9 +1138,10 @@ export default function Model({
         const apiTemperatureBounds =
           enableTemperature && temperature_bounds
           ? {
-              type: "range" as const,
-                lower: temperature_bounds.lower ?? 0.0,
-                upper: temperature_bounds.upper ?? 1.0,
+              bounds_type: "range" as const,
+              lower_bound: temperature_bounds.lower ?? 0.0,
+              upper_bound: temperature_bounds.upper ?? 1.0,
+              values_array: null,
             }
           : undefined;
 
@@ -1166,7 +1154,7 @@ export default function Model({
           Object.keys(pricing).length > 0
             ? Object.entries(pricing).flatMap(([type, entries]) =>
               entries.map((entry) => ({
-                type: type as "input" | "output" | "cached",
+                pricing_type: type as "input" | "output" | "cached",
                 unit_id: entry.unit_id,
                 price: entry.price,
               })),
@@ -1174,15 +1162,7 @@ export default function Model({
           : undefined;
 
       // Transform modalities for API (default to text/text if not set)
-        const modalities = formData["modalities"] as { input: string[]; output: string[] } | null | undefined;
-        const apiModalities =
-          modalities &&
-          (modalities.input.length > 0 || modalities.output.length > 0)
-            ? {
-                input: modalities.input,
-                output: modalities.output,
-            }
-          : { input: ["text"], output: ["text"] }; // Server-side default
+        // Note: Modalities removed from API type - not used in server
 
       // Ensure profileId exists - required for API calls
       if (!effectiveProfile?.id) {
@@ -1206,7 +1186,7 @@ export default function Model({
 
       if (isEditMode && modelId) {
         await handleUpdateModel({
-          modelId: modelId,
+          model_id: modelId,
             provider_id: provider_id!,
             name: name!,
             description: description!,
@@ -1216,7 +1196,7 @@ export default function Model({
             base_url: customModel ? baseUrl || null : null,
             ...(apiTemperatureBounds ? { temperature_bounds: apiTemperatureBounds } : {}),
             ...(apiPricing ? { pricing: apiPricing } : {}),
-            modalities: apiModalities,
+            // modalities removed - not in API type
           reasoning_levels:
               enableReasoningLevels && reasoning_levels && reasoning_levels.length > 0
                 ? reasoning_levels
@@ -1241,7 +1221,7 @@ export default function Model({
             base_url: customModel ? baseUrl || null : null,
             ...(apiTemperatureBounds ? { temperature_bounds: apiTemperatureBounds } : {}),
             ...(apiPricing ? { pricing: apiPricing } : {}),
-            modalities: apiModalities,
+            // modalities removed - not in API type
           reasoning_levels:
               enableReasoningLevels && reasoning_levels && reasoning_levels.length > 0
                 ? reasoning_levels
@@ -1345,7 +1325,6 @@ export default function Model({
       const departmentIds = (stepFormData["departmentIds"] as string[] | null | undefined) || [];
       const customModel = (stepFormData["customModel"] as boolean | null | undefined) ?? false;
       const baseUrl = (stepFormData["baseUrl"] as string | null | undefined) ?? "";
-      const enableModalities = (stepFormData["enableModalities"] as boolean | null | undefined) ?? true;
       const enableTemperature = (stepFormData["enableTemperature"] as boolean | null | undefined) ?? false;
       const enablePricing = (stepFormData["enablePricing"] as boolean | null | undefined) ?? false;
       const enableVoices = (stepFormData["enableVoices"] as boolean | null | undefined) ?? false;
@@ -1439,9 +1418,9 @@ export default function Model({
                 <Label htmlFor="department">Department</Label>
                   <GenericPicker
                     items={departments.map((d) => ({
-                      id: d.department_id,
-                      name: d.name,
-                      description: d.description,
+                      id: d.department_id ?? "",
+                      name: d.name ?? "",
+                      description: d.description ?? "",
                     }))}
                     itemIds={validDepartmentIds}
                       selectedIds={departmentIds}
@@ -1450,10 +1429,10 @@ export default function Model({
                           departmentIds: ids.length > 0 ? ids : null,
                         })
                     }
-                    getId={(dept) => (dept as unknown as { id: string }).id}
-                    getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) =>
-                      `${dept.name} ${dept.description || ""}`
+                    getId={(dept: { id: string }) => dept.id}
+                    getLabel={(dept: { name?: string | null }) => dept.name || ""}
+                    getSearchText={(dept: { name?: string | null; description?: string | null }) =>
+                      `${dept.name || ""} ${dept.description || ""}`
                     }
                     placeholder="All Departments"
                       disabled={isReadonly}
@@ -1642,7 +1621,7 @@ export default function Model({
               setStepFormData={setStepFormData}
               errors={errors}
               isSubmitting={isSubmitting}
-              onReset={onReset}
+              {...(onReset ? { onReset } : {})}
             />
           );
 
@@ -1660,11 +1639,16 @@ export default function Model({
               resetLabel="Reset"
             >
                 <ProviderCardGrid
-                  providerMapping={providers.reduce((acc, p) => {
-                    acc[String(p.provider_id)] = { name: p.name, description: p.description };
+                  providerMapping={providers.reduce((acc: Record<string, { name: string; description: string }>, p) => {
+                    if (p.provider_id) {
+                      acc[String(p.provider_id)] = { 
+                        name: p.name ?? "", 
+                        description: p.description ?? "" 
+                      };
+                    }
                     return acc;
                   }, {} as Record<string, { name: string; description: string }>)}
-                  validProviderIds={providers.map((p) => String(p.provider_id))}
+                  validProviderIds={providers.filter((p): p is typeof p & { provider_id: string } => !!p.provider_id).map((p) => String(p.provider_id))}
                 selectedProviderId={provider_id || null}
                   onSelect={(providerId) => {
                   setStepFormData({ provider_id: providerId || null });

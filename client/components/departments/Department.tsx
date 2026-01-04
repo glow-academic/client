@@ -21,15 +21,17 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 
 import type {
-  CreateDepartmentIn,
-  CreateDepartmentOut,
   DepartmentDetailOut,
-  DepartmentNewOut,
   PatchDepartmentDraftIn,
   PatchDepartmentDraftOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
 } from "@/app/(main)/system/departments/d/[departmentId]/page";
+import type {
+  CreateDepartmentIn,
+  CreateDepartmentOut,
+  DepartmentNewOut,
+} from "@/app/(main)/system/departments/new/page";
 import type {
   DeleteDepartmentIn,
   DeleteDepartmentOut,
@@ -49,6 +51,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -236,7 +239,7 @@ function DepartmentComponent({
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(departmentSearchParamsClient, {
+  const [urlParams] = useQueryStates(departmentSearchParamsClient, {
     history: "replace",
     shallow: true, // Use shallow routing to prevent server component re-renders
   });
@@ -424,7 +427,7 @@ function DepartmentComponent({
     ) {
       return false;
     }
-    return !departmentData.can_edit;
+    return !(departmentData && "can_edit" in departmentData && departmentData.can_edit);
   }, [isEditMode, departmentData, effectiveProfile?.role]);
 
   // Set breadcrumb context when department data is loaded
@@ -502,12 +505,18 @@ function DepartmentComponent({
           throw new Error("Update action not available");
         }
         try {
+          const settingsId = departmentData && "settings_id" in departmentData ? departmentData.settings_id : null;
+          if (!settingsId) {
+            toast.error("Settings ID is required to update department");
+            throw new Error("Settings ID is required");
+          }
           await updateDepartmentAction({
             body: {
               department_id: departmentId!,
               title: draftState.title || "",
               description: draftState.description || "",
               active: draftState.active ?? true,
+              settings_id: settingsId,
             },
           });
         toast.success("Department updated successfully!");
@@ -524,11 +533,20 @@ function DepartmentComponent({
           throw new Error("Create action not available");
         }
         try {
+          // For create, we need a settings_id - get from default or use first available
+          const settingsId = departmentDetailDefault && "settings" in departmentDetailDefault && departmentDetailDefault.settings && Array.isArray(departmentDetailDefault.settings) && departmentDetailDefault.settings.length > 0
+            ? departmentDetailDefault.settings[0]?.settings_id ?? null
+            : null;
+          if (!settingsId) {
+            toast.error("Settings ID is required to create department");
+            throw new Error("Settings ID is required");
+          }
           await createDepartmentAction({
             body: {
               title: draftState.title || "",
               description: draftState.description || "",
               active: draftState.active ?? true,
+              settings_id: settingsId,
             },
           });
         toast.success("Department created successfully!");
@@ -770,7 +788,7 @@ function DepartmentComponent({
                   {effectiveProfile?.role === "admin" ||
                   effectiveProfile?.role === "superadmin"
                     ? "You do not have permission to edit this department. You can view the details but cannot make changes."
-                    : departmentData?.in_use
+                    : (departmentData && "in_use" in departmentData && departmentData.in_use)
                       ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
                       : "You do not have permission to edit this department. You can view the details but cannot make changes."}
                 </p>
@@ -801,7 +819,7 @@ function DepartmentComponent({
 
         {/* Delete button - positioned to match submit button area */}
           {isEditMode &&
-            departmentData?.can_delete &&
+            departmentData && "can_delete" in departmentData && departmentData.can_delete &&
             deleteDepartmentAction && (
             <div className="flex justify-end gap-3 -mt-8">
               <Button
@@ -830,7 +848,7 @@ function DepartmentComponent({
               <AlertDialogDescription>
                 Are you sure you want to delete "{departmentData?.title}"? This
                 action cannot be undone.
-                {departmentData?.in_use && (
+                {departmentData && "in_use" in departmentData && departmentData.in_use && (
                   <div className="mt-2 text-sm font-medium text-destructive">
                     Warning: This department is currently in use and cannot be
                     deleted.
@@ -847,7 +865,7 @@ function DepartmentComponent({
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                  disabled={departmentData?.in_use}
+                  disabled={departmentData && "in_use" in departmentData ? (departmentData.in_use ?? false) : false}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-testid="btn-confirm-delete"
               >

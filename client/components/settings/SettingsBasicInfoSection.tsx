@@ -23,7 +23,7 @@ export interface SettingsBasicInfoSectionProps {
   departmentMapping: Record<string, { name: string; description: string }>;
   active: boolean;
   guestLoginEnabled: boolean;
-  settingsList: SettingsListOut["settings"];
+  settingsList: SettingsListOut["settings"] | null | undefined;
   selectedSettingsId: string | null;
   settingsMapping: Record<string, SettingsListOut["settings"][number]>;
 
@@ -94,7 +94,7 @@ export function SettingsBasicInfoSection({
           </div>
         </div>
         {/* Version Picker */}
-        {settingsList.length > 0 && (
+        {settingsList && settingsList.length > 0 && (
           <div className="ml-4 shrink-0">
             <GenericPicker
               items={settingsMapping}

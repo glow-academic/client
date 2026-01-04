@@ -100,7 +100,9 @@ export function Simulations({
   const scenarioMapping = useMemo(() => {
     const scenarios = simulationsData?.scenarios || [];
     return scenarios.reduce((acc, scenario) => {
-      acc[scenario.scenario_id] = scenario;
+      if (scenario.scenario_id) {
+        acc[scenario.scenario_id] = scenario;
+      }
       return acc;
     }, {} as Record<string, typeof scenarios[0]>);
   }, [simulationsData?.scenarios]);
@@ -188,6 +190,7 @@ export function Simulations({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
+          if (!row.original.updated_at) return null;
           const date = new Date(row.original.updated_at);
           return (
             <div className="text-sm text-muted-foreground">
@@ -256,7 +259,7 @@ export function Simulations({
 
     setIsDeleting(true);
     try {
-      await deleteSimulationAction({ body: { simulationId: deleteItem.id } });
+      await deleteSimulationAction({ body: { simulation_id: deleteItem.id } });
       toast.success("Simulation deleted successfully");
       router.refresh();
     } catch {
@@ -285,7 +288,7 @@ export function Simulations({
 
     setIsDuplicating(simulationId);
     try {
-      await duplicateSimulationAction({ body: { simulationId } });
+      await duplicateSimulationAction({ body: { simulation_id: simulationId } });
       toast.success("Simulation duplicated successfully");
       router.refresh();
     } catch {
@@ -295,10 +298,12 @@ export function Simulations({
     }
   };
 
-  const renderSimulationCard = (simulation: (typeof simulations)[number]) => (
+  const renderSimulationCard = (simulation: (typeof simulations)[number]) => {
+    if (!simulation.simulation_id) return null;
+    return (
     <Card
       key={simulation.simulation_id}
-      aria-label={simulation.name}
+      aria-label={simulation.name || undefined}
       data-testid="simulation-card"
       data-simulation-id={simulation.simulation_id}
       className="relative flex flex-col h-full hover:shadow-md transition-shadow"
@@ -337,9 +342,9 @@ export function Simulations({
                 variant="outline"
                 size="sm"
                 data-testid="btn-edit-simulation"
-                onClick={() => handleEdit(simulation.simulation_id)}
-                aria-label={`Edit ${simulation.name}`}
-                title={`Edit ${simulation.name}`}
+                onClick={() => simulation.simulation_id && handleEdit(simulation.simulation_id)}
+                aria-label={`Edit ${simulation.name || "Simulation"}`}
+                title={`Edit ${simulation.name || "Simulation"}`}
                 className="h-9 px-3"
               >
                 <Edit className="h-4 w-4 md:mr-0 mr-2" />
@@ -350,7 +355,7 @@ export function Simulations({
                 variant="outline"
                 size="sm"
                 data-testid="btn-view-simulation"
-                onClick={() => handleEdit(simulation.simulation_id)}
+                onClick={() => simulation.simulation_id && handleEdit(simulation.simulation_id)}
                 aria-label={`View ${simulation.name}`}
                 title={`View ${simulation.name}`}
                 className="h-9 px-3"
@@ -365,14 +370,14 @@ export function Simulations({
                 size="sm"
                 data-testid="btn-duplicate-simulation"
                 onClick={() =>
-                  handleDuplicate(simulation.simulation_id, simulation.name)
+                  simulation.simulation_id && handleDuplicate(simulation.simulation_id, simulation.name || "Simulation")
                 }
-                disabled={isDuplicating === simulation.simulation_id || false}
+                disabled={isDuplicating === simulation.simulation_id || !simulation.simulation_id}
                 aria-busy={
                   isDuplicating === simulation.simulation_id ? true : undefined
                 }
-                aria-label={`Duplicate ${simulation.name}`}
-                title={`Duplicate ${simulation.name}`}
+                aria-label={`Duplicate ${simulation.name || "Simulation"}`}
+                title={`Duplicate ${simulation.name || "Simulation"}`}
                 className="h-9 px-3"
               >
                 {isDuplicating === simulation.simulation_id ? (
@@ -393,10 +398,10 @@ export function Simulations({
                 size="sm"
                 data-testid="btn-delete-simulation"
                 onClick={() =>
-                  handleDeleteClick(simulation.simulation_id, simulation.name)
+                  simulation.simulation_id && handleDeleteClick(simulation.simulation_id, simulation.name || "Simulation")
                 }
-                aria-label={`Delete ${simulation.name}`}
-                title={`Delete ${simulation.name}`}
+                aria-label={`Delete ${simulation.name || "Simulation"}`}
+                title={`Delete ${simulation.name || "Simulation"}`}
                 className="h-9 px-3"
               >
                 <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
@@ -440,7 +445,7 @@ export function Simulations({
                         style={{
                           backgroundColor: personaColor,
                         }}
-                        aria-label={scenario.name}
+                        aria-label={scenario.name || undefined}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
@@ -454,7 +459,8 @@ export function Simulations({
         </div>
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");

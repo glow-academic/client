@@ -20,7 +20,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -96,22 +95,33 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   // This component only handles group responses (has 'runs' property)
   // Type assertion is safe here since this component is specifically for groups
   const isGroupResponse = "runs" in groupDetail;
-  const groupDetailTyped = useMemo(() => {
-    return isGroupResponse
-      ? (groupDetail as Extract<PricingGroupDetailOut, { runs: unknown }>)
-      : null;
-  }, [groupDetail, isGroupResponse]);
-
-  const runs = useMemo(() => groupDetailTyped?.runs ?? [], [groupDetailTyped]);
+  
+  // Type guard to ensure we have group response
+  type GroupResponseType = PricingGroupDetailOut & { runs: unknown[]; models?: unknown[]; agents?: unknown[]; profiles?: unknown[] };
+  const groupResponse = isGroupResponse ? (groupDetail as GroupResponseType) : null;
+  
+  const runs = useMemo(() => {
+    if (!groupResponse) return [];
+    return (groupResponse.runs ?? []) as Array<{ run: { created_at: string; model_id: string | null; agent_id: string | null; profile_id: string | null; cost: number | null; input_tokens: number | null; [key: string]: unknown }; messages: Array<{ id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; [key: string]: unknown }>; previous_context_start_index: number | null }>;
+  }, [groupResponse]);
   
   // Use arrays directly (no mapping construction)
-  const models = useMemo(() => groupDetailTyped?.models || [], [groupDetailTyped?.models]);
-  const agents = useMemo(() => groupDetailTyped?.agents || [], [groupDetailTyped?.agents]);
-  const profiles = useMemo(() => groupDetailTyped?.profiles || [], [groupDetailTyped?.profiles]);
+  const models = useMemo(() => {
+    if (!groupResponse) return [];
+    return (groupResponse.models || []) as Array<{ model_id: string | null; name: string | null; [key: string]: unknown }>;
+  }, [groupResponse]);
+  const agents = useMemo(() => {
+    if (!groupResponse) return [];
+    return (groupResponse.agents || []) as Array<{ agent_id: string | null; name: string | null; [key: string]: unknown }>;
+  }, [groupResponse]);
+  const profiles = useMemo(() => {
+    if (!groupResponse) return [];
+    return (groupResponse.profiles || []) as Array<{ profile_id: string | null; name: string | null; [key: string]: unknown }>;
+  }, [groupResponse]);
 
   // Sort runs chronologically
   const sortedRuns = useMemo(() => {
-    if (!isGroupResponse || runs.length === 0) {
+    if (!groupResponse || runs.length === 0) {
       return [];
     }
     return [...runs].sort(
@@ -119,21 +129,21 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
         new Date(a.run.created_at).getTime() -
         new Date(b.run.created_at).getTime()
     );
-  }, [runs, isGroupResponse]);
+  }, [runs, groupResponse]);
 
   // Get current run
   const currentRun = sortedRuns[currentRunIndex];
 
   // Filter messages based on toggle switches
-  type MessageItem =
-    components["schemas"]["app__api__v4__pricing__detail__MessageItem"];
+  // Use the message type from the run structure
+  type MessageItem = { id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; [key: string]: unknown };
   const filteredMessages = useMemo(() => {
     if (!currentRun) {
       return [];
     }
 
     // First filter by previous context (if needed)
-    let messagesToFilter = currentRun.messages;
+    let messagesToFilter = currentRun.messages as MessageItem[];
     if (
       !showPreviousContext &&
       currentRun.previous_context_start_index !== null &&
@@ -142,12 +152,12 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
       // Hide messages before the previous_context_start_index (these are from previous runs)
       messagesToFilter = currentRun.messages.slice(
         currentRun.previous_context_start_index
-      );
+      ) as MessageItem[];
     }
 
     // Then filter by system/developer toggles
-    return messagesToFilter.filter((message: MessageItem) => {
-      const role = message.role.toLowerCase();
+    return messagesToFilter.filter((message) => {
+      const role = (message.role || "").toLowerCase();
 
       // Filter by system/developer toggles
       if (role === "system" && !showSystemPrompt) {
@@ -173,16 +183,16 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   // Messages are already ordered by message_tree from server, no need to sort
 
   const modelName =
-    run.model_id
-      ? (models.find(m => m.model_id === run.model_id)?.name ?? run.model_id)
+    run["model_id"]
+      ? (models.find((m) => m["model_id"] === run["model_id"])?.["name"] ?? run["model_id"])
       : "Unknown";
   const agentName =
-    run.agent_id
-      ? (agents.find(a => a.agent_id === run.agent_id)?.name ?? run.agent_id)
+    run["agent_id"]
+      ? (agents.find((a) => a["agent_id"] === run["agent_id"])?.["name"] ?? run["agent_id"])
       : "Unknown";
   const profileName =
-    run.profile_id
-      ? (profiles.find(p => p.profile_id === run.profile_id)?.name ?? run.profile_id)
+    run["profile_id"]
+      ? (profiles.find((p) => p["profile_id"] === run["profile_id"])?.["name"] ?? run["profile_id"])
       : "Unknown";
 
   return (
@@ -243,25 +253,25 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
             <div>
               <div className="text-sm text-muted-foreground">Cost</div>
               <div className="text-lg font-semibold">
-                {formatCost(run.cost)}
+                {formatCost((run["cost"] as number) ?? 0)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Input Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber(run.input_tokens)}
+                {formatNumber((run["input_tokens"] as number) ?? 0)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Output Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber(run.output_tokens)}
+                {formatNumber((run["output_tokens"] as number) ?? 0)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Cached Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber(run.cached_input_tokens)}
+                {formatNumber((run["cached_input_tokens"] as number) ?? 0)}
               </div>
             </div>
           </div>
@@ -296,15 +306,17 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                   <p className="text-sm">No messages found for this run</p>
                 </div>
               ) : (
-                filteredMessages.map((message: MessageItem) => {
-                  const isUser = message.role.toLowerCase() === "user";
-                  const RoleIcon = getRoleIcon(message.role);
-                  const roleLabel = getRoleLabel(message.role);
+                filteredMessages.map((message) => {
+                  const msg = message as MessageItem;
+                  const role = msg.role || "";
+                  const isUser = role.toLowerCase() === "user";
+                  const RoleIcon = getRoleIcon(role);
+                  const roleLabel = getRoleLabel(role);
 
                   // Check if this is the boundary between previous context and current run
                   // Find the original index in the unfiltered messages array
                   const originalIndex = currentRun.messages.findIndex(
-                    (m) => m.id === message.id
+                    (m) => (m as MessageItem).id === msg.id
                   );
                   const isPreviousContextBoundary =
                     currentRun.previous_context_start_index !== null &&
@@ -313,7 +325,7 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                     showPreviousContext; // Only show boundary when previous context is visible
 
                   return (
-                    <div key={message.id}>
+                    <div key={msg.id || `msg-${originalIndex}`}>
                       {isPreviousContextBoundary && (
                         <div className="relative my-4">
                           <div className="absolute inset-0 flex items-center">
@@ -360,24 +372,27 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                                 : "bg-muted"
                             )}
                           >
-                            {message.contents && message.contents.length > 0 ? (
+                            {msg.contents && msg.contents.length > 0 ? (
                               <div className="space-y-2">
-                                {message.contents.map(
-                                  (contentItem, contentIdx) => (
-                                    <div
-                                      key={contentIdx}
-                                      className="flex items-start gap-2"
-                                    >
-                                      {contentIdx > 0 && (
-                                        <div className="w-0.5 h-full bg-border mt-1.5 min-h-[1rem]" />
-                                      )}
-                                      <div className="flex-1">
-                                        <Markdown>
-                                          {contentItem.content}
-                                        </Markdown>
+                                {msg.contents.map(
+                                  (contentItem, contentIdx: number) => {
+                                    const content = contentItem as { content: string | null; [key: string]: unknown };
+                                    return (
+                                      <div
+                                        key={contentIdx}
+                                        className="flex items-start gap-2"
+                                      >
+                                        {contentIdx > 0 && (
+                                          <div className="w-0.5 h-full bg-border mt-1.5 min-h-[1rem]" />
+                                        )}
+                                        <div className="flex-1">
+                                          <Markdown>
+                                            {content.content || ""}
+                                          </Markdown>
+                                        </div>
                                       </div>
-                                    </div>
-                                  )
+                                    );
+                                  }
                                 )}
                               </div>
                             ) : (

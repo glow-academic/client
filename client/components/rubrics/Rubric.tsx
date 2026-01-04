@@ -30,10 +30,6 @@ import {
 } from "@/components/rubrics/RubricStandardGroupCardGrid";
 import { RubricStandardSection } from "@/components/rubrics/RubricStandardSection";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -48,9 +44,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
-import { cn } from "@/lib/utils";
 import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
-import { Check, Power, Sparkles } from "lucide-react";
+import { Power, Sparkles } from "lucide-react";
 import {
   parseAsString,
   useQueryStates,
@@ -396,7 +391,7 @@ export default function Rubric({
       const cells: GridCell[] = [];
       if (Array.isArray(data.standard_groups) && Array.isArray(data.standards)) {
         data.standard_groups.forEach((group: any) => {
-          if (group.standard_group_id && group.standard_ids) {
+          if (group.standard_group_id && "standard_ids" in group && Array.isArray(group.standard_ids)) {
             const groupId = String(group.standard_group_id);
             group.standard_ids.forEach((standardId: string) => {
               const standard = data.standards?.find(
@@ -594,7 +589,7 @@ export default function Rubric({
 
   // Step status logic (for GenericForm)
   const getStepStatus = useCallback(
-    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       const hasName = !!(draftState.name?.trim() && draftState.name !== "New Rubric");
       const hasGroups = draftState.standardGroups.length > 0;
       const hasStandards = draftState.standards.length > 0;
@@ -720,7 +715,7 @@ export default function Rubric({
             short_name: group.name.substring(0, 10).toUpperCase(),
             description: group.description,
             points: group.points,
-            passPoints: group.passPoints,
+            pass_points: group.passPoints,
             position: group.position,
             active: group.active,
             standards: groupStandards.map((s) => {
@@ -739,7 +734,7 @@ export default function Rubric({
         // Calculate total points
         const totalPoints = allGroups.reduce((sum, g) => sum + g.points, 0);
         const totalPassPoints = allGroups.reduce(
-          (sum, g) => sum + g.passPoints,
+          (sum, g) => sum + (g.pass_points ?? 0),
           0,
         );
 
@@ -750,12 +745,12 @@ export default function Rubric({
           }
           await updateRubricAction({
             body: {
-              rubricId: rubricId!,
+              rubric_id: rubricId!,
               name: draftState.name,
               description: draftState.description,
               active: draftState.active,
               points: totalPoints,
-              passPoints: totalPassPoints,
+              pass_points: totalPassPoints,
               department_ids: finalDepartmentIds || [],
               standard_groups: allGroups,
               rubric_agent_id: draftState.rubricAgentId || null,
@@ -775,15 +770,15 @@ export default function Rubric({
               department_ids: finalDepartmentIds ?? [],
               active: draftState.active,
               points: totalPoints,
-              passPoints: totalPassPoints,
+              pass_points: totalPassPoints,
               rubric_agent_id: draftState.rubricAgentId || null,
               standard_groups: allGroups,
             },
           });
 
-          if (data && data.rubricId) {
+          if (data && data.rubric_id) {
             toast.success("Rubric created successfully");
-            router.push(`/engine/rubrics/r/${data.rubricId}`);
+            router.push(`/engine/rubrics/r/${data.rubric_id}`);
           }
         }
       } catch (error) {
@@ -1327,16 +1322,27 @@ export default function Rubric({
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: stepFormData,
-      setFormData: stepSetFormData,
+      isOptional: _isOptional,
+      formData: _stepFormData,
+      setFormData: _stepSetFormData,
+      filters: _filters,
+      onReset: _onReset,
     }: {
       stepId: string;
       stepStatus: StepStatus;
       stepTitle: string;
       stepDescription: string;
       stepNumber: number;
+      isOptional: boolean;
       formData: Values<typeof rubricSearchParamsClient>;
       setFormData: (updates: Partial<Values<typeof rubricSearchParamsClient>>) => void;
+      filters?: Array<{
+        key: string;
+        label: string;
+        value: boolean;
+        onChange: (value: boolean) => void;
+      }>;
+      onReset?: () => void;
     }) => {
       switch (stepId) {
         case "basic": {

@@ -148,7 +148,9 @@ export default function Keys({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
-          const date = new Date(row.original.updated_at);
+          const updatedAt = row.original.updated_at;
+          if (!updatedAt) return <div className="text-sm text-muted-foreground">-</div>;
+          const date = new Date(updatedAt);
           return (
             <div className="text-sm text-muted-foreground">
               {date.toLocaleDateString()}
@@ -292,12 +294,17 @@ export default function Keys({
     router.push("/system/keys/new");
   };
 
-  const renderKeyCard = (key: (typeof keys)[number]) => (
+  const renderKeyCard = (key: (typeof keys)[number]) => {
+    const keyId = key.key_id ?? "";
+    const keyName = key.name ?? "";
+    if (!keyId) return null;
+    
+    return (
     <Card
-      key={key.key_id}
-      aria-label={key.name}
+      key={keyId}
+      aria-label={keyName || undefined}
       data-testid="key-card"
-      data-key-id={key.key_id}
+      data-key-id={keyId}
       className="relative flex flex-col h-full"
     >
       <CardHeader className="pb-3">
@@ -315,9 +322,11 @@ export default function Keys({
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`edit-${key.key_id}`}
-                onClick={() => handleEdit(key.key_id)}
-                aria-label={`Edit ${key.name}`}
+                data-testid={`edit-${keyId}`}
+                onClick={() => {
+                  if (keyId) handleEdit(keyId);
+                }}
+                aria-label={`Edit ${keyName}`}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -325,9 +334,12 @@ export default function Keys({
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`view-${key.key_id}`}
-                onClick={() => handleView(key.key_id)}
-                aria-label={`View ${key.name}`}
+                data-testid={`view-${keyId}`}
+                onClick={() => {
+                  const keyId = key.key_id;
+                  if (keyId) handleView(keyId);
+                }}
+                aria-label={`View ${keyName}`}
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -336,9 +348,11 @@ export default function Keys({
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`delete-${key.key_id}`}
-                onClick={() => handleDeleteClick(key.key_id, key.name)}
-                aria-label={`Delete ${key.name}`}
+                data-testid={`delete-${keyId}`}
+                onClick={() => {
+                  if (keyId) handleDeleteClick(keyId, keyName);
+                }}
+                aria-label={`Delete ${keyName}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -359,7 +373,8 @@ export default function Keys({
         )}
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   const renderEmptyState = () => (
     <div className="col-span-full">

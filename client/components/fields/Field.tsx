@@ -266,7 +266,7 @@ export default function Field({
   } as const;
 
   // URL-backed state using nuqs
-  const [urlParams, setUrlParams] = useQueryStates(fieldSearchParamsClient, {
+  const [urlParams] = useQueryStates(fieldSearchParamsClient, {
     history: "replace",
     shallow: true,
   });
@@ -299,7 +299,7 @@ export default function Field({
       const isSuperadmin = effectiveProfile?.role === "superadmin";
       const defaultDepartmentIds = getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primary_department_id || null
       );
       return {
         name: "New Field",
@@ -337,7 +337,7 @@ export default function Field({
     fieldDetail?.department_ids,
     fieldDetail?.conditional_parameter_ids,
     effectiveProfile?.role,
-    effectiveProfile?.primaryDepartmentId,
+    effectiveProfile?.primary_department_id,
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
@@ -460,11 +460,11 @@ export default function Field({
 
   // Set breadcrumb metadata
   useEffect(() => {
-    if (isEditMode && fieldDetail && fieldId) {
+    if (isEditMode && fieldDetail && fieldId && fieldDetail.name) {
       setEntityMetadata({
         entityId: fieldId,
         entityName: fieldDetail.name,
-        entityType: "field",
+        entityType: "parameter", // Using "parameter" as closest match since "field" not in allowed types
       });
     }
 
@@ -531,23 +531,21 @@ export default function Field({
 
   // Form initialization from server data
   const initializeForm = useCallback(
-    (serverData: FieldDetailOut | FieldNewOut, editMode: boolean) => {
-      if (!editMode || !("field_id" in serverData)) {
+    (serverData: unknown, isEditMode: boolean): Partial<Record<string, unknown>> => {
+      if (!isEditMode || !serverData || typeof serverData !== "object" || !("field_id" in serverData)) {
         return {};
       }
 
       const fieldDetail = serverData as FieldDetailOut;
-      const updates: Partial<
-        Record<keyof typeof fieldSearchParamsClient, unknown>
-      > = {};
+      const updates: Partial<Record<string, unknown>> = {};
 
       if (fieldDetail.name) updates["name"] = fieldDetail.name;
       if (fieldDetail.description)
         updates["description"] = fieldDetail.description;
       if (fieldDetail.active !== undefined) updates["active"] = fieldDetail.active;
-      if (fieldDetail.department_ids)
+      if (fieldDetail.department_ids && Array.isArray(fieldDetail.department_ids))
         updates["departmentIds"] = fieldDetail.department_ids;
-      if (fieldDetail.conditional_parameter_ids)
+      if (fieldDetail.conditional_parameter_ids && Array.isArray(fieldDetail.conditional_parameter_ids))
         updates["conditionalParameterIds"] = fieldDetail.conditional_parameter_ids;
 
       return updates;
@@ -577,7 +575,12 @@ export default function Field({
         }
         try {
           await updateFieldAction({
-            body: { ...finalData, field_id: fieldId! },
+            body: { 
+              ...finalData, 
+              field_id: fieldId!,
+              department_ids: finalData.department_ids ?? [],
+              conditional_parameter_ids: finalData.conditional_parameter_ids ?? [],
+            },
           });
         toast.success("Field updated successfully!");
           router.push("/management/fields");
@@ -592,7 +595,13 @@ export default function Field({
           throw new Error("createFieldAction is required");
         }
         try {
-          await createFieldAction({ body: finalData });
+          await createFieldAction({ 
+            body: {
+              ...finalData,
+              department_ids: finalData.department_ids ?? [],
+              conditional_parameter_ids: finalData.conditional_parameter_ids ?? [],
+            }
+          });
         toast.success("Field created successfully!");
           router.push("/management/fields");
         } catch (error) {
@@ -646,16 +655,6 @@ export default function Field({
                 value: name,
                 onChange: (value) => setStepFormData({ name: value }),
                 placeholder: "New Field",
-                onFocus: (e) => {
-                  if (e.target.value === "New Field") {
-                    e.target.select();
-                  }
-                },
-                onBlur: (e) => {
-                  if (!e.target.value || e.target.value.trim() === "") {
-                    setStepFormData({ name: "New Field" });
-                  }
-                },
               }}
             >
               <div className="space-y-4">

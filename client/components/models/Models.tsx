@@ -175,7 +175,9 @@ export default function Models({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
-          const date = new Date(row.original.updated_at);
+          const updatedAt = row.original.updated_at;
+          if (!updatedAt) return <div className="text-sm text-muted-foreground">—</div>;
+          const date = new Date(updatedAt);
           return (
             <div className="text-sm text-muted-foreground">
               {date.toLocaleDateString()}
@@ -258,7 +260,11 @@ export default function Models({
       toast.error("Cannot delete model: It is currently in use");
       return;
     }
-    setDeleteItem({ id: model.model_id, name: model.name });
+    if (!model.model_id) {
+      toast.error("Model ID is missing");
+      return;
+    }
+    setDeleteItem({ id: model.model_id, name: model.name || "Unknown Model" });
     setShowDeleteDialog(true);
   };
 
@@ -271,6 +277,10 @@ export default function Models({
       return;
     }
 
+    if (!model.model_id) {
+      toast.error("Model ID is missing");
+      return;
+    }
     setIsDuplicating(model.model_id);
     try {
       await duplicateModelAction({
@@ -279,7 +289,7 @@ export default function Models({
         },
       });
       // profileId comes from X-Profile-Id header automatically
-      toast.success(`Model '${model.name}' duplicated successfully`);
+      toast.success(`Model '${model.name || "Unknown Model"}' duplicated successfully`);
       router.refresh();
     } catch {
       toast.error("Failed to duplicate model");
@@ -334,10 +344,10 @@ export default function Models({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleEdit(model.model_id)}
-            aria-label={`Edit model ${model.name}`}
+            onClick={() => model.model_id && handleEdit(model.model_id)}
+            aria-label={`Edit model ${model.name || "Unknown Model"}`}
             data-testid="btn-edit-model"
-            title={`Edit model ${model.name}`}
+            title={`Edit model ${model.name || "Unknown Model"}`}
             className="h-9 px-3"
           >
             <Edit className="h-4 w-4 md:mr-0 mr-2" />

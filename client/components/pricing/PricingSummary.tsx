@@ -165,12 +165,18 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       const modelInfo = models.find(m => m.model_id === modelId);
       if (!modelInfo) continue;
 
-      const spend =
-        (run.input_tokens / 1_000_000) * (Number(modelInfo.input_ppm) || 0) +
-        (run.output_tokens / 1_000_000) * (Number(modelInfo.output_ppm) || 0);
+      // Handle null values for tokens and created_at
+      const inputTokens = run.input_tokens ?? 0;
+      const outputTokens = run.output_tokens ?? 0;
+      const createdAt = run.created_at;
+      if (!createdAt) continue;
 
-      const dateKey = format(new Date(run.created_at), "yyyy-MM-dd");
-      const dateLabel = format(new Date(run.created_at), "MMM dd");
+      const spend =
+        (inputTokens / 1_000_000) * (Number(modelInfo.input_ppm) || 0) +
+        (outputTokens / 1_000_000) * (Number(modelInfo.output_ppm) || 0);
+
+      const dateKey = format(new Date(createdAt), "yyyy-MM-dd");
+      const dateLabel = format(new Date(createdAt), "MMM dd");
 
       if (!byDay.has(dateKey)) {
         byDay.set(dateKey, { dateLabel, values: {} });
@@ -189,6 +195,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       .map(([_, { dateLabel, values }]) => {
         const row: Record<string, number | string> = { date: dateLabel };
         for (const id of includeModels) {
+          if (!id) continue;
           const value = Number((values[id] || 0).toFixed(2));
           // Only include non-zero values to prevent rendering empty areas
           if (value > 0) {
@@ -206,6 +213,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     const modelIdToColor: Record<string, string> = {};
     let colorIdx = 0;
     for (const id of includeModels) {
+      if (!id) continue;
       modelIdToColor[id] =
         chartColors[colorIdx % chartColors.length] ?? "#999999";
       colorIdx += 1;
@@ -213,6 +221,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
 
     const config: Record<string, { label: string; color: string }> = {};
     for (const id of includeModels) {
+      if (!id) continue;
       const model = models.find(m => m.model_id === id);
       const label = model?.name;
       config[id] = {

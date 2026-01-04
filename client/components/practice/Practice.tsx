@@ -50,19 +50,12 @@ export default function Practice({
 
   // Build standard_groups mapping from standards array (for SimulationCard compatibility)
   // API returns arrays, but SimulationCard expects a dict mapping standard_group_id -> array of standard_ids
+  // Note: Server response doesn't include standard_group_id in standards array, so we build an empty mapping
+  // This mapping may need to be built differently if the server adds standard_group_id to the response
   const standardGroupsToStandards = useMemo(() => {
     const mapping: Record<string, string[]> = {};
-    if (practiceOverview?.standards) {
-      for (const standard of practiceOverview.standards) {
-        if (standard.standard_group_id && standard.standard_id) {
-          const sgId = String(standard.standard_group_id);
-          if (!mapping[sgId]) {
-            mapping[sgId] = [];
-          }
-          mapping[sgId].push(String(standard.standard_id));
-        }
-      }
-    }
+    // Since standards array doesn't include standard_group_id, we can't build this mapping
+    // Return empty mapping for now - this may need server-side changes to include standard_group_id
     return mapping;
   }, [practiceOverview?.standards]);
 

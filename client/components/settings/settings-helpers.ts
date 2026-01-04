@@ -14,7 +14,9 @@ export function convertProviderKeysToMapping(
   if (!providerKeys) return {};
   const mapping: Record<string, string> = {};
   providerKeys.forEach((pk) => {
-    mapping[pk.provider_id] = pk.key_id;
+    if (pk.provider_id) {
+      mapping[pk.provider_id] = pk.key_id || "";
+    }
   });
   return mapping;
 }
@@ -28,9 +30,12 @@ export function convertAuthKeysToMapping(
   if (!authKeys) return {};
   const mapping: Record<string, Record<string, string>> = {};
   authKeys.forEach((ak) => {
+    if (!ak.auth_id) return;
     const itemsMapping: Record<string, string> = {};
-    ak.items.forEach((item) => {
-      itemsMapping[item.auth_item_id] = item.key_id;
+    (ak.items || []).forEach((item) => {
+      if (item.auth_item_id) {
+        itemsMapping[item.auth_item_id] = item.key_id || "";
+      }
     });
     mapping[ak.auth_id] = itemsMapping;
   });
@@ -46,9 +51,12 @@ export function convertAuthValuesToMapping(
   if (!authValues) return {};
   const mapping: Record<string, Record<string, string>> = {};
   authValues.forEach((av) => {
+    if (!av.auth_id) return;
     const itemsMapping: Record<string, string> = {};
-    av.items.forEach((item) => {
-      itemsMapping[item.auth_item_id] = item.value;
+    (av.items || []).forEach((item) => {
+      if (item.auth_item_id) {
+        itemsMapping[item.auth_item_id] = item.value || "";
+      }
     });
     mapping[av.auth_id] = itemsMapping;
   });

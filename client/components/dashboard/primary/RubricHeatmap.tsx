@@ -56,8 +56,6 @@ type RubricMatrixPackage = {
   hasData: boolean;
 };
 
-type RubricMapping = Record<string, { name: string; description: string }>;
-
 import { TrendingUp } from "lucide-react";
 import {
   useCallback,
@@ -67,6 +65,12 @@ import {
   useRef,
   useState,
 } from "react";
+
+type Rubric = {
+  rubric_id: string;
+  name: string;
+  description: string;
+};
 
 export interface RubricHeatmapProps {
   matrices: RubricMatrixPackage[];
@@ -293,7 +297,7 @@ export default function RubricHeatmap({
                           (colGroup, colIndex) => {
                             const cell =
                               deferredMatrix.matrix?.[rowIndex]?.[colIndex];
-                            if (!cell) {
+                            if (!cell || typeof cell !== "object" || !("correlation" in cell)) {
                               return (
                                 <TableCell key={colIndex} className="p-1" />
                               );

@@ -150,16 +150,22 @@ export default function Documents({
   // Use server-provided filter options directly (already composite type arrays)
   const scenarioOptions = useMemo(
     () =>
-      (documentsData?.scenario_options || []).filter(
-        (opt) => opt.value && opt.label,
-      ),
+      (documentsData?.scenario_options || [])
+        .filter((opt) => opt.value && opt.label)
+        .map((opt) => ({
+          value: opt.value!,
+          label: opt.label!,
+        })),
     [documentsData?.scenario_options],
   );
   const departmentOptions = useMemo(
     () =>
-      (documentsData?.department_options || []).filter(
-        (opt) => opt.value && opt.label,
-      ),
+      (documentsData?.department_options || [])
+        .filter((opt) => opt.value && opt.label)
+        .map((opt) => ({
+          value: opt.value!,
+          label: opt.label!,
+        })),
     [documentsData?.department_options],
   );
 
@@ -371,7 +377,7 @@ export default function Documents({
 
   // Handle document delete
   const handleDelete = async () => {
-    if (!deletingDocument) return;
+    if (!deletingDocument || !deletingDocument.document_id) return;
 
     if (!canDeleteDocument(deletingDocument.document_id)) {
       toast.error(
@@ -386,7 +392,7 @@ export default function Documents({
     try {
       if (!deleteDocumentAction) return;
       await deleteDocumentAction({
-        body: { documentId: deletingDocument.document_id },
+        body: { document_id: deletingDocument.document_id },
       });
       router.refresh();
       toast.success("Document deleted successfully");
@@ -484,9 +490,9 @@ export default function Documents({
                   return (
                     <Card
                       key={document.document_id}
-                      aria-label={document.name}
+                      aria-label={document.name ?? undefined}
                       data-testid="document-card"
-                      data-document-id={document.document_id}
+                      data-document-id={document.document_id ?? undefined}
                       className="relative flex flex-col h-full"
                     >
                       <CardHeader className="pb-3">
@@ -550,7 +556,7 @@ export default function Documents({
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            {canDeleteDocument(document.document_id) && (
+                            {document.document_id && canDeleteDocument(document.document_id) && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -595,7 +601,7 @@ export default function Documents({
                           )}
                         <div className="text-xs text-muted-foreground">
                           Updated{" "}
-                          {new Date(document.updated_at).toLocaleDateString()}
+                          {document.updated_at ? new Date(document.updated_at).toLocaleDateString() : "-"}
                         </div>
                       </CardContent>
                     </Card>
@@ -652,6 +658,7 @@ export default function Documents({
                 disabled={
                   isDeleting ||
                   !deletingDocument ||
+                  !deletingDocument.document_id ||
                   !canDeleteDocument(deletingDocument.document_id)
                 }
                 variant="destructive"
@@ -678,17 +685,20 @@ export default function Documents({
               <div className="flex-1 min-h-0">
                 <DocumentViewer
                   document={{
-                    document_id: previewDocument.document_id,
-                    name: previewDocument.name,
-                    updatedAt: previewDocument.updated_at,
-                    extension: previewDocument.extension || "",
-                    scenario_ids: previewDocument.scenario_ids,
-                    can_edit: previewDocument.can_edit,
-                    can_delete: previewDocument.can_delete,
-                    active: previewDocument.active,
-                    department_ids: previewDocument.department_ids || [],
-                    upload_id: previewDocument.upload_id || null,
-                    field_ids: previewDocument.field_ids,
+                    document_id: previewDocument.document_id ?? null,
+                    name: previewDocument.name ?? null,
+                    updated_at: previewDocument.updated_at ?? null,
+                    extension: previewDocument.extension ?? null,
+                    scenario_ids: previewDocument.scenario_ids ?? null,
+                    can_edit: previewDocument.can_edit ?? null,
+                    can_delete: previewDocument.can_delete ?? null,
+                    active: previewDocument.active ?? null,
+                    department_ids: previewDocument.department_ids ?? null,
+                    upload_id: previewDocument.upload_id ?? null,
+                    field_ids: previewDocument.field_ids ?? null,
+                    valid_field_ids: previewDocument.valid_field_ids ?? null,
+                    active_scenario_count: previewDocument.active_scenario_count ?? null,
+                    total_scenario_links: previewDocument.total_scenario_links ?? null,
                   }}
                   bare={true}
                   isFormDocument={false}

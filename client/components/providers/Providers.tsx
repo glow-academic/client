@@ -158,7 +158,9 @@ export default function Providers({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
-          const date = new Date(row.original.updated_at);
+          const updatedAt = row.original.updated_at;
+          if (!updatedAt) return null;
+          const date = new Date(updatedAt);
           return (
             <div className="text-sm text-muted-foreground">
               {date.toLocaleDateString()}
@@ -300,12 +302,17 @@ export default function Providers({
     router.push("/system/providers/new");
   };
 
-  const renderProviderCard = (provider: (typeof providers)[number]) => (
+  const renderProviderCard = (provider: (typeof providers)[number]) => {
+    const providerId = provider.provider_id;
+    const providerName = provider.name;
+    if (!providerId) return null;
+    
+    return (
     <Card
-      key={provider.provider_id}
-      aria-label={provider.name}
+      key={providerId}
+      aria-label={providerName ?? undefined}
       data-testid="provider-card"
-      data-provider-id={provider.provider_id}
+      data-provider-id={providerId}
       className="relative flex flex-col h-full"
     >
       <CardHeader className="pb-3">
@@ -322,26 +329,26 @@ export default function Providers({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {provider.can_edit && (
+            {provider.can_edit && providerId && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleEdit(provider.provider_id)}
-                aria-label={`Edit ${provider.name}`}
-                data-testid={`btn-edit-provider-${provider.provider_id}`}
+                onClick={() => handleEdit(providerId)}
+                aria-label={providerName ? `Edit ${providerName}` : undefined}
+                data-testid={`btn-edit-provider-${providerId}`}
               >
                 <Edit className="h-4 w-4" />
               </Button>
             )}
-            {provider.can_delete && (
+            {provider.can_delete && providerId && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() =>
-                  handleDeleteClick(provider.provider_id, provider.name)
+                  handleDeleteClick(providerId, providerName ?? "")
                 }
-                aria-label={`Delete ${provider.name}`}
-                data-testid={`btn-delete-provider-${provider.provider_id}`}
+                aria-label={providerName ? `Delete ${providerName}` : undefined}
+                data-testid={`btn-delete-provider-${providerId}`}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
@@ -360,7 +367,8 @@ export default function Providers({
         )}
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6" data-page="providers-index">

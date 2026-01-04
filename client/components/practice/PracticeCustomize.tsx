@@ -35,7 +35,6 @@ import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -73,7 +72,7 @@ function PracticeCustomizeComponent({
     setSelectedDraftId,
   } = useProfile();
 
-  const [isStartingAttempt, setIsStartingAttempt] = useState(false);
+  const [_isStartingAttempt, setIsStartingAttempt] = useState(false);
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
     null,
   );
@@ -533,10 +532,6 @@ function PracticeCustomizeComponent({
     draftState.parameterItemIds,
   ]);
 
-  const validPersonaIds = useMemo(
-    () => filteredPersonasArray.map((p) => p.id),
-    [filteredPersonasArray]
-  );
 
   const validParameterItemIds = useMemo(
     () => Object.keys(filteredParameterItemMapping),
@@ -1032,7 +1027,6 @@ function PracticeCustomizeComponent({
     ]
   );
 
-  const isDisabled = effectiveProfile?.id !== activeProfile?.id;
 
   if (!effectiveProfile) {
     return null;

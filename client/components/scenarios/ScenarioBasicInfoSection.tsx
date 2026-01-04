@@ -19,9 +19,9 @@ import {
 import type { components } from "@/lib/api/schema";
 
 type AgentMappingItem =
-  components["schemas"]["app__api__v4__scenarios__detail__AgentMappingItem"];
+  components["schemas"]["QGetScenarioDetailV4Agent"];
 type DepartmentMappingItem =
-  components["schemas"]["app__api__v4__scenarios__detail__DepartmentMappingItem"];
+  components["schemas"]["QGetScenarioDetailV4Department"];
 
 export interface ScenarioBasicInfoSectionProps {
   // Data

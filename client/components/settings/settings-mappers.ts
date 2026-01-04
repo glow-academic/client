@@ -5,7 +5,6 @@
 import type {
   DepartmentsListOut,
   KeysListOut,
-  SettingsDetailOut,
   StaffListOut,
 } from "@/app/(main)/settings/page";
 
@@ -40,12 +39,13 @@ export function buildKeyMapping(keysList: KeysListOut): Record<
       department_ids: string[] | null;
     }
   > = {};
-  keysList.keys.forEach((key) => {
+  (keysList.keys || []).forEach((key) => {
+    if (!key.key_id) return;
     mapping[key.key_id] = {
-      name: key.name,
+      name: key.name || "",
       description: key.description || "",
-      key_masked: key.key_masked,
-      active: key.active,
+      key_masked: key.key_masked || "",
+      active: key.active ?? false,
       department_ids: key.department_ids || null,
     };
   });
@@ -59,13 +59,14 @@ export function buildProfileMapping(
   staffList: StaffListOut
 ): Record<string, ProfileMappingItem> {
   const mapping: Record<string, ProfileMappingItem> = {};
-  staffList.staff.forEach((staff) => {
+  (staffList.staff || []).forEach((staff) => {
+    if (!staff.profile_id) return;
     mapping[staff.profile_id] = {
       profile_id: staff.profile_id,
-      name: staff.name,
-      role: staff.role,
-      first_name: staff.first_name,
-      last_name: staff.last_name,
+      name: staff.name || "",
+      role: staff.role || "",
+      first_name: staff.first_name || "",
+      last_name: staff.last_name || "",
     };
   });
   return mapping;
@@ -78,9 +79,10 @@ export function buildDepartmentMapping(
   departmentsList: DepartmentsListOut
 ): Record<string, { name: string; description: string }> {
   const mapping: Record<string, { name: string; description: string }> = {};
-  departmentsList.departments.forEach((dept) => {
+  (departmentsList.departments || []).forEach((dept) => {
+    if (!dept.department_id) return;
     mapping[dept.department_id] = {
-      name: dept.title,
+      name: dept.title || "",
       description: dept.description || "",
     };
   });
@@ -91,7 +93,9 @@ export function buildDepartmentMapping(
  * Get valid profile IDs from staff list
  */
 export function getValidProfileIds(staffList: StaffListOut): string[] {
-  return staffList.staff.map((staff) => staff.profile_id);
+  return (staffList.staff || [])
+    .map((staff) => staff.profile_id)
+    .filter((id): id is string => id !== null && id !== undefined);
 }
 
 /**
@@ -100,14 +104,18 @@ export function getValidProfileIds(staffList: StaffListOut): string[] {
 export function getValidDepartmentIds(
   departmentsList: DepartmentsListOut
 ): string[] {
-  return departmentsList.departments.map((dept) => dept.department_id);
+  return (departmentsList.departments || [])
+    .map((dept) => dept.department_id)
+    .filter((id): id is string => id !== null && id !== undefined);
 }
 
 /**
  * Get valid key IDs from keys list
  */
 export function getValidKeyIds(keysList: KeysListOut): string[] {
-  return keysList.keys.map((key) => key.key_id);
+  return (keysList.keys || [])
+    .map((key) => key.key_id)
+    .filter((id): id is string => id !== null && id !== undefined);
 }
 
 /**

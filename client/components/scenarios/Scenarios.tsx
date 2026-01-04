@@ -286,6 +286,7 @@ export function Scenarios({
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => {
+          if (!row.original.updated_at) return null;
           const date = new Date(row.original.updated_at);
           return (
             <div className="text-sm text-muted-foreground">
@@ -458,7 +459,7 @@ export function Scenarios({
 
     setIsDeleting(true);
     try {
-      await deleteScenarioAction({ body: { scenarioId: deleteItem.id } });
+      await deleteScenarioAction({ body: { scenario_id: deleteItem.id } });
       toast.success("Scenario deleted successfully");
       router.refresh();
     } catch {
@@ -475,7 +476,7 @@ export function Scenarios({
 
     setIsDuplicating(scenarioId);
     try {
-      await duplicateScenarioAction({ body: { scenarioId } });
+      await duplicateScenarioAction({ body: { scenario_id: scenarioId } });
       toast.success(`Scenario "${scenarioName}" duplicated successfully`);
       router.refresh();
     } catch {
@@ -563,7 +564,7 @@ export function Scenarios({
                   variant="outline"
                   size="sm"
                   data-testid="btn-view-scenario"
-                  onClick={() => handleView(scenario.scenario_id)}
+                  onClick={() => scenario.scenario_id && handleView(scenario.scenario_id)}
                   className="h-9 px-3"
                 >
                   <Eye className="h-4 w-4 md:mr-0 mr-2" />
@@ -575,9 +576,9 @@ export function Scenarios({
                     size="sm"
                     data-testid="btn-duplicate-scenario"
                     onClick={() =>
-                      handleDuplicate(scenario.scenario_id, scenario.title)
+                      scenario.scenario_id && handleDuplicate(scenario.scenario_id, scenario.title || "Unnamed Scenario")
                     }
-                    disabled={isDuplicating === scenario.scenario_id}
+                    disabled={isDuplicating === scenario.scenario_id || !scenario.scenario_id}
                     className="h-9 px-3"
                   >
                     {isDuplicating === scenario.scenario_id ? (
@@ -601,7 +602,7 @@ export function Scenarios({
                     variant="outline"
                     size="sm"
                     data-testid="btn-edit-scenario"
-                    onClick={() => handleEdit(scenario.scenario_id)}
+                    onClick={() => scenario.scenario_id && handleEdit(scenario.scenario_id)}
                     className="h-9 px-3"
                   >
                     <Edit className="h-4 w-4 md:mr-0 mr-2" />
@@ -612,7 +613,7 @@ export function Scenarios({
                     variant="outline"
                     size="sm"
                     data-testid="btn-view-scenario"
-                    onClick={() => handleView(scenario.scenario_id)}
+                    onClick={() => scenario.scenario_id && handleView(scenario.scenario_id)}
                     className="h-9 px-3"
                   >
                     <Eye className="h-4 w-4 md:mr-0 mr-2" />
@@ -625,9 +626,9 @@ export function Scenarios({
                     size="sm"
                     data-testid="btn-duplicate-scenario"
                     onClick={() =>
-                      handleDuplicate(scenario.scenario_id, scenario.title)
+                      scenario.scenario_id && handleDuplicate(scenario.scenario_id, scenario.title || "Unnamed Scenario")
                     }
-                    disabled={isDuplicating === scenario.scenario_id}
+                    disabled={isDuplicating === scenario.scenario_id || !scenario.scenario_id}
                     className="h-9 px-3"
                   >
                     {isDuplicating === scenario.scenario_id ? (
@@ -649,7 +650,7 @@ export function Scenarios({
                     size="sm"
                     data-testid="btn-delete-scenario"
                     onClick={() =>
-                      handleDeleteClick(
+                      scenario.scenario_id && handleDeleteClick(
                         scenario.scenario_id,
                         scenario.title || "Unnamed Scenario",
                       )
@@ -713,29 +714,8 @@ export function Scenarios({
                 </div>
               </>
             )}
-            {/* Parameter item badges (max 3) - grouped together without dots */}
-            {scenario.parameter_items &&
-              scenario.parameter_items.length > 0 && (
-                <>
-                  {scenario.persona_ids?.length > 0 && (
-                    <span className="text-muted-foreground">•</span>
-                  )}
-                  <div className="flex items-center gap-1">
-                    {scenario.parameter_items.slice(0, 3).map((item) => (
-                      <Tooltip key={item.parameter_id + "_" + item.name}>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs">
-                            {item.name}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{item.parameter_name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                </>
-              )}
+            {/* Parameter item badges - removed since parameter_items not in schema type */}
+            {/* TODO: Add parameter_items display if needed, using fields array or parameter_item_ids */}
           </div>
         )}
       </CardContent>
@@ -746,18 +726,20 @@ export function Scenarios({
     const groupsToRender = filteredGroups || groupedScenarios;
 
     return groupsToRender.map((group) => {
-      const isCollapsed = collapsedGroups.has(group.parent.scenario_id);
+      const parentId = group.parent.scenario_id;
+      if (!parentId) return null;
+      const isCollapsed = collapsedGroups.has(parentId);
       const hasChildren = group.children.length > 0;
 
       return (
-        <div key={group.parent.scenario_id} className="space-y-2">
+        <div key={parentId} className="space-y-2">
           {/* Parent Scenario Card */}
           {renderScenarioCard(
             group.parent,
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.scenario_id),
+            () => toggleGroupCollapse(parentId),
           )}
 
           {/* Child Scenarios */}

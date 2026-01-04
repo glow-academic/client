@@ -62,7 +62,7 @@ import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 type PersonaMappingItem =
-  components["schemas"]["app__api__v4__scenarios__detail__PersonaMappingItem"];
+  components["schemas"]["QGetScenarioDetailV4Persona"];
 
 type StepStatus = "pending" | "active" | "completed";
 
@@ -387,7 +387,6 @@ export function ContentSection({
   onUseObjectivesChange,
   onUseImageChange,
   onImageUpload,
-  onUseVideoChange,
   onUseQuestionsChange,
   onStateChange,
   onScenarioPreviewDocumentChange,
@@ -939,27 +938,6 @@ export function ContentSection({
 
   // Helper function to handle question text change
   const handleQuestionTextChange = (index: number, text: string) => {
-    if (!onUpdateQuestion) {
-      // Fallback to updating entire questions array
-      const updatedQuestions = [...questions];
-      const currentQuestion = updatedQuestions[index];
-      if (!currentQuestion) return;
-      updatedQuestions[index] = {
-        id: currentQuestion.id,
-        question_text: text,
-        allow_multiple: currentQuestion.allow_multiple,
-        options: currentQuestion.options,
-        ...(currentQuestion.times && { times: currentQuestion.times }),
-      };
-      handleUpdateQuestion(index, {
-        id: currentQuestion.id,
-        question_text: text,
-        allow_multiple: currentQuestion.allow_multiple,
-        options: currentQuestion.options,
-        ...(currentQuestion.times && { times: currentQuestion.times }),
-      });
-      return;
-    }
     const currentQuestion = questions[index];
     if (!currentQuestion) return;
     handleUpdateQuestion(index, {
@@ -980,7 +958,7 @@ export function ContentSection({
   const goToPreviousDocument = () => {
     if (currentDocumentIndex > 0) {
       const previousDocId = allPreviewDocumentIds[currentDocumentIndex - 1];
-      onScenarioPreviewDocumentChange(previousDocId ?? null);
+      onScenarioPreviewDocumentChange?.(previousDocId ?? null);
     }
   };
 
@@ -1158,7 +1136,7 @@ export function ContentSection({
                   onCheckedChange={(checked) => {
                     onUseImageChange(checked);
                     if (!checked) {
-                      onImageSelect(null);
+                      handleImageSelect(null);
                     }
                   }}
                   disabled={isReadonly}
@@ -1587,9 +1565,7 @@ export function ContentSection({
                     checked={useObjectives}
                     onCheckedChange={(checked) => {
                       onUseObjectivesChange(checked);
-                      if (!checked) {
-                        _onObjectivesChange([]);
-                      }
+                      // Objectives are cleared via onStateChange when useObjectives is false
                     }}
                     disabled={isReadonly}
                   />
@@ -1850,21 +1826,19 @@ export function ContentSection({
                                     optIndex &&
                                   "opacity-50"
                               )}
-                              onDragOver={onDragOverOption}
-                              onDrop={(e) => onDropOption?.(e, index, optIndex)}
+                              onDragOver={handleDragOverOption}
+                              onDrop={(e) => handleDropOption(e, index, optIndex)}
                             >
                               {/* Option Drag Handle */}
-                              {onDragStartOption && (
-                                <div
-                                  draggable={!isReadonly}
-                                  onDragStart={(e) =>
-                                    onDragStartOption(e, index, optIndex)
-                                  }
-                                  className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
-                                >
-                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                              )}
+                              <div
+                                draggable={!isReadonly}
+                                onDragStart={(e) =>
+                                  handleDragStartOption(e, index, optIndex)
+                                }
+                                className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
+                              >
+                                <GripVertical className="h-4 w-4 text-muted-foreground" />
+                              </div>
 
                               {/* Correct Checkbox */}
                               {option.type !== "freeform" && (
@@ -1902,52 +1876,10 @@ export function ContentSection({
                               <Input
                                 value={option.option_text}
                                 onChange={(e) => {
-                                  if (onOptionChange) {
-                                    handleOptionChange(index, optIndex, {
-                                      ...option,
-                                      option_text: e.target.value,
-                                    });
-                                  } else {
-                                    // Fallback: update entire questions array
-                                    const updatedQuestions = [...questions];
-                                    const currentQuestion =
-                                      updatedQuestions[index];
-                                    if (!currentQuestion) return;
-                                    const updatedOptions = [
-                                      ...currentQuestion.options,
-                                    ];
-                                    const currentOption =
-                                      updatedOptions[optIndex];
-                                    if (!currentOption) return;
-                                    updatedOptions[optIndex] = {
-                                      id: currentOption.id,
-                                      option_text: e.target.value,
-                                      ...(currentOption.type && {
-                                        type: currentOption.type,
-                                      }),
-                                      is_correct: currentOption.is_correct,
-                                    };
-                                    updatedQuestions[index] = {
-                                      id: currentQuestion.id,
-                                      question_text:
-                                        currentQuestion.question_text,
-                                      allow_multiple:
-                                        currentQuestion.allow_multiple,
-                                      options: updatedOptions,
-                                      ...(currentQuestion.times && {
-                                        times: currentQuestion.times,
-                                      }),
-                                    };
-                                    handleUpdateQuestion(index, {
-                                      id: currentQuestion.id,
-                                      question_text: currentQuestion.question_text,
-                                      allow_multiple: currentQuestion.allow_multiple,
-                                      options: updatedOptions,
-                                      ...(currentQuestion.times && {
-                                        times: currentQuestion.times,
-                                      }),
-                                    });
-                                  }
+                                  handleOptionChange(index, optIndex, {
+                                    ...option,
+                                    option_text: e.target.value,
+                                  });
                                 }}
                                 placeholder="Option text"
                                 className="flex-1 min-w-0"
@@ -1984,32 +1916,7 @@ export function ContentSection({
                               variant="secondary"
                               size="sm"
                               onClick={() => {
-                                if (onAddOption) {
-                                  onAddOption(index);
-                                } else {
-                                  // Fallback: update entire questions array
-                                  const updatedQuestions = [...questions];
-                                  const currentQuestion =
-                                    updatedQuestions[index];
-                                  if (!currentQuestion) return;
-                                  updatedQuestions[index] = {
-                                    id: currentQuestion.id,
-                                    question_text:
-                                      currentQuestion.question_text,
-                                    allow_multiple:
-                                      currentQuestion.allow_multiple,
-                                    options: [
-                                      ...currentQuestion.options,
-                                      {
-                                        id: "",
-                                        option_text: "",
-                                        type: "discrete",
-                                        is_correct: false,
-                                      },
-                                    ],
-                                  };
-                                  onQuestionsChange(updatedQuestions);
-                                }
+                                handleAddOption(index);
                               }}
                               disabled={isReadonly}
                             >
@@ -2248,7 +2155,7 @@ export function ContentSection({
                       if (!persona) return null;
 
                       const IconComponent =
-                        getPersonaIconComponent(persona.icon) || MessageSquare;
+                        getPersonaIconComponent(persona.icon || "") || MessageSquare;
                       const hexColor = persona.color || "#64748b";
                       const buttonStyle = {
                         background: generateGradientFromHex(hexColor),
@@ -2266,7 +2173,7 @@ export function ContentSection({
                                   <Button
                                     variant="secondary"
                                     size="sm"
-                                    aria-label={persona.name}
+                                    aria-label={persona.name || undefined}
                                     className="flex-1 p-0 rounded-md shadow-md"
                                     style={buttonStyle}
                                     tabIndex={-1}
@@ -2406,8 +2313,8 @@ export function ContentSection({
                           (fullDoc as { name?: string }).name ||
                           documentMapping[docId]?.name ||
                           "Document",
-                        updatedAt:
-                          (fullDoc as { updatedAt?: string }).updatedAt ||
+                        updated_at:
+                          (fullDoc as { updated_at?: string }).updated_at ||
                           new Date().toISOString(),
                         extension:
                           (fullDoc as { extension?: string }).extension || "",
@@ -2427,11 +2334,17 @@ export function ContentSection({
                         upload_id: fullDoc.upload_id ?? null,
                         parameter_item_ids: [],
                         field_ids: [],
+                        valid_field_ids: null,
+                        active_scenario_count: null,
+                        total_scenario_links: null,
                       } as DocumentItem)
                     : ({
                         document_id: docId,
                         name: documentMapping[docId]?.name || "Document",
-                        updatedAt: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        valid_field_ids: null,
+                        active_scenario_count: null,
+                        total_scenario_links: null,
                         extension: "",
                         scenario_ids: [],
                         can_edit: false,
@@ -2466,7 +2379,7 @@ export function ContentSection({
       onScenarioPreviewDocumentChange?.(nextDocId ?? null);
                       } else {
                         // Last document, clear preview
-                        onScenarioPreviewDocumentChange(null);
+                        onScenarioPreviewDocumentChange?.(null);
                       }
                     }
                   };
@@ -2584,9 +2497,12 @@ export function ContentSection({
                         (fullDoc as { name?: string }).name ||
                         documentMapping[docId]?.name ||
                         "Document",
-                      updatedAt:
-                        (fullDoc as { updatedAt?: string }).updatedAt ||
+                      updated_at:
+                        (fullDoc as { updated_at?: string }).updated_at ||
                         new Date().toISOString(),
+                      valid_field_ids: null,
+                      active_scenario_count: null,
+                      total_scenario_links: null,
                       extension:
                         (fullDoc as { extension?: string }).extension || "",
                       scenario_ids:
@@ -2608,7 +2524,7 @@ export function ContentSection({
                   : ({
                       document_id: docId,
                       name: documentMapping[docId]?.name || "Document",
-                      updatedAt: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
                       extension: "",
                       scenario_ids: [],
                       can_edit: false,
@@ -2618,6 +2534,9 @@ export function ContentSection({
                       field_ids: [],
                       parameter_item_ids: [],
                       upload_id: null,
+                      valid_field_ids: null,
+                      active_scenario_count: null,
+                      total_scenario_links: null,
                     } as DocumentItem);
 
                 return (

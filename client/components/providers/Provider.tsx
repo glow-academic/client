@@ -68,7 +68,7 @@ export interface ProviderProps {
 
 function ProviderComponent({
   providerId,
-  mode = providerId ? "edit" : "create",
+  mode: _mode = providerId ? "edit" : "create",
   providerDetail: serverProviderDetail,
   providerDetailDefault: serverProviderDetailDefault,
   createProviderAction,
@@ -197,7 +197,7 @@ function ProviderComponent({
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(providerSearchParamsClient, {
+  const [urlParams] = useQueryStates(providerSearchParamsClient, {
     history: "replace",
     shallow: true, // Use shallow routing to prevent server component re-renders
   });
@@ -220,6 +220,7 @@ function ProviderComponent({
     description: string;
     value: string;
     active: boolean;
+    baseUrl: string;
   };
 
   // Initialize draft state from server data or draft payload
@@ -232,6 +233,7 @@ function ProviderComponent({
         description: "",
         value: "",
         active: true,
+        baseUrl: "",
       };
     }
 
@@ -242,6 +244,7 @@ function ProviderComponent({
       description: data.description || "",
       value: data.value || "",
       active: data.active ?? true,
+      baseUrl: data.base_url || "",
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -484,6 +487,7 @@ function ProviderComponent({
               description: draftState.description || "",
               value: draftState.value || "",
               active: draftState.active ?? true,
+              base_url: draftState.baseUrl || "",
             },
           });
           toast.success("Provider updated successfully!");
@@ -506,6 +510,7 @@ function ProviderComponent({
               description: draftState.description || "",
               value: draftState.value || "",
               active: draftState.active ?? true,
+              base_url: draftState.baseUrl || "",
             },
           });
           toast.success("Provider created successfully!");
