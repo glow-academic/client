@@ -575,6 +575,7 @@ dept_data AS (
     JOIN departments d ON d.id = pd.department_id
     WHERE pd.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd.active = true
+      AND d.active = true
 ),
 cohort_data AS (
     -- Cohorts for the effective profile

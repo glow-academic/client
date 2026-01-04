@@ -221,16 +221,18 @@ export function AnalyticsFilters({
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
 
-  // Convert departments to the format expected by DepartmentSelector
-  const departmentOptions = departments
+  // Filter to only active departments and convert to the format expected by DepartmentSelector
+  const activeDepartments = departments.filter((department) => department.active);
+
+  const departmentOptions = activeDepartments
     .filter((department) => {
       const departmentId = "department_id" in department ? department.department_id : null;
-      const departmentName = "name" in department ? department.name : null;
+      const departmentName = "title" in department ? department.title : null;
       return departmentId && departmentName;
     })
     .map((department) => {
       const departmentId = "department_id" in department ? department.department_id : null;
-      const departmentName = "name" in department ? department.name : null;
+      const departmentName = "title" in department ? department.title : null;
       return {
         id: departmentId!,
         title: departmentName as string,

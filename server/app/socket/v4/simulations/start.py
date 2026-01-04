@@ -13,7 +13,7 @@ from app.main import get_internal_sio, sio
 # Removed gen_trace_id import - trace_id comes from SQL
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from typing import cast
+from typing import Any, cast
 from utils.sql_helper import load_sql, execute_sql_typed
 
 from app.sql.types import (
@@ -401,10 +401,25 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
             SQL_PATH_START = (
                 "app/sql/v4/simulations/start_simulation_attempt_complete.sql"
             )
+            # Ensure simulation_id is a UUID object (could be string from payload or UUID from database)
+            if not simulation_id:
+                # This should not happen due to validation above, but handle for type safety
+                await simulation_start_error(
+                    StartSimulationErrorPayload(
+                        success=False, message="Missing simulation_id"
+                    ),
+                    room=sid,
+                )
+                return
+            # Convert to UUID (handles both string and UUID object cases)
+            if isinstance(simulation_id, uuid.UUID):
+                simulation_id_uuid: uuid.UUID = simulation_id
+            else:
+                simulation_id_uuid = uuid.UUID(str(simulation_id))
             start_params = StartSimulationAttemptSqlParams(
-                simulation_id=simulation_id,
+                simulation_id=simulation_id_uuid,  # type: ignore[arg-type]
                 infinite_mode=infinite,
-                profile_id=uuid.UUID(profile_id) if profile_id else None,
+                profile_id=profile_id,  # Already a UUID object from line 256
                 scenario_id_override=uuid.UUID(scenario_id_override)
                 if scenario_id_override
                 else None,
@@ -428,7 +443,7 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
             attempt_id = result.attempt_id
 
             # Check if there's a next incomplete scenario
-            sql = load_sql("app/sql/v4/simulations/check_next_incomplete_scenario.sql")
+            sql = load_sql("app/sql/v4/simulations/check_next_incomplete_scenario_complete.sql")
             next_scenario_row = await conn.fetchrow(sql, attempt_id)
 
             if not next_scenario_row:
