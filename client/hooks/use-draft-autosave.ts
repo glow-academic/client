@@ -76,51 +76,11 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
     (current: T, lastSaved: T | null): Partial<T> | null => {
       if (!lastSaved) {
         // First save - return all fields
-        // #region agent log
-        fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "use-draft-autosave.ts:77",
-            message: "computePatch - first save (no lastSaved)",
-            data: {
-              currentKeys: Object.keys(current),
-              hasActive: "active" in current,
-              activeValue: (current as { active?: boolean }).active,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            hypothesisId: "E",
-          }),
-        }).catch(() => {});
-        // #endregion
         return current;
       }
 
       const patch: Partial<T> = {};
       let hasChanges = false;
-
-      // #region agent log
-      if ("active" in current || "active" in lastSaved) {
-        fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "use-draft-autosave.ts:103",
-            message: "computePatch - entry (checking active)",
-            data: {
-              currentActive: (current as { active?: boolean }).active,
-              lastSavedActive: (lastSaved as { active?: boolean }).active,
-              hasActiveInCurrent: "active" in current,
-              hasActiveInLastSaved: "active" in lastSaved,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            hypothesisId: "E",
-          }),
-        }).catch(() => {});
-      }
-      // #endregion
 
       // CRITICAL: Always check boolean fields explicitly, even if they're undefined in lastSaved
       // This handles cases where boolean fields need to be synced but lastSaved doesn't have them
@@ -129,30 +89,7 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
         if (field in current) {
           const currentVal = (current as Record<string, unknown>)[field];
           const lastSavedVal = (lastSaved as Record<string, unknown>)[field];
-          
-          // #region agent log
-          fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "use-draft-autosave.ts:130",
-              message: `computePatch - checking boolean field ${field}`,
-              data: {
-                field,
-                currentVal,
-                lastSavedVal,
-                currentValType: typeof currentVal,
-                lastSavedValType: typeof lastSavedVal,
-                valuesMatch: currentVal === lastSavedVal,
-                willIncludeInPatch: currentVal !== lastSavedVal,
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              hypothesisId: "E",
-            }),
-          }).catch(() => {});
-          // #endregion
-          
+
           // Include in patch if values differ (including undefined vs defined)
           if (currentVal !== lastSavedVal) {
             (patch as Record<string, unknown>)[field] = currentVal;
@@ -163,10 +100,10 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
 
       Object.keys(current).forEach((key) => {
         // Skip boolean fields already processed above
-        if (booleanFields.includes(key as typeof booleanFields[number])) {
+        if (booleanFields.includes(key as (typeof booleanFields)[number])) {
           return;
         }
-        
+
         const k = key as keyof T;
         const currentVal = current[k];
         const lastSavedVal = lastSaved[k];
@@ -174,35 +111,12 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
         // Deep comparison for arrays and objects
         const currentStr = JSON.stringify(currentVal);
         const lastSavedStr = JSON.stringify(lastSavedVal);
-        
+
         if (currentStr !== lastSavedStr) {
           patch[k] = currentVal;
           hasChanges = true;
         }
       });
-
-      // #region agent log
-      if ("active" in current || "active" in lastSaved) {
-        fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "use-draft-autosave.ts:165",
-            message: "computePatch - final result",
-            data: {
-              hasChanges,
-              patchKeys: Object.keys(patch),
-              hasActiveInPatch: "active" in patch,
-              currentActive: (current as { active?: boolean }).active,
-              lastSavedActive: (lastSaved as { active?: boolean }).active,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            hypothesisId: "E",
-          }),
-        }).catch(() => {});
-      }
-      // #endregion
 
       return hasChanges ? patch : null;
     },
@@ -308,7 +222,7 @@ export function useDraftAutosave<T extends Record<string, unknown>>({
       draftState,
       lastSavedStateRef.current
     );
-    
+
     if (!patch) return; // No changes
 
     // Clear existing timer

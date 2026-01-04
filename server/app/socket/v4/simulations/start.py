@@ -461,8 +461,8 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                     {
                         "attempt_id": str(attempt_id),
                         "scenario_id": str(next_scenario_id),
-                        "profile_id": profile_id,
-                        "simulation_id": simulation_id,
+                        "profile_id": str(profile_id),
+                        "simulation_id": str(simulation_id) if simulation_id else None,
                     },
                 )
 
