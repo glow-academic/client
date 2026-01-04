@@ -1,6 +1,5 @@
 """Leaderboard bundle v4 API endpoint."""
 
-from datetime import datetime
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -68,16 +67,12 @@ async def get_leaderboard(
             )
 
         # Convert API request to SQL params (add profile_id from header)
+        # Use mode='json' to keep dates as ISO strings (SQL params model expects strings, not datetime objects)
         # Use double-star pattern - SQL handles defaults via COALESCE in params CTE
+        # Note: model_dump(mode='json') returns strings for dates at runtime, but type checker infers datetime
         params = GetLeaderboardBundleSqlParams(
-            **request.model_dump(), profile_id=profile_id
-        )
-        # Convert date strings to datetime objects for asyncpg timestamptz parameters
-        # execute_sql_typed calls params.to_tuple() internally, so we need to modify the params object
-        params.start_date = datetime.fromisoformat(
-            params.start_date.replace("Z", "+00:00")
-        )  # type: ignore[assignment]
-        params.end_date = datetime.fromisoformat(params.end_date.replace("Z", "+00:00"))  # type: ignore[assignment]
+            **request.model_dump(mode="json"), profile_id=profile_id
+        )  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
