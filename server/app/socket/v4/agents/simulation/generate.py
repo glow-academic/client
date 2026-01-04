@@ -11,7 +11,7 @@ from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from utils.sql_helper import execute_sql_typed
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
@@ -271,6 +271,9 @@ async def _simulation_text_generate_impl(
                             "sid": sid,
                             "success": False,
                             "message": user_msg,
+                            "attempt_id": None,  # Context not available yet
+                            "simulation_id": None,
+                            "operation": "text_generation",
                         },
                     )
                     return
@@ -280,6 +283,9 @@ async def _simulation_text_generate_impl(
                         "sid": sid,
                         "success": False,
                         "message": f"Failed to initialize simulation generation: {str(e)}",
+                        "attempt_id": None,  # Context not available yet
+                        "simulation_id": None,
+                        "operation": "text_generation",
                     },
                 )
                 return
@@ -291,6 +297,9 @@ async def _simulation_text_generate_impl(
                         "sid": sid,
                         "success": False,
                         "message": f"No simulation agent configured for chat {data.chat_id}",
+                        "attempt_id": None,  # Context not available yet
+                        "simulation_id": None,
+                        "operation": "text_generation",
                     },
                 )
                 return
@@ -304,6 +313,9 @@ async def _simulation_text_generate_impl(
                         "sid": sid,
                         "success": False,
                         "message": "No active departments found in system",
+                        "attempt_id": str(result.attempt_id) if result.attempt_id else None,
+                        "simulation_id": str(result.simulation_id) if result.simulation_id else None,
+                        "operation": "text_generation",
                     },
                 )
                 return
@@ -1131,12 +1143,28 @@ Tool Usage Instructions:
 
         error_text = f"Error: {reason or 'Guardrail tripwire triggered'}"
 
+        # Get simulation context from database if available
+        attempt_id: str | None = None
+        simulation_id: str | None = None
+        try:
+            async with get_db_connection() as conn:
+                sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
+                context_result = await conn.fetchrow(sql, data.chat_id)
+                if context_result:
+                    attempt_id = str(context_result.get("attempt_id")) if context_result.get("attempt_id") else None
+                    simulation_id = str(context_result.get("simulation_id")) if context_result.get("simulation_id") else None
+        except Exception:
+            pass  # Ignore errors when fetching context
+
         await internal_sio.emit(
             "simulation_text_error",
             {
                 "sid": sid,
                 "success": False,
                 "message": error_text,
+                "attempt_id": attempt_id,
+                "simulation_id": simulation_id,
+                "operation": "text_generation",
             },
         )
 
@@ -1151,12 +1179,28 @@ Tool Usage Instructions:
         )
 
     except Exception as e:
+        # Get simulation context from database if available
+        attempt_id: str | None = None
+        simulation_id: str | None = None
+        try:
+            async with get_db_connection() as conn:
+                sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
+                context_result = await conn.fetchrow(sql, data.chat_id)
+                if context_result:
+                    attempt_id = str(context_result.get("attempt_id")) if context_result.get("attempt_id") else None
+                    simulation_id = str(context_result.get("simulation_id")) if context_result.get("simulation_id") else None
+        except Exception:
+            pass  # Ignore errors when fetching context
+
         await internal_sio.emit(
             "simulation_text_error",
             {
                 "sid": sid,
                 "success": False,
                 "message": str(e),
+                "attempt_id": attempt_id,
+                "simulation_id": simulation_id,
+                "operation": "text_generation",
             },
         )
 

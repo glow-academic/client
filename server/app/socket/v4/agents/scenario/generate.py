@@ -188,6 +188,27 @@ async def scenario_generation_error(
     await sio.emit("scenarios_generation_error", payload.model_dump(), room=room)
 
 
+async def _emit_scenario_error_with_simulation_context(
+    sid: str,
+    message: str,
+    attempt_id: str | None = None,
+    simulation_id: str | None = None,
+) -> None:
+    """Helper to emit scenario error via error handler with simulation context."""
+    if attempt_id or simulation_id:
+        await internal_sio.emit(
+            "scenario_error",
+            {
+                "sid": sid,
+                "success": False,
+                "message": message,
+                "attempt_id": attempt_id,
+                "simulation_id": simulation_id,
+                "operation": "scenario_generation",
+            },
+        )
+
+
 async def scenario_randomize_error(
     payload: ScenarioRandomizeErrorPayload, room: str
 ) -> None:
@@ -923,6 +944,12 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     trace_id=trace_id,
                 ),
                 room=sid,
+            )
+            await _emit_scenario_error_with_simulation_context(
+                sid=sid,
+                message="Profile not found. Please reconnect.",
+                attempt_id=data.attemptId,
+                simulation_id=data.simulationId,
             )
             return
         profile_id = uuid.UUID(profile_id_str)
@@ -2348,22 +2375,44 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             except Exception as log_error:
                 pass
         except RuntimeError:
-            await scenario_generation_error(
-                ScenarioGenerationErrorPayload(
-                    success=False,
-                    message="Database connection pool not available",
-                    trace_id=trace_id,
-                ),
-                room=sid,
+            error_payload = ScenarioGenerationErrorPayload(
+                success=False,
+                message="Database connection pool not available",
+                trace_id=trace_id,
             )
+            await scenario_generation_error(error_payload, room=sid)
+            # Also emit via error handler if simulation context is available
+            if data.simulationId or data.attemptId:
+                await internal_sio.emit(
+                    "scenario_error",
+                    {
+                        "sid": sid,
+                        "success": False,
+                        "message": "Database connection pool not available",
+                        "attempt_id": data.attemptId,
+                        "simulation_id": data.simulationId,
+                        "operation": "scenario_generation",
+                    },
+                )
             return
     except Exception as e:
-        await scenario_generation_error(
-            ScenarioGenerationErrorPayload(
-                success=False, message=str(e), trace_id=trace_id
-            ),
-            room=sid,
+        error_payload = ScenarioGenerationErrorPayload(
+            success=False, message=str(e), trace_id=trace_id
         )
+        await scenario_generation_error(error_payload, room=sid)
+        # Also emit via error handler if simulation context is available
+        if data.simulationId or data.attemptId:
+            await internal_sio.emit(
+                "scenario_error",
+                {
+                    "sid": sid,
+                    "success": False,
+                    "message": str(e),
+                    "attempt_id": data.attemptId,
+                    "simulation_id": data.simulationId,
+                    "operation": "scenario_generation",
+                },
+            )
         # Log activity error
         try:
             await log_websocket_activity(

@@ -20,6 +20,9 @@ class SimulationVoiceErrorPayload(BaseModel):
 
     success: bool
     message: str
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    operation: str | None = None
 
 
 async def _simulation_voice_error_impl(
@@ -29,11 +32,27 @@ async def _simulation_voice_error_impl(
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Internal implementation - emits to client."""
+    # 1. Emit child-specific error (existing behavior)
     await emit_to_client(
         "simulations_voice_error",
         data,
         room=sid,
     )
+
+    # 2. Propagate to simulation error handler if simulation context is present
+    if data.attempt_id or data.simulation_id:
+        await internal_sio.emit(
+            "simulation_error",
+            {
+                "sid": sid,
+                "success": data.success,
+                "message": data.message,
+                "attempt_id": data.attempt_id,
+                "simulation_id": data.simulation_id,
+                "operation": data.operation or "voice",
+                "error_type": "voice_error",
+            },
+        )
 
 
 @internal_sio.on("simulation_voice_error")  # type: ignore

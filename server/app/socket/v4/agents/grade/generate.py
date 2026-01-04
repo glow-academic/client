@@ -17,7 +17,7 @@ from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 from utils.agents.create_safe_field_name import create_safe_field_name
-from utils.sql_helper import execute_sql_typed
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
@@ -1051,23 +1051,49 @@ async def _simulation_grading_start_impl(
                 room=f"simulation_{simulation_chat_id}",
             )
     except RuntimeError:
+        error_message = "Database connection pool not available"
         await simulation_grading_progress(
             SimulationGradingProgressPayload(
                 type="error",
                 chat_id=chat_id,
-                message="Database connection pool not available",
-                error="Database connection pool not available",
+                message=error_message,
+                error=error_message,
             ),
             room=f"simulation_{chat_id}",
         )
+        # Also emit via error handler with simulation context if available
+        attempt_id: str | None = None
+        simulation_id: str | None = None
+        try:
+            async with get_db_connection() as conn:
+                sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
+                context_result = await conn.fetchrow(sql, uuid.UUID(chat_id))
+                if context_result:
+                    attempt_id = str(context_result.get("attempt_id")) if context_result.get("attempt_id") else None
+                    simulation_id = str(context_result.get("simulation_id")) if context_result.get("simulation_id") else None
+        except Exception:
+            pass  # Ignore errors when fetching context
+        if attempt_id or simulation_id:
+            await internal_sio.emit(
+                "grade_text_error",
+                {
+                    "sid": sid,
+                    "success": False,
+                    "message": error_message,
+                    "attempt_id": attempt_id,
+                    "simulation_id": simulation_id,
+                    "operation": "grading",
+                },
+            )
     except Exception as e:
+        error_message = f"Grading failed: {str(e)}"
         # Emit error event
         try:
             await simulation_grading_progress(
                 SimulationGradingProgressPayload(
                     type="error",
                     chat_id=chat_id,
-                    message=f"Grading failed: {str(e)}",
+                    message=error_message,
                     error=str(e),
                 ),
                 room=f"simulation_{chat_id}",
@@ -1075,6 +1101,30 @@ async def _simulation_grading_start_impl(
         except Exception:
             # Error emitting error event - Socket.IO handles logging
             pass
+        # Also emit via error handler with simulation context if available
+        attempt_id: str | None = None
+        simulation_id: str | None = None
+        try:
+            async with get_db_connection() as conn:
+                sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
+                context_result = await conn.fetchrow(sql, uuid.UUID(chat_id))
+                if context_result:
+                    attempt_id = str(context_result.get("attempt_id")) if context_result.get("attempt_id") else None
+                    simulation_id = str(context_result.get("simulation_id")) if context_result.get("simulation_id") else None
+        except Exception:
+            pass  # Ignore errors when fetching context
+        if attempt_id or simulation_id:
+            await internal_sio.emit(
+                "grade_text_error",
+                {
+                    "sid": sid,
+                    "success": False,
+                    "message": error_message,
+                    "attempt_id": attempt_id,
+                    "simulation_id": simulation_id,
+                    "operation": "grading",
+                },
+            )
 
 
 @sio.event  # type: ignore

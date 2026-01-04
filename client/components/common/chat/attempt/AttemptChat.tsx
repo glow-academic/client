@@ -1251,6 +1251,16 @@ export default function AttemptChat({
     socket.on("member_progress_error", handleMemberProgressError);
     socket.on("simulations_text_stop_error", handleStopSimulationError);
     socket.on("simulations_text_end_error", handleContinueSimulationError);
+    socket.on("simulations_error", (data: { success: boolean; message: string }) => {
+      toast.error(data.message);
+      // Reset any loading states if needed
+      if (isSendingMessage) {
+        setIsSendingMessage(false);
+      }
+      if (isStoppingMessage) {
+        setIsStoppingMessage(false);
+      }
+    });
     socket.on(
       "simulations_text_grading_progress",
       handleSimulationGradingProgress

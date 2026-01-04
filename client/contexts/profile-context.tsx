@@ -300,6 +300,17 @@ export function ProfileProviderClient({
           window.dispatchEvent(new CustomEvent("simulationError"));
         }
       );
+
+      // Listen for centralized simulation errors (from child operations)
+      socket.on(
+        "simulations_error",
+        (
+          data: Parameters<ServerToClientEvents["simulations_error"]>[0]
+        ) => {
+          toast.error(data.message);
+          window.dispatchEvent(new CustomEvent("simulationError"));
+        }
+      );
     };
 
     connectWebSocket();
