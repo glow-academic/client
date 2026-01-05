@@ -9043,6 +9043,254 @@ class RenderTemplateApiResponse(BaseModel):
 
 
 
+# Generated from: document_tool_html_complete
+
+class DocumentToolHtmlCompleteSqlParams(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    document_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.document_id,
+        )
+
+class DocumentToolHtmlCompleteSqlRow(BaseModel):
+
+    tool_call_id: str | None = None
+    template_html: str | None = None
+    completed: bool | None = None
+
+class DocumentToolHtmlCompleteApiRequest(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    document_id: UUID | None = None
+
+class DocumentToolHtmlCompleteApiResponse(BaseModel):
+
+    tool_call_id: str | None = None
+    template_html: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: document_tool_html_progress_update
+
+class DocumentToolHtmlProgressUpdateSqlParams(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    arguments_delta: str
+    progress_type: str
+    document_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.arguments_delta,
+            self.progress_type,
+            self.document_id,
+        )
+
+class DocumentToolHtmlProgressUpdateSqlRow(BaseModel):
+
+    tool_call_id: str | None = None
+    persisted_call_id: str | None = None
+    arguments_raw: str | None = None
+
+class DocumentToolHtmlProgressUpdateApiRequest(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    arguments_delta: str
+    progress_type: str
+    document_id: UUID | None = None
+
+class DocumentToolHtmlProgressUpdateApiResponse(BaseModel):
+
+    tool_call_id: str | None = None
+    persisted_call_id: str | None = None
+    arguments_raw: str | None = None
+
+
+
+# Generated from: document_tool_schema_complete
+
+class DocumentToolSchemaCompleteSqlParams(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    document_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.document_id,
+        )
+
+class DocumentToolSchemaCompleteSqlRow(BaseModel):
+
+    tool_call_id: str | None = None
+    template_schema_json: str | None = None
+    completed: bool | None = None
+
+class DocumentToolSchemaCompleteApiRequest(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    document_id: UUID | None = None
+
+class DocumentToolSchemaCompleteApiResponse(BaseModel):
+
+    tool_call_id: str | None = None
+    template_schema_json: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: document_tool_schema_progress_update
+
+class DocumentToolSchemaProgressUpdateSqlParams(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    arguments_delta: str
+    progress_type: str
+    document_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.arguments_delta,
+            self.progress_type,
+            self.document_id,
+        )
+
+class DocumentToolSchemaProgressUpdateSqlRow(BaseModel):
+
+    tool_call_id: str | None = None
+    persisted_call_id: str | None = None
+    arguments_raw: str | None = None
+
+class DocumentToolSchemaProgressUpdateApiRequest(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    arguments_delta: str
+    progress_type: str
+    document_id: UUID | None = None
+
+class DocumentToolSchemaProgressUpdateApiResponse(BaseModel):
+
+    tool_call_id: str | None = None
+    persisted_call_id: str | None = None
+    arguments_raw: str | None = None
+
+
+
+# Generated from: document_tool_title_complete
+
+class DocumentToolTitleCompleteSqlParams(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    document_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.document_id,
+        )
+
+class DocumentToolTitleCompleteSqlRow(BaseModel):
+
+    tool_call_id: str | None = None
+    document_id: UUID | None = None
+    title: str | None = None
+    completed: bool | None = None
+
+class DocumentToolTitleCompleteApiRequest(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    document_id: UUID
+
+class DocumentToolTitleCompleteApiResponse(BaseModel):
+
+    tool_call_id: str | None = None
+    document_id: UUID | None = None
+    title: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: document_tool_title_progress_update
+
+class DocumentToolTitleProgressUpdateSqlParams(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    arguments_delta: str
+    progress_type: str
+    document_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.arguments_delta,
+            self.progress_type,
+            self.document_id,
+        )
+
+class DocumentToolTitleProgressUpdateSqlRow(BaseModel):
+
+    tool_call_id: str | None = None
+    persisted_call_id: str | None = None
+    arguments_raw: str | None = None
+
+class DocumentToolTitleProgressUpdateApiRequest(BaseModel):
+
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    arguments_delta: str
+    progress_type: str
+    document_id: UUID | None = None
+
+class DocumentToolTitleProgressUpdateApiResponse(BaseModel):
+
+    tool_call_id: str | None = None
+    persisted_call_id: str | None = None
+    arguments_raw: str | None = None
+
+
+
 # Generated from: update_document
 
 class UpdateDocumentSqlParams(BaseModel):
@@ -11855,6 +12103,106 @@ class MemberProgressUpsertApiResponse(BaseModel):
     audio: bool | None = None
     chat_id: str | None = None
     group_id: str | None = None
+
+
+
+# Generated from: member_tool_complete_finalize
+
+class MemberToolCompleteFinalizeSqlParams(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    message_id: UUID
+    final_content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.message_id,
+            self.final_content,
+        )
+
+class MemberToolCompleteFinalizeSqlRow(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+class MemberToolCompleteFinalizeApiRequest(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    message_id: UUID
+    final_content: str
+
+class MemberToolCompleteFinalizeApiResponse(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: member_tool_progress_update
+
+class MemberToolProgressUpdateSqlParams(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    tool_name: str
+    token: str
+    accumulated_content: str
+    arguments_raw: str
+    message_id: UUID | None = None
+    parent_message_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.tool_name,
+            self.token,
+            self.accumulated_content,
+            self.arguments_raw,
+            self.message_id,
+            self.parent_message_id,
+        )
+
+class MemberToolProgressUpdateSqlRow(BaseModel):
+
+    message_id: str | None = None
+    tool_call_id: str | None = None
+    accumulated_content: str | None = None
+
+class MemberToolProgressUpdateApiRequest(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    tool_name: str
+    token: str
+    accumulated_content: str
+    arguments_raw: str
+    message_id: UUID | None = None
+    parent_message_id: UUID | None = None
+
+class MemberToolProgressUpdateApiResponse(BaseModel):
+
+    message_id: str | None = None
+    tool_call_id: str | None = None
+    accumulated_content: str | None = None
 
 
 
@@ -15894,6 +16242,106 @@ class GetPromptRunContextAndCreateRunApiResponse(BaseModel):
     earliest_run_created_at: str | None = None
     run_id: str | None = None
     group_id: UUID | None = None
+
+
+
+# Generated from: prompt_tool_complete_finalize
+
+class PromptToolCompleteFinalizeSqlParams(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    message_id: UUID
+    final_content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.message_id,
+            self.final_content,
+        )
+
+class PromptToolCompleteFinalizeSqlRow(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+class PromptToolCompleteFinalizeApiRequest(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    message_id: UUID
+    final_content: str
+
+class PromptToolCompleteFinalizeApiResponse(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: prompt_tool_progress_update
+
+class PromptToolProgressUpdateSqlParams(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    tool_name: str
+    token: str
+    accumulated_content: str
+    arguments_raw: str
+    message_id: UUID | None = None
+    parent_message_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.tool_name,
+            self.token,
+            self.accumulated_content,
+            self.arguments_raw,
+            self.message_id,
+            self.parent_message_id,
+        )
+
+class PromptToolProgressUpdateSqlRow(BaseModel):
+
+    message_id: str | None = None
+    tool_call_id: str | None = None
+    accumulated_content: str | None = None
+
+class PromptToolProgressUpdateApiRequest(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    tool_name: str
+    token: str
+    accumulated_content: str
+    arguments_raw: str
+    message_id: UUID | None = None
+    parent_message_id: UUID | None = None
+
+class PromptToolProgressUpdateApiResponse(BaseModel):
+
+    message_id: str | None = None
+    tool_call_id: str | None = None
+    accumulated_content: str | None = None
 
 
 
@@ -21460,6 +21908,112 @@ class UpdateSettingsApiResponse(BaseModel):
 
 
 
+# Generated from: simulation_tool_complete_finalize
+
+class SimulationToolCompleteFinalizeSqlParams(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: UUID
+    call_id: str
+    message_id: UUID
+    final_content: str
+    persona_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.message_id,
+            self.final_content,
+            self.persona_id,
+        )
+
+class SimulationToolCompleteFinalizeSqlRow(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+class SimulationToolCompleteFinalizeApiRequest(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: UUID
+    call_id: str
+    message_id: UUID
+    final_content: str
+    persona_id: UUID | None = None
+
+class SimulationToolCompleteFinalizeApiResponse(BaseModel):
+
+    message_id: str | None = None
+    final_content: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: simulation_tool_progress_update
+
+class SimulationToolProgressUpdateSqlParams(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    tool_name: str
+    token: str
+    accumulated_content: str
+    arguments_raw: str
+    message_id: UUID | None = None
+    parent_message_id: UUID | None = None
+    persona_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.run_id,
+            self.tool_call_id,
+            self.call_id,
+            self.tool_name,
+            self.token,
+            self.accumulated_content,
+            self.arguments_raw,
+            self.message_id,
+            self.parent_message_id,
+            self.persona_id,
+        )
+
+class SimulationToolProgressUpdateSqlRow(BaseModel):
+
+    message_id: str | None = None
+    tool_call_id: str | None = None
+    accumulated_content: str | None = None
+
+class SimulationToolProgressUpdateApiRequest(BaseModel):
+
+    chat_id: UUID
+    run_id: UUID
+    tool_call_id: str
+    call_id: str
+    tool_name: str
+    token: str
+    accumulated_content: str
+    arguments_raw: str
+    message_id: UUID | None = None
+    parent_message_id: UUID | None = None
+    persona_id: UUID | None = None
+
+class SimulationToolProgressUpdateApiResponse(BaseModel):
+
+    message_id: str | None = None
+    tool_call_id: str | None = None
+    accumulated_content: str | None = None
+
+
+
 # Generated from: text_complete_finalize
 
 class TextCompleteFinalizeSqlParams(BaseModel):
@@ -26198,6 +26752,42 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RenderTemplateApiRequest",
         "RenderTemplateApiResponse",
     ),
+    "app/sql/v4/documents/tools/html/document_tool_html_complete_complete.sql": (
+        "DocumentToolHtmlCompleteSqlParams",
+        "DocumentToolHtmlCompleteSqlRow",
+        "DocumentToolHtmlCompleteApiRequest",
+        "DocumentToolHtmlCompleteApiResponse",
+    ),
+    "app/sql/v4/documents/tools/html/document_tool_html_progress_update_complete.sql": (
+        "DocumentToolHtmlProgressUpdateSqlParams",
+        "DocumentToolHtmlProgressUpdateSqlRow",
+        "DocumentToolHtmlProgressUpdateApiRequest",
+        "DocumentToolHtmlProgressUpdateApiResponse",
+    ),
+    "app/sql/v4/documents/tools/schema/document_tool_schema_complete_complete.sql": (
+        "DocumentToolSchemaCompleteSqlParams",
+        "DocumentToolSchemaCompleteSqlRow",
+        "DocumentToolSchemaCompleteApiRequest",
+        "DocumentToolSchemaCompleteApiResponse",
+    ),
+    "app/sql/v4/documents/tools/schema/document_tool_schema_progress_update_complete.sql": (
+        "DocumentToolSchemaProgressUpdateSqlParams",
+        "DocumentToolSchemaProgressUpdateSqlRow",
+        "DocumentToolSchemaProgressUpdateApiRequest",
+        "DocumentToolSchemaProgressUpdateApiResponse",
+    ),
+    "app/sql/v4/documents/tools/title/document_tool_title_complete_complete.sql": (
+        "DocumentToolTitleCompleteSqlParams",
+        "DocumentToolTitleCompleteSqlRow",
+        "DocumentToolTitleCompleteApiRequest",
+        "DocumentToolTitleCompleteApiResponse",
+    ),
+    "app/sql/v4/documents/tools/title/document_tool_title_progress_update_complete.sql": (
+        "DocumentToolTitleProgressUpdateSqlParams",
+        "DocumentToolTitleProgressUpdateSqlRow",
+        "DocumentToolTitleProgressUpdateApiRequest",
+        "DocumentToolTitleProgressUpdateApiResponse",
+    ),
     "app/sql/v4/documents/update_document_complete.sql": (
         "UpdateDocumentSqlParams",
         "UpdateDocumentSqlRow",
@@ -26521,6 +27111,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MemberProgressUpsertSqlRow",
         "MemberProgressUpsertApiRequest",
         "MemberProgressUpsertApiResponse",
+    ),
+    "app/sql/v4/member/tools/member_tool_complete_finalize_complete.sql": (
+        "MemberToolCompleteFinalizeSqlParams",
+        "MemberToolCompleteFinalizeSqlRow",
+        "MemberToolCompleteFinalizeApiRequest",
+        "MemberToolCompleteFinalizeApiResponse",
+    ),
+    "app/sql/v4/member/tools/member_tool_progress_update_complete.sql": (
+        "MemberToolProgressUpdateSqlParams",
+        "MemberToolProgressUpdateSqlRow",
+        "MemberToolProgressUpdateApiRequest",
+        "MemberToolProgressUpdateApiResponse",
     ),
     "app/sql/v4/messages/create_assistant_message_with_branch_complete.sql": (
         "CreateAssistantMessageWithBranchSqlParams",
@@ -26875,6 +27477,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPromptRunContextAndCreateRunSqlRow",
         "GetPromptRunContextAndCreateRunApiRequest",
         "GetPromptRunContextAndCreateRunApiResponse",
+    ),
+    "app/sql/v4/prompt/tools/prompt_tool_complete_finalize_complete.sql": (
+        "PromptToolCompleteFinalizeSqlParams",
+        "PromptToolCompleteFinalizeSqlRow",
+        "PromptToolCompleteFinalizeApiRequest",
+        "PromptToolCompleteFinalizeApiResponse",
+    ),
+    "app/sql/v4/prompt/tools/prompt_tool_progress_update_complete.sql": (
+        "PromptToolProgressUpdateSqlParams",
+        "PromptToolProgressUpdateSqlRow",
+        "PromptToolProgressUpdateApiRequest",
+        "PromptToolProgressUpdateApiResponse",
     ),
     "app/sql/v4/prompts/delete_prompt_complete.sql": (
         "DeletePromptSqlParams",
@@ -27319,6 +27933,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateSettingsSqlRow",
         "UpdateSettingsApiRequest",
         "UpdateSettingsApiResponse",
+    ),
+    "app/sql/v4/simulation/tools/simulation_tool_complete_finalize_complete.sql": (
+        "SimulationToolCompleteFinalizeSqlParams",
+        "SimulationToolCompleteFinalizeSqlRow",
+        "SimulationToolCompleteFinalizeApiRequest",
+        "SimulationToolCompleteFinalizeApiResponse",
+    ),
+    "app/sql/v4/simulation/tools/simulation_tool_progress_update_complete.sql": (
+        "SimulationToolProgressUpdateSqlParams",
+        "SimulationToolProgressUpdateSqlRow",
+        "SimulationToolProgressUpdateApiRequest",
+        "SimulationToolProgressUpdateApiResponse",
     ),
     "app/sql/v4/simulation_text/text_complete_finalize_complete.sql": (
         "TextCompleteFinalizeSqlParams",
@@ -28481,6 +29107,36 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/tools/html/document_tool_html_complete_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/tools/html/document_tool_html_progress_update_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/tools/schema/document_tool_schema_complete_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/tools/schema/document_tool_schema_progress_update_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/tools/title/document_tool_title_complete_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/tools/title/document_tool_title_progress_update_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/update_document_complete.sql"]
     ) -> SqlString: ...
 
@@ -28747,6 +29403,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/member/member_progress_upsert_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/member/tools/member_tool_complete_finalize_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/member/tools/member_tool_progress_update_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29042,6 +29708,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/prompt/get_prompt_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/prompt/tools/prompt_tool_complete_finalize_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/prompt/tools/prompt_tool_progress_update_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29412,6 +30088,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/settings/update_settings_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulation/tools/simulation_tool_complete_finalize_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulation/tools/simulation_tool_progress_update_complete.sql"]
     ) -> SqlString: ...
 
     @overload

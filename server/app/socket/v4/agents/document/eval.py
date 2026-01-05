@@ -3,18 +3,15 @@
 import uuid
 from typing import Any, cast
 
-from fastapi import APIRouter
-from utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.main import get_internal_sio
-from app.sql.types import (
-    AgentsDocumentDocumentEvalStartApiRequest,
-    AgentsDocumentDocumentEvalStartSqlParams,
-    AgentsDocumentDocumentEvalStartSqlRow,
-)
+from app.sql.types import (AgentsDocumentDocumentEvalStartApiRequest,
+                           AgentsDocumentDocumentEvalStartSqlParams,
+                           AgentsDocumentDocumentEvalStartSqlRow)
+from fastapi import APIRouter
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()
@@ -42,7 +39,7 @@ async def _document_eval_impl(
             )
 
             # Get eval dynamic flag
-            eval_id_uuid = uuid.UUID(data.eval_id)
+            eval_id_uuid = uuid.UUID(str(data.eval_id))
             eval_row = await conn.fetchrow(
                 "SELECT dynamic FROM evals WHERE id = $1::uuid",
                 eval_id_uuid,

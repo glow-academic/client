@@ -44,8 +44,9 @@ def _to_class_name(route_name: str, suffix: str) -> str:
 def _sql_path_to_route_name(sql_path: str) -> str | None:
     """Extract route name from SQL file path.
 
-    Example:
+    Handles paths of arbitrary depth:
         f"app/sql/{VERSION}/agents/create_agent_complete.sql" -> "create_agent"
+        f"app/sql/{VERSION}/documents/tools/html/document_tool_html_complete_complete.sql" -> "document_tool_html_complete"
         f"tests/sql/{VERSION}/integration/infra/activity/insert_test_profile.sql" -> "insert_test_profile"
 
     Args:
@@ -59,9 +60,11 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
 
     # Pattern: app/sql/{VERSION}/[resource]/[operation]_complete.sql
     # Pattern: app/sql/{VERSION}/infrastructure/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
+    # Pattern: app/sql/{VERSION}/[any]/[path]/[operation]_complete.sql (arbitrary depth)
     if sql_path.startswith(app_sql_prefix):
         relative = sql_path[len(app_sql_prefix) :]
         parts = relative.split("/")
+        
         # Handle infrastructure paths: infrastructure/[category]/[operation]_complete.sql
         if len(parts) == 3 and parts[0] == "infrastructure":
             category, filename = parts[1], parts[2]
@@ -69,12 +72,17 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
                 return None
             operation = filename[: -len("_complete.sql")]
             return f"infra_{category}_{operation}".replace("-", "_")
-        # Handle standard paths: [resource]/[operation]_complete.sql
-        if len(parts) != 2:
+        
+        # Handle arbitrary depth paths: [any]/[path]/[operation]_complete.sql
+        # Extract filename (last part) and use it as the operation name
+        if len(parts) < 2:
             return None
-        resource, filename = parts
+        
+        filename = parts[-1]
         if not filename.endswith("_complete.sql"):
             return None
+        
+        # Extract operation name from filename (remove _complete.sql suffix)
         operation = filename[: -len("_complete.sql")]
         return operation.replace("-", "_")
 

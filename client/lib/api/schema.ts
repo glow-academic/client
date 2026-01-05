@@ -4667,7 +4667,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/simulations/tools/speak_tool": {
+    "/socket/v4/server/agents/simulations/simulation_speak_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4680,14 +4680,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_voice_speak_call_speak_tool"];
+        post: operations["handle_simulation_speak_progress_simulation_speak_progress"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/simulations/tools/speak_complete": {
+    "/socket/v4/server/agents/simulations/simulation_speak_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4700,47 +4700,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_voice_speak_complete_speak_complete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/simulations/tools/speak_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_voice_speak_error_speak_error"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/simulations/tools/speak_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_voice_speak_progress_speak_progress"];
+        post: operations["handle_simulation_speak_complete_simulation_speak_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4881,6 +4841,86 @@ export interface paths {
          * @description Server-to-client event: Error occurred linking audio.
          */
         post: operations["voice_assistant_audio_link_error_api_socket_v4_server_agents_simulations_audio_link_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/simulations/tools/speak_tool": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_voice_speak_call_speak_tool"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/simulations/tools/speak_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_voice_speak_complete_speak_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/simulations/tools/speak_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_voice_speak_error_speak_error"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/simulations/tools/speak_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_voice_speak_progress_speak_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5727,6 +5767,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/agents/documents/tools/document_tool_html_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_document_html_progress_document_tool_html_progress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/documents/tools/document_tool_html_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_document_html_complete_document_tool_html_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/documents/tools/document_tool_schema_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_document_schema_progress_document_tool_schema_progress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/documents/tools/document_tool_schema_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_document_schema_complete_document_tool_schema_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/agents/documents/tools/document_tool_debug": {
         parameters: {
             query?: never;
@@ -6347,7 +6467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/rubrics/generation_complete": {
+    "/socket/v4/server/agents/rubrics/rubric_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6360,7 +6480,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_rubric_complete_generation_complete"];
+        post: operations["handle_rubric_complete_rubric_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6387,7 +6507,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/rubrics/generation_progress": {
+    "/socket/v4/server/agents/rubrics/rubric_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6400,7 +6520,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_rubric_progress_generation_progress"];
+        post: operations["handle_rubric_progress_rubric_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6427,7 +6547,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_complete": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_title_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6440,7 +6560,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_rubric_title_complete_rubric_tool_title_complete"];
+        post: operations["handle_rubric_title_complete_rubric_title_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6467,7 +6587,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/rubrics/tools/rubric_tool_title_progress": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_title_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6480,7 +6600,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_rubric_title_progress_rubric_tool_title_progress"];
+        post: operations["handle_rubric_title_progress_rubric_title_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6607,7 +6727,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/rubrics/tools/standard_description_complete": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_standard_description_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6620,7 +6740,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_rubric_rubric_complete_standard_description_complete"];
+        post: operations["handle_rubric_rubric_complete_rubric_standard_description_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6647,7 +6767,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/rubrics/tools/standard_description_progress": {
+    "/socket/v4/server/agents/rubrics/tools/rubric_standard_description_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -6660,7 +6780,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_rubric_rubric_progress_standard_description_progress"];
+        post: operations["handle_rubric_rubric_progress_rubric_standard_description_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7207,7 +7327,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/hints/tools/hint_complete": {
+    "/socket/v4/server/agents/hints/tools/hint_hint_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7220,7 +7340,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_hint_hint_complete_hint_complete"];
+        post: operations["handle_hint_hint_complete_hint_hint_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7247,7 +7367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/hints/tools/hint_progress": {
+    "/socket/v4/server/agents/hints/tools/hint_hint_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7260,7 +7380,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_hint_hint_progress_hint_progress"];
+        post: operations["handle_hint_hint_progress_hint_hint_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7287,7 +7407,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/grades/grade_text_complete": {
+    "/socket/v4/server/agents/grades/grade_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7300,7 +7420,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_grade_complete_grade_text_complete"];
+        post: operations["handle_grade_complete_grade_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7327,7 +7447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/grades/grade_text_progress": {
+    "/socket/v4/server/agents/grades/grade_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -7340,7 +7460,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_grade_progress_grade_text_progress"];
+        post: operations["handle_grade_progress_grade_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7578,9 +7698,9 @@ export interface paths {
         put?: never;
         /**
          * Endpoint Handler
-         * @description Server-to-client event: {description}
+         * @description Client-to-server event: {description}
          */
-        post: operations["handle_grade_grade_complete_feedback_complete"];
+        post: operations["handle_grade_grade_call_feedback_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7607,7 +7727,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/grades/tools/feedback_progress": {
+    "/socket/v4/server/agents/grades/tools/grade_grade_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7620,7 +7740,27 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_grade_grade_progress_feedback_progress"];
+        post: operations["handle_grade_grade_complete_grade_grade_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/grades/tools/grade_grade_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_grade_grade_progress_grade_grade_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11658,77 +11798,6 @@ export interface components {
             document_id: string;
             /** Draft Id */
             draft_id?: string | null;
-        };
-        /** GetDocumentDetailApiResponse */
-        GetDocumentDetailApiResponse: {
-            /** Document Exists */
-            document_exists?: boolean | null;
-            /** Document Id */
-            document_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Type */
-            type?: string | null;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Extension */
-            extension?: string | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** Document Type Options */
-            document_type_options?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDocumentDetailV4Department"][] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Valid Field Ids */
-            valid_field_ids?: string[] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetDocumentDetailV4Field"][] | null;
-            /** Linked Parameter Ids */
-            linked_parameter_ids?: string[] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetDocumentDetailV4Parameter"][] | null;
-            /** Classify Agent Id */
-            classify_agent_id?: string | null;
-            /** Document Agent Id */
-            document_agent_id?: string | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetDocumentDetailV4Agent"][] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Template */
-            template?: boolean | null;
-            /** Template Id */
-            template_id?: string | null;
-            /** Schema Id */
-            schema_id?: string | null;
-            /** Template Upload Id */
-            template_upload_id?: string | null;
-            /** Template File Path */
-            template_file_path?: string | null;
-            /** Template Html */
-            template_html?: string | null;
-            /** Templates */
-            templates?: components["schemas"]["QGetDocumentDetailV4Template"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
         };
         /** GetDocumentsListApiRequest */
         GetDocumentsListApiRequest: Record<string, never>;
@@ -16772,71 +16841,6 @@ export interface components {
             active: boolean | null;
             /** Department Ids */
             department_ids: string[] | null;
-        };
-        /** QGetDocumentDetailV4Agent */
-        QGetDocumentDetailV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
-        /** QGetDocumentDetailV4Department */
-        QGetDocumentDetailV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
-        };
-        /** QGetDocumentDetailV4Field */
-        QGetDocumentDetailV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
-        };
-        /** QGetDocumentDetailV4Parameter */
-        QGetDocumentDetailV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-            /** Scenario Parameter */
-            scenario_parameter: boolean | null;
-            /** Video Parameter */
-            video_parameter: boolean | null;
-        };
-        /** QGetDocumentDetailV4Template */
-        QGetDocumentDetailV4Template: {
-            /** Template Id */
-            template_id: string | null;
-            /** Schema Id */
-            schema_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
         };
         /** QGetEvalAttemptV4Attempt */
         QGetEvalAttemptV4Attempt: {
@@ -25949,7 +25953,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDocumentDetailApiResponse"];
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -32063,7 +32069,7 @@ export interface operations {
             };
         };
     };
-    handle_voice_speak_call_speak_tool: {
+    handle_simulation_speak_progress_simulation_speak_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -32098,77 +32104,7 @@ export interface operations {
             };
         };
     };
-    handle_voice_speak_complete_speak_complete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_voice_speak_error_speak_error: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_voice_speak_progress_speak_progress: {
+    handle_simulation_speak_complete_simulation_speak_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -32423,6 +32359,146 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VoiceProgressErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_voice_speak_call_speak_tool: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_voice_speak_complete_speak_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_voice_speak_error_speak_error: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_voice_speak_progress_speak_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
             };
         };
         responses: {
@@ -33918,6 +33994,146 @@ export interface operations {
             };
         };
     };
+    handle_document_html_progress_document_tool_html_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_document_html_complete_document_tool_html_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_document_schema_progress_document_tool_schema_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_document_schema_complete_document_tool_schema_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     handle_document_debug_call_document_tool_debug: {
         parameters: {
             query?: never;
@@ -35003,7 +35219,7 @@ export interface operations {
             };
         };
     };
-    handle_rubric_complete_generation_complete: {
+    handle_rubric_complete_rubric_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -35073,7 +35289,7 @@ export interface operations {
             };
         };
     };
-    handle_rubric_progress_generation_progress: {
+    handle_rubric_progress_rubric_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -35143,7 +35359,7 @@ export interface operations {
             };
         };
     };
-    handle_rubric_title_complete_rubric_tool_title_complete: {
+    handle_rubric_title_complete_rubric_title_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -35213,7 +35429,7 @@ export interface operations {
             };
         };
     };
-    handle_rubric_title_progress_rubric_tool_title_progress: {
+    handle_rubric_title_progress_rubric_title_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -35458,7 +35674,7 @@ export interface operations {
             };
         };
     };
-    handle_rubric_rubric_complete_standard_description_complete: {
+    handle_rubric_rubric_complete_rubric_standard_description_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -35528,7 +35744,7 @@ export interface operations {
             };
         };
     };
-    handle_rubric_rubric_progress_standard_description_progress: {
+    handle_rubric_rubric_progress_rubric_standard_description_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -36508,7 +36724,7 @@ export interface operations {
             };
         };
     };
-    handle_hint_hint_complete_hint_complete: {
+    handle_hint_hint_complete_hint_hint_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -36578,7 +36794,7 @@ export interface operations {
             };
         };
     };
-    handle_hint_hint_progress_hint_progress: {
+    handle_hint_hint_progress_hint_hint_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -36648,7 +36864,7 @@ export interface operations {
             };
         };
     };
-    handle_grade_complete_grade_text_complete: {
+    handle_grade_complete_grade_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -36718,7 +36934,7 @@ export interface operations {
             };
         };
     };
-    handle_grade_progress_grade_text_progress: {
+    handle_grade_progress_grade_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -37138,7 +37354,7 @@ export interface operations {
             };
         };
     };
-    handle_grade_grade_complete_feedback_complete: {
+    handle_grade_grade_call_feedback_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -37208,7 +37424,42 @@ export interface operations {
             };
         };
     };
-    handle_grade_grade_progress_feedback_progress: {
+    handle_grade_grade_complete_grade_grade_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_grade_grade_progress_grade_grade_progress: {
         parameters: {
             query?: never;
             header?: never;

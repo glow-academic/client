@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION socket_document_tool_schema_complete_v4(
 )
 RETURNS TABLE (
     tool_call_id text,
-    schema_json text,
+    template_schema_json text,
     completed boolean
 )
 LANGUAGE sql
@@ -54,7 +54,7 @@ extract_schema_json AS (
             (gtc.arguments_json->>'schema_json')::text,
             (gtc.arguments_raw::jsonb->>'schema_json')::text,
             '{}'
-        ) as schema_json
+        ) as template_schema_json
     FROM get_tool_call gtc
 ),
 -- Finalize tool_call (mark as completed)
@@ -68,7 +68,7 @@ finalize_tool_call AS (
 )
 SELECT 
     (SELECT tool_call_id::text FROM finalize_tool_call LIMIT 1) as tool_call_id,
-    (SELECT schema_json FROM extract_schema_json LIMIT 1) as schema_json,
+    (SELECT template_schema_json FROM extract_schema_json LIMIT 1) as template_schema_json,
     (SELECT completed FROM finalize_tool_call LIMIT 1) as completed
 $$;
 

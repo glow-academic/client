@@ -1,127 +1,47 @@
 """Handler for document_regenerate WebSocket event."""
 
+import asyncio
 import uuid
 from typing import Any, cast
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
+from app.infra.v4.agents.generic_agent import GenericAgent
+from app.infra.v4.agents.stream_agent_events import (StreamEventCallbacks,
+                                                     stream_agent_events)
+from app.infra.v4.debug.debug_info import DebugContext
+from app.infra.v4.documents.format_document_template_context import \
+    format_document_template_context
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.handler_wrapper import handle_client_event
+from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
+from app.infra.v4.websocket.remove_active_run import remove_active_run
+from app.infra.v4.websocket.store_active_run import store_active_run
+from app.infra.v4.websocket.typed_emit import emit_to_internal
+from app.main import get_internal_sio, sio
+# SQL-generated types (from SQL introspection)
+from app.sql.types import (
+    GetDocumentRegenerationRunContextAndCreateRunSqlParams,
+    GetDocumentRegenerationRunContextAndCreateRunSqlRow,
+    GetDocumentTemplateContextSqlParams, GetDocumentTemplateContextSqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from utils.sql_helper import execute_sql_typed, load_sql
 
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.infra.v4.agents.generic_agent import GenericAgent
-from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.documents.format_document_template_context import (
-    format_document_template_context,
-)
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.handler_wrapper import handle_client_event
-from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
-from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, sio
-from app.utils.schema_helper import create_schema_from_dict
 
-# Types will be auto-generated from SQL introspection
-try:
-    from app.sql.types import (
-        CreateTemplateAndLinkSqlParams,
-        CreateTemplateAndLinkSqlRow,
-        DocumentGenerationCompleteApiRequest,
-        DocumentGenerationErrorApiRequest,
-        DocumentGenerationErrorSqlRow,
-        DocumentGenerationProgressApiRequest,
-        GetDocumentRegenerationRunContextAndCreateRunSqlParams,
-        GetDocumentRegenerationRunContextAndCreateRunSqlRow,
-        GetDocumentTemplateContextSqlParams,
-        GetDocumentTemplateContextSqlRow,
-    )
-except ImportError:
-    # Types not generated yet - will be created when SQL files are processed
-    from pydantic import BaseModel
+# Event payload types (not SQL-generated, defined inline)
+class DocumentGenerationErrorApiRequest(BaseModel):
+    """Error event payload for document generation."""
+    document_id: str | None = None
+    error_message: str
 
-    class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-        department_id: uuid.UUID
-        profile_id: uuid.UUID
-        document_agent_id: uuid.UUID
-        group_id: uuid.UUID
-        document_id: uuid.UUID | None = None
-        document_name: str | None = None
-        document_description: str | None = None
-        field_ids: list[uuid.UUID] | None = None
-        user_instructions: str | None = None
 
-    class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-        agent_id: str
-        agent_name: str
-        system_prompt: str
-        temperature: float
-        reasoning: str
-        model_id: str
-        model_name: str
-        provider: str
-        base_url: str
-        api_key: str
-        profile_id: str
-        req_per_day: int
-        runs_today_count: int
-        earliest_run_created_at: str | None
-        run_id: str
-        group_id: uuid.UUID
-        trace_id: str
-        previous_messages: list[Any] | None = None
-
-    class GetDocumentTemplateContextSqlParams(BaseModel):
-        field_ids: list[uuid.UUID]
-
-    class DocumentTemplateContextField(BaseModel):
-        item_name: str
-        item_description: str
-        param_name: str
-        param_description: str
-
-    class GetDocumentTemplateContextSqlRow(BaseModel):
-        fields: list[DocumentTemplateContextField]
-
-    class CreateTemplateAndLinkSqlParams(BaseModel):
-        document_id: uuid.UUID
-        upload_id: uuid.UUID
-        name: str
-        schema_id: uuid.UUID
-        active: bool
-        run_id: uuid.UUID
-
-    class CreateTemplateAndLinkSqlRow(BaseModel):
-        template_id: uuid.UUID
-
-    class DocumentGenerationCompleteApiRequest(BaseModel):
-        document_id: uuid.UUID | None = None
-        message: str
-        template_html: str
-        template_schema: dict[str, Any]
-        upload_id: str
-        template_mapping: dict[str, Any] | None = None
-
-    class DocumentGenerationErrorApiRequest(BaseModel):
-        document_id: uuid.UUID | None = None
-        error_message: str
-
-    class DocumentGenerationErrorSqlRow(BaseModel):
-        success: bool
-        message: str
-
-    class DocumentGenerationProgressApiRequest(BaseModel):
-        document_id: uuid.UUID | None = None
-        progress_type: str
-        message: str | None = None
+class DocumentGenerationProgressApiRequest(BaseModel):
+    """Progress event payload for document generation."""
+    document_id: str | None = None
+    progress_type: str
+    message: str | None = None
 
 
 client_router = APIRouter()
@@ -131,7 +51,6 @@ SQL_PATH = "app/sql/v4/documents/get_document_regeneration_run_context_and_creat
 SQL_TEMPLATE_CONTEXT_PATH = (
     "app/sql/v4/documents/get_document_template_context_complete.sql"
 )
-SQL_CREATE_TEMPLATE_PATH = "app/sql/v4/documents/create_template_and_link_complete.sql"
 
 internal_sio = get_internal_sio()
 
@@ -482,7 +401,18 @@ async def _document_regenerate_impl(
             # (get_document_regeneration_run_context_and_create_run_complete.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
-            # Run document regeneration with tracing
+            # Track completed tool names for verification (SQL handles persistence)
+            completed_tool_names: set[str] = set()
+            tool_call_id_to_name: dict[str, str] = {}
+            
+            # Map tool_name to tool_type (stable enum mapping)
+            TOOL_NAME_TO_TYPE = {
+                "create_title": "title",
+                "generate_html": "html",
+                "generate_schema": "schema",
+            }
+
+            # Run document regeneration with streaming
             with trace(
                 "Document Agent Regeneration",
                 trace_id=trace_id,  # From groups table
@@ -490,16 +420,104 @@ async def _document_regenerate_impl(
                 if document_id
                 else None,  # Resource ID, not database group_id
             ):
-                run_result = await Runner.run(
+                result_runner = Runner.run_streamed(
                     document_agent.agent(),
                     input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
+            # Store the result in active runs for potential cancellation
+            await store_active_run(
+                str(document_id) if document_id else sid, result_runner
+            )
+
+            try:
+                # Use generic streaming helper instead of manual parsing
+                async def on_start(tool_call_id: str, tool_name: str, call_id: str | None) -> None:
+                    tool_call_id_to_name[tool_call_id] = tool_name
+                    await internal_sio.emit(
+                        "document_progress",
+                        {
+                            "sid": sid,
+                            "progress_type": "tool_call_start",
+                            "document_id": str(document_id) if document_id else None,
+                            "run_id": str(model_run_id),
+                            "tool_call_id": tool_call_id,
+                            "call_id": call_id or tool_call_id,
+                            "tool_name": tool_name,
+                            "arguments_raw": "",  # Empty for start
+                        },
+                    )
+
+                async def on_progress(tool_call_id: str, arguments_delta: str) -> None:
+                    await internal_sio.emit(
+                        "document_progress",
+                        {
+                            "sid": sid,
+                            "progress_type": "tool_call_progress",
+                            "document_id": str(document_id) if document_id else None,
+                            "run_id": str(model_run_id),
+                            "tool_call_id": tool_call_id,
+                            "call_id": None,  # SQL will look it up
+                            "tool_name": None,  # SQL will look it up
+                            "arguments_raw": arguments_delta,  # Delta - SQL accumulates
+                        },
+                    )
+
+                async def on_complete(tool_call_id: str, final_args: dict[str, Any]) -> None:
+                    tool_name = tool_call_id_to_name.get(tool_call_id, "")
+                    if tool_name:
+                        completed_tool_names.add(tool_name)
+                    
+                    # Map tool_name to tool_type (stable enum)
+                    tool_type = TOOL_NAME_TO_TYPE.get(tool_name)
+                    
+                    await internal_sio.emit(
+                        "document_complete",
+                        {
+                            "sid": sid,
+                            "type": "tool_call_complete",
+                            "document_id": str(document_id) if document_id else None,
+                            "run_id": str(model_run_id),
+                            "tool_call_id": tool_call_id,
+                            "call_id": None,  # SQL will look it up
+                            "tool_type": tool_type,  # For routing by tool_type
+                            "final_content": str(final_args),
+                            "arguments_raw": None,  # SQL has the accumulated version
+                        },
+                    )
+
+                callbacks = StreamEventCallbacks(
+                    on_tool_call_start=on_start,
+                    on_tool_call_progress=on_progress,
+                    on_tool_call_complete=on_complete,
+                )
+
+                # Generate tool_call_id from call_id
+                def tool_call_id_generator(call_id: str | None) -> str:
+                    if call_id:
+                        return call_id
+                    return f"document_{uuid.uuid4().hex[:16]}"
+
+                await stream_agent_events(result_runner, callbacks, tool_call_id_generator)
+
+            except BaseException as stream_error:
+                if isinstance(
+                    stream_error,
+                    (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
+                ):
+                    raise
+                raise
+            except Exception:
+                raise
+            finally:
+                # Clean up active run
+                await remove_active_run(str(document_id) if document_id else sid)
+
             # Emit async pricing event (non-blocking)
             # This handles token updates and message logging in background
-            usage = run_result.context_wrapper.usage
-            assistant_output = getattr(run_result, "final_output", None) or ""
+            usage = result_runner.context_wrapper.usage
+            assistant_output = getattr(result_runner, "final_output", None) or ""
             await internal_sio.emit(
                 "log_run",
                 {
@@ -514,55 +532,8 @@ async def _document_regenerate_impl(
                 },
             )
 
-            # Extract results from SQL (tool_call_arguments table)
-            # Query tool_call_arguments for completed tools
-            import json
-
-            template_html = ""
-            template_schema_str = "{}"
-
-            # Get template_html from generate_html tool_call
-            html_tool_call_query = """
-                SELECT tca.arguments_json->>'template_html' as template_html
-                FROM tool_calls tc
-                JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-                JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
-                JOIN tools t ON t.id = tc.tool_id
-                WHERE tcr.run_id = $1
-                  AND t.name = 'generate_html'
-                  AND tc.completed = true
-                ORDER BY tc.created_at DESC
-                LIMIT 1
-            """
-            html_result = await conn.fetchrow(html_tool_call_query, model_run_id)
-            if html_result and html_result["template_html"]:
-                template_html = html_result["template_html"]
-
-            # Get schema_json from generate_schema tool_call
-            schema_tool_call_query = """
-                SELECT tca.arguments_json->>'schema_json' as schema_json
-                FROM tool_calls tc
-                JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-                JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
-                JOIN tools t ON t.id = tc.tool_id
-                WHERE tcr.run_id = $1
-                  AND t.name = 'generate_schema'
-                  AND tc.completed = true
-                ORDER BY tc.created_at DESC
-                LIMIT 1
-            """
-            schema_result = await conn.fetchrow(schema_tool_call_query, model_run_id)
-            if schema_result and schema_result["schema_json"]:
-                template_schema_str = schema_result["schema_json"]
-
-            # Parse schema JSON
-            try:
-                template_schema = json.loads(template_schema_str)
-            except (json.JSONDecodeError, TypeError):
-                template_schema = {}
-
-            # Verify both tools were called
-            if not template_html or not template_schema_str or template_schema_str == "{}":
+            # Verify both required tools were called
+            if "generate_html" not in completed_tool_names or "generate_schema" not in completed_tool_names:
                 await emit_to_internal(
                     "document_error",
                     DocumentGenerationErrorApiRequest(
@@ -576,159 +547,19 @@ async def _document_regenerate_impl(
                 )
                 return
 
-            # Create template directly in database
-            import os
-
-            from utils.cache.invalidate_tags import invalidate_tags
-
-            from app.main import UPLOAD_FOLDER
-
-            try:
-                # Save template HTML to file and create upload record
-                upload_uuid = uuid.uuid4()
-                file_path = f"{upload_uuid}.html"
-                full_path = os.path.join(UPLOAD_FOLDER, file_path)
-
-                # Ensure uploads directory exists
-                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-                # Write template HTML to file
-                with open(full_path, "w", encoding="utf-8") as f:
-                    f.write(template_html)
-
-                template_mapping: dict[str, Any] | None = None
-
-                async with conn.transaction():
-                    # Create upload record
-                    sql_insert_upload = load_sql("app/sql/v4/uploads/insert_upload.sql")
-                    upload_id_result = await conn.fetchrow(
-                        sql_insert_upload,
-                        file_path,
-                        "text/html",
-                        len(template_html.encode("utf-8")),
-                    )
-                    upload_id = upload_id_result["id"]
-
-                    # If documentId is provided, create template and link to document and run
-                    if document_id:
-                        template_name = f"Template for {document_name or 'Document'}"
-
-                        # Create schema records from template_schema dict
-                        schema_id = await create_schema_from_dict(conn, template_schema)
-
-                        # Create template and link to document and run using execute_sql_typed()
-                        create_template_params = CreateTemplateAndLinkSqlParams(
-                            document_id=document_id,
-                            upload_id=uuid.UUID(upload_id),
-                            name=template_name,
-                            schema_id=schema_id,
-                            active=True,
-                            run_id=model_run_id,
-                        )
-                        template_result = cast(
-                            CreateTemplateAndLinkSqlRow,
-                            await execute_sql_typed(
-                                conn,
-                                SQL_CREATE_TEMPLATE_PATH,
-                                params=create_template_params,
-                            ),
-                        )
-
-                        if template_result:
-                            template_id = template_result.template_id
-
-                        # Fetch updated templates and build mapping from array
-                        from app.sql.types import (
-                            GetDocumentTemplatesSqlParams,
-                            GetDocumentTemplatesSqlRow,
-                        )
-
-                        template_params = GetDocumentTemplatesSqlParams(
-                            document_id=document_id
-                        )
-                        template_result_list = cast(
-                            GetDocumentTemplatesSqlRow,
-                            await execute_sql_typed(
-                                conn,
-                                "app/sql/v4/documents/get_document_templates_complete.sql",
-                                params=template_params,
-                            ),
-                        )
-
-                        # Build mapping from array (now using schema_id instead of template_args)
-                        template_mapping = {}
-                        if (
-                            hasattr(template_result_list, "templates")
-                            and template_result_list.templates
-                        ):
-                            for template in template_result_list.templates:
-                                upload_id_str = (
-                                    str(template.upload_id)
-                                    if template.upload_id
-                                    else ""
-                                )
-                                schema_id_str = (
-                                    str(template.schema_id)
-                                    if template.schema_id
-                                    else None
-                                )
-                                template_mapping[upload_id_str] = {
-                                    "template_id": str(template.template_id),
-                                    "schema_id": schema_id_str,
-                                    "active": template.active,
-                                    "created_at": template.created_at.isoformat()
-                                    if template.created_at
-                                    else None,
-                                    "updated_at": template.updated_at.isoformat()
-                                    if template.updated_at
-                                    else None,
-                                }
-
-                if document_id:
-                    # Invalidate documents cache
-                    await invalidate_tags(["documents"])
-
-                # Emit completion event via internal bus
-                await emit_to_internal(
-                    "document_complete",
-                    DocumentGenerationCompleteApiRequest(
-                        document_id=document_id if document_id else None,
-                        message="Document template regenerated successfully",
-                        template_html=template_html,
-                        template_schema=template_schema,
-                        upload_id=upload_id,
-                        template_mapping=template_mapping,
-                    ),
-                    sid=sid,
-                    group_id=str(group_id),
-                )
-
-            except Exception as create_error:
-                # Error creating template - emit error event
-                await emit_to_internal(
-                    "document_error",
-                    DocumentGenerationErrorApiRequest(
-                        document_id=document_id if document_id else None,
-                        error_message=f"Failed to create template: {str(create_error)}",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            # Log activity
-            try:
-                await log_websocket_activity(
-                    sid=sid,
-                    event_key="documents.regenerated",
-                    template="{{ actor.name }} regenerated document template",
-                    context={
-                        "department_id": str(department_id),
-                    },
-                    endpoint="/socket/v4/documents/regenerate",
-                    error=False,
-                )
-            except Exception:
-                pass
+            # Emit run completion event - complete.py will handle result extraction and template creation
+            await internal_sio.emit(
+                "document_complete",
+                {
+                    "sid": sid,
+                    "type": "run_complete",
+                    "document_id": str(document_id) if document_id else None,
+                    "run_id": str(model_run_id),
+                    "group_id": str(group_id) if group_id else None,
+                    "department_id": str(department_id),
+                    "document_name": document_name,
+                },
+            )
 
     except RuntimeError:
         # Pool not initialized - emit error event
@@ -749,18 +580,7 @@ async def _document_regenerate_impl(
             ),
             sid=sid,
         )
-        # Log activity error
-        try:
-            await log_websocket_activity(
-                sid=sid,
-                event_key="documents.regenerated",
-                template="{{ actor.name }} failed to regenerate document template",
-                context={"error": str(e)},
-                endpoint="/socket/v4/documents/regenerate",
-                error=True,
-            )
-        except Exception:
-            pass
+        pass
 
 
 # Pydantic model for client-to-server event
@@ -800,7 +620,7 @@ async def document_regenerate(sid: str, data: dict[str, Any]) -> None:
         request_type=DocumentRegeneratePayload,
         handler=_document_regenerate_impl,  # type: ignore[arg-type]
         error_event_name="documents_generation_error",
-        error_response_type=DocumentGenerationErrorSqlRow,
+        error_response_type=None,  # Error handler uses DocumentErrorPayload (defined in error.py)
     )
 
 
