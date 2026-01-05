@@ -33,7 +33,6 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION socket_hint_debug_complete_v4(
-    sid text,
     run_id text,
     tool_call_id text,
     tool_name text,

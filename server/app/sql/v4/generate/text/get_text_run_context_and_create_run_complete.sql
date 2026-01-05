@@ -3,7 +3,7 @@
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- NOTE: The type i_get_text_run_context_and_create_run_v4_tool is used by other functions
 -- (e.g., socket_get_hint_run_context_and_create_run_v4). We must drop dependent functions first.
--- 1) Drop dependent functions first (hint function depends on our tool type)
+-- 1) Drop dependent functions first (functions that depend on our tool type)
 DO $$
 DECLARE
     r RECORD;
@@ -16,6 +16,16 @@ BEGIN
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
         EXECUTE format('DROP FUNCTION IF EXISTS socket_get_hint_run_context_and_create_run_v4(%s)', r.sig);
+    END LOOP;
+    
+    -- Drop text function that depends on our tool type
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'socket_get_text_run_context_for_existing_run_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_text_run_context_for_existing_run_v4(%s)', r.sig);
     END LOOP;
 END $$;
 

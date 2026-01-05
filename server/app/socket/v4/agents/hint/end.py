@@ -36,7 +36,7 @@ async def _hint_end_impl(
             chat_id=None,
         )
         await emit_to_client(
-            "simulation_hints_error",
+            "hints_error",
             missing_fields_error,
             room=sid,
         )
@@ -62,7 +62,7 @@ async def _hint_end_impl(
                 chat_id=result.chat_id if result else data.resource_id,
             )
             await emit_to_client(
-                "simulation_hints_complete",
+                "hints_complete",
                 response_payload,
                 room=sid,
             )
@@ -74,7 +74,7 @@ async def _hint_end_impl(
             chat_id=None,
         )
         await emit_to_client(
-            "simulation_hints_error",
+            "hints_error",
             error_payload,
             room=sid,
         )

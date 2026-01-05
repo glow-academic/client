@@ -47,7 +47,7 @@ async def _hint_tool_complete_impl(
         if not hint_text or not hint_text.strip():
             # No hint to create, just emit completion
             await sio.emit(
-                "simulation_hints_progress",
+                "hints_progress",
                 {
                     "type": "tool_complete",
                     "chat_id": data.resource_id,
@@ -91,7 +91,7 @@ async def _hint_tool_complete_impl(
             hints_list = result.hints or []
             if hints_list:
                 await sio.emit(
-                    "simulation_hints_progress",
+                    "hints_progress",
                     {
                         "type": "tool_complete",
                         "chat_id": data.resource_id,

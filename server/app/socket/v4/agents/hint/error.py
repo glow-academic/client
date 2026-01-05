@@ -45,20 +45,20 @@ async def _hint_error_impl(
                 resource_id=result.resource_id if result else data.resource_id,  # Client will interpret as chat_id
             )
             await emit_to_client(
-                "simulation_hints_error",
+                "hints_error",
                 response_payload,
                 room=sid,
             )
     except Exception as e:
         # If SQL call fails, still emit error to client
-        response_payload: HintErrorApiResponse = HintErrorApiResponse(
+        error_response_payload: HintErrorApiResponse = HintErrorApiResponse(
             success=False,
             message=f"Error handling failed: {str(e)}",
             resource_id=data.resource_id,
         )
         await emit_to_client(
-            "simulation_hints_error",
-            response_payload,
+            "hints_error",
+            error_response_payload,
             room=sid,
         )
 
@@ -72,7 +72,7 @@ async def hint_error_internal(
         data=data,
         request_type=HintErrorApiRequest,
         handler=_hint_error_impl,  # type: ignore[arg-type]
-        error_event_name="simulation_hints_error",
+        error_event_name="hints_error",
         error_response_type=HintErrorApiResponse,
     )
 

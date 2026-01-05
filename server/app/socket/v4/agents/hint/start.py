@@ -1,4 +1,4 @@
-"""Handler for simulation_hints_generate WebSocket event - dispatches to generate_start."""
+"""Handler for hints_generate WebSocket event - dispatches to generate_start."""
 
 import uuid
 from typing import Any, cast
@@ -9,9 +9,7 @@ from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.sql.types import (GenerateHintsApiRequest, GenerateHintsSqlParams,
-                           GenerateHintsSqlRow,
-                           GetDeveloperInstructionSqlParams,
-                           GetDeveloperInstructionSqlRow, HintErrorApiRequest)
+                           GenerateHintsSqlRow, HintErrorApiRequest)
 from fastapi import APIRouter
 from jinja2 import Template
 from utils.sql_helper import execute_sql_typed
@@ -21,8 +19,7 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_GENERATE = "app/sql/v4/simulations/generate_hints_complete.sql"
-SQL_PATH_DEVELOPER_INSTRUCTION = "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql"
+SQL_PATH = "app/sql/v4/simulations/generate_hints_complete.sql"
 
 
 async def _generate_hints_impl(
@@ -44,7 +41,7 @@ async def _generate_hints_impl(
             )
             result = cast(
                 GenerateHintsSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_GENERATE, params=params),
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
             if not result:
@@ -64,35 +61,23 @@ async def _generate_hints_impl(
                 )
                 return
 
-            # Fetch and render developer instruction template (agent-specific logic)
+            # Render developer instruction template if available (from SQL result)
             developer_message_contents: list[str] = []
-            try:
-                dev_instruction_params = GetDeveloperInstructionSqlParams(
-                    instruction_type="hint",
-                    agent_role_val="hint",
-                )
-                dev_instruction_result = cast(
-                    GetDeveloperInstructionSqlRow,
-                    await execute_sql_typed(
-                        conn,
-                        SQL_PATH_DEVELOPER_INSTRUCTION,
-                        params=dev_instruction_params,
-                    ),
-                )
-                if dev_instruction_result and dev_instruction_result.template:
+            if result.developer_instruction_template:
+                try:
                     # Render Jinja template with hint-specific context variables
                     # For hint agent, we might need message content, chat context, etc.
                     # For now, render with empty context (can be extended later)
-                    template = Template(dev_instruction_result.template)
+                    template = Template(result.developer_instruction_template)
                     developer_message_content = template.render(
                         # Add hint-specific context variables here as needed
                         # e.g., message_content=data.message_id, chat_id=data.chat_id
                     )
                     if developer_message_content and developer_message_content.strip():
                         developer_message_contents.append(developer_message_content)
-            except Exception:
-                # No developer instruction configured - continue without it
-                pass
+                except Exception:
+                    # Template rendering failed - continue without it
+                    pass
 
             # Dispatch to generate_start with developer message contents
             await internal_sio.emit(
@@ -125,20 +110,20 @@ async def _generate_hints_impl(
 
 
 @sio.event  # type: ignore
-async def simulation_hints_generate(sid: str, data: dict[str, Any]) -> None:
+async def hints_generate(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
     await handle_client_event(
         sid=sid,
         data=data,
         request_type=GenerateHintsApiRequest,
         handler=_generate_hints_impl,  # type: ignore[arg-type]
-        error_event_name="simulation_hints_error",
+        error_event_name="hints_error",
         error_response_type=None,  # Error handled via hint_error
     )
 
 
-@internal_sio.on("simulation_hints_generate")
-async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
+@internal_sio.on("hints_generate")
+async def hints_generate_internal(data: dict[str, Any]) -> None:
     """Internal event handler for hint generation (called from other handlers)."""
     # Extract sid from payload if available
     sid = data.get("sid", "internal")

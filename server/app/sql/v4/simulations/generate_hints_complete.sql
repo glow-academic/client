@@ -63,7 +63,8 @@ RETURNS TABLE (
     agent_id text,
     agent_role text,  -- Required: used for dispatch mapping
     chat_id text,
-    group_id uuid  -- Optional: for regeneration (if provided, uses existing group)
+    group_id uuid,  -- Optional: for regeneration (if provided, uses existing group)
+    developer_instruction_template text  -- Optional: developer instruction template for rendering
 )
 LANGUAGE sql
 VOLATILE
@@ -329,7 +330,9 @@ SELECT
     cd.agent_id,
     cd.agent_role,
     cd.chat_id,
-    p_params.group_id as group_id  -- Pass through group_id if provided (for regeneration)
+    p_params.group_id as group_id,  -- Pass through group_id if provided (for regeneration)
+    did.developer_instruction_template  -- Developer instruction template (may be NULL)
 FROM context_data cd
 CROSS JOIN params p_params
+LEFT JOIN developer_instruction_data did ON true  -- Join to get developer instruction template
 $$;

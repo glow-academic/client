@@ -33,7 +33,6 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION socket_hint_end_v4(
-    sid text,
     type text,
     run_id text,
     resource_id text DEFAULT NULL,

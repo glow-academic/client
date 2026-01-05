@@ -3252,7 +3252,6 @@ class GetAgentsListApiResponse(BaseModel):
 
 class HintDebugCompleteSqlParams(BaseModel):
 
-    sid: str
     run_id: str
     tool_call_id: str
     tool_name: str
@@ -3263,7 +3262,6 @@ class HintDebugCompleteSqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.sid,
             self.run_id,
             self.tool_call_id,
             self.tool_name,
@@ -3280,7 +3278,6 @@ class HintDebugCompleteSqlRow(BaseModel):
 
 class HintDebugCompleteApiRequest(BaseModel):
 
-    sid: str
     run_id: str
     tool_call_id: str
     tool_name: str
@@ -3296,41 +3293,10 @@ class HintDebugCompleteApiResponse(BaseModel):
 
 
 
-# Generated from: hint_debug_error
-
-class HintDebugErrorSqlParams(BaseModel):
-
-    success: bool
-    message: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.success,
-            self.message,
-        )
-
-class HintDebugErrorSqlRow(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
-
-class HintDebugErrorApiRequest(BaseModel):
-
-    success: bool
-    message: str
-
-class HintDebugErrorApiResponse(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
-
-
-
 # Generated from: hint_end
 
 class HintEndSqlParams(BaseModel):
 
-    sid: str
     type: str
     run_id: str
     resource_id: str | None = None
@@ -3339,7 +3305,6 @@ class HintEndSqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.sid,
             self.type,
             self.run_id,
             self.resource_id,
@@ -3355,7 +3320,6 @@ class HintEndSqlRow(BaseModel):
 
 class HintEndApiRequest(BaseModel):
 
-    sid: str
     type: str
     run_id: str
     resource_id: str | None = None
@@ -3407,84 +3371,6 @@ class HintErrorApiResponse(BaseModel):
     message: str | None = None
     resource_id: str | None = None
     group_id: str | None = None
-
-
-
-# Generated from: hint_hint_complete
-
-class HintHintCompleteSqlParams(BaseModel):
-
-    sid: str
-    resource_id: str
-    run_id: str
-    tool_call_id: str
-    tool_name: str
-    final_content: str
-    arguments_raw: str
-    call_id: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.sid,
-            self.resource_id,
-            self.run_id,
-            self.tool_call_id,
-            self.tool_name,
-            self.final_content,
-            self.arguments_raw,
-            self.call_id,
-        )
-
-class HintHintCompleteSqlRow(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
-
-class HintHintCompleteApiRequest(BaseModel):
-
-    sid: str
-    resource_id: str
-    run_id: str
-    tool_call_id: str
-    tool_name: str
-    final_content: str
-    arguments_raw: str
-    call_id: str | None = None
-
-class HintHintCompleteApiResponse(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
-
-
-
-# Generated from: hint_hint_error
-
-class HintHintErrorSqlParams(BaseModel):
-
-    success: bool
-    message: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.success,
-            self.message,
-        )
-
-class HintHintErrorSqlRow(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
-
-class HintHintErrorApiRequest(BaseModel):
-
-    success: bool
-    message: str
-
-class HintHintErrorApiResponse(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
 
 
 
@@ -10348,6 +10234,7 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
     department_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
+    developer_message_contents: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10359,6 +10246,7 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.department_id,
             self.group_id,
             self.user_instructions,
+            self.developer_message_contents,
         )
 
 class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
@@ -10377,6 +10265,7 @@ class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
     department_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
+    developer_message_contents: list[str] | None = None
 
 class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -10535,10 +10424,7 @@ class GetTextRunContextForExistingRunSqlRow(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
     department_name: str | None = None
-    developer_message_id: UUID | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
     mime_type: str | None = None
@@ -10572,10 +10458,7 @@ class GetTextRunContextForExistingRunApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
     department_name: str | None = None
-    developer_message_id: UUID | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
     mime_type: str | None = None
@@ -23536,6 +23419,7 @@ class GenerateHintsSqlRow(BaseModel):
     agent_role: str | None = None
     chat_id: str | None = None
     group_id: UUID | None = None
+    developer_instruction_template: str | None = None
 
 class GenerateHintsApiRequest(BaseModel):
 
@@ -23551,6 +23435,7 @@ class GenerateHintsApiResponse(BaseModel):
     agent_role: str | None = None
     chat_id: str | None = None
     group_id: UUID | None = None
+    developer_instruction_template: str | None = None
 
 
 
@@ -27101,12 +26986,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "HintDebugCompleteApiRequest",
         "HintDebugCompleteApiResponse",
     ),
-    "app/sql/v4/agents/hint_debug_error_complete.sql": (
-        "HintDebugErrorSqlParams",
-        "HintDebugErrorSqlRow",
-        "HintDebugErrorApiRequest",
-        "HintDebugErrorApiResponse",
-    ),
     "app/sql/v4/agents/hint_end_complete.sql": (
         "HintEndSqlParams",
         "HintEndSqlRow",
@@ -27118,18 +26997,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "HintErrorSqlRow",
         "HintErrorApiRequest",
         "HintErrorApiResponse",
-    ),
-    "app/sql/v4/agents/hint_hint_complete_complete.sql": (
-        "HintHintCompleteSqlParams",
-        "HintHintCompleteSqlRow",
-        "HintHintCompleteApiRequest",
-        "HintHintCompleteApiResponse",
-    ),
-    "app/sql/v4/agents/hint_hint_error_complete.sql": (
-        "HintHintErrorSqlParams",
-        "HintHintErrorSqlRow",
-        "HintHintErrorApiRequest",
-        "HintHintErrorApiResponse",
     ),
     "app/sql/v4/agents/hint_tool_complete_complete.sql": (
         "HintToolCompleteSqlParams",
@@ -29654,27 +29521,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/hint_debug_error_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/agents/hint_end_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/agents/hint_error_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/hint_hint_complete_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/hint_hint_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
