@@ -36,7 +36,7 @@ async def _generate_hints_impl(
 
     try:
         async with get_db_connection() as conn:
-            # Get context from SQL (rate limiting handled in generate/start.py)
+            # Get context from SQL (rate limiting handled in SQL function)
             # Use execute_sql_typed() - auto-detects function
             params = GenerateHintsSqlParams(
                 message_id=message_id,
@@ -53,16 +53,16 @@ async def _generate_hints_impl(
 
             if not result:
                 await emit_to_internal(
-                    "generate_error",
+                    "hint_error",
                     {
                         "sid": sid,
-                        "error_message": (
+                        "success": False,
+                        "message": (
                             f"Message {message_id} in chat {chat_id} not found or "
                             f"no hint agent configured for department {department_id}"
                         ),
                         "resource_id": str(chat_id),
                         "group_id": str(result.group_id) if result and result.group_id else None,
-                        "resource_type": "hint",
                     },
                     sid=sid,
                 )
@@ -85,15 +85,15 @@ async def _generate_hints_impl(
             )
             return  # Exit early - generate_start will handle the rest
     except Exception as e:
-        # Emit error event to generate_error handler
+        # Emit error event directly to hint_error handler (not a generation error yet)
         await emit_to_internal(
-            "generate_error",
+            "hint_error",
             {
                 "sid": sid,
-                "error_message": f"Hint generation failed: {str(e)}",
+                "success": False,
+                "message": f"Hint generation failed: {str(e)}",
                 "resource_id": str(chat_id),
                 "group_id": str(group_id) if group_id else None,
-                "resource_type": "hint",
             },
             sid=sid,
         )
@@ -135,13 +135,13 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         await emit_to_internal(
-            "generate_error",
+            "hint_error",
             {
                 "sid": sid,
-                "error_message": "No profile found for socket",
+                "success": False,
+                "message": "No profile found for socket",
                 "resource_id": None,
                 "group_id": None,
-                "resource_type": "hint",
             },
             sid=sid,
         )
