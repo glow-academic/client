@@ -22,8 +22,15 @@ from app.main import get_internal_sio
 # SQL-generated types (from SQL introspection)
 from app.sql.types import (GetTextRunContextAndCreateRunApiRequest,
                            GetTextRunContextAndCreateRunSqlParams,
-                           GetTextRunContextAndCreateRunSqlRow,
-                           TextGenerationErrorApiRequest)
+                           GetTextRunContextAndCreateRunSqlRow)
+from pydantic import BaseModel
+
+# Placeholder for SQL-generated type (will be auto-generated when SQL is executed)
+class TextGenerationErrorApiRequest(BaseModel):
+    """Placeholder - will be replaced by SQL-generated type."""
+    error_message: str
+    resource_id: uuid.UUID | None = None
+    group_id: uuid.UUID | None = None
 from fastapi import APIRouter
 from jinja2 import Template
 from utils.sql_helper import execute_sql_typed
@@ -245,36 +252,34 @@ async def _generate_text_impl(
                     tool_call_id: str, tool_name: str, call_id: str | None
                 ) -> None:
                     tool_call_id_to_name[tool_call_id] = tool_name
-                    await emit_to_internal(
+                    await internal_sio.emit(
                         "generate_text_progress",
                         {
                             "sid": sid,
                             "progress_type": "tool_call_start",
                             "resource_id": str(data.resource_id) if data.resource_id else None,
-                            "run_id": model_run_id,
+                            "run_id": str(model_run_id),
                             "tool_call_id": tool_call_id,
                             "call_id": call_id or tool_call_id or "",
                             "tool_name": tool_name or "",
                             "arguments_delta": "",  # Empty for start
                         },
-                        sid=sid,
                     )
 
                 async def on_progress(tool_call_id: str, arguments_delta: str) -> None:
                     # For progress events, call_id and tool_name may be None - SQL will look them up
-                    await emit_to_internal(
+                    await internal_sio.emit(
                         "generate_text_progress",
                         {
                             "sid": sid,
                             "progress_type": "tool_call_progress",
                             "resource_id": str(data.resource_id) if data.resource_id else None,
-                            "run_id": model_run_id,
+                            "run_id": str(model_run_id),
                             "tool_call_id": tool_call_id,
                             "call_id": None,  # SQL will look it up
                             "tool_name": None,  # SQL will look it up
                             "arguments_delta": arguments_delta,  # Delta - SQL accumulates
                         },
-                        sid=sid,
                     )
 
                 async def on_complete(
@@ -391,30 +396,30 @@ async def _generate_text_impl(
             resource_id_err = data.resource_id  # Already UUID
         except Exception:
             pass
-        await emit_to_internal(
+        await internal_sio.emit(
             "generate_text_error",
-            TextGenerationErrorApiRequest(
-                error_message="Database connection pool not available",
-                resource_id=resource_id_err,
-                group_id=None,
-            ),
-            sid=sid,
+            {
+                "sid": sid,
+                "error_message": "Database connection pool not available",
+                "resource_id": str(resource_id_err) if resource_id_err else None,
+                "group_id": None,
+            },
         )
     except Exception as e:
         # Extract resource_id safely for error message
-        resource_id_err: uuid.UUID | None = None
+        resource_id_err2: uuid.UUID | None = None
         try:
-            resource_id_err = data.resource_id  # Already UUID
+            resource_id_err2 = data.resource_id  # Already UUID
         except Exception:
             pass
-        await emit_to_internal(
+        await internal_sio.emit(
             "generate_text_error",
-            TextGenerationErrorApiRequest(
-                error_message=str(e),
-                resource_id=resource_id_err,
-                group_id=None,
-            ),
-            sid=sid,
+            {
+                "sid": sid,
+                "error_message": str(e),
+                "resource_id": str(resource_id_err2) if resource_id_err2 else None,
+                "group_id": None,
+            },
         )
         # Log activity error
         try:

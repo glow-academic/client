@@ -31,7 +31,8 @@ async def _generate_text_start_impl(
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Internal implementation - emits to client."""
-    await emit_to_client(
+    from app.main import sio as client_sio
+    await client_sio.emit(
         "text_generation_started",
         {
             "success": True,
