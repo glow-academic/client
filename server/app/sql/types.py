@@ -10336,6 +10336,57 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
+# Generated from: get_generation_run_context_and_create_run
+
+class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    agent_id: UUID
+    resource_id: UUID
+    resource_type: str
+    profile_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.resource_id,
+            self.resource_type,
+            self.profile_id,
+            self.message_ids,
+            self.department_id,
+            self.group_id,
+            self.user_instructions,
+        )
+
+class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+
+class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    agent_id: UUID
+    resource_id: UUID
+    resource_type: str
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    user_instructions: str | None = None
+
+class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+
+
+
 # Generated from: get_text_run_context_and_create_run
 
 class GetTextRunContextAndCreateRunSqlParams(BaseModel):
@@ -10430,6 +10481,94 @@ class GetTextRunContextAndCreateRunApiResponse(BaseModel):
     runs_today_count: int | None = None
     earliest_run_created_at: str | None = None
     run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_template: str | None = None
+    developer_instruction_schema_id: UUID | None = None
+    department_name: str | None = None
+    developer_message_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+
+
+# Generated from: get_text_run_context_for_existing_run
+
+class GetTextRunContextForExistingRunSqlParams(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    resource_id: UUID
+    resource_type: str
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.agent_id,
+            self.resource_id,
+            self.resource_type,
+            self.message_ids,
+            self.group_id,
+        )
+
+class GetTextRunContextForExistingRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_template: str | None = None
+    developer_instruction_schema_id: UUID | None = None
+    department_name: str | None = None
+    developer_message_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+class GetTextRunContextForExistingRunApiRequest(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    resource_id: UUID
+    resource_type: str
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+
+class GetTextRunContextForExistingRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
@@ -12932,6 +13071,66 @@ class GetMessageCreatedAtApiRequest(BaseModel):
 class GetMessageCreatedAtApiResponse(BaseModel):
 
     created_at: str | None = None
+
+
+
+# Generated from: get_messages_by_ids
+
+class GetMessagesByIdsSqlParams(BaseModel):
+
+    message_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.message_ids,
+        )
+
+class IGetMessagesByIdsV4Message(BaseModel):
+
+    id: UUID | None
+    role: str | None
+    content: str | None
+    created_at: str | None
+    completed: bool | None
+    audio: bool | None
+    upload_id: UUID | None
+
+class GetMessagesByIdsSqlRow(BaseModel):
+
+    messages: list[IGetMessagesByIdsV4Message] | None = None
+
+class GetMessagesByIdsApiRequest(BaseModel):
+
+    message_ids: list[UUID]
+
+class GetMessagesByIdsApiResponse(BaseModel):
+
+    messages: list[IGetMessagesByIdsV4Message] | None = None
+
+
+
+# Generated from: get_messages_by_run_id
+
+class GetMessagesByRunIdSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class GetMessagesByRunIdSqlRow(BaseModel):
+
+    messages: list[IGetMessagesByIdsV4Message] | None = None
+
+class GetMessagesByRunIdApiRequest(BaseModel):
+
+    run_id: UUID
+
+class GetMessagesByRunIdApiResponse(BaseModel):
+
+    messages: list[IGetMessagesByIdsV4Message] | None = None
 
 
 
@@ -23331,47 +23530,12 @@ class GenerateHintsSqlParams(BaseModel):
             self.user_instructions,
         )
 
-class IGetHintRunContextAndCreateRunV4Document(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-
-
-
-
 class GenerateHintsSqlRow(BaseModel):
 
     agent_id: str | None = None
-    agent_name: str | None = None
     agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
-    department_name: str | None = None
-    developer_message_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    message_id: str | None = None
     chat_id: str | None = None
-    documents: list[IGetHintRunContextAndCreateRunV4Document] | None = None
+    group_id: UUID | None = None
 
 class GenerateHintsApiRequest(BaseModel):
 
@@ -23384,34 +23548,9 @@ class GenerateHintsApiRequest(BaseModel):
 class GenerateHintsApiResponse(BaseModel):
 
     agent_id: str | None = None
-    agent_name: str | None = None
     agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
-    department_name: str | None = None
-    developer_message_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    message_id: str | None = None
     chat_id: str | None = None
-    documents: list[IGetHintRunContextAndCreateRunV4Document] | None = None
+    group_id: UUID | None = None
 
 
 
@@ -27640,11 +27779,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
+    "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql": (
+        "GetGenerationRunContextAndCreateRunSqlParams",
+        "GetGenerationRunContextAndCreateRunSqlRow",
+        "GetGenerationRunContextAndCreateRunApiRequest",
+        "GetGenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql": (
         "GetTextRunContextAndCreateRunSqlParams",
         "GetTextRunContextAndCreateRunSqlRow",
         "GetTextRunContextAndCreateRunApiRequest",
         "GetTextRunContextAndCreateRunApiResponse",
+    ),
+    "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql": (
+        "GetTextRunContextForExistingRunSqlParams",
+        "GetTextRunContextForExistingRunSqlRow",
+        "GetTextRunContextForExistingRunApiRequest",
+        "GetTextRunContextForExistingRunApiResponse",
     ),
     "app/sql/v4/generate/text/get_text_tool_call_results_complete.sql": (
         "GetTextToolCallResultsSqlParams",
@@ -27933,6 +28084,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetMessageCreatedAtSqlRow",
         "GetMessageCreatedAtApiRequest",
         "GetMessageCreatedAtApiResponse",
+    ),
+    "app/sql/v4/messages/get_messages_by_ids_complete.sql": (
+        "GetMessagesByIdsSqlParams",
+        "GetMessagesByIdsSqlRow",
+        "GetMessagesByIdsApiRequest",
+        "GetMessagesByIdsApiResponse",
+    ),
+    "app/sql/v4/messages/get_messages_by_run_id_complete.sql": (
+        "GetMessagesByRunIdSqlParams",
+        "GetMessagesByRunIdSqlRow",
+        "GetMessagesByRunIdApiRequest",
+        "GetMessagesByRunIdApiResponse",
     ),
     "app/sql/v4/model_runs/create_model_run_complete.sql": (
         "CreateModelRunSqlParams",
@@ -30056,7 +30219,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30297,6 +30470,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/messages/get_message_created_at_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/messages/get_messages_by_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/messages/get_messages_by_run_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload

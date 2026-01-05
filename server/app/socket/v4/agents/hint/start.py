@@ -44,7 +44,7 @@ async def _generate_hints_impl(
             )
 
             if not result:
-                error_payload: HintErrorApiRequest = HintErrorApiRequest(
+                error_payload_not_found = HintErrorApiRequest(
                     success=False,
                     message=(
                         f"Message {data.message_id} in chat {data.chat_id} not found or "
@@ -55,7 +55,7 @@ async def _generate_hints_impl(
                 )
                 await emit_to_internal(
                     "hint_error",
-                    error_payload,
+                    error_payload_not_found,
                     sid=sid,
                 )
                 return
@@ -69,13 +69,14 @@ async def _generate_hints_impl(
                     "resource_id": str(result.chat_id),
                     "resource_type": result.agent_role or "hint",  # Pass agent_role as resource_type
                     "group_id": str(result.group_id) if result.group_id else None,  # Optional: for regeneration
+                    "user_instructions": data.user_instructions,  # Optional: for regeneration
                     "message_ids": [str(data.message_id)],  # Hint agent needs message_id for context
                 },
             )
             return  # Exit early - generate_start will handle the rest
     except Exception as e:
         # Emit error event directly to hint_error handler (not a generation error yet)
-        error_payload: HintErrorApiRequest = HintErrorApiRequest(
+        error_payload_exception = HintErrorApiRequest(
             success=False,
             message=f"Hint generation failed: {str(e)}",
             resource_id=str(data.chat_id),
@@ -83,7 +84,7 @@ async def _generate_hints_impl(
         )
         await emit_to_internal(
             "hint_error",
-            error_payload,
+            error_payload_exception,
             sid=sid,
         )
 

@@ -1,20 +1,26 @@
 """Handler for generate_start WebSocket event - entry point for all generation requests."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
+from app.socket.v4.generate.error import GenerateErrorApiRequest
+from app.sql.types import (GetGenerationRunContextAndCreateRunSqlParams,
+                           GetGenerationRunContextAndCreateRunSqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH = "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"
 
 
 class GenerateStartApiRequest(BaseModel):
@@ -25,6 +31,7 @@ class GenerateStartApiRequest(BaseModel):
     resource_id: str
     resource_type: str  # agent_role from SQL result
     group_id: str | None = None  # Optional: for regeneration
+    user_instructions: str | None = None  # Optional: for regeneration (creates user message)
     # Agent-specific fields - only include what's needed
     message_ids: list[str] | None = None  # Optional: message IDs for context (e.g., hint agent)
 
@@ -60,26 +67,102 @@ async def _generate_start_impl(
     """Entry point for all generation requests - handles mapping, group creation, run creation, rate limiting."""
     try:
         async with get_db_connection() as conn:
+            # Call SQL to create group + run + rate limit check + user message (if needed)
+            try:
+                # Convert message_ids to UUID array if provided
+                message_ids_uuid = (
+                    [uuid.UUID(mid) for mid in data.message_ids]
+                    if data.message_ids
+                    else None
+                )
+                
+                params = GetGenerationRunContextAndCreateRunSqlParams(
+                    agent_id=uuid.UUID(data.agent_id),
+                    resource_id=uuid.UUID(data.resource_id),
+                    resource_type=data.resource_type,
+                    profile_id=profile_id,
+                    message_ids=message_ids_uuid,
+                    department_id=None,  # Can be NULL, modality handlers will get it
+                    group_id=uuid.UUID(data.group_id) if data.group_id else None,
+                    user_instructions=data.user_instructions,
+                )
+                result = cast(
+                    GetGenerationRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
+            except Exception as e:
+                import asyncpg  # type: ignore
+
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message=user_msg,
+                            resource_id=data.resource_id,
+                            group_id=data.group_id,
+                            resource_type=data.resource_type,
+                        ),
+                        sid=sid,
+                    )
+                    return
+                # Other errors
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Failed to start generation: {str(e)}",
+                        resource_id=data.resource_id,
+                        group_id=data.group_id,
+                        resource_type=data.resource_type,
+                    ),
+                    sid=sid,
+                )
+                return
+
+            if not result:
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Failed to create run",
+                        resource_id=data.resource_id,
+                        group_id=data.group_id,
+                        resource_type=data.resource_type,
+                    ),
+                    sid=sid,
+                )
+                return
+
             # Determine handler type from agent_role
             handler_type = HANDLER_MAPPING.get(data.resource_type, "text")
             
             # Build payload for modality handler
-            # Modality handlers will get department_id, upload_id, etc. from SQL based on agent_id
+            # Modality handlers will fetch agent config, tools, etc. using run_id + agent_id
             modality_payload = {
                 "sid": sid,
+                "run_id": result.run_id,  # Already created
                 "agent_id": data.agent_id,
                 "resource_id": data.resource_id,
                 "resource_type": data.resource_type,
-                "group_id": uuid.UUID(data.group_id) if data.group_id else None,
-                # Pass message_ids if provided (agent-specific context)
-                "message_ids": [uuid.UUID(mid) for mid in data.message_ids] if data.message_ids else None,
+                "group_id": str(result.group_id),
+                "trace_id": result.trace_id,
+                "message_ids": [str(mid) for mid in (result.message_ids or [])],  # Includes user message if created
             }
             
             # Dispatch to appropriate modality handler
-            # Modality handlers will call their SQL functions which handle:
-            # - Group creation (if group_id is None)
-            # - Rate limiting validation
-            # - Run creation
+            # Modality handlers will fetch context using run_id
             if handler_type == "text":
                 await internal_sio.emit("generate_text", modality_payload)
             elif handler_type == "image":
@@ -96,13 +179,13 @@ async def _generate_start_impl(
         # Emit error to generate_error handler
         await emit_to_internal(
             "generate_error",
-            {
-                "sid": sid,
-                "error_message": f"Failed to start generation: {str(e)}",
-                "resource_id": data.resource_id,
-                "group_id": data.group_id,
-                "resource_type": data.resource_type,
-            },
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message=f"Failed to start generation: {str(e)}",
+                resource_id=data.resource_id,
+                group_id=data.group_id,
+                resource_type=data.resource_type,
+            ),
             sid=sid,
         )
 

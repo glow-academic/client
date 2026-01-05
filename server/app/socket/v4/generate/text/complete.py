@@ -9,6 +9,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client, emit_to_internal
 from app.main import get_internal_sio
+from app.socket.v4.generate.error import GenerateErrorApiRequest
 from fastapi import APIRouter
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
@@ -125,13 +126,13 @@ async def generate_text_complete_internal(
     if not profile_id_str:
         await emit_to_internal(
             "generate_error",
-            {
-                "sid": sid,
-                "error_message": "Profile not found for socket",
-                "resource_id": data.get("resource_id"),
-                "group_id": data.get("group_id"),
-                "resource_type": data.get("resource_type"),
-            },
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message="Profile not found for socket",
+                resource_id=data.get("resource_id"),
+                group_id=data.get("group_id"),
+                resource_type=data.get("resource_type"),
+            ),
             sid=sid,
         )
         return

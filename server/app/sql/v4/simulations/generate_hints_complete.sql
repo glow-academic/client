@@ -47,6 +47,8 @@ CREATE TYPE types.i_get_hint_run_context_and_create_run_v4_document AS (
 );
 
 -- 4) Recreate function
+-- NO run creation or rate limiting - only gets agent context
+-- Run creation happens in generate/start.py
 -- Supports optional group_id and user_instructions for regeneration
 CREATE OR REPLACE FUNCTION socket_get_hint_run_context_and_create_run_v4(
     message_id uuid,
@@ -54,40 +56,14 @@ CREATE OR REPLACE FUNCTION socket_get_hint_run_context_and_create_run_v4(
     department_id uuid,
     profile_id uuid,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
-    user_instructions text DEFAULT NULL  -- Optional: user instructions for regeneration
+    user_instructions text DEFAULT NULL  -- Optional: user instructions for regeneration (passed through to generate_start)
 )
 RETURNS TABLE (
-    -- Standardized output schema matching text generation handler
+    -- Minimal output - only what's needed for dispatch to generate_start
     agent_id text,
-    agent_name text,
     agent_role text,  -- Required: used for dispatch mapping
-    system_prompt text,
-    temperature float,
-    reasoning text,
-    model_id text,
-    model_name text,
-    provider text,
-    base_url text,
-    api_key text,
-    profile_id text,
-    req_per_day integer,
-    runs_today_count bigint,
-    earliest_run_created_at timestamptz,
-    run_id text,
-    group_id uuid,
-    trace_id text,
-    tools types.i_get_text_run_context_and_create_run_v4_tool[],
-    developer_instruction_template text,
-    developer_instruction_schema_id uuid,
-    department_name text,
-    developer_message_id uuid,
-    upload_id uuid,
-    file_path text,
-    mime_type text,
-    -- Agent-specific fields (minimal)
-    message_id text,
     chat_id text,
-    documents types.i_get_hint_run_context_and_create_run_v4_document[]
+    group_id uuid  -- Optional: for regeneration (if provided, uses existing group)
 )
 LANGUAGE sql
 VOLATILE
@@ -330,212 +306,30 @@ department_data AS (
     FROM params p_params
     LEFT JOIN departments d ON d.id = p_params.department_id
 ),
--- Context data with rate limit info
+-- Context data - minimal (no rate limit, no run creation)
 context_data AS (
     SELECT 
-        -- Standardized fields
+        -- Only fields needed for dispatch
         a.id::text as agent_id,
-        a.name as agent_name,
         a.role::text as agent_role,
-        COALESCE(pr_prompt.system_prompt, '') as system_prompt,
-        COALESCE(mtl.temperature, 0.0) as temperature,
-        mrl.reasoning_level as reasoning,
-        m.id::text as model_id,
-        m.value as model_name,
-        COALESCE(p.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
-        k.key as api_key,
-        COALESCE(pi.profile_id, p_params.profile_id)::text as profile_id,
-        prl.req_per_day,
-        COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
-        rt.earliest_run_created_at,
-        -- Tools data
-        COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
-        -- Developer instruction data
-        did.developer_instruction_template,
-        did.developer_instruction_schema_id,
-        -- Department data
-        dd.department_name,
-        -- Agent-specific fields
-        tm.id::text as message_id,
-        ci.id::text as chat_id,
-        -- Aggregate documents as composite type array
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (dd_doc.document_id, dd_doc.name, dd_doc.file_path, dd_doc.mime_type)::types.i_get_hint_run_context_and_create_run_v4_document
-                ORDER BY dd_doc.document_id
-            ) FROM document_data dd_doc),
-            '{}'::types.i_get_hint_run_context_and_create_run_v4_document[]
-        ) as documents
+        ci.id::text as chat_id
     FROM target_message tm
     CROSS JOIN chat_info ci
     CROSS JOIN attempt_info ai
     CROSS JOIN scenario_info si
-    LEFT JOIN profile_info pi ON true
     CROSS JOIN best_agent ba
-    CROSS JOIN profile_rate_limit prl
-    CROSS JOIN runs_today rt
     CROSS JOIN params p_params
-    CROSS JOIN group_data gd
     INNER JOIN agents a ON a.id = ba.agent_id
-    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p_params.department_id AND adp_prompt.active = true
-    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
-    LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
-    LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
-    INNER JOIN models m ON m.id = a.model_id
-    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
-    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN providers p ON p.id = m.provider_id
-    CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id 
-        AND spk.settings_id = act_s.settings_id 
-        AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    -- Join tools data
-    LEFT JOIN agent_tools_data atd ON atd.agent_id = ba.agent_id
-    -- Join developer instruction data
-    LEFT JOIN developer_instruction_data did ON did.agent_id = ba.agent_id
-    -- Join department data
-    LEFT JOIN department_data dd ON dd.department_id = p_params.department_id
-    -- Validate rate limit: raises exception if exceeded
-    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
-),
-create_run AS (
-    -- Create run record
-    INSERT INTO runs (input_tokens, output_tokens, agent_id)
-    SELECT 0, 0, cd.agent_id::uuid
-    FROM context_data cd
-    RETURNING id as run_id
-),
-link_model AS (
-    -- Link model to run
-    INSERT INTO run_models (run_id, model_id, active)
-    SELECT cr.run_id, m.id, true
-    FROM create_run cr
-    CROSS JOIN best_agent ba
-    INNER JOIN agents a ON a.id = ba.agent_id
-    INNER JOIN models m ON m.id = a.model_id
-    RETURNING run_id
-),
-link_profile AS (
-    -- Link profile to run if provided
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, cd.profile_id::uuid, true
-    FROM link_model lm
-    CROSS JOIN context_data cd
-    WHERE cd.profile_id IS NOT NULL
-    RETURNING run_id
-),
-link_group AS (
-    -- Link group to run
-    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT gd.group_id, lp.run_id, 0, NOW(), NOW()
-    FROM link_profile lp
-    CROSS JOIN group_data gd
-    RETURNING run_id
-),
--- Create and link developer message if template exists
-developer_message_content AS (
-    SELECT 
-        cd.developer_instruction_template as content,
-        lg.run_id
-    FROM context_data cd
-    CROSS JOIN link_group lg
-    WHERE cd.developer_instruction_template IS NOT NULL
-    LIMIT 1
-),
-developer_message_hash AS (
-    SELECT 
-        dmc.content,
-        dmc.run_id,
-        message_content_hash(dmc.content, 'developer') as hash
-    FROM developer_message_content dmc
-),
-existing_developer_message AS (
-    SELECT 
-        m.id, 
-        m.created_at,
-        dmh.run_id
-    FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN developer_message_hash dmh ON message_content_hash(mc.content, 'developer') = dmh.hash
-    WHERE m.role = 'developer'
-    LIMIT 1
-),
-new_developer_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, NOW(), NOW()
-    FROM developer_message_hash dmh
-    WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
-    RETURNING id, created_at, updated_at
-),
-insert_developer_message_content AS (
-    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
-    SELECT 
-        nm.id, 
-        0, 
-        (SELECT content FROM developer_message_hash LIMIT 1), 
-        nm.created_at, 
-        nm.updated_at
-    FROM new_developer_message nm
-),
-developer_message_final AS (
-    SELECT id, run_id FROM existing_developer_message
-    UNION ALL
-    SELECT 
-        nm.id, 
-        (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
-    FROM new_developer_message nm
-),
-link_developer_message_to_run AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT dmf.id, dmf.run_id, NOW(), NOW()
-    FROM developer_message_final dmf
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
-    RETURNING message_id, run_id
+    -- NO rate limit check - handled in generate/start.py
+    -- NO run creation - handled in generate/start.py
+    -- NO tools, developer instructions, etc. - fetched by modality handlers
 )
 SELECT 
-    -- Standardized output schema
+    -- Minimal output - only what's needed for dispatch
     cd.agent_id,
-    cd.agent_name,
     cd.agent_role,
-    cd.system_prompt,
-    cd.temperature,
-    cd.reasoning,
-    cd.model_id,
-    cd.model_name,
-    cd.provider,
-    cd.base_url,
-    cd.api_key,
-    cd.profile_id,
-    cd.req_per_day,
-    cd.runs_today_count,
-    cd.earliest_run_created_at,
-    cr.run_id::text as run_id,
-    gd.group_id,
-    gd.trace_id::text as trace_id,
-    cd.tools,
-    cd.developer_instruction_template,
-    cd.developer_instruction_schema_id,
-    cd.department_name,
-    ldm.message_id as developer_message_id,
-    NULL::uuid as upload_id,
-    NULL::text as file_path,
-    NULL::text as mime_type,
-    -- Agent-specific fields
-    cd.message_id,
     cd.chat_id,
-    cd.documents
+    p_params.group_id as group_id  -- Pass through group_id if provided (for regeneration)
 FROM context_data cd
-CROSS JOIN create_run cr
-CROSS JOIN link_model lm
-CROSS JOIN link_profile lp
-CROSS JOIN link_group lg
-CROSS JOIN group_data gd
-LEFT JOIN link_developer_message_to_run ldm ON true
+CROSS JOIN params p_params
 $$;
