@@ -63,14 +63,71 @@ WebSocket v3 endpoints follow the agents-style architecture pattern, which uses:
 2. **Run Creation**: Every time we run an agent, a run MUST be created
 3. **Atomic Operation**: Context fetching and run creation MUST happen atomically in a single SQL transaction
 
-**Pattern: Atomic Context + Run Creation**
+**Pattern: Centralized Generation Dispatch via `generate_start`**
 
-Use SQL files following the pattern `get_[operation]_run_context_and_create_run_complete.sql` that:
+**⚠️ CRITICAL: All generation requests flow through `generate_start`**
 
-1. **Get context data**: All data needed to run the agent (agent config, model, keys, prompts, etc.)
-2. **Validate rate limit**: Check rate limits using `validate_rate_limit()` function (raises exception if exceeded)
-3. **Create run**: Insert into `runs` table with all junction records (run_models, run_profiles, etc.)
-4. **Return context + run_id**: Return all context data plus the created run_id
+All agent generation handlers dispatch to `generate_start` (`server/app/socket/v4/generate/start.py`), which:
+
+1. **Creates group** (if not provided) - Gets or creates `group_id` and `trace_id`
+2. **Validates rate limits** - Checks rate limits using `validate_rate_limit()` function (raises exception if exceeded)
+3. **Creates run** - Inserts into `runs` table with all junction records (run_profiles, group_runs, etc.)
+4. **Creates user message** (if `user_instructions` provided) - For regeneration scenarios
+5. **Links existing messages** - Links system/developer messages from previous runs in the group
+6. **Dispatches to modality handlers** - Routes to text/image/video/audio handlers based on `agent_role`
+
+**SQL Function**: `get_generation_run_context_and_create_run_complete.sql`
+
+- **Location**: `server/app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql`
+- **Returns**: `run_id`, `group_id`, `trace_id`, `message_ids` (includes new user message if created, developer messages if created, and context message IDs)
+- **Parameters**: `agent_id`, `resource_id`, `resource_type`, `profile_id`, `message_ids` (optional), `department_id` (optional), `group_id` (optional), `user_instructions` (optional), `developer_message_contents` (optional array of pre-rendered developer message content strings)
+
+**Modality Handlers**: After `generate_start` creates the run, modality handlers (text, image, video, audio) fetch context for the existing run:
+
+- **Text**: `get_text_run_context_for_existing_run_complete.sql` - Fetches agent config, tools, messages, etc. for existing `run_id`
+- **Image/Video/Audio**: Similar pattern - fetch context for existing `run_id` (no run creation, no rate limiting)
+
+**Legacy Pattern (Deprecated)**: Some older agents may still use the direct pattern `get_[operation]_run_context_and_create_run_complete.sql` that combines context fetching and run creation. These should be migrated to use `generate_start`.
+
+**Developer Message Creation**: Agents can create developer messages with agent-specific logic by:
+
+1. **Fetching developer instruction template** in agent start handler using `get_developer_instruction_complete.sql`
+2. **Rendering Jinja template** with agent-specific context variables
+3. **Passing content strings** to `generate_start` via `developer_message_contents` parameter (array of strings)
+4. **Automatic creation**: `generate_start` creates developer messages atomically with run creation, includes message IDs in `message_ids` array
+5. **Generic handlers**: Modality handlers receive developer messages via `message_ids`, no template fetching or rendering
+
+**Example Pattern** (from `hint/start.py`):
+
+```python
+# Fetch and render developer instruction template
+developer_message_contents: list[str] = []
+try:
+    dev_instruction_params = GetDeveloperInstructionSqlParams(
+        instruction_type="hint",
+        agent_role_val="hint",
+    )
+    dev_instruction_result = await execute_sql_typed(
+        conn,
+        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+        params=dev_instruction_params,
+    )
+    if dev_instruction_result and dev_instruction_result.template:
+        template = Template(dev_instruction_result.template)
+        developer_message_content = template.render(
+            # Agent-specific context variables
+        )
+        if developer_message_content and developer_message_content.strip():
+            developer_message_contents.append(developer_message_content)
+except Exception:
+    pass  # No developer instruction configured
+
+# Pass to generate_start
+await internal_sio.emit("generate_start", {
+    # ... other fields ...
+    "developer_message_contents": developer_message_contents if developer_message_contents else None,
+})
+```
 
 ### 6. Required Event Files for Main Operations
 

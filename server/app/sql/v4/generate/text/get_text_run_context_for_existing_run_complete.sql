@@ -47,10 +47,7 @@ RETURNS TABLE (
     group_id uuid,
     trace_id text,
     tools types.i_get_text_run_context_and_create_run_v4_tool[],
-    developer_instruction_template text,
-    developer_instruction_schema_id uuid,
     department_name text,
-    developer_message_id uuid,
     upload_id uuid,
     file_path text,
     mime_type text
@@ -212,19 +209,6 @@ agent_tools_data AS (
     LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
     GROUP BY sa.agent_id
 ),
--- Get developer instruction using agent role
-developer_instruction_data AS (
-    SELECT 
-        sa.agent_id,
-        di.template as developer_instruction_template,
-        dis.schema_id as developer_instruction_schema_id
-    FROM selected_agent sa
-    INNER JOIN agents a ON a.id = sa.agent_id
-    LEFT JOIN agent_role_developer_instruction_types ardit ON ardit.agent_role = a.role
-    LEFT JOIN developer_instructions di ON di.type = ardit.developer_instruction_type AND di.active = true
-    LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
-    LIMIT 1
-),
 -- Get department name (from agent_departments or profile primary department)
 department_data AS (
     SELECT 
@@ -281,10 +265,6 @@ context_data AS (
         -- Tools data
         COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
         
-        -- Developer instruction data
-        did.developer_instruction_template,
-        did.developer_instruction_schema_id,
-        
         -- Department data
         dnd.department_name
 
@@ -318,71 +298,8 @@ context_data AS (
     CROSS JOIN runs_today rt
     -- Join tools data
     LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id
-    -- Join developer instruction data
-    LEFT JOIN developer_instruction_data did ON did.agent_id = sa.agent_id
     -- Join department data
     CROSS JOIN department_name_data dnd
-),
--- Create and link developer message if template exists
-developer_message_content AS (
-    SELECT 
-        cd.developer_instruction_template as content,
-        er.run_id
-    FROM context_data cd
-    CROSS JOIN existing_run er
-    WHERE cd.developer_instruction_template IS NOT NULL
-    LIMIT 1
-),
-developer_message_hash AS (
-    SELECT 
-        dmc.content,
-        dmc.run_id,
-        message_content_hash(dmc.content, 'developer') as hash
-    FROM developer_message_content dmc
-),
-existing_developer_message AS (
-    SELECT 
-        m.id, 
-        m.created_at,
-        dmh.run_id
-    FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN developer_message_hash dmh ON message_content_hash(mc.content, 'developer') = dmh.hash
-    WHERE m.role = 'developer'
-    LIMIT 1
-),
-new_developer_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, NOW(), NOW()
-    FROM developer_message_hash dmh
-    WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
-    RETURNING id, created_at, updated_at
-),
-insert_developer_message_content AS (
-    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
-    SELECT 
-        nm.id, 
-        0, 
-        (SELECT content FROM developer_message_hash LIMIT 1), 
-        nm.created_at, 
-        nm.updated_at
-    FROM new_developer_message nm
-),
-developer_message_final AS (
-    SELECT id, run_id FROM existing_developer_message
-    UNION ALL
-    SELECT 
-        nm.id, 
-        (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
-    FROM new_developer_message nm
-),
-link_developer_message_to_run AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT dmf.id, dmf.run_id, NOW(), NOW()
-    FROM developer_message_final dmf
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
-    RETURNING message_id, run_id
 )
 SELECT 
     -- Context data
@@ -406,13 +323,8 @@ SELECT
     gd.trace_id::text as trace_id,
     -- Tools array
     cd.tools,
-    -- Developer instruction
-    cd.developer_instruction_template,
-    cd.developer_instruction_schema_id,
     -- Department name
     cd.department_name,
-    -- Developer message ID (if created/linked)
-    ldm.message_id as developer_message_id,
     -- Upload info (for audio input, when upload_id is provided)
     ui.upload_id,
     ui.file_path,
@@ -420,7 +332,6 @@ SELECT
 FROM context_data cd
 CROSS JOIN existing_run er
 CROSS JOIN group_data gd
-LEFT JOIN link_developer_message_to_run ldm ON true
 LEFT JOIN upload_info ui ON true
 $$;
 

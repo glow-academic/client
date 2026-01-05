@@ -34,6 +34,7 @@ class GenerateStartApiRequest(BaseModel):
     user_instructions: str | None = None  # Optional: for regeneration (creates user message)
     # Agent-specific fields - only include what's needed
     message_ids: list[str] | None = None  # Optional: message IDs for context (e.g., hint agent)
+    developer_message_contents: list[str] | None = None  # Optional: pre-rendered developer message content strings
 
 
 # Mapping from agent_role to handler type
@@ -85,6 +86,7 @@ async def _generate_start_impl(
                     department_id=None,  # Can be NULL, modality handlers will get it
                     group_id=uuid.UUID(data.group_id) if data.group_id else None,
                     user_instructions=data.user_instructions,
+                    developer_message_contents=data.developer_message_contents,
                 )
                 result = cast(
                     GetGenerationRunContextAndCreateRunSqlRow,

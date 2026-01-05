@@ -35,7 +35,6 @@ class TextGenerationErrorApiRequest(BaseModel):
     resource_id: uuid.UUID | None = None
     group_id: uuid.UUID | None = None
 from fastapi import APIRouter
-from jinja2 import Template
 from utils.sql_helper import execute_sql_typed
 
 client_router = APIRouter()
@@ -254,23 +253,9 @@ async def _generate_text_impl(
                         f"Failed to fetch messages by IDs: {e}"
                     )
             
-            # Get developer instruction template from SQL result
-            developer_message_content: str | None = (
-                result.developer_instruction_template
-            )
-            if developer_message_content:
-                # Render Jinja template (no user_instructions - user message already in input_items)
-                template = Template(developer_message_content)
-                developer_message_content = template.render(
-                    user_instructions=""  # User message already in input_items from message_ids
-                )
-
-                developer_message: TResponseInputItem = {
-                    "role": "developer",
-                    "content": developer_message_content,
-                }
-                input_items.append(developer_message)
-                # Developer message linking is handled in SQL (result.developer_message_id)
+            # Developer messages are included in message_ids (from generate_start)
+            # They are fetched via get_messages_by_ids_complete.sql above and included in input_items automatically
+            # No need to fetch/render developer instruction templates here - handled by agent-specific start handlers
 
             # Track completed tool names for verification (SQL handles persistence)
             # Get required tool names from database result

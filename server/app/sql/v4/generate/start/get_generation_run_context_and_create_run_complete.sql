@@ -17,7 +17,7 @@ BEGIN
 END $$;
 
 -- 2) Recreate function
--- Minimal function: only rate limit, group creation, run creation, user message creation
+-- Minimal function: only rate limit, group creation, run creation, user message creation, developer message creation
 CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     agent_id uuid,
     resource_id uuid,
@@ -26,13 +26,14 @@ CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     message_ids uuid[] DEFAULT NULL,  -- Context message IDs (e.g., hint agent needs message_id)
     department_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
-    user_instructions text DEFAULT NULL  -- Optional: for regeneration (creates user message)
+    user_instructions text DEFAULT NULL,  -- Optional: for regeneration (creates user message)
+    developer_message_contents text[] DEFAULT NULL  -- Optional: pre-rendered developer message content strings
 )
 RETURNS TABLE (
     run_id text,
     group_id uuid,
     trace_id text,
-    message_ids uuid[]  -- Includes new user message ID (if created) + context message IDs
+    message_ids uuid[]  -- Includes new user message ID (if created) + developer message IDs (if created) + context message IDs
 )
 LANGUAGE sql
 VOLATILE
@@ -46,7 +47,8 @@ WITH params AS (
         profile_id AS profile_id,
         department_id AS department_id,
         group_id AS group_id,
-        user_instructions AS user_instructions
+        user_instructions AS user_instructions,
+        developer_message_contents AS developer_message_contents
 ),
 -- Validate agent exists
 selected_agent AS (
@@ -203,7 +205,113 @@ link_existing_messages AS (
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()
 ),
--- Build message_ids array: includes new user message (if created) + context message_ids
+-- Create developer messages from content strings (with deduplication)
+-- Expand developer message contents array into rows with row numbers for ordering
+developer_message_contents_expanded AS (
+    SELECT 
+        unnest(p.developer_message_contents) as content,
+        lg.run_id,
+        generate_subscripts(p.developer_message_contents, 1) as array_idx
+    FROM params p
+    CROSS JOIN link_group lg
+    WHERE p.developer_message_contents IS NOT NULL
+      AND array_length(p.developer_message_contents, 1) > 0
+),
+-- Calculate hash for each content
+developer_message_hashes AS (
+    SELECT 
+        dmce.content,
+        dmce.run_id,
+        dmce.array_idx,
+        message_content_hash(dmce.content, 'developer') as content_hash
+    FROM developer_message_contents_expanded dmce
+),
+-- Find existing developer messages by hash (deduplication)
+existing_developer_messages AS (
+    SELECT DISTINCT ON (dmh.content_hash)
+        m.id as message_id,
+        dmh.run_id,
+        dmh.content_hash,
+        dmh.array_idx
+    FROM messages m
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN developer_message_hashes dmh ON message_content_hash(mc.content, 'developer') = dmh.content_hash
+    WHERE m.role = 'developer'::message_role
+    ORDER BY dmh.content_hash, m.id
+),
+-- Get content that needs new messages (ordered by hash for deterministic matching)
+new_content_needing_messages AS (
+    SELECT DISTINCT ON (content_hash)
+        content,
+        run_id,
+        content_hash
+    FROM developer_message_hashes dmh
+    WHERE NOT EXISTS (
+        SELECT 1 FROM existing_developer_messages edm 
+        WHERE edm.content_hash = dmh.content_hash
+    )
+    ORDER BY content_hash
+),
+-- Create new developer messages (one per content, in same order)
+new_developer_messages AS (
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    FROM new_content_needing_messages
+    RETURNING id, created_at, updated_at
+),
+-- Match new messages with their content (both ordered the same way)
+new_developer_messages_ordered AS (
+    SELECT 
+        id,
+        created_at,
+        updated_at,
+        ROW_NUMBER() OVER (ORDER BY id) as rn
+    FROM new_developer_messages
+),
+new_content_ordered AS (
+    SELECT 
+        content,
+        run_id,
+        ROW_NUMBER() OVER (ORDER BY content_hash) as rn
+    FROM new_content_needing_messages
+),
+new_developer_messages_with_content AS (
+    SELECT 
+        nmo.id as message_id,
+        nco.content,
+        nco.run_id,
+        nmo.created_at,
+        nmo.updated_at
+    FROM new_developer_messages_ordered nmo
+    JOIN new_content_ordered nco ON nmo.rn = nco.rn
+),
+-- Insert content for new developer messages  
+insert_developer_message_contents AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT 
+        ndmwc.message_id,
+        0,
+        ndmwc.content,
+        ndmwc.created_at,
+        ndmwc.updated_at
+    FROM new_developer_messages_with_content ndmwc
+),
+-- Get all developer message IDs (existing + new)
+all_developer_message_ids AS (
+    SELECT message_id, run_id FROM existing_developer_messages
+    UNION ALL
+    SELECT message_id, run_id FROM new_developer_messages_with_content
+),
+-- Link developer messages to run
+link_developer_messages_to_run AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT admids.message_id, admids.run_id, NOW(), NOW()
+    FROM all_developer_message_ids admids
+    ON CONFLICT (message_id, run_id) 
+    DO UPDATE SET updated_at = NOW()
+    RETURNING message_id, run_id
+),
+-- Build message_ids array: includes new user message (if created) + developer messages (if created) + context message_ids
 final_message_ids AS (
     SELECT 
         COALESCE(
@@ -215,6 +323,11 @@ final_message_ids AS (
         SELECT cum.message_id as msg_id
         FROM create_user_message cum
         WHERE cum.message_id IS NOT NULL
+        UNION ALL
+        -- Developer messages (if created)
+        SELECT ldm.message_id as msg_id
+        FROM link_developer_messages_to_run ldm
+        WHERE ldm.message_id IS NOT NULL
         UNION ALL
         -- Context message IDs from params
         SELECT unnest(p.message_ids) as msg_id
