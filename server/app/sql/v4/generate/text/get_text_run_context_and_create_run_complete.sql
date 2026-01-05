@@ -1,7 +1,25 @@
 -- Get all data needed to run text generation agent AND create run in single atomic transaction
 -- Generic version that works with any agent_id and resource
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
--- 1) Drop function first (breaks dependency on types)
+-- NOTE: The type i_get_text_run_context_and_create_run_v4_tool is used by other functions
+-- (e.g., socket_get_hint_run_context_and_create_run_v4). We must drop dependent functions first.
+-- 1) Drop dependent functions first (hint function depends on our tool type)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Drop hint function that depends on our tool type
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'socket_get_hint_run_context_and_create_run_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_hint_run_context_and_create_run_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
@@ -17,7 +35,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
+-- 3) Drop types WITHOUT CASCADE
 -- Drop all types matching prefix pattern to handle type additions/removals
 DO $$
 DECLARE
@@ -33,7 +51,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 3) Create composite types for tools array
+-- 4) Create composite types for tools array
 CREATE TYPE types.i_get_text_run_context_and_create_run_v4_tool AS (
     id uuid,
     name text,
@@ -46,7 +64,7 @@ CREATE TYPE types.i_get_text_run_context_and_create_run_v4_tool AS (
     active boolean
 );
 
--- 4) Recreate function
+-- 5) Recreate function
 -- Generic version that accepts agent_id, resource_id, resource_type, etc.
 -- Supports optional upload_id for audio input (used by audio agent)
 -- Supports optional group_id and user_instructions for regeneration

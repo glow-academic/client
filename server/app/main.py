@@ -433,7 +433,7 @@ async def transaction(
 from app.socket.v4.agents.document.tools.title.call import (
     document_tool_title_internal,  # noqa: F401
 )
-from app.socket.v4.agents.hint.generate import (
+from app.socket.v4.agents.hint.start import (
     simulation_hints_generate_internal,  # noqa: F401
 )
 from app.socket.v4.agents.image.complete import (

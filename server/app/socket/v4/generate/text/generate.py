@@ -501,12 +501,17 @@ async def generate_text_internal(data: dict[str, Any]) -> None:
         if not sid:
             return
         
-        # Create payload from known fields (ApiRequest might not have group_id/user_instructions yet)
-        payload_dict = {
-            k: v for k, v in data.items() 
-            if k not in ("sid", "group_id", "user_instructions", "trace_id")
-        }
-        payload = GetTextRunContextAndCreateRunApiRequest(**payload_dict)
+        # Build payload from simplified structure
+        # SQL function will derive department_id from agent_id
+        payload = GetTextRunContextAndCreateRunApiRequest(
+            agent_id=uuid.UUID(data["agent_id"]),
+            resource_id=uuid.UUID(data["resource_id"]) if data.get("resource_id") else None,
+            resource_type=data.get("resource_type"),
+            department_id=None,  # Will be derived from agent_id in SQL
+            upload_id=None,  # Only needed for audio agents, can be added later if needed
+            group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
+            user_instructions=None,  # Can be derived from group_id/message_ids if needed
+        )
         
         # Get profile_id from sid lookup for internal events
         from app.infra.v4.websocket.find_profile_by_socket import \
@@ -519,18 +524,14 @@ async def generate_text_internal(data: dict[str, Any]) -> None:
                 {
                     "sid": sid,
                     "error_message": "Profile not found. Please reconnect.",
-                    "resource_id": str(payload.resource_id) if payload.resource_id else None,
-                    "group_id": None,
-                    "resource_type": payload.resource_type,
+                    "resource_id": data.get("resource_id"),
+                    "group_id": data.get("group_id"),
+                    "resource_type": data.get("resource_type"),
                 },
                 sid=sid,
             )
             return
         profile_id = uuid.UUID(profile_id_str)
-        
-        # Attach additional fields to payload object for passing to SQL
-        payload.group_id = uuid.UUID(data["group_id"]) if data.get("group_id") else None
-        payload.user_instructions = data.get("user_instructions")
         
         await _generate_text_impl(sid, payload, profile_id)
     except Exception as e:

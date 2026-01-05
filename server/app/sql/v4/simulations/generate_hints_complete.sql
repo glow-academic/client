@@ -1,6 +1,8 @@
 -- Generate hints for a simulation message - complete unit of work
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- NOTE: This function depends on types.i_get_text_run_context_and_create_run_v4_tool from
+-- get_text_run_context_and_create_run_complete.sql. That type must be created before this function.
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -20,6 +22,8 @@ END $$;
 -- 2) Drop types WITHOUT CASCADE
 -- Drop all types matching prefix pattern to handle type additions/removals
 -- If any other object depends on them, this will ERROR and stop the migration (good)
+-- NOTE: We do NOT drop i_get_text_run_context_and_create_run_v4_tool here as it's defined
+-- in get_text_run_context_and_create_run_complete.sql and may be used by other functions
 DO $$
 DECLARE
     r RECORD;

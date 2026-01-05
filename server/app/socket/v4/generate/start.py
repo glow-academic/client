@@ -18,18 +18,15 @@ server_router = APIRouter()
 
 
 class GenerateStartApiRequest(BaseModel):
-    """Standardized payload for generation start."""
+    """Standardized payload for generation start - minimal fields only."""
 
     sid: str
     agent_id: str
     resource_id: str
     resource_type: str  # agent_role from SQL result
-    department_id: str | None = None
-    upload_id: str | None = None
     group_id: str | None = None  # Optional: for regeneration
-    user_instructions: str | None = None  # Optional: for regeneration
-    # Agent-specific fields for regeneration message creation
-    message_id: str | None = None  # Original message for regeneration
+    # Agent-specific fields - only include what's needed
+    message_ids: list[str] | None = None  # Optional: message IDs for context (e.g., hint agent)
 
 
 # Mapping from agent_role to handler type
@@ -66,24 +63,16 @@ async def _generate_start_impl(
             # Determine handler type from agent_role
             handler_type = HANDLER_MAPPING.get(data.resource_type, "text")
             
-            # For regeneration: create regenerate user message if needed
-            regenerate_message_id: uuid.UUID | None = None
-            if data.group_id and data.message_id:
-                # TODO: Create regenerate user message in database
-                # For now, we'll pass user_instructions to SQL function
-                # This should be implemented as a SQL function that creates the message atomically
-                pass
-            
             # Build payload for modality handler
+            # Modality handlers will get department_id, upload_id, etc. from SQL based on agent_id
             modality_payload = {
                 "sid": sid,
                 "agent_id": data.agent_id,
                 "resource_id": data.resource_id,
                 "resource_type": data.resource_type,
-                "department_id": data.department_id,
-                "upload_id": data.upload_id,
                 "group_id": uuid.UUID(data.group_id) if data.group_id else None,
-                "user_instructions": data.user_instructions,
+                # Pass message_ids if provided (agent-specific context)
+                "message_ids": [uuid.UUID(mid) for mid in data.message_ids] if data.message_ids else None,
             }
             
             # Dispatch to appropriate modality handler
