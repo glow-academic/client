@@ -9,18 +9,15 @@ from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.sql.types import (CreateHintsSqlParams, CreateHintsSqlRow,
-                           GetHintMessageIdSqlParams, GetHintMessageIdSqlRow,
-                           HintErrorApiRequest, HintHintCompleteApiRequest)
+from app.sql.types import (HintErrorApiRequest, HintHintCompleteApiRequest,
+                           HintToolCompleteSqlParams, HintToolCompleteSqlRow)
 from fastapi import APIRouter
 from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH_CREATE_HINTS = "app/sql/v4/simulations/create_hints_complete.sql"
-SQL_PATH_GET_MESSAGE_ID = "app/sql/v4/simulations/get_hint_message_id_complete.sql"
-SQL_PATH_HINT_COMPLETE = "app/sql/v4/agents/hint_hint_complete_complete.sql"
+SQL_PATH = "app/sql/v4/agents/hint_tool_complete_complete.sql"
 
 
 async def _hint_tool_complete_impl(
@@ -61,69 +58,44 @@ async def _hint_tool_complete_impl(
             )
             return
 
-        # Get message_id from run_id and chat_id using SQL function
+        # Get message_id and create hints atomically using consolidated SQL function
         async with get_db_connection() as conn:
             run_id_uuid = uuid.UUID(data.run_id)
             chat_id_uuid = uuid.UUID(data.resource_id)
 
-            # Get message_id using SQL function
-            get_message_params = GetHintMessageIdSqlParams(
+            # Use double-star pattern - SQL handles both operations atomically
+            params = HintToolCompleteSqlParams(
                 run_id=run_id_uuid,
                 chat_id=chat_id_uuid,
-            )
-            message_result = await execute_sql_typed(
-                conn, SQL_PATH_GET_MESSAGE_ID, params=get_message_params
-            )
-
-            if not message_result:
-                error_payload: HintErrorApiRequest = HintErrorApiRequest(
-                    success=False,
-                    message="Could not find target message for hint creation",
-                    resource_id=data.resource_id,
-                    group_id=None,
-                )
-                await emit_to_internal(
-                    "hint_error",
-                    error_payload,
-                    sid=sid,
-                )
-                return
-
-            message_result_typed = cast(GetHintMessageIdSqlRow, message_result)
-            if not message_result_typed.message_id:
-                error_payload: HintErrorApiRequest = HintErrorApiRequest(
-                    success=False,
-                    message="Could not find target message for hint creation",
-                    resource_id=data.resource_id,
-                    group_id=None,
-                )
-                await emit_to_internal(
-                    "hint_error",
-                    error_payload,
-                    sid=sid,
-                )
-                return
-
-            message_id = message_result_typed.message_id
-
-            # Create hints in database
-            create_hints_params = CreateHintsSqlParams(
-                message_id=message_id,
                 hint_texts=[hint_text],
             )
-            create_hints_result = cast(
-                CreateHintsSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CREATE_HINTS, params=create_hints_params),
+            result = cast(
+                HintToolCompleteSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            hints_list = create_hints_result.hints or []
+            if not result or not result.message_id:
+                not_found_error: HintErrorApiRequest = HintErrorApiRequest(
+                    success=False,
+                    message="Could not find target message for hint creation",
+                    resource_id=data.resource_id,
+                    group_id=None,
+                )
+                await emit_to_internal(
+                    "hint_error",
+                    not_found_error,
+                    sid=sid,
+                )
+                return
+
+            hints_list = result.hints or []
             if hints_list:
                 await sio.emit(
                     "simulation_hints_progress",
                     {
                         "type": "tool_complete",
                         "chat_id": data.resource_id,
-                        "message_id": str(message_id),
+                        "message_id": str(result.message_id),
                         "tool_name": data.tool_name,
                         "message": "Hint created successfully",
                     },

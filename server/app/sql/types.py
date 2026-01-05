@@ -3488,6 +3488,45 @@ class HintHintErrorApiResponse(BaseModel):
 
 
 
+# Generated from: hint_tool_complete
+
+class HintToolCompleteSqlParams(BaseModel):
+
+    run_id: UUID
+    chat_id: UUID
+    hint_texts: list[str]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.chat_id,
+            self.hint_texts,
+        )
+
+class IHintToolCompleteV4HintResult(BaseModel):
+
+    simulation_message_id: UUID | None
+    idx: int | None
+    hint: str | None
+
+class HintToolCompleteSqlRow(BaseModel):
+
+    message_id: UUID | None = None
+    hints: list[IHintToolCompleteV4HintResult] | None = None
+
+class HintToolCompleteApiRequest(BaseModel):
+
+    run_id: UUID
+    chat_id: UUID
+    hint_texts: list[str]
+
+class HintToolCompleteApiResponse(BaseModel):
+
+    message_id: UUID | None = None
+    hints: list[IHintToolCompleteV4HintResult] | None = None
+
+
+
 # Generated from: patch_agent_draft
 
 class PatchAgentDraftSqlParams(BaseModel):
@@ -26953,6 +26992,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "HintHintErrorApiRequest",
         "HintHintErrorApiResponse",
     ),
+    "app/sql/v4/agents/hint_tool_complete_complete.sql": (
+        "HintToolCompleteSqlParams",
+        "HintToolCompleteSqlRow",
+        "HintToolCompleteApiRequest",
+        "HintToolCompleteApiResponse",
+    ),
     "app/sql/v4/agents/patch_agent_draft_complete.sql": (
         "PatchAgentDraftSqlParams",
         "PatchAgentDraftSqlRow",
@@ -29467,6 +29512,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/agents/hint_hint_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/agents/hint_tool_complete_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -558,9 +558,33 @@ async def _rubric_generate_impl(...) -> None:
 
 ## Reference Implementation
 
-See `server/app/socket/v4/rubrics/standard_group_descriptions/` as the reference implementation for tool events.
+**⚠️ MIGRATION STATUS: The hint agent (`server/app/socket/v4/agents/hint/`) is the fully migrated reference implementation following all standards, including explicit type annotations. Other routes may not yet be fully migrated to this pattern.**
 
-See `server/app/socket/v4/rubrics/generate.py`, `regenerate.py`, `progress.py`, `complete.py`, `error.py` as reference implementations for main operations.
+### Fully Migrated Reference Implementations
+
+**Hint Agent (Fully Migrated - Reference Implementation):**
+- `server/app/socket/v4/agents/hint/start.py` - Client event handler with explicit type annotations
+- `server/app/socket/v4/agents/hint/end.py` - Completion handler with explicit type annotations
+- `server/app/socket/v4/agents/hint/error.py` - Error handler with explicit type annotations
+- `server/app/socket/v4/agents/hint/tools/hint.py` - Tool handler with explicit type annotations
+- `server/app/socket/v4/agents/hint/tools/debug.py` - Tool handler with explicit type annotations
+
+**Key Features of Hint Agent (Reference Pattern):**
+- ✅ All SQL in separate `.sql` files (no inline SQL)
+- ✅ All types imported from `app.sql.types` (auto-generated)
+- ✅ Explicit type annotations for all emit calls (section 14 pattern)
+- ✅ Centralized error handling via `hint_error` handler
+- ✅ Uses `execute_sql_typed()` for all SQL execution
+- ✅ No manual parsing - uses typed models throughout
+- ✅ Follows Generation Dispatch System pattern (dispatches to `generate_start`)
+
+### Legacy Reference Implementations (May Not Be Fully Migrated)
+
+**Rubrics (Legacy - May Need Migration):**
+- `server/app/socket/v4/rubrics/standard_group_descriptions/` - Tool events (may need type annotation updates)
+- `server/app/socket/v4/rubrics/generate.py`, `regenerate.py`, `progress.py`, `complete.py`, `error.py` - Main operations (may need type annotation updates)
+
+**Note:** When migrating other routes, use the hint agent as the reference for the complete pattern, including explicit type annotations (section 14).
 
 ## Benefits
 
