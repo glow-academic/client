@@ -69,6 +69,7 @@ VOLATILE
 AS $$
 DECLARE
     upload_id_val uuid;
+    html_id_val uuid;
     schema_id_val uuid;
     template_id_val uuid;
     template_mapping_val jsonb;
@@ -83,6 +84,22 @@ BEGIN
     INSERT INTO uploads (file_path, mime_type, size, created_at, updated_at)
     VALUES (file_path, 'text/html', file_size, NOW(), NOW())
     RETURNING id INTO upload_id_val;
+
+    -- 1a. Create html entry (strong entity)
+    INSERT INTO html (name, created_at, updated_at, active, completed)
+    VALUES (
+        COALESCE('Template HTML: ' || document_name, 'Template HTML'),
+        NOW(),
+        NOW(),
+        true,
+        false
+    )
+    RETURNING id INTO html_id_val;
+
+    -- 1b. Link html to upload via html_uploads junction
+    INSERT INTO html_uploads (html_id, upload_id, active, created_at, updated_at)
+    VALUES (html_id_val, upload_id_val, true, NOW(), NOW())
+    ON CONFLICT DO NOTHING;
 
     -- 2. Create schema from template_schema_json
     -- Parse JSON and create schema_fields (handles nested arrays recursively)
@@ -213,46 +230,38 @@ BEGIN
         WHERE document_templates.document_id = document_id
           AND document_templates.active = true;
 
-        -- Create or get template
-        INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+        -- Create template (just values, no schema/HTML refs)
+        INSERT INTO templates (name, created_at, updated_at)
         VALUES (
             COALESCE('Template for ' || document_name, 'Template for Document'),
-            upload_id_val,
-            '{}'::jsonb,
             NOW(),
             NOW()
         )
-        ON CONFLICT DO NOTHING
         RETURNING id INTO template_id_val;
 
-        -- If template already exists, get its ID
-        IF template_id_val IS NULL THEN
-            SELECT id INTO template_id_val
-            FROM templates
-            WHERE upload_id = upload_id_val
-            LIMIT 1;
-        END IF;
-
-        -- Link template to schema if schema was created
+        -- Link template to schema via schema_templates junction
         IF schema_id_val IS NOT NULL THEN
-            INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
-            VALUES (template_id_val, schema_id_val, NOW(), NOW())
-            ON CONFLICT (template_id, schema_id) DO UPDATE SET updated_at = NOW();
+            INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
+            VALUES (schema_id_val, template_id_val, NOW(), NOW())
+            ON CONFLICT (schema_id, template_id) DO UPDATE SET updated_at = NOW();
         END IF;
 
-        -- Link template to document
-        INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
-        VALUES (document_id, template_id_val, true, NOW(), NOW())
+        -- Link template to document with html_id and schema_id
+        INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
+        VALUES (document_id, template_id_val, html_id_val, schema_id_val, true, NOW(), NOW())
         ON CONFLICT (document_id, template_id) DO UPDATE SET
+            html_id = EXCLUDED.html_id,
+            schema_id = EXCLUDED.schema_id,
             active = EXCLUDED.active,
             updated_at = NOW();
 
         -- 4. Fetch template mapping
         SELECT jsonb_object_agg(
-            t.upload_id::text,
+            dt.html_id::text,
             jsonb_build_object(
-                'template_id', t.id::text,
-                'schema_id', ts.schema_id::text,
+                'template_id', dt.template_id::text,
+                'schema_id', dt.schema_id::text,
+                'html_id', dt.html_id::text,
                 'active', dt.active,
                 'created_at', dt.created_at,
                 'updated_at', dt.updated_at
@@ -260,8 +269,6 @@ BEGIN
         )
         INTO template_mapping_val
         FROM document_templates dt
-        JOIN templates t ON t.id = dt.template_id
-        LEFT JOIN template_schemas ts ON ts.template_id = t.id
         WHERE dt.document_id = document_id;
     END IF;
 

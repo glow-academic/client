@@ -8243,7 +8243,7 @@ class CreateDocumentSqlParams(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_item_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     schema_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8254,7 +8254,7 @@ class CreateDocumentSqlParams(BaseModel):
             self.upload_id,
             self.department_ids,
             self.parameter_item_ids,
-            self.template_upload_id,
+            self.html_id,
             self.schema_id,
         )
 
@@ -8272,7 +8272,7 @@ class CreateDocumentApiRequest(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_item_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     schema_id: UUID | None = None
 
 class CreateDocumentApiResponse(BaseModel):
@@ -8289,7 +8289,7 @@ class CreateDocumentApiResponse(BaseModel):
 class CreateTemplateAndLinkSqlParams(BaseModel):
 
     document_id: UUID
-    upload_id: UUID
+    html_id: UUID
     name: str
     schema_id: UUID
     active: bool
@@ -8298,7 +8298,7 @@ class CreateTemplateAndLinkSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.document_id,
-            self.upload_id,
+            self.html_id,
             self.name,
             self.schema_id,
             self.active,
@@ -8312,7 +8312,7 @@ class CreateTemplateAndLinkSqlRow(BaseModel):
 class CreateTemplateAndLinkApiRequest(BaseModel):
 
     document_id: UUID
-    upload_id: UUID
+    html_id: UUID
     name: str
     schema_id: UUID
     active: bool
@@ -8652,7 +8652,7 @@ class GetDocumentDetailSqlRow(BaseModel):
     template: bool | None = None
     template_id: UUID | None = None
     schema_id: UUID | None = None
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
     templates: list[QGetDocumentDetailV4Template] | None = None
@@ -8694,7 +8694,7 @@ class GetDocumentDetailApiResponse(BaseModel):
     template: bool | None = None
     template_id: UUID | None = None
     schema_id: UUID | None = None
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     template_file_path: str | None = None
     template_html: str | None = None
     templates: list[QGetDocumentDetailV4Template] | None = None
@@ -8977,7 +8977,7 @@ class GetDocumentTemplatesSqlParams(BaseModel):
 
 class GetDocumentTemplatesSqlRow(BaseModel):
 
-    upload_id: UUID | None = None
+    html_id: UUID | None = None
     template_id: UUID | None = None
     schema_id: UUID | None = None
     active: bool | None = None
@@ -8990,7 +8990,7 @@ class GetDocumentTemplatesApiRequest(BaseModel):
 
 class GetDocumentTemplatesApiResponse(BaseModel):
 
-    upload_id: UUID | None = None
+    html_id: UUID | None = None
     template_id: UUID | None = None
     schema_id: UUID | None = None
     active: bool | None = None
@@ -9158,7 +9158,7 @@ class InsertDocumentSqlParams(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     schema_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -9170,7 +9170,7 @@ class InsertDocumentSqlParams(BaseModel):
             self.upload_id,
             self.department_ids,
             self.field_ids,
-            self.template_upload_id,
+            self.html_id,
             self.schema_id,
         )
 
@@ -9187,7 +9187,7 @@ class InsertDocumentApiRequest(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     schema_id: UUID | None = None
 
 class InsertDocumentApiResponse(BaseModel):
@@ -9635,7 +9635,7 @@ class UpdateDocumentSqlParams(BaseModel):
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     classify_agent_id: UUID | None = None
     document_agent_id: UUID | None = None
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     schema_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -9650,7 +9650,7 @@ class UpdateDocumentSqlParams(BaseModel):
             self.field_ids,
             self.classify_agent_id,
             self.document_agent_id,
-            self.template_upload_id,
+            self.html_id,
             self.schema_id,
         )
 
@@ -9673,7 +9673,7 @@ class UpdateDocumentApiRequest(BaseModel):
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     classify_agent_id: UUID | None = None
     document_agent_id: UUID | None = None
-    template_upload_id: UUID | None = None
+    html_id: UUID | None = None
     schema_id: UUID | None = None
 
 class UpdateDocumentApiResponse(BaseModel):
@@ -20934,7 +20934,7 @@ class IGetScenarioRegenerationRunContextAndCreateRunV4Docum(BaseModel):
     document_id: str | None
     document_name: str | None
     schema_id: UUID | None
-    template_upload_id: str | None
+    html_id: str | None
 
 
 
@@ -21071,7 +21071,7 @@ class IGetScenarioRunContextAndCreateRunV4DocumentTemplate(BaseModel):
     classify_agent_id: str | None
     document_agent_id: str | None
     schema_id: UUID | None
-    template_upload_id: str | None
+    html_id: str | None
     template_file_path: str | None
 
 

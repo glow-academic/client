@@ -127,7 +127,7 @@ async def get_schema_tree(
 async def get_template_schema(
     conn: asyncpg.Connection, template_id: uuid.UUID
 ) -> dict[str, Any] | None:
-    """Get schema for a template via template_schemas junction.
+    """Get schema for a template via schema_templates junction.
 
     Args:
         conn: Database connection
@@ -149,6 +149,224 @@ async def get_template_schema(
 
     # Build schema tree
     return await get_schema_tree(conn, schema_id)
+
+
+async def get_template_values(
+    conn: asyncpg.Connection, template_id: uuid.UUID
+) -> dict[str, Any]:
+    """Reconstruct template values JSONB from normalized tables.
+
+    Loads scalar values from template_values and array items from template_array_items,
+    reconstructing the original JSONB structure.
+
+    Args:
+        conn: Database connection
+        template_id: UUID of the template
+
+    Returns:
+        Dictionary of template values (compatible with template_args format)
+    """
+    # Get all scalar values
+    values_rows = await conn.fetch(
+        """
+        SELECT sf.name, tv.string_value, tv.number_value, tv.boolean_value, sf.field_type
+        FROM template_values tv
+        JOIN schema_fields sf ON sf.id = tv.schema_field_id
+        WHERE tv.template_id = $1
+        ORDER BY sf.position
+        """,
+        template_id,
+    )
+
+    # Get all array items
+    array_items_rows = await conn.fetch(
+        """
+        SELECT sf.name, tai.item_template_id, tai.position
+        FROM template_array_items tai
+        JOIN schema_fields sf ON sf.id = tai.schema_field_id
+        WHERE tai.template_id = $1
+        ORDER BY sf.position, tai.position
+        """,
+        template_id,
+    )
+
+    # Build result dictionary
+    result: dict[str, Any] = {}
+
+    # Process scalar values
+    for row in values_rows:
+        field_name = row["name"]
+        field_type = row["field_type"]
+
+        if field_type == "string":
+            result[field_name] = row["string_value"]
+        elif field_type == "number":
+            result[field_name] = row["number_value"]
+        elif field_type == "boolean":
+            result[field_name] = row["boolean_value"]
+
+    # Process array items (group by field name)
+    array_fields: dict[str, list[dict[str, Any]]] = {}
+    for row in array_items_rows:
+        field_name = row["name"]
+        item_template_id = row["item_template_id"]
+
+        if field_name not in array_fields:
+            array_fields[field_name] = []
+
+        # Recursively get values for nested template
+        item_values = await get_template_values(conn, item_template_id)
+        array_fields[field_name].append(item_values)
+
+    # Add arrays to result (preserve order)
+    for field_name, items in array_fields.items():
+        result[field_name] = items
+
+    return result
+
+
+async def create_template_with_values(
+    conn: asyncpg.Connection,
+    name: str,
+    schema_id: uuid.UUID,
+    values: dict[str, Any],
+) -> uuid.UUID:
+    """Create template and populate normalized value tables.
+
+    Args:
+        conn: Database connection
+        name: Template name
+        schema_id: UUID of the schema this template invokes
+        values: Dictionary of template values (compatible with template_args format)
+
+    Returns:
+        UUID of the created template
+    """
+    # Create template record
+    template_id = uuid.uuid4()
+    await conn.execute(
+        """
+        INSERT INTO templates (id, name, created_at, updated_at)
+        VALUES ($1, $2, NOW(), NOW())
+        """,
+        template_id,
+        name,
+    )
+
+    # Get schema fields
+    schema_fields_list = await get_schema_with_fields(conn, schema_id)
+
+    # Process each value
+    for field in schema_fields_list:
+        field_name = field["field_name"]
+        field_id = field["field_id"]
+        field_type = field["field_type"]
+
+        if field_name not in values:
+            continue  # Skip missing values
+
+        value = values[field_name]
+
+        if field_type == "array":
+            # Handle array items
+            if isinstance(value, list):
+                for position, item_value in enumerate(value):
+                    if isinstance(item_value, dict):
+                        # Recursively create nested template for array item
+                        item_schema_id = field["item_schema_id"]
+                        if item_schema_id:
+                            item_template_id = await create_template_with_values(
+                                conn, f"{name} - {field_name}[{position}]", item_schema_id, item_value
+                            )
+
+                            # Link array item
+                            await conn.execute(
+                                """
+                                INSERT INTO template_array_items (
+                                    template_id, schema_field_id, item_template_id, position,
+                                    created_at, updated_at
+                                )
+                                VALUES ($1, $2, $3, $4, NOW(), NOW())
+                                ON CONFLICT (template_id, schema_field_id, item_template_id) DO NOTHING
+                                """,
+                                template_id,
+                                field_id,
+                                item_template_id,
+                                position,
+                            )
+        else:
+            # Handle scalar values
+            if field_type == "string":
+                await conn.execute(
+                    """
+                    INSERT INTO template_values (
+                        template_id, schema_field_id, string_value, created_at, updated_at
+                    )
+                    VALUES ($1, $2, $3, NOW(), NOW())
+                    ON CONFLICT (template_id, schema_field_id) DO UPDATE SET
+                        string_value = EXCLUDED.string_value,
+                        updated_at = NOW()
+                    """,
+                    template_id,
+                    field_id,
+                    str(value),
+                )
+            elif field_type == "number":
+                await conn.execute(
+                    """
+                    INSERT INTO template_values (
+                        template_id, schema_field_id, number_value, created_at, updated_at
+                    )
+                    VALUES ($1, $2, $3, NOW(), NOW())
+                    ON CONFLICT (template_id, schema_field_id) DO UPDATE SET
+                        number_value = EXCLUDED.number_value,
+                        updated_at = NOW()
+                    """,
+                    template_id,
+                    field_id,
+                    float(value),
+                )
+            elif field_type == "boolean":
+                await conn.execute(
+                    """
+                    INSERT INTO template_values (
+                        template_id, schema_field_id, boolean_value, created_at, updated_at
+                    )
+                    VALUES ($1, $2, $3, NOW(), NOW())
+                    ON CONFLICT (template_id, schema_field_id) DO UPDATE SET
+                        boolean_value = EXCLUDED.boolean_value,
+                        updated_at = NOW()
+                    """,
+                    template_id,
+                    field_id,
+                    bool(value),
+                )
+
+    # Link template to schema
+    await link_template_to_schema(conn, template_id, schema_id)
+
+    return template_id
+
+
+async def link_template_to_schema(
+    conn: asyncpg.Connection, template_id: uuid.UUID, schema_id: uuid.UUID
+) -> None:
+    """Create schema_templates entry linking template to schema.
+
+    Args:
+        conn: Database connection
+        template_id: UUID of the template
+        schema_id: UUID of the schema
+    """
+    await conn.execute(
+        """
+        INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
+        VALUES ($1, $2, NOW(), NOW())
+        ON CONFLICT (schema_id, template_id) DO UPDATE SET updated_at = NOW()
+        """,
+        schema_id,
+        template_id,
+    )
 
 
 async def create_schema_from_dict(

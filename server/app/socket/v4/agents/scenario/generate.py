@@ -1355,7 +1355,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         "classify_agent_id": dt.classify_agent_id,
                         "document_agent_id": dt.document_agent_id,
                         "schema_id": str(dt.schema_id) if dt.schema_id else None,
-                        "template_upload_id": dt.template_upload_id,
+                        "html_id": str(dt.html_id) if dt.html_id else None,
                         "template_file_path": dt.template_file_path,
                     }
                     for dt in document_templates

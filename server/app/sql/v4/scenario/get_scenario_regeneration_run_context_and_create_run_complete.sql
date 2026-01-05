@@ -51,7 +51,7 @@ CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v4_docu
     document_id text,
     document_name text,
     schema_id uuid,
-    template_upload_id text
+    html_id text
 );
 
 CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v4_parameter_item AS (
@@ -294,16 +294,16 @@ context_data AS (
         -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, ts.schema_id)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc
+                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, dt.schema_id)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]
             FROM documents d
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
             LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            LEFT JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN template_schemas ts ON ts.template_id = t.id
-            LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+            LEFT JOIN html h ON h.id = dt.html_id
+            LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+            LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
             WHERE d.id = ANY(p.document_ids)
             ),
             ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]
@@ -312,13 +312,11 @@ context_data AS (
         -- Document templates data (aggregated as composite type array for template documents)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, ts.schema_id, t.upload_id::text)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template
+                (d.id::text, d.name, dt.schema_id, dt.html_id::text)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template[]
             FROM documents d
             INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            INNER JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN template_schemas ts ON ts.template_id = t.id
             WHERE d.id = ANY(p.document_ids)
               AND d.template = true
             ),

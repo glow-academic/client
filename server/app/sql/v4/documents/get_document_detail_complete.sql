@@ -110,7 +110,7 @@ RETURNS TABLE (
     template boolean,
     template_id uuid,
     schema_id uuid,
-    template_upload_id uuid,
+    html_id uuid,
     template_file_path text,
     template_html text,
     templates types.q_get_document_detail_v4_template[],
@@ -154,14 +154,15 @@ document_data AS (
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT t.upload_id FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_upload_id,
-        (SELECT ts.schema_id FROM document_templates dt JOIN template_schemas ts ON ts.template_id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as schema_id,
+        (SELECT dt.html_id FROM document_templates dt WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as html_id,
+        (SELECT dt.schema_id FROM document_templates dt WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as schema_id,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
         (SELECT u.file_path FROM document_templates dt
-         JOIN templates t ON t.id = dt.template_id
-         JOIN uploads u ON u.id = t.upload_id 
+         JOIN html h ON h.id = dt.html_id
+         JOIN html_uploads hu ON hu.html_id = h.id
+         JOIN uploads u ON u.id = hu.upload_id 
          WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_file_path,
         d.template,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id) FROM scenario_documents sd
@@ -175,29 +176,25 @@ document_data AS (
 document_active_template AS (
     SELECT 
         dt.document_id,
-        t.id as template_id,
-        ts.schema_id,
+        dt.template_id,
+        dt.schema_id,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id AND dt.active = true
-    JOIN templates t ON t.id = dt.template_id
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
     ORDER BY dt.created_at DESC
     LIMIT 1
 ),
 document_all_templates AS (
     SELECT 
         dt.document_id,
-        t.id as template_id,
-        ts.schema_id,
+        dt.template_id,
+        dt.schema_id,
         dt.active as template_active,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id
-    JOIN templates t ON t.id = dt.template_id
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
 ),
 user_profile AS (
     SELECT 
@@ -475,7 +472,7 @@ SELECT
     dd.template::boolean as template,
     dat.template_id::uuid as template_id,
     dat.schema_id::uuid as schema_id,
-    dd.template_upload_id::uuid as template_upload_id,
+    dd.html_id::uuid as html_id,
     dd.template_file_path::text as template_file_path,
     NULL::text as template_html,  -- Will be populated in Python from file system
     -- Aggregate templates separately

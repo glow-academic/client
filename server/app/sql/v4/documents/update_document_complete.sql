@@ -29,7 +29,7 @@ CREATE OR REPLACE FUNCTION api_update_document_v4(
     field_ids text[] DEFAULT ARRAY[]::text[],
     classify_agent_id uuid DEFAULT NULL,
     document_agent_id uuid DEFAULT NULL,
-    template_upload_id uuid DEFAULT NULL,
+    html_id uuid DEFAULT NULL,
     schema_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
@@ -54,7 +54,7 @@ WITH params AS (
         COALESCE(field_ids, ARRAY[]::text[]) AS field_ids,
         classify_agent_id AS classify_agent_id,
         document_agent_id AS document_agent_id,
-        template_upload_id AS template_upload_id,
+        html_id AS html_id,
         schema_id AS schema_id
 ),
 actor_profile AS (
@@ -78,54 +78,49 @@ update_document AS (
     WHERE d.id = p.document_id
     RETURNING d.id
 ),
-create_or_get_template AS (
-    -- Create or get template if template_upload_id is provided
-    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+create_template AS (
+    -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
+    INSERT INTO templates (name, created_at, updated_at)
     SELECT 
         COALESCE((SELECT name FROM documents WHERE id = (SELECT document_id FROM params)), 'Template'),
-        p.template_upload_id,
-        '{}'::jsonb,  -- Empty args, schema stored separately
         NOW(),
         NOW()
     FROM params p
-    WHERE p.template_upload_id IS NOT NULL
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM templates t 
-          JOIN template_schemas ts ON ts.template_id = t.id
-          WHERE t.upload_id = p.template_upload_id 
-            AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
+          SELECT 1 FROM document_templates dt
+          WHERE dt.html_id = p.html_id 
+            AND dt.schema_id = p.schema_id
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists (matching upload_id and schema_id)
-    SELECT t.id as template_id
+    -- Get existing template if it exists (matching html_id and schema_id via document_templates)
+    SELECT dt.template_id
     FROM params p
-    CROSS JOIN templates t
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
-    WHERE t.upload_id = p.template_upload_id 
-      AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
+    JOIN document_templates dt ON dt.html_id = p.html_id AND dt.schema_id = p.schema_id
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
     LIMIT 1
 ),
 template_id AS (
-    SELECT template_id FROM create_or_get_template
+    SELECT template_id FROM create_template
     UNION ALL
     SELECT template_id FROM get_existing_template
-    WHERE EXISTS (SELECT 1 FROM params WHERE template_upload_id IS NOT NULL)
+    WHERE EXISTS (SELECT 1 FROM params WHERE html_id IS NOT NULL AND schema_id IS NOT NULL)
     LIMIT 1
 ),
 link_template_schema AS (
-    -- Link template to schema via template_schemas junction table
-    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    -- Link template to schema via schema_templates junction table
+    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
     SELECT 
-        ti.template_id,
         p.schema_id,
+        ti.template_id,
         NOW(),
         NOW()
     FROM template_id ti
     CROSS JOIN params p
     WHERE p.schema_id IS NOT NULL
-    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+    ON CONFLICT (schema_id, template_id) DO UPDATE SET
         updated_at = NOW()
 ),
 deactivate_previous_templates AS (
@@ -134,29 +129,33 @@ deactivate_previous_templates AS (
     SET active = false, updated_at = NOW()
     WHERE document_id = (SELECT document_id FROM params)
       AND active = true
-      AND (SELECT template_upload_id FROM params) IS NOT NULL
+      AND (SELECT html_id FROM params) IS NOT NULL
 ),
 update_template_link AS (
-    -- Update or insert template link if template_id is available
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Update or insert template link with html_id and schema_id
+    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
     SELECT 
         p.document_id,
         ti.template_id,
+        p.html_id,
+        p.schema_id,
         true,
         NOW(),
         NOW()
     FROM template_id ti
     CROSS JOIN params p
-    WHERE p.template_upload_id IS NOT NULL
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
     ON CONFLICT (document_id, template_id) DO UPDATE SET
+        html_id = EXCLUDED.html_id,
+        schema_id = EXCLUDED.schema_id,
         active = true,
         updated_at = NOW()
 ),
 delete_template_link AS (
-    -- Delete template link if template_upload_id is NULL (removing template)
+    -- Delete template link if html_id is NULL (removing template)
     DELETE FROM document_templates 
     WHERE document_id = (SELECT document_id FROM params)
-    AND (SELECT template_upload_id FROM params) IS NULL
+    AND (SELECT html_id FROM params) IS NULL
 ),
 replace_departments AS (
     -- Delete all existing department links

@@ -1,4 +1,4 @@
--- Get schema for a template via template_schemas junction
+-- Get schema for a template via schema_templates junction
 -- Returns schema_id for a given template_id
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -26,9 +26,9 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT
-    ts.schema_id
-FROM template_schemas ts
-WHERE ts.template_id = template_id
+    st.schema_id
+FROM schema_templates st
+WHERE st.template_id = template_id
 LIMIT 1
 $$;
 

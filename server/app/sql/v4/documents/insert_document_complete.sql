@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION api_insert_document_v4(
     upload_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     field_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    template_upload_id uuid DEFAULT NULL,
+    html_id uuid DEFAULT NULL,
     schema_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
@@ -75,65 +75,65 @@ insert_upload AS (
         active = true,
         updated_at = NOW()
 ),
-create_or_get_template AS (
-    -- Create or get template if template_upload_id is provided
-    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+create_template AS (
+    -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
+    INSERT INTO templates (name, created_at, updated_at)
     SELECT 
         name as name,
-        template_upload_id,
-        '{}'::jsonb,  -- Empty args, schema stored separately
         NOW(),
         NOW()
-    WHERE template_upload_id IS NOT NULL
+    WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM templates t 
-          JOIN template_schemas ts ON ts.template_id = t.id
-          WHERE t.upload_id = template_upload_id 
-            AND ts.schema_id = COALESCE(schema_id, ts.schema_id)
+          SELECT 1 FROM document_templates dt
+          WHERE dt.html_id = html_id 
+            AND dt.schema_id = schema_id
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists (matching upload_id and schema_id)
-    SELECT t.id as template_id
-    FROM templates t
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
-    WHERE t.upload_id = template_upload_id 
-      AND (schema_id IS NULL OR ts.schema_id = schema_id)
+    -- Get existing template if it exists (matching html_id and schema_id via document_templates)
+    SELECT dt.template_id
+    FROM document_templates dt
+    WHERE dt.html_id = html_id AND dt.schema_id = schema_id
+      AND html_id IS NOT NULL AND schema_id IS NOT NULL
     LIMIT 1
 ),
 template_id AS (
-    SELECT template_id FROM create_or_get_template
+    SELECT template_id FROM create_template
     UNION ALL
     SELECT template_id FROM get_existing_template
-    WHERE template_upload_id IS NOT NULL
+    WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
     LIMIT 1
 ),
 link_template_schema AS (
-    -- Link template to schema via template_schemas junction table
-    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    -- Link template to schema via schema_templates junction table
+    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
     SELECT 
-        ti.template_id,
         schema_id,
+        ti.template_id,
         NOW(),
         NOW()
     FROM template_id ti
     WHERE schema_id IS NOT NULL
-    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+    ON CONFLICT (schema_id, template_id) DO UPDATE SET
         updated_at = NOW()
 ),
 insert_template_link AS (
-    -- Link template to document if template_id is available
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Link template to document with html_id and schema_id
+    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
     SELECT 
         document_id,
         ti.template_id,
+        html_id,
+        schema_id,
         true,
         NOW(),
         NOW()
     FROM template_id ti
-    WHERE template_upload_id IS NOT NULL
+    WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
     ON CONFLICT (document_id, template_id) DO UPDATE SET
+        html_id = EXCLUDED.html_id,
+        schema_id = EXCLUDED.schema_id,
         active = true,
         updated_at = NOW()
 ),

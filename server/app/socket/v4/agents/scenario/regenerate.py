@@ -352,7 +352,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         "document_id": dt.document_id,
                         "document_name": dt.document_name,
                         "schema_id": str(dt.schema_id) if dt.schema_id else None,
-                        "template_upload_id": dt.template_upload_id,
+                        "html_id": str(dt.html_id) if dt.html_id else None,
                     }
                     for dt in document_templates
                 ],

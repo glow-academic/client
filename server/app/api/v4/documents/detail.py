@@ -111,9 +111,9 @@ async def get_document_detail(
                 document={"name": document_name, "id": str(request.document_id)},
             )
 
-        # Read template HTML if template upload exists (keep this in Python for now)
+        # Read template HTML if html_id exists (keep this in Python for now)
         template_html: str | None = None
-        if result.template and result.template_upload_id:
+        if result.template and result.html_id:
             try:
                 if result.template_file_path:
                     full_path = os.path.join(UPLOAD_FOLDER, result.template_file_path)

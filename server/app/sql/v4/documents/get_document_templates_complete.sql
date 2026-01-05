@@ -20,7 +20,7 @@ CREATE OR REPLACE FUNCTION api_get_document_templates_v4(
     document_id uuid
 )
 RETURNS TABLE (
-    upload_id uuid,
+    html_id uuid,
     template_id uuid,
     schema_id uuid,
     active boolean,
@@ -31,15 +31,13 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT
-    t.upload_id,
-    t.id as template_id,
-    ts.schema_id,
+    dt.html_id,
+    dt.template_id,
+    dt.schema_id,
     dt.active,
     dt.created_at,
     dt.updated_at
 FROM document_templates dt
-JOIN templates t ON t.id = dt.template_id
-LEFT JOIN template_schemas ts ON ts.template_id = t.id
 WHERE dt.document_id = document_id
 ORDER BY dt.created_at DESC
 $$;

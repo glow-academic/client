@@ -34,10 +34,10 @@ BEGIN
 END $$;
 
 -- 3) Recreate function
--- Note: schema_id is provided by Python code which creates schema records first
+-- Note: schema_id and html_id are provided by Python code
 CREATE OR REPLACE FUNCTION socket_create_template_and_link_v4(
     document_id uuid,
-    upload_id uuid,
+    html_id uuid,
     name text,
     schema_id uuid,
     active boolean,
@@ -58,21 +58,18 @@ WITH deactivate_previous AS (
       AND $5 = true
 ),
 existing_template AS (
-    -- Check if template already exists (same upload_id and schema_id)
-    SELECT templates.id as template_id
-    FROM templates
-    JOIN template_schemas ts ON ts.template_id = templates.id
-    WHERE templates.upload_id = $2 
-      AND ts.schema_id = $4
+    -- Check if template already exists (same html_id and schema_id via document_templates)
+    SELECT dt.template_id
+    FROM document_templates dt
+    WHERE dt.html_id = $2 
+      AND dt.schema_id = $4
     LIMIT 1
 ),
 create_template AS (
-    -- Create template if it doesn't exist (still store args JSONB for backward compatibility during migration)
-    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+    -- Create template (just values, no schema/HTML refs)
+    INSERT INTO templates (name, created_at, updated_at)
     SELECT 
         $3,
-        $2,
-        '{}'::jsonb,  -- Empty args, schema is stored separately
         NOW(),
         NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_template)
@@ -85,29 +82,33 @@ template_id AS (
     LIMIT 1
 ),
 link_schema AS (
-    -- Link template to schema via template_schemas junction table
-    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    -- Link template to schema via schema_templates junction table
+    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
     SELECT 
-        ti.template_id,
         $4,
+        ti.template_id,
         NOW(),
         NOW()
     FROM template_id ti
     WHERE $4 IS NOT NULL
-    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+    ON CONFLICT (schema_id, template_id) DO UPDATE SET
         updated_at = NOW()
 ),
 link_to_document AS (
-    -- Link template to document
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Link template to document with html_id and schema_id
+    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
     SELECT 
         $1,
         ti.template_id,
+        $2,
+        $4,
         $5,
         NOW(),
         NOW()
     FROM template_id ti
     ON CONFLICT (document_id, template_id) DO UPDATE SET
+        html_id = EXCLUDED.html_id,
+        schema_id = EXCLUDED.schema_id,
         active = EXCLUDED.active,
         updated_at = NOW()
     RETURNING template_id
