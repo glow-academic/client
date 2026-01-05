@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION api_create_document_v4(
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     parameter_item_ids uuid[] DEFAULT ARRAY[]::uuid[],
     template_upload_id uuid DEFAULT NULL,
-    template_args jsonb DEFAULT '{}'::jsonb
+    schema_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     success boolean,
@@ -45,7 +45,7 @@ WITH params AS (
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(parameter_item_ids, ARRAY[]::uuid[]) AS field_ids,
         template_upload_id AS template_upload_id,
-        COALESCE(template_args, '{}'::jsonb) AS template_args,
+        schema_id AS schema_id,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -100,7 +100,7 @@ create_or_get_template AS (
     SELECT 
         p.name as name,
         p.template_upload_id,
-        p.template_args,
+        '{}'::jsonb,  -- Empty args, schema stored separately
         NOW(),
         NOW()
     FROM params p
@@ -108,17 +108,20 @@ create_or_get_template AS (
     WHERE p.template_upload_id IS NOT NULL
       AND NOT EXISTS (
           SELECT 1 FROM templates t 
-          WHERE t.upload_id = p.template_upload_id AND t.args = p.template_args
+          JOIN template_schemas ts ON ts.template_id = t.id
+          WHERE t.upload_id = p.template_upload_id 
+            AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists
-    SELECT id as template_id
+    -- Get existing template if it exists (matching upload_id and schema_id)
+    SELECT t.id as template_id
     FROM params p
     CROSS JOIN templates t
+    LEFT JOIN template_schemas ts ON ts.template_id = t.id
     WHERE t.upload_id = p.template_upload_id 
-      AND t.args = p.template_args
+      AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
     LIMIT 1
 ),
 template_id AS (
@@ -127,6 +130,20 @@ template_id AS (
     SELECT template_id FROM get_existing_template
     WHERE EXISTS (SELECT 1 FROM params WHERE template_upload_id IS NOT NULL)
     LIMIT 1
+),
+link_template_schema AS (
+    -- Link template to schema via template_schemas junction table
+    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    SELECT 
+        ti.template_id,
+        p.schema_id,
+        NOW(),
+        NOW()
+    FROM template_id ti
+    CROSS JOIN params p
+    WHERE p.schema_id IS NOT NULL
+    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+        updated_at = NOW()
 ),
 insert_template_link AS (
     -- Link template to document if template_id is available

@@ -69,7 +69,7 @@ CREATE TYPE types.q_get_document_detail_v4_agent AS (
 
 CREATE TYPE types.q_get_document_detail_v4_template AS (
     template_id uuid,
-    template_args jsonb,
+    schema_id uuid,
     active boolean,
     created_at timestamptz,
     updated_at timestamptz
@@ -109,7 +109,7 @@ RETURNS TABLE (
     valid_agent_ids text[],
     template boolean,
     template_id uuid,
-    template_args jsonb,  -- Schema definition (exception: JSONB for dynamic template schema structures)
+    schema_id uuid,
     template_upload_id uuid,
     template_file_path text,
     template_html text,
@@ -155,7 +155,7 @@ document_data AS (
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
         (SELECT t.upload_id FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_upload_id,
-        (SELECT t.args FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_args,
+        (SELECT ts.schema_id FROM document_templates dt JOIN template_schemas ts ON ts.template_id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as schema_id,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
@@ -176,12 +176,13 @@ document_active_template AS (
     SELECT 
         dt.document_id,
         t.id as template_id,
-        t.args as template_args,
+        ts.schema_id,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id AND dt.active = true
     JOIN templates t ON t.id = dt.template_id
+    LEFT JOIN template_schemas ts ON ts.template_id = t.id
     ORDER BY dt.created_at DESC
     LIMIT 1
 ),
@@ -189,13 +190,14 @@ document_all_templates AS (
     SELECT 
         dt.document_id,
         t.id as template_id,
-        t.args as template_args,
+        ts.schema_id,
         dt.active as template_active,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id
     JOIN templates t ON t.id = dt.template_id
+    LEFT JOIN template_schemas ts ON ts.template_id = t.id
 ),
 user_profile AS (
     SELECT 
@@ -472,14 +474,14 @@ SELECT
     COALESCE((SELECT ARRAY_AGG(ad2.agent_id::text ORDER BY ad2.name) FROM agent_data ad2), ARRAY[]::text[])::text[] as valid_agent_ids,
     dd.template::boolean as template,
     dat.template_id::uuid as template_id,
-    COALESCE(dat.template_args, '{}'::jsonb)::jsonb as template_args,  -- Schema definition (exception: JSONB for dynamic template schema structures)
+    dat.schema_id::uuid as schema_id,
     dd.template_upload_id::uuid as template_upload_id,
     dd.template_file_path::text as template_file_path,
     NULL::text as template_html,  -- Will be populated in Python from file system
     -- Aggregate templates separately
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dat2.template_id, dat2.template_args, dat2.template_active, dat2.template_created_at, dat2.template_updated_at)::types.q_get_document_detail_v4_template
+            (dat2.template_id, dat2.schema_id, dat2.template_active, dat2.template_created_at, dat2.template_updated_at)::types.q_get_document_detail_v4_template
             ORDER BY dat2.template_created_at DESC
         ) FROM document_all_templates dat2),
         '{}'::types.q_get_document_detail_v4_template[]

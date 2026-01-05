@@ -28,7 +28,7 @@ RETURNS TABLE (
     document_name text,
     actor_name text,
     file_path text,
-    template_args jsonb,
+    schema_id uuid,
     -- Settings fields for theme derivation
     settings_primary_color text,
     settings_accent text,
@@ -105,7 +105,7 @@ SELECT
     d.name::text as document_name,
     ap.actor_name::text as actor_name,
     u.file_path::text as file_path,
-    t.args::jsonb as template_args,
+    ts.schema_id,
     -- Settings fields
     s.primary_color::text as settings_primary_color,
     s.accent::text as settings_accent,
@@ -126,6 +126,7 @@ JOIN documents d ON d.id = x.document_id
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
 INNER JOIN templates t ON t.id = dt.template_id
 INNER JOIN uploads u ON u.id = t.upload_id
+LEFT JOIN template_schemas ts ON ts.template_id = t.id
 CROSS JOIN actor_profile ap
 CROSS JOIN selected_settings ss
 LEFT JOIN settings s ON s.id = ss.settings_id

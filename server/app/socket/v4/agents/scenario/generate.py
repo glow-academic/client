@@ -33,6 +33,7 @@ from app.sql.types import (
     GetScenarioRunContextAndCreateRunSqlParams,
     GetScenarioRunContextAndCreateRunSqlRow,
 )
+from app.utils.schema_helper import get_schema_tree
 
 internal_sio = get_internal_sio()
 SQL_PATH = "app/sql/v4/scenario/get_scenario_run_context_and_create_run_complete.sql"
@@ -1305,7 +1306,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         "file_path": doc.file_path,
                         "mime_type": doc.mime_type,
                         "template": doc.template,
-                        "template_args": doc.template_args,
+                        "schema_id": str(doc.schema_id) if doc.schema_id else None,
                     }
                     for doc in documents
                 ],
@@ -1325,7 +1326,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         "document_description": dt.document_description,
                         "classify_agent_id": dt.classify_agent_id,
                         "document_agent_id": dt.document_agent_id,
-                        "template_args": dt.template_args,
+                        "schema_id": str(dt.schema_id) if dt.schema_id else None,
                         "template_upload_id": dt.template_upload_id,
                         "template_file_path": dt.template_file_path,
                     }
@@ -1633,18 +1634,16 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     if document_templates and len(document_templates) > 0:
                         # Use the first template's schema (typically there's only one)
                         first_template = document_templates[0]
-                        template_args_raw = first_template.get("template_args")
-                        if template_args_raw:
-                            # Parse if it's a string, otherwise use as-is
-                            if isinstance(template_args_raw, str):
-                                try:
-                                    template_schema = json.loads(template_args_raw)
-                                except json.JSONDecodeError:
-                                    template_schema = {}
-                            elif isinstance(template_args_raw, dict):
-                                template_schema = template_args_raw
-                            else:
-                                template_schema = {}
+                        schema_id_str = first_template.get("schema_id")
+                        if schema_id_str:
+                            try:
+                                schema_id_uuid = uuid.UUID(schema_id_str)
+                                # Get schema tree from database using existing conn
+                                template_schema = await get_schema_tree(
+                                    conn, schema_id_uuid
+                                )
+                            except (ValueError, Exception):
+                                template_schema = None
 
                     # Core implementation function that processes template args
                     async def _create_document_impl(

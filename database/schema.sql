@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hL2lcalDptoT8Gu9AFWQPx2foVy0FIRueoyGzziXPE3lnvxWAgUFj2PTxwG7gkB
+\restrict vTfBknrRhP1GFrP4opZGzbisySeJXdLjcAuVfln8vfZavYELDO2mCPs7VOSRfia
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -78,7 +78,24 @@ CREATE TYPE public.agent_role AS ENUM (
     'document',
     'audio',
     'member',
-    'rubric'
+    'rubric',
+    'prompt'
+);
+
+
+--
+-- Name: developer_instruction_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.developer_instruction_type AS ENUM (
+    'scenario_statement',
+    'scenario_document',
+    'persona',
+    'hint',
+    'grade_rubric',
+    'grade_time',
+    'classify',
+    'member'
 );
 
 
@@ -214,6 +231,18 @@ CREATE TYPE public.reasoning_effort AS ENUM (
 
 
 --
+-- Name: schema_field_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.schema_field_type AS ENUM (
+    'string',
+    'number',
+    'boolean',
+    'array'
+);
+
+
+--
 -- Name: tool_type; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -234,7 +263,10 @@ CREATE TYPE public.tool_type AS ENUM (
     'statement',
     'strength',
     'title',
-    'video'
+    'video',
+    'regenerate',
+    'instruct',
+    'prompt'
 );
 
 
@@ -693,6 +725,18 @@ CREATE TABLE public.agent_reasoning_levels (
 
 
 --
+-- Name: agent_role_developer_instruction_types; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_role_developer_instruction_types (
+    agent_role public.agent_role NOT NULL,
+    developer_instruction_type public.developer_instruction_type CONSTRAINT agent_role_developer_instru_developer_instruction_type_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: agent_temperature_levels; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -960,6 +1004,32 @@ CREATE TABLE public.departments (
     description text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT departments_id_v7_not_null NOT NULL
+);
+
+
+--
+-- Name: developer_instruction_schemas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.developer_instruction_schemas (
+    developer_instruction_id uuid NOT NULL,
+    schema_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: developer_instructions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.developer_instructions (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    type public.developer_instruction_type NOT NULL,
+    template text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2466,6 +2536,45 @@ CREATE TABLE public.scenarios (
 
 
 --
+-- Name: schema_field_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schema_field_items (
+    schema_field_id uuid NOT NULL,
+    item_schema_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: schema_fields; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schema_fields (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    schema_id uuid NOT NULL,
+    name text NOT NULL,
+    field_type public.schema_field_type NOT NULL,
+    required boolean DEFAULT false NOT NULL,
+    "position" integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: schemas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schemas (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: service_health; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2739,6 +2848,18 @@ CREATE TABLE public.standards (
 
 
 --
+-- Name: template_schemas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.template_schemas (
+    template_id uuid NOT NULL,
+    schema_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2826,7 +2947,7 @@ CREATE TABLE public.tool_calls (
     call_id text NOT NULL,
     completed boolean DEFAULT false NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT tool_calls_id_v7_not_null NOT NULL,
-    tool_id uuid
+    tool_id uuid NOT NULL
 );
 
 
@@ -2968,6 +3089,14 @@ ALTER TABLE ONLY public.agent_prompts
 
 ALTER TABLE ONLY public.agent_reasoning_levels
     ADD CONSTRAINT agent_reasoning_levels_pkey PRIMARY KEY (agent_id, model_reasoning_level_id);
+
+
+--
+-- Name: agent_role_developer_instruction_types agent_role_developer_instruction_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_role_developer_instruction_types
+    ADD CONSTRAINT agent_role_developer_instruction_types_pkey PRIMARY KEY (agent_role, developer_instruction_type);
 
 
 --
@@ -3128,6 +3257,30 @@ ALTER TABLE ONLY public.department_settings
 
 ALTER TABLE ONLY public.departments
     ADD CONSTRAINT departments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: developer_instruction_schemas developer_instruction_schemas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.developer_instruction_schemas
+    ADD CONSTRAINT developer_instruction_schemas_pkey PRIMARY KEY (developer_instruction_id, schema_id);
+
+
+--
+-- Name: developer_instructions developer_instructions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.developer_instructions
+    ADD CONSTRAINT developer_instructions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: developer_instructions developer_instructions_type_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.developer_instructions
+    ADD CONSTRAINT developer_instructions_type_key UNIQUE (type);
 
 
 --
@@ -3907,6 +4060,38 @@ ALTER TABLE ONLY public.scenarios
 
 
 --
+-- Name: schema_field_items schema_field_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_field_items
+    ADD CONSTRAINT schema_field_items_pkey PRIMARY KEY (schema_field_id, item_schema_id);
+
+
+--
+-- Name: schema_fields schema_fields_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_fields
+    ADD CONSTRAINT schema_fields_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schema_fields schema_fields_schema_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_fields
+    ADD CONSTRAINT schema_fields_schema_id_name_key UNIQUE (schema_id, name);
+
+
+--
+-- Name: schemas schemas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schemas
+    ADD CONSTRAINT schemas_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: service_health service_health_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4040,6 +4225,14 @@ ALTER TABLE ONLY public.standard_groups
 
 ALTER TABLE ONLY public.standards
     ADD CONSTRAINT standards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: template_schemas template_schemas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_schemas
+    ADD CONSTRAINT template_schemas_pkey PRIMARY KEY (template_id, schema_id);
 
 
 --
@@ -4263,6 +4456,20 @@ CREATE INDEX agent_reasoning_levels_agent_id_v7_idx ON public.agent_reasoning_le
 --
 
 CREATE INDEX agent_reasoning_levels_model_reasoning_level_id_v7_idx ON public.agent_reasoning_levels USING btree (model_reasoning_level_id);
+
+
+--
+-- Name: agent_role_developer_instruction_types_agent_role_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_role_developer_instruction_types_agent_role_idx ON public.agent_role_developer_instruction_types USING btree (agent_role);
+
+
+--
+-- Name: agent_role_developer_instruction_types_developer_instruction_ty; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_role_developer_instruction_types_developer_instruction_ty ON public.agent_role_developer_instruction_types USING btree (developer_instruction_type);
 
 
 --
@@ -4550,6 +4757,34 @@ CREATE INDEX department_settings_department_id_v7_idx ON public.department_setti
 --
 
 CREATE INDEX department_settings_settings_id_v7_idx ON public.department_settings USING btree (settings_id);
+
+
+--
+-- Name: developer_instruction_schemas_developer_instruction_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX developer_instruction_schemas_developer_instruction_id_idx ON public.developer_instruction_schemas USING btree (developer_instruction_id);
+
+
+--
+-- Name: developer_instruction_schemas_schema_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX developer_instruction_schemas_schema_id_idx ON public.developer_instruction_schemas USING btree (schema_id);
+
+
+--
+-- Name: developer_instructions_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX developer_instructions_active_idx ON public.developer_instructions USING btree (active);
+
+
+--
+-- Name: developer_instructions_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX developer_instructions_type_idx ON public.developer_instructions USING btree (type);
 
 
 --
@@ -6212,6 +6447,48 @@ CREATE INDEX scenarios_video_agent_id_v7_idx ON public.scenarios USING btree (vi
 
 
 --
+-- Name: schema_field_items_item_schema_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_field_items_item_schema_id_idx ON public.schema_field_items USING btree (item_schema_id);
+
+
+--
+-- Name: schema_field_items_schema_field_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_field_items_schema_field_id_idx ON public.schema_field_items USING btree (schema_field_id);
+
+
+--
+-- Name: schema_fields_position_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_fields_position_idx ON public.schema_fields USING btree (schema_id, "position");
+
+
+--
+-- Name: schema_fields_schema_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_fields_schema_id_idx ON public.schema_fields USING btree (schema_id);
+
+
+--
+-- Name: schemas_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schemas_created_at_idx ON public.schemas USING btree (created_at);
+
+
+--
+-- Name: schemas_updated_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schemas_updated_at_idx ON public.schemas USING btree (updated_at);
+
+
+--
 -- Name: service_health_service_ts_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6545,6 +6822,20 @@ CREATE INDEX standards_group_idx ON public.standards USING btree (standard_group
 --
 
 CREATE INDEX standards_standard_group_id_v7_idx ON public.standards USING btree (standard_group_id);
+
+
+--
+-- Name: template_schemas_schema_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX template_schemas_schema_id_idx ON public.template_schemas USING btree (schema_id);
+
+
+--
+-- Name: template_schemas_template_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX template_schemas_template_id_idx ON public.template_schemas USING btree (template_id);
 
 
 --
@@ -7213,6 +7504,22 @@ ALTER TABLE ONLY public.department_settings
 
 ALTER TABLE ONLY public.department_settings
     ADD CONSTRAINT department_settings_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.settings(id);
+
+
+--
+-- Name: developer_instruction_schemas developer_instruction_schemas_developer_instruction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.developer_instruction_schemas
+    ADD CONSTRAINT developer_instruction_schemas_developer_instruction_id_fkey FOREIGN KEY (developer_instruction_id) REFERENCES public.developer_instructions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: developer_instruction_schemas developer_instruction_schemas_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.developer_instruction_schemas
+    ADD CONSTRAINT developer_instruction_schemas_schema_id_fkey FOREIGN KEY (schema_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
 
 
 --
@@ -8560,6 +8867,30 @@ ALTER TABLE ONLY public.scenarios
 
 
 --
+-- Name: schema_field_items schema_field_items_item_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_field_items
+    ADD CONSTRAINT schema_field_items_item_schema_id_fkey FOREIGN KEY (item_schema_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: schema_field_items schema_field_items_schema_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_field_items
+    ADD CONSTRAINT schema_field_items_schema_field_id_fkey FOREIGN KEY (schema_field_id) REFERENCES public.schema_fields(id) ON DELETE CASCADE;
+
+
+--
+-- Name: schema_fields schema_fields_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_fields
+    ADD CONSTRAINT schema_fields_schema_id_fkey FOREIGN KEY (schema_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
+
+
+--
 -- Name: setting_auth_keys setting_auth_keys_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8824,6 +9155,22 @@ ALTER TABLE ONLY public.standards
 
 
 --
+-- Name: template_schemas template_schemas_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_schemas
+    ADD CONSTRAINT template_schemas_schema_id_fkey FOREIGN KEY (schema_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: template_schemas template_schemas_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_schemas
+    ADD CONSTRAINT template_schemas_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id) ON DELETE CASCADE;
+
+
+--
 -- Name: templates templates_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8947,5 +9294,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hL2lcalDptoT8Gu9AFWQPx2foVy0FIRueoyGzziXPE3lnvxWAgUFj2PTxwG7gkB
+\unrestrict vTfBknrRhP1GFrP4opZGzbisySeJXdLjcAuVfln8vfZavYELDO2mCPs7VOSRfia
 

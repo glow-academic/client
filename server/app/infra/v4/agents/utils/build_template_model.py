@@ -1,9 +1,12 @@
 """Build Pydantic models dynamically from template schemas."""
 
+import uuid
 from typing import Any
 
+import asyncpg
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
+from app.utils.schema_helper import get_schema_tree
 from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -148,3 +151,19 @@ def build_template_model(schema: dict[str, Any]) -> type[BaseModel]:
     )
 
     return model  # type: ignore[return-value]
+
+
+async def build_template_model_from_schema_id(
+    conn: asyncpg.Connection, schema_id: uuid.UUID
+) -> type[BaseModel]:
+    """Build a Pydantic model from a schema_id.
+
+    Args:
+        conn: Database connection
+        schema_id: UUID of the schema
+
+    Returns:
+        A dynamically created Pydantic model class with strict schema (no additionalProperties)
+    """
+    schema = await get_schema_tree(conn, schema_id)
+    return build_template_model(schema)

@@ -34,12 +34,12 @@ BEGIN
 END $$;
 
 -- 3) Recreate function
--- Note: template_schema is kept as jsonb since it's truly dynamic (template variables can vary)
+-- Note: schema_id is provided by Python code which creates schema records first
 CREATE OR REPLACE FUNCTION socket_create_template_and_link_v4(
     document_id uuid,
     upload_id uuid,
     name text,
-    template_schema jsonb,
+    schema_id uuid,
     active boolean,
     run_id uuid
 )
@@ -58,20 +58,21 @@ WITH deactivate_previous AS (
       AND $5 = true
 ),
 existing_template AS (
-    -- Check if template already exists (same upload_id and args)
+    -- Check if template already exists (same upload_id and schema_id)
     SELECT templates.id as template_id
     FROM templates
+    JOIN template_schemas ts ON ts.template_id = templates.id
     WHERE templates.upload_id = $2 
-      AND templates.args = COALESCE($4, '{}'::jsonb)
+      AND ts.schema_id = $4
     LIMIT 1
 ),
 create_template AS (
-    -- Create template if it doesn't exist
+    -- Create template if it doesn't exist (still store args JSONB for backward compatibility during migration)
     INSERT INTO templates (name, upload_id, args, created_at, updated_at)
     SELECT 
         $3,
         $2,
-        COALESCE($4, '{}'::jsonb),
+        '{}'::jsonb,  -- Empty args, schema is stored separately
         NOW(),
         NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_template)
@@ -82,6 +83,19 @@ template_id AS (
     UNION ALL
     SELECT template_id FROM create_template
     LIMIT 1
+),
+link_schema AS (
+    -- Link template to schema via template_schemas junction table
+    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    SELECT 
+        ti.template_id,
+        $4,
+        NOW(),
+        NOW()
+    FROM template_id ti
+    WHERE $4 IS NOT NULL
+    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+        updated_at = NOW()
 ),
 link_to_document AS (
     -- Link template to document

@@ -19,6 +19,7 @@ from app.sql.types import (
     RenderTemplateSqlRow,
     load_sql_query,
 )
+from app.utils.schema_helper import get_schema_tree
 
 logger = get_logger(__name__)
 
@@ -129,9 +130,16 @@ async def render_document_template(
 
         theme_tokens = derive_theme_tokens(theme_primitives)
 
-        # Get template schema (template_args contains the schema with placeholder/description metadata)
-        # template_args is already parsed by execute_sql_typed (JSONB → dict)
-        template_schema_raw = result.template_args or {}
+        # Get template schema from schema_id
+        template_schema_raw: dict[str, Any] = {}
+        if result.schema_id:
+            try:
+                template_schema_raw = await get_schema_tree(conn, result.schema_id)
+            except Exception as e:
+                logger.warning(
+                    f"Failed to get schema for schema_id {result.schema_id}: {str(e)}"
+                )
+                template_schema_raw = {}
 
         # Extract placeholders from schema and build default values structure
         def extract_placeholders(

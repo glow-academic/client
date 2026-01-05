@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION api_get_document_template_info_v4(
 )
 RETURNS TABLE (
     file_path text,
-    template_args jsonb,
+    schema_id uuid,
     classify_agent_id text,
     document_agent_id text,
     name text,
@@ -32,7 +32,7 @@ STABLE
 AS $$
 SELECT 
     u.file_path,
-    t.args as template_args,
+    ts.schema_id,
     d.classify_agent_id::text,
     d.document_agent_id::text,
     d.name,
@@ -41,6 +41,7 @@ FROM documents d
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
 INNER JOIN templates t ON t.id = dt.template_id
 INNER JOIN uploads u ON u.id = t.upload_id
+LEFT JOIN template_schemas ts ON ts.template_id = t.id
 WHERE d.id = parent_document_id
 ORDER BY dt.created_at DESC
 LIMIT 1

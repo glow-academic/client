@@ -174,9 +174,23 @@ link_system AS (
     RETURNING message_id as system_message_id
 ),
 -- Get scenario developer message (for simulation runs with chat_id)
+-- Use developer_instructions table for scenario_statement type
+scenario_developer_template AS (
+    SELECT di.template
+    FROM run_info ri
+    JOIN agents a ON a.id = ri.agent_id
+    JOIN agent_role_developer_instruction_types ardit ON ardit.agent_role = a.role
+    JOIN developer_instructions di ON di.type = ardit.developer_instruction_type
+    WHERE ardit.developer_instruction_type = 'scenario_statement'::developer_instruction_type
+    LIMIT 1
+),
 scenario_developer_content AS (
     SELECT DISTINCT
-        'The following is the scenario for the chat: ' || ps.problem_statement as content
+        -- Use template from developer_instructions if available, otherwise fallback to hardcoded
+        COALESCE(
+            REPLACE(sdt.template, '{{ problem_statement }}', ps.problem_statement),
+            'The following is the scenario for the chat: ' || ps.problem_statement
+        ) as content
     FROM run_info ri
     JOIN group_runs gr ON gr.run_id = ri.run_id
     JOIN groups g ON g.id = gr.group_id
@@ -184,6 +198,7 @@ scenario_developer_content AS (
     JOIN chats c ON c.id = cg.chat_id
     JOIN scenario_problem_statements sps ON sps.scenario_id = c.scenario_id AND sps.active = true
     JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    CROSS JOIN LATERAL (SELECT template FROM scenario_developer_template LIMIT 1) sdt
     WHERE chat_id IS NOT NULL
     AND c.id = chat_id
     AND ps.problem_statement IS NOT NULL 

@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION api_get_document_templates_v4(
 RETURNS TABLE (
     upload_id uuid,
     template_id uuid,
-    template_args jsonb,
+    schema_id uuid,
     active boolean,
     created_at timestamptz,
     updated_at timestamptz
@@ -33,12 +33,13 @@ AS $$
 SELECT
     t.upload_id,
     t.id as template_id,
-    t.args as template_args,
+    ts.schema_id,
     dt.active,
     dt.created_at,
     dt.updated_at
 FROM document_templates dt
 JOIN templates t ON t.id = dt.template_id
+LEFT JOIN template_schemas ts ON ts.template_id = t.id
 WHERE dt.document_id = document_id
 ORDER BY dt.created_at DESC
 $$;

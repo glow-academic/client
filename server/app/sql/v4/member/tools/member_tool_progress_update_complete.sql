@@ -99,7 +99,7 @@ link_tool_call_to_run AS (
 ),
 -- Get or create message
 existing_message AS (
-    SELECT m.id as message_id
+    SELECT p.message_id::uuid as message_id
     FROM params p
     WHERE p.message_id IS NOT NULL
     UNION ALL
@@ -147,7 +147,7 @@ upsert_message_content AS (
         WHERE mc.message_id = uuid(sm.message_id) AND mc.idx = 0
     )
     ON CONFLICT (message_id, idx) DO UPDATE SET
-        content = p.accumulated_content,
+        content = EXCLUDED.content,
         updated_at = NOW()
 ),
 -- Link message to run

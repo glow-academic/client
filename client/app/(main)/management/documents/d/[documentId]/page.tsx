@@ -157,8 +157,12 @@ export default async function DocumentEditPage({
       });
 
       // Check if there are template arg params (JSON format)
+      // Use template_schema from API response, fallback to template_args for backward compatibility
+      // Note: template_schema is added dynamically by the API, so we need type assertion
+      const docDetail = documentDetail as DocumentDetailOut & { template_schema?: TemplateSchema | null; template_args?: TemplateSchema | null };
       const templateSchema =
-        documentDetail.template_args as TemplateSchema | null;
+        (docDetail.template_schema as TemplateSchema | null) ||
+        (docDetail.template_args as TemplateSchema | null);
       if (templateSchema) {
         const hasTemplateParams = searchParamsObj.has("templateArgs");
 

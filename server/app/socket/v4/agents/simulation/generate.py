@@ -24,7 +24,13 @@ from app.sql.types import (
     GetSimulationRunContextAndCreateRunSqlRow,
     GetSimulationMessagesSqlParams,
     GetSimulationMessagesSqlRow,
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
+    LinkDeveloperMessageToRunSqlParams,
+    LinkDeveloperMessageToRunSqlRow,
 )
+from app.utils.schema_helper import get_schema_tree
+from jinja2 import Environment, Template
 
 internal_sio = get_internal_sio()
 
@@ -554,9 +560,32 @@ async def _simulation_text_generate_impl(
 
                 persona_names_list = [f'"{name}"' for name in persona_names]
 
-                developer_message_personas: TResponseInputItem = {
-                    "role": "developer",
-                    "content": f"""Available personas and their personalities:
+                # Get developer instruction template from database
+                developer_message_content: str | None = None
+                try:
+                    dev_instruction_params = GetDeveloperInstructionSqlParams(
+                        instruction_type="persona",
+                        agent_role_val="simulation",
+                    )
+                    dev_instruction_result = cast(
+                        GetDeveloperInstructionSqlRow,
+                        await execute_sql_typed(
+                            conn,
+                            "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                            params=dev_instruction_params,
+                        ),
+                    )
+                    if dev_instruction_result and dev_instruction_result.template:
+                        # Render Jinja template with persona context
+                        template = Template(dev_instruction_result.template)
+                        developer_message_content = template.render(
+                            persona_descriptions=persona_descriptions,
+                            persona_names_list=persona_names_list,
+                            persona_names=persona_names,
+                        )
+                except Exception:
+                    # Fallback to hardcoded message if developer instruction not found
+                    developer_message_content = f"""Available personas and their personalities:
 {chr(10).join(persona_descriptions)}
 
 Tool Usage Instructions:
@@ -566,9 +595,29 @@ Tool Usage Instructions:
   * `message`: The message content that the persona should say
 - Call exactly one tool per user message
 - Never respond directly - always use the `speak` tool
-- The persona name must match exactly one of the available personas listed above""",
-                }
-                input_items.append(developer_message_personas)
+- The persona name must match exactly one of the available personas listed above"""
+
+                if developer_message_content:
+                    developer_message_personas: TResponseInputItem = {
+                        "role": "developer",
+                        "content": developer_message_content,
+                    }
+                    input_items.append(developer_message_personas)
+
+                    # Link developer message to run
+                    try:
+                        link_params = LinkDeveloperMessageToRunSqlParams(
+                            content=developer_message_content,
+                            run_id=run_id_uuid,
+                        )
+                        await execute_sql_typed(
+                            conn,
+                            "app/sql/v4/simulations/link_developer_message_to_run_complete.sql",
+                            params=link_params,
+                        )
+                    except Exception:
+                        # Log error but continue - message is already in input_items
+                        pass
 
                 # Add debug_info tool
                 from app.infra.v4.debug.debug_info import debug_info

@@ -26,8 +26,12 @@ from app.sql.types import (
     GenerateHintsSqlRow,
     GetSimulationMessagesSqlParams,
     GetSimulationMessagesSqlRow,
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
+    LinkDeveloperMessageToRunSqlParams,
 )
 from app.socket.v4.agents.hint.error import HintErrorPayload
+from jinja2 import Template
 
 internal_sio = get_internal_sio()
 
@@ -316,12 +320,50 @@ async def _generate_hints_impl(
             input_items.insert(0, chat_scenario)
             input_items.extend(conversation_history)
 
-            # Add developer message at the end to explicitly request hint generation
-            developer_message: TResponseInputItem = {
-                "role": "developer",
-                "content": "Now please generate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student (e.g., content explanation, emotional support, pedagogical approach).",
-            }
-            input_items.append(developer_message)
+            # Get developer instruction template from database
+            developer_message_content: str | None = None
+            try:
+                dev_instruction_params = GetDeveloperInstructionSqlParams(
+                    instruction_type="hint",
+                    agent_role_val="hint",
+                )
+                dev_instruction_result = cast(
+                    GetDeveloperInstructionSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                        params=dev_instruction_params,
+                    ),
+                )
+                if dev_instruction_result and dev_instruction_result.template:
+                    # Render Jinja template
+                    template = Template(dev_instruction_result.template)
+                    developer_message_content = template.render()
+            except Exception:
+                # Fallback to hardcoded message if developer instruction not found
+                developer_message_content = "Now please generate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student (e.g., content explanation, emotional support, pedagogical approach)."
+
+            if developer_message_content:
+                developer_message: TResponseInputItem = {
+                    "role": "developer",
+                    "content": developer_message_content,
+                }
+                input_items.append(developer_message)
+
+                # Link developer message to run
+                try:
+                    link_params = LinkDeveloperMessageToRunSqlParams(
+                        content=developer_message_content,
+                        run_id=model_run_id,
+                    )
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/simulations/link_developer_message_to_run_complete.sql",
+                        params=link_params,
+                    )
+                except Exception:
+                    # Log error but continue - message is already in input_items
+                    pass
 
             # Build hint agent from context
             profile_id_str = context.get("profile_id")
@@ -389,11 +431,9 @@ async def _generate_hints_impl(
             # This handles token updates and message logging in background
             usage = result_runner.context_wrapper.usage
             assistant_output = getattr(result_runner, "final_output", None) or ""
-            hint_dev_content = "Now please generate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student."
+            # Use the same developer message content that was added to input_items
             # Create input_items with developer message for logging
-            input_items_with_dev = input_items + [
-                {"role": "developer", "content": hint_dev_content}
-            ]
+            input_items_with_dev = input_items.copy()
             await internal_sio.emit(
                 "log_run",
                 {

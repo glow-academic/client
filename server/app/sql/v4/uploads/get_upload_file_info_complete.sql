@@ -29,7 +29,7 @@ RETURNS TABLE (
     size bigint,
     actor_name text,
     is_template boolean,
-    template_args jsonb
+    schema_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -58,19 +58,16 @@ actor_profile AS (
 ),
 regular_document_upload AS (
     -- Case 1: Upload is linked to a document via document_uploads
-    -- Also get template_args if document has template=true
+    -- Also get schema_id if document has template=true
     SELECT 
         du.document_id,
         d.template,
-        COALESCE(
-            (SELECT t.args 
-             FROM document_templates dt 
-             JOIN templates t ON t.id = dt.template_id 
-             WHERE dt.document_id = d.id AND dt.active = true 
-             ORDER BY dt.created_at DESC 
-             LIMIT 1),
-            '{}'::jsonb
-        ) as template_args
+        (SELECT ts.schema_id 
+         FROM document_templates dt 
+         JOIN template_schemas ts ON ts.template_id = dt.template_id
+         WHERE dt.document_id = d.id AND dt.active = true 
+         ORDER BY dt.created_at DESC 
+         LIMIT 1) as schema_id
     FROM document_uploads du
     JOIN documents d ON d.id = du.document_id
     WHERE du.upload_id = (SELECT upload_id FROM params)
@@ -82,10 +79,11 @@ template_upload AS (
     SELECT 
         dt.document_id,
         d.template,
-        t.args as template_args
+        ts.schema_id
     FROM templates t
     JOIN document_templates dt ON dt.template_id = t.id AND dt.active = true
     JOIN documents d ON d.id = dt.document_id
+    LEFT JOIN template_schemas ts ON ts.template_id = t.id
     WHERE t.upload_id = (SELECT upload_id FROM params)
     ORDER BY dt.created_at DESC
     LIMIT 1
@@ -94,7 +92,7 @@ template_info AS (
     -- Return template info from either case (prefer regular document upload if both exist)
     SELECT 
         COALESCE(rdu.template, tu.template, false) as is_template,
-        COALESCE(tu.template_args, rdu.template_args, '{}'::jsonb) as template_args
+        COALESCE(tu.schema_id, rdu.schema_id) as schema_id
     FROM regular_document_upload rdu
     FULL OUTER JOIN template_upload tu ON true
     WHERE rdu.document_id IS NOT NULL OR tu.document_id IS NOT NULL
@@ -108,5 +106,5 @@ SELECT
     COALESCE((SELECT size FROM upload_info), 0)::bigint as size,
     COALESCE((SELECT actor_name FROM actor_profile), 'System')::text as actor_name,
     COALESCE((SELECT is_template FROM template_info), false)::boolean as is_template,
-    COALESCE((SELECT template_args FROM template_info), '{}'::jsonb) as template_args;
+    (SELECT schema_id FROM template_info)::uuid as schema_id;
 $$;

@@ -19,6 +19,7 @@ from app.socket.v4.agents.simulation.generate import (
     get_simulation_conversation_history,
 )
 from app.main import get_internal_sio, sio
+from jinja2 import Template
 
 # Types will be auto-generated from SQL introspection
 try:
@@ -27,6 +28,9 @@ try:
         GetMemberRegenerationRunContextAndCreateRunSqlRow,
         GetSimulationMessagesSqlParams,
         GetSimulationMessagesSqlRow,
+        GetDeveloperInstructionSqlParams,
+        GetDeveloperInstructionSqlRow,
+        LinkDeveloperMessageToRunSqlParams,
     )
 except ImportError:
     from pydantic import BaseModel
@@ -311,6 +315,53 @@ async def _member_regenerate_impl(
                         "content": f"User Instructions: {data.user_instructions.strip()}",
                     }
                 )
+
+            # Get developer instruction template from database (if configured)
+            try:
+                dev_instruction_params = GetDeveloperInstructionSqlParams(
+                    instruction_type="member",
+                    agent_role_val="member",
+                )
+                dev_instruction_result = cast(
+                    GetDeveloperInstructionSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                        params=dev_instruction_params,
+                    ),
+                )
+                if dev_instruction_result and dev_instruction_result.template:
+                    # Render Jinja template with user_instructions if provided
+                    template = Template(dev_instruction_result.template)
+                    developer_message_content = template.render(
+                        user_instructions=data.user_instructions
+                        if data.user_instructions
+                        else ""
+                    )
+                    if developer_message_content:
+                        developer_message: TResponseInputItem = {
+                            "role": "developer",
+                            "content": developer_message_content,
+                        }
+                        input_items.append(developer_message)
+
+                        # Link developer message to run
+                        try:
+                            link_params = LinkDeveloperMessageToRunSqlParams(
+                                content=developer_message_content,
+                                run_id=model_run_id,
+                            )
+                            await execute_sql_typed(
+                                conn,
+                                "app/sql/v4/simulations/link_developer_message_to_run_complete.sql",
+                                params=link_params,
+                            )
+                        except Exception:
+                            # Log error but continue - message is already in input_items
+                            pass
+            except Exception:
+                # No developer instruction configured - continue without it
+                pass
 
             # Get member agent ID
             member_agent_id = context["agent_id"]

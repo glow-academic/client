@@ -28,6 +28,7 @@ from app.sql.types import (
     GetScenarioRegenerationRunContextAndCreateRunSqlParams,
     GetScenarioRegenerationRunContextAndCreateRunSqlRow,
 )
+from app.utils.schema_helper import get_schema_tree
 
 internal_sio = get_internal_sio()
 SQL_PATH = "app/sql/v4/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"
@@ -334,7 +335,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         "file_path": doc.file_path,
                         "mime_type": doc.mime_type,
                         "template": doc.template,
-                        "template_args": doc.template_args,
+                        "schema_id": str(doc.schema_id) if doc.schema_id else None,
                     }
                     for doc in documents
                 ],
@@ -351,7 +352,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     {
                         "document_id": dt.document_id,
                         "document_name": dt.document_name,
-                        "template_args": dt.template_args,
+                        "schema_id": str(dt.schema_id) if dt.schema_id else None,
                         "template_upload_id": dt.template_upload_id,
                     }
                     for dt in document_templates

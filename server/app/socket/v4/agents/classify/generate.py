@@ -38,7 +38,10 @@ from app.sql.types import (
     LinkSystemDeveloperMessagesToRunSqlRow,
     LinkDeveloperMessageToRunSqlParams,
     LinkDeveloperMessageToRunSqlRow,
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
 )
+from jinja2 import Template
 
 internal_sio = get_internal_sio()
 
@@ -443,8 +446,31 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 ]
             )
 
-            # Create input for agent
-            agent_input = f"""You need to classify the following files by matching them to appropriate parameter items.
+            # Get developer instruction template from database
+            agent_input: str | None = None
+            try:
+                classify_instruction_params = GetDeveloperInstructionSqlParams(
+                    instruction_type="classify",
+                    agent_role_val="classify",
+                )
+                classify_instruction_result = cast(
+                    GetDeveloperInstructionSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                        params=classify_instruction_params,
+                    ),
+                )
+                if classify_instruction_result and classify_instruction_result.template:
+                    # Render Jinja template with file and parameter context
+                    template = Template(classify_instruction_result.template)
+                    agent_input = template.render(
+                        file_list_text=file_list_text,
+                        parameter_items_text=parameter_items_text,
+                    )
+            except Exception:
+                # Fallback to hardcoded message if developer instruction not found
+                agent_input = f"""You need to classify the following files by matching them to appropriate parameter items.
 
 Files:
 {file_list_text}
@@ -459,7 +485,7 @@ Use the provided classification tools to indicate which files match each paramet
             # Run classification agent
             # Convert to developer message (non-simulation handlers use developer, not user)
             input_items: list[TResponseInputItem] = [
-                {"role": "developer", "content": agent_input}
+                {"role": "developer", "content": agent_input or ""}
             ]  # type: ignore[assignment]
 
             # Log system and developer messages for this run

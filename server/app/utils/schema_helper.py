@@ -1,0 +1,296 @@
+"""Schema helper utilities for working with normalized schema system.
+
+Provides functions to:
+- Get schema with fields (including nested arrays)
+- Build schema tree structure compatible with template schema format
+- Get template schema
+- Create schemas from dict structures
+- Validate data against schemas
+"""
+
+import uuid
+from typing import Any
+
+import asyncpg
+
+from utils.sql_helper import execute_sql_typed, load_sql
+
+
+async def get_schema_with_fields(
+    conn: asyncpg.Connection, schema_id: uuid.UUID
+) -> list[dict[str, Any]]:
+    """Get schema fields for a given schema_id.
+
+    Calls api_get_schema_with_fields_v4 SQL function to get all fields
+    including nested array fields via schema_field_items.
+
+    Args:
+        conn: Database connection
+        schema_id: UUID of the schema
+
+    Returns:
+        List of field dictionaries with keys: schema_id, field_id, field_name,
+        field_type, required, position, item_schema_id
+    """
+    # Call function directly since it returns multiple rows
+    rows = await conn.fetch(
+        "SELECT * FROM api_get_schema_with_fields_v4($1)",
+        schema_id,
+    )
+
+    # Convert rows to list of dicts
+    fields: list[dict[str, Any]] = []
+    for row in rows:
+        field_dict = {
+            "schema_id": uuid.UUID(row["schema_id"]) if row["schema_id"] else None,
+            "field_id": uuid.UUID(row["field_id"]) if row["field_id"] else None,
+            "field_name": row["field_name"],
+            "field_type": row["field_type"],
+            "required": row["required"],
+            "position": row["position"],
+            "item_schema_id": uuid.UUID(row["item_schema_id"])
+            if row["item_schema_id"]
+            else None,
+        }
+        fields.append(field_dict)
+
+    return fields
+
+
+async def get_schema_tree(
+    conn: asyncpg.Connection, schema_id: uuid.UUID
+) -> dict[str, Any]:
+    """Recursively build complete schema tree including nested arrays.
+
+    Returns structure compatible with existing template schema format:
+    {
+        "fields": [
+            {
+                "name": "field_name",
+                "type": "string" | "number" | "boolean" | "array",
+                "required": true/false,
+                "description": "...",
+                "placeholder": "...",
+                "item": {  # Only for array type
+                    "fields": [...]
+                }
+            }
+        ]
+    }
+
+    Args:
+        conn: Database connection
+        schema_id: UUID of the schema
+
+    Returns:
+        Dictionary with "fields" key containing list of field definitions
+    """
+    fields_list = await get_schema_with_fields(conn, schema_id)
+
+    # Group fields by schema_id (for nested arrays)
+    schema_fields_map: dict[uuid.UUID, list[dict[str, Any]]] = {}
+    for field in fields_list:
+        schema_id_val = field["schema_id"]
+        if schema_id_val not in schema_fields_map:
+            schema_fields_map[schema_id_val] = []
+        schema_fields_map[schema_id_val].append(field)
+
+    async def build_field_dict(field: dict[str, Any]) -> dict[str, Any]:
+        """Build field dictionary, recursively handling array items."""
+        field_dict: dict[str, Any] = {
+            "name": field["field_name"],
+            "type": field["field_type"],
+            "required": field["required"],
+        }
+
+        # If array type, recursively build item schema
+        if field["field_type"] == "array" and field["item_schema_id"]:
+            item_schema_id = field["item_schema_id"]
+            item_fields = await get_schema_with_fields(conn, item_schema_id)
+            item_field_dicts = [await build_field_dict(f) for f in item_fields]
+            field_dict["item"] = {"fields": item_field_dicts}
+
+        return field_dict
+
+    # Build field dictionaries for root schema
+    root_fields = schema_fields_map.get(schema_id, [])
+    field_dicts = [await build_field_dict(f) for f in root_fields]
+
+    # Sort by position
+    field_dicts.sort(
+        key=lambda x: next(
+            (f["position"] for f in root_fields if f["field_name"] == x["name"]), 999
+        )
+    )
+
+    return {"fields": field_dicts}
+
+
+async def get_template_schema(
+    conn: asyncpg.Connection, template_id: uuid.UUID
+) -> dict[str, Any] | None:
+    """Get schema for a template via template_schemas junction.
+
+    Args:
+        conn: Database connection
+        template_id: UUID of the template
+
+    Returns:
+        Schema tree dictionary or None if template has no schema
+    """
+    # Call function directly since it returns a single row
+    row = await conn.fetchrow(
+        "SELECT * FROM api_get_template_schema_v4($1)",
+        template_id,
+    )
+
+    if not row or not row["schema_id"]:
+        return None
+
+    schema_id = uuid.UUID(row["schema_id"])
+
+    # Build schema tree
+    return await get_schema_tree(conn, schema_id)
+
+
+async def create_schema_from_dict(
+    conn: asyncpg.Connection, schema_dict: dict[str, Any]
+) -> uuid.UUID:
+    """Create schema and schema_fields records from dict structure.
+
+    Handles nested arrays via schema_field_items junction table.
+    The schema_dict should have the format:
+    {
+        "fields": [
+            {
+                "name": "field_name",
+                "type": "string" | "number" | "boolean" | "array",
+                "required": true/false,
+                "description": "...",  # Optional
+                "placeholder": "...",  # Optional
+                "item": {  # Only for array type
+                    "fields": [...]
+                }
+            }
+        ]
+    }
+
+    Args:
+        conn: Database connection
+        schema_dict: Dictionary with schema structure
+
+    Returns:
+        UUID of the created schema
+    """
+    # Create schema record
+    schema_id = uuid.uuid4()
+    await conn.execute(
+        """
+        INSERT INTO schemas (id, created_at, updated_at)
+        VALUES ($1, NOW(), NOW())
+        """,
+        schema_id,
+    )
+
+    # Create schema_fields records
+    fields = schema_dict.get("fields", [])
+    for position, field in enumerate(fields):
+        field_id = uuid.uuid4()
+        field_type = field["type"]
+        required = field.get("required", False)
+        description = field.get("description")
+        placeholder = field.get("placeholder")
+
+        # Insert schema_field
+        await conn.execute(
+            """
+            INSERT INTO schema_fields (
+                id, schema_id, name, field_type, required, position, description, placeholder,
+                created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            """,
+            field_id,
+            schema_id,
+            field["name"],
+            field_type,
+            required,
+            position,
+            description,
+            placeholder,
+        )
+
+        # If array type, recursively create item schema and link via schema_field_items
+        if field_type == "array" and "item" in field:
+            item_schema_id = await create_schema_from_dict(conn, field["item"])
+            await conn.execute(
+                """
+                INSERT INTO schema_field_items (
+                    schema_field_id, item_schema_id, created_at, updated_at
+                )
+                VALUES ($1, $2, NOW(), NOW())
+                """,
+                field_id,
+                item_schema_id,
+            )
+
+    return schema_id
+
+
+async def validate_schema_data(
+    data: dict[str, Any], schema_id: uuid.UUID, conn: asyncpg.Connection
+) -> bool:
+    """Validate data against schema.
+
+    Checks required fields, types, and nested structures.
+
+    Args:
+        data: Data dictionary to validate
+        schema_id: UUID of the schema to validate against
+        conn: Database connection
+
+    Returns:
+        True if valid, False otherwise
+    """
+    schema_tree = await get_schema_tree(conn, schema_id)
+    fields = schema_tree.get("fields", [])
+
+    # Check required fields
+    for field in fields:
+        if field.get("required") and field["name"] not in data:
+            return False
+
+        field_name = field["name"]
+        if field_name in data:
+            value = data[field_name]
+            field_type = field["type"]
+
+            # Type validation
+            if field_type == "string" and not isinstance(value, str):
+                return False
+            elif field_type == "number" and not isinstance(value, (int, float)):
+                return False
+            elif field_type == "boolean" and not isinstance(value, bool):
+                return False
+            elif field_type == "array":
+                if not isinstance(value, list):
+                    return False
+                # Validate array items if item schema exists
+                if "item" in field and value:
+                    item_schema_id = None
+                    # Get item_schema_id from database
+                    fields_list = await get_schema_with_fields(conn, schema_id)
+                    for f in fields_list:
+                        if f["field_name"] == field_name and f["item_schema_id"]:
+                            item_schema_id = f["item_schema_id"]
+                            break
+                    if item_schema_id:
+                        for item in value:
+                            if not isinstance(item, dict):
+                                return False
+                            if not await validate_schema_data(
+                                item, item_schema_id, conn
+                            ):
+                                return False
+
+    return True

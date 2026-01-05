@@ -28,6 +28,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.utils.schema_helper import create_schema_from_dict, get_template_schema
 
 # Types will be auto-generated from SQL introspection
 try:
@@ -94,7 +95,7 @@ except ImportError:
         document_id: uuid.UUID
         upload_id: uuid.UUID
         name: str
-        template_schema: str  # jsonb as string
+        schema_id: uuid.UUID
         active: bool
         run_id: uuid.UUID
 
@@ -597,17 +598,17 @@ async def _document_regenerate_impl(
 
                     # If documentId is provided, create template and link to document and run
                     if document_id:
-                        # template_schema is dynamic JSON, so we need json.dumps() for SQL function
-                        template_schema_jsonb = json.dumps(template_schema)
                         template_name = f"Template for {document_name or 'Document'}"
 
+                        # Create schema records from template_schema dict
+                        schema_id = await create_schema_from_dict(conn, template_schema)
+
                         # Create template and link to document and run using execute_sql_typed()
-                        # Note: template_schema_jsonb is passed as string, SQL function expects jsonb
                         create_template_params = CreateTemplateAndLinkSqlParams(
                             document_id=document_id,
                             upload_id=uuid.UUID(upload_id),
                             name=template_name,
-                            template_schema=template_schema_jsonb,  # jsonb parameter as string
+                            schema_id=schema_id,
                             active=True,
                             run_id=model_run_id,
                         )
@@ -624,34 +625,51 @@ async def _document_regenerate_impl(
                             template_id = template_result.template_id
 
                         # Fetch updated templates and build mapping from array
-                        sql_templates = load_sql(
-                            "app/sql/v4/documents/get_document_templates.sql"
-                        )
-                        template_rows = await conn.fetch(
-                            sql_templates, str(document_id)
+                        from app.sql.types import (
+                            GetDocumentTemplatesSqlParams,
+                            GetDocumentTemplatesSqlRow,
                         )
 
-                        # Build mapping from array
+                        template_params = GetDocumentTemplatesSqlParams(
+                            document_id=document_id
+                        )
+                        template_result_list = cast(
+                            GetDocumentTemplatesSqlRow,
+                            await execute_sql_typed(
+                                conn,
+                                "app/sql/v4/documents/get_document_templates_complete.sql",
+                                params=template_params,
+                            ),
+                        )
+
+                        # Build mapping from array (now using schema_id instead of template_args)
                         template_mapping = {}
-                        for row in template_rows:
-                            upload_id_str = str(row["upload_id"])
-                            # template_args is jsonb from database, convert to dict if needed
-                            template_args = row["template_args"]
-                            if isinstance(template_args, str):
-                                template_args = json.loads(template_args)
-                            elif not isinstance(template_args, dict):
-                                template_args = {}
-                            template_mapping[upload_id_str] = {
-                                "template_id": str(row["template_id"]),
-                                "template_args": template_args,
-                                "active": row["active"],
-                                "created_at": row["created_at"].isoformat()
-                                if row["created_at"]
-                                else None,
-                                "updated_at": row["updated_at"].isoformat()
-                                if row["updated_at"]
-                                else None,
-                            }
+                        if (
+                            hasattr(template_result_list, "templates")
+                            and template_result_list.templates
+                        ):
+                            for template in template_result_list.templates:
+                                upload_id_str = (
+                                    str(template.upload_id)
+                                    if template.upload_id
+                                    else ""
+                                )
+                                schema_id_str = (
+                                    str(template.schema_id)
+                                    if template.schema_id
+                                    else None
+                                )
+                                template_mapping[upload_id_str] = {
+                                    "template_id": str(template.template_id),
+                                    "schema_id": schema_id_str,
+                                    "active": template.active,
+                                    "created_at": template.created_at.isoformat()
+                                    if template.created_at
+                                    else None,
+                                    "updated_at": template.updated_at.isoformat()
+                                    if template.updated_at
+                                    else None,
+                                }
 
                 if document_id:
                     # Invalidate documents cache

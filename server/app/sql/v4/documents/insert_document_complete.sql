@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION api_insert_document_v4(
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     field_ids uuid[] DEFAULT ARRAY[]::uuid[],
     template_upload_id uuid DEFAULT NULL,
-    template_args jsonb DEFAULT NULL
+    schema_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     document_id text,
@@ -81,22 +81,25 @@ create_or_get_template AS (
     SELECT 
         name as name,
         template_upload_id,
-        COALESCE(template_args, '{}'::jsonb),
+        '{}'::jsonb,  -- Empty args, schema stored separately
         NOW(),
         NOW()
     WHERE template_upload_id IS NOT NULL
       AND NOT EXISTS (
           SELECT 1 FROM templates t 
-          WHERE t.upload_id = template_upload_id AND t.args = COALESCE(template_args, '{}'::jsonb)
+          JOIN template_schemas ts ON ts.template_id = t.id
+          WHERE t.upload_id = template_upload_id 
+            AND ts.schema_id = COALESCE(schema_id, ts.schema_id)
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists
-    SELECT id as template_id
-    FROM templates
-    WHERE upload_id = template_upload_id 
-      AND args = COALESCE(template_args, '{}'::jsonb)
+    -- Get existing template if it exists (matching upload_id and schema_id)
+    SELECT t.id as template_id
+    FROM templates t
+    LEFT JOIN template_schemas ts ON ts.template_id = t.id
+    WHERE t.upload_id = template_upload_id 
+      AND (schema_id IS NULL OR ts.schema_id = schema_id)
     LIMIT 1
 ),
 template_id AS (
@@ -105,6 +108,19 @@ template_id AS (
     SELECT template_id FROM get_existing_template
     WHERE template_upload_id IS NOT NULL
     LIMIT 1
+),
+link_template_schema AS (
+    -- Link template to schema via template_schemas junction table
+    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    SELECT 
+        ti.template_id,
+        schema_id,
+        NOW(),
+        NOW()
+    FROM template_id ti
+    WHERE schema_id IS NOT NULL
+    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+        updated_at = NOW()
 ),
 insert_template_link AS (
     -- Link template to document if template_id is available

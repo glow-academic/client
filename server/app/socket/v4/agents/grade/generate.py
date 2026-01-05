@@ -32,7 +32,11 @@ from app.main import get_internal_sio, sio
 from app.sql.types import (
     GetGradingRunContextAndCreateRunSqlParams,
     GetGradingRunContextAndCreateRunSqlRow,
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
+    LinkDeveloperMessageToRunSqlParams,
 )
+from jinja2 import Template
 
 internal_sio = get_internal_sio()
 
@@ -458,9 +462,34 @@ async def _simulation_grading_start_impl(
 
             rubric_string = "\n".join(rubric_lines)
 
+            # Get developer instruction template for rubric from database
+            rubric_message_content: str | None = None
+            try:
+                rubric_instruction_params = GetDeveloperInstructionSqlParams(
+                    instruction_type="grade_rubric",
+                    agent_role_val="grade",
+                )
+                rubric_instruction_result = cast(
+                    GetDeveloperInstructionSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                        params=rubric_instruction_params,
+                    ),
+                )
+                if rubric_instruction_result and rubric_instruction_result.template:
+                    # Render Jinja template with rubric_string context
+                    template = Template(rubric_instruction_result.template)
+                    rubric_message_content = template.render(
+                        rubric_string=rubric_string
+                    )
+            except Exception:
+                # Fallback to hardcoded message if developer instruction not found
+                rubric_message_content = f"You are evaluating a conversation based on the following rubric. Please provide scores (1-5) and feedback for each criterion.\n\n{rubric_string}"
+
             rubric_input = {
                 "role": "developer",
-                "content": f"You are evaluating a conversation based on the following rubric. Please provide scores (1-5) and feedback for each criterion.\n\n{rubric_string}",
+                "content": rubric_message_content or "",
             }
 
             # get the time limit from the simulation
@@ -496,22 +525,73 @@ async def _simulation_grading_start_impl(
                 secs = seconds % 60
                 return f"{minutes} min {secs} sec" if minutes > 0 else f"{secs} sec"
 
-            # create time message
-            time_message: TResponseInputItem
-            if adjusted_time_limit > 0:
-                time_message = {
-                    "role": "developer",
-                    "content": f"The adjusted time limit for this chat is {format_minutes(adjusted_time_limit)}. The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
-                }
-            else:
-                time_message = {
-                    "role": "developer",
-                    "content": f"The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
-                }
+            # Get developer instruction template for time limit from database
+            time_message_content: str | None = None
+            try:
+                time_instruction_params = GetDeveloperInstructionSqlParams(
+                    instruction_type="grade_time",
+                    agent_role_val="grade",
+                )
+                time_instruction_result = cast(
+                    GetDeveloperInstructionSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                        params=time_instruction_params,
+                    ),
+                )
+                if time_instruction_result and time_instruction_result.template:
+                    # Render Jinja template with time context
+                    template = Template(time_instruction_result.template)
+                    time_message_content = template.render(
+                        adjusted_time_limit=format_minutes(adjusted_time_limit)
+                        if adjusted_time_limit > 0
+                        else None,
+                        actual_time_taken=format_minutes(actual_time_taken),
+                        has_time_limit=adjusted_time_limit > 0,
+                    )
+            except Exception:
+                # Fallback to hardcoded message if developer instruction not found
+                if adjusted_time_limit > 0:
+                    time_message_content = f"The adjusted time limit for this chat is {format_minutes(adjusted_time_limit)}. The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric."
+                else:
+                    time_message_content = f"The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric."
 
-            # add rubric to beginning of input_items
+            # create time message
+            time_message: TResponseInputItem = {
+                "role": "developer",
+                "content": time_message_content or "",
+            }
+
+            # add rubric and time messages to beginning of input_items
             input_items.insert(0, time_message)
             input_items.insert(0, rubric_input)  # type: ignore[arg-type]
+
+            # Link developer messages to run
+            try:
+                if rubric_message_content:
+                    rubric_link_params = LinkDeveloperMessageToRunSqlParams(
+                        content=rubric_message_content,
+                        run_id=model_run_id,
+                    )
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/simulations/link_developer_message_to_run_complete.sql",
+                        params=rubric_link_params,
+                    )
+                if time_message_content:
+                    time_link_params = LinkDeveloperMessageToRunSqlParams(
+                        content=time_message_content,
+                        run_id=model_run_id,
+                    )
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/simulations/link_developer_message_to_run_complete.sql",
+                        params=time_link_params,
+                    )
+            except Exception:
+                # Log error but continue - messages are already in input_items
+                pass
 
             # Create wrapper for emit_progress that captures chat_id
             async def emit_progress_wrapper(event_data: dict[str, Any]) -> None:

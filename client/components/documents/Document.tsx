@@ -189,13 +189,15 @@ export default function Document({
     null
   );
   // Build templateMapping from templates array (composite types - no JSONB)
+  // Note: templates now use schema_id, but we keep template_args for backward compatibility during migration
   const templateMapping = useMemo(() => {
     if (!isEditMode || !documentDetail?.templates) return {};
     const mapping: Record<
       string,
       {
         template_id: string;
-        template_args: Record<string, unknown>;
+        schema_id: string | null;
+        template_schema: TemplateSchema | null;
         active: boolean;
         created_at: string;
         updated_at: string;
@@ -203,11 +205,21 @@ export default function Document({
     > = {};
     documentDetail.templates.forEach((template) => {
       if (template.template_id) {
+        // Use template_schema from documentDetail if available, otherwise fall back to template_args
+        // Note: template_schema is added dynamically by the API, so we need type assertion
+        const docDetail = documentDetail as DocumentDetailOut & { template_schema?: TemplateSchema | null };
+        const templateWithArgs = template as typeof template & { template_args?: TemplateSchema | null };
+        let templateSchema: TemplateSchema | null = null;
+        if (docDetail.template_schema && isTemplateSchema(docDetail.template_schema)) {
+          templateSchema = docDetail.template_schema;
+        } else if (templateWithArgs.template_args && isTemplateSchema(templateWithArgs.template_args)) {
+          templateSchema = templateWithArgs.template_args;
+        }
+        
         mapping[template.template_id] = {
           template_id: template.template_id,
-          template_args:
-            (template.template_args as Record<string, unknown>) ||
-            ({} as Record<string, unknown>),
+          schema_id: template.schema_id || null,
+          template_schema: templateSchema,
           active: template.active ?? false,
           created_at: template.created_at || "",
           updated_at: template.updated_at || "",
@@ -215,7 +227,7 @@ export default function Document({
       }
     });
     return mapping;
-  }, [isEditMode, documentDetail?.templates]);
+  }, [isEditMode, documentDetail]);
   const [clientRenderedHtml, setClientRenderedHtml] = useState<string | null>(
     renderedHtml
   );
@@ -746,15 +758,24 @@ export default function Document({
     // If we have a selected template ID and it's in the mapping, use that schema
     if (selectedTemplateId && templateMapping[selectedTemplateId]) {
       const selectedTemplateSchema =
-        templateMapping[selectedTemplateId].template_args;
-      if (isTemplateSchema(selectedTemplateSchema)) {
+        templateMapping[selectedTemplateId].template_schema;
+      if (selectedTemplateSchema && isTemplateSchema(selectedTemplateSchema)) {
         return selectedTemplateSchema;
       }
     }
 
-    // Otherwise, use documentDetail template_args in edit mode, or templateSchema state
-    if (isEditMode && documentDetail?.template_args) {
-      const templateArgs = documentDetail.template_args;
+    // Otherwise, use documentDetail template_schema in edit mode, or templateSchema state
+    // Note: template_schema is added dynamically by the API, so we need type assertion
+    const docDetail = documentDetail as DocumentDetailOut & { template_schema?: TemplateSchema | null; template_args?: TemplateSchema | null };
+    if (isEditMode && docDetail?.template_schema) {
+      const templateSchemaData = docDetail.template_schema;
+      if (isTemplateSchema(templateSchemaData)) {
+        return templateSchemaData;
+      }
+    }
+    // Fallback to template_args for backward compatibility
+    if (isEditMode && docDetail?.template_args) {
+      const templateArgs = docDetail.template_args;
       if (isTemplateSchema(templateArgs)) {
         return templateArgs;
       }
@@ -764,7 +785,7 @@ export default function Document({
     selectedTemplateId,
     templateMapping,
     isEditMode,
-    documentDetail?.template_args,
+    documentDetail,
     templateSchema,
   ]);
   const templateHtmlForDisplay =
@@ -1459,9 +1480,9 @@ export default function Document({
     // Enable template mode when switching to a template
     setIsTemplateMode(true);
 
-    // Parse template schema from template_args
-    const schema = template.template_args;
-    if (isTemplateSchema(schema)) {
+    // Parse template schema from template_schema or template_args (backward compatibility)
+    const schema = template.template_schema || (template as any).template_args;
+    if (schema && isTemplateSchema(schema)) {
       setTemplateSchema(schema);
       // Initialize template args to empty object for the new template
       // User will fill in the values via the form
@@ -1549,7 +1570,9 @@ export default function Document({
 
       setIsSubmitting(true);
       try {
-        const updateBody: UpdateDocumentBody = {
+        // Note: template_args contains the actual values, not the schema
+        // The API still expects template_args for backward compatibility
+        const updateBody = {
           document_id: documentId,
           name: (formData["name"] as string) || "",
           description: (formData["description"] as string) || "",
@@ -1572,7 +1595,7 @@ export default function Document({
                   templateSchemaForDisplay
                 ) as Record<string, unknown> | null)
               : null,
-        };
+        } as UpdateDocumentBody & { template_args?: Record<string, unknown> | null };
         await updateDocumentAction({ body: updateBody });
 
         toast.success("Document updated successfully");
@@ -2632,7 +2655,10 @@ export default function Document({
                                   getSearchText={(item) => {
                                     if (!item.updated_at) return "Template";
                                     const date = new Date(item.updated_at);
-                                    const schema = item.template_args;
+                                    // Use template_schema from mapping if available, otherwise template_args
+                                    const template = templateMapping[item.template_id || ""];
+                                    const itemWithArgs = item as typeof item & { template_args?: TemplateSchema | null };
+                                    const schema = template?.template_schema || itemWithArgs.template_args;
                                     const preview =
                                       schema &&
                                       typeof schema === "object" &&
@@ -2665,7 +2691,10 @@ export default function Document({
                                       );
                                     }
                                     const date = new Date(item.updated_at);
-                                    const schema = item.template_args;
+                                    // Use template_schema from mapping if available, otherwise template_args
+                                    const template = templateMapping[item.template_id || ""];
+                                    const itemWithArgs = item as typeof item & { template_args?: TemplateSchema | null };
+                                    const schema = template?.template_schema || itemWithArgs.template_args;
                                     const preview =
                                       schema &&
                                       typeof schema === "object" &&

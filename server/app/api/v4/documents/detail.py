@@ -13,6 +13,7 @@ from utils.sql_helper import execute_sql_typed
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db
+from app.utils.schema_helper import get_schema_tree
 from app.sql.types import (
     GetDocumentDetailApiRequest,
     GetDocumentDetailApiResponse,
@@ -30,7 +31,8 @@ router = APIRouter()
 
 @router.post(
     "/detail",
-    response_model=GetDocumentDetailApiResponse,
+    # Note: response_model removed to allow template_schema field
+    # Response includes template_schema which is added in Python, not SQL
     dependencies=[
         audit_activity(
             "document.viewed", "{{ actor.name }} viewed document '{{ document.name }}'"
@@ -42,7 +44,7 @@ async def get_document_detail(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetDocumentDetailApiResponse:
+) -> dict[str, Any]:
     """Get document detail information."""
     tags = ["documents"]  # From router tags
 
@@ -55,7 +57,7 @@ async def get_document_detail(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return GetDocumentDetailApiResponse.model_validate(cached["data"])
+        return cached["data"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -122,12 +124,31 @@ async def get_document_detail(
                 # If reading fails, template_html will remain None
                 pass
 
+        # Get schema tree if schema_id is present
+        template_schema: dict[str, Any] | None = None
+        if result.schema_id:
+            try:
+                template_schema = await get_schema_tree(conn, result.schema_id)
+            except Exception:
+                # If schema fetch fails, template_schema will remain None
+                pass
+
         # Convert SQL result to API response
-        # Update template_html from file system
+        # Update template_html from file system and template_schema from schema_id
         response_dict = result.model_dump()
         if template_html is not None:
             response_dict["template_html"] = template_html
         api_response = GetDocumentDetailApiResponse.model_validate(response_dict)
+
+        # Add template_schema to response if available
+        # Note: template_schema is not in the auto-generated response type, so we add it as a dict
+        # FastAPI will serialize the dict correctly
+        api_response_dict = api_response.model_dump(mode="json")
+        if template_schema is not None:
+            api_response_dict["template_schema"] = template_schema
+
+        # Return dict - FastAPI will serialize it correctly
+        return api_response_dict
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

@@ -18,6 +18,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from jinja2 import Template
 
 # Types will be auto-generated from SQL introspection
 try:
@@ -28,6 +29,9 @@ try:
         CreateHintsSqlRow,
         GetSimulationMessagesSqlParams,
         GetSimulationMessagesSqlRow,
+        GetDeveloperInstructionSqlParams,
+        GetDeveloperInstructionSqlRow,
+        LinkDeveloperMessageToRunSqlParams,
     )
 except ImportError:
     # Types not generated yet - will be created when SQL files are processed
@@ -314,18 +318,55 @@ async def _hint_regenerate_impl(
             chat_scenario = format_chat_scenario(context["problem_statement"])
             input_items.append(chat_scenario)
 
-            # Add developer message with user instructions on top
-            if user_instructions and user_instructions.strip():
+            # Get developer instruction template from database
+            developer_message_content: str | None = None
+            try:
+                dev_instruction_params = GetDeveloperInstructionSqlParams(
+                    instruction_type="hint",
+                    agent_role_val="hint",
+                )
+                dev_instruction_result = cast(
+                    GetDeveloperInstructionSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                        params=dev_instruction_params,
+                    ),
+                )
+                if dev_instruction_result and dev_instruction_result.template:
+                    # Render Jinja template with user_instructions if provided
+                    template = Template(dev_instruction_result.template)
+                    developer_message_content = template.render(
+                        user_instructions=user_instructions if user_instructions else ""
+                    )
+            except Exception:
+                # Fallback to hardcoded message if developer instruction not found
+                if user_instructions and user_instructions.strip():
+                    developer_message_content = f"Now please regenerate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student (e.g., content explanation, emotional support, pedagogical approach).\n\nUser Instructions: {user_instructions}"
+                else:
+                    developer_message_content = "Now please regenerate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student (e.g., content explanation, emotional support, pedagogical approach)."
+
+            if developer_message_content:
                 developer_message: TResponseInputItem = {
                     "role": "developer",
-                    "content": f"Now please regenerate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student (e.g., content explanation, emotional support, pedagogical approach).\n\nUser Instructions: {user_instructions}",
+                    "content": developer_message_content,
                 }
-            else:
-                developer_message: TResponseInputItem = {
-                    "role": "developer",
-                    "content": "Now please regenerate the hints based on the previous conversation. You must call the create_hint tool at least 3 times to provide short, concise guidance for the GTA. Each hint should be distinct and focused on different aspects of helping the student (e.g., content explanation, emotional support, pedagogical approach).",
-                }
-            input_items.append(developer_message)
+                input_items.append(developer_message)
+
+                # Link developer message to run
+                try:
+                    link_params = LinkDeveloperMessageToRunSqlParams(
+                        content=developer_message_content,
+                        run_id=model_run_id,
+                    )
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/simulations/link_developer_message_to_run_complete.sql",
+                        params=link_params,
+                    )
+                except Exception:
+                    # Log error but continue - message is already in input_items
+                    pass
 
             # Build hint agent from context
             profile_id_str = context.get("profile_id")
