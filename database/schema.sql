@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict LBtUD3JyUoDeIYSiH1f3N8X1s5zUCdgmUfIn1JQbYu8h8vsx9K0wYGwpkRdoSUP
+\restrict o0gA6JSHmSQV8o6dE30ukXnZFVblbpKnzMzHCgcGnPqQysgEe2jv4YewcmkcvOU
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -95,7 +95,8 @@ CREATE TYPE public.developer_instruction_type AS ENUM (
     'grade_rubric',
     'grade_time',
     'classify',
-    'member'
+    'member',
+    'document'
 );
 
 
@@ -135,16 +136,6 @@ CREATE TYPE public.feedback_type AS ENUM (
     'bug',
     'question',
     'other'
-);
-
-
---
--- Name: message_feedback_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.message_feedback_type AS ENUM (
-    'strength',
-    'improvement'
 );
 
 
@@ -553,6 +544,18 @@ CREATE TYPE types.i_document_regen_run_context_create_run_v4_msg AS (
 
 
 --
+-- Name: i_get_document_run_context_and_create_run_v4_field; Type: TYPE; Schema: types; Owner: -
+--
+
+CREATE TYPE types.i_get_document_run_context_and_create_run_v4_field AS (
+	item_name text,
+	item_description text,
+	param_name text,
+	param_description text
+);
+
+
+--
 -- Name: i_get_document_run_context_and_create_run_v4_pass_through; Type: TYPE; Schema: types; Owner: -
 --
 
@@ -565,6 +568,23 @@ CREATE TYPE types.i_get_document_run_context_and_create_run_v4_pass_through AS (
 
 
 --
+-- Name: i_get_document_run_context_and_create_run_v4_tool; Type: TYPE; Schema: types; Owner: -
+--
+
+CREATE TYPE types.i_get_document_run_context_and_create_run_v4_tool AS (
+	id uuid,
+	name text,
+	description text,
+	tool_type text,
+	agent_role text,
+	arguments jsonb,
+	argument_descriptions jsonb,
+	argument_defaults jsonb,
+	active boolean
+);
+
+
+--
 -- Name: i_get_hint_run_context_and_create_run_v4_document; Type: TYPE; Schema: types; Owner: -
 --
 
@@ -573,6 +593,21 @@ CREATE TYPE types.i_get_hint_run_context_and_create_run_v4_document AS (
 	name text,
 	file_path text,
 	mime_type text
+);
+
+
+--
+-- Name: i_get_messages_by_ids_v4_message; Type: TYPE; Schema: types; Owner: -
+--
+
+CREATE TYPE types.i_get_messages_by_ids_v4_message AS (
+	id uuid,
+	role text,
+	content text,
+	created_at timestamp with time zone,
+	completed boolean,
+	audio boolean,
+	upload_id uuid
 );
 
 
@@ -623,7 +658,7 @@ CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v4_docu
 	document_id text,
 	document_name text,
 	schema_id uuid,
-	template_upload_id text
+	html_id text
 );
 
 
@@ -664,7 +699,7 @@ CREATE TYPE types.i_get_scenario_run_context_and_create_run_v4_document_template
 	classify_agent_id text,
 	document_agent_id text,
 	schema_id uuid,
-	template_upload_id text,
+	html_id text,
 	template_file_path text
 );
 
@@ -678,6 +713,23 @@ CREATE TYPE types.i_get_scenario_run_context_and_create_run_v4_parameter_item AS
 	item_description text,
 	param_name text,
 	param_description text
+);
+
+
+--
+-- Name: i_get_text_run_context_and_create_run_v4_tool; Type: TYPE; Schema: types; Owner: -
+--
+
+CREATE TYPE types.i_get_text_run_context_and_create_run_v4_tool AS (
+	id uuid,
+	name text,
+	description text,
+	tool_type text,
+	agent_role text,
+	arguments jsonb,
+	argument_descriptions jsonb,
+	argument_defaults jsonb,
+	active boolean
 );
 
 
@@ -746,6 +798,17 @@ CREATE TYPE types.i_hint_regen_run_context_create_run_v4_document AS (
 CREATE TYPE types.i_hint_regen_run_context_create_run_v4_msg AS (
 	role text,
 	content text
+);
+
+
+--
+-- Name: i_hint_tool_complete_v4_hint_result; Type: TYPE; Schema: types; Owner: -
+--
+
+CREATE TYPE types.i_hint_tool_complete_v4_hint_result AS (
+	simulation_message_id uuid,
+	idx integer,
+	hint text
 );
 
 
@@ -5368,7 +5431,6 @@ CREATE TYPE types.q_get_simulation_attempt_v4_message_feedback AS (
 	id uuid,
 	name text,
 	description text,
-	type text,
 	replaces types.q_get_simulation_attempt_v4_message_feedback_replace[],
 	highlights types.q_get_simulation_attempt_v4_message_feedback_highlight[]
 );
@@ -9799,7 +9861,7 @@ $$;
 -- Name: api_create_document_v4(text, uuid, text, uuid, uuid[], uuid[], uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.api_create_document_v4(name text, profile_id uuid, description text DEFAULT ''::text, upload_id uuid DEFAULT NULL::uuid, department_ids uuid[] DEFAULT ARRAY[]::uuid[], parameter_item_ids uuid[] DEFAULT ARRAY[]::uuid[], template_upload_id uuid DEFAULT NULL::uuid, schema_id uuid DEFAULT NULL::uuid) RETURNS TABLE(success boolean, message text, document_id uuid, actor_name text)
+CREATE FUNCTION public.api_create_document_v4(name text, profile_id uuid, description text DEFAULT ''::text, upload_id uuid DEFAULT NULL::uuid, department_ids uuid[] DEFAULT ARRAY[]::uuid[], parameter_item_ids uuid[] DEFAULT ARRAY[]::uuid[], html_id uuid DEFAULT NULL::uuid, schema_id uuid DEFAULT NULL::uuid) RETURNS TABLE(success boolean, message text, document_id uuid, actor_name text)
     LANGUAGE sql
     AS $$
 WITH params AS (
@@ -9809,7 +9871,7 @@ WITH params AS (
         upload_id AS upload_id,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(parameter_item_ids, ARRAY[]::uuid[]) AS field_ids,
-        template_upload_id AS template_upload_id,
+        html_id AS html_id,
         schema_id AS schema_id,
         profile_id AS profile_id
 ),
@@ -9859,70 +9921,70 @@ insert_upload AS (
         active = true,
         updated_at = NOW()
 ),
-create_or_get_template AS (
-    -- Create or get template if template_upload_id is provided
-    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+create_template AS (
+    -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
+    INSERT INTO templates (name, created_at, updated_at)
     SELECT 
         p.name as name,
-        p.template_upload_id,
-        '{}'::jsonb,  -- Empty args, schema stored separately
         NOW(),
         NOW()
     FROM params p
     CROSS JOIN new_document_id ndi
-    WHERE p.template_upload_id IS NOT NULL
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM templates t 
-          JOIN template_schemas ts ON ts.template_id = t.id
-          WHERE t.upload_id = p.template_upload_id 
-            AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
+          SELECT 1 FROM document_templates dt
+          WHERE dt.html_id = p.html_id 
+            AND dt.schema_id = p.schema_id
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists (matching upload_id and schema_id)
-    SELECT t.id as template_id
+    -- Get existing template if it exists (matching html_id and schema_id via document_templates)
+    SELECT dt.template_id
     FROM params p
-    CROSS JOIN templates t
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
-    WHERE t.upload_id = p.template_upload_id 
-      AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
+    JOIN document_templates dt ON dt.html_id = p.html_id AND dt.schema_id = p.schema_id
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
     LIMIT 1
 ),
 template_id AS (
-    SELECT template_id FROM create_or_get_template
+    SELECT template_id FROM create_template
     UNION ALL
     SELECT template_id FROM get_existing_template
-    WHERE EXISTS (SELECT 1 FROM params WHERE template_upload_id IS NOT NULL)
+    WHERE EXISTS (SELECT 1 FROM params WHERE html_id IS NOT NULL AND schema_id IS NOT NULL)
     LIMIT 1
 ),
 link_template_schema AS (
-    -- Link template to schema via template_schemas junction table
-    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    -- Link template to schema via schema_templates junction table
+    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
     SELECT 
-        ti.template_id,
         p.schema_id,
+        ti.template_id,
         NOW(),
         NOW()
     FROM template_id ti
     CROSS JOIN params p
     WHERE p.schema_id IS NOT NULL
-    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+    ON CONFLICT (schema_id, template_id) DO UPDATE SET
         updated_at = NOW()
 ),
 insert_template_link AS (
-    -- Link template to document if template_id is available
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Link template to document with html_id and schema_id
+    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
     SELECT 
         ndi.document_id,
         ti.template_id,
+        p.html_id,
+        p.schema_id,
         true,
         NOW(),
         NOW()
     FROM template_id ti
     CROSS JOIN new_document_id ndi
-    WHERE EXISTS (SELECT 1 FROM params WHERE template_upload_id IS NOT NULL)
+    CROSS JOIN params p
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
     ON CONFLICT (document_id, template_id) DO UPDATE SET
+        html_id = EXCLUDED.html_id,
+        schema_id = EXCLUDED.schema_id,
         active = true,
         updated_at = NOW()
 ),
@@ -21388,7 +21450,7 @@ $$;
 -- Name: api_get_document_detail_v4(uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.api_get_document_detail_v4(document_id uuid, profile_id uuid, draft_id uuid DEFAULT NULL::uuid) RETURNS TABLE(document_exists boolean, document_id uuid, name text, description text, active boolean, type text, upload_id uuid, updated_at timestamp with time zone, extension text, scenario_ids uuid[], can_edit boolean, can_delete boolean, document_type_options text[], department_ids text[], valid_department_ids text[], departments types.q_get_document_detail_v4_department[], field_ids uuid[], valid_field_ids text[], fields types.q_get_document_detail_v4_field[], linked_parameter_ids text[], parameters types.q_get_document_detail_v4_parameter[], classify_agent_id uuid, document_agent_id uuid, agents types.q_get_document_detail_v4_agent[], valid_agent_ids text[], template boolean, template_id uuid, schema_id uuid, template_upload_id uuid, template_file_path text, template_html text, templates types.q_get_document_detail_v4_template[], actor_name text, draft_version integer)
+CREATE FUNCTION public.api_get_document_detail_v4(document_id uuid, profile_id uuid, draft_id uuid DEFAULT NULL::uuid) RETURNS TABLE(document_exists boolean, document_id uuid, name text, description text, active boolean, type text, upload_id uuid, updated_at timestamp with time zone, extension text, scenario_ids uuid[], can_edit boolean, can_delete boolean, document_type_options text[], department_ids text[], valid_department_ids text[], departments types.q_get_document_detail_v4_department[], field_ids uuid[], valid_field_ids text[], fields types.q_get_document_detail_v4_field[], linked_parameter_ids text[], parameters types.q_get_document_detail_v4_parameter[], classify_agent_id uuid, document_agent_id uuid, agents types.q_get_document_detail_v4_agent[], valid_agent_ids text[], template boolean, template_id uuid, schema_id uuid, html_id uuid, template_file_path text, template_html text, templates types.q_get_document_detail_v4_template[], actor_name text, draft_version integer)
     LANGUAGE sql STABLE
     AS $_$
 WITH params AS (
@@ -21425,14 +21487,15 @@ document_data AS (
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT t.upload_id FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_upload_id,
-        (SELECT ts.schema_id FROM document_templates dt JOIN template_schemas ts ON ts.template_id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as schema_id,
+        (SELECT dt.html_id FROM document_templates dt WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as html_id,
+        (SELECT dt.schema_id FROM document_templates dt WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as schema_id,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
         (SELECT u.file_path FROM document_templates dt
-         JOIN templates t ON t.id = dt.template_id
-         JOIN uploads u ON u.id = t.upload_id 
+         JOIN html h ON h.id = dt.html_id
+         JOIN html_uploads hu ON hu.html_id = h.id
+         JOIN uploads u ON u.id = hu.upload_id 
          WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_file_path,
         d.template,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id) FROM scenario_documents sd
@@ -21446,29 +21509,25 @@ document_data AS (
 document_active_template AS (
     SELECT 
         dt.document_id,
-        t.id as template_id,
-        ts.schema_id,
+        dt.template_id,
+        dt.schema_id,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id AND dt.active = true
-    JOIN templates t ON t.id = dt.template_id
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
     ORDER BY dt.created_at DESC
     LIMIT 1
 ),
 document_all_templates AS (
     SELECT 
         dt.document_id,
-        t.id as template_id,
-        ts.schema_id,
+        dt.template_id,
+        dt.schema_id,
         dt.active as template_active,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id
-    JOIN templates t ON t.id = dt.template_id
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
 ),
 user_profile AS (
     SELECT 
@@ -21746,7 +21805,7 @@ SELECT
     dd.template::boolean as template,
     dat.template_id::uuid as template_id,
     dat.schema_id::uuid as schema_id,
-    dd.template_upload_id::uuid as template_upload_id,
+    dd.html_id::uuid as html_id,
     dd.template_file_path::text as template_file_path,
     NULL::text as template_html,  -- Will be populated in Python from file system
     -- Aggregate templates separately
@@ -21777,16 +21836,16 @@ CREATE FUNCTION public.api_get_document_template_info_v4(parent_document_id uuid
     AS $$
 SELECT 
     u.file_path,
-    ts.schema_id,
+    dt.schema_id,
     d.classify_agent_id::text,
     d.document_agent_id::text,
     d.name,
     d.description
 FROM documents d
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-INNER JOIN templates t ON t.id = dt.template_id
-INNER JOIN uploads u ON u.id = t.upload_id
-LEFT JOIN template_schemas ts ON ts.template_id = t.id
+INNER JOIN html h ON h.id = dt.html_id
+INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+INNER JOIN uploads u ON u.id = hu.upload_id
 WHERE d.id = parent_document_id
 ORDER BY dt.created_at DESC
 LIMIT 1
@@ -21797,19 +21856,17 @@ $$;
 -- Name: api_get_document_templates_v4(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.api_get_document_templates_v4(document_id uuid) RETURNS TABLE(upload_id uuid, template_id uuid, schema_id uuid, active boolean, created_at timestamp with time zone, updated_at timestamp with time zone)
+CREATE FUNCTION public.api_get_document_templates_v4(document_id uuid) RETURNS TABLE(html_id uuid, template_id uuid, schema_id uuid, active boolean, created_at timestamp with time zone, updated_at timestamp with time zone)
     LANGUAGE sql STABLE
     AS $$
 SELECT
-    t.upload_id,
-    t.id as template_id,
-    ts.schema_id,
+    dt.html_id,
+    dt.template_id,
+    dt.schema_id,
     dt.active,
     dt.created_at,
     dt.updated_at
 FROM document_templates dt
-JOIN templates t ON t.id = dt.template_id
-LEFT JOIN template_schemas ts ON ts.template_id = t.id
 WHERE dt.document_id = document_id
 ORDER BY dt.created_at DESC
 $$;
@@ -39897,8 +39954,9 @@ all_documents_array AS (
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-    LEFT JOIN templates t ON t.id = dt.template_id
-    LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+    LEFT JOIN html h ON h.id = dt.html_id
+    LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+    LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
     LEFT JOIN document_fields_data dfd ON dfd.document_id = d.id
     LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
 ),
@@ -40314,6 +40372,7 @@ all_document_details_array AS (
         COALESCE(u.file_path, template_u.file_path) as file_path,
         COALESCE(u.mime_type, template_u.mime_type) as mime_type,
         COALESCE(u.id, template_u.id) as upload_id,
+        dt.html_id as html_id,
         COALESCE((
             SELECT ARRAY_AGG(df.field_id)
             FROM document_fields df
@@ -40332,8 +40391,9 @@ all_document_details_array AS (
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-    LEFT JOIN templates t ON t.id = dt.template_id
-    LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+    LEFT JOIN html h ON h.id = dt.html_id
+    LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+    LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
     LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
     WHERE (
         d.id IN (SELECT id FROM document_data)
@@ -41873,25 +41933,37 @@ grades_data AS (
     ORDER BY c.id, scg.created_at DESC
 ),
 message_feedbacks_data AS (
+    -- Strengths with highlights
     SELECT 
-        mf.message_id,
-        mf.grade_id,
-        (mf.id, mf.name, mf.description, mf.type::text,
-         COALESCE(
-             (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_message_feedback_replace ORDER BY mfr.idx)
-                        FROM message_feedback_replace mfr
-                        WHERE mfr.message_feedback_id = mf.id),
-             '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[]
-         ),
+        mfs.message_id,
+        mfs.grade_id,
+        (mfs.id, mfs.name, mfs.description,
+         '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[],
          COALESCE(
              (SELECT ARRAY_AGG((mfh.section)::types.q_get_simulation_attempt_v4_message_feedback_highlight ORDER BY mfh.idx)
                         FROM message_feedback_highlight mfh
-                        WHERE mfh.message_feedback_id = mf.id),
+                        WHERE mfh.message_feedback_id = mfs.id),
              '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
-                    )
+         )
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
-    FROM message_feedbacks mf
-    WHERE mf.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    FROM message_feedback_strengths mfs
+    WHERE mfs.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    UNION ALL
+    -- Improvements with replaces
+    SELECT 
+        mfi.message_id,
+        mfi.grade_id,
+        (mfi.id, mfi.name, mfi.description,
+         COALESCE(
+             (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_message_feedback_replace ORDER BY mfr.idx)
+                        FROM message_feedback_replace mfr
+                        WHERE mfr.message_feedback_id = mfi.id),
+             '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[]
+         ),
+         '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
+        )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
+    FROM message_feedback_improvements mfi
+    WHERE mfi.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
 ),
 message_feedbacks_grouped AS (
     SELECT 
@@ -44795,9 +44867,9 @@ CREATE FUNCTION public.api_get_template_schema_v4(template_id uuid) RETURNS TABL
     LANGUAGE sql STABLE
     AS $$
 SELECT
-    ts.schema_id
-FROM template_schemas ts
-WHERE ts.template_id = template_id
+    st.schema_id
+FROM schema_templates st
+WHERE st.template_id = template_id
 LIMIT 1
 $$;
 
@@ -44851,9 +44923,8 @@ regular_document_upload AS (
     SELECT 
         du.document_id,
         d.template,
-        (SELECT ts.schema_id 
+        (SELECT dt.schema_id 
          FROM document_templates dt 
-         JOIN template_schemas ts ON ts.template_id = dt.template_id
          WHERE dt.document_id = d.id AND dt.active = true 
          ORDER BY dt.created_at DESC 
          LIMIT 1) as schema_id
@@ -44864,16 +44935,17 @@ regular_document_upload AS (
     LIMIT 1
 ),
 template_upload AS (
-    -- Case 2: Upload is a template upload (via document_templates → templates)
+    -- Case 2: Upload is a template upload (via document_templates → html → html_uploads)
     SELECT 
         dt.document_id,
         d.template,
-        ts.schema_id
-    FROM templates t
-    JOIN document_templates dt ON dt.template_id = t.id AND dt.active = true
+        dt.schema_id
+    FROM html_uploads hu
+    JOIN html h ON h.id = hu.html_id
+    JOIN document_templates dt ON dt.html_id = h.id AND dt.active = true
     JOIN documents d ON d.id = dt.document_id
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
-    WHERE t.upload_id = (SELECT upload_id FROM params)
+    WHERE hu.upload_id = (SELECT upload_id FROM params)
+      AND hu.active = true
     ORDER BY dt.created_at DESC
     LIMIT 1
 ),
@@ -44959,7 +45031,7 @@ $$;
 -- Name: api_insert_document_v4(uuid, text, uuid, text, uuid, uuid[], uuid[], uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.api_insert_document_v4(document_id uuid, name text, profile_id uuid, description text DEFAULT NULL::text, upload_id uuid DEFAULT NULL::uuid, department_ids uuid[] DEFAULT ARRAY[]::uuid[], field_ids uuid[] DEFAULT ARRAY[]::uuid[], template_upload_id uuid DEFAULT NULL::uuid, schema_id uuid DEFAULT NULL::uuid) RETURNS TABLE(document_id text, actor_name text)
+CREATE FUNCTION public.api_insert_document_v4(document_id uuid, name text, profile_id uuid, description text DEFAULT NULL::text, upload_id uuid DEFAULT NULL::uuid, department_ids uuid[] DEFAULT ARRAY[]::uuid[], field_ids uuid[] DEFAULT ARRAY[]::uuid[], html_id uuid DEFAULT NULL::uuid, schema_id uuid DEFAULT NULL::uuid) RETURNS TABLE(document_id text, actor_name text)
     LANGUAGE sql
     AS $$
 WITH user_profile AS (
@@ -45002,65 +45074,65 @@ insert_upload AS (
         active = true,
         updated_at = NOW()
 ),
-create_or_get_template AS (
-    -- Create or get template if template_upload_id is provided
-    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+create_template AS (
+    -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
+    INSERT INTO templates (name, created_at, updated_at)
     SELECT 
         name as name,
-        template_upload_id,
-        '{}'::jsonb,  -- Empty args, schema stored separately
         NOW(),
         NOW()
-    WHERE template_upload_id IS NOT NULL
+    WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM templates t 
-          JOIN template_schemas ts ON ts.template_id = t.id
-          WHERE t.upload_id = template_upload_id 
-            AND ts.schema_id = COALESCE(schema_id, ts.schema_id)
+          SELECT 1 FROM document_templates dt
+          WHERE dt.html_id = html_id 
+            AND dt.schema_id = schema_id
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists (matching upload_id and schema_id)
-    SELECT t.id as template_id
-    FROM templates t
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
-    WHERE t.upload_id = template_upload_id 
-      AND (schema_id IS NULL OR ts.schema_id = schema_id)
+    -- Get existing template if it exists (matching html_id and schema_id via document_templates)
+    SELECT dt.template_id
+    FROM document_templates dt
+    WHERE dt.html_id = html_id AND dt.schema_id = schema_id
+      AND html_id IS NOT NULL AND schema_id IS NOT NULL
     LIMIT 1
 ),
 template_id AS (
-    SELECT template_id FROM create_or_get_template
+    SELECT template_id FROM create_template
     UNION ALL
     SELECT template_id FROM get_existing_template
-    WHERE template_upload_id IS NOT NULL
+    WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
     LIMIT 1
 ),
 link_template_schema AS (
-    -- Link template to schema via template_schemas junction table
-    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    -- Link template to schema via schema_templates junction table
+    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
     SELECT 
-        ti.template_id,
         schema_id,
+        ti.template_id,
         NOW(),
         NOW()
     FROM template_id ti
     WHERE schema_id IS NOT NULL
-    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+    ON CONFLICT (schema_id, template_id) DO UPDATE SET
         updated_at = NOW()
 ),
 insert_template_link AS (
-    -- Link template to document if template_id is available
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Link template to document with html_id and schema_id
+    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
     SELECT 
         document_id,
         ti.template_id,
+        html_id,
+        schema_id,
         true,
         NOW(),
         NOW()
     FROM template_id ti
-    WHERE template_upload_id IS NOT NULL
+    WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
     ON CONFLICT (document_id, template_id) DO UPDATE SET
+        html_id = EXCLUDED.html_id,
+        schema_id = EXCLUDED.schema_id,
         active = true,
         updated_at = NOW()
 ),
@@ -48963,10 +49035,10 @@ $$;
 
 
 --
--- Name: api_log_run_v4(uuid, uuid, integer, integer, integer, integer, integer, integer, integer, text[], text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: api_log_run_v4(uuid, integer, integer, integer, integer, integer, integer, integer, uuid, text[], text); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.api_log_run_v4(run_id uuid, department_id uuid, input_text_tokens integer, input_audio_tokens integer, input_image_tokens integer, output_text_tokens integer, output_audio_tokens integer, cached_text_tokens integer, cached_audio_tokens integer, developer_contents text[], assistant_output text) RETURNS TABLE(success integer)
+CREATE FUNCTION public.api_log_run_v4(run_id uuid, input_text_tokens integer, input_audio_tokens integer, input_image_tokens integer, output_text_tokens integer, output_audio_tokens integer, cached_text_tokens integer, cached_audio_tokens integer, department_id uuid DEFAULT NULL::uuid, developer_contents text[] DEFAULT ARRAY[]::text[], assistant_output text DEFAULT NULL::text) RETURNS TABLE(success integer)
     LANGUAGE sql
     AS $$
 -- Complete log_run handler: token updates + message logging in single transaction
@@ -51308,7 +51380,7 @@ SELECT
     d.name::text as document_name,
     ap.actor_name::text as actor_name,
     u.file_path::text as file_path,
-    ts.schema_id,
+    dt.schema_id,
     -- Settings fields
     s.primary_color::text as settings_primary_color,
     s.accent::text as settings_accent,
@@ -51327,9 +51399,9 @@ SELECT
 FROM params x
 JOIN documents d ON d.id = x.document_id
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-INNER JOIN templates t ON t.id = dt.template_id
-INNER JOIN uploads u ON u.id = t.upload_id
-LEFT JOIN template_schemas ts ON ts.template_id = t.id
+INNER JOIN html h ON h.id = dt.html_id
+INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+INNER JOIN uploads u ON u.id = hu.upload_id
 CROSS JOIN actor_profile ap
 CROSS JOIN selected_settings ss
 LEFT JOIN settings s ON s.id = ss.settings_id
@@ -52452,7 +52524,7 @@ $$;
 -- Name: api_update_document_v4(uuid, uuid, text, text, boolean, boolean, uuid, text[], uuid, uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.api_update_document_v4(document_id uuid, profile_id uuid, name text DEFAULT NULL::text, description text DEFAULT NULL::text, active boolean DEFAULT NULL::boolean, template boolean DEFAULT NULL::boolean, department_id uuid DEFAULT NULL::uuid, field_ids text[] DEFAULT ARRAY[]::text[], classify_agent_id uuid DEFAULT NULL::uuid, document_agent_id uuid DEFAULT NULL::uuid, template_upload_id uuid DEFAULT NULL::uuid, schema_id uuid DEFAULT NULL::uuid) RETURNS TABLE(success boolean, message text, document_id uuid, document_name text, actor_name text)
+CREATE FUNCTION public.api_update_document_v4(document_id uuid, profile_id uuid, name text DEFAULT NULL::text, description text DEFAULT NULL::text, active boolean DEFAULT NULL::boolean, template boolean DEFAULT NULL::boolean, department_id uuid DEFAULT NULL::uuid, field_ids text[] DEFAULT ARRAY[]::text[], classify_agent_id uuid DEFAULT NULL::uuid, document_agent_id uuid DEFAULT NULL::uuid, html_id uuid DEFAULT NULL::uuid, schema_id uuid DEFAULT NULL::uuid) RETURNS TABLE(success boolean, message text, document_id uuid, document_name text, actor_name text)
     LANGUAGE sql
     AS $$
 WITH params AS (
@@ -52467,7 +52539,7 @@ WITH params AS (
         COALESCE(field_ids, ARRAY[]::text[]) AS field_ids,
         classify_agent_id AS classify_agent_id,
         document_agent_id AS document_agent_id,
-        template_upload_id AS template_upload_id,
+        html_id AS html_id,
         schema_id AS schema_id
 ),
 actor_profile AS (
@@ -52491,54 +52563,49 @@ update_document AS (
     WHERE d.id = p.document_id
     RETURNING d.id
 ),
-create_or_get_template AS (
-    -- Create or get template if template_upload_id is provided
-    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+create_template AS (
+    -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
+    INSERT INTO templates (name, created_at, updated_at)
     SELECT 
         COALESCE((SELECT name FROM documents WHERE id = (SELECT document_id FROM params)), 'Template'),
-        p.template_upload_id,
-        '{}'::jsonb,  -- Empty args, schema stored separately
         NOW(),
         NOW()
     FROM params p
-    WHERE p.template_upload_id IS NOT NULL
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM templates t 
-          JOIN template_schemas ts ON ts.template_id = t.id
-          WHERE t.upload_id = p.template_upload_id 
-            AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
+          SELECT 1 FROM document_templates dt
+          WHERE dt.html_id = p.html_id 
+            AND dt.schema_id = p.schema_id
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists (matching upload_id and schema_id)
-    SELECT t.id as template_id
+    -- Get existing template if it exists (matching html_id and schema_id via document_templates)
+    SELECT dt.template_id
     FROM params p
-    CROSS JOIN templates t
-    LEFT JOIN template_schemas ts ON ts.template_id = t.id
-    WHERE t.upload_id = p.template_upload_id 
-      AND (p.schema_id IS NULL OR ts.schema_id = p.schema_id)
+    JOIN document_templates dt ON dt.html_id = p.html_id AND dt.schema_id = p.schema_id
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
     LIMIT 1
 ),
 template_id AS (
-    SELECT template_id FROM create_or_get_template
+    SELECT template_id FROM create_template
     UNION ALL
     SELECT template_id FROM get_existing_template
-    WHERE EXISTS (SELECT 1 FROM params WHERE template_upload_id IS NOT NULL)
+    WHERE EXISTS (SELECT 1 FROM params WHERE html_id IS NOT NULL AND schema_id IS NOT NULL)
     LIMIT 1
 ),
 link_template_schema AS (
-    -- Link template to schema via template_schemas junction table
-    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    -- Link template to schema via schema_templates junction table
+    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
     SELECT 
-        ti.template_id,
         p.schema_id,
+        ti.template_id,
         NOW(),
         NOW()
     FROM template_id ti
     CROSS JOIN params p
     WHERE p.schema_id IS NOT NULL
-    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+    ON CONFLICT (schema_id, template_id) DO UPDATE SET
         updated_at = NOW()
 ),
 deactivate_previous_templates AS (
@@ -52547,29 +52614,33 @@ deactivate_previous_templates AS (
     SET active = false, updated_at = NOW()
     WHERE document_id = (SELECT document_id FROM params)
       AND active = true
-      AND (SELECT template_upload_id FROM params) IS NOT NULL
+      AND (SELECT html_id FROM params) IS NOT NULL
 ),
 update_template_link AS (
-    -- Update or insert template link if template_id is available
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Update or insert template link with html_id and schema_id
+    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
     SELECT 
         p.document_id,
         ti.template_id,
+        p.html_id,
+        p.schema_id,
         true,
         NOW(),
         NOW()
     FROM template_id ti
     CROSS JOIN params p
-    WHERE p.template_upload_id IS NOT NULL
+    WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
     ON CONFLICT (document_id, template_id) DO UPDATE SET
+        html_id = EXCLUDED.html_id,
+        schema_id = EXCLUDED.schema_id,
         active = true,
         updated_at = NOW()
 ),
 delete_template_link AS (
-    -- Delete template link if template_upload_id is NULL (removing template)
+    -- Delete template link if html_id is NULL (removing template)
     DELETE FROM document_templates 
     WHERE document_id = (SELECT document_id FROM params)
-    AND (SELECT template_upload_id FROM params) IS NULL
+    AND (SELECT html_id FROM params) IS NULL
 ),
 replace_departments AS (
     -- Delete all existing department links
@@ -56041,6 +56112,20 @@ $$;
 
 
 --
+-- Name: socket_create_message_feedback_improvement_v4(uuid, uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_create_message_feedback_improvement_v4(grade_id uuid, message_id uuid, name text, description text) RETURNS TABLE(id text)
+    LANGUAGE sql
+    AS $$
+    INSERT INTO message_feedback_improvements 
+    (grade_id, message_id, name, description, created_at)
+    VALUES (grade_id, message_id, name, description, NOW())
+    RETURNING id::text
+$$;
+
+
+--
 -- Name: socket_create_message_feedback_replace_v4(uuid, types.i_create_message_feedback_replace_v4_replace[]); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -56061,15 +56146,15 @@ $$;
 
 
 --
--- Name: socket_create_message_feedback_v4(uuid, uuid, text, text, public.message_feedback_type); Type: FUNCTION; Schema: public; Owner: -
+-- Name: socket_create_message_feedback_strength_v4(uuid, uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.socket_create_message_feedback_v4(grade_id uuid, message_id uuid, name text, description text, type public.message_feedback_type) RETURNS TABLE(id text)
+CREATE FUNCTION public.socket_create_message_feedback_strength_v4(grade_id uuid, message_id uuid, name text, description text) RETURNS TABLE(id text)
     LANGUAGE sql
     AS $$
-    INSERT INTO message_feedbacks 
-    (grade_id, message_id, name, description, type, created_at)
-    VALUES (grade_id, message_id, name, description, type, NOW())
+    INSERT INTO message_feedback_strengths 
+    (grade_id, message_id, name, description, created_at)
+    VALUES (grade_id, message_id, name, description, NOW())
     RETURNING id::text
 $$;
 
@@ -56133,7 +56218,7 @@ $$;
 -- Name: socket_create_template_and_link_v4(uuid, uuid, text, uuid, boolean, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.socket_create_template_and_link_v4(document_id uuid, upload_id uuid, name text, schema_id uuid, active boolean, run_id uuid) RETURNS TABLE(template_id uuid)
+CREATE FUNCTION public.socket_create_template_and_link_v4(document_id uuid, html_id uuid, name text, schema_id uuid, active boolean, run_id uuid) RETURNS TABLE(template_id uuid)
     LANGUAGE sql
     AS $_$
 WITH deactivate_previous AS (
@@ -56145,21 +56230,18 @@ WITH deactivate_previous AS (
       AND $5 = true
 ),
 existing_template AS (
-    -- Check if template already exists (same upload_id and schema_id)
-    SELECT templates.id as template_id
-    FROM templates
-    JOIN template_schemas ts ON ts.template_id = templates.id
-    WHERE templates.upload_id = $2 
-      AND ts.schema_id = $4
+    -- Check if template already exists (same html_id and schema_id via document_templates)
+    SELECT dt.template_id
+    FROM document_templates dt
+    WHERE dt.html_id = $2 
+      AND dt.schema_id = $4
     LIMIT 1
 ),
 create_template AS (
-    -- Create template if it doesn't exist (still store args JSONB for backward compatibility during migration)
-    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
+    -- Create template (just values, no schema/HTML refs)
+    INSERT INTO templates (name, created_at, updated_at)
     SELECT 
         $3,
-        $2,
-        '{}'::jsonb,  -- Empty args, schema is stored separately
         NOW(),
         NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_template)
@@ -56172,29 +56254,33 @@ template_id AS (
     LIMIT 1
 ),
 link_schema AS (
-    -- Link template to schema via template_schemas junction table
-    INSERT INTO template_schemas (template_id, schema_id, created_at, updated_at)
+    -- Link template to schema via schema_templates junction table
+    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
     SELECT 
-        ti.template_id,
         $4,
+        ti.template_id,
         NOW(),
         NOW()
     FROM template_id ti
     WHERE $4 IS NOT NULL
-    ON CONFLICT (template_id, schema_id) DO UPDATE SET
+    ON CONFLICT (schema_id, template_id) DO UPDATE SET
         updated_at = NOW()
 ),
 link_to_document AS (
-    -- Link template to document
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Link template to document with html_id and schema_id
+    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
     SELECT 
         $1,
         ti.template_id,
+        $2,
+        $4,
         $5,
         NOW(),
         NOW()
     FROM template_id ti
     ON CONFLICT (document_id, template_id) DO UPDATE SET
+        html_id = EXCLUDED.html_id,
+        schema_id = EXCLUDED.schema_id,
         active = EXCLUDED.active,
         updated_at = NOW()
     RETURNING template_id
@@ -56275,6 +56361,249 @@ $$;
 
 
 --
+-- Name: socket_document_generation_complete_v4(uuid, uuid, text, bigint, text, text, uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_generation_complete_v4(profile_id uuid, run_id uuid, file_path text, file_size bigint, template_html text, template_schema_json text, document_id uuid DEFAULT NULL::uuid, group_id uuid DEFAULT NULL::uuid, department_id uuid DEFAULT NULL::uuid, document_name text DEFAULT NULL::text) RETURNS TABLE(success boolean, message text, result_document_id uuid, result_template_html text, template_schema jsonb, upload_id uuid, template_mapping jsonb, trace_id text)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    upload_id_val uuid;
+    html_id_val uuid;
+    schema_id_val uuid;
+    template_id_val uuid;
+    template_mapping_val jsonb;
+    trace_id_val text;
+BEGIN
+    -- Get trace_id from groups table if group_id provided
+    IF group_id IS NOT NULL THEN
+        SELECT trace_id INTO trace_id_val FROM groups WHERE id = group_id LIMIT 1;
+    END IF;
+
+    -- 1. Create upload record for template HTML file
+    INSERT INTO uploads (file_path, mime_type, size, created_at, updated_at)
+    VALUES (file_path, 'text/html', file_size, NOW(), NOW())
+    RETURNING id INTO upload_id_val;
+
+    -- 1a. Create html entry (strong entity)
+    INSERT INTO html (name, created_at, updated_at, active, completed)
+    VALUES (
+        COALESCE('Template HTML: ' || document_name, 'Template HTML'),
+        NOW(),
+        NOW(),
+        true,
+        false
+    )
+    RETURNING id INTO html_id_val;
+
+    -- 1b. Link html to upload via html_uploads junction
+    INSERT INTO html_uploads (html_id, upload_id, active, created_at, updated_at)
+    VALUES (html_id_val, upload_id_val, true, NOW(), NOW())
+    ON CONFLICT DO NOTHING;
+
+    -- 2. Create schema from template_schema_json
+    -- Parse JSON and create schema_fields (handles nested arrays recursively)
+    IF template_schema_json IS NOT NULL AND template_schema_json != '{}' THEN
+        -- Create schema record
+        schema_id_val := gen_random_uuid();
+        INSERT INTO schemas (id, created_at, updated_at)
+        VALUES (schema_id_val, NOW(), NOW());
+
+        -- Create schema_fields from JSON
+        -- Use a recursive CTE to handle nested arrays
+        WITH RECURSIVE field_processor AS (
+            -- Base case: process top-level fields
+            SELECT 
+                (field->>'name')::text as field_name,
+                (field->>'type')::text as field_type,
+                COALESCE((field->>'required')::boolean, false) as required,
+                (field->>'description')::text as description,
+                (field->>'placeholder')::text as placeholder,
+                field->'item' as item_schema,
+                0 as position,
+                gen_random_uuid() as field_id,
+                schema_id_val as parent_schema_id,
+                NULL::uuid as parent_field_id
+            FROM jsonb_array_elements(template_schema_json::jsonb->'fields') as field
+            WHERE template_schema_json::jsonb ? 'fields'
+        ),
+        create_fields AS (
+            -- Insert top-level fields
+            INSERT INTO schema_fields (
+                id, schema_id, name, field_type, required, position, description, placeholder,
+                created_at, updated_at
+            )
+            SELECT 
+                field_id,
+                parent_schema_id,
+                field_name,
+                CASE field_type
+                    WHEN 'string' THEN 'string'::schema_field_type
+                    WHEN 'number' THEN 'number'::schema_field_type
+                    WHEN 'boolean' THEN 'boolean'::schema_field_type
+                    WHEN 'array' THEN 'array'::schema_field_type
+                    ELSE 'string'::schema_field_type
+                END,
+                required,
+                position,
+                description,
+                placeholder,
+                NOW(),
+                NOW()
+            FROM field_processor
+            WHERE item_schema IS NULL OR jsonb_typeof(item_schema) != 'object'
+            RETURNING id, schema_id, name
+        ),
+        process_array_items AS (
+            -- For array fields, create item schemas recursively
+            SELECT 
+                fp.field_id as parent_field_id,
+                (item_field->>'name')::text as item_field_name,
+                (item_field->>'type')::text as item_field_type,
+                COALESCE((item_field->>'required')::boolean, false) as item_required,
+                (item_field->>'description')::text as item_description,
+                (item_field->>'placeholder')::text as item_placeholder,
+                gen_random_uuid() as item_schema_id,
+                gen_random_uuid() as item_field_id,
+                ROW_NUMBER() OVER (PARTITION BY fp.field_id ORDER BY 1) - 1 as item_position
+            FROM field_processor fp
+            CROSS JOIN jsonb_array_elements(fp.item_schema->'fields') as item_field
+            WHERE fp.field_type = 'array' 
+              AND fp.item_schema IS NOT NULL
+              AND jsonb_typeof(fp.item_schema) = 'object'
+              AND fp.item_schema ? 'fields'
+        ),
+        create_item_schemas AS (
+            -- Create item schemas for array fields
+            INSERT INTO schemas (id, created_at, updated_at)
+            SELECT DISTINCT item_schema_id, NOW(), NOW()
+            FROM process_array_items
+            RETURNING id
+        ),
+        create_item_fields AS (
+            -- Create fields for item schemas
+            INSERT INTO schema_fields (
+                id, schema_id, name, field_type, required, position, description, placeholder,
+                created_at, updated_at
+            )
+            SELECT 
+                pai.item_field_id,
+                pai.item_schema_id,
+                pai.item_field_name,
+                CASE pai.item_field_type
+                    WHEN 'string' THEN 'string'::schema_field_type
+                    WHEN 'number' THEN 'number'::schema_field_type
+                    WHEN 'boolean' THEN 'boolean'::schema_field_type
+                    WHEN 'array' THEN 'array'::schema_field_type
+                    ELSE 'string'::schema_field_type
+                END,
+                pai.item_required,
+                pai.item_position,
+                pai.item_description,
+                pai.item_placeholder,
+                NOW(),
+                NOW()
+            FROM process_array_items pai
+            RETURNING id, schema_id
+        ),
+        link_array_items AS (
+            -- Link array fields to their item schemas
+            INSERT INTO schema_field_items (
+                schema_field_id, item_schema_id, created_at, updated_at
+            )
+            SELECT DISTINCT
+                pai.parent_field_id,
+                pai.item_schema_id,
+                NOW(),
+                NOW()
+            FROM process_array_items pai
+            RETURNING schema_field_id, item_schema_id
+        )
+        SELECT 1; -- Dummy select to complete CTE
+    END IF;
+
+    -- 3. Create template and link to document/run (only if document_id provided)
+    IF document_id IS NOT NULL THEN
+        -- Deactivate previous templates
+        UPDATE document_templates
+        SET active = false, updated_at = NOW()
+        WHERE document_templates.document_id = document_id
+          AND document_templates.active = true;
+
+        -- Create template (just values, no schema/HTML refs)
+        INSERT INTO templates (name, created_at, updated_at)
+        VALUES (
+            COALESCE('Template for ' || document_name, 'Template for Document'),
+            NOW(),
+            NOW()
+        )
+        RETURNING id INTO template_id_val;
+
+        -- Link template to schema via schema_templates junction
+        IF schema_id_val IS NOT NULL THEN
+            INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
+            VALUES (schema_id_val, template_id_val, NOW(), NOW())
+            ON CONFLICT (schema_id, template_id) DO UPDATE SET updated_at = NOW();
+        END IF;
+
+        -- Link template to document with html_id and schema_id
+        INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
+        VALUES (document_id, template_id_val, html_id_val, schema_id_val, true, NOW(), NOW())
+        ON CONFLICT (document_id, template_id) DO UPDATE SET
+            html_id = EXCLUDED.html_id,
+            schema_id = EXCLUDED.schema_id,
+            active = EXCLUDED.active,
+            updated_at = NOW();
+
+        -- 4. Fetch template mapping
+        SELECT jsonb_object_agg(
+            dt.html_id::text,
+            jsonb_build_object(
+                'template_id', dt.template_id::text,
+                'schema_id', dt.schema_id::text,
+                'html_id', dt.html_id::text,
+                'active', dt.active,
+                'created_at', dt.created_at,
+                'updated_at', dt.updated_at
+            )
+        )
+        INTO template_mapping_val
+        FROM document_templates dt
+        WHERE dt.document_id = document_id;
+    END IF;
+
+    -- 5. Return complete client payload structure
+    RETURN QUERY
+    SELECT 
+        true as success,
+        'Document template created successfully' as message,
+        document_id as result_document_id,
+        template_html as result_template_html,
+        template_schema_json::jsonb as template_schema,
+        upload_id_val as upload_id,
+        COALESCE(template_mapping_val, '{}'::jsonb) as template_mapping,
+        trace_id_val as trace_id;
+END;
+$$;
+
+
+--
+-- Name: socket_document_generation_error_v4(uuid, text, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_generation_error_v4(profile_id uuid, error_message text, document_id uuid DEFAULT NULL::uuid, group_id uuid DEFAULT NULL::uuid) RETURNS TABLE(success boolean, message text, trace_id text)
+    LANGUAGE sql
+    AS $$
+-- Returns error payload structure for client
+-- trace_id comes from groups table if group_id provided, otherwise NULL
+SELECT 
+    false as success,
+    error_message as message,
+    (SELECT trace_id FROM groups WHERE id = group_id LIMIT 1) as trace_id
+$$;
+
+
+--
 -- Name: socket_document_title_eval_start_v4(uuid, uuid, uuid, uuid, uuid, uuid, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -56291,6 +56620,578 @@ SELECT
     tool_id::text as tool_id,
     true as success,
     'Title eval started' as message
+$$;
+
+
+--
+-- Name: socket_document_tool_html_complete_v4(uuid, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_tool_html_complete_v4(run_id uuid, tool_call_id text, call_id text, document_id uuid DEFAULT NULL::uuid) RETURNS TABLE(tool_call_id text, template_html text, completed boolean)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, document_id
+),
+-- Get tool_call and final arguments
+get_tool_call AS (
+    SELECT tc.id as tool_call_id, tca.arguments_raw, tca.arguments_json
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LEFT JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+    LIMIT 1
+),
+-- Parse template_html from arguments_json
+extract_template_html AS (
+    SELECT 
+        gtc.tool_call_id,
+        COALESCE(
+            (gtc.arguments_json->>'template_html')::text,
+            (gtc.arguments_raw::jsonb->>'template_html')::text,
+            ''
+        ) as template_html
+    FROM get_tool_call gtc
+),
+-- Finalize tool_call (mark as completed)
+finalize_tool_call AS (
+    UPDATE tool_calls
+    SET completed = true,
+        updated_at = NOW()
+    FROM get_tool_call gtc
+    WHERE tool_calls.id = gtc.tool_call_id
+    RETURNING id as tool_call_id, completed
+)
+SELECT 
+    (SELECT tool_call_id::text FROM finalize_tool_call LIMIT 1) as tool_call_id,
+    (SELECT template_html FROM extract_template_html LIMIT 1) as template_html,
+    (SELECT completed FROM finalize_tool_call LIMIT 1) as completed
+$$;
+
+
+--
+-- Name: socket_document_tool_html_progress_update_v4(uuid, text, text, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_tool_html_progress_update_v4(run_id uuid, tool_call_id text, call_id text, arguments_delta text, progress_type text, document_id uuid DEFAULT NULL::uuid) RETURNS TABLE(tool_call_id text, persisted_call_id text, arguments_raw text)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, arguments_delta, progress_type, document_id
+),
+-- Get tool_id for HTML tool (tool_type='html', agent_role='document')
+get_tool_id AS (
+    SELECT t.id as tool_id
+    FROM tools t
+    WHERE t.tool_type = 'html'::tool_type
+      AND t.agent_role = 'document'::agent_role
+      AND t.active = true
+    LIMIT 1
+),
+-- Get or create tool_call
+existing_tool_call AS (
+    SELECT tc.id as tool_call_id, tc.call_id
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LIMIT 1
+),
+create_tool_call AS (
+    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    SELECT 
+        COALESCE(p.call_id, 'document_html_' || p.tool_call_id),
+        gt.tool_id,
+        false,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN get_tool_id gt
+    WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
+    RETURNING id as tool_call_id, call_id
+),
+selected_tool_call AS (
+    SELECT tool_call_id::text, call_id FROM existing_tool_call
+    UNION ALL
+    SELECT tool_call_id::text, call_id FROM create_tool_call
+),
+-- Link tool_call to run
+link_tool_call_to_run AS (
+    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
+    SELECT 
+        uuid(stc.tool_call_id),
+        p.run_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    ON CONFLICT (tool_call_id, run_id) DO UPDATE SET updated_at = NOW()
+),
+-- Accumulate arguments_raw (SQL accumulates!)
+accumulate_arguments AS (
+    SELECT 
+        uuid(stc.tool_call_id) as tool_call_id,
+        CASE 
+            WHEN p.progress_type = 'tool_call_start' THEN COALESCE(p.arguments_delta, '')
+            WHEN p.progress_type = 'tool_call_progress' THEN 
+                COALESCE(
+                    (SELECT arguments_raw FROM tool_call_arguments tca 
+                     WHERE tca.tool_call_id = uuid(stc.tool_call_id) 
+                     ORDER BY created_at DESC LIMIT 1),
+                    ''
+                ) || COALESCE(p.arguments_delta, '')
+            ELSE COALESCE(p.arguments_delta, '')
+        END as accumulated_raw
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+),
+-- Upsert tool_call_arguments (SQL accumulates)
+upsert_tool_call_arguments AS (
+    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
+    SELECT 
+        aa.tool_call_id,
+        CASE 
+            WHEN aa.accumulated_raw ~ '^[\s]*\{' THEN aa.accumulated_raw::jsonb
+            ELSE NULL
+        END,
+        aa.accumulated_raw,
+        NOW()
+    FROM accumulate_arguments aa
+    WHERE aa.accumulated_raw IS NOT NULL AND aa.accumulated_raw != ''
+    ON CONFLICT (tool_call_id) DO UPDATE SET
+        arguments_raw = EXCLUDED.arguments_raw,
+        arguments_json = EXCLUDED.arguments_json
+)
+SELECT 
+    (SELECT tool_call_id FROM selected_tool_call LIMIT 1) as tool_call_id,
+    (SELECT call_id FROM selected_tool_call LIMIT 1) as persisted_call_id,
+    (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) as arguments_raw
+$$;
+
+
+--
+-- Name: socket_document_tool_progress_update_v4(uuid, text, text, text, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_tool_progress_update_v4(run_id uuid, tool_call_id text, progress_type text, call_id text DEFAULT NULL::text, tool_name text DEFAULT NULL::text, arguments_delta text DEFAULT ''::text, document_id uuid DEFAULT NULL::uuid) RETURNS TABLE(tool_id uuid, tool_type public.tool_type, tool_call_id text, persisted_call_id text, tool_name text, arguments_raw text)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, tool_name, arguments_delta, progress_type, document_id
+),
+-- Get tool_id AND tool_type from tool_name + agent_tools junction table (for document agent)
+-- This handles create_title which has agent_role='scenario' but is linked via agent_tools
+get_tool_info AS (
+    SELECT t.id as tool_id, t.tool_type, t.name as tool_name
+    FROM params p
+    JOIN tools t ON t.name = p.tool_name
+    JOIN agent_tools at ON at.tool_id = t.id
+    JOIN agents a ON a.id = at.agent_id
+    WHERE a.role = 'document'::agent_role
+      AND at.active = true
+      AND t.active = true
+    LIMIT 1
+),
+-- Get or create tool_call (by call_id or tool_call_id)
+existing_tool_call AS (
+    SELECT tc.id as tool_call_id, tc.call_id
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LIMIT 1
+),
+create_tool_call AS (
+    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    SELECT 
+        COALESCE(p.call_id, 'document_' || p.tool_call_id),
+        gt.tool_id,
+        false,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN get_tool_info gt
+    WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
+    RETURNING id as tool_call_id, call_id
+),
+selected_tool_call AS (
+    SELECT tool_call_id::text, call_id FROM existing_tool_call
+    UNION ALL
+    SELECT tool_call_id::text, call_id FROM create_tool_call
+),
+-- Link tool_call to run (creates group_runs if needed, but run already exists)
+link_tool_call_to_run AS (
+    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
+    SELECT 
+        uuid(stc.tool_call_id),
+        p.run_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    ON CONFLICT (tool_call_id, run_id) DO UPDATE SET updated_at = NOW()
+),
+-- Accumulate arguments_raw (SQL accumulates!)
+accumulate_arguments AS (
+    SELECT 
+        uuid(stc.tool_call_id) as tool_call_id,
+        CASE 
+            WHEN p.progress_type = 'tool_call_start' THEN COALESCE(p.arguments_delta, '')
+            WHEN p.progress_type = 'tool_call_progress' THEN 
+                COALESCE(
+                    (SELECT arguments_raw FROM tool_call_arguments tca 
+                     WHERE tca.tool_call_id = uuid(stc.tool_call_id) 
+                     ORDER BY created_at DESC LIMIT 1),
+                    ''
+                ) || COALESCE(p.arguments_delta, '')
+            ELSE COALESCE(p.arguments_delta, '')
+        END as accumulated_raw
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+),
+-- Upsert tool_call_arguments (SQL accumulates)
+upsert_tool_call_arguments AS (
+    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
+    SELECT 
+        aa.tool_call_id,
+        CASE 
+            WHEN aa.accumulated_raw ~ '^[\s]*\{' THEN aa.accumulated_raw::jsonb
+            ELSE NULL
+        END,
+        aa.accumulated_raw,
+        NOW()
+    FROM accumulate_arguments aa
+    WHERE aa.accumulated_raw IS NOT NULL AND aa.accumulated_raw != ''
+    ON CONFLICT (tool_call_id) DO UPDATE SET
+        arguments_raw = EXCLUDED.arguments_raw,
+        arguments_json = EXCLUDED.arguments_json
+)
+SELECT 
+    (SELECT tool_id FROM get_tool_info LIMIT 1) as tool_id,
+    (SELECT tool_type FROM get_tool_info LIMIT 1) as tool_type,
+    (SELECT tool_call_id FROM selected_tool_call LIMIT 1) as tool_call_id,
+    (SELECT call_id FROM selected_tool_call LIMIT 1) as persisted_call_id,
+    (SELECT tool_name FROM get_tool_info LIMIT 1) as tool_name,
+    (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) as arguments_raw
+$$;
+
+
+--
+-- Name: socket_document_tool_schema_complete_v4(uuid, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_tool_schema_complete_v4(run_id uuid, tool_call_id text, call_id text, document_id uuid DEFAULT NULL::uuid) RETURNS TABLE(tool_call_id text, template_schema_json text, completed boolean)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, document_id
+),
+-- Get tool_call and final arguments
+get_tool_call AS (
+    SELECT tc.id as tool_call_id, tca.arguments_raw, tca.arguments_json
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LEFT JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+    LIMIT 1
+),
+-- Parse schema_json from arguments_json
+extract_schema_json AS (
+    SELECT 
+        gtc.tool_call_id,
+        COALESCE(
+            (gtc.arguments_json->>'schema_json')::text,
+            (gtc.arguments_raw::jsonb->>'schema_json')::text,
+            '{}'
+        ) as template_schema_json
+    FROM get_tool_call gtc
+),
+-- Finalize tool_call (mark as completed)
+finalize_tool_call AS (
+    UPDATE tool_calls
+    SET completed = true,
+        updated_at = NOW()
+    FROM get_tool_call gtc
+    WHERE tool_calls.id = gtc.tool_call_id
+    RETURNING id as tool_call_id, completed
+)
+SELECT 
+    (SELECT tool_call_id::text FROM finalize_tool_call LIMIT 1) as tool_call_id,
+    (SELECT template_schema_json FROM extract_schema_json LIMIT 1) as template_schema_json,
+    (SELECT completed FROM finalize_tool_call LIMIT 1) as completed
+$$;
+
+
+--
+-- Name: socket_document_tool_schema_progress_update_v4(uuid, text, text, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_tool_schema_progress_update_v4(run_id uuid, tool_call_id text, call_id text, arguments_delta text, progress_type text, document_id uuid DEFAULT NULL::uuid) RETURNS TABLE(tool_call_id text, persisted_call_id text, arguments_raw text)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, arguments_delta, progress_type, document_id
+),
+-- Get tool_id for schema tool (tool_type='schema', agent_role='document')
+get_tool_id AS (
+    SELECT t.id as tool_id
+    FROM tools t
+    WHERE t.tool_type = 'schema'::tool_type
+      AND t.agent_role = 'document'::agent_role
+      AND t.active = true
+    LIMIT 1
+),
+-- Get or create tool_call
+existing_tool_call AS (
+    SELECT tc.id as tool_call_id, tc.call_id
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LIMIT 1
+),
+create_tool_call AS (
+    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    SELECT 
+        COALESCE(p.call_id, 'document_schema_' || p.tool_call_id),
+        gt.tool_id,
+        false,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN get_tool_id gt
+    WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
+    RETURNING id as tool_call_id, call_id
+),
+selected_tool_call AS (
+    SELECT tool_call_id::text, call_id FROM existing_tool_call
+    UNION ALL
+    SELECT tool_call_id::text, call_id FROM create_tool_call
+),
+-- Link tool_call to run
+link_tool_call_to_run AS (
+    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
+    SELECT 
+        uuid(stc.tool_call_id),
+        p.run_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    ON CONFLICT (tool_call_id, run_id) DO UPDATE SET updated_at = NOW()
+),
+-- Accumulate arguments_raw (SQL accumulates!)
+accumulate_arguments AS (
+    SELECT 
+        uuid(stc.tool_call_id) as tool_call_id,
+        CASE 
+            WHEN p.progress_type = 'tool_call_start' THEN COALESCE(p.arguments_delta, '')
+            WHEN p.progress_type = 'tool_call_progress' THEN 
+                COALESCE(
+                    (SELECT arguments_raw FROM tool_call_arguments tca 
+                     WHERE tca.tool_call_id = uuid(stc.tool_call_id) 
+                     ORDER BY created_at DESC LIMIT 1),
+                    ''
+                ) || COALESCE(p.arguments_delta, '')
+            ELSE COALESCE(p.arguments_delta, '')
+        END as accumulated_raw
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+),
+-- Upsert tool_call_arguments (SQL accumulates)
+upsert_tool_call_arguments AS (
+    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
+    SELECT 
+        aa.tool_call_id,
+        CASE 
+            WHEN aa.accumulated_raw ~ '^[\s]*\{' THEN aa.accumulated_raw::jsonb
+            ELSE NULL
+        END,
+        aa.accumulated_raw,
+        NOW()
+    FROM accumulate_arguments aa
+    WHERE aa.accumulated_raw IS NOT NULL AND aa.accumulated_raw != ''
+    ON CONFLICT (tool_call_id) DO UPDATE SET
+        arguments_raw = EXCLUDED.arguments_raw,
+        arguments_json = EXCLUDED.arguments_json
+)
+SELECT 
+    (SELECT tool_call_id FROM selected_tool_call LIMIT 1) as tool_call_id,
+    (SELECT call_id FROM selected_tool_call LIMIT 1) as persisted_call_id,
+    (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) as arguments_raw
+$$;
+
+
+--
+-- Name: socket_document_tool_title_complete_v4(uuid, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_tool_title_complete_v4(run_id uuid, tool_call_id text, call_id text, document_id uuid) RETURNS TABLE(tool_call_id text, document_id uuid, title text, completed boolean)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, document_id
+),
+-- Get tool_call and final arguments
+get_tool_call AS (
+    SELECT tc.id as tool_call_id, tca.arguments_raw, tca.arguments_json
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LEFT JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+    LIMIT 1
+),
+-- Parse title from arguments_json
+extract_title AS (
+    SELECT 
+        gtc.tool_call_id,
+        COALESCE(
+            (gtc.arguments_json->>'title')::text,
+            (gtc.arguments_raw::jsonb->>'title')::text,
+            ''
+        ) as title
+    FROM get_tool_call gtc
+),
+-- Update document name
+update_document AS (
+    UPDATE documents
+    SET name = et.title,
+        updated_at = NOW()
+    FROM extract_title et
+    CROSS JOIN params p
+    WHERE documents.id = p.document_id
+      AND et.title IS NOT NULL
+      AND et.title != ''
+    RETURNING documents.id as document_id, documents.name as title
+),
+-- Finalize tool_call (mark as completed)
+finalize_tool_call AS (
+    UPDATE tool_calls
+    SET completed = true,
+        updated_at = NOW()
+    FROM get_tool_call gtc
+    WHERE tool_calls.id = gtc.tool_call_id
+    RETURNING id as tool_call_id, completed
+)
+SELECT 
+    (SELECT tool_call_id::text FROM finalize_tool_call LIMIT 1) as tool_call_id,
+    (SELECT document_id FROM update_document LIMIT 1) as document_id,
+    (SELECT title FROM update_document LIMIT 1) as title,
+    (SELECT completed FROM finalize_tool_call LIMIT 1) as completed
+$$;
+
+
+--
+-- Name: socket_document_tool_title_progress_update_v4(uuid, text, text, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_document_tool_title_progress_update_v4(run_id uuid, tool_call_id text, call_id text, arguments_delta text, progress_type text, document_id uuid DEFAULT NULL::uuid) RETURNS TABLE(tool_call_id text, persisted_call_id text, arguments_raw text)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, arguments_delta, progress_type, document_id
+),
+-- Get tool_id for title tool (tool_type='title')
+-- Check agent_tools junction table for document agent (create_title has agent_role='scenario' but linked via agent_tools)
+get_tool_id AS (
+    SELECT t.id as tool_id
+    FROM tools t
+    JOIN agent_tools at ON at.tool_id = t.id
+    JOIN agents a ON a.id = at.agent_id
+    WHERE t.tool_type = 'title'::tool_type
+      AND a.role = 'document'::agent_role
+      AND at.active = true
+      AND t.active = true
+    LIMIT 1
+),
+-- Get or create tool_call
+existing_tool_call AS (
+    SELECT tc.id as tool_call_id, tc.call_id
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LIMIT 1
+),
+create_tool_call AS (
+    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    SELECT 
+        COALESCE(p.call_id, 'document_title_' || p.tool_call_id),
+        gt.tool_id,
+        false,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN get_tool_id gt
+    WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
+    RETURNING id as tool_call_id, call_id
+),
+selected_tool_call AS (
+    SELECT tool_call_id::text, call_id FROM existing_tool_call
+    UNION ALL
+    SELECT tool_call_id::text, call_id FROM create_tool_call
+),
+-- Link tool_call to run
+link_tool_call_to_run AS (
+    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
+    SELECT 
+        uuid(stc.tool_call_id),
+        p.run_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    ON CONFLICT (tool_call_id, run_id) DO UPDATE SET updated_at = NOW()
+),
+-- Accumulate arguments_raw (SQL accumulates!)
+accumulate_arguments AS (
+    SELECT 
+        uuid(stc.tool_call_id) as tool_call_id,
+        CASE 
+            WHEN p.progress_type = 'tool_call_start' THEN COALESCE(p.arguments_delta, '')
+            WHEN p.progress_type = 'tool_call_progress' THEN 
+                COALESCE(
+                    (SELECT arguments_raw FROM tool_call_arguments tca 
+                     WHERE tca.tool_call_id = uuid(stc.tool_call_id) 
+                     ORDER BY created_at DESC LIMIT 1),
+                    ''
+                ) || COALESCE(p.arguments_delta, '')
+            ELSE COALESCE(p.arguments_delta, '')
+        END as accumulated_raw
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+),
+-- Upsert tool_call_arguments (SQL accumulates)
+upsert_tool_call_arguments AS (
+    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
+    SELECT 
+        aa.tool_call_id,
+        CASE 
+            WHEN aa.accumulated_raw ~ '^[\s]*\{' THEN aa.accumulated_raw::jsonb
+            ELSE NULL
+        END,
+        aa.accumulated_raw,
+        NOW()
+    FROM accumulate_arguments aa
+    WHERE aa.accumulated_raw IS NOT NULL AND aa.accumulated_raw != ''
+    ON CONFLICT (tool_call_id) DO UPDATE SET
+        arguments_raw = EXCLUDED.arguments_raw,
+        arguments_json = EXCLUDED.arguments_json
+)
+SELECT 
+    (SELECT tool_call_id FROM selected_tool_call LIMIT 1) as tool_call_id,
+    (SELECT call_id FROM selected_tool_call LIMIT 1) as persisted_call_id,
+    (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) as arguments_raw
 $$;
 
 
@@ -57454,7 +58355,7 @@ $$;
 -- Name: socket_get_document_run_context_and_create_run_v4(uuid, uuid, uuid, text, text, uuid[]); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.socket_get_document_run_context_and_create_run_v4(department_id uuid, profile_id uuid, document_id uuid DEFAULT NULL::uuid, document_name text DEFAULT NULL::text, document_description text DEFAULT NULL::text, field_ids uuid[] DEFAULT NULL::uuid[]) RETURNS TABLE(agent_id text, agent_name text, system_prompt text, temperature double precision, reasoning text, model_id text, model_name text, provider text, base_url text, api_key text, profile_id text, req_per_day integer, runs_today_count bigint, earliest_run_created_at timestamp with time zone, run_id text, group_id uuid, trace_id text)
+CREATE FUNCTION public.socket_get_document_run_context_and_create_run_v4(department_id uuid, profile_id uuid, document_id uuid DEFAULT NULL::uuid, document_name text DEFAULT NULL::text, document_description text DEFAULT NULL::text, field_ids uuid[] DEFAULT NULL::uuid[]) RETURNS TABLE(agent_id text, agent_name text, agent_role text, system_prompt text, temperature double precision, reasoning text, model_id text, model_name text, provider text, base_url text, api_key text, profile_id text, req_per_day integer, runs_today_count bigint, earliest_run_created_at timestamp with time zone, run_id text, group_id uuid, trace_id text, tools types.i_get_document_run_context_and_create_run_v4_tool[], developer_instruction_template text, developer_instruction_schema_id uuid, department_name text, template_context_fields types.i_get_document_run_context_and_create_run_v4_field[], developer_message_id uuid)
     LANGUAGE sql
     AS $$
 WITH params AS (
@@ -57587,12 +58488,75 @@ active_settings AS (
             (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
 ),
+-- Get agent tools as composite type array
+agent_tools_data AS (
+    SELECT 
+        ba.agent_id,
+        COALESCE(
+            ARRAY_AGG(
+                (t.id, t.name, COALESCE(t.description, ''), t.tool_type, t.agent_role::text, t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_document_run_context_and_create_run_v4_tool
+                ORDER BY t.tool_type, t.name
+            ),
+            '{}'::types.i_get_document_run_context_and_create_run_v4_tool[]
+        ) as tools
+    FROM best_agent ba
+    LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
+    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    GROUP BY ba.agent_id
+),
+-- Get developer instruction using agent role
+developer_instruction_data AS (
+    SELECT 
+        ba.agent_id,
+        di.template as developer_instruction_template,
+        dis.schema_id as developer_instruction_schema_id
+    FROM best_agent ba
+    INNER JOIN agents a ON a.id = ba.agent_id
+    -- Join developer_instructions via agent_role_developer_instruction_types
+    -- Use agents.role to determine which developer instruction to use
+    LEFT JOIN agent_role_developer_instruction_types ardit ON ardit.agent_role = a.role
+    LEFT JOIN developer_instructions di ON di.type = ardit.developer_instruction_type AND di.active = true
+    LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
+    LIMIT 1
+),
+-- Get department name
+department_data AS (
+    SELECT 
+        p.department_id,
+        d.title as department_name
+    FROM params p
+    LEFT JOIN departments d ON d.id = p.department_id
+),
+-- Get template context fields (if field_ids provided)
+template_context_fields_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (f.name, COALESCE(f.description, ''), pa.name, COALESCE(pa.description, ''))::types.i_get_document_run_context_and_create_run_v4_field
+                ORDER BY array_position(p.field_ids, f.id)
+            ),
+            '{}'::types.i_get_document_run_context_and_create_run_v4_field[]
+        ) as template_context_fields
+    FROM params p
+    LEFT JOIN fields f ON f.id = ANY(p.field_ids) AND p.field_ids IS NOT NULL AND array_length(p.field_ids, 1) > 0
+    LEFT JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
+    LEFT JOIN parameters pa ON pa.id = fp.parameter_id AND pa.active = true
+    WHERE p.field_ids IS NOT NULL AND array_length(p.field_ids, 1) > 0
+    GROUP BY p.field_ids
+    UNION ALL
+    -- Return empty array if no field_ids provided
+    SELECT '{}'::types.i_get_document_run_context_and_create_run_v4_field[] as template_context_fields
+    FROM params p
+    WHERE p.field_ids IS NULL OR array_length(p.field_ids, 1) IS NULL OR array_length(p.field_ids, 1) = 0
+    LIMIT 1
+),
 context_data AS (
     -- Get all context data (agent, model, provider, etc.)
     SELECT 
         -- Agent data
         a.id::text as agent_id,
         a.name as agent_name,
+        a.role::text as agent_role,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -57610,7 +58574,20 @@ context_data AS (
         -- Rate limit data (for profile)
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
-        rt.earliest_run_created_at
+        rt.earliest_run_created_at,
+        
+        -- Tools data
+        COALESCE(atd.tools, '{}'::types.i_get_document_run_context_and_create_run_v4_tool[]) as tools,
+        
+        -- Developer instruction data
+        did.developer_instruction_template,
+        did.developer_instruction_schema_id,
+        
+        -- Department data
+        dd.department_name,
+        
+        -- Template context fields
+        COALESCE(tcfd.template_context_fields, '{}'::types.i_get_document_run_context_and_create_run_v4_field[]) as template_context_fields
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
@@ -57640,6 +58617,14 @@ context_data AS (
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
+    -- Join tools data
+    LEFT JOIN agent_tools_data atd ON atd.agent_id = ba.agent_id
+    -- Join developer instruction data
+    LEFT JOIN developer_instruction_data did ON did.agent_id = ba.agent_id
+    -- Join department data
+    LEFT JOIN department_data dd ON dd.department_id = p.department_id
+    -- Join template context fields data
+    LEFT JOIN template_context_fields_data tcfd ON true
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
@@ -57673,11 +58658,73 @@ link_group AS (
     FROM link_profile lp
     CROSS JOIN group_data gd
     RETURNING run_id
+),
+-- Create and link developer message if template exists
+developer_message_content AS (
+    SELECT 
+        cd.developer_instruction_template as content,
+        lg.run_id
+    FROM context_data cd
+    CROSS JOIN link_group lg
+    WHERE cd.developer_instruction_template IS NOT NULL
+    LIMIT 1
+),
+developer_message_hash AS (
+    SELECT 
+        dmc.content,
+        dmc.run_id,
+        message_content_hash(dmc.content, 'developer') as hash
+    FROM developer_message_content dmc
+),
+existing_developer_message AS (
+    SELECT 
+        m.id, 
+        m.created_at,
+        dmh.run_id
+    FROM messages m
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN developer_message_hash dmh ON message_content_hash(mc.content, 'developer') = dmh.hash
+    WHERE m.role = 'developer'
+    LIMIT 1
+),
+new_developer_message AS (
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    FROM developer_message_hash dmh
+    WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
+    RETURNING id, created_at, updated_at
+),
+insert_developer_message_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT 
+        nm.id, 
+        0, 
+        (SELECT content FROM developer_message_hash LIMIT 1), 
+        nm.created_at, 
+        nm.updated_at
+    FROM new_developer_message nm
+),
+developer_message_final AS (
+    SELECT id, run_id FROM existing_developer_message
+    UNION ALL
+    SELECT 
+        nm.id, 
+        (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
+    FROM new_developer_message nm
+),
+link_developer_message_to_run AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT dmf.id, dmf.run_id, NOW(), NOW()
+    FROM developer_message_final dmf
+    ON CONFLICT (message_id, run_id) 
+    DO UPDATE SET updated_at = NOW()
+    RETURNING message_id, run_id
 )
 SELECT 
     -- Context data
     cd.agent_id,
     cd.agent_name,
+    cd.agent_role,
     cd.system_prompt,
     cd.temperature,
     cd.reasoning,
@@ -57694,10 +58741,22 @@ SELECT
     cr.id::text as run_id,
     -- Group ID and trace_id (from groups table)
     gd.group_id,
-    gd.trace_id::text as trace_id
+    gd.trace_id::text as trace_id,
+    -- Tools array
+    cd.tools,
+    -- Developer instruction
+    cd.developer_instruction_template,
+    cd.developer_instruction_schema_id,
+    -- Department name
+    cd.department_name,
+    -- Template context fields
+    cd.template_context_fields,
+    -- Developer message ID (if created/linked)
+    ldm.message_id as developer_message_id
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN group_data gd
+LEFT JOIN link_developer_message_to_run ldm ON true
 $$;
 
 
@@ -57720,6 +58779,45 @@ JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
 JOIN parameters pa ON pa.id = fp.parameter_id
 WHERE f.id = ANY($1)
   AND pa.active = true
+$_$;
+
+
+--
+-- Name: socket_get_document_tool_call_results_v4(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_document_tool_call_results_v4(run_id uuid) RETURNS TABLE(template_html text, template_schema_json text)
+    LANGUAGE sql STABLE
+    AS $_$
+WITH html_result AS (
+    -- Get template_html from generate_html tool_call
+    SELECT tca.arguments_json->>'template_html' as template_html
+    FROM tool_calls tc
+    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+    JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+    JOIN tools t ON t.id = tc.tool_id
+    WHERE tcr.run_id = $1
+      AND t.name = 'generate_html'
+      AND tc.completed = true
+    ORDER BY tc.created_at DESC
+    LIMIT 1
+),
+schema_result AS (
+    -- Get schema_json from generate_schema tool_call
+    SELECT tca.arguments_json->>'schema_json' as schema_json
+    FROM tool_calls tc
+    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+    JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+    JOIN tools t ON t.id = tc.tool_id
+    WHERE tcr.run_id = $1
+      AND t.name = 'generate_schema'
+      AND tc.completed = true
+    ORDER BY tc.created_at DESC
+    LIMIT 1
+)
+SELECT 
+    COALESCE((SELECT template_html FROM html_result), '') as template_html,
+    COALESCE((SELECT schema_json FROM schema_result), '{}') as template_schema_json
 $_$;
 
 
@@ -57748,6 +58846,322 @@ FROM profile_departments
 WHERE profile_id = profile_id
   AND active = true
 LIMIT 1
+$$;
+
+
+--
+-- Name: socket_get_generation_run_context_and_create_run_v4(uuid, uuid, text, uuid, uuid[], uuid, uuid, text, text[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_generation_run_context_and_create_run_v4(agent_id uuid, resource_id uuid, resource_type text, profile_id uuid, message_ids uuid[] DEFAULT NULL::uuid[], department_id uuid DEFAULT NULL::uuid, group_id uuid DEFAULT NULL::uuid, user_instructions text DEFAULT NULL::text, developer_message_contents text[] DEFAULT NULL::text[]) RETURNS TABLE(run_id text, group_id uuid, trace_id text, message_ids uuid[])
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT 
+        agent_id AS agent_id,
+        resource_id AS resource_id,
+        resource_type AS resource_type,
+        message_ids AS message_ids,
+        profile_id AS profile_id,
+        department_id AS department_id,
+        group_id AS group_id,
+        user_instructions AS user_instructions,
+        developer_message_contents AS developer_message_contents
+),
+-- Validate agent exists
+selected_agent AS (
+    SELECT a.id as agent_id
+    FROM agents a
+    CROSS JOIN params p
+    WHERE a.id = p.agent_id
+      AND a.active = true
+    LIMIT 1
+),
+-- Get rate limit for profile
+profile_rate_limit AS (
+    SELECT 
+        prl.requests_per_day as req_per_day
+    FROM profiles prof
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    WHERE prof.id = (SELECT profile_id FROM params)
+),
+-- Count runs today for rate limiting
+runs_today AS (
+    SELECT 
+        COUNT(*)::bigint as runs_today_count,
+        MIN(mr.created_at) as earliest_run_created_at
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
+    WHERE mrp.profile_id = (SELECT profile_id FROM params)
+      AND mrp.active = true
+      AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+),
+-- Get or create group (for trace_id and group_id)
+existing_group_from_param AS (
+    SELECT g.id as group_id, g.trace_id
+    FROM params p
+    JOIN groups g ON g.id = p.group_id
+    WHERE p.group_id IS NOT NULL
+    LIMIT 1
+),
+create_group_if_needed AS (
+    -- Create new group if needed (only if group_id not provided)
+    INSERT INTO groups (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM params p
+    WHERE p.group_id IS NULL
+    RETURNING id as group_id, trace_id
+),
+group_data AS (
+    -- Use existing group from param, newly created group, or fallback
+    SELECT 
+        COALESCE(
+            (SELECT group_id FROM existing_group_from_param LIMIT 1),
+            (SELECT group_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::uuid  -- Fallback if no group created
+        ) as group_id,
+        COALESCE(
+            (SELECT trace_id FROM existing_group_from_param LIMIT 1),
+            (SELECT trace_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::text  -- Fallback trace_id
+        ) as trace_id
+),
+-- Validate rate limit (raises exception if exceeded)
+rate_limit_check AS (
+    SELECT 
+        prl.req_per_day,
+        COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count
+    FROM profile_rate_limit prl
+    CROSS JOIN runs_today rt
+    CROSS JOIN params p
+    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
+),
+-- Create run
+create_run AS (
+    INSERT INTO runs (input_tokens, output_tokens, agent_id)
+    SELECT 0, 0, sa.agent_id
+    FROM selected_agent sa
+    CROSS JOIN rate_limit_check rlc
+    RETURNING id as run_id
+),
+-- Link agent to run (via agent_id in runs table - already done)
+-- Link profile to run
+link_profile AS (
+    INSERT INTO run_profiles (run_id, profile_id, active)
+    SELECT cr.run_id, p.profile_id, true
+    FROM create_run cr
+    CROSS JOIN params p
+    RETURNING run_id
+),
+-- Link group to run
+link_group AS (
+    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
+    SELECT 
+        gd.group_id,
+        lp.run_id,
+        COALESCE(
+            (SELECT MAX(idx) FROM group_runs WHERE group_id = gd.group_id),
+            -1
+        ) + 1 as idx,
+        NOW(),
+        NOW()
+    FROM link_profile lp
+    CROSS JOIN group_data gd
+    RETURNING run_id
+),
+-- Create user message if user_instructions provided (for regeneration)
+create_user_message AS (
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'user'::message_role, false, false, NOW(), NOW()
+    FROM params p
+    CROSS JOIN link_group lg
+    WHERE p.user_instructions IS NOT NULL
+      AND p.user_instructions != ''
+    RETURNING id as message_id, created_at, updated_at
+),
+-- Insert user message content
+insert_user_message_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT 
+        cum.message_id,
+        0,
+        p.user_instructions,
+        cum.created_at,
+        cum.updated_at
+    FROM create_user_message cum
+    CROSS JOIN params p
+    WHERE p.user_instructions IS NOT NULL
+      AND p.user_instructions != ''
+),
+-- Link user message to run
+link_user_message_to_run AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT cum.message_id, lg.run_id, NOW(), NOW()
+    FROM create_user_message cum
+    CROSS JOIN link_group lg
+    WHERE cum.message_id IS NOT NULL
+    ON CONFLICT (message_id, run_id) 
+    DO UPDATE SET updated_at = NOW()
+    RETURNING message_id, run_id
+),
+-- Link existing system/developer messages from previous runs (if group_id provided for regeneration)
+previous_runs_in_group AS (
+    SELECT DISTINCT gr.run_id
+    FROM group_runs gr
+    CROSS JOIN params p
+    WHERE gr.group_id = p.group_id
+      AND p.group_id IS NOT NULL
+),
+link_existing_messages AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT DISTINCT mr.message_id, cr.run_id, NOW(), NOW()
+    FROM previous_runs_in_group prig
+    CROSS JOIN create_run cr
+    JOIN message_runs mr ON mr.run_id = prig.run_id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE m.role IN ('system'::message_role, 'developer'::message_role)
+    ON CONFLICT (message_id, run_id)
+    DO UPDATE SET updated_at = NOW()
+),
+-- Create developer messages from content strings (with deduplication)
+-- Expand developer message contents array into rows with row numbers for ordering
+developer_message_contents_expanded AS (
+    SELECT 
+        unnest(p.developer_message_contents) as content,
+        lg.run_id,
+        generate_subscripts(p.developer_message_contents, 1) as array_idx
+    FROM params p
+    CROSS JOIN link_group lg
+    WHERE p.developer_message_contents IS NOT NULL
+      AND array_length(p.developer_message_contents, 1) > 0
+),
+-- Calculate hash for each content
+developer_message_hashes AS (
+    SELECT 
+        dmce.content,
+        dmce.run_id,
+        dmce.array_idx,
+        message_content_hash(dmce.content, 'developer') as content_hash
+    FROM developer_message_contents_expanded dmce
+),
+-- Find existing developer messages by hash (deduplication)
+existing_developer_messages AS (
+    SELECT DISTINCT ON (dmh.content_hash)
+        m.id as message_id,
+        dmh.run_id,
+        dmh.content_hash,
+        dmh.array_idx
+    FROM messages m
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN developer_message_hashes dmh ON message_content_hash(mc.content, 'developer') = dmh.content_hash
+    WHERE m.role = 'developer'::message_role
+    ORDER BY dmh.content_hash, m.id
+),
+-- Get content that needs new messages (ordered by hash for deterministic matching)
+new_content_needing_messages AS (
+    SELECT DISTINCT ON (content_hash)
+        content,
+        run_id,
+        content_hash
+    FROM developer_message_hashes dmh
+    WHERE NOT EXISTS (
+        SELECT 1 FROM existing_developer_messages edm 
+        WHERE edm.content_hash = dmh.content_hash
+    )
+    ORDER BY content_hash
+),
+-- Create new developer messages (one per content, in same order)
+new_developer_messages AS (
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    FROM new_content_needing_messages
+    RETURNING id, created_at, updated_at
+),
+-- Match new messages with their content (both ordered the same way)
+new_developer_messages_ordered AS (
+    SELECT 
+        id,
+        created_at,
+        updated_at,
+        ROW_NUMBER() OVER (ORDER BY id) as rn
+    FROM new_developer_messages
+),
+new_content_ordered AS (
+    SELECT 
+        content,
+        run_id,
+        ROW_NUMBER() OVER (ORDER BY content_hash) as rn
+    FROM new_content_needing_messages
+),
+new_developer_messages_with_content AS (
+    SELECT 
+        nmo.id as message_id,
+        nco.content,
+        nco.run_id,
+        nmo.created_at,
+        nmo.updated_at
+    FROM new_developer_messages_ordered nmo
+    JOIN new_content_ordered nco ON nmo.rn = nco.rn
+),
+-- Insert content for new developer messages  
+insert_developer_message_contents AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT 
+        ndmwc.message_id,
+        0,
+        ndmwc.content,
+        ndmwc.created_at,
+        ndmwc.updated_at
+    FROM new_developer_messages_with_content ndmwc
+),
+-- Get all developer message IDs (existing + new)
+all_developer_message_ids AS (
+    SELECT message_id, run_id FROM existing_developer_messages
+    UNION ALL
+    SELECT message_id, run_id FROM new_developer_messages_with_content
+),
+-- Link developer messages to run
+link_developer_messages_to_run AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT admids.message_id, admids.run_id, NOW(), NOW()
+    FROM all_developer_message_ids admids
+    ON CONFLICT (message_id, run_id) 
+    DO UPDATE SET updated_at = NOW()
+    RETURNING message_id, run_id
+),
+-- Build message_ids array: includes new user message (if created) + developer messages (if created) + context message_ids
+final_message_ids AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(DISTINCT msg_id) FILTER (WHERE msg_id IS NOT NULL),
+            ARRAY[]::uuid[]
+        ) as message_ids
+    FROM (
+        -- New user message (if created)
+        SELECT cum.message_id as msg_id
+        FROM create_user_message cum
+        WHERE cum.message_id IS NOT NULL
+        UNION ALL
+        -- Developer messages (if created)
+        SELECT ldm.message_id as msg_id
+        FROM link_developer_messages_to_run ldm
+        WHERE ldm.message_id IS NOT NULL
+        UNION ALL
+        -- Context message IDs from params
+        SELECT unnest(p.message_ids) as msg_id
+        FROM params p
+        WHERE p.message_ids IS NOT NULL
+    ) combined
+)
+SELECT 
+    cr.run_id::text as run_id,
+    gd.group_id,
+    gd.trace_id::text as trace_id,
+    COALESCE(fmi.message_ids, ARRAY[]::uuid[]) as message_ids
+FROM create_run cr
+CROSS JOIN group_data gd
+CROSS JOIN link_group lg
+LEFT JOIN final_message_ids fmi ON true
 $$;
 
 
@@ -58606,6 +60020,31 @@ $$;
 
 
 --
+-- Name: socket_get_hint_message_id_v4(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_hint_message_id_v4(run_id uuid, chat_id uuid) RETURNS TABLE(message_id uuid)
+    LANGUAGE sql STABLE
+    AS $_$
+    SELECT m.id as message_id
+    FROM message_runs mr
+    JOIN messages m ON m.id = mr.message_id
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN chat_groups cg ON cg.group_id IN (
+        SELECT gr.group_id 
+        FROM group_runs gr 
+        WHERE gr.run_id = $1
+    )
+    JOIN chats c ON c.id = cg.chat_id
+    WHERE mr.run_id = $1
+      AND c.id = $2
+      AND m.role = 'user'::message_role
+    ORDER BY m.created_at DESC
+    LIMIT 1
+$_$;
+
+
+--
 -- Name: socket_get_hint_regeneration_run_context_and_create_run_v4(uuid, uuid, uuid, uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -58966,14 +60405,14 @@ $$;
 
 
 --
--- Name: socket_get_hint_run_context_and_create_run_v4(uuid, uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: socket_get_hint_run_context_and_create_run_v4(uuid, uuid, uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.socket_get_hint_run_context_and_create_run_v4(message_id uuid, chat_id uuid, department_id uuid, profile_id uuid) RETURNS TABLE(message_id text, message_created_at timestamp with time zone, chat_id text, attempt_id text, scenario_id text, trace_id text, chat_title text, simulation_id text, problem_statement text, agent_id text, agent_name text, system_prompt text, temperature double precision, reasoning text, model_id text, model_name text, provider_name text, base_url text, api_key text, provider_id text, profile_id text, req_per_day integer, runs_today_count bigint, earliest_run_created_at timestamp with time zone, documents types.i_get_hint_run_context_and_create_run_v4_document[], run_id text)
+CREATE FUNCTION public.socket_get_hint_run_context_and_create_run_v4(message_id uuid, chat_id uuid, department_id uuid, profile_id uuid, group_id uuid DEFAULT NULL::uuid, user_instructions text DEFAULT NULL::text) RETURNS TABLE(agent_id text, agent_role text, chat_id text, group_id uuid, developer_instruction_template text)
     LANGUAGE sql
     AS $$
 WITH params AS (
-    SELECT message_id, chat_id, department_id, profile_id
+    SELECT message_id, chat_id, department_id, profile_id, group_id, user_instructions
 ),
 target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, mc.content, m.created_at
@@ -59133,131 +60572,111 @@ document_data AS (
     LEFT JOIN uploads u ON u.id = du.upload_id
     WHERE sd.scenario_id = si.id AND sd.active = true
 ),
--- Context data with rate limit info
+-- Get or create group (for trace_id and group_id)
+-- If group_id provided (regeneration), use existing group; otherwise create/get from chat
+existing_group_from_param AS (
+    SELECT g.id as group_id, g.trace_id
+    FROM params p
+    JOIN groups g ON g.id = p.group_id
+    WHERE p.group_id IS NOT NULL
+    LIMIT 1
+),
+existing_group_from_chat AS (
+    SELECT g.id as group_id, g.trace_id
+    FROM chat_info ci
+    JOIN chat_groups cg ON cg.chat_id = ci.id
+    JOIN groups g ON g.id = cg.group_id
+    WHERE NOT EXISTS (SELECT 1 FROM existing_group_from_param)
+    LIMIT 1
+),
+create_group_if_needed AS (
+    INSERT INTO groups (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM chat_info ci
+    WHERE NOT EXISTS (SELECT 1 FROM existing_group_from_param)
+      AND NOT EXISTS (SELECT 1 FROM existing_group_from_chat)
+    RETURNING id as group_id, trace_id
+),
+group_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT group_id FROM existing_group_from_param LIMIT 1),
+            (SELECT group_id FROM existing_group_from_chat LIMIT 1),
+            (SELECT group_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::uuid
+        ) as group_id,
+        COALESCE(
+            (SELECT trace_id FROM existing_group_from_param LIMIT 1),
+            (SELECT trace_id FROM existing_group_from_chat LIMIT 1),
+            (SELECT trace_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::text
+        ) as trace_id
+),
+-- Get agent tools as composite type array
+agent_tools_data AS (
+    SELECT 
+        ba.agent_id,
+        COALESCE(
+            ARRAY_AGG(
+                (t.id, t.name, COALESCE(t.description, ''), t.tool_type, t.agent_role::text, t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY t.tool_type, t.name
+            ),
+            '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
+        ) as tools
+    FROM best_agent ba
+    LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
+    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    GROUP BY ba.agent_id
+),
+-- Get developer instruction using agent role
+developer_instruction_data AS (
+    SELECT 
+        ba.agent_id,
+        di.template as developer_instruction_template,
+        dis.schema_id as developer_instruction_schema_id
+    FROM best_agent ba
+    INNER JOIN agents a ON a.id = ba.agent_id
+    LEFT JOIN agent_role_developer_instruction_types ardit ON ardit.agent_role = a.role
+    LEFT JOIN developer_instructions di ON di.type = ardit.developer_instruction_type AND di.active = true
+    LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
+    LIMIT 1
+),
+-- Get department name
+department_data AS (
+    SELECT 
+        p_params.department_id,
+        d.title as department_name
+    FROM params p_params
+    LEFT JOIN departments d ON d.id = p_params.department_id
+),
+-- Context data - minimal (no rate limit, no run creation)
 context_data AS (
     SELECT 
-        tm.id::text as message_id,
-        tm.created_at as message_created_at,
-        ci.id::text as chat_id,
-        ci.attempt_id::text as chat_attempt_id,
-        ci.scenario_id::text,
-        ci.trace_id,
-        ci.title as chat_title,
-        ai.id::text as attempt_id,
-        ai.simulation_id::text,
-        si.problem_statement,
+        -- Only fields needed for dispatch
         a.id::text as agent_id,
-        a.name as agent_name,
-        COALESCE(pr_prompt.system_prompt, '') as system_prompt,
-        COALESCE(mtl.temperature, 0.0) as temperature,
-        mrl.reasoning_level as reasoning,
-        m.id::text as model_id,
-        m.value as model_name,
-        COALESCE(p.value::text, '') as provider_name,
-        COALESCE(me.base_url, '') as base_url,
-        k.key as api_key,
-        p.id::text as provider_id,
-        COALESCE(pi.profile_id, p_params.profile_id)::uuid as profile_id,
-        prl.req_per_day,
-        COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
-        rt.earliest_run_created_at,
-        -- Aggregate documents as composite type array
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (dd.document_id, dd.name, dd.file_path, dd.mime_type)::types.i_get_hint_run_context_and_create_run_v4_document
-                ORDER BY dd.document_id
-            ) FROM document_data dd),
-            '{}'::types.i_get_hint_run_context_and_create_run_v4_document[]
-        ) as documents
+        a.role::text as agent_role,
+        ci.id::text as chat_id
     FROM target_message tm
     CROSS JOIN chat_info ci
     CROSS JOIN attempt_info ai
     CROSS JOIN scenario_info si
-    LEFT JOIN profile_info pi ON true
     CROSS JOIN best_agent ba
-    CROSS JOIN profile_rate_limit prl
-    CROSS JOIN runs_today rt
     CROSS JOIN params p_params
     INNER JOIN agents a ON a.id = ba.agent_id
-    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p_params.department_id AND adp_prompt.active = true
-    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
-    LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
-    LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
-    INNER JOIN models m ON m.id = a.model_id
-    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
-    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN providers p ON p.id = m.provider_id
-    CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id 
-        AND spk.settings_id = act_s.settings_id 
-        AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    -- Validate rate limit: raises exception if exceeded
-    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
-),
-create_run AS (
-    -- Create run record
-    INSERT INTO runs (input_tokens, output_tokens, agent_id)
-    SELECT 0, 0, cd.agent_id::uuid
-    FROM context_data cd
-    RETURNING id as run_id
-),
-link_model AS (
-    -- Link model to run
-    INSERT INTO run_models (run_id, model_id, active)
-    SELECT cr.run_id, m.id, true
-    FROM create_run cr
-    CROSS JOIN best_agent ba
-    INNER JOIN agents a ON a.id = ba.agent_id
-    INNER JOIN models m ON m.id = a.model_id
-    RETURNING run_id
-),
-link_profile AS (
-    -- Link profile to run if provided
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, profile_id, true
-    FROM link_model lm
-    CROSS JOIN context_data cd
-    WHERE profile_id IS NOT NULL
-    RETURNING run_id
+    -- NO rate limit check - handled in generate/start.py
+    -- NO run creation - handled in generate/start.py
+    -- NO tools, developer instructions, etc. - fetched by modality handlers
 )
 SELECT 
-    -- Context data from context_data CTE
-    cd.message_id,
-    cd.message_created_at,
-    cd.chat_id,
-    cd.attempt_id,
-    cd.scenario_id,
-    cd.trace_id,
-    cd.chat_title,
-    cd.simulation_id,
-    cd.problem_statement,
+    -- Minimal output - only what's needed for dispatch
     cd.agent_id,
-    cd.agent_name,
-    cd.system_prompt,
-    cd.temperature,
-    cd.reasoning,
-    cd.model_id,
-    cd.model_name,
-    cd.provider_name,
-    cd.base_url,
-    cd.api_key,
-    cd.provider_id,
-    cd.profile_id,
-    cd.req_per_day,
-    cd.runs_today_count,
-    cd.earliest_run_created_at,
-    cd.documents,
-    -- Run ID (created in this transaction)
-    cr.run_id::text as run_id
+    cd.agent_role,
+    cd.chat_id,
+    p_params.group_id as group_id,  -- Pass through group_id if provided (for regeneration)
+    did.developer_instruction_template  -- Developer instruction template (may be NULL)
 FROM context_data cd
-CROSS JOIN create_run cr
-CROSS JOIN link_model lm
-CROSS JOIN link_profile lp
+CROSS JOIN params p_params
+LEFT JOIN developer_instruction_data did ON true  -- Join to get developer instruction template
 $$;
 
 
@@ -60591,6 +62010,87 @@ $$;
 
 
 --
+-- Name: socket_get_messages_by_ids_v4(uuid[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_messages_by_ids_v4(message_ids uuid[]) RETURNS TABLE(messages types.i_get_messages_by_ids_v4_message[])
+    LANGUAGE sql STABLE
+    AS $$
+WITH params AS (
+    SELECT message_ids AS message_ids
+),
+-- Get messages in order of message_ids array
+messages_data AS (
+    SELECT 
+        m.id,
+        m.role::text,
+        mc.content,
+        m.created_at,
+        m.completed,
+        m.audio,
+        ma.upload_id,
+        array_position(p.message_ids, m.id) as pos
+    FROM params p
+    CROSS JOIN unnest(p.message_ids) AS msg_id
+    JOIN messages m ON m.id = msg_id
+    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    LEFT JOIN message_audio ma ON ma.message_id = m.id
+    WHERE p.message_ids IS NOT NULL
+      AND array_length(p.message_ids, 1) > 0
+)
+SELECT 
+    COALESCE(
+        ARRAY_AGG(
+            (md.id, md.role, md.content, md.created_at, md.completed, md.audio, md.upload_id)::types.i_get_messages_by_ids_v4_message
+            ORDER BY md.pos
+        ),
+        '{}'::types.i_get_messages_by_ids_v4_message[]
+    ) as messages
+FROM messages_data md
+$$;
+
+
+--
+-- Name: socket_get_messages_by_run_id_v4(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_messages_by_run_id_v4(run_id uuid) RETURNS TABLE(messages types.i_get_messages_by_ids_v4_message[])
+    LANGUAGE sql STABLE
+    AS $$
+WITH params AS (
+    SELECT run_id AS run_id
+),
+-- Get all messages linked to the run (includes system/developer from previous runs)
+messages_data AS (
+    SELECT 
+        m.id,
+        m.role::text,
+        mc.content,
+        m.created_at,
+        m.completed,
+        m.audio,
+        ma.upload_id
+    FROM params p
+    JOIN message_runs mr ON mr.run_id = p.run_id
+    JOIN messages m ON m.id = mr.message_id
+    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    LEFT JOIN message_audio ma ON ma.message_id = m.id
+    WHERE p.run_id IS NOT NULL
+    ORDER BY m.created_at ASC  -- Order by creation time
+)
+SELECT 
+    COALESCE(
+        ARRAY_AGG(
+            (md.id, md.role, md.content, md.created_at, md.completed, md.audio, md.upload_id)::types.i_get_messages_by_ids_v4_message
+            ORDER BY md.created_at
+        ),
+        '{}'::types.i_get_messages_by_ids_v4_message[]
+    ) as messages
+FROM messages_data md
+$$;
+
+
+--
 -- Name: socket_get_messages_with_audio_v4(uuid, uuid[]); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -61723,16 +63223,16 @@ context_data AS (
         -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, ts.schema_id)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc
+                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, dt.schema_id)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]
             FROM documents d
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
             LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            LEFT JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN template_schemas ts ON ts.template_id = t.id
-            LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+            LEFT JOIN html h ON h.id = dt.html_id
+            LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+            LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
             WHERE d.id = ANY(p.document_ids)
             ),
             ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]
@@ -61741,13 +63241,11 @@ context_data AS (
         -- Document templates data (aggregated as composite type array for template documents)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, ts.schema_id, t.upload_id::text)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template
+                (d.id::text, d.name, dt.schema_id, dt.html_id::text)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template[]
             FROM documents d
             INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            INNER JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN template_schemas ts ON ts.template_id = t.id
             WHERE d.id = ANY(p.document_ids)
               AND d.template = true
             ),
@@ -62066,16 +63564,16 @@ context_data AS (
         -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, ts.schema_id)::types.i_get_scenario_run_context_and_create_run_v4_document
+                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, dt.schema_id)::types.i_get_scenario_run_context_and_create_run_v4_document
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document[]
             FROM documents d
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
             LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            LEFT JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN template_schemas ts ON ts.template_id = t.id
-            LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+            LEFT JOIN html h ON h.id = dt.html_id
+            LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+            LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
             WHERE d.id = ANY(p.document_ids)
             ),
             ARRAY[]::types.i_get_scenario_run_context_and_create_run_v4_document[]
@@ -62085,14 +63583,14 @@ context_data AS (
         -- Includes all parent document info needed for child creation
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(d.description, ''), d.classify_agent_id::text, d.document_agent_id::text, ts.schema_id, t.upload_id::text, u.file_path)::types.i_get_scenario_run_context_and_create_run_v4_document_template
+                (d.id::text, d.name, COALESCE(d.description, ''), d.classify_agent_id::text, d.document_agent_id::text, dt.schema_id, dt.html_id::text, u.file_path)::types.i_get_scenario_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
             FROM documents d
             INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            INNER JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN template_schemas ts ON ts.template_id = t.id
-            INNER JOIN uploads u ON u.id = t.upload_id
+            INNER JOIN html h ON h.id = dt.html_id
+            INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
+            INNER JOIN uploads u ON u.id = hu.upload_id
             WHERE d.id = ANY(p.document_ids)
               AND d.template = true
             ),
@@ -63331,6 +64829,720 @@ CROSS JOIN create_run cr
 CROSS JOIN group_data gd
 LEFT JOIN documents_data dd ON dd.chat_id::text = cd.chat_id
 $$;
+
+
+--
+-- Name: socket_get_text_run_context_and_create_run_v4(uuid, uuid, uuid, uuid, text, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_text_run_context_and_create_run_v4(agent_id uuid, profile_id uuid, department_id uuid DEFAULT NULL::uuid, resource_id uuid DEFAULT NULL::uuid, resource_type text DEFAULT NULL::text, upload_id uuid DEFAULT NULL::uuid, group_id uuid DEFAULT NULL::uuid, user_instructions text DEFAULT NULL::text) RETURNS TABLE(agent_id text, agent_name text, agent_role text, system_prompt text, temperature double precision, reasoning text, model_id text, model_name text, provider text, base_url text, api_key text, profile_id text, req_per_day integer, runs_today_count bigint, earliest_run_created_at timestamp with time zone, run_id text, group_id uuid, trace_id text, tools types.i_get_text_run_context_and_create_run_v4_tool[], developer_instruction_template text, developer_instruction_schema_id uuid, department_name text, developer_message_id uuid, upload_id uuid, file_path text, mime_type text)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT 
+        agent_id AS agent_id, 
+        profile_id AS profile_id,
+        department_id AS department_id,
+        resource_id AS resource_id,
+        resource_type AS resource_type,
+        upload_id AS upload_id,
+        group_id AS group_id,
+        user_instructions AS user_instructions
+),
+upload_info AS (
+    -- Get upload information when upload_id is provided (for audio input)
+    SELECT 
+        u.id as upload_id,
+        u.file_path,
+        u.mime_type
+    FROM params p
+    LEFT JOIN uploads u ON u.id = p.upload_id
+    WHERE p.upload_id IS NOT NULL
+),
+-- Get or create group (for trace_id and group_id)
+-- If group_id provided (regeneration), use existing group; otherwise create new one
+existing_group_from_param AS (
+    SELECT g.id as group_id, g.trace_id
+    FROM params p
+    JOIN groups g ON g.id = p.group_id
+    WHERE p.group_id IS NOT NULL
+    LIMIT 1
+),
+create_group_if_needed AS (
+    -- Create new group if needed (only if group_id not provided)
+    INSERT INTO groups (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM params p
+    WHERE p.group_id IS NULL
+      AND p.department_id IS NOT NULL
+    RETURNING id as group_id, trace_id
+),
+group_data AS (
+    -- Use existing group from param, newly created group, or fallback
+    SELECT 
+        COALESCE(
+            (SELECT group_id FROM existing_group_from_param LIMIT 1),
+            (SELECT group_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::uuid  -- Fallback if no group created
+        ) as group_id,
+        COALESCE(
+            (SELECT trace_id FROM existing_group_from_param LIMIT 1),
+            (SELECT trace_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::text  -- Fallback trace_id
+        ) as trace_id
+),
+selected_agent AS (
+    -- Use provided agent_id directly
+    SELECT a.id as agent_id
+    FROM agents a
+    CROSS JOIN params p
+    WHERE a.id = p.agent_id
+      AND a.active = true
+    LIMIT 1
+),
+profile_rate_limit AS (
+    -- Get rate limit for the profile
+    SELECT 
+        prl.requests_per_day as req_per_day
+    FROM profiles prof
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    WHERE prof.id = (SELECT profile_id FROM params)
+),
+runs_today AS (
+    -- Count model runs for the profile since start of day
+    SELECT 
+        COUNT(*)::bigint as runs_today_count,
+        MIN(mr.created_at) as earliest_run_created_at
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
+    WHERE mrp.profile_id = (SELECT profile_id FROM params)
+      AND mrp.active = true
+      AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+),
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+profile_primary_department AS (
+    SELECT pd.department_id
+    FROM profile_departments pd
+    CROSS JOIN params p
+    WHERE pd.profile_id = p.profile_id
+      AND pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
+default_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+dept_specific_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
+settings_with_keys AS (
+    SELECT DISTINCT spk.settings_id
+    FROM setting_provider_keys spk
+    JOIN keys k ON k.id = spk.key_id
+    WHERE spk.active = true AND k.active = true
+),
+dept_specific_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true AND sd.active = true
+    LIMIT 1
+),
+default_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+active_settings AS (
+    SELECT 
+        COALESCE(
+            (SELECT settings_id FROM dept_specific_settings_with_keys),
+            (SELECT settings_id FROM default_settings_with_keys),
+            (SELECT settings_id FROM settings_with_keys LIMIT 1),
+            (SELECT settings_id FROM dept_specific_settings),
+            (SELECT settings_id FROM default_settings),
+            (SELECT id FROM settings WHERE active = true LIMIT 1)
+        ) as settings_id
+),
+-- Get agent tools as composite type array
+agent_tools_data AS (
+    SELECT 
+        sa.agent_id,
+        COALESCE(
+            ARRAY_AGG(
+                (t.id, t.name, COALESCE(t.description, ''), t.tool_type, t.agent_role::text, t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY t.tool_type, t.name
+            ),
+            '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
+        ) as tools
+    FROM selected_agent sa
+    LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
+    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    GROUP BY sa.agent_id
+),
+-- Get developer instruction using agent role
+developer_instruction_data AS (
+    SELECT 
+        sa.agent_id,
+        di.template as developer_instruction_template,
+        dis.schema_id as developer_instruction_schema_id
+    FROM selected_agent sa
+    INNER JOIN agents a ON a.id = sa.agent_id
+    LEFT JOIN agent_role_developer_instruction_types ardit ON ardit.agent_role = a.role
+    LEFT JOIN developer_instructions di ON di.type = ardit.developer_instruction_type AND di.active = true
+    LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
+    LIMIT 1
+),
+-- Get department name
+department_data AS (
+    SELECT 
+        p.department_id,
+        d.title as department_name
+    FROM params p
+    LEFT JOIN departments d ON d.id = p.department_id
+),
+context_data AS (
+    -- Get all context data (agent, model, provider, etc.)
+    SELECT 
+        -- Agent data
+        a.id::text as agent_id,
+        a.name as agent_name,
+        a.role::text as agent_role,
+        COALESCE(pr_prompt.system_prompt, '') as system_prompt,
+        COALESCE(mtl.temperature, 0.0) as temperature,
+        mrl.reasoning_level as reasoning,
+        
+        -- Model data
+        m.id::text as model_id,
+        m.value as model_name,
+        COALESCE(prov.value::text, '') as provider,
+        COALESCE(me.base_url, '') as base_url,
+        k.key as api_key,
+        
+        -- Profile data
+        p.profile_id::text as profile_id,
+        
+        -- Rate limit data (for profile)
+        prl.req_per_day,
+        COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
+        rt.earliest_run_created_at,
+        
+        -- Tools data
+        COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
+        
+        -- Developer instruction data
+        did.developer_instruction_template,
+        did.developer_instruction_schema_id,
+        
+        -- Department data
+        dd.department_name
+
+    FROM selected_agent sa
+    INNER JOIN agents a ON a.id = sa.agent_id
+    CROSS JOIN params p
+    -- Try department-specific prompt first, fall back to default prompt
+    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
+    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
+    LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
+    -- Use department-specific prompt if available, otherwise use default
+    LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
+    INNER JOIN models m ON m.id = a.model_id
+    -- Join temperature from junction table
+    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
+    -- Join reasoning from junction table
+    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
+    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
+    -- Get keys via settings system: provider -> active settings -> setting_provider_keys
+    LEFT JOIN providers prov ON prov.id = m.provider_id
+    CROSS JOIN active_settings act_s
+    LEFT JOIN setting_provider_keys spk ON spk.provider_id = prov.id 
+        AND spk.settings_id = act_s.settings_id 
+        AND spk.active = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    CROSS JOIN profile_rate_limit prl
+    CROSS JOIN runs_today rt
+    -- Join tools data
+    LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id
+    -- Join developer instruction data
+    LEFT JOIN developer_instruction_data did ON did.agent_id = sa.agent_id
+    -- Join department data
+    LEFT JOIN department_data dd ON dd.department_id = p.department_id
+    -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
+    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
+),
+create_run AS (
+    -- Create run record with all junction records (atomic with context query)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
+    SELECT 0, 0, NULL, cd.agent_id::uuid
+    FROM context_data cd
+    RETURNING id
+),
+link_model AS (
+    -- Link model to run
+    INSERT INTO run_models (run_id, model_id, active)
+    SELECT cr.id, cd.model_id::uuid, true
+    FROM create_run cr
+    CROSS JOIN context_data cd
+    RETURNING run_id
+),
+link_profile AS (
+    -- Link profile to run
+    INSERT INTO run_profiles (run_id, profile_id, active)
+    SELECT lm.run_id, cd.profile_id::uuid, true
+    FROM link_model lm
+    CROSS JOIN context_data cd
+    RETURNING run_id
+),
+link_group AS (
+    -- Link group to run
+    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
+    SELECT gd.group_id, lp.run_id, 0, NOW(), NOW()
+    FROM link_profile lp
+    CROSS JOIN group_data gd
+    RETURNING run_id
+),
+-- Create and link developer message if template exists
+developer_message_content AS (
+    SELECT 
+        cd.developer_instruction_template as content,
+        lg.run_id
+    FROM context_data cd
+    CROSS JOIN link_group lg
+    WHERE cd.developer_instruction_template IS NOT NULL
+    LIMIT 1
+),
+developer_message_hash AS (
+    SELECT 
+        dmc.content,
+        dmc.run_id,
+        message_content_hash(dmc.content, 'developer') as hash
+    FROM developer_message_content dmc
+),
+existing_developer_message AS (
+    SELECT 
+        m.id, 
+        m.created_at,
+        dmh.run_id
+    FROM messages m
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN developer_message_hash dmh ON message_content_hash(mc.content, 'developer') = dmh.hash
+    WHERE m.role = 'developer'
+    LIMIT 1
+),
+new_developer_message AS (
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    FROM developer_message_hash dmh
+    WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
+    RETURNING id, created_at, updated_at
+),
+insert_developer_message_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT 
+        nm.id, 
+        0, 
+        (SELECT content FROM developer_message_hash LIMIT 1), 
+        nm.created_at, 
+        nm.updated_at
+    FROM new_developer_message nm
+),
+developer_message_final AS (
+    SELECT id, run_id FROM existing_developer_message
+    UNION ALL
+    SELECT 
+        nm.id, 
+        (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
+    FROM new_developer_message nm
+),
+link_developer_message_to_run AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT dmf.id, dmf.run_id, NOW(), NOW()
+    FROM developer_message_final dmf
+    ON CONFLICT (message_id, run_id) 
+    DO UPDATE SET updated_at = NOW()
+    RETURNING message_id, run_id
+)
+SELECT 
+    -- Context data
+    cd.agent_id,
+    cd.agent_name,
+    cd.agent_role,
+    cd.system_prompt,
+    cd.temperature,
+    cd.reasoning,
+    cd.model_id,
+    cd.model_name,
+    cd.provider,
+    cd.base_url,
+    cd.api_key,
+    cd.profile_id,
+    cd.req_per_day,
+    cd.runs_today_count,
+    cd.earliest_run_created_at,
+    -- Run ID (created in same transaction)
+    cr.id::text as run_id,
+    -- Group ID and trace_id (from groups table)
+    gd.group_id,
+    gd.trace_id::text as trace_id,
+    -- Tools array
+    cd.tools,
+    -- Developer instruction
+    cd.developer_instruction_template,
+    cd.developer_instruction_schema_id,
+    -- Department name
+    cd.department_name,
+    -- Developer message ID (if created/linked)
+    ldm.message_id as developer_message_id,
+    -- Upload info (for audio input, when upload_id is provided)
+    ui.upload_id,
+    ui.file_path,
+    ui.mime_type
+FROM context_data cd
+CROSS JOIN create_run cr
+CROSS JOIN group_data gd
+LEFT JOIN link_developer_message_to_run ldm ON true
+LEFT JOIN upload_info ui ON true
+$$;
+
+
+--
+-- Name: socket_get_text_run_context_for_existing_run_v4(uuid, uuid, uuid, text, uuid[], uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_text_run_context_for_existing_run_v4(run_id uuid, agent_id uuid, resource_id uuid, resource_type text, message_ids uuid[] DEFAULT NULL::uuid[], group_id uuid DEFAULT NULL::uuid) RETURNS TABLE(agent_id text, agent_name text, agent_role text, system_prompt text, temperature double precision, reasoning text, model_id text, model_name text, provider text, base_url text, api_key text, profile_id text, req_per_day integer, runs_today_count bigint, earliest_run_created_at timestamp with time zone, group_id uuid, trace_id text, tools types.i_get_text_run_context_and_create_run_v4_tool[], department_name text, upload_id uuid, file_path text, mime_type text)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT 
+        run_id AS run_id,
+        agent_id AS agent_id,
+        resource_id AS resource_id,
+        resource_type AS resource_type,
+        message_ids AS message_ids,
+        group_id AS group_id
+),
+-- Validate run exists
+existing_run AS (
+    SELECT 
+        r.id as run_id,
+        r.agent_id,
+        gd.group_id,
+        gd.trace_id
+    FROM runs r
+    CROSS JOIN params p
+    LEFT JOIN group_runs gr ON gr.run_id = r.id
+    LEFT JOIN groups g ON g.id = gr.group_id
+    LEFT JOIN LATERAL (
+        SELECT 
+            COALESCE(gr.group_id, p.group_id) as group_id,
+            COALESCE(g.trace_id, gen_random_uuid()::text) as trace_id
+    ) gd ON true
+    WHERE r.id = p.run_id
+    LIMIT 1
+),
+-- Get group_id and trace_id
+group_data AS (
+    SELECT 
+        er.group_id,
+        er.trace_id
+    FROM existing_run er
+),
+-- Get agent
+selected_agent AS (
+    SELECT a.id as agent_id
+    FROM agents a
+    CROSS JOIN params p
+    WHERE a.id = p.agent_id
+      AND a.active = true
+    LIMIT 1
+),
+-- Get profile from run
+run_profile AS (
+    SELECT rp.profile_id
+    FROM run_profiles rp
+    CROSS JOIN params p
+    WHERE rp.run_id = p.run_id
+      AND rp.active = true
+    LIMIT 1
+),
+-- Get rate limit info (for display, not validation)
+profile_rate_limit AS (
+    SELECT 
+        prl.requests_per_day as req_per_day
+    FROM run_profile rp
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = rp.profile_id AND prl.active = true
+),
+runs_today AS (
+    SELECT 
+        COUNT(*)::bigint as runs_today_count,
+        MIN(mr.created_at) as earliest_run_created_at
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
+    CROSS JOIN run_profile rp
+    WHERE mrp.profile_id = rp.profile_id
+      AND mrp.active = true
+      AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+),
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+profile_primary_department AS (
+    SELECT pd.department_id
+    FROM run_profile rp
+    JOIN profile_departments pd ON pd.profile_id = rp.profile_id
+    WHERE pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
+default_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+dept_specific_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
+settings_with_keys AS (
+    SELECT DISTINCT spk.settings_id
+    FROM setting_provider_keys spk
+    JOIN keys k ON k.id = spk.key_id
+    WHERE spk.active = true AND k.active = true
+),
+dept_specific_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true AND sd.active = true
+    LIMIT 1
+),
+default_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+active_settings AS (
+    SELECT 
+        COALESCE(
+            (SELECT settings_id FROM dept_specific_settings_with_keys),
+            (SELECT settings_id FROM default_settings_with_keys),
+            (SELECT settings_id FROM settings_with_keys LIMIT 1),
+            (SELECT settings_id FROM dept_specific_settings),
+            (SELECT settings_id FROM default_settings),
+            (SELECT id FROM settings WHERE active = true LIMIT 1)
+        ) as settings_id
+),
+-- Get agent tools as composite type array
+agent_tools_data AS (
+    SELECT 
+        sa.agent_id,
+        COALESCE(
+            ARRAY_AGG(
+                (t.id, t.name, COALESCE(t.description, ''), t.tool_type, t.agent_role::text, t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY t.tool_type, t.name
+            ),
+            '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
+        ) as tools
+    FROM selected_agent sa
+    LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
+    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    GROUP BY sa.agent_id
+),
+-- Get department name (from agent_departments or profile primary department)
+department_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ad.department_id FROM agent_departments ad 
+             JOIN selected_agent sa ON ad.agent_id = sa.agent_id 
+             WHERE ad.active = true LIMIT 1),
+            (SELECT ppd.department_id FROM profile_primary_department ppd)
+        ) as department_id
+),
+department_name_data AS (
+    SELECT d.title as department_name
+    FROM department_data dd
+    LEFT JOIN departments d ON d.id = dd.department_id
+),
+-- Get upload info if exists (for audio input) - get from messages linked to run
+upload_info AS (
+    SELECT DISTINCT
+        u.id as upload_id,
+        u.file_path,
+        u.mime_type
+    FROM params p
+    JOIN message_runs mr ON mr.run_id = p.run_id
+    JOIN message_audio ma ON ma.message_id = mr.message_id
+    JOIN uploads u ON u.id = ma.upload_id
+    LIMIT 1
+),
+-- Context data with agent config
+context_data AS (
+    SELECT 
+        -- Agent data
+        a.id::text as agent_id,
+        a.name as agent_name,
+        a.role::text as agent_role,
+        COALESCE(pr_prompt.system_prompt, '') as system_prompt,
+        COALESCE(mtl.temperature, 0.0) as temperature,
+        mrl.reasoning_level as reasoning,
+        
+        -- Model data
+        m.id::text as model_id,
+        m.value as model_name,
+        COALESCE(prov.value::text, '') as provider,
+        COALESCE(me.base_url, '') as base_url,
+        k.key as api_key,
+        
+        -- Profile data
+        rp.profile_id::text as profile_id,
+        
+        -- Rate limit data (for display)
+        prl.req_per_day,
+        COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
+        rt.earliest_run_created_at,
+        
+        -- Tools data
+        COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
+        
+        -- Department data
+        dnd.department_name
+
+    FROM selected_agent sa
+    INNER JOIN agents a ON a.id = sa.agent_id
+    CROSS JOIN run_profile rp
+    -- Try department-specific prompt first, fall back to default prompt
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = ad.department_id AND adp_prompt.active = true
+    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
+    LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
+    -- Use department-specific prompt if available, otherwise use default
+    LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
+    INNER JOIN models m ON m.id = a.model_id
+    -- Join temperature from junction table
+    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
+    -- Join reasoning from junction table
+    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
+    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
+    -- Get keys via settings system: provider -> active settings -> setting_provider_keys
+    LEFT JOIN providers prov ON prov.id = m.provider_id
+    CROSS JOIN active_settings act_s
+    LEFT JOIN setting_provider_keys spk ON spk.provider_id = prov.id 
+        AND spk.settings_id = act_s.settings_id 
+        AND spk.active = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    CROSS JOIN profile_rate_limit prl
+    CROSS JOIN runs_today rt
+    -- Join tools data
+    LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id
+    -- Join department data
+    CROSS JOIN department_name_data dnd
+)
+SELECT 
+    -- Context data
+    cd.agent_id,
+    cd.agent_name,
+    cd.agent_role,
+    cd.system_prompt,
+    cd.temperature,
+    cd.reasoning,
+    cd.model_id,
+    cd.model_name,
+    cd.provider,
+    cd.base_url,
+    cd.api_key,
+    cd.profile_id,
+    cd.req_per_day,
+    cd.runs_today_count,
+    cd.earliest_run_created_at,
+    -- Group ID and trace_id (from groups table)
+    gd.group_id,
+    gd.trace_id::text as trace_id,
+    -- Tools array
+    cd.tools,
+    -- Department name
+    cd.department_name,
+    -- Upload info (for audio input, when upload_id is provided)
+    ui.upload_id,
+    ui.file_path,
+    ui.mime_type
+FROM context_data cd
+CROSS JOIN existing_run er
+CROSS JOIN group_data gd
+LEFT JOIN upload_info ui ON true
+$$;
+
+
+--
+-- Name: socket_get_text_tool_call_results_v4(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_get_text_tool_call_results_v4(run_id uuid) RETURNS TABLE(tool_results jsonb)
+    LANGUAGE sql STABLE
+    AS $_$
+WITH tool_call_results AS (
+    -- Get all tool call results for the run
+    SELECT 
+        jsonb_object_agg(
+            t.name,
+            tca.arguments_json
+        ) as tool_results
+    FROM tool_calls tc
+    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+    JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+    JOIN tools t ON t.id = tc.tool_id
+    WHERE tcr.run_id = $1
+      AND tc.completed = true
+)
+SELECT 
+    COALESCE((SELECT tool_results FROM tool_call_results), '{}'::jsonb) as tool_results
+$_$;
 
 
 --
@@ -65170,6 +67382,20 @@ $$;
 
 
 --
+-- Name: socket_hint_debug_complete_v4(text, text, text, text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_hint_debug_complete_v4(run_id text, tool_call_id text, tool_name text, final_content text, arguments_raw text, resource_id text DEFAULT NULL::text, call_id text DEFAULT NULL::text) RETURNS TABLE(success boolean, message text)
+    LANGUAGE sql
+    AS $$
+-- No-op: Just returns success (no database operations)
+SELECT 
+    true as success,
+    'Debug info tool completed' as message
+$$;
+
+
+--
 -- Name: socket_hint_debug_eval_start_v4(uuid, uuid, uuid, uuid, uuid, uuid, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -65186,6 +67412,37 @@ SELECT
     tool_id::text as tool_id,
     true as success,
     'Debug eval started' as message
+$$;
+
+
+--
+-- Name: socket_hint_end_v4(text, text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_hint_end_v4(type text, run_id text, resource_id text DEFAULT NULL::text, group_id text DEFAULT NULL::text, department_id text DEFAULT NULL::text) RETURNS TABLE(success boolean, message text, chat_id text)
+    LANGUAGE sql
+    AS $$
+-- No-op: Just returns completion info (no database operations)
+SELECT 
+    true as success,
+    'Hint generation completed' as message,
+    resource_id as chat_id
+$$;
+
+
+--
+-- Name: socket_hint_error_v4(boolean, text, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_hint_error_v4(success boolean, message text, resource_id text DEFAULT NULL::text, group_id text DEFAULT NULL::text) RETURNS TABLE(success boolean, message text, resource_id text, group_id text)
+    LANGUAGE sql
+    AS $$
+-- No-op: Just returns error info (no database operations)
+SELECT 
+    success as success,
+    message as message,
+    resource_id as resource_id,
+    group_id as group_id
 $$;
 
 
@@ -65226,6 +67483,83 @@ SELECT
     tool_id::text as tool_id,
     true as success,
     'Hint eval started' as message
+$$;
+
+
+--
+-- Name: socket_hint_tool_complete_v4(uuid, uuid, text[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_hint_tool_complete_v4(run_id uuid, chat_id uuid, hint_texts text[]) RETURNS TABLE(message_id uuid, hints types.i_hint_tool_complete_v4_hint_result[])
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_message_id uuid;
+    v_hints types.i_hint_tool_complete_v4_hint_result[];
+BEGIN
+    -- Get message_id from run_id and chat_id (same logic as get_hint_message_id_complete.sql)
+    SELECT m.id INTO v_message_id
+    FROM message_runs mr
+    JOIN messages m ON m.id = mr.message_id
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN chat_groups cg ON cg.group_id IN (
+        SELECT gr.group_id 
+        FROM group_runs gr 
+        WHERE gr.run_id = run_id
+    )
+    JOIN chats c ON c.id = cg.chat_id
+    WHERE mr.run_id = run_id
+      AND c.id = chat_id
+      AND m.role = 'user'::message_role
+    ORDER BY m.created_at DESC
+    LIMIT 1;
+
+    -- If no message_id found, return empty result
+    IF v_message_id IS NULL THEN
+        RETURN QUERY SELECT NULL::uuid, '{}'::types.i_hint_tool_complete_v4_hint_result[];
+        RETURN;
+    END IF;
+
+    -- Create hints for that message_id (same logic as create_hints_complete.sql)
+    WITH hint_texts_array AS (
+        SELECT 
+            t.hint_text,
+            t.idx
+        FROM unnest(hint_texts) WITH ORDINALITY AS t(hint_text, idx)
+        WHERE trim(t.hint_text) != ''
+    ),
+    hints_with_next_idx AS (
+        SELECT 
+            hta.hint_text,
+            hta.idx as original_idx,
+            COALESCE(
+                (SELECT MAX(sh.idx) FROM simulation_hints sh WHERE sh.simulation_message_id = v_message_id),
+                -1
+            ) + ROW_NUMBER() OVER (ORDER BY hta.idx) as next_idx
+        FROM hint_texts_array hta
+    ),
+    inserted_hints AS (
+        INSERT INTO simulation_hints (simulation_message_id, idx, hint)
+        SELECT 
+            v_message_id,
+            hwni.next_idx,
+            hwni.hint_text
+        FROM hints_with_next_idx hwni
+        RETURNING simulation_message_id, idx, hint
+    )
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (simulation_message_id, idx, hint)::types.i_hint_tool_complete_v4_hint_result
+                ORDER BY idx
+            ),
+            '{}'::types.i_hint_tool_complete_v4_hint_result[]
+        ) INTO v_hints
+    FROM inserted_hints;
+
+    -- Return result
+    RETURN QUERY SELECT v_message_id, v_hints;
+END;
 $$;
 
 
@@ -67291,6 +69625,145 @@ LEFT JOIN attempt_chat_link acl ON acl.chat_id = nc.chat_id AND acl.attempt_id =
 LEFT JOIN chat_group_link cgl ON cgl.chat_id = nc.chat_id AND ctc.content_type = 'scenario'
 LEFT JOIN new_group ng ON ng.group_id = cgl.group_id AND ctc.content_type = 'scenario'
 LEFT JOIN scenario_full_data sfd ON ctc.content_type = 'scenario' AND sfd.scenario_id = (SELECT scenario_id FROM chosen_scenario_id)
+$$;
+
+
+--
+-- Name: socket_text_generation_complete_v4(uuid, uuid, uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_text_generation_complete_v4(profile_id uuid, run_id uuid, resource_id uuid DEFAULT NULL::uuid, group_id uuid DEFAULT NULL::uuid, department_id uuid DEFAULT NULL::uuid) RETURNS TABLE(success boolean, message text, tool_results jsonb, trace_id text)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    tool_results_val jsonb;
+    trace_id_val text;
+BEGIN
+    -- Get trace_id from groups table if group_id provided
+    IF group_id IS NOT NULL THEN
+        SELECT trace_id INTO trace_id_val FROM groups WHERE id = group_id LIMIT 1;
+    END IF;
+
+    -- Get tool results
+    SELECT tool_results INTO tool_results_val
+    FROM socket_get_text_tool_call_results_v4(run_id);
+
+    -- Return completion data
+    RETURN QUERY
+    SELECT 
+        true as success,
+        'Text generation completed successfully' as message,
+        COALESCE(tool_results_val, '{}'::jsonb) as tool_results,
+        trace_id_val as trace_id;
+END;
+$$;
+
+
+--
+-- Name: socket_text_tool_progress_update_v4(uuid, text, text, text, text, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.socket_text_tool_progress_update_v4(run_id uuid, tool_call_id text, progress_type text, call_id text DEFAULT NULL::text, tool_name text DEFAULT NULL::text, arguments_delta text DEFAULT ''::text, resource_id uuid DEFAULT NULL::uuid) RETURNS TABLE(tool_id uuid, tool_type public.tool_type, tool_call_id text, persisted_call_id text, tool_name text, arguments_raw text)
+    LANGUAGE sql
+    AS $$
+WITH params AS (
+    SELECT run_id, tool_call_id, call_id, tool_name, arguments_delta, progress_type, resource_id
+),
+-- Get tool_id AND tool_type from tool_name + agent_tools junction table
+-- Works with any agent (not hardcoded to document)
+get_tool_info AS (
+    SELECT t.id as tool_id, t.tool_type, t.name as tool_name
+    FROM params p
+    JOIN tools t ON t.name = p.tool_name
+    JOIN agent_tools at ON at.tool_id = t.id
+    JOIN runs r ON r.id = p.run_id
+    WHERE at.agent_id = r.agent_id
+      AND at.active = true
+      AND t.active = true
+    LIMIT 1
+),
+-- Get or create tool_call (by call_id or tool_call_id)
+existing_tool_call AS (
+    SELECT tc.id as tool_call_id, tc.call_id
+    FROM params p
+    JOIN tool_calls tc ON (
+        (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
+        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+    )
+    LIMIT 1
+),
+create_tool_call AS (
+    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    SELECT 
+        COALESCE(p.call_id, 'text_' || p.tool_call_id),
+        gt.tool_id,
+        false,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN get_tool_info gt
+    WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
+    RETURNING id as tool_call_id, call_id
+),
+selected_tool_call AS (
+    SELECT tool_call_id::text, call_id FROM existing_tool_call
+    UNION ALL
+    SELECT tool_call_id::text, call_id FROM create_tool_call
+),
+-- Link tool_call to run
+link_tool_call_to_run AS (
+    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
+    SELECT 
+        uuid(stc.tool_call_id),
+        p.run_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    ON CONFLICT (tool_call_id, run_id) DO UPDATE SET updated_at = NOW()
+),
+-- Accumulate arguments_raw (SQL accumulates!)
+accumulate_arguments AS (
+    SELECT 
+        uuid(stc.tool_call_id) as tool_call_id,
+        CASE 
+            WHEN p.progress_type = 'tool_call_start' THEN COALESCE(p.arguments_delta, '')
+            WHEN p.progress_type = 'tool_call_progress' THEN 
+                COALESCE(
+                    (SELECT arguments_raw FROM tool_call_arguments tca 
+                     WHERE tca.tool_call_id = uuid(stc.tool_call_id) 
+                     ORDER BY created_at DESC LIMIT 1),
+                    ''
+                ) || COALESCE(p.arguments_delta, '')
+            ELSE COALESCE(p.arguments_delta, '')
+        END as accumulated_raw
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+),
+-- Upsert tool_call_arguments (SQL accumulates)
+upsert_tool_call_arguments AS (
+    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
+    SELECT 
+        aa.tool_call_id,
+        CASE 
+            WHEN aa.accumulated_raw ~ '^[\s]*\{' THEN aa.accumulated_raw::jsonb
+            ELSE NULL
+        END,
+        aa.accumulated_raw,
+        NOW()
+    FROM accumulate_arguments aa
+    WHERE aa.accumulated_raw IS NOT NULL AND aa.accumulated_raw != ''
+    ON CONFLICT (tool_call_id) DO UPDATE SET
+        arguments_raw = EXCLUDED.arguments_raw,
+        arguments_json = EXCLUDED.arguments_json
+)
+SELECT 
+    (SELECT tool_id FROM get_tool_info LIMIT 1) as tool_id,
+    (SELECT tool_type FROM get_tool_info LIMIT 1) as tool_type,
+    (SELECT tool_call_id FROM selected_tool_call LIMIT 1) as tool_call_id,
+    (SELECT call_id FROM selected_tool_call LIMIT 1) as persisted_call_id,
+    (SELECT tool_name FROM get_tool_info LIMIT 1) as tool_name,
+    (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) as arguments_raw
 $$;
 
 
@@ -70971,7 +73444,9 @@ CREATE TABLE public.document_templates (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     document_id uuid NOT NULL,
-    template_id uuid NOT NULL
+    template_id uuid NOT NULL,
+    html_id uuid NOT NULL,
+    schema_id uuid NOT NULL
 );
 
 
@@ -71246,6 +73721,34 @@ CREATE TABLE public.group_stop (
 
 
 --
+-- Name: html; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.html (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    description text,
+    active boolean DEFAULT true NOT NULL,
+    completed boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: html_uploads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.html_uploads (
+    html_id uuid NOT NULL,
+    upload_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: image_departments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -71341,6 +73844,21 @@ CREATE TABLE public.message_feedback_highlight (
 
 
 --
+-- Name: message_feedback_improvements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_feedback_improvements (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    grade_id uuid,
+    message_id uuid,
+    name text NOT NULL,
+    description text DEFAULT 'No description provided'::text NOT NULL,
+    tool_call_id uuid NOT NULL
+);
+
+
+--
 -- Name: message_feedback_replace; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -71354,17 +73872,16 @@ CREATE TABLE public.message_feedback_replace (
 
 
 --
--- Name: message_feedbacks; Type: TABLE; Schema: public; Owner: -
+-- Name: message_feedback_strengths; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.message_feedbacks (
+CREATE TABLE public.message_feedback_strengths (
+    id uuid DEFAULT uuidv7() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    name text NOT NULL,
-    description text DEFAULT 'No description provided'::text NOT NULL,
-    type public.message_feedback_type NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT message_feedbacks_id_v7_not_null NOT NULL,
     grade_id uuid,
     message_id uuid,
+    name text NOT NULL,
+    description text DEFAULT 'No description provided'::text NOT NULL,
     tool_call_id uuid NOT NULL
 );
 
@@ -72185,6 +74702,18 @@ CREATE TABLE public.schema_fields (
 
 
 --
+-- Name: schema_templates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schema_templates (
+    schema_id uuid NOT NULL,
+    template_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: schemas; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -72391,14 +74920,33 @@ CREATE TABLE public.standards (
 
 
 --
--- Name: template_schemas; Type: TABLE; Schema: public; Owner: -
+-- Name: template_array_items; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.template_schemas (
+CREATE TABLE public.template_array_items (
     template_id uuid NOT NULL,
-    schema_id uuid NOT NULL,
+    schema_field_id uuid NOT NULL,
+    item_template_id uuid NOT NULL,
+    "position" integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: template_values; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.template_values (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    template_id uuid NOT NULL,
+    schema_field_id uuid NOT NULL,
+    string_value text,
+    number_value numeric,
+    boolean_value boolean,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT template_values_check CHECK ((((((string_value IS NOT NULL))::integer + ((number_value IS NOT NULL))::integer) + ((boolean_value IS NOT NULL))::integer) = 1))
 );
 
 
@@ -72410,9 +74958,7 @@ CREATE TABLE public.templates (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
-    args jsonb DEFAULT '{}'::jsonb NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT templates_id_v7_not_null NOT NULL,
-    upload_id uuid,
     tool_call_id uuid NOT NULL
 );
 
@@ -73051,6 +75597,22 @@ ALTER TABLE ONLY public.groups
 
 
 --
+-- Name: html html_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.html
+    ADD CONSTRAINT html_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: html_uploads html_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.html_uploads
+    ADD CONSTRAINT html_uploads_pkey PRIMARY KEY (html_id, upload_id);
+
+
+--
 -- Name: image_departments image_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -73091,11 +75653,19 @@ ALTER TABLE ONLY public.message_audio
 
 
 --
--- Name: message_feedbacks message_feedbacks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: message_feedback_improvements message_feedback_improvements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_feedbacks
-    ADD CONSTRAINT message_feedbacks_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.message_feedback_improvements
+    ADD CONSTRAINT message_feedback_improvements_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: message_feedback_strengths message_feedback_strengths_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedback_strengths
+    ADD CONSTRAINT message_feedback_strengths_pkey PRIMARY KEY (id);
 
 
 --
@@ -73627,6 +76197,14 @@ ALTER TABLE ONLY public.schema_fields
 
 
 --
+-- Name: schema_templates schema_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_templates
+    ADD CONSTRAINT schema_templates_pkey PRIMARY KEY (schema_id, template_id);
+
+
+--
 -- Name: schemas schemas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -73771,11 +76349,27 @@ ALTER TABLE ONLY public.standards
 
 
 --
--- Name: template_schemas template_schemas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: template_array_items template_array_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.template_schemas
-    ADD CONSTRAINT template_schemas_pkey PRIMARY KEY (template_id, schema_id);
+ALTER TABLE ONLY public.template_array_items
+    ADD CONSTRAINT template_array_items_pkey PRIMARY KEY (template_id, schema_field_id, item_template_id);
+
+
+--
+-- Name: template_values template_values_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_values
+    ADD CONSTRAINT template_values_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: template_values template_values_template_id_schema_field_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_values
+    ADD CONSTRAINT template_values_template_id_schema_field_id_key UNIQUE (template_id, schema_field_id);
 
 
 --
@@ -74569,6 +77163,20 @@ CREATE INDEX document_templates_document_id_v7_idx ON public.document_templates 
 
 
 --
+-- Name: document_templates_html_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_templates_html_id_idx ON public.document_templates USING btree (html_id);
+
+
+--
+-- Name: document_templates_schema_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_templates_schema_id_idx ON public.document_templates USING btree (schema_id);
+
+
+--
 -- Name: document_templates_template_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -74954,6 +77562,41 @@ CREATE INDEX groups_trace_id_idx ON public.groups USING btree (trace_id);
 
 
 --
+-- Name: html_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX html_active_idx ON public.html USING btree (active);
+
+
+--
+-- Name: html_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX html_created_at_idx ON public.html USING btree (created_at);
+
+
+--
+-- Name: html_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX html_name_idx ON public.html USING btree (name);
+
+
+--
+-- Name: html_uploads_html_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX html_uploads_html_id_idx ON public.html_uploads USING btree (html_id);
+
+
+--
+-- Name: html_uploads_upload_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX html_uploads_upload_id_idx ON public.html_uploads USING btree (upload_id);
+
+
+--
 -- Name: idx_cohort_profiles_active; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -75094,6 +77737,27 @@ CREATE INDEX message_feedback_highlight_message_feedback_id_v7_idx ON public.mes
 
 
 --
+-- Name: message_feedback_improvements_grade_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_feedback_improvements_grade_id_v7_idx ON public.message_feedback_improvements USING btree (grade_id);
+
+
+--
+-- Name: message_feedback_improvements_message_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_feedback_improvements_message_id_v7_idx ON public.message_feedback_improvements USING btree (message_id);
+
+
+--
+-- Name: message_feedback_improvements_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_feedback_improvements_tool_call_id_idx ON public.message_feedback_improvements USING btree (tool_call_id);
+
+
+--
 -- Name: message_feedback_replace_message_feedback_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -75101,24 +77765,24 @@ CREATE INDEX message_feedback_replace_message_feedback_id_v7_idx ON public.messa
 
 
 --
--- Name: message_feedbacks_grade_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: message_feedback_strengths_grade_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX message_feedbacks_grade_id_v7_idx ON public.message_feedbacks USING btree (grade_id);
-
-
---
--- Name: message_feedbacks_message_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_feedbacks_message_id_v7_idx ON public.message_feedbacks USING btree (message_id);
+CREATE INDEX message_feedback_strengths_grade_id_v7_idx ON public.message_feedback_strengths USING btree (grade_id);
 
 
 --
--- Name: message_feedbacks_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: message_feedback_strengths_message_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX message_feedbacks_tool_call_id_idx ON public.message_feedbacks USING btree (tool_call_id);
+CREATE INDEX message_feedback_strengths_message_id_v7_idx ON public.message_feedback_strengths USING btree (message_id);
+
+
+--
+-- Name: message_feedback_strengths_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_feedback_strengths_tool_call_id_idx ON public.message_feedback_strengths USING btree (tool_call_id);
 
 
 --
@@ -76235,6 +78899,20 @@ CREATE INDEX schema_fields_schema_id_idx ON public.schema_fields USING btree (sc
 
 
 --
+-- Name: schema_templates_schema_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_templates_schema_id_idx ON public.schema_templates USING btree (schema_id);
+
+
+--
+-- Name: schema_templates_template_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_templates_template_id_idx ON public.schema_templates USING btree (template_id);
+
+
+--
 -- Name: schemas_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -76585,17 +79263,45 @@ CREATE INDEX standards_standard_group_id_v7_idx ON public.standards USING btree 
 
 
 --
--- Name: template_schemas_schema_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: template_array_items_item_template_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX template_schemas_schema_id_idx ON public.template_schemas USING btree (schema_id);
+CREATE INDEX template_array_items_item_template_id_idx ON public.template_array_items USING btree (item_template_id);
 
 
 --
--- Name: template_schemas_template_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: template_array_items_position_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX template_schemas_template_id_idx ON public.template_schemas USING btree (template_id);
+CREATE INDEX template_array_items_position_idx ON public.template_array_items USING btree (template_id, schema_field_id, "position");
+
+
+--
+-- Name: template_array_items_schema_field_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX template_array_items_schema_field_id_idx ON public.template_array_items USING btree (schema_field_id);
+
+
+--
+-- Name: template_array_items_template_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX template_array_items_template_id_idx ON public.template_array_items USING btree (template_id);
+
+
+--
+-- Name: template_values_schema_field_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX template_values_schema_field_id_idx ON public.template_values USING btree (schema_field_id);
+
+
+--
+-- Name: template_values_template_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX template_values_template_id_idx ON public.template_values USING btree (template_id);
 
 
 --
@@ -76617,13 +79323,6 @@ CREATE INDEX templates_name_idx ON public.templates USING btree (name);
 --
 
 CREATE INDEX templates_tool_call_id_idx ON public.templates USING btree (tool_call_id);
-
-
---
--- Name: templates_upload_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX templates_upload_id_v7_idx ON public.templates USING btree (upload_id);
 
 
 --
@@ -77339,6 +80038,22 @@ ALTER TABLE ONLY public.document_templates
 
 
 --
+-- Name: document_templates document_templates_html_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_templates
+    ADD CONSTRAINT document_templates_html_id_fkey FOREIGN KEY (html_id) REFERENCES public.html(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: document_templates document_templates_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_templates
+    ADD CONSTRAINT document_templates_schema_id_fkey FOREIGN KEY (schema_id) REFERENCES public.schemas(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: document_templates document_templates_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -77643,6 +80358,22 @@ ALTER TABLE ONLY public.group_stop
 
 
 --
+-- Name: html_uploads html_uploads_html_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.html_uploads
+    ADD CONSTRAINT html_uploads_html_id_fkey FOREIGN KEY (html_id) REFERENCES public.html(id) ON DELETE CASCADE;
+
+
+--
+-- Name: html_uploads html_uploads_upload_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.html_uploads
+    ADD CONSTRAINT html_uploads_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: image_departments image_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -77719,7 +80450,31 @@ ALTER TABLE ONLY public.message_content
 --
 
 ALTER TABLE ONLY public.message_feedback_highlight
-    ADD CONSTRAINT message_feedback_highlight_message_feedback_id_fkey FOREIGN KEY (message_feedback_id) REFERENCES public.message_feedbacks(id);
+    ADD CONSTRAINT message_feedback_highlight_message_feedback_id_fkey FOREIGN KEY (message_feedback_id) REFERENCES public.message_feedback_strengths(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_feedback_improvements message_feedback_improvements_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedback_improvements
+    ADD CONSTRAINT message_feedback_improvements_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.grades(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_feedback_improvements message_feedback_improvements_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedback_improvements
+    ADD CONSTRAINT message_feedback_improvements_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_feedback_improvements message_feedback_improvements_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedback_improvements
+    ADD CONSTRAINT message_feedback_improvements_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -77727,31 +80482,31 @@ ALTER TABLE ONLY public.message_feedback_highlight
 --
 
 ALTER TABLE ONLY public.message_feedback_replace
-    ADD CONSTRAINT message_feedback_replace_message_feedback_id_fkey FOREIGN KEY (message_feedback_id) REFERENCES public.message_feedbacks(id);
+    ADD CONSTRAINT message_feedback_replace_message_feedback_id_fkey FOREIGN KEY (message_feedback_id) REFERENCES public.message_feedback_improvements(id) ON DELETE CASCADE;
 
 
 --
--- Name: message_feedbacks message_feedbacks_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: message_feedback_strengths message_feedback_strengths_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_feedbacks
-    ADD CONSTRAINT message_feedbacks_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.grades(id);
-
-
---
--- Name: message_feedbacks message_feedbacks_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_feedbacks
-    ADD CONSTRAINT message_feedbacks_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id);
+ALTER TABLE ONLY public.message_feedback_strengths
+    ADD CONSTRAINT message_feedback_strengths_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.grades(id) ON DELETE CASCADE;
 
 
 --
--- Name: message_feedbacks message_feedbacks_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: message_feedback_strengths message_feedback_strengths_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_feedbacks
-    ADD CONSTRAINT message_feedbacks_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
+ALTER TABLE ONLY public.message_feedback_strengths
+    ADD CONSTRAINT message_feedback_strengths_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_feedback_strengths message_feedback_strengths_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedback_strengths
+    ADD CONSTRAINT message_feedback_strengths_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -78651,6 +81406,22 @@ ALTER TABLE ONLY public.schema_fields
 
 
 --
+-- Name: schema_templates schema_templates_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_templates
+    ADD CONSTRAINT schema_templates_schema_id_fkey FOREIGN KEY (schema_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: schema_templates schema_templates_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_templates
+    ADD CONSTRAINT schema_templates_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id) ON DELETE CASCADE;
+
+
+--
 -- Name: setting_auth_keys setting_auth_keys_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -78915,19 +81686,43 @@ ALTER TABLE ONLY public.standards
 
 
 --
--- Name: template_schemas template_schemas_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: template_array_items template_array_items_item_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.template_schemas
-    ADD CONSTRAINT template_schemas_schema_id_fkey FOREIGN KEY (schema_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.template_array_items
+    ADD CONSTRAINT template_array_items_item_template_id_fkey FOREIGN KEY (item_template_id) REFERENCES public.templates(id) ON DELETE CASCADE;
 
 
 --
--- Name: template_schemas template_schemas_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: template_array_items template_array_items_schema_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.template_schemas
-    ADD CONSTRAINT template_schemas_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.template_array_items
+    ADD CONSTRAINT template_array_items_schema_field_id_fkey FOREIGN KEY (schema_field_id) REFERENCES public.schema_fields(id) ON DELETE CASCADE;
+
+
+--
+-- Name: template_array_items template_array_items_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_array_items
+    ADD CONSTRAINT template_array_items_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id) ON DELETE CASCADE;
+
+
+--
+-- Name: template_values template_values_schema_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_values
+    ADD CONSTRAINT template_values_schema_field_id_fkey FOREIGN KEY (schema_field_id) REFERENCES public.schema_fields(id) ON DELETE CASCADE;
+
+
+--
+-- Name: template_values template_values_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_values
+    ADD CONSTRAINT template_values_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id) ON DELETE CASCADE;
 
 
 --
@@ -78936,14 +81731,6 @@ ALTER TABLE ONLY public.template_schemas
 
 ALTER TABLE ONLY public.templates
     ADD CONSTRAINT templates_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
-
-
---
--- Name: templates templates_upload_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.templates
-    ADD CONSTRAINT templates_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads(id);
 
 
 --
@@ -79054,5 +81841,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict LBtUD3JyUoDeIYSiH1f3N8X1s5zUCdgmUfIn1JQbYu8h8vsx9K0wYGwpkRdoSUP
+\unrestrict o0gA6JSHmSQV8o6dE30ukXnZFVblbpKnzMzHCgcGnPqQysgEe2jv4YewcmkcvOU
 

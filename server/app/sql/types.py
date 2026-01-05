@@ -4026,7 +4026,6 @@ class QGetSimulationAttemptV4MessageFeedback(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    type: str | None
     replaces: list[QGetSimulationAttemptV4MessageFeedbackReplace] | None
     highlights: list[QGetSimulationAttemptV4MessageFeedbackHighlight] | None
 
@@ -10588,43 +10587,6 @@ class TextToolProgressUpdateApiResponse(BaseModel):
 # Generated from: create_feedback
 
 
-# Generated from: create_message_feedback
-
-class CreateMessageFeedbackSqlParams(BaseModel):
-
-    grade_id: UUID
-    message_id: UUID
-    name: str
-    description: str
-    type: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.grade_id,
-            self.message_id,
-            self.name,
-            self.description,
-            self.type,
-        )
-
-class CreateMessageFeedbackSqlRow(BaseModel):
-
-    id: str | None = None
-
-class CreateMessageFeedbackApiRequest(BaseModel):
-
-    grade_id: UUID
-    message_id: UUID
-    name: str
-    description: str
-    type: str
-
-class CreateMessageFeedbackApiResponse(BaseModel):
-
-    id: str | None = None
-
-
-
 # Generated from: create_message_feedback_highlight
 
 class ICreateMessageFeedbackHighlightV4Highlight(BaseModel):
@@ -10659,6 +10621,40 @@ class CreateMessageFeedbackHighlightApiRequest(BaseModel):
 class CreateMessageFeedbackHighlightApiResponse(BaseModel):
 
     success: bool | None = None
+
+
+
+# Generated from: create_message_feedback_improvement
+
+class CreateMessageFeedbackImprovementSqlParams(BaseModel):
+
+    grade_id: UUID
+    message_id: UUID
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grade_id,
+            self.message_id,
+            self.name,
+            self.description,
+        )
+
+class CreateMessageFeedbackImprovementSqlRow(BaseModel):
+
+    id: str | None = None
+
+class CreateMessageFeedbackImprovementApiRequest(BaseModel):
+
+    grade_id: UUID
+    message_id: UUID
+    name: str
+    description: str
+
+class CreateMessageFeedbackImprovementApiResponse(BaseModel):
+
+    id: str | None = None
 
 
 
@@ -10697,6 +10693,40 @@ class CreateMessageFeedbackReplaceApiRequest(BaseModel):
 class CreateMessageFeedbackReplaceApiResponse(BaseModel):
 
     success: bool | None = None
+
+
+
+# Generated from: create_message_feedback_strength
+
+class CreateMessageFeedbackStrengthSqlParams(BaseModel):
+
+    grade_id: UUID
+    message_id: UUID
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grade_id,
+            self.message_id,
+            self.name,
+            self.description,
+        )
+
+class CreateMessageFeedbackStrengthSqlRow(BaseModel):
+
+    id: str | None = None
+
+class CreateMessageFeedbackStrengthApiRequest(BaseModel):
+
+    grade_id: UUID
+    message_id: UUID
+    name: str
+    description: str
+
+class CreateMessageFeedbackStrengthApiResponse(BaseModel):
+
+    id: str | None = None
 
 
 
@@ -27688,23 +27718,29 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateFeedbackApiRequest",
         "CreateFeedbackApiResponse",
     ),
-    "app/sql/v4/grading/create_message_feedback_complete.sql": (
-        "CreateMessageFeedbackSqlParams",
-        "CreateMessageFeedbackSqlRow",
-        "CreateMessageFeedbackApiRequest",
-        "CreateMessageFeedbackApiResponse",
-    ),
     "app/sql/v4/grading/create_message_feedback_highlight_complete.sql": (
         "CreateMessageFeedbackHighlightSqlParams",
         "CreateMessageFeedbackHighlightSqlRow",
         "CreateMessageFeedbackHighlightApiRequest",
         "CreateMessageFeedbackHighlightApiResponse",
     ),
+    "app/sql/v4/grading/create_message_feedback_improvement_complete.sql": (
+        "CreateMessageFeedbackImprovementSqlParams",
+        "CreateMessageFeedbackImprovementSqlRow",
+        "CreateMessageFeedbackImprovementApiRequest",
+        "CreateMessageFeedbackImprovementApiResponse",
+    ),
     "app/sql/v4/grading/create_message_feedback_replace_complete.sql": (
         "CreateMessageFeedbackReplaceSqlParams",
         "CreateMessageFeedbackReplaceSqlRow",
         "CreateMessageFeedbackReplaceApiRequest",
         "CreateMessageFeedbackReplaceApiResponse",
+    ),
+    "app/sql/v4/grading/create_message_feedback_strength_complete.sql": (
+        "CreateMessageFeedbackStrengthSqlParams",
+        "CreateMessageFeedbackStrengthSqlRow",
+        "CreateMessageFeedbackStrengthApiRequest",
+        "CreateMessageFeedbackStrengthApiResponse",
     ),
     "app/sql/v4/grading/find_standard_by_group_and_score_complete.sql": (
         "FindStandardByGroupAndScoreSqlParams",
@@ -30106,17 +30142,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/grading/create_message_feedback_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/grading/create_message_feedback_highlight_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/grading/create_message_feedback_improvement_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/grading/create_message_feedback_replace_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/grading/create_message_feedback_strength_complete.sql"]
     ) -> SqlString: ...
 
     @overload

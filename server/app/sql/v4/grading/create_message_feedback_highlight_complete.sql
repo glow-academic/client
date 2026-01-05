@@ -1,6 +1,7 @@
 -- Insert message feedback highlight items
 -- Converted to PostgreSQL function pattern with composite types (no JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Note: message_feedback_id now references message_feedback_strengths(id)
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -37,6 +38,8 @@ CREATE TYPE types.i_create_message_feedback_highlight_v4_highlight AS (
 );
 
 -- 4) Recreate function
+-- Parameters: message_feedback_id (uuid) - references message_feedback_strengths(id)
+--             highlights (array) - array of highlight sections
 CREATE OR REPLACE FUNCTION socket_create_message_feedback_highlight_v4(
     message_feedback_id uuid,
     highlights types.i_create_message_feedback_highlight_v4_highlight[]

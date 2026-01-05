@@ -122,7 +122,6 @@ CREATE TYPE types.q_get_simulation_attempt_v4_message_feedback AS (
     id uuid,
     name text,
     description text,
-    type text,
     replaces types.q_get_simulation_attempt_v4_message_feedback_replace[],
     highlights types.q_get_simulation_attempt_v4_message_feedback_highlight[]
 );
@@ -1222,25 +1221,37 @@ grades_data AS (
     ORDER BY c.id, scg.created_at DESC
 ),
 message_feedbacks_data AS (
+    -- Strengths with highlights
     SELECT 
-        mf.message_id,
-        mf.grade_id,
-        (mf.id, mf.name, mf.description, mf.type::text,
-         COALESCE(
-             (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_message_feedback_replace ORDER BY mfr.idx)
-                        FROM message_feedback_replace mfr
-                        WHERE mfr.message_feedback_id = mf.id),
-             '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[]
-         ),
+        mfs.message_id,
+        mfs.grade_id,
+        (mfs.id, mfs.name, mfs.description,
+         '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[],
          COALESCE(
              (SELECT ARRAY_AGG((mfh.section)::types.q_get_simulation_attempt_v4_message_feedback_highlight ORDER BY mfh.idx)
                         FROM message_feedback_highlight mfh
-                        WHERE mfh.message_feedback_id = mf.id),
+                        WHERE mfh.message_feedback_id = mfs.id),
              '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
-                    )
+         )
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
-    FROM message_feedbacks mf
-    WHERE mf.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    FROM message_feedback_strengths mfs
+    WHERE mfs.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    UNION ALL
+    -- Improvements with replaces
+    SELECT 
+        mfi.message_id,
+        mfi.grade_id,
+        (mfi.id, mfi.name, mfi.description,
+         COALESCE(
+             (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_message_feedback_replace ORDER BY mfr.idx)
+                        FROM message_feedback_replace mfr
+                        WHERE mfr.message_feedback_id = mfi.id),
+             '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[]
+         ),
+         '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
+        )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
+    FROM message_feedback_improvements mfi
+    WHERE mfi.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
 ),
 message_feedbacks_grouped AS (
     SELECT 

@@ -1,6 +1,7 @@
 -- Insert message feedback replace items
 -- Converted to PostgreSQL function pattern with composite types (no JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Note: message_feedback_id now references message_feedback_improvements(id)
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -38,6 +39,8 @@ CREATE TYPE types.i_create_message_feedback_replace_v4_replace AS (
 );
 
 -- 4) Recreate function
+-- Parameters: message_feedback_id (uuid) - references message_feedback_improvements(id)
+--             replaces (array) - array of replace items (section, replace pairs)
 CREATE OR REPLACE FUNCTION socket_create_message_feedback_replace_v4(
     message_feedback_id uuid,
     replaces types.i_create_message_feedback_replace_v4_replace[]

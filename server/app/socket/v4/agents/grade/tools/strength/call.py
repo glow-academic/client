@@ -14,8 +14,8 @@ from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio
 from app.sql.types import (
     CreateMessageFeedbackHighlightSqlParams,
-    CreateMessageFeedbackSqlParams,
-    CreateMessageFeedbackSqlRow,
+    CreateMessageFeedbackStrengthSqlParams,
+    CreateMessageFeedbackStrengthSqlRow,
 )
 
 internal_sio = get_internal_sio()
@@ -109,19 +109,18 @@ async def _grading_tool_message_strength_impl(
                 )
                 return
 
-            # Create message feedback record
+            # Create message feedback strength record
             SQL_CREATE_FEEDBACK_PATH = (
-                "app/sql/v4/grading/create_message_feedback_complete.sql"
+                "app/sql/v4/grading/create_message_feedback_strength_complete.sql"
             )
-            feedback_params = CreateMessageFeedbackSqlParams(
+            feedback_params = CreateMessageFeedbackStrengthSqlParams(
                 grade_id=grade_id_uuid,
                 message_id=message_id_uuid,
                 name="Strength",
                 description=data.feedback,
-                type="strength",  # type: ignore
             )
             feedback_result = cast(
-                CreateMessageFeedbackSqlRow,
+                CreateMessageFeedbackStrengthSqlRow,
                 await execute_sql_typed(
                     conn, SQL_CREATE_FEEDBACK_PATH, params=feedback_params
                 ),
